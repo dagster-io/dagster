@@ -59,6 +59,7 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -207,6 +208,7 @@ export type LogsRowStructuredFragment_EngineEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -350,6 +352,7 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -482,6 +485,7 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -611,6 +615,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -727,6 +732,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -912,6 +918,7 @@ export type LogsRowStructuredFragment_HandledOutputEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1075,6 +1082,7 @@ export type LogsRowStructuredFragment_LoadedInputEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1220,6 +1228,7 @@ export type LogsRowStructuredFragment_MaterializationEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1344,6 +1353,7 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -1472,6 +1482,7 @@ export type LogsRowStructuredFragment_ObservationEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1597,6 +1608,7 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1731,6 +1743,7 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1855,6 +1868,7 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -2062,6 +2076,7 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -2192,6 +2207,7 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -2316,6 +2332,7 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;

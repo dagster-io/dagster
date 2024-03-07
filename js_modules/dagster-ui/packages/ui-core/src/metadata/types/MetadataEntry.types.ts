@@ -16,6 +16,12 @@ export type MetadataEntryFragment_BoolMetadataEntry_ = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_DateTimeMetadataEntry_ = {
+  __typename: 'DateTimeMetadataEntry';
+  label: string;
+  description: string | null;
+};
+
 export type MetadataEntryFragment_FloatMetadataEntry_ = {
   __typename: 'FloatMetadataEntry';
   floatValue: number | null;
@@ -154,6 +160,7 @@ export type MetadataEntryFragment_UrlMetadataEntry_ = {
 export type MetadataEntryFragment =
   | MetadataEntryFragment_AssetMetadataEntry_
   | MetadataEntryFragment_BoolMetadataEntry_
+  | MetadataEntryFragment_DateTimeMetadataEntry_
   | MetadataEntryFragment_FloatMetadataEntry_
   | MetadataEntryFragment_IntMetadataEntry_
   | MetadataEntryFragment_JobMetadataEntry_

@@ -7,6 +7,7 @@ from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
     DagsterJobMetadataValue,
+    DateTimeMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -43,6 +44,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
+        GrapheneDateTimeMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJobMetadataEntry,
@@ -162,6 +164,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                     constraints=value.schema.constraints,
                     columns=value.schema.columns,
                 ),
+            )
+        elif isinstance(value, DateTimeMetadataValue):
+            yield GrapheneDateTimeMetadataEntry(
+                label=key,
+                timestamp=value.timestamp,
+                timezone=value.timezone,
             )
         else:
             # skip rest for now

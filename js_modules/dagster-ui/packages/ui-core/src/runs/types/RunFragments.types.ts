@@ -116,6 +116,7 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -264,6 +265,7 @@ export type RunDagsterRunEventFragment_EngineEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -407,6 +409,7 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -539,6 +542,7 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -668,6 +672,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -784,6 +789,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -969,6 +975,7 @@ export type RunDagsterRunEventFragment_HandledOutputEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1132,6 +1139,7 @@ export type RunDagsterRunEventFragment_LoadedInputEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1278,6 +1286,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1402,6 +1411,7 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -1530,6 +1540,7 @@ export type RunDagsterRunEventFragment_ObservationEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1655,6 +1666,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1789,6 +1801,7 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -1913,6 +1926,7 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -2120,6 +2134,7 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent_ = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
@@ -2250,6 +2265,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -2374,6 +2390,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent_ = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;

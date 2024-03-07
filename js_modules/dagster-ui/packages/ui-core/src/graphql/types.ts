@@ -162,6 +162,7 @@ export type AssetCheckEvaluation = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -439,6 +440,7 @@ export type AssetNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1025,6 +1027,7 @@ export type DagsterType = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1063,6 +1066,14 @@ export type DagsterTypeOrError =
   | PipelineNotFoundError
   | PythonError
   | RegularDagsterType;
+
+export type DateTimeMetadataEntry = MetadataEntry & {
+  __typename: 'DateTimeMetadataEntry';
+  description: Maybe<Scalars['String']>;
+  label: Scalars['String'];
+  timestamp: Maybe<Scalars['Float']>;
+  timezone: Maybe<Scalars['String']>;
+};
 
 export type DefaultPartitionStatuses = {
   __typename: 'DefaultPartitionStatuses';
@@ -1110,6 +1121,7 @@ export type DisplayableEvent = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1183,6 +1195,7 @@ export type EngineEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1421,6 +1434,7 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1519,6 +1533,7 @@ export type ExpectationResult = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1544,6 +1559,7 @@ export type FailureMetadata = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1648,6 +1664,7 @@ export type HandledOutputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1716,6 +1733,7 @@ export type IPipelineSnapshot = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1784,6 +1802,7 @@ export type InputDefinition = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -2004,6 +2023,7 @@ export type Job = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2191,6 +2211,7 @@ export type ListDagsterType = DagsterType &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2233,6 +2254,7 @@ export type LoadedInputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2397,6 +2419,7 @@ export type MaterializationEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2772,6 +2795,7 @@ export type NullableDagsterType = DagsterType &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2820,6 +2844,7 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -2858,6 +2883,7 @@ export type ObservationEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2897,6 +2923,7 @@ export type OutputDefinition = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -3215,6 +3242,7 @@ export type Pipeline = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -3439,6 +3467,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -3866,6 +3895,7 @@ export type RegularDagsterType = DagsterType & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -4083,6 +4113,7 @@ export type ResourceInitFailureEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4119,6 +4150,7 @@ export type ResourceInitStartedEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4155,6 +4187,7 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4867,6 +4900,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -4970,6 +5004,7 @@ export type StepWorkerStartedEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -5006,6 +5041,7 @@ export type StepWorkerStartingEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
+      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -5222,6 +5258,7 @@ export type TypeCheck = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -5259,6 +5296,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
+    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -7129,6 +7167,23 @@ export const buildDagsterTypeNotFoundError = (
         ? overrides.dagsterTypeName!
         : 'quia',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dolore',
+  };
+};
+
+export const buildDateTimeMetadataEntry = (
+  overrides?: Partial<DateTimeMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DateTimeMetadataEntry'} & DateTimeMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DateTimeMetadataEntry');
+  return {
+    __typename: 'DateTimeMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'fugit',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'iure',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 0.1,
+    timezone:
+      overrides && overrides.hasOwnProperty('timezone') ? overrides.timezone! : 'voluptatem',
   };
 };
 

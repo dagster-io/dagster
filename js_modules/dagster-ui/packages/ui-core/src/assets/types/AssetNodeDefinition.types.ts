@@ -611,6 +611,7 @@ export type AssetNodeDefinitionFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -744,6 +745,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -1990,6 +1992,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -3236,6 +3239,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -4473,6 +4477,7 @@ export type AssetNodeDefinitionFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -5725,6 +5730,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -6971,6 +6977,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -8217,6 +8224,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -9454,6 +9462,7 @@ export type AssetNodeDefinitionFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -10706,6 +10715,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -11952,6 +11962,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -13198,6 +13209,7 @@ export type AssetNodeDefinitionFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -14435,6 +14447,7 @@ export type AssetNodeDefinitionFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;

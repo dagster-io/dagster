@@ -2663,6 +2663,13 @@ type NullMetadataEntry implements MetadataEntry {
   description: String
 }
 
+type DateTimeMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  timestamp: Float
+  timezone: String
+}
+
 scalar Cursor
 
 type Partition {
