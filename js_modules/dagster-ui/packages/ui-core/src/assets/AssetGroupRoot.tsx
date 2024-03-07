@@ -101,7 +101,12 @@ export const AssetGroupRoot = ({
 
   const setFilters = React.useCallback(({changedInBranch}: {changedInBranch?: ChangeReason[]}) => {
     if (changedInBranch) {
-      setChangeInBranchFilters(changedInBranch);
+      setChangeInBranchFilters((previousChangedInBranch) => {
+        if (JSON.stringify(previousChangedInBranch) !== JSON.stringify(changedInBranch)) {
+          return changedInBranch;
+        }
+        return previousChangedInBranch;
+      });
     } else {
       setChangeInBranchFilters([]);
     }
