@@ -1639,7 +1639,7 @@ def external_asset_nodes_from_defs(
                     downstream_asset_key=output_key
                 )
 
-        for assets_def in asset_layer.assets_defs_by_key.values():
+        for assets_def in asset_layer.assets_defs:
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
             auto_materialize_policy_by_asset_key.update(assets_def.auto_materialize_policies_by_key)

@@ -817,7 +817,7 @@ class JobDefinition(IHasInternalInit):
 
         new_job = build_asset_selection_job(
             name=self.name,
-            assets=set(self.asset_layer.assets_defs_by_key.values()),
+            assets=self.asset_layer.assets_defs,
             source_assets=self.asset_layer.source_assets_by_key.values(),
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
