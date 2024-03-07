@@ -103,7 +103,7 @@ export const AssetsCatalogRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default AssetsCatalogRoot;
 
-const ASSETS_CATALOG_ROOT_QUERY = gql`
+export const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
