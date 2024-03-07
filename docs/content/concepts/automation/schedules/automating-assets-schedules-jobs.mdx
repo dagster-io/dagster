@@ -95,7 +95,7 @@ Next, we'll update our project's <PyObject object="Definitions" /> object to inc
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_definitions endbefore=end_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
-    jobs=[ecommerce_asset_job],
+    jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
 )
 ```
@@ -131,7 +131,7 @@ def users_asset():
 # start_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
-    jobs=[ecommerce_asset_job],
+    jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
 ```
 
@@ -184,7 +184,7 @@ You can set the schedule's default status using `DefaultScheduleStatus.RUNNING` 
 # start_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
-    jobs=[ecommerce_asset_job],
+    jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
 ```
 

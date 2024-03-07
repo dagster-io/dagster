@@ -43,7 +43,7 @@ ecommerce_schedule = ScheduleDefinition(
 # start_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
-    jobs=[ecommerce_asset_job],
+    jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
 )
 # end_definitions
