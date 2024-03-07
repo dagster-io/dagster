@@ -5,13 +5,13 @@ description: "Learn how to automate asset materialization using schedules and jo
 
 # Automating assets using schedules and jobs
 
-After you've created some [Software-defined Assets](/concepts/assets/software-defined-assets), you'll likely want to automate their materialization.
+After creating some [Software-defined Assets](/concepts/assets/software-defined-assets), you'll may want to automate their materialization.
 
-In this guide, we'll show you one method of accomplishing this by using schedules and jobs. If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/automation/schedules/automating-ops-schedules-jobs).
+In this guide, we'll show you one method of accomplishing this by using schedules and jobs. To do this for ops, refer to the [Automating ops using schedules guide](/concepts/automation/schedules/automating-ops-schedules-jobs).
 
-By the end of this guide, you will:
+By the end of this guide, you'll be able to:
 
-- Create a job that materializes some assets
+- Create a job that materializes assets
 - Create a schedule
 - Add the new job and schedule to your project's <PyObject object="Definitions" /> object
 - Turn the schedule on
@@ -20,9 +20,9 @@ By the end of this guide, you will:
 
 ## Prerequisites
 
-To complete the steps in this guide, you'll need:
+To follow this guide, you'll need:
 
-- **To have Dagster and the Dagster UI installed.** Refer to the [Installation guide](/getting-started/install) for more info and instructions.
+- **To install Dagster and the Dagster UI.** Refer to the [Installation guide](/getting-started/install) for more info and instructions.
 - **Familiarity with**:
   - [Software-defined Assets](/concepts/assets/software-defined-assets)
   - [Jobs](/concepts/ops-jobs-graphs/jobs)
@@ -32,12 +32,9 @@ To complete the steps in this guide, you'll need:
 
 ## Step 1: Create a job
 
-The first step in creating a schedule is to build a job that materializes some assets. Let's assume we already have a few assets in our project, in a group named `ecommerce_assets`:
+To create a schedule, start by building a job that materializes assets. Let's assume we already have a few assets in our project in a group named `ecommerce_assets`:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_assets endbefore=end_assets
-from dagster import asset
-
-
 @asset(group_name="ecommerce_assets")
 def orders_asset():
     return 1
@@ -48,22 +45,19 @@ def users_asset():
     return 2
 ```
 
-To create a job that materializes the assets in this group, we'll use <PyObject object="define_asset_job" />.
+To create a job that materializes the assets in this group, we'll use <PyObject object="define_asset_job" />:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_job endbefore=end_job
-from dagster import AssetSelection, define_asset_job
-
-
-ecommerce_asset_job = define_asset_job(
-    "ecommerce_asset_job", AssetSelection.groups("ecommerce_assets")
+ecommerce_job = define_asset_job(
+    "ecommerce_job", AssetSelection.groups("ecommerce_assets")
 )
 ```
 
-To do this, we:
+To create the job, we:
 
 1. Imported <PyObject object="AssetSelection" /> and <PyObject object="define_asset_job" />
-2. Used <PyObject object="define_asset_job" /> to construct the job and name it `ecommerce_asset_job`
-3. Used <PyObject object="AssetSelection" /> to select all assets in the `ecommerce_assets` group. Only these assets will be materialized when the job runs.
+2. Constructed the job using <PyObject object="define_asset_job" /> and name it `ecommerce_asset_job`
+3. Selected all assets in the `ecommerce_assets` group using <PyObject object="AssetSelection" />. Only these assets will be materialized when the job runs.
 
 Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more info and examples.
 
@@ -71,23 +65,20 @@ Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more in
 
 ## Step 2: Define the schedule
 
-Next, we'll use <PyObject object="ScheduleDefinition" /> to construct the schedule and attach it to the job we created in [Step 1](#step-1-create-a-job).
+Next, we'll construct the schedule using <PyObject object="ScheduleDefinition" /> and attach it to the job we created in [Step 1](#step-1-create-a-job).
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_schedule endbefore=end_schedule
-from dagster import ScheduleDefinition
-
-
 ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_asset_job,
+    job=ecommerce_job,
     cron_schedule="15 5 * * 1-5",
     default_status=DefaultScheduleStatus.RUNNING,
 )
 ```
 
-In this example, we:
+To build the schedule, we:
 
-1. Imported <PyObject object="ScheduleDefinition" /> and the `ecommerce_asset_job`
-2. Uused <PyObject object="ScheduleDefinition" /> to create a schedule that:
+1. Imported `DefaultScheduleStatus` and <PyObject object="ScheduleDefinition" /> from `dagster`
+2. Created a schedule using <PyObject object="ScheduleDefinition" /> that:
 
    - Is attached to the `ecommerce_assets_job` job
    - Has a cron expression of `15 5 * * 1-5`, which translates to `Every Monday through Friday of every month at 5:15AM`
@@ -97,12 +88,9 @@ In this example, we:
 
 ## Step 3: Update the Definitions object
 
-Next, we'll update our project's <PyObject object="Definitions" /> object to include our new job and schedule. This ensures the job and schedule are available to Dagster processes like the Dagster UI.
+Next, we'll update our project's <PyObject object="Definitions" /> object to include the new job and schedule. This ensures the job and schedule are available to Dagster processes, such as the Dagster UI.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_definitions endbefore=end_definitions
-from dagster import Definitions
-
-
 defs = Definitions(
     assets=[orders_asset, users_asset],
     jobs=[ecommerce_asset_job],
@@ -110,7 +98,7 @@ defs = Definitions(
 )
 ```
 
-At this point, our code looks like this:
+At this point, your code should look like the following:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=3-10,14-23,30-34,41-47,54-60
 from dagster import (
@@ -121,8 +109,6 @@ from dagster import (
     asset,
     define_asset_job,
 )
-
-
 @asset(group_name="ecommerce_assets")
 def orders_asset():
     return 1
@@ -133,52 +119,49 @@ def users_asset():
     return 2
 
 
-ecommerce_asset_job = define_asset_job(
-    "ecommerce_asset_job", AssetSelection.groups("ecommerce_assets")
-)
+
+# end_job
 
 
-ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_asset_job,
-    cron_schedule="15 5 * * 1-5",
-    default_status=DefaultScheduleStatus.RUNNING,
-)
+# start_schedule
 
 
+# start_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
     jobs=[ecommerce_asset_job],
     schedules=[ecommerce_schedule],
-)
 ```
 
 ---
 
 ## Step 4: Turn the schedule on
 
-Schedules need to be turned on before they can be used. In our case, we already turned the schedule on by using the `default_status` parameter in its <PyObject object="ScheduleDefinition" />, but there are a few other ways to do this:
+Schedules must be turned on before they can be used. In our case, we already turned the schedule on by using the `default_status` parameter in its <PyObject object="ScheduleDefinition" />, but there are a few other ways to do this:
 
 <TabGroup>
 <TabItem name="Dagster UI">
 
 <Note>
-  <strong>Heads up!</strong> Starting or stopping a schedule in the UI overrides
-  any default status set in code.
+  <strong>Heads up!</strong> Starting or stopping a schedule in the UI will
+  override any default status set in code.
 </Note>
 
-In the Dagster UI using the **Schedules** tab:
+To turn on a schedule in the Dagster UI, navigate to **Overview > Schedules**:
+
+<!-- ![Schedules tab in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/schedules-tab-toggle.png) -->
 
 <Image
 alt="Schedules tab in the Dagster UI"
-src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
-width={1164}
-height={280}
+src="/images/concepts/partitions-schedules-sensors/schedules/schedules-tab-toggle.png"
+width={1920}
+height={512}
 />
 
 </TabItem>
 <TabItem name="CLI">
 
-Using the [dagster CLI](/\_apidocs/cli#dagster-schedule):
+To start and stop schedules via the [dagster CLI](/\_apidocs/cli#dagster-schedule), use the following commands:
 
 ```shell
 dagster schedule start
@@ -189,24 +172,24 @@ dagster schedule stop
 <TabItem name="Python code">
 
 <Note>
-  <strong>Heads up!</strong> Starting or stopping a schedule in the UI overrides
-  any default status set in code.
+  <strong>Heads up!</strong> Starting or stopping a schedule in the UI will
+  override any default status set in code.
 </Note>
 
-The default status can be set using `DefaultScheduleStatus.RUNNING` in the schedule's <PyObject object="ScheduleDefinition" />:
+You can set the schedule's default status using `DefaultScheduleStatus.RUNNING` in the schedule's <PyObject object="ScheduleDefinition" />:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=43-47
-ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_asset_job,
-    cron_schedule="15 5 * * 1-5",
-    default_status=DefaultScheduleStatus.RUNNING,
-)
+# start_definitions
+defs = Definitions(
+    assets=[orders_asset, users_asset],
+    jobs=[ecommerce_asset_job],
+    schedules=[ecommerce_schedule],
 ```
 
 </TabItem>
 </TabGroup>
 
-Once the schedule is started, it will begin executing immediately if the [dagster-daemon](/deployment/dagster-daemon) process is running - which is started automatically when `dagster dev` is run - as part of your deployoment.
+After the schedule is started, it will begin executing immediately if the [dagster-daemon](/deployment/dagster-daemon) process is running. This process starts automatically when `dagster dev` is run.
 
 <!-- TODO: Refer to the [Troubleshooting schedules](/concepts/automation/schedules/troubleshooting) guide if the schedule has been started but isn't submitting runs. -->
 
