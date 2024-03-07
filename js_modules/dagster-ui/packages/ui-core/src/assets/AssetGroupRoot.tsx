@@ -1,10 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
-import isEqual from 'lodash/isEqual';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {buildAssetGroupSelector} from './AssetGroupSuggest';
 import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
@@ -89,17 +87,14 @@ export const AssetGroupRoot = ({
   );
 
   const [filters, setFilters] = useQueryPersistedState<{
-    groups?: AssetGroupSelector[];
     computeKindTags?: string[];
     changedInBranch?: ChangeReason[];
   }>({
-    encode: ({groups, computeKindTags, changedInBranch}) => ({
-      groups: groups?.length ? JSON.stringify(groups) : undefined,
+    encode: ({computeKindTags, changedInBranch}) => ({
       computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
       changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
     }),
     decode: (qs) => ({
-      groups: qs.groups ? JSON.parse(qs.groups) : [],
       computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
       changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
     }),
@@ -116,12 +111,6 @@ export const AssetGroupRoot = ({
         )
       ) {
         return true;
-      }
-      if (filters.groups?.length) {
-        const nodeGroup = buildAssetGroupSelector({definition: node});
-        if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
-          return true;
-        }
       }
 
       if (filters.changedInBranch?.length) {
