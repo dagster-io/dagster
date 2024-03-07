@@ -2188,3 +2188,39 @@ def test_asset_spec_with_metadata():
         AssetKey(["a"]): {"foo": "1"},
         AssetKey(["b"]): {"bar": "2"},
     }
+
+
+def test_asset_with_tags():
+    @asset(tags={"a": "b"})
+    def asset1(): ...
+
+    assert asset1.tags_by_key[asset1.key] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @asset(tags={"a%": "b"})  # key has illegal character
+        def asset2(): ...
+
+
+def test_asset_spec_with_tags():
+    @multi_asset(specs=[AssetSpec("asset1", tags={"a": "b"})])
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])  # key has illegal character
+        def assets(): ...
+
+
+def test_asset_out_with_tags():
+    @multi_asset(outs={"asset1": AssetOut(tags={"a": "b"})})
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
+        def assets(): ...

@@ -12,6 +12,7 @@ from .events import (
 )
 from .freshness_policy import FreshnessPolicy
 from .metadata import RawMetadataMapping
+from .utils import validate_definition_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -55,6 +56,7 @@ class AssetExecutionType(Enum):
 
 
 @experimental_param(param="owners")
+@experimental_param(param="tags")
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
@@ -69,6 +71,7 @@ class AssetSpec(
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("owners", PublicAttr[Optional[Sequence[str]]]),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
         ],
     )
 ):
@@ -97,6 +100,8 @@ class AssetSpec(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
     """
 
     def __new__(
@@ -112,6 +117,7 @@ class AssetSpec(
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         owners: Optional[Sequence[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -138,4 +144,5 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            tags=validate_definition_tags(tags),
         )
