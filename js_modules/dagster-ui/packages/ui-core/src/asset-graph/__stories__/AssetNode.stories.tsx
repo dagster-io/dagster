@@ -1,6 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
+import React from 'react';
 
+import {FeatureFlag, setFeatureFlags} from '../../app/Flags';
 import {AssetLiveDataProvider, factory} from '../../asset-data/AssetLiveDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey} from '../../graphql/types';
@@ -64,6 +66,10 @@ export const LiveStates = () => {
       </>
     );
   };
+
+  React.useEffect(() => {
+    setFeatureFlags([FeatureFlag.flagExperimentalBranchDiff]);
+  }, []);
 
   return (
     <MockedProvider>

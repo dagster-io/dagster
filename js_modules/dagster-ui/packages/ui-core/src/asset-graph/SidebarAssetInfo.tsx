@@ -286,6 +286,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
         }
       }
     }
+    changedReasons
 
     ...AssetNodeConfigFragment
     ...AssetNodeOpMetadataFragment

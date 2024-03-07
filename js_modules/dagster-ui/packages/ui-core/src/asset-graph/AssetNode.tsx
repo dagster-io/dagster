@@ -38,7 +38,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
         <ChangedReasonsTag
-          changedReasons={liveData?.changedReasons}
+          changedReasons={definition.changedReasons}
           assetKey={definition.assetKey}
         />
       </Box>
@@ -176,7 +176,7 @@ export const AssetNodeMinimal = ({
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
-  const isChanged = liveData?.changedReasons?.length;
+  const isChanged = definition.changedReasons.length;
   const isStale = isAssetStale(liveData);
 
   return (
@@ -196,7 +196,7 @@ export const AssetNodeMinimal = ({
           >
             {isChanged ? (
               <MinimalNodeChangedDot
-                changedReasons={liveData.changedReasons!}
+                changedReasons={definition.changedReasons}
                 assetKey={assetKey}
               />
             ) : null}

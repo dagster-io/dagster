@@ -12,7 +12,7 @@ import {
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {usePageLoadTrace} from '../performance';
@@ -32,14 +32,17 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   const [filters, setFilters] = useQueryPersistedState<{
     groups: AssetGroupSelector[];
     computeKindTags: string[];
+    changedInBranch: ChangeReason[];
   }>({
-    encode: ({groups, computeKindTags}) => ({
+    encode: ({groups, computeKindTags, changedInBranch}) => ({
       groups: groups.length ? JSON.stringify(groups) : undefined,
       computeKindTags: computeKindTags.length ? JSON.stringify(computeKindTags) : undefined,
+      changedInBranch: changedInBranch.length ? JSON.stringify(changedInBranch) : undefined,
     }),
     decode: (qs) => ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
       computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
+      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
     }),
   });
 
@@ -83,11 +86,18 @@ export const AssetsGroupsGlobalGraphRoot = () => {
           }
         }
 
+        if (filters.changedInBranch.length) {
+          if (node.changedReasons.find((reason) => filters.changedInBranch.includes(reason))) {
+            return false;
+          }
+          return true;
+        }
+
         return false;
       },
     };
     return options;
-  }, [filters.groups, visibleRepos]);
+  }, [filters, visibleRepos]);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>

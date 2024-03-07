@@ -14,10 +14,10 @@ export type AssetGraphQuery = {
     id: string;
     groupName: string | null;
     isExecutable: boolean;
+    changedReasons: Array<Types.ChangeReason>;
     hasMaterializePermission: boolean;
     graphName: string | null;
     jobNames: Array<string>;
-    changedReasons: Array<Types.ChangeReason>;
     opNames: Array<string>;
     opVersion: string | null;
     description: string | null;
@@ -42,10 +42,10 @@ export type AssetNodeForGraphQueryFragment = {
   id: string;
   groupName: string | null;
   isExecutable: boolean;
+  changedReasons: Array<Types.ChangeReason>;
   hasMaterializePermission: boolean;
   graphName: string | null;
   jobNames: Array<string>;
-  changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
   opVersion: string | null;
   description: string | null;

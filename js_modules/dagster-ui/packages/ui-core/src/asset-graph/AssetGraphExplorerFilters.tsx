@@ -2,7 +2,8 @@ import {Box, Icon} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
 import {GraphNode} from './Utils';
-import {AssetGroupSelector} from '../graphql/types';
+import {FeatureFlag, featureEnabled} from '../app/Flags';
+import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
@@ -18,6 +19,8 @@ type OptionalFilters =
       visibleAssetGroups?: null;
       computeKindTags?: null;
       setComputeKindTags?: null;
+      changedInBranch?: null;
+      setChangedInBranch?: null;
     }
   | {
       assetGroups: AssetGroupSelector[];
@@ -25,6 +28,8 @@ type OptionalFilters =
       setGroupFilters: (groups: AssetGroupSelector[]) => void;
       computeKindTags: string[];
       setComputeKindTags: (s: string[]) => void;
+      changedInBranch?: ChangeReason[];
+      setChangedInBranch?: (s: ChangeReason[]) => void;
     };
 
 type Props = {
@@ -44,10 +49,45 @@ export function useAssetGraphExplorerFilters({
   setComputeKindTags,
   explorerPath,
   clearExplorerPath,
+  changedInBranch,
+  setChangedInBranch,
 }: Props) {
   const {allRepos} = useContext(WorkspaceContext);
 
   const reposFilter = useCodeLocationFilter();
+
+  const changedFilter = useStaticSetFilter<ChangeReason>({
+    name: 'Changed in branch',
+    icon: 'new_in_branch',
+    allValues: Object.values(ChangeReason).map((reason) => ({
+      key: reason,
+      value: reason,
+      match: [reason],
+    })),
+    allowMultipleSelections: true,
+    menuWidth: '300px',
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="repo" />
+        <TruncatedTextWithFullTextOnHover
+          tooltipText={value}
+          text={
+            <span style={{textTransform: 'capitalize'}}>
+              {value.toLocaleLowerCase().replace('_', ' ')}
+            </span>
+          }
+        />
+      </Box>
+    ),
+    getStringValue: (value) => value[0] + value.slice(1).toLowerCase(),
+
+    state: useMemo(() => new Set(changedInBranch ?? []), [changedInBranch]),
+    onStateChanged: (values) => {
+      if (setChangedInBranch) {
+        setChangedInBranch(Array.from(values));
+      }
+    },
+  });
 
   const groupsFilter = useStaticSetFilter<AssetGroupSelector>({
     name: 'Asset Groups',
@@ -138,11 +178,15 @@ export function useAssetGraphExplorerFilters({
   if (assetGroups) {
     filters.push(groupsFilter);
   }
+  if (changedInBranch && featureEnabled(FeatureFlag.flagExperimentalBranchDiff)) {
+    filters.push(changedFilter);
+  }
   filters.push(kindTagsFilter);
   const {button, activeFiltersJsx} = useFilters({filters});
   if (allRepos.length <= 1 && !assetGroups) {
     return {button: null, activeFiltersJsx: null};
   }
+
   return {
     button,
     filterBar:

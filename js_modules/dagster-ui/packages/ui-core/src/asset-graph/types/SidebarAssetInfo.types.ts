@@ -8,6 +8,7 @@ export type SidebarAssetFragment = {
   description: string | null;
   opVersion: string | null;
   jobNames: Array<string>;
+  changedReasons: Array<Types.ChangeReason>;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -15675,6 +15676,7 @@ export type SidebarAssetQuery = {
         description: string | null;
         opVersion: string | null;
         jobNames: Array<string>;
+        changedReasons: Array<Types.ChangeReason>;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';

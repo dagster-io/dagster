@@ -50,7 +50,7 @@ import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PageLoadTrace} from '../performance';
@@ -73,8 +73,13 @@ type OptionalFilters =
       filters: {
         groups: AssetGroupSelector[];
         computeKindTags: string[];
+        changedInBranch: ChangeReason[];
       };
-      setFilters: (updates: {groups: AssetGroupSelector[]; computeKindTags: string[]}) => void;
+      setFilters: (updates: {
+        groups: AssetGroupSelector[];
+        computeKindTags: string[];
+        changedInBranch: ChangeReason[];
+      }) => void;
     }
   | {filters?: null; setFilters?: null};
 
@@ -134,6 +139,18 @@ export const AssetGraphExplorer = (props: Props) => {
         props.setFilters?.({
           ...props.filters,
           computeKindTags: tags,
+        }),
+      [props],
+    ),
+    changedInBranch: React.useMemo(
+      () => props.filters?.changedInBranch || [],
+      [props.filters?.changedInBranch],
+    ),
+    setChangedInBranch: React.useCallback(
+      (changedInBranch: ChangeReason[]) =>
+        props.setFilters?.({
+          ...props.filters,
+          changedInBranch,
         }),
       [props],
     ),

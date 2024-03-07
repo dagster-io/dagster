@@ -539,7 +539,7 @@ const AssetViewPageHeaderTags = ({
               onClick={onShowUpstream}
             />
             <ChangedReasonsTag
-              changedReasons={liveData?.changedReasons}
+              changedReasons={definition.changedReasons}
               assetKey={definition.assetKey}
             />
           </>
@@ -586,7 +586,7 @@ const AssetViewPageHeaderTags = ({
             onClick={onShowUpstream}
           />
           <ChangedReasonsTag
-            changedReasons={liveData?.changedReasons}
+            changedReasons={definition.changedReasons}
             assetKey={definition.assetKey}
           />
           <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
