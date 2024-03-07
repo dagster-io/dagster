@@ -625,8 +625,8 @@ export type AssetConditionEvaluationRecordFragment = {
 
 export type GetEvaluationsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  limit: Types.Scalars['Int'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type GetEvaluationsQuery = {
@@ -1001,8 +1001,8 @@ export type GetEvaluationsQuery = {
 
 export type GetEvaluationsSpecificPartitionQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  evaluationId: Types.Scalars['Int'];
-  partition: Types.Scalars['String'];
+  evaluationId: Types.Scalars['Int']['input'];
+  partition: Types.Scalars['String']['input'];
 }>;
 
 export type GetEvaluationsSpecificPartitionQuery = {

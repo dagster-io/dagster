@@ -115,7 +115,7 @@ export type ScheduleRootQuery = {
 
 export type PreviousRunsForScheduleQueryVariables = Types.Exact<{
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type PreviousRunsForScheduleQuery = {

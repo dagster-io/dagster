@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type CapturedLogsSubscriptionVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']> | Types.Scalars['String'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type CapturedLogsSubscription = {
@@ -25,7 +25,7 @@ export type CapturedLogFragment = {
 };
 
 export type CapturedLogsMetadataQueryVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']> | Types.Scalars['String'];
+  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
 }>;
 
 export type CapturedLogsMetadataQuery = {
@@ -40,9 +40,9 @@ export type CapturedLogsMetadataQuery = {
 };
 
 export type CapturedLogsQueryVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']> | Types.Scalars['String'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type CapturedLogsQuery = {

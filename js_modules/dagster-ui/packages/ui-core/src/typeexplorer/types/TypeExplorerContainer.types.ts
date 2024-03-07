@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type TypeExplorerContainerQueryVariables = Types.Exact<{
   pipelineSelector: Types.PipelineSelector;
-  dagsterTypeName: Types.Scalars['String'];
+  dagsterTypeName: Types.Scalars['String']['input'];
 }>;
 
 export type TypeExplorerContainerQuery = {

@@ -287,9 +287,9 @@ export type AssetObservationFragment = {
 
 export type AssetEventsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  before?: Types.InputMaybe<Types.Scalars['String']>;
-  partitionInLast?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  before?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  partitionInLast?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type AssetEventsQuery = {

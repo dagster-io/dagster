@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type TypeExplorerFragment_ListDagsterType_ = {
+export type TypeExplorerFragment_ListDagsterType = {
   __typename: 'ListDagsterType';
   name: string | null;
   description: string | null;
@@ -1215,7 +1215,7 @@ export type TypeExplorerFragment_ListDagsterType_ = {
     | null;
 };
 
-export type TypeExplorerFragment_NullableDagsterType_ = {
+export type TypeExplorerFragment_NullableDagsterType = {
   __typename: 'NullableDagsterType';
   name: string | null;
   description: string | null;
@@ -2428,7 +2428,7 @@ export type TypeExplorerFragment_NullableDagsterType_ = {
     | null;
 };
 
-export type TypeExplorerFragment_RegularDagsterType_ = {
+export type TypeExplorerFragment_RegularDagsterType = {
   __typename: 'RegularDagsterType';
   name: string | null;
   description: string | null;
@@ -3642,6 +3642,6 @@ export type TypeExplorerFragment_RegularDagsterType_ = {
 };
 
 export type TypeExplorerFragment =
-  | TypeExplorerFragment_ListDagsterType_
-  | TypeExplorerFragment_NullableDagsterType_
-  | TypeExplorerFragment_RegularDagsterType_;
+  | TypeExplorerFragment_ListDagsterType
+  | TypeExplorerFragment_NullableDagsterType
+  | TypeExplorerFragment_RegularDagsterType;

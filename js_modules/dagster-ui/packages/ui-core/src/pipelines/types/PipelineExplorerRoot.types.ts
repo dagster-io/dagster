@@ -4,9 +4,9 @@ import * as Types from '../../graphql/types';
 
 export type PipelineExplorerRootQueryVariables = Types.Exact<{
   snapshotPipelineSelector?: Types.InputMaybe<Types.PipelineSelector>;
-  snapshotId?: Types.InputMaybe<Types.Scalars['String']>;
-  rootHandleID: Types.Scalars['String'];
-  requestScopeHandleID?: Types.InputMaybe<Types.Scalars['String']>;
+  snapshotId?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  rootHandleID: Types.Scalars['String']['input'];
+  requestScopeHandleID?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type PipelineExplorerRootQuery = {
