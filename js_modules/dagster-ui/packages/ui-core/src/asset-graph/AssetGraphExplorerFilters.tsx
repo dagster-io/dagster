@@ -69,7 +69,7 @@ export function useAssetGraphExplorerFilters({
     menuWidth: '300px',
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="repo" />
+        <Icon name="new_in_branch" />
         <TruncatedTextWithFullTextOnHover
           tooltipText={value}
           text={
