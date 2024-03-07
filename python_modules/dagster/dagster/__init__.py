@@ -250,7 +250,6 @@ from dagster._core.definitions.metadata import (
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
     DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
-    DateTimeMetadataValue as DateTimeMetadataValue,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,
     JsonMetadataValue as JsonMetadataValue,
@@ -264,6 +263,7 @@ from dagster._core.definitions.metadata import (
     TableMetadataValue as TableMetadataValue,
     TableSchemaMetadataValue as TableSchemaMetadataValue,
     TextMetadataValue as TextMetadataValue,
+    TimestampMetadataValue as TimestampMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
 from dagster._core.definitions.metadata.table import (

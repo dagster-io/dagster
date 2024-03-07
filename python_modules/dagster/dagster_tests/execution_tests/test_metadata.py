@@ -9,7 +9,6 @@ from dagster import (
     AssetObservation,
     BoolMetadataValue,
     DagsterEventType,
-    DateTimeMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -18,6 +17,7 @@ from dagster import (
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TextMetadataValue,
+    TimestampMetadataValue,
     UrlMetadataValue,
     job,
     op,
@@ -62,6 +62,7 @@ def test_metadata_asset_materialization():
                 "float": 0.1,
                 "path": MetadataValue.path(Path("/a/b.csv")),
                 "python": MetadataValue.python_artifact(MetadataValue),
+                "timestamp": MetadataValue.timestamp(2000.5),
             },
         )
 
@@ -87,6 +88,7 @@ def test_metadata_asset_materialization():
     assert entry_map["float"] == FloatMetadataValue
     assert entry_map["path"] == PathMetadataValue
     assert entry_map["python"] == PythonArtifactMetadataValue
+    assert entry_map["timestamp"] == TimestampMetadataValue
 
 
 def test_metadata_asset_observation():
@@ -124,53 +126,30 @@ def test_metadata_asset_observation():
     assert entry_map["python"] == PythonArtifactMetadataValue
 
 
-def test_normalize_datetime_metadata():
-    pendulum_dt_with_timezone = pendulum.datetime(2021, 1, 1, tz="UTC")
-    pendulum_dt_with_timezone_metadata_val = normalize_metadata({"foo": pendulum_dt_with_timezone})[
-        "foo"
-    ]
-    assert pendulum_dt_with_timezone_metadata_val == DateTimeMetadataValue(
-        timestamp=pendulum_dt_with_timezone.timestamp(), timezone="UTC"
-    )
-    assert pendulum_dt_with_timezone_metadata_val.value == pendulum_dt_with_timezone
-
+def test_metadata_value_timestamp():
+    pendulum_dt_with_timezone = pendulum.datetime(2024, 3, 6, 12, 0, 0, tz="America/New_York")
     assert (
-        normalize_metadata({"foo": pendulum.datetime(2024, 3, 6, 12, tz="America/New_York")})[
-            "foo"
-        ].timestamp
-        == normalize_metadata(
-            {"foo": pendulum.datetime(2024, 3, 6, 9, tz=pytz.timezone("America/Los_Angeles"))}
-        )["foo"].timestamp
+        MetadataValue.timestamp(pendulum_dt_with_timezone).value
+        == pendulum_dt_with_timezone.timestamp()
     )
-
-    pendulum_dt_without_timezone = pendulum.datetime(2021, 1, 1)
-    assert pendulum_dt_without_timezone.tzinfo is not None
-    pendulum_dt_without_timezone_metadata_val = normalize_metadata(
-        {"foo": pendulum_dt_with_timezone}
-    )["foo"]
-    assert pendulum_dt_without_timezone_metadata_val == DateTimeMetadataValue(
-        timestamp=pendulum_dt_with_timezone.timestamp(),
-        timezone=pendulum_dt_without_timezone.tzinfo.tzname(pendulum_dt_without_timezone),
-    )
-    assert pendulum_dt_without_timezone_metadata_val.value == pendulum_dt_without_timezone
-
-    normal_dt_with_timezone = pytz.timezone("EST").localize(datetime(2024, 3, 6, 12, 0, 0))
-    assert normalize_metadata({"foo": normal_dt_with_timezone})["foo"] == DateTimeMetadataValue(
-        timestamp=normal_dt_with_timezone.timestamp(), timezone="EST"
-    )
-
+    pendulum_dt_without_timezone = pendulum.datetime(2024, 3, 6, 12, 0, 0)
     assert (
-        normalize_metadata(
-            {"foo": pytz.timezone("America/New_York").localize(datetime(2024, 3, 6, 12, 0, 0))}
-        )["foo"].timestamp
-        == normalize_metadata(
-            {"foo": pytz.timezone("America/Los_Angeles").localize(datetime(2024, 3, 6, 9, 0, 0))}
-        )["foo"].timestamp
+        MetadataValue.timestamp(pendulum_dt_without_timezone).value
+        == pendulum_dt_without_timezone.timestamp()
     )
+
+    normal_dt_with_timezone = pytz.timezone("America/New_York").localize(
+        datetime(2024, 3, 6, 12, 0, 0)
+    )
+    metadata_value = MetadataValue.timestamp(normal_dt_with_timezone)
+    assert metadata_value.value == normal_dt_with_timezone.timestamp()
+    assert metadata_value.value == pendulum_dt_with_timezone.timestamp()
 
     normal_dt_without_timezone = datetime(2024, 3, 6, 12, 0, 0)
-    with pytest.raises(CheckError, match="Datetime metadata values must have timezones"):
-        normalize_metadata({"foo": normal_dt_without_timezone})["foo"]
+    with pytest.raises(
+        CheckError, match="Datetime values provided to MetadataValue.timestamp must have timezones"
+    ):
+        MetadataValue.timestamp(normal_dt_without_timezone)
 
 
 def test_unknown_metadata_value():
