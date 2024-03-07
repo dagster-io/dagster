@@ -78,7 +78,6 @@ export type PipelineRunLogsSubscription = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -190,6 +189,11 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
                       label: string;
                       description: string | null;
                     }
@@ -245,7 +249,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -357,6 +360,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -409,7 +413,6 @@ export type PipelineRunLogsSubscription = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -521,6 +524,11 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
                       label: string;
                       description: string | null;
                     }
@@ -560,7 +568,6 @@ export type PipelineRunLogsSubscription = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -676,6 +683,11 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -708,7 +720,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -820,6 +831,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -845,7 +857,6 @@ export type PipelineRunLogsSubscription = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -957,6 +968,11 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
                       label: string;
                       description: string | null;
                     }
@@ -1049,7 +1065,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -1161,6 +1176,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -1233,7 +1249,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -1345,6 +1360,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -1400,7 +1416,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -1512,6 +1527,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -1545,7 +1561,6 @@ export type PipelineRunLogsSubscription = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -1661,6 +1676,11 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -1692,7 +1712,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -1804,6 +1823,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -1838,7 +1858,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -1950,6 +1969,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -1993,7 +2013,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -2105,6 +2124,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -2138,7 +2158,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -2250,6 +2269,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -2366,7 +2386,6 @@ export type PipelineRunLogsSubscription = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -2482,6 +2501,11 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -2515,7 +2539,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -2627,6 +2650,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -2660,7 +2684,6 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -2772,6 +2795,7 @@ export type PipelineRunLogsSubscription = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -2847,7 +2871,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -2959,6 +2982,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
@@ -3011,7 +3035,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -3123,6 +3146,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         error: {
@@ -3170,7 +3194,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -3282,6 +3305,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
@@ -3318,7 +3342,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -3430,6 +3453,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
@@ -3463,7 +3487,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -3575,6 +3598,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         typeCheck: {
@@ -3595,7 +3619,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -3707,6 +3730,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
@@ -3796,7 +3820,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -3908,6 +3931,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
       }
@@ -3975,7 +3999,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -4087,6 +4110,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
       }
@@ -4137,7 +4161,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -4249,6 +4272,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -4277,7 +4301,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -4389,6 +4412,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
@@ -4421,7 +4445,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -4533,6 +4556,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -4562,7 +4586,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -4674,6 +4697,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         error: {
@@ -4712,7 +4736,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -4824,6 +4847,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
       }
@@ -4852,7 +4876,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -4964,6 +4987,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
       }
@@ -5075,7 +5099,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -5187,6 +5210,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
@@ -5221,7 +5245,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -5333,6 +5356,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
       }
@@ -5361,7 +5385,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
-          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -5473,6 +5496,7 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
       }
@@ -5561,7 +5585,6 @@ export type RunLogsQuery = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -5673,6 +5696,11 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
                       label: string;
                       description: string | null;
                     }
@@ -5728,7 +5756,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -5840,6 +5867,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -5892,7 +5920,6 @@ export type RunLogsQuery = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -6004,6 +6031,11 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
                       label: string;
                       description: string | null;
                     }
@@ -6043,7 +6075,6 @@ export type RunLogsQuery = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -6159,6 +6190,11 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -6191,7 +6227,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -6303,6 +6338,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -6328,7 +6364,6 @@ export type RunLogsQuery = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -6440,6 +6475,11 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
                       label: string;
                       description: string | null;
                     }
@@ -6532,7 +6572,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -6644,6 +6683,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -6716,7 +6756,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -6828,6 +6867,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -6883,7 +6923,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -6995,6 +7034,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -7028,7 +7068,6 @@ export type RunLogsQuery = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -7144,6 +7183,11 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -7175,7 +7219,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -7287,6 +7330,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -7321,7 +7365,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -7433,6 +7476,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -7476,7 +7520,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -7588,6 +7631,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -7621,7 +7665,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -7733,6 +7776,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -7849,7 +7893,6 @@ export type RunLogsQuery = {
                       label: string;
                       description: string | null;
                     }
-                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -7965,6 +8008,11 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -7998,7 +8046,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -8110,6 +8157,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
@@ -8143,7 +8191,6 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
-                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -8255,6 +8302,7 @@ export type RunLogsQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'UrlMetadataEntry';
                     url: string;

@@ -2663,11 +2663,10 @@ type NullMetadataEntry implements MetadataEntry {
   description: String
 }
 
-type DateTimeMetadataEntry implements MetadataEntry {
+type TimestampMetadataEntry implements MetadataEntry {
   label: String!
   description: String
   timestamp: Float
-  timezone: String
 }
 
 scalar Cursor

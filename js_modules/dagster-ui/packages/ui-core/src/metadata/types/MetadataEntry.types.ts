@@ -16,12 +16,6 @@ export type MetadataEntryFragment_BoolMetadataEntry = {
   description: string | null;
 };
 
-export type MetadataEntryFragment_DateTimeMetadataEntry = {
-  __typename: 'DateTimeMetadataEntry';
-  label: string;
-  description: string | null;
-};
-
 export type MetadataEntryFragment_FloatMetadataEntry = {
   __typename: 'FloatMetadataEntry';
   floatValue: number | null;
@@ -150,6 +144,12 @@ export type MetadataEntryFragment_TextMetadataEntry = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_TimestampMetadataEntry = {
+  __typename: 'TimestampMetadataEntry';
+  label: string;
+  description: string | null;
+};
+
 export type MetadataEntryFragment_UrlMetadataEntry = {
   __typename: 'UrlMetadataEntry';
   url: string;
@@ -160,7 +160,6 @@ export type MetadataEntryFragment_UrlMetadataEntry = {
 export type MetadataEntryFragment =
   | MetadataEntryFragment_AssetMetadataEntry
   | MetadataEntryFragment_BoolMetadataEntry
-  | MetadataEntryFragment_DateTimeMetadataEntry
   | MetadataEntryFragment_FloatMetadataEntry
   | MetadataEntryFragment_IntMetadataEntry
   | MetadataEntryFragment_JobMetadataEntry
@@ -174,6 +173,7 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_TableMetadataEntry
   | MetadataEntryFragment_TableSchemaMetadataEntry
   | MetadataEntryFragment_TextMetadataEntry
+  | MetadataEntryFragment_TimestampMetadataEntry
   | MetadataEntryFragment_UrlMetadataEntry;
 
 export type TableSchemaForMetadataEntryFragment = {

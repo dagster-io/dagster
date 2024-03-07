@@ -7,7 +7,6 @@ from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
     DagsterJobMetadataValue,
-    DateTimeMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -19,6 +18,7 @@ from dagster import (
     TableMetadataValue,
     TableSchemaMetadataValue,
     TextMetadataValue,
+    TimestampMetadataValue,
     UrlMetadataValue,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
@@ -44,7 +44,6 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
-        GrapheneDateTimeMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJobMetadataEntry,
@@ -58,6 +57,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneTableMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
         GrapheneTextMetadataEntry,
+        GrapheneTimestampMetadataEntry,
         GrapheneUrlMetadataEntry,
     )
     from ..schema.table import GrapheneTable, GrapheneTableSchema
@@ -165,12 +165,8 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                     columns=value.schema.columns,
                 ),
             )
-        elif isinstance(value, DateTimeMetadataValue):
-            yield GrapheneDateTimeMetadataEntry(
-                label=key,
-                timestamp=value.timestamp,
-                timezone=value.timezone,
-            )
+        elif isinstance(value, TimestampMetadataValue):
+            yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")

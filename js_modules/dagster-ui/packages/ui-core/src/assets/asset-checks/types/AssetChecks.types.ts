@@ -54,11 +54,6 @@ export type AssetChecksQuery = {
                           description: string | null;
                         }
                       | {
-                          __typename: 'DateTimeMetadataEntry';
-                          label: string;
-                          description: string | null;
-                        }
-                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -172,6 +167,11 @@ export type AssetChecksQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
                           label: string;
                           description: string | null;
                         }

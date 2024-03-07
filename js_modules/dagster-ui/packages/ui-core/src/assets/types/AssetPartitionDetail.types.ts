@@ -59,7 +59,6 @@ export type AssetPartitionDetailQuery = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -171,6 +170,7 @@ export type AssetPartitionDetailQuery = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
@@ -223,7 +223,6 @@ export type AssetPartitionDetailQuery = {
                 label: string;
                 description: string | null;
               }
-            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -335,6 +334,7 @@ export type AssetPartitionDetailQuery = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'UrlMetadataEntry';
                 url: string;

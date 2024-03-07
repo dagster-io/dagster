@@ -166,7 +166,6 @@ export type AssetCheckEvaluation = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -180,6 +179,7 @@ export type AssetCheckEvaluation = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   severity: AssetCheckSeverity;
@@ -444,7 +444,6 @@ export type AssetNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -458,6 +457,7 @@ export type AssetNode = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   op: Maybe<SolidDefinition>;
@@ -1031,7 +1031,6 @@ export type DagsterType = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1045,6 +1044,7 @@ export type DagsterType = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Maybe<Scalars['String']['output']>;
@@ -1070,14 +1070,6 @@ export type DagsterTypeOrError =
   | PipelineNotFoundError
   | PythonError
   | RegularDagsterType;
-
-export type DateTimeMetadataEntry = MetadataEntry & {
-  __typename: 'DateTimeMetadataEntry';
-  description: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  timestamp: Maybe<Scalars['Float']['output']>;
-  timezone: Maybe<Scalars['String']['output']>;
-};
 
 export type DefaultPartitionStatuses = {
   __typename: 'DefaultPartitionStatuses';
@@ -1125,7 +1117,6 @@ export type DisplayableEvent = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1139,6 +1130,7 @@ export type DisplayableEvent = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
 };
@@ -1199,7 +1191,6 @@ export type EngineEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1213,6 +1204,7 @@ export type EngineEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -1438,7 +1430,6 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1452,6 +1443,7 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     outputName: Scalars['String']['output'];
@@ -1537,7 +1529,6 @@ export type ExpectationResult = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1551,6 +1542,7 @@ export type ExpectationResult = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   success: Scalars['Boolean']['output'];
@@ -1563,7 +1555,6 @@ export type FailureMetadata = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1577,6 +1568,7 @@ export type FailureMetadata = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
 };
@@ -1668,7 +1660,6 @@ export type HandledOutputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1682,6 +1673,7 @@ export type HandledOutputEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     outputName: Scalars['String']['output'];
@@ -1737,7 +1729,6 @@ export type IPipelineSnapshot = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1751,6 +1742,7 @@ export type IPipelineSnapshot = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   modes: Array<Mode>;
@@ -1806,7 +1798,6 @@ export type InputDefinition = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1820,6 +1811,7 @@ export type InputDefinition = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Scalars['String']['output'];
@@ -2027,7 +2019,6 @@ export type Job = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2041,6 +2032,7 @@ export type Job = IPipelineSnapshot &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -2215,7 +2207,6 @@ export type ListDagsterType = DagsterType &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2229,6 +2220,7 @@ export type ListDagsterType = DagsterType &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     name: Maybe<Scalars['String']['output']>;
@@ -2258,7 +2250,6 @@ export type LoadedInputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2272,6 +2263,7 @@ export type LoadedInputEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -2423,7 +2415,6 @@ export type MaterializationEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2437,6 +2428,7 @@ export type MaterializationEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     partition: Maybe<Scalars['String']['output']>;
@@ -2799,7 +2791,6 @@ export type NullableDagsterType = DagsterType &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2813,6 +2804,7 @@ export type NullableDagsterType = DagsterType &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     name: Maybe<Scalars['String']['output']>;
@@ -2848,7 +2840,6 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -2862,6 +2853,7 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   op: ObjectStoreOperationType;
@@ -2887,7 +2879,6 @@ export type ObservationEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2901,6 +2892,7 @@ export type ObservationEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     partition: Maybe<Scalars['String']['output']>;
@@ -2927,7 +2919,6 @@ export type OutputDefinition = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -2941,6 +2932,7 @@ export type OutputDefinition = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Scalars['String']['output'];
@@ -3246,7 +3238,6 @@ export type Pipeline = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -3260,6 +3251,7 @@ export type Pipeline = IPipelineSnapshot &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -3471,7 +3463,6 @@ export type PipelineSnapshot = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -3485,6 +3476,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -3899,7 +3891,6 @@ export type RegularDagsterType = DagsterType & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -3913,6 +3904,7 @@ export type RegularDagsterType = DagsterType & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Maybe<Scalars['String']['output']>;
@@ -4117,7 +4109,6 @@ export type ResourceInitFailureEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4131,6 +4122,7 @@ export type ResourceInitFailureEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4154,7 +4146,6 @@ export type ResourceInitStartedEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4168,6 +4159,7 @@ export type ResourceInitStartedEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4191,7 +4183,6 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4205,6 +4196,7 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4904,7 +4896,6 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -4918,6 +4909,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   status: AssetConditionEvaluationStatus;
@@ -5008,7 +5000,6 @@ export type StepWorkerStartedEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -5022,6 +5013,7 @@ export type StepWorkerStartedEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -5045,7 +5037,6 @@ export type StepWorkerStartingEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | DateTimeMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -5059,6 +5050,7 @@ export type StepWorkerStartingEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -5255,6 +5247,13 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimestampMetadataEntry = MetadataEntry & {
+  __typename: 'TimestampMetadataEntry';
+  description: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  timestamp: Maybe<Scalars['Float']['output']>;
+};
+
 export type TypeCheck = DisplayableEvent & {
   __typename: 'TypeCheck';
   description: Maybe<Scalars['String']['output']>;
@@ -5262,7 +5261,6 @@ export type TypeCheck = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -5276,6 +5274,7 @@ export type TypeCheck = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   success: Scalars['Boolean']['output'];
@@ -5300,7 +5299,6 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | DateTimeMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -5314,6 +5312,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -7171,23 +7170,6 @@ export const buildDagsterTypeNotFoundError = (
         ? overrides.dagsterTypeName!
         : 'quia',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dolore',
-  };
-};
-
-export const buildDateTimeMetadataEntry = (
-  overrides?: Partial<DateTimeMetadataEntry>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'DateTimeMetadataEntry'} & DateTimeMetadataEntry => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('DateTimeMetadataEntry');
-  return {
-    __typename: 'DateTimeMetadataEntry',
-    description:
-      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'fugit',
-    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'iure',
-    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 0.1,
-    timezone:
-      overrides && overrides.hasOwnProperty('timezone') ? overrides.timezone! : 'voluptatem',
   };
 };
 
@@ -14421,6 +14403,21 @@ export const buildTimePartitionStatuses = (
   return {
     __typename: 'TimePartitionStatuses',
     ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
+  };
+};
+
+export const buildTimestampMetadataEntry = (
+  overrides?: Partial<TimestampMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TimestampMetadataEntry'} & TimestampMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimestampMetadataEntry');
+  return {
+    __typename: 'TimestampMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolores',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'fuga',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 9.36,
   };
 };
 

@@ -36,7 +36,6 @@ export type AssetCheckTableFragment = {
             label: string;
             description: string | null;
           }
-        | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
         | {
             __typename: 'FloatMetadataEntry';
             floatValue: number | null;
@@ -138,6 +137,7 @@ export type AssetCheckTableFragment = {
             };
           }
         | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+        | {__typename: 'TimestampMetadataEntry'; label: string; description: string | null}
         | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
       >;
     } | null;

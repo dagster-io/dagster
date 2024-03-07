@@ -83,8 +83,6 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 
 .. autoclass:: DagsterRunMetadataValue
 
-.. autoclass:: DateTimeMetadataValue
-
 .. autoclass:: FloatMetadataValue
 
 .. autoclass:: IntMetadataValue
@@ -104,6 +102,8 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 .. autoclass:: TableSchemaMetadataValue
 
 .. autoclass:: TextMetadataValue
+
+.. autoclass:: TimestampMetadataValue
 
 .. autoclass:: UrlMetadataValue
 
