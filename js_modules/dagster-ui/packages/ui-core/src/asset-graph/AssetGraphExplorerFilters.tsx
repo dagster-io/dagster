@@ -37,12 +37,14 @@ type Props = {
   nodes: GraphNode[];
   clearExplorerPath: () => void;
   explorerPath: string;
+  isGlobalGraph: boolean;
 } & OptionalFilters;
 
 const emptyArray: any[] = [];
 
 export function useAssetGraphExplorerFilters({
   nodes,
+  isGlobalGraph,
   assetGroups,
   visibleAssetGroups,
   setGroupFilters,
@@ -174,9 +176,7 @@ export function useAssetGraphExplorerFilters({
 
   const filters: FilterObject[] = [];
 
-  // This is kind of odd, but rely on group filtering being enabled for
-  // showing the locations filter since the locationsFilter is controlled by app-wide context
-  if (allRepos.length > 1 && setGroupFilters) {
+  if (allRepos.length > 1 && isGlobalGraph) {
     filters.push(reposFilter);
   }
   if (assetGroups && setGroupFilters) {

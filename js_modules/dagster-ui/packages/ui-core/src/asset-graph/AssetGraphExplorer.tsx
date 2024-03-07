@@ -152,6 +152,7 @@ export const AssetGraphExplorer = (props: Props) => {
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
       [fullAssetGraphData],
     ),
+    isGlobalGraph,
     assetGroups,
     visibleAssetGroups: React.useMemo(() => props.filters?.groups || [], [props.filters?.groups]),
     setGroupFilters: props.filters?.groups ? setGroupFilters : undefined,

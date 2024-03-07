@@ -1,8 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
+import isEqual from 'lodash/isEqual';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {buildAssetGroupSelector} from './AssetGroupSuggest';
 import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
@@ -18,6 +20,7 @@ import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraph
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {
   ExplorerPath,
@@ -26,6 +29,7 @@ import {
 } from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -84,33 +88,53 @@ export const AssetGroupRoot = ({
     [history],
   );
 
-  const [changedInBranchFilters, setChangeInBranchFilters] = React.useState<ChangeReason[]>([]);
+  const [filters, setFilters] = useQueryPersistedState<{
+    groups?: AssetGroupSelector[];
+    computeKindTags?: string[];
+    changedInBranch?: ChangeReason[];
+  }>({
+    encode: ({groups, computeKindTags, changedInBranch}) => ({
+      groups: groups?.length ? JSON.stringify(groups) : undefined,
+      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
+      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+    }),
+    decode: (qs) => ({
+      groups: qs.groups ? JSON.parse(qs.groups) : [],
+      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
+      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
+    }),
+  });
 
+  const {visibleRepos} = React.useContext(WorkspaceContext);
   const hideNodesMatchingInLineage = React.useCallback(
     (node: AssetNodeForGraphQueryFragment) => {
-      if (!changedInBranchFilters.length) {
-        return false;
+      if (
+        !visibleRepos.some(
+          (repo) =>
+            repo.repositoryLocation.name === node.repository.location.name &&
+            repo.repository.name === node.repository.name,
+        )
+      ) {
+        return true;
       }
-      const hasMatchingReason = node.changedReasons.find((reason) =>
-        changedInBranchFilters.includes(reason),
-      );
-      return !hasMatchingReason;
-    },
-    [changedInBranchFilters],
-  );
-
-  const setFilters = React.useCallback(({changedInBranch}: {changedInBranch?: ChangeReason[]}) => {
-    if (changedInBranch) {
-      setChangeInBranchFilters((previousChangedInBranch) => {
-        if (JSON.stringify(previousChangedInBranch) !== JSON.stringify(changedInBranch)) {
-          return changedInBranch;
+      if (filters.groups?.length) {
+        const nodeGroup = buildAssetGroupSelector({definition: node});
+        if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
+          return true;
         }
-        return previousChangedInBranch;
-      });
-    } else {
-      setChangeInBranchFilters([]);
-    }
-  }, []);
+      }
+
+      if (filters.changedInBranch?.length) {
+        if (node.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))) {
+          return false;
+        }
+        return true;
+      }
+
+      return false;
+    },
+    [filters, visibleRepos],
+  );
 
   const fetchOptions = React.useMemo(
     () => ({groupSelector, hideNodesMatching: hideNodesMatchingInLineage}),
@@ -120,10 +144,6 @@ export const AssetGroupRoot = ({
   const lineageOptions = React.useMemo(
     () => ({preferAssetRendering: true, explodeComposites: true}),
     [],
-  );
-  const lineageFilters = React.useMemo(
-    () => ({changedInBranch: changedInBranchFilters}),
-    [changedInBranchFilters],
   );
 
   return (
@@ -152,7 +172,7 @@ export const AssetGroupRoot = ({
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
-          filters={lineageFilters}
+          filters={filters}
           setFilters={setFilters}
         />
       ) : (
