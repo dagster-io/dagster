@@ -1,6 +1,58 @@
 # Changelog
 
-## 1.6.8 (core) / 0.22.8 (libraries
+## 1.6.9 (core) / 0.22.8 (libraries)
+
+### New
+
+- [ui] When viewing logs for a run, the date for a single log row is now shown in the tooltip on the timestamp. This helps when viewing a run that takes place over more than one date.
+- Added suggestions to the error message when selecting asset keys that do not exist as an upstream asset or in an `AssetSelection.`
+- Improved error messages when trying to materialize a subset of a multi-asset which cannot be subset.
+- [dagster-snowflake] `dagster-snowflake` now requires `snowflake-connector-python>=3.4.0`
+- [embedded-elt] `@sling_assets` accepts an optional name parameter for the underlying op
+- [dagster-openai] `dagster-openai` library is now available.
+- [dagster-dbt] Added a new setting on `DagsterDbtTranslatorSettings` called `enable_duplicate_source_asset_keys` that allows users to set duplicate asset keys for their dbt sources. Thanks @hello-world-bfree!
+- Log messages in the Dagster daemon for unloadable sensors and schedules have been removed.
+- [ui] Search now uses a cache that persists across pageloads which should greatly improve search performance for very large orgs.
+- [ui] groups/code locations in the asset graph’s sidebar are now sorted alphabetically.
+
+### Bugfixes
+
+- Fixed issue where the input/output schemas of configurable IOManagers could be ignored when providing explicit input / output run config.
+- Fixed an issue where enum values could not properly have a default value set in a `ConfigurableResource`.
+- Fixed an issue where graph-backed assets would sometimes lose user-provided descriptions due to a bug in internal copying.
+- [auto-materialize] Fixed an issue introduced in 1.6.7 where updates to ExternalAssets would be ignored when using AutoMaterializePolicies which depended on parent updates.
+- [asset checks] Fixed a bug with asset checks in step launchers.
+- [embedded-elt] Fix a bug when creating a `SlingConnectionResource` where a blank keyword argument would be emitted as an environment variable
+- [dagster-dbt] Fixed a bug where emitting events from `dbt source freshness` would cause an error.
+- [ui] Fixed a bug where using the “Terminate all runs” button with filters selected would not apply the filters to the action.
+- [ui] Fixed an issue where typing a search query into the search box before the search data was fetched would yield “No results” even after the data was fetched.
+
+### Community Contributions
+
+- [docs] fixed typo in embedded-elt.mdx (thanks [@cameronmartin](https://github.com/cameronmartin))!
+- [dagster-databricks] log the url for the run of a databricks job (thanks [@smats0n](https://github.com/smats0n))!
+- Fix missing partition property (thanks [christeefy](https://github.com/christeefy))!
+- Add op_tags to @observable_source_asset decorator (thanks [@maxfirman](https://github.com/maxfirman))!
+- [docs] typo in MultiPartitionMapping docs (thanks [@dschafer](https://github.com/dschafer))
+- Allow github actions to checkout branch from forked repo for docs changes (ci fix) (thanks [hainenber](https://github.com/hainenber))!
+
+### Experimental
+
+- [asset checks] UI performance of asset checks related pages has been improved.
+- [dagster-dbt] The class `DbtArtifacts` has been added for managing the behavior of rebuilding the manifest during development but expecting a pre-built one in production.
+
+### Documentation
+
+- Added example of writing compute logs to AWS S3 when customizing agent configuration.
+- "Hello, Dagster" is now "Dagster Quickstart" with the option to use a Github Codespace to explore Dagster.
+- Improved guides and reference to better running multiple isolated agents with separate queues on ECS.
+
+### Dagster Cloud
+
+- Microsoft Teams is now supported for alerts. [Documentation](https://docs.dagster.io/dagster-cloud/managing-deployments/setting-up-alerts)
+- A `send sample alert` button now exists on both the alert policies page and in the alert policies editor to make it easier to debug and configure alerts without having to wait for an event to kick them off.
+
+## 1.6.8 (core) / 0.22.8 (libraries)
 
 ### Bugfixes
 
