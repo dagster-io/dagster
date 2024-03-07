@@ -121,7 +121,10 @@ export const AssetTable = ({
               title="No matching assets"
               description={
                 isFiltered ? (
-                  <div>No assets matching selected filters</div>
+                  <div>
+                    No assets matching <strong>{searchPath}</strong> were found in the selected
+                    filters
+                  </div>
                 ) : (
                   <div>
                     No assets matching <strong>{searchPath}</strong> were found
