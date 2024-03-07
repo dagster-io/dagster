@@ -2,9 +2,9 @@ from typing import Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.host_representation import CodeLocation
-from dagster._core.host_representation.external import ExternalJob
-from dagster._core.host_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation import CodeLocation
+from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.origin import ExternalJobOrigin
 
 
 def external_job_from_location(

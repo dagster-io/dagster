@@ -3,8 +3,8 @@ from typing import Optional, cast
 import dagster._check as check
 import graphene
 from dagster import MultiPartitionsDefinition
-from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._core.remote_representation.external_data import (
     ExternalDynamicPartitionsDefinitionData,
     ExternalMultiPartitionsDefinitionData,
     ExternalPartitionsDefinitionData,

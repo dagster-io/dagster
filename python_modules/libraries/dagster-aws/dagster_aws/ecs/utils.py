@@ -2,7 +2,7 @@ import hashlib
 import re
 from typing import Any, Mapping
 
-from dagster._core.host_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation.origin import ExternalJobOrigin
 
 from .tasks import DagsterEcsTaskDefinitionConfig
 

@@ -26,11 +26,11 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalJobData,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalResourceData,
     NestedResource,
     NestedResourceType,

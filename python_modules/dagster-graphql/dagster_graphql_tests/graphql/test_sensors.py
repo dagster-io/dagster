@@ -7,7 +7,7 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )

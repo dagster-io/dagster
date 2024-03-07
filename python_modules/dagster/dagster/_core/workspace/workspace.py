@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation import CodeLocation, CodeLocationOrigin
+    from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
 
 
 # For locations that are loaded asynchronously

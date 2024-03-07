@@ -41,7 +41,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAs
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
 )

@@ -8,14 +8,14 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
-from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
-from dagster._core.host_representation.origin import (
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
 )
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.serdes import SetToSequenceFieldSerializer
 from dagster._utils.error import SerializableErrorInfo

@@ -32,10 +32,10 @@ from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterUserCodeUnreachableError,
 )
-from dagster._core.host_representation import ExternalSchedule
-from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalSchedule
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

@@ -8,7 +8,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.host_representation.external import (
+from dagster._core.remote_representation.external import (
     ExternalSchedule,
     ExternalSensor,
 )

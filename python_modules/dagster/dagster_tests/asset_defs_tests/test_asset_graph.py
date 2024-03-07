@@ -38,11 +38,11 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_representation.external_data import (
     external_asset_checks_from_defs,
     external_asset_nodes_from_defs,
 )
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 

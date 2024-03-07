@@ -27,30 +27,30 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import ExternalJobSubsetResult
-from dagster._core.host_representation.external import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.libraries import DagsterLibraryRegistry
+from dagster._core.origin import RepositoryPythonOrigin
+from dagster._core.remote_representation import ExternalJobSubsetResult
+from dagster._core.remote_representation.external import (
     ExternalExecutionPlan,
     ExternalJob,
     ExternalPartitionSet,
     ExternalRepository,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
     external_partition_set_name_for_job_name,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
+from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.libraries import DagsterLibraryRegistry
-from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._grpc.impl import (
     get_external_schedule_execution,
@@ -69,7 +69,7 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
-    from dagster._core.host_representation import (
+    from dagster._core.remote_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
         ExternalPartitionSetExecutionParamData,

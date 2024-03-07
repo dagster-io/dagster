@@ -13,8 +13,8 @@ from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterUserCodeUnreachableError,
 )
-from dagster._core.host_representation import ExternalExecutionPlan, ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalExecutionPlan, ExternalJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext

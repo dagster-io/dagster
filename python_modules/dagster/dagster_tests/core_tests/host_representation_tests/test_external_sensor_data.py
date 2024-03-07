@@ -2,7 +2,7 @@ from typing import AbstractSet
 
 from dagster import AssetKey, AssetSelection, Definitions, asset, sensor
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.host_representation.external_data import external_sensor_data_from_def
+from dagster._core.remote_representation.external_data import external_sensor_data_from_def
 
 
 def test_external_sensor_has_asset_selection():

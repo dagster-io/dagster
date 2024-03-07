@@ -3,8 +3,8 @@ from typing import Iterator
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus

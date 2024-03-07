@@ -37,10 +37,10 @@ from dagster._core.definitions.sensor_definition import (
 )
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalJob, ExternalSensor
-from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
+from dagster._core.remote_representation.external_data import ExternalTargetData
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,

@@ -3,8 +3,8 @@ import sys
 import pytest
 from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import ExternalJobSubsetResult
-from dagster._core.host_representation.handle import JobHandle
+from dagster._core.remote_representation.external_data import ExternalJobSubsetResult
+from dagster._core.remote_representation.handle import JobHandle
 from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info

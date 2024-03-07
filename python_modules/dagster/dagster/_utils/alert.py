@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
-    from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
+    from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 
     return "<br>".join(
         [

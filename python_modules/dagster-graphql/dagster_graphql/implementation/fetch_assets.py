@@ -39,10 +39,10 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
-from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external_data import ExternalAssetNode
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,

@@ -4,8 +4,8 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import ExternalJobSubsetResult
-from dagster._core.host_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation.external_data import ExternalJobSubsetResult
+from dagster._core.remote_representation.origin import ExternalJobOrigin
 from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
 
