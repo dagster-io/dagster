@@ -57,6 +57,9 @@ describe('RecentlyVisitedAssetsStorage', () => {
 
     // First render displays the page in a loading state
     const {rerender} = render(TestAssetView);
+    // Assert that the asset is not stored if the page is still loading
+    expect(fetchRecentlyVisitedAssetsFromLocalStorage()).toEqual([]);
+    // Wait for the page to load
     await waitFor(() => {
       expect(screen.queryByText('Loading assets…')).toBeNull();
     });
@@ -100,6 +103,9 @@ describe('RecentlyVisitedAssetsStorage', () => {
 
     // First render displays the page in a loading state
     const {rerender} = render(TestAssetView);
+    // Assert that the asset is not stored if the page is still loading
+    expect(fetchRecentlyVisitedAssetsFromLocalStorage()).toEqual([]);
+    // Wait for the page to load
     await waitFor(() => {
       expect(screen.queryByText('Loading assets…')).toBeNull();
     });
