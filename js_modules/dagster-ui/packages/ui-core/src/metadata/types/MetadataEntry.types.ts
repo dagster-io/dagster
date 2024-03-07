@@ -2,28 +2,28 @@
 
 import * as Types from '../../graphql/types';
 
-export type MetadataEntryFragment_AssetMetadataEntry_ = {
+export type MetadataEntryFragment_AssetMetadataEntry = {
   __typename: 'AssetMetadataEntry';
   label: string;
   description: string | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 
-export type MetadataEntryFragment_BoolMetadataEntry_ = {
+export type MetadataEntryFragment_BoolMetadataEntry = {
   __typename: 'BoolMetadataEntry';
   boolValue: boolean | null;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_FloatMetadataEntry_ = {
+export type MetadataEntryFragment_FloatMetadataEntry = {
   __typename: 'FloatMetadataEntry';
   floatValue: number | null;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_IntMetadataEntry_ = {
+export type MetadataEntryFragment_IntMetadataEntry = {
   __typename: 'IntMetadataEntry';
   intValue: number | null;
   intRepr: string;
@@ -31,7 +31,7 @@ export type MetadataEntryFragment_IntMetadataEntry_ = {
   description: string | null;
 };
 
-export type MetadataEntryFragment_JobMetadataEntry_ = {
+export type MetadataEntryFragment_JobMetadataEntry = {
   __typename: 'JobMetadataEntry';
   jobName: string;
   repositoryName: string | null;
@@ -40,48 +40,48 @@ export type MetadataEntryFragment_JobMetadataEntry_ = {
   description: string | null;
 };
 
-export type MetadataEntryFragment_JsonMetadataEntry_ = {
+export type MetadataEntryFragment_JsonMetadataEntry = {
   __typename: 'JsonMetadataEntry';
   jsonString: string;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_MarkdownMetadataEntry_ = {
+export type MetadataEntryFragment_MarkdownMetadataEntry = {
   __typename: 'MarkdownMetadataEntry';
   mdStr: string;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_NotebookMetadataEntry_ = {
+export type MetadataEntryFragment_NotebookMetadataEntry = {
   __typename: 'NotebookMetadataEntry';
   path: string;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_NullMetadataEntry_ = {
+export type MetadataEntryFragment_NullMetadataEntry = {
   __typename: 'NullMetadataEntry';
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_PathMetadataEntry_ = {
+export type MetadataEntryFragment_PathMetadataEntry = {
   __typename: 'PathMetadataEntry';
   path: string;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_PipelineRunMetadataEntry_ = {
+export type MetadataEntryFragment_PipelineRunMetadataEntry = {
   __typename: 'PipelineRunMetadataEntry';
   runId: string;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_PythonArtifactMetadataEntry_ = {
+export type MetadataEntryFragment_PythonArtifactMetadataEntry = {
   __typename: 'PythonArtifactMetadataEntry';
   module: string;
   name: string;
@@ -89,7 +89,7 @@ export type MetadataEntryFragment_PythonArtifactMetadataEntry_ = {
   description: string | null;
 };
 
-export type MetadataEntryFragment_TableMetadataEntry_ = {
+export type MetadataEntryFragment_TableMetadataEntry = {
   __typename: 'TableMetadataEntry';
   label: string;
   description: string | null;
@@ -115,7 +115,7 @@ export type MetadataEntryFragment_TableMetadataEntry_ = {
   };
 };
 
-export type MetadataEntryFragment_TableSchemaMetadataEntry_ = {
+export type MetadataEntryFragment_TableSchemaMetadataEntry = {
   __typename: 'TableSchemaMetadataEntry';
   label: string;
   description: string | null;
@@ -137,14 +137,14 @@ export type MetadataEntryFragment_TableSchemaMetadataEntry_ = {
   };
 };
 
-export type MetadataEntryFragment_TextMetadataEntry_ = {
+export type MetadataEntryFragment_TextMetadataEntry = {
   __typename: 'TextMetadataEntry';
   text: string;
   label: string;
   description: string | null;
 };
 
-export type MetadataEntryFragment_UrlMetadataEntry_ = {
+export type MetadataEntryFragment_UrlMetadataEntry = {
   __typename: 'UrlMetadataEntry';
   url: string;
   label: string;
@@ -152,22 +152,22 @@ export type MetadataEntryFragment_UrlMetadataEntry_ = {
 };
 
 export type MetadataEntryFragment =
-  | MetadataEntryFragment_AssetMetadataEntry_
-  | MetadataEntryFragment_BoolMetadataEntry_
-  | MetadataEntryFragment_FloatMetadataEntry_
-  | MetadataEntryFragment_IntMetadataEntry_
-  | MetadataEntryFragment_JobMetadataEntry_
-  | MetadataEntryFragment_JsonMetadataEntry_
-  | MetadataEntryFragment_MarkdownMetadataEntry_
-  | MetadataEntryFragment_NotebookMetadataEntry_
-  | MetadataEntryFragment_NullMetadataEntry_
-  | MetadataEntryFragment_PathMetadataEntry_
-  | MetadataEntryFragment_PipelineRunMetadataEntry_
-  | MetadataEntryFragment_PythonArtifactMetadataEntry_
-  | MetadataEntryFragment_TableMetadataEntry_
-  | MetadataEntryFragment_TableSchemaMetadataEntry_
-  | MetadataEntryFragment_TextMetadataEntry_
-  | MetadataEntryFragment_UrlMetadataEntry_;
+  | MetadataEntryFragment_AssetMetadataEntry
+  | MetadataEntryFragment_BoolMetadataEntry
+  | MetadataEntryFragment_FloatMetadataEntry
+  | MetadataEntryFragment_IntMetadataEntry
+  | MetadataEntryFragment_JobMetadataEntry
+  | MetadataEntryFragment_JsonMetadataEntry
+  | MetadataEntryFragment_MarkdownMetadataEntry
+  | MetadataEntryFragment_NotebookMetadataEntry
+  | MetadataEntryFragment_NullMetadataEntry
+  | MetadataEntryFragment_PathMetadataEntry
+  | MetadataEntryFragment_PipelineRunMetadataEntry
+  | MetadataEntryFragment_PythonArtifactMetadataEntry
+  | MetadataEntryFragment_TableMetadataEntry
+  | MetadataEntryFragment_TableSchemaMetadataEntry
+  | MetadataEntryFragment_TextMetadataEntry
+  | MetadataEntryFragment_UrlMetadataEntry;
 
 export type TableSchemaForMetadataEntryFragment = {
   __typename: 'TableSchemaMetadataEntry';

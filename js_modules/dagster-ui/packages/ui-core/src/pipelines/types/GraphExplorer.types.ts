@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type GraphExplorerFragment_CompositeSolidDefinition_ = {
+export type GraphExplorerFragment_CompositeSolidDefinition = {
   __typename: 'CompositeSolidDefinition';
   id: string;
   name: string;
@@ -1133,7 +1133,7 @@ export type GraphExplorerFragment_CompositeSolidDefinition_ = {
   }>;
 };
 
-export type GraphExplorerFragment_Graph_ = {
+export type GraphExplorerFragment_Graph = {
   __typename: 'Graph';
   id: string;
   name: string;
@@ -2264,7 +2264,7 @@ export type GraphExplorerFragment_Graph_ = {
   }>;
 };
 
-export type GraphExplorerFragment_Job_ = {
+export type GraphExplorerFragment_Job = {
   __typename: 'Job';
   id: string;
   name: string;
@@ -3395,7 +3395,7 @@ export type GraphExplorerFragment_Job_ = {
   }>;
 };
 
-export type GraphExplorerFragment_Pipeline_ = {
+export type GraphExplorerFragment_Pipeline = {
   __typename: 'Pipeline';
   id: string;
   name: string;
@@ -4526,7 +4526,7 @@ export type GraphExplorerFragment_Pipeline_ = {
   }>;
 };
 
-export type GraphExplorerFragment_PipelineSnapshot_ = {
+export type GraphExplorerFragment_PipelineSnapshot = {
   __typename: 'PipelineSnapshot';
   id: string;
   name: string;
@@ -5771,11 +5771,11 @@ export type GraphExplorerFragment_PipelineSnapshot_ = {
 };
 
 export type GraphExplorerFragment =
-  | GraphExplorerFragment_CompositeSolidDefinition_
-  | GraphExplorerFragment_Graph_
-  | GraphExplorerFragment_Job_
-  | GraphExplorerFragment_Pipeline_
-  | GraphExplorerFragment_PipelineSnapshot_;
+  | GraphExplorerFragment_CompositeSolidDefinition
+  | GraphExplorerFragment_Graph
+  | GraphExplorerFragment_Job
+  | GraphExplorerFragment_Pipeline
+  | GraphExplorerFragment_PipelineSnapshot;
 
 export type GraphExplorerAssetNodeFragment = {
   __typename: 'AssetNode';

@@ -139,9 +139,9 @@ export type AssetCheckExecutionFragment = {
 
 export type AssetCheckDetailsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  checkName: Types.Scalars['String'];
-  limit: Types.Scalars['Int'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  checkName: Types.Scalars['String']['input'];
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type AssetCheckDetailsQuery = {

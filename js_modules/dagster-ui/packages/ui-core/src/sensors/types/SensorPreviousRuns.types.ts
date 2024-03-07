@@ -4,8 +4,8 @@ import * as Types from '../../graphql/types';
 
 export type PreviousRunsForSensorQueryVariables = Types.Exact<{
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type PreviousRunsForSensorQuery = {

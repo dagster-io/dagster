@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type PipelineRunLogsSubscriptionVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  runId: Types.Scalars['ID']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type PipelineRunLogsSubscription = {
@@ -5453,9 +5453,9 @@ export type PipelineRunLogsSubscriptionStatusFragment = {
 };
 
 export type RunLogsQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  runId: Types.Scalars['ID']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type RunLogsQuery = {
