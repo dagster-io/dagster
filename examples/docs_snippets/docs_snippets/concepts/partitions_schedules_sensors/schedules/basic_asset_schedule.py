@@ -9,10 +9,8 @@ from dagster import (
     define_asset_job,
 )
 
+
 # start_assets
-from dagster import asset
-
-
 @asset(group_name="ecommerce_assets")
 def orders_asset():
     return 1
@@ -26,22 +24,16 @@ def users_asset():
 # end_assets
 
 # start_job
-from dagster import AssetSelection, define_asset_job
-
-
-ecommerce_asset_job = define_asset_job(
-    "ecommerce_asset_job", AssetSelection.groups("ecommerce_assets")
+ecommerce_job = define_asset_job(
+    "ecommerce_job", AssetSelection.groups("ecommerce_assets")
 )
 
 # end_job
 
 
 # start_schedule
-from dagster import ScheduleDefinition
-
-
 ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_asset_job,
+    job=ecommerce_job,
     cron_schedule="15 5 * * 1-5",
     default_status=DefaultScheduleStatus.RUNNING,
 )
@@ -49,10 +41,6 @@ ecommerce_schedule = ScheduleDefinition(
 
 
 # start_definitions
-
-from dagster import Definitions
-
-
 defs = Definitions(
     assets=[orders_asset, users_asset],
     jobs=[ecommerce_asset_job],
