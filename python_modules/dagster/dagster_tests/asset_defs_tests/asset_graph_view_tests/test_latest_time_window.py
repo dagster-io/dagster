@@ -7,8 +7,13 @@ from dagster import (
     asset,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
 
 
@@ -173,3 +178,80 @@ def test_latest_time_slice_static_partitioned() -> None:
     asset_graph_view = AssetGraphView.for_test(defs, instance)
     latest_up_slice = asset_graph_view.create_latest_time_window_slice(up_numbers.key)
     assert latest_up_slice.compute_partition_keys() == number_keys
+
+
+def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
+    # starts at 2020-02-01
+    daily_partitions_def = DailyPartitionsDefinition(
+        start_date=pendulum.datetime(2020, 1, 1), end_date=pendulum.datetime(2020, 1, 3)
+    )
+
+    static_partitions_def = StaticPartitionsDefinition(["CA", "NY", "MN"])
+
+    multi_partitions_definition = MultiPartitionsDefinition(
+        {"daily": daily_partitions_def, "static": static_partitions_def}
+    )
+
+    partition_keys = []
+    jan_2_keys = []
+    for daily_pk in daily_partitions_def.get_partition_keys():
+        for static_pk in static_partitions_def.get_partition_keys():
+            if daily_pk == "2020-01-02":
+                jan_2_keys.append(MultiPartitionKey({"daily": daily_pk, "static": static_pk}))
+
+            partition_keys.append(MultiPartitionKey({"daily": daily_pk, "static": static_pk}))
+
+    @asset(partitions_def=multi_partitions_definition)
+    def multi_dimensional(context: AssetExecutionContext) -> None: ...
+
+    defs = Definitions([multi_dimensional])
+    instance = DagsterInstance.ephemeral()
+
+    asset_graph_view_within_partition = AssetGraphView.for_test(
+        defs, instance, effective_dt=pendulum.datetime(2020, 3, 3)
+    )
+
+    md_slice = asset_graph_view_within_partition.get_asset_slice(multi_dimensional.key)
+    assert md_slice.compute_partition_keys() == set(partition_keys)
+    last_tw_slice = asset_graph_view_within_partition.create_latest_time_window_slice(
+        multi_dimensional.key
+    )
+    assert last_tw_slice.compute_partition_keys() == set(jan_2_keys)
+    assert _tw(last_tw_slice).start == pendulum.datetime(2020, 1, 2)
+    assert _tw(last_tw_slice).end == pendulum.datetime(2020, 1, 3)
+
+    asset_graph_view_in_past = AssetGraphView.for_test(
+        defs, instance, effective_dt=pendulum.datetime(2019, 3, 3)
+    )
+
+    md_slice_in_past = asset_graph_view_in_past.create_latest_time_window_slice(
+        multi_dimensional.key
+    )
+    assert md_slice_in_past.compute_partition_keys() == set()
+    assert not md_slice_in_past.time_windows
+
+
+def test_multi_dimesional_without_time_partition_latest_time_window() -> None:
+    num_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
+    letter_partitions_def = StaticPartitionsDefinition(["A", "B", "C"])
+
+    multi_partitions_definition = MultiPartitionsDefinition(
+        {"num": num_partitions_def, "letter": letter_partitions_def}
+    )
+
+    partition_keys = []
+    for num_pk in num_partitions_def.get_partition_keys():
+        for letter_pk in letter_partitions_def.get_partition_keys():
+            partition_keys.append(MultiPartitionKey({"num": num_pk, "letter": letter_pk}))
+
+    @asset(partitions_def=multi_partitions_definition)
+    def multi_dimensional(context: AssetExecutionContext) -> None: ...
+
+    defs = Definitions([multi_dimensional])
+    instance = DagsterInstance.ephemeral()
+    asset_graph_view = AssetGraphView.for_test(defs, instance)
+    md_slice = asset_graph_view.get_asset_slice(multi_dimensional.key)
+    assert md_slice.compute_partition_keys() == set(partition_keys)
+    assert asset_graph_view.create_latest_time_window_slice(
+        multi_dimensional.key
+    ).compute_partition_keys() == set(partition_keys)
