@@ -155,6 +155,15 @@ class GrapheneNullMetadataEntry(graphene.ObjectType):
         name = "NullMetadataEntry"
 
 
+class GrapheneDateTimeMetadataEntry(graphene.ObjectType):
+    timestamp = graphene.Field(graphene.Float)
+    timezone = graphene.Field(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "DateTimeMetadataEntry"
+
+
 def types():
     return [
         GrapheneMetadataEntry,
@@ -175,4 +184,5 @@ def types():
         GrapheneAssetMetadataEntry,
         GrapheneJobMetadataEntry,
         GrapheneNullMetadataEntry,
+        GrapheneDateTimeMetadataEntry,
     ]

@@ -191,6 +191,7 @@ export type RunMetadataProviderMessageFragment_ObjectStoreOperationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
       | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;

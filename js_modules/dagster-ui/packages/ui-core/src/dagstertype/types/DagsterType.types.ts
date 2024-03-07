@@ -36,6 +36,7 @@ export type DagsterTypeFragment_ListDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -1277,6 +1278,7 @@ export type DagsterTypeFragment_ListDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -2518,6 +2520,7 @@ export type DagsterTypeFragment_ListDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -3750,6 +3753,7 @@ export type DagsterTypeFragment_ListDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -4980,6 +4984,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -6221,6 +6226,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -7462,6 +7468,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -8694,6 +8701,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -9924,6 +9932,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -11165,6 +11174,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -12406,6 +12416,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -13638,6 +13649,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -14862,6 +14874,7 @@ export type InnerDagsterTypeFragment_ListDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -16081,6 +16094,7 @@ export type InnerDagsterTypeFragment_NullableDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -17300,6 +17314,7 @@ export type InnerDagsterTypeFragment_RegularDagsterType = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;

@@ -31,6 +31,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -152,6 +153,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -360,6 +362,7 @@ export type AssetConditionEvaluationRecordFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -500,6 +503,7 @@ export type AssetConditionEvaluationRecordFragment = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -721,6 +725,11 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'DateTimeMetadataEntry';
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'FloatMetadataEntry';
                         floatValue: number | null;
                         label: string;
@@ -863,6 +872,11 @@ export type GetEvaluationsQuery = {
                     | {
                         __typename: 'BoolMetadataEntry';
                         boolValue: boolean | null;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'DateTimeMetadataEntry';
                         label: string;
                         description: string | null;
                       }
@@ -1067,6 +1081,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -1207,6 +1222,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;

@@ -662,6 +662,7 @@ export type AssetViewDefinitionQuery = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -812,6 +813,11 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'BoolMetadataEntry';
                             boolValue: boolean | null;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'DateTimeMetadataEntry';
                             label: string;
                             description: string | null;
                           }
@@ -2072,6 +2078,11 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'DateTimeMetadataEntry';
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -3328,6 +3339,11 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'DateTimeMetadataEntry';
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -4574,6 +4590,7 @@ export type AssetViewDefinitionQuery = {
                       label: string;
                       description: string | null;
                     }
+                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -5835,6 +5852,11 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'DateTimeMetadataEntry';
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -7087,6 +7109,11 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'BoolMetadataEntry';
                             boolValue: boolean | null;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'DateTimeMetadataEntry';
                             label: string;
                             description: string | null;
                           }
@@ -8347,6 +8374,11 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'DateTimeMetadataEntry';
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -9593,6 +9625,7 @@ export type AssetViewDefinitionQuery = {
                       label: string;
                       description: string | null;
                     }
+                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -10854,6 +10887,11 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'DateTimeMetadataEntry';
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -12106,6 +12144,11 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'BoolMetadataEntry';
                             boolValue: boolean | null;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'DateTimeMetadataEntry';
                             label: string;
                             description: string | null;
                           }
@@ -13366,6 +13409,11 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'DateTimeMetadataEntry';
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -14612,6 +14660,7 @@ export type AssetViewDefinitionQuery = {
                       label: string;
                       description: string | null;
                     }
+                  | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                   | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
@@ -16483,6 +16532,7 @@ export type AssetViewDefinitionNodeFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -16616,6 +16666,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -17862,6 +17913,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -19108,6 +19160,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -20345,6 +20398,7 @@ export type AssetViewDefinitionNodeFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -21597,6 +21651,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -22843,6 +22898,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -24089,6 +24145,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -25326,6 +25383,7 @@ export type AssetViewDefinitionNodeFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
@@ -26578,6 +26636,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -27824,6 +27883,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -29070,6 +29130,7 @@ export type AssetViewDefinitionNodeFragment = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
@@ -30307,6 +30368,7 @@ export type AssetViewDefinitionNodeFragment = {
               label: string;
               description: string | null;
             }
+          | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
           | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;

@@ -41,6 +41,7 @@ export type AssetMaterializationFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -185,6 +186,7 @@ export type AssetObservationFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
@@ -338,6 +340,7 @@ export type AssetEventsQuery = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
@@ -496,6 +499,7 @@ export type AssetEventsQuery = {
                 label: string;
                 description: string | null;
               }
+            | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
             | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;

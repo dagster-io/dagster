@@ -4546,6 +4546,7 @@ export type GraphExplorerFragment_PipelineSnapshot = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
     | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;

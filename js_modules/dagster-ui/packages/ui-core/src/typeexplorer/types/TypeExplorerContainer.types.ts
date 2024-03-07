@@ -36,6 +36,7 @@ export type TypeExplorerContainerQuery = {
                     label: string;
                     description: string | null;
                   }
+                | {__typename: 'DateTimeMetadataEntry'; label: string; description: string | null}
                 | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
