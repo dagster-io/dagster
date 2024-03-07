@@ -147,7 +147,64 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
   }
 
   const {nodes} = data.assetsOrError;
-  return nodes
+  const assetCountByComputeKind: Set<string> = new Set();
+  const assetCountByCodeLocation: Set<string> = new Set();
+  const assetGroups: Set<string> = new Set();
+
+  nodes
+    .filter((asset) => asset.definition)
+    .forEach((asset) => {
+      const assetDefinition = asset.definition!;
+
+      if (assetDefinition.computeKind) {
+        assetCountByComputeKind.add(assetDefinition.computeKind);
+      }
+
+      if (assetDefinition.repository) {
+        const locationName = assetDefinition.repository.location.name;
+        const repositoryName = assetDefinition.repository.name;
+        assetCountByCodeLocation.add(buildRepoPathForHuman(repositoryName, locationName));
+      }
+
+      if (assetDefinition.groupName) {
+        const groupName = assetDefinition.groupName;
+        const locationName = assetDefinition.repository.location.name;
+        const repositoryName = assetDefinition.repository.name;
+        assetGroups.add(JSON.stringify({groupName, repositoryName, locationName}));
+      }
+    });
+
+  const computeKindResults: SearchResult[] = Array.from(assetCountByComputeKind.values()).map(
+    (computeKind) => {
+      return {
+        label: computeKind,
+        description: 'Compute kind',
+        type: SearchResultType.ComputeKind,
+        href: '/assets',
+      };
+    },
+  );
+
+  const codeLocationResults: SearchResult[] = Array.from(assetCountByCodeLocation.values()).map(
+    (repoPath) => ({
+      label: repoPath,
+      description: 'Code location',
+      type: SearchResultType.CodeLocation,
+      href: '/assets',
+    }),
+  );
+
+  const groupResults: SearchResult[] = Array.from(assetGroups).map((group) => {
+    const {groupName, repositoryName, locationName} = JSON.parse(group);
+    return {
+      label: groupName,
+      description: `Asset group in ${buildRepoPathForHuman(repositoryName, locationName)}`,
+      type: SearchResultType.AssetGroup,
+      href: workspacePath(repositoryName, locationName, `/asset-groups/${groupName}`),
+    };
+  });
+
+  const assets = nodes
     .filter(({definition}) => definition !== null)
     .map(({key}) => {
       return {
@@ -158,6 +215,8 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
         type: SearchResultType.Asset,
       };
     });
+
+  return [...assets, ...computeKindResults, ...codeLocationResults, ...groupResults];
 };
 
 const fuseOptions = {
@@ -389,6 +448,16 @@ export const SEARCH_SECONDARY_QUERY = gql`
           }
           definition {
             id
+            computeKind
+            groupName
+            repository {
+              id
+              name
+              location {
+                id
+                name
+              }
+            }
           }
         }
       }
