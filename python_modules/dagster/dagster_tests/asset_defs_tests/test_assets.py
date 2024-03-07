@@ -2140,6 +2140,30 @@ def test_multi_asset_owners():
     }
 
 
+def test_replace_asset_keys_for_asset_with_owners():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(owners=["user@dagsterlabs.com"]),
+            "out2": AssetOut(owners=["user@dagsterlabs.com"]),
+        }
+    )
+    def my_multi_asset():
+        pass
+
+    assert my_multi_asset.owners_by_key == {
+        AssetKey("out1"): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+    }
+
+    prefixed_asset = my_multi_asset.with_attributes(
+        output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
+    )
+    assert prefixed_asset.owners_by_key == {
+        AssetKey(["prefix", "out1"]): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+    }
+
+
 def test_asset_spec_with_code_versions():
     @multi_asset(specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")])
     def multi_asset_with_versions():
