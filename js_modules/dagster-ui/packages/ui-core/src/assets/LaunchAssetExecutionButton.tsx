@@ -265,7 +265,7 @@ export const LaunchAssetExecutionButton = ({
               ))}
               {showChangedAndMissingOption ? (
                 <MenuItem
-                  text="Materialize changed and missing"
+                  text="Materialize unsynced"
                   icon="changes_present"
                   onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
                 />
