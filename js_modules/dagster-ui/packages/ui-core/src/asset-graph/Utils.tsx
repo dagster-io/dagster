@@ -165,7 +165,6 @@ export interface LiveDataForNode {
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
   unstartedRunIds: [],
-  changedReasons: [],
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   freshnessInfo: null,
@@ -218,7 +217,6 @@ export const buildLiveDataForNode = (
 
   return {
     lastMaterialization,
-    changedReasons: assetNode.changedReasons,
     lastMaterializationRunStatus:
       latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
         ? latestRunForAsset.status
