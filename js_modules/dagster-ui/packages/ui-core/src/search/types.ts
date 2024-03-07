@@ -12,6 +12,8 @@ export enum SearchResultType {
   Sensor,
   Solid,
   Resource,
+  ComputeKind,
+  CodeLocation,
 }
 
 export type SearchResult = {
