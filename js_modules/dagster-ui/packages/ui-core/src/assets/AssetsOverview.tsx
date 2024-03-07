@@ -114,7 +114,9 @@ function getGreeting(timezone: string) {
       timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
     }),
   );
-  if (hour < 12) {
+  if (hour < 4) {
+    return 'Good evening';
+  } else if (hour < 12) {
     return 'Good morning';
   } else if (hour < 18) {
     return 'Good afternoon';
@@ -218,11 +220,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
     <>
       <AssetPageHeader
         assetKey={{path: currentPath}}
-        right={
-          <Box flex={{gap: 12, alignItems: 'center'}}>
-            <ReloadAllButton label="Reload definitions" />
-          </Box>
-        }
+        right={<ReloadAllButton label="Reload definitions" />}
       />
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'auto'}}>
         <Box padding={64} flex={{justifyContent: 'center', alignItems: 'center'}}>
