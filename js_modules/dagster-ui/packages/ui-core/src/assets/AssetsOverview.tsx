@@ -215,7 +215,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
   }
 
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+    <>
       <AssetPageHeader
         assetKey={{path: currentPath}}
         right={
@@ -224,98 +224,96 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
           </Box>
         }
       />
-      <Box
-        padding={64}
-        flex={{justifyContent: 'center', alignItems: 'center'}}
-        style={{overflowY: 'scroll'}}
-      >
-        <Box style={{width: '60%'}} flex={{direction: 'column', gap: 16}}>
-          <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-            <Heading>
-              {getGreeting(timezone)}
-              {viewerName ? `, ${viewerName}` : ''}
-            </Heading>
-            <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
-              <Link to="/assets">View all</Link>
-              <AssetGlobalLineageButton />
+      <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'auto'}}>
+        <Box padding={64} flex={{justifyContent: 'center', alignItems: 'center'}}>
+          <Box style={{width: '60%'}} flex={{direction: 'column', gap: 16}}>
+            <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+              <Heading>
+                {getGreeting(timezone)}
+                {viewerName ? `, ${viewerName}` : ''}
+              </Heading>
+              <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
+                <Link to="/assets">View all</Link>
+                <AssetGlobalLineageButton />
+              </Box>
             </Box>
+            <TextInput />
           </Box>
-          <TextInput />
+        </Box>
+        <Box flex={{direction: 'column'}}>
+          {Object.keys(assetCountBySection.countsByOwner).length > 0 && (
+            <>
+              <SectionHeader sectionName="Owner" />
+              <SectionBody>
+                {Object.entries(assetCountBySection.countsByOwner).map(([label, count]) => (
+                  <CountForAssetType key={label} assetsCount={count}>
+                    <UserDisplay email={label} />
+                  </CountForAssetType>
+                ))}
+              </SectionBody>
+            </>
+          )}
+          {Object.keys(assetCountBySection.countsByComputeKind).length > 0 && (
+            <>
+              <SectionHeader sectionName="Compute kind" />
+              <SectionBody>
+                {Object.entries(assetCountBySection.countsByComputeKind).map(([label, count]) => (
+                  <CountForAssetType key={label} assetsCount={count}>
+                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                      <TagIcon label={label} />
+                      <Link to={linkToAssetGraphComputeKind(label)}>{label}</Link>
+                    </Box>
+                  </CountForAssetType>
+                ))}
+              </SectionBody>
+            </>
+          )}
+          {assetCountBySection.countPerAssetGroup.length > 0 && (
+            <>
+              <SectionHeader sectionName="Asset groups" />
+              <SectionBody>
+                {assetCountBySection.countPerAssetGroup.map((assetGroupCount) => (
+                  <CountForAssetType
+                    key={JSON.stringify(assetGroupCount.groupMetadata)}
+                    assetsCount={assetGroupCount.assetCount}
+                  >
+                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                      <Icon name="asset_group" />
+                      <Link to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}>
+                        {assetGroupCount.groupMetadata.groupName}
+                      </Link>
+                      <span style={{color: Colors.textLighter()}}>
+                        {assetGroupCount.groupMetadata.repositoryLocationName}
+                      </span>
+                    </Box>
+                  </CountForAssetType>
+                ))}
+              </SectionBody>
+            </>
+          )}
+          {assetCountBySection.countPerCodeLocation.length > 0 && (
+            <>
+              <SectionHeader sectionName="Code locations" />
+              <SectionBody>
+                {assetCountBySection.countPerCodeLocation.map((countPerCodeLocation) => (
+                  <CountForAssetType
+                    key={repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
+                    assetsCount={countPerCodeLocation.assetCount}
+                  >
+                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                      <Icon name="folder" />
+                      <Link to={linkToCodeLocation(countPerCodeLocation.repoAddress)}>
+                        {repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
+                      </Link>
+                    </Box>
+                  </CountForAssetType>
+                ))}
+              </SectionBody>
+            </>
+          )}
         </Box>
       </Box>
-      <Box flex={{direction: 'column'}}>
-        {Object.keys(assetCountBySection.countsByOwner).length > 0 && (
-          <>
-            <SectionHeader sectionName="Owner" />
-            <SectionBody>
-              {Object.entries(assetCountBySection.countsByOwner).map(([label, count]) => (
-                <CountForAssetType key={label} assetsCount={count}>
-                  <UserDisplay email={label} />
-                </CountForAssetType>
-              ))}
-            </SectionBody>
-          </>
-        )}
-        {Object.keys(assetCountBySection.countsByComputeKind).length > 0 && (
-          <>
-            <SectionHeader sectionName="Compute kind" />
-            <SectionBody>
-              {Object.entries(assetCountBySection.countsByComputeKind).map(([label, count]) => (
-                <CountForAssetType key={label} assetsCount={count}>
-                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    <TagIcon label={label} />
-                    <Link to={linkToAssetGraphComputeKind(label)}>{label}</Link>
-                  </Box>
-                </CountForAssetType>
-              ))}
-            </SectionBody>
-          </>
-        )}
-        {assetCountBySection.countPerAssetGroup.length > 0 && (
-          <>
-            <SectionHeader sectionName="Asset groups" />
-            <SectionBody>
-              {assetCountBySection.countPerAssetGroup.map((assetGroupCount) => (
-                <CountForAssetType
-                  key={JSON.stringify(assetGroupCount.groupMetadata)}
-                  assetsCount={assetGroupCount.assetCount}
-                >
-                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    <Icon name="asset_group" />
-                    <Link to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}>
-                      {assetGroupCount.groupMetadata.groupName}
-                    </Link>
-                    <span style={{color: Colors.textLighter()}}>
-                      {assetGroupCount.groupMetadata.repositoryLocationName}
-                    </span>
-                  </Box>
-                </CountForAssetType>
-              ))}
-            </SectionBody>
-          </>
-        )}
-        {assetCountBySection.countPerCodeLocation.length > 0 && (
-          <>
-            <SectionHeader sectionName="Code locations" />
-            <SectionBody>
-              {assetCountBySection.countPerCodeLocation.map((countPerCodeLocation) => (
-                <CountForAssetType
-                  key={repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
-                  assetsCount={countPerCodeLocation.assetCount}
-                >
-                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    <Icon name="folder" />
-                    <Link to={linkToCodeLocation(countPerCodeLocation.repoAddress)}>
-                      {repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
-                    </Link>
-                  </Box>
-                </CountForAssetType>
-              ))}
-            </SectionBody>
-          </>
-        )}
-      </Box>
-    </Box>
+    </>
   );
 };
 
