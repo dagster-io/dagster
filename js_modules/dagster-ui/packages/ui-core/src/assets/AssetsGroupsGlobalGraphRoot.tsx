@@ -30,14 +30,14 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   const history = useHistory();
 
   const [filters, setFilters] = useQueryPersistedState<{
-    groups: AssetGroupSelector[];
-    computeKindTags: string[];
-    changedInBranch: ChangeReason[];
+    groups?: AssetGroupSelector[];
+    computeKindTags?: string[];
+    changedInBranch?: ChangeReason[];
   }>({
     encode: ({groups, computeKindTags, changedInBranch}) => ({
-      groups: groups.length ? JSON.stringify(groups) : undefined,
-      computeKindTags: computeKindTags.length ? JSON.stringify(computeKindTags) : undefined,
-      changedInBranch: changedInBranch.length ? JSON.stringify(changedInBranch) : undefined,
+      groups: groups?.length ? JSON.stringify(groups) : undefined,
+      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
+      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
     }),
     decode: (qs) => ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
@@ -86,8 +86,8 @@ export const AssetsGroupsGlobalGraphRoot = () => {
           }
         }
 
-        if (filters.changedInBranch.length) {
-          if (node.changedReasons.find((reason) => filters.changedInBranch.includes(reason))) {
+        if (filters.changedInBranch?.length) {
+          if (node.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))) {
             return false;
           }
           return true;
