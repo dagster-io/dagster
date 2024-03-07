@@ -683,14 +683,14 @@ class AssetDaemon(DagsterDaemon):
             auto_materialize_asset_keys = {
                 target_key
                 for target_key in eligible_keys
-                if asset_graph.get_auto_materialize_policy(target_key) is not None
+                if asset_graph.get(target_key).auto_materialize_policy is not None
             }
             num_target_assets = len(auto_materialize_asset_keys)
 
             auto_observe_asset_keys = {
                 key
                 for key in eligible_keys
-                if asset_graph.get_auto_observe_interval_minutes(key) is not None
+                if asset_graph.get(key).auto_observe_interval_minutes is not None
             }
             num_auto_observe_assets = len(auto_observe_asset_keys)
 

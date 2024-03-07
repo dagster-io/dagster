@@ -189,8 +189,8 @@ def test_cross_repo_dep_with_source_asset(instance):
         _make_context(instance, ["defs1", "downstream_defs"])
     )
     assert len(asset_graph.external_asset_keys) == 0
-    assert asset_graph.get_parents(AssetKey("downstream")) == {AssetKey("asset1")}
-    assert asset_graph.get_children(AssetKey("asset1")) == {AssetKey("downstream")}
+    assert asset_graph.get(AssetKey("downstream")).parent_keys == {AssetKey("asset1")}
+    assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream")}
     assert (
         asset_graph.get_repository_handle(
             AssetKey("asset1")
@@ -212,8 +212,8 @@ def test_cross_repo_dep_no_source_asset(instance):
         _make_context(instance, ["defs1", "downstream_defs_no_source"])
     )
     assert len(asset_graph.external_asset_keys) == 0
-    assert asset_graph.get_parents(AssetKey("downstream_non_arg_dep")) == {AssetKey("asset1")}
-    assert asset_graph.get_children(AssetKey("asset1")) == {AssetKey("downstream_non_arg_dep")}
+    assert asset_graph.get(AssetKey("downstream_non_arg_dep")).parent_keys == {AssetKey("asset1")}
+    assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream_non_arg_dep")}
     assert (
         asset_graph.get_repository_handle(
             AssetKey("asset1")
@@ -324,9 +324,9 @@ def test_get_implicit_job_name_for_assets(instance):
 def test_auto_materialize_policy(instance):
     asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
 
-    assert asset_graph.get_auto_materialize_policy(
+    assert asset_graph.get(
         AssetKey("downstream_of_partitioned_source")
-    ) == AutoMaterializePolicy.eager(
+    ).auto_materialize_policy == AutoMaterializePolicy.eager(
         max_materializations_per_minute=75,
     )
 
@@ -400,16 +400,16 @@ backfill_assets_defs = Definitions(
 def test_assets_with_backfill_policies(instance):
     asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["backfill_assets_defs"]))
     assert (
-        asset_graph.get_backfill_policy(AssetKey("static_partitioned_single_run_backfill_asset"))
+        asset_graph.get(AssetKey("static_partitioned_single_run_backfill_asset")).backfill_policy
         == BackfillPolicy.single_run()
     )
     assert (
-        asset_graph.get_backfill_policy(AssetKey("non_partitioned_single_run_backfill_asset"))
+        asset_graph.get(AssetKey("non_partitioned_single_run_backfill_asset")).backfill_policy
         == BackfillPolicy.single_run()
     )
-    assert asset_graph.get_backfill_policy(
+    assert asset_graph.get(
         AssetKey("static_partitioned_multi_run_backfill_asset")
-    ) == BackfillPolicy.multi_run(5)
+    ).backfill_policy == BackfillPolicy.multi_run(5)
 
 
 @asset(deps=[SourceAsset("b")])

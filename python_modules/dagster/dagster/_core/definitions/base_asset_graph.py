@@ -168,10 +168,6 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def has(self, asset_key: AssetKey) -> bool:
         return asset_key in self._asset_nodes_by_key
 
-    # To be removed in upstack PR and callsites replaced with `has`
-    def has_asset(self, asset_key: AssetKey) -> bool:
-        return self.has(asset_key)
-
     def get(self, asset_key: AssetKey) -> T_AssetNode:
         return self._asset_nodes_by_key[asset_key]
 
@@ -193,29 +189,17 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_materializable}
 
-    def is_materializable(self, key: AssetKey) -> bool:
-        return self.get(key).is_materializable
-
     @cached_property
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_observable}
-
-    def is_observable(self, key: AssetKey) -> bool:
-        return self.get(key).is_observable
 
     @cached_property
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_external}
 
-    def is_external(self, key: AssetKey) -> bool:
-        return self.get(key).is_external
-
     @cached_property
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_executable}
-
-    def is_executable(self, key: AssetKey) -> bool:
-        return self.get(key).is_executable
 
     @cached_property
     def toposorted_asset_keys(self) -> Sequence[AssetKey]:
@@ -287,24 +271,6 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def is_partitioned(self, asset_key: AssetKey) -> bool:
         return self.get_partitions_def(asset_key) is not None
 
-    def get_group_name(self, asset_key: AssetKey) -> Optional[str]:
-        return self.get(asset_key).group_name
-
-    def get_freshness_policy(self, asset_key: AssetKey) -> Optional[FreshnessPolicy]:
-        return self.get(asset_key).freshness_policy
-
-    def get_auto_materialize_policy(self, asset_key: AssetKey) -> Optional[AutoMaterializePolicy]:
-        return self.get(asset_key).auto_materialize_policy
-
-    def get_auto_observe_interval_minutes(self, asset_key: AssetKey) -> Optional[float]:
-        return self.get(asset_key).auto_observe_interval_minutes
-
-    def get_backfill_policy(self, asset_key: AssetKey) -> Optional[BackfillPolicy]:
-        return self.get(asset_key).backfill_policy
-
-    def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
-        return self.get(asset_key).code_version
-
     def have_same_partitioning(self, asset_key1: AssetKey, asset_key2: AssetKey) -> bool:
         """Returns whether the given assets have the same partitions definition."""
         return self.get(asset_key1).partitions_def == self.get(asset_key2).partitions_def
@@ -336,7 +302,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """Returns all asset keys that are direct dependencies on the given asset key."""
         return self.get(asset_key).parent_keys
 
-    def get_ancestors(
+    def get_ancestor_asset_keys(
         self, asset_key: AssetKey, include_self: bool = False
     ) -> AbstractSet[AssetKey]:
         """Returns all nth-order dependencies of an asset."""
@@ -643,7 +609,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         downstream_policies = set().union(
             *(
                 self.get_downstream_freshness_policies(asset_key=child_key)
-                for child_key in self.get_children(asset_key)
+                for child_key in self.get(asset_key).child_keys
                 if child_key != asset_key
             )
         )

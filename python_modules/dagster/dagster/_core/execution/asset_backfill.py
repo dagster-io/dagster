@@ -1255,7 +1255,7 @@ def execute_asset_backfill_iteration_inner(
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
     asset_backfill_policies = [
-        asset_graph.get_backfill_policy(asset_key)
+        asset_graph.get(asset_key).backfill_policy
         for asset_key in {
             asset_partition.asset_key for asset_partition in asset_partitions_to_request
         }
@@ -1318,9 +1318,9 @@ def can_run_with_parent(
     this tick.
     """
     parent_target_subset = target_subset.get_asset_subset(parent.asset_key, asset_graph)
-    parent_backfill_policy = asset_graph.get_backfill_policy(parent.asset_key)
+    parent_backfill_policy = asset_graph.get(parent.asset_key).backfill_policy
     candidate_target_subset = target_subset.get_asset_subset(candidate.asset_key, asset_graph)
-    candidate_backfill_policy = asset_graph.get_backfill_policy(candidate.asset_key)
+    candidate_backfill_policy = asset_graph.get(candidate.asset_key).backfill_policy
     partition_mapping = asset_graph.get_partition_mapping(
         candidate.asset_key, in_asset_key=parent.asset_key
     )

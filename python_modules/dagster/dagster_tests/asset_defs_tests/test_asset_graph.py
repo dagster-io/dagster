@@ -93,8 +93,8 @@ def test_basics(asset_graph_from_assets):
     assert asset_graph.get_parents(asset3.key) == {asset1.key, asset2.key}
     for asset_def in assets:
         assert asset_graph.get_execution_set_asset_keys(asset_def.key) == {asset_def.key}
-    assert asset_graph.get_code_version(asset0.key) == "1"
-    assert asset_graph.get_code_version(asset1.key) is None
+    assert asset_graph.get(asset0.key).code_version == "1"
+    assert asset_graph.get(asset1.key).code_version is None
 
 
 def test_get_children_partitions_unpartitioned_parent_partitioned_child(
