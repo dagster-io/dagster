@@ -5,7 +5,7 @@ description: "Learn how to automate asset materialization using schedules and jo
 
 # Automating assets using schedules and jobs
 
-After creating some [Software-defined Assets](/concepts/assets/software-defined-assets), you'll may want to automate their materialization.
+After creating some [Software-defined Assets](/concepts/assets/software-defined-assets), you may want to automate their materialization.
 
 In this guide, we'll show you one method of accomplishing this by using schedules and jobs. To do this for ops, refer to the [Automating ops using schedules guide](/concepts/automation/schedules/automating-ops-schedules-jobs).
 
@@ -32,7 +32,9 @@ To follow this guide, you'll need:
 
 ## Step 1: Create a job
 
-To create a schedule, start by building a job that materializes assets. Let's assume we already have a few assets in our project in a group named `ecommerce_assets`:
+The first step in creating a schedule is to build a job that materializes some assets.
+
+Let's assume we already have a few assets in our project in a group named `ecommerce_assets`:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_assets endbefore=end_assets
 @asset(group_name="ecommerce_assets")
@@ -56,7 +58,7 @@ ecommerce_job = define_asset_job(
 To create the job, we:
 
 1. Imported <PyObject object="AssetSelection" /> and <PyObject object="define_asset_job" />
-2. Constructed the job using <PyObject object="define_asset_job" /> and name it `ecommerce_asset_job`
+2. Constructed the job using <PyObject object="define_asset_job" /> and name it `ecommerce_job`
 3. Selected all assets in the `ecommerce_assets` group using <PyObject object="AssetSelection" />. Only these assets will be materialized when the job runs.
 
 Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more info and examples.
@@ -80,7 +82,7 @@ To build the schedule, we:
 1. Imported `DefaultScheduleStatus` and <PyObject object="ScheduleDefinition" /> from `dagster`
 2. Created a schedule using <PyObject object="ScheduleDefinition" /> that:
 
-   - Is attached to the `ecommerce_assets_job` job
+   - Is attached to the `ecommerce_job` job
    - Has a cron expression of `15 5 * * 1-5`, which translates to `Every Monday through Friday of every month at 5:15AM`
    - Is turned on by default (`default_status`). We'll discuss this more in [Step 4](#step-4-turn-the-schedule-on).
 
