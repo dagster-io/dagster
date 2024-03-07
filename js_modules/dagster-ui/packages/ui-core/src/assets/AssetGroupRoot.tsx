@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
-import {useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGlobalLineageLink} from './AssetPageHeader';
@@ -14,8 +14,9 @@ import {
 } from './types/AssetGroupRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {
@@ -83,6 +84,17 @@ export const AssetGroupRoot = ({
     [history],
   );
 
+  const [changedInBranchFilters, setChangeInBranchFilters] = React.useState<ChangeReason[]>([]);
+  function hideNodesMatchingInLineage(node: AssetNodeForGraphQueryFragment) {
+    if (!changedInBranchFilters.length) {
+      return false;
+    }
+    const hasMatchingReason = node.changedReasons.find((reason) =>
+      changedInBranchFilters.includes(reason),
+    );
+    return !hasMatchingReason;
+  }
+
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
@@ -104,11 +116,19 @@ export const AssetGroupRoot = ({
       />
       {tab === 'lineage' ? (
         <AssetGraphExplorer
-          fetchOptions={{groupSelector}}
+          fetchOptions={{groupSelector, hideNodesMatching: hideNodesMatchingInLineage}}
           options={{preferAssetRendering: true, explodeComposites: true}}
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
+          filters={{changedInBranch: changedInBranchFilters}}
+          setFilters={({changedInBranch}) => {
+            if (changedInBranch) {
+              setChangeInBranchFilters(changedInBranch);
+            } else {
+              setChangeInBranchFilters([]);
+            }
+          }}
         />
       ) : (
         <AssetsCatalogTable

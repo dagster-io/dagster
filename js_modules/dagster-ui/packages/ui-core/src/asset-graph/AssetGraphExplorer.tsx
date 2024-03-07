@@ -71,14 +71,14 @@ type AssetNode = AssetNodeForGraphQueryFragment;
 type OptionalFilters =
   | {
       filters: {
-        groups: AssetGroupSelector[];
-        computeKindTags: string[];
-        changedInBranch: ChangeReason[];
+        groups?: AssetGroupSelector[];
+        computeKindTags?: string[];
+        changedInBranch?: ChangeReason[];
       };
       setFilters: (updates: {
-        groups: AssetGroupSelector[];
-        computeKindTags: string[];
-        changedInBranch: ChangeReason[];
+        groups?: AssetGroupSelector[];
+        computeKindTags?: string[];
+        changedInBranch?: ChangeReason[];
       }) => void;
     }
   | {filters?: null; setFilters?: null};
@@ -122,6 +122,29 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {explorerPath, onChangeExplorerPath} = props;
 
+  const setComputeKindTags = React.useCallback(
+    (tags: string[]) =>
+      props.setFilters?.({
+        ...props.filters,
+        computeKindTags: tags,
+      }),
+    [props],
+  );
+
+  const setGroupFilters = React.useCallback(
+    (groups: AssetGroupSelector[]) => props.setFilters?.({...props.filters, groups}),
+    [props],
+  );
+
+  const setChangedInBranch = React.useCallback(
+    (changedInBranch: ChangeReason[]) =>
+      props.setFilters?.({
+        ...props.filters,
+        changedInBranch,
+      }),
+    [props],
+  );
+
   const {button, filterBar} = useAssetGraphExplorerFilters({
     nodes: React.useMemo(
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
@@ -129,31 +152,14 @@ export const AssetGraphExplorer = (props: Props) => {
     ),
     assetGroups,
     visibleAssetGroups: React.useMemo(() => props.filters?.groups || [], [props.filters?.groups]),
-    setGroupFilters: React.useCallback(
-      (groups: AssetGroupSelector[]) => props.setFilters?.({...props.filters, groups}),
-      [props],
-    ),
+    setGroupFilters: props.filters?.groups ? setGroupFilters : undefined,
     computeKindTags: props.filters?.computeKindTags || emptyArray,
-    setComputeKindTags: React.useCallback(
-      (tags: string[]) =>
-        props.setFilters?.({
-          ...props.filters,
-          computeKindTags: tags,
-        }),
-      [props],
-    ),
+    setComputeKindTags: props.filters?.computeKindTags ? setComputeKindTags : undefined,
     changedInBranch: React.useMemo(
       () => props.filters?.changedInBranch || [],
       [props.filters?.changedInBranch],
     ),
-    setChangedInBranch: React.useCallback(
-      (changedInBranch: ChangeReason[]) =>
-        props.setFilters?.({
-          ...props.filters,
-          changedInBranch,
-        }),
-      [props],
-    ),
+    setChangedInBranch: props.filters?.changedInBranch ? setChangedInBranch : undefined,
     explorerPath: explorerPath.opsQuery,
     clearExplorerPath: React.useCallback(() => {
       onChangeExplorerPath(

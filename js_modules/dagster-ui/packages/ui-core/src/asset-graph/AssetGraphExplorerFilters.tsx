@@ -24,11 +24,11 @@ type OptionalFilters =
       setChangedInBranch?: null;
     }
   | {
-      assetGroups: AssetGroupSelector[];
-      visibleAssetGroups: AssetGroupSelector[];
-      setGroupFilters: (groups: AssetGroupSelector[]) => void;
-      computeKindTags: string[];
-      setComputeKindTags: (s: string[]) => void;
+      assetGroups?: AssetGroupSelector[];
+      visibleAssetGroups?: AssetGroupSelector[];
+      setGroupFilters?: (groups: AssetGroupSelector[]) => void;
+      computeKindTags?: string[];
+      setComputeKindTags?: (s: string[]) => void;
       changedInBranch?: ChangeReason[];
       setChangedInBranch?: (s: ChangeReason[]) => void;
     };
@@ -179,7 +179,6 @@ export function useAssetGraphExplorerFilters({
   if (assetGroups) {
     filters.push(groupsFilter);
   }
-
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
   if (
     changedInBranch &&
