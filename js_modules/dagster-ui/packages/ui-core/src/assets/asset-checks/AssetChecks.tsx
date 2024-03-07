@@ -21,7 +21,13 @@ import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {ASSET_CHECK_DETAILS_QUERY, MetadataCell} from './AssetCheckDetailModal';
+import {
+  ASSET_CHECK_DETAILS_QUERY,
+  AgentUpgradeRequired,
+  MetadataCell,
+  MigrationRequired,
+  NeedsUserCodeUpgrade,
+} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {
   EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
@@ -36,7 +42,7 @@ import {
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {COMMON_COLLATOR} from '../../app/Util';
+import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
@@ -116,6 +122,22 @@ export const AssetChecks = ({
 
   if (!data) {
     return null;
+  }
+
+  if (data.assetNodeOrError.__typename === 'AssetNode') {
+    const type = data.assetNodeOrError.assetChecksOrError.__typename;
+    switch (type) {
+      case 'AssetCheckNeedsAgentUpgradeError':
+        return <AgentUpgradeRequired />;
+      case 'AssetCheckNeedsMigrationError':
+        return <MigrationRequired />;
+      case 'AssetCheckNeedsUserCodeUpgrade':
+        return <NeedsUserCodeUpgrade />;
+      case 'AssetChecks':
+        break;
+      default:
+        assertUnreachable(type);
+    }
   }
 
   if (!checks.length || !selectedCheck || !assetNode) {
