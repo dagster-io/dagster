@@ -20,13 +20,12 @@ import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
-import {AssetKeyInput, ChangeReason, StaleCauseCategory, StaleStatus} from '../graphql/types';
+import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
 type StaleDataForNode = {
   staleCauses?: LiveDataForNode['staleCauses'];
   staleStatus?: LiveDataForNode['staleStatus'];
-  changedReasons?: ChangeReason[];
 };
 export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
