@@ -194,7 +194,7 @@ export function useAssetGraphExplorerFilters({
     filters.push(kindTagsFilter);
   }
   const {button, activeFiltersJsx} = useFilters({filters});
-  if (allRepos.length <= 1 && !assetGroups) {
+  if (!filters.length) {
     return {button: null, activeFiltersJsx: null};
   }
 

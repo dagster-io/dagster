@@ -112,6 +112,15 @@ export const AssetGroupRoot = ({
     [groupSelector, hideNodesMatchingInLineage],
   );
 
+  const lineageOptions = React.useMemo(
+    () => ({preferAssetRendering: true, explodeComposites: true}),
+    [],
+  );
+  const lineageFilters = React.useMemo(
+    () => ({changedInBranch: changedInBranchFilters}),
+    [changedInBranchFilters],
+  );
+
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
@@ -134,11 +143,11 @@ export const AssetGroupRoot = ({
       {tab === 'lineage' ? (
         <AssetGraphExplorer
           fetchOptions={fetchOptions}
-          options={{preferAssetRendering: true, explodeComposites: true}}
+          options={lineageOptions}
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
-          filters={{changedInBranch: changedInBranchFilters}}
+          filters={lineageFilters}
           setFilters={setFilters}
         />
       ) : (
