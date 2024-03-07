@@ -40,10 +40,12 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
+import code_location from '../icon-svgs/code_location.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import corporate_fare from '../icon-svgs/corporate_fare.svg';
 import datatype_array from '../icon-svgs/datatype_array.svg';
 import datatype_bool from '../icon-svgs/datatype_bool.svg';
 import datatype_number from '../icon-svgs/datatype_number.svg';
@@ -109,6 +111,7 @@ import multi_asset from '../icon-svgs/multi_asset.svg';
 import new_in_branch from '../icon-svgs/new_in_branch.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
+import notifications from '../icon-svgs/notifications.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
@@ -122,6 +125,7 @@ import partition_failure from '../icon-svgs/partition_failure.svg';
 import partition_missing from '../icon-svgs/partition_missing.svg';
 import partition_stale from '../icon-svgs/partition_stale.svg';
 import partition_success from '../icon-svgs/partition_success.svg';
+import password from '../icon-svgs/password.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -138,11 +142,13 @@ import source from '../icon-svgs/source.svg';
 import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
+import stacks from '../icon-svgs/stacks.svg';
 import star from '../icon-svgs/star.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
 import status from '../icon-svgs/status.svg';
 import sticky_note from '../icon-svgs/sticky_note.svg';
 import subtract from '../icon-svgs/subtract.svg';
+import sync_alt from '../icon-svgs/sync_alt.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
 import tag from '../icon-svgs/tag.svg';
@@ -273,9 +279,11 @@ export const Icons = {
   chevron_right,
   chevron_left,
   close,
+  code_location,
   console: console_icon,
   content_copy,
   collapse_arrows,
+  corporate_fare,
   delete: deleteSVG,
   done,
   dot,
@@ -314,6 +322,8 @@ export const Icons = {
   new_in_branch,
   nightlight,
   no_access,
+  notifications,
+  password,
   people,
   refresh,
   replay,
@@ -327,10 +337,12 @@ export const Icons = {
   subtract,
   speed,
   splitscreen,
+  stacks,
   star,
   star_outline,
   status,
   sticky_note,
+  sync_alt,
   sync_problem,
   table_view,
   timer,

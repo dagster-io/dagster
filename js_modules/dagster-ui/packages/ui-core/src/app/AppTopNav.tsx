@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {useFeatureFlags} from './Flags';
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';
 import {WebSocketStatus} from './WebSocketProvider';
@@ -35,6 +36,7 @@ export const AppTopNav = ({
   allowGlobalReload = false,
 }: Props) => {
   const history = useHistory();
+  const {flagSettingsPage} = useFeatureFlags();
 
   const navLinks = () => {
     return [
@@ -91,35 +93,61 @@ export const AppTopNav = ({
           </ShortcutHandler>
         ),
       },
-      {
-        title: 'deployment',
-        element: (
-          <ShortcutHandler
-            key="deployment"
-            onShortcut={() => history.push('/locations')}
-            shortcutLabel="⌥4"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
-          >
-            <TopNavLink
-              to="/locations"
-              data-cy="AppTopNav_StatusLink"
-              isActive={(_, location) => {
-                const {pathname} = location;
-                return (
-                  pathname.startsWith('/locations') ||
-                  pathname.startsWith('/health') ||
-                  pathname.startsWith('/config')
-                );
-              }}
-            >
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Deployment
-                <DeploymentStatusIcon />
-              </Box>
-            </TopNavLink>
-          </ShortcutHandler>
-        ),
-      },
+      flagSettingsPage
+        ? {
+            title: 'settings',
+            element: (
+              <ShortcutHandler
+                key="settings"
+                onShortcut={() => history.push('/settings')}
+                shortcutLabel="⌥4"
+                shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
+              >
+                <TopNavLink
+                  to="/settings"
+                  data-cy="AppTopNav_SettingsLink"
+                  isActive={(_, location) => {
+                    const {pathname} = location;
+                    return pathname.startsWith('/settings') || pathname.startsWith('/locations');
+                  }}
+                >
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                    Settings
+                    <DeploymentStatusIcon />
+                  </Box>
+                </TopNavLink>
+              </ShortcutHandler>
+            ),
+          }
+        : {
+            title: 'deployment',
+            element: (
+              <ShortcutHandler
+                key="deployment"
+                onShortcut={() => history.push('/locations')}
+                shortcutLabel="⌥4"
+                shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
+              >
+                <TopNavLink
+                  to="/locations"
+                  data-cy="AppTopNav_StatusLink"
+                  isActive={(_, location) => {
+                    const {pathname} = location;
+                    return (
+                      pathname.startsWith('/locations') ||
+                      pathname.startsWith('/health') ||
+                      pathname.startsWith('/config')
+                    );
+                  }}
+                >
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                    Deployment
+                    <DeploymentStatusIcon />
+                  </Box>
+                </TopNavLink>
+              </ShortcutHandler>
+            ),
+          },
     ];
   };
 

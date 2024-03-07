@@ -55,8 +55,8 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
     <Table>
       <thead>
         <tr>
-          <th style={{width: '25%'}}>Daemon</th>
-          <th style={{width: '30%'}}>Status</th>
+          <th style={{width: '30%'}}>Daemon</th>
+          <th style={{width: '20%'}}>Status</th>
           {showTimestampColumn && <th>Last heartbeat</th>}
         </tr>
       </thead>
