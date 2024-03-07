@@ -1,7 +1,8 @@
 import {Box, Icon} from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import React, {useContext, useMemo} from 'react';
 
 import {GraphNode} from './Utils';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
@@ -178,7 +179,13 @@ export function useAssetGraphExplorerFilters({
   if (assetGroups) {
     filters.push(groupsFilter);
   }
-  if (changedInBranch && featureEnabled(FeatureFlag.flagExperimentalBranchDiff)) {
+
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (
+    changedInBranch &&
+    featureEnabled(FeatureFlag.flagExperimentalBranchDiff) &&
+    isBranchDeployment
+  ) {
     filters.push(changedFilter);
   }
   filters.push(kindTagsFilter);
