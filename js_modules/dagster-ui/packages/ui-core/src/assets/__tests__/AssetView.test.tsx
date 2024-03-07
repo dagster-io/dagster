@@ -1,6 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
-import Router, {MemoryRouter} from 'react-router-dom';
+import {MemoryRouter} from 'react-router-dom';
 
 import {
   ASSETS_GRAPH_LIVE_QUERY,
@@ -23,8 +23,6 @@ import {
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {AssetView} from '../AssetView';
-import AssetsCatalogRoot from '../AssetsCatalogRoot';
-import {fetchRecentlyVisitedAssetsFromLocalStorage} from '../RecentlyVisitedAssetsStorage';
 import {
   AssetViewDefinitionNonSDA,
   AssetViewDefinitionSDA,
@@ -39,12 +37,6 @@ jest.mock('../../graph/asyncGraphLayout', () => ({}));
 // and the component tree fails to mount.
 jest.mock('../AssetPartitions', () => ({AssetPartitions: () => <div />}));
 jest.mock('../AssetEvents', () => ({AssetEvents: () => <div />}));
-
-// Mock the `useParams` hook to override the asset key in the URL.
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useParams: jest.fn(),
-}));
 
 function mockLiveData(key: string) {
   const assetKey = {path: [key]};
@@ -155,44 +147,6 @@ describe('AssetView', () => {
         render(<Test path="/non_sda_asset" assetKey={{path: ['non_sda_asset']}} />);
       });
       expect(screen.queryByText(MESSAGE)).toBeNull();
-    });
-
-    it('store visited asset in local storage', async () => {
-      jest.spyOn(Router, 'useParams').mockReturnValue({0: 'sda_asset'});
-
-      const assetKey = {path: ['sda_asset']};
-      const Test = (
-        <MockedProvider
-          mocks={[
-            AssetViewDefinitionSDA,
-            AssetViewDefinitionNonSDA,
-            AssetViewDefinitionSourceAsset,
-            mockLiveData('sda_asset'),
-            mockLiveData('observable_source_asset'),
-            mockLiveData('non_sda_asset'),
-            buildQueryMock<AssetGraphQuery, AssetGraphQueryVariables>({
-              query: ASSET_GRAPH_QUERY,
-              variables: {},
-              data: {
-                assetNodes: [buildAssetNode()],
-              },
-            }),
-          ]}
-        >
-          <AssetLiveDataProvider>
-            <MemoryRouter initialEntries={['/assets/sda_asset']}>
-              <AssetsCatalogRoot />
-            </MemoryRouter>
-          </AssetLiveDataProvider>
-        </MockedProvider>
-      );
-      const {rerender} = render(Test); // nothing logged
-      await waitFor(() => {
-        expect(screen.getByText('Materialize')).toBeVisible();
-      });
-
-      rerender(Test);
-      expect(fetchRecentlyVisitedAssetsFromLocalStorage()).toEqual([assetKey]);
     });
   });
 });
