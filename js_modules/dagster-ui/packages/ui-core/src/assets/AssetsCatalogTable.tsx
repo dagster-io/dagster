@@ -3,7 +3,7 @@ import {Box, ButtonGroup, TextInput} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 
-import {buildAssetGroupSelector} from './AssetGroupSuggest';
+import {buildAssetGroupSelector, useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -17,6 +17,7 @@ import {
 } from './types/AssetsCatalogTable.types';
 import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -24,6 +25,14 @@ import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PageLoadTrace} from '../performance';
+import {useFilters} from '../ui/Filters';
+import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
+import {
+  useAssetKindTagsForAssets,
+  useComputeKindTagFilter,
+} from '../ui/Filters/useComputeKindTagFilter';
+import {FilterObject} from '../ui/Filters/useFilter';
 import {LoadingSpinner} from '../ui/Loading';
 type Asset = AssetTableFragment;
 
@@ -151,12 +160,6 @@ export const AssetsCatalogTable = ({
     }
   }, [loaded, trace]);
 
-  React.useEffect(() => {
-    if (view !== 'directory' && prefixPath.length) {
-      setView('directory');
-    }
-  }, [view, setView, prefixPath]);
-
   const setVisibleAssetGroups = React.useCallback(
     (groups: AssetGroupSelector[]) => {
       setFilters((existingFilters: typeof filters) => ({
@@ -187,6 +190,36 @@ export const AssetsCatalogTable = ({
     [setFilters],
   );
 
+  const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
+  const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
+
+  const groupsFilter = useAssetGroupFilter({
+    assetGroups: allAssetGroupOptions,
+    visibleAssetGroups: filters.groups,
+    setGroupFilters: setVisibleAssetGroups,
+  });
+  const changedInBranchFilter = useChangedFilter({
+    changedInBranch: filters.changedInBranch,
+    setChangedInBranch: setVisibleChangedInBranch,
+  });
+  const computeKindFilter = useComputeKindTagFilter({
+    allComputeKindTags,
+    computeKindTags: filters.computeKindTags,
+    setComputeKindTags: setVisibleComputeKindTags,
+  });
+  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter];
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (isBranchDeployment) {
+    uiFilters.push(changedInBranchFilter);
+  }
+  const {button, activeFiltersJsx} = useFilters({filters: uiFilters});
+
+  React.useEffect(() => {
+    if (view !== 'directory' && prefixPath.length) {
+      setView('directory');
+    }
+  }, [view, setView, prefixPath]);
+
   if (error) {
     return <PythonErrorInfo error={error} />;
   }
@@ -214,12 +247,6 @@ export const AssetsCatalogTable = ({
           filters.groups?.length
         )
       }
-      visibleAssetGroups={filters.groups}
-      setVisibleAssetGroups={setVisibleAssetGroups}
-      visibleComputeKindTags={filters.computeKindTags}
-      setVisibleComputeKindTags={setVisibleComputeKindTags}
-      visibleChangedInBranch={filters.changedInBranch}
-      setVisibleChangedInBranch={setVisibleChangedInBranch}
       actionBarComponents={
         <>
           <ButtonGroup<AssetViewType>
@@ -235,6 +262,7 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
+          {button}
           <TextInput
             value={search || ''}
             style={{width: '30vw', minWidth: 150, maxWidth: 400}}
@@ -246,6 +274,17 @@ export const AssetsCatalogTable = ({
             onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
         </>
+      }
+      belowActionBarComponents={
+        activeFiltersJsx.length ? (
+          <Box
+            border="top-and-bottom"
+            padding={12}
+            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+          >
+            {activeFiltersJsx}
+          </Box>
+        ) : null
       }
       refreshState={refreshState}
       prefixPath={prefixPath || []}

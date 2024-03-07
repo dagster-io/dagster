@@ -1,5 +1,5 @@
 import {Box} from '@dagster-io/ui-components';
-import React, {useContext, useMemo} from 'react';
+import React, {useContext} from 'react';
 
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
@@ -9,7 +9,10 @@ import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
-import {useComputeKindTagFilter} from '../ui/Filters/useComputeKindTagFilter';
+import {
+  useAssetKindTagsForAssets,
+  useComputeKindTagFilter,
+} from '../ui/Filters/useComputeKindTagFilter';
 import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
@@ -60,16 +63,10 @@ export function useAssetGraphExplorerFilters({
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
   const groupsFilter = useAssetGroupFilter({visibleAssetGroups, assetGroups, setGroupFilters});
 
-  const allKindTags = useMemo(
-    () =>
-      Array.from(
-        new Set(nodes.map((node) => node.definition.computeKind).filter((v) => v) as string[]),
-      ),
-    [nodes],
-  );
+  const allComputeKindTags = useAssetKindTagsForAssets(nodes);
 
   const kindTagsFilter = useComputeKindTagFilter({
-    allKindTags,
+    allComputeKindTags,
     computeKindTags,
     setComputeKindTags,
   });

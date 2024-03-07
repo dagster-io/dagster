@@ -2,17 +2,16 @@ import {Box, Icon} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {useStaticSetFilter} from './useStaticSetFilter';
-import {AssetTableFragment} from '../../assets/types/AssetTableFragment.types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 
 const emptyArray: any[] = [];
 
 export const useComputeKindTagFilter = ({
-  allKindTags,
+  allComputeKindTags,
   computeKindTags,
   setComputeKindTags,
 }: {
-  allKindTags: string[];
+  allComputeKindTags: string[];
   computeKindTags?: null | string[];
   setComputeKindTags?: null | ((s: string[]) => void);
 }) => {
@@ -21,11 +20,11 @@ export const useComputeKindTagFilter = ({
     icon: 'tag',
     allValues: useMemo(
       () =>
-        allKindTags.map((value) => ({
+        allComputeKindTags.map((value) => ({
           value,
           match: [value],
         })),
-      [allKindTags],
+      [allComputeKindTags],
     ),
     menuWidth: '300px',
     renderLabel: ({value}) => (
@@ -42,8 +41,14 @@ export const useComputeKindTagFilter = ({
   });
 };
 
-export function useAssetKindTagsForAssets(assets: AssetTableFragment[]): string[] {
-  return Array.from(
-    new Set(assets.map((a) => a.definition?.computeKind).filter((x) => x)),
-  ) as string[];
+export function useAssetKindTagsForAssets(
+  assets: {definition?: {computeKind?: string | null} | null}[],
+): string[] {
+  return useMemo(
+    () =>
+      Array.from(
+        new Set(assets.map((a) => a.definition?.computeKind).filter((x) => x)),
+      ) as string[],
+    [assets],
+  );
 }
