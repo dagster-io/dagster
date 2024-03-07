@@ -234,6 +234,14 @@ class TimeWindow(NamedTuple):
     start: PublicAttr[datetime]
     end: PublicAttr[datetime]
 
+    @property
+    def is_empty(self) -> bool:
+        return self.start == self.end
+
+    @staticmethod
+    def empty() -> "TimeWindow":
+        return TimeWindow(start=datetime.max, end=datetime.max)
+
 
 @whitelist_for_serdes(
     field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
