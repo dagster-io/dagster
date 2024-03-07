@@ -1280,12 +1280,6 @@ class DagsterInstance(DynamicPartitionsStore):
             if not self._run_storage.has_job_snapshot(
                 job_snapshot.lineage_snapshot.parent_snapshot_id
             ):
-                check.invariant(
-                    create_job_snapshot_id(parent_job_snapshot)  # type: ignore  # (possible none)
-                    == job_snapshot.lineage_snapshot.parent_snapshot_id,
-                    "Parent pipeline snapshot id out of sync with passed parent pipeline snapshot",
-                )
-
                 returned_job_snapshot_id = self._run_storage.add_job_snapshot(
                     parent_job_snapshot  # type: ignore  # (possible none)
                 )

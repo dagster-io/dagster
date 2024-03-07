@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 def sync_get_external_job_subset_grpc(
     api_client: "DagsterGrpcClient",
     job_origin: ExternalJobOrigin,
+    include_parent_snapshot: bool,
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
@@ -36,6 +37,7 @@ def sync_get_external_job_subset_grpc(
                 op_selection=op_selection,
                 asset_selection=asset_selection,
                 asset_check_selection=asset_check_selection,
+                include_parent_snapshot=include_parent_snapshot,
             ),
         ),
         ExternalJobSubsetResult,
