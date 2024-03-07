@@ -7,7 +7,7 @@ description: "Learn how to automate asset materialization using schedules and jo
 
 After you've created some [Software-defined Assets](/concepts/assets/software-defined-assets), you'll likely want to automate their materialization.
 
-In this guide, we'll show you one method of accomplishing this by using schedules and jobs. If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/automation/schedules/running-ops).
+In this guide, we'll show you one method of accomplishing this by using schedules and jobs. If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/automation/schedules/automating-ops-schedules-jobs).
 
 By the end of this guide, you will:
 
@@ -208,11 +208,11 @@ ecommerce_schedule = ScheduleDefinition(
 
 Once the schedule is started, it will begin executing immediately if the [dagster-daemon](/deployment/dagster-daemon) process is running - which is started automatically when `dagster dev` is run - as part of your deployoment.
 
-Refer to the [Troubleshooting schedules](/concepts/automation/schedules/troubleshooting) guide if the schedule has been started but isn't submitting runs.
+<!-- TODO: Refer to the [Troubleshooting schedules](/concepts/automation/schedules/troubleshooting) guide if the schedule has been started but isn't submitting runs. -->
 
 ---
 
-## What's next?
+<!-- TODO: ## What's next?
 
 That's it! At this point, you should have a working, running schedule in your Dagster project. From here, you can:
 
@@ -220,7 +220,7 @@ That's it! At this point, you should have a working, running schedule in your Da
 - Create [tests for your schedules](/concepts/automation/schedules/testing) to make sure things are running smoothly
 - Refer to the [Automating pipelines guide](/guides/dagster/automating-pipelines) for more pipeline automation ideas
 
----
+--- -->
 
 ## APIs in this guide
 
@@ -231,14 +231,14 @@ That's it! At this point, you should have a working, running schedule in your Da
 | <PyObject object="ScheduleDefinition" /> | A class that defines a schedule and attaches it to a job.                                                                                         |
 | <PyObject object="Definitions" />        | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
 
----
+<!-- TODO: ---
 
 ## Related
 
 <ArticleList>
   <ArticleListItem
     title="Defining schedules for ops"
-    href="/concepts/automation/schedules/running-ops"
+    href="/concepts/automation/schedules/automating-ops-schedules-jobs"
   ></ArticleListItem>
   <ArticleListItem
     title="Testing schedules"
@@ -261,3 +261,4 @@ That's it! At this point, you should have a working, running schedule in your Da
     href="/concepts/automation/schedules/troubleshooting"
   ></ArticleListItem>
 </ArticleList>
+ -->
