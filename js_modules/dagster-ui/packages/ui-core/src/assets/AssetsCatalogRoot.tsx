@@ -1,10 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
+import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {writeAssetVisitToLocalStorage} from './RecentlyVisitedAssetsStorage';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
   AssetsCatalogRootQuery,
@@ -43,6 +45,18 @@ export const AssetsCatalogRoot = () => {
   const trace = usePageLoadTrace(
     currentPath && currentPath.length === 0 ? 'AssetsCatalogRoot' : 'AssetCatalogAssetView',
   );
+
+  React.useEffect(() => {
+    // If the asset exists, add it to the recently visited list
+    if (
+      currentPath &&
+      currentPath.length &&
+      queryResult.loading === false &&
+      queryResult.data?.assetOrError.__typename === 'Asset'
+    ) {
+      writeAssetVisitToLocalStorage({path: currentPath});
+    }
+  }, [currentPath, queryResult]);
 
   if (queryResult.loading) {
     return (
