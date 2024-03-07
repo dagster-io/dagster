@@ -53,7 +53,7 @@ export type QueryPersistedStateConfig<T extends QueryPersistedDataType> = {
  */
 export function useQueryPersistedState<T extends QueryPersistedDataType>(
   options: QueryPersistedStateConfig<T>,
-): [T, (updates: T) => void] {
+): [T, React.Dispatch<React.SetStateAction<T>>] {
   const {queryKey, defaults} = options;
   let {encode, decode} = options;
 

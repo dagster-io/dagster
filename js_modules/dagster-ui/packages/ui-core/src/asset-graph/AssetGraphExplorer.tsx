@@ -75,11 +75,13 @@ type OptionalFilters =
         computeKindTags?: string[];
         changedInBranch?: ChangeReason[];
       };
-      setFilters: (updates: {
-        groups?: AssetGroupSelector[];
-        computeKindTags?: string[];
-        changedInBranch?: ChangeReason[];
-      }) => void;
+      setFilters: React.Dispatch<
+        React.SetStateAction<{
+          groups?: AssetGroupSelector[];
+          computeKindTags?: string[];
+          changedInBranch?: ChangeReason[];
+        }>
+      >;
     }
   | {filters?: null; setFilters?: null};
 

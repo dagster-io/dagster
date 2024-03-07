@@ -1,17 +1,17 @@
-import {Box, Icon} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import React, {useContext, useMemo} from 'react';
 
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {AssetGroupSelector, ChangeReason} from '../graphql/types';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
+import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {useComputeKindTagFilter} from '../ui/Filters/useComputeKindTagFilter';
 import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 type OptionalFilters =
   | {
@@ -40,8 +40,6 @@ type Props = {
   isGlobalGraph: boolean;
 } & OptionalFilters;
 
-const emptyArray: any[] = [];
-
 export function useAssetGraphExplorerFilters({
   nodes,
   isGlobalGraph,
@@ -59,87 +57,8 @@ export function useAssetGraphExplorerFilters({
 
   const reposFilter = useCodeLocationFilter();
 
-  const changedFilter = useStaticSetFilter<ChangeReason>({
-    name: 'Changed in branch',
-    icon: 'new_in_branch',
-    allValues: Object.values(ChangeReason).map((reason) => ({
-      key: reason,
-      value: reason,
-      match: [reason],
-    })),
-    allowMultipleSelections: true,
-    menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="new_in_branch" />
-        <TruncatedTextWithFullTextOnHover
-          tooltipText={value}
-          text={
-            <span style={{textTransform: 'capitalize'}}>
-              {value.toLocaleLowerCase().replace('_', ' ')}
-            </span>
-          }
-        />
-      </Box>
-    ),
-    getStringValue: (value) => value[0] + value.slice(1).toLowerCase(),
-
-    state: useMemo(() => new Set(changedInBranch ?? []), [changedInBranch]),
-    onStateChanged: (values) => {
-      if (setChangedInBranch) {
-        setChangedInBranch(Array.from(values));
-      }
-    },
-  });
-
-  const groupsFilter = useStaticSetFilter<AssetGroupSelector>({
-    name: 'Asset Groups',
-    icon: 'asset_group',
-    allValues: (assetGroups || []).map((group) => ({
-      key: group.groupName,
-      value:
-        visibleAssetGroups?.find(
-          (visibleGroup) =>
-            visibleGroup.groupName === group.groupName &&
-            visibleGroup.repositoryName === group.repositoryName &&
-            visibleGroup.repositoryLocationName === group.repositoryLocationName,
-        ) ?? group,
-      match: [group.groupName],
-    })),
-    menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="repo" />
-        <TruncatedTextWithFullTextOnHover
-          tooltipText={
-            value.groupName +
-            ' - ' +
-            buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)
-          }
-          text={
-            <>
-              {value.groupName}
-              <span style={{opacity: 0.5, paddingLeft: '4px'}}>
-                {buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)}
-              </span>
-            </>
-          }
-        />
-      </Box>
-    ),
-    getStringValue: (group) => group.groupName,
-    getTooltipText: (group) =>
-      group.groupName +
-      ' - ' +
-      buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
-
-    state: useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
-    onStateChanged: (values) => {
-      if (setGroupFilters) {
-        setGroupFilters(Array.from(values));
-      }
-    },
-  });
+  const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
+  const groupsFilter = useAssetGroupFilter({visibleAssetGroups, assetGroups, setGroupFilters});
 
   const allKindTags = useMemo(
     () =>
@@ -149,31 +68,11 @@ export function useAssetGraphExplorerFilters({
     [nodes],
   );
 
-  const kindTagsFilter = useStaticSetFilter<string>({
-    name: 'Compute kind',
-    icon: 'tag',
-    allValues: useMemo(
-      () =>
-        allKindTags.map((value) => ({
-          value,
-          match: [value],
-        })),
-      [allKindTags],
-    ),
-    menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="tag" />
-        <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
-      </Box>
-    ),
-    getStringValue: (value) => value,
-    state: computeKindTags ?? emptyArray,
-    onStateChanged: (values) => {
-      setComputeKindTags?.(Array.from(values));
-    },
+  const kindTagsFilter = useComputeKindTagFilter({
+    allKindTags,
+    computeKindTags,
+    setComputeKindTags,
   });
-
   const filters: FilterObject[] = [];
 
   if (allRepos.length > 1 && isGlobalGraph) {

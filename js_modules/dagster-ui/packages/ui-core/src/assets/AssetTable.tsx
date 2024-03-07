@@ -14,15 +14,25 @@ import {
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
 
+import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
+import {AssetGroupSelector, AssetKeyInput, ChangeReason} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
+import {useFilters} from '../ui/Filters';
+import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
+import {
+  useAssetKindTagsForAssets,
+  useComputeKindTagFilter,
+} from '../ui/Filters/useComputeKindTagFilter';
+import {FilterObject} from '../ui/Filters/useFilter';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 type Asset = AssetTableFragment;
@@ -36,7 +46,13 @@ interface Props {
   displayPathForAsset: (asset: Asset) => string[];
   requery?: RefetchQueriesFunction;
   searchPath: string;
-  searchGroups: AssetGroupSelector[];
+  isFiltered: boolean;
+  visibleAssetGroups: AssetGroupSelector[];
+  setVisibleAssetGroups: (groups: AssetGroupSelector[]) => void;
+  visibleComputeKindTags: string[];
+  setVisibleComputeKindTags: (kindTags: string[]) => void;
+  visibleChangedInBranch: ChangeReason[];
+  setVisibleChangedInBranch: (changeReasons: ChangeReason[]) => void;
 }
 
 export const AssetTable = ({
@@ -47,9 +63,39 @@ export const AssetTable = ({
   displayPathForAsset,
   requery,
   searchPath,
-  searchGroups,
+  isFiltered,
   view,
+  visibleAssetGroups,
+  setVisibleAssetGroups,
+  visibleComputeKindTags,
+  setVisibleComputeKindTags,
+  visibleChangedInBranch,
+  setVisibleChangedInBranch,
 }: Props) => {
+  const assetGroupOptions = useAssetGroupSelectorsForAssets(assets);
+  const groupsFilter = useAssetGroupFilter({
+    assetGroups: assetGroupOptions,
+    visibleAssetGroups,
+    setGroupFilters: setVisibleAssetGroups,
+  });
+  const changedInBranchFilter = useChangedFilter({
+    changedInBranch: visibleChangedInBranch,
+    setChangedInBranch: setVisibleChangedInBranch,
+  });
+  const allKindTags = useAssetKindTagsForAssets(assets);
+  const computeKindFilter = useComputeKindTagFilter({
+    allKindTags,
+    computeKindTags: visibleComputeKindTags,
+    setComputeKindTags: setVisibleComputeKindTags,
+  });
+  const filters: FilterObject[] = [groupsFilter, computeKindFilter];
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (isBranchDeployment) {
+    filters.push(changedInBranchFilter);
+  }
+  const {button, activeFiltersJsx} = useFilters({
+    filters,
+  });
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
   const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
@@ -74,15 +120,8 @@ export const AssetTable = ({
               icon="search"
               title="No matching assets"
               description={
-                searchGroups.length ? (
-                  <div>
-                    No assets matching <strong>{searchPath}</strong> were found in{' '}
-                    {searchGroups.length === 1 ? (
-                      <strong>{searchGroups[0]?.groupName}</strong>
-                    ) : (
-                      'the selected asset groups'
-                    )}
-                  </div>
+                isFiltered ? (
+                  <div>No assets matching selected filters</div>
                 ) : (
                   <div>
                     No assets matching <strong>{searchPath}</strong> were found
@@ -100,18 +139,9 @@ export const AssetTable = ({
             icon="search"
             title="No assets"
             description={
-              searchGroups.length ? (
-                <div>
-                  No assets were found in{' '}
-                  {searchGroups.length === 1 ? (
-                    <strong>{searchGroups[0]?.groupName}</strong>
-                  ) : (
-                    'the selected asset groups'
-                  )}
-                </div>
-              ) : (
-                'No assets were found'
-              )
+              isFiltered
+                ? 'No assets were found matching the selected filters'
+                : 'No assets were found'
             }
           />
         </Box>
@@ -154,6 +184,7 @@ export const AssetTable = ({
           style={{position: 'sticky', top: 0, zIndex: 1}}
         >
           {actionBarComponents}
+          {button}
           <div style={{flex: 1}} />
           <QueryRefreshCountdown refreshState={refreshState} />
           <Box flex={{alignItems: 'center', gap: 8}}>
@@ -181,6 +212,15 @@ export const AssetTable = ({
             />
           </Box>
         </Box>
+        {activeFiltersJsx.length ? (
+          <Box
+            border="top-and-bottom"
+            padding={12}
+            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+          >
+            {activeFiltersJsx}
+          </Box>
+        ) : null}
         {content()}
       </Box>
       <AssetWipeDialog
