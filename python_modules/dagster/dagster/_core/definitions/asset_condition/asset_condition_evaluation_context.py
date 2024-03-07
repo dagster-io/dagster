@@ -88,7 +88,7 @@ class AssetConditionEvaluationContext:
         evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> "AssetConditionEvaluationContext":
-        partitions_def = instance_queryer.asset_graph.get_partitions_def(asset_key)
+        partitions_def = instance_queryer.asset_graph.get(asset_key).partitions_def
 
         return AssetConditionEvaluationContext(
             asset_key=asset_key,
@@ -136,7 +136,7 @@ class AssetConditionEvaluationContext:
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        return self.asset_graph.get_partitions_def(self.asset_key)
+        return self.asset_graph.get(self.asset_key).partitions_def
 
     @property
     def evaluation_time(self) -> datetime.datetime:
@@ -190,7 +190,7 @@ class AssetConditionEvaluationContext:
         can be materialized in the same run as this asset.
         """
         subset = self.empty_subset()
-        for parent_key in self.asset_graph.get_parents(self.asset_key):
+        for parent_key in self.asset_graph.get(self.asset_key).parent_keys:
             if not self.materializable_in_same_run(self.asset_key, parent_key):
                 continue
             parent_info = self.evaluation_state_by_key.get(parent_key)
@@ -302,17 +302,19 @@ class AssetConditionEvaluationContext:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
+        child_node = self.asset_graph.get(child_key)
+        parent_node = self.asset_graph.get(parent_key)
         return (
             # both assets must be materializable
-            child_key in self.asset_graph.materializable_asset_keys
-            and parent_key in self.asset_graph.materializable_asset_keys
+            child_node.is_materializable
+            and parent_node.is_materializable
             # the parent must have the same partitioning
-            and self.asset_graph.have_same_partitioning(child_key, parent_key)
+            and child_node.partitions_def == parent_node.partitions_def
             # the parent must have a simple partition mapping to the child
             and (
-                not self.asset_graph.is_partitioned(parent_key)
+                not parent_node.is_partitioned
                 or isinstance(
-                    self.asset_graph.get_partition_mapping(child_key, parent_key),
+                    self.asset_graph.get_partition_mapping(child_node.key, parent_node.key),
                     (TimeWindowPartitionMapping, IdentityPartitionMapping),
                 )
             )

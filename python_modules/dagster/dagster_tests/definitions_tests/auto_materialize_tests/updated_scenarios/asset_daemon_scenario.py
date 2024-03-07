@@ -102,7 +102,7 @@ class AssetRuleEvaluationSpec(NamedTuple):
         """
         subset = AssetSubset.from_asset_partitions_set(
             asset_key,
-            asset_graph.get_partitions_def(asset_key),
+            asset_graph.get(asset_key).partitions_def,
             {
                 AssetKeyPartitionKey(asset_key, partition_key)
                 for partition_key in self.partitions or [None]
@@ -253,7 +253,7 @@ class AssetDaemonScenarioState(ScenarioState):
             ]
             new_evaluations = [
                 e.get_evaluation_with_run_ids(
-                    self.asset_graph.get_partitions_def(e.asset_key)
+                    self.asset_graph.get(e.asset_key).partitions_def
                 ).evaluation
                 for e in check.not_none(
                     self.instance.schedule_storage
@@ -398,7 +398,7 @@ class AssetDaemonScenarioState(ScenarioState):
         assert (
             new_run_ids_for_asset
             == evaluation_record.get_evaluation_with_run_ids(
-                self.asset_graph.get_partitions_def(key)
+                self.asset_graph.get(key).partitions_def
             ).run_ids
         )
 

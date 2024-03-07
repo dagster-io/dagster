@@ -491,7 +491,7 @@ class CachingStaleStatusResolver:
         code_version = self.asset_graph.get(key.asset_key).code_version
         provenance = self._get_current_data_provenance(key=key)
 
-        asset_deps = self.asset_graph.get_parents(key.asset_key)
+        asset_deps = self.asset_graph.get(key.asset_key).parent_keys
 
         # only used if no provenance available
         materialization = check.not_none(self._get_latest_data_version_record(key=key))
@@ -663,7 +663,7 @@ class CachingStaleStatusResolver:
         if asset.is_external:
             return asset.is_observable
         else:
-            deps = asset.get_parents(key)
+            deps = asset.get(key).parent_keys
             return len(deps) == 0 or any(self._is_volatile(key=dep_key) for dep_key in deps)
 
     @cached_method
@@ -713,11 +713,11 @@ class CachingStaleStatusResolver:
             AssetKeyPartitionKey,
         )
 
-        asset_deps = self.asset_graph.get_parents(key.asset_key)
+        asset_deps = self.asset_graph.get(key.asset_key).parent_keys
 
         deps = []
         for dep_asset_key in asset_deps:
-            if not self.asset_graph.is_partitioned(dep_asset_key):
+            if not self.asset_graph.get(dep_asset_key).is_partitioned:
                 deps.append(AssetKeyPartitionKey(dep_asset_key, None))
             elif key.asset_key == dep_asset_key and self._exceeds_self_partition_limit(
                 key.asset_key
@@ -744,6 +744,6 @@ class CachingStaleStatusResolver:
 
     def _exceeds_self_partition_limit(self, asset_key: "AssetKey") -> bool:
         return (
-            check.not_none(self.asset_graph.get_partitions_def(asset_key)).get_num_partitions()
+            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions()
             >= SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
         )

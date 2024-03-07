@@ -128,23 +128,25 @@ class AssetGraphDiffer:
         ):
             changes.append(ChangeReason.CODE_VERSION)
 
-        if self.branch_asset_graph.get_parents(asset_key) != self.base_asset_graph.get_parents(
-            asset_key
+        if (
+            self.branch_asset_graph.get(asset_key).parent_keys
+            != self.base_asset_graph.get(asset_key).parent_keys
         ):
             changes.append(ChangeReason.INPUTS)
         else:
             # if the set of inputs is different, then we don't need to check if the partition mappings
             # for inputs have changed since ChangeReason.INPUTS is already in the list of changes
-            for upstream_asset in self.branch_asset_graph.get_parents(asset_key):
+            for upstream_asset in self.branch_asset_graph.get(asset_key).parent_keys:
                 if self.branch_asset_graph.get_partition_mapping(
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
                     changes.append(ChangeReason.INPUTS)
                     break
 
-        if self.branch_asset_graph.get_partitions_def(
-            asset_key
-        ) != self.base_asset_graph.get_partitions_def(asset_key):
+        if (
+            self.branch_asset_graph.get(asset_key).partitions_def
+            != self.base_asset_graph.get(asset_key).partitions_def
+        ):
             changes.append(ChangeReason.PARTITIONS_DEFINITION)
 
         return changes

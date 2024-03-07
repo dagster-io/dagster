@@ -381,7 +381,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
                 )
             # for observable assets, we need to select the job based on the partitions def
             target_partitions_defs = {
-                self.get_partitions_def(asset_key) for asset_key in asset_keys
+                self.get(asset_key).partitions_def for asset_key in asset_keys
             }
             check.invariant(len(target_partitions_defs) == 1, "Expected exactly one partitions def")
             target_partitions_def = next(iter(target_partitions_defs))

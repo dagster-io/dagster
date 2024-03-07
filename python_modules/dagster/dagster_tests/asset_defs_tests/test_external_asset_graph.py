@@ -235,8 +235,8 @@ def test_cross_repo_dep_no_source_asset(instance):
 def test_partitioned_source_asset(instance):
     asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
 
-    assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
-    assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
+    assert asset_graph.get(AssetKey("partitioned_source")).is_partitioned
+    assert asset_graph.get(AssetKey("downstream_of_partitioned_source")).is_partitioned
 
 
 def test_get_implicit_job_name_for_assets(instance):
