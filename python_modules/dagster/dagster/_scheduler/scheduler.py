@@ -772,7 +772,7 @@ def _schedule_runs_at_time(
     tick_context: _ScheduleLaunchContext,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
-) -> "DaemonIterator":
+) -> Generator[Union[None, SerializableErrorInfo, ScheduleIterationTimes], None, None]:
     instance = workspace_process_context.instance
     repository_handle = external_schedule.handle.repository_handle
 
