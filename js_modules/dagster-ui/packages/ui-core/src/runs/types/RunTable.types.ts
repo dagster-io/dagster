@@ -30,7 +30,7 @@ export type RunTableRunFragment = {
   } | null;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   assetCheckSelection: Array<{
-    __typename: 'AssetCheckhandle';
+    __typename: 'AssetCheckKey';
     name: string;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }> | null;

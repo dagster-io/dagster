@@ -1402,7 +1402,7 @@ type Run implements PipelineRun {
   eventConnection(afterCursor: String): EventConnection!
   parentPipelineSnapshotId: String
   assetSelection: [AssetKey!]
-  assetCheckSelection: [AssetCheckhandle!]
+  assetCheckSelection: [AssetCheckKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
   startTime: Float
@@ -1414,7 +1414,7 @@ type Run implements PipelineRun {
   hasConcurrencyKeySlots: Boolean!
 }
 
-type AssetCheckhandle {
+type AssetCheckKey {
   name: String!
   assetKey: AssetKey!
 }
@@ -2210,10 +2210,10 @@ input JobOrPipelineSelector {
   repositoryLocationName: String!
   solidSelection: [String!]
   assetSelection: [AssetKeyInput!]
-  assetCheckSelection: [AssetCheckHandleInput!]
+  assetCheckSelection: [AssetCheckKeyInput!]
 }
 
-input AssetCheckHandleInput {
+input AssetCheckKeyInput {
   assetKey: AssetKeyInput!
   name: String!
 }
@@ -2287,7 +2287,7 @@ input PipelineSelector {
   repositoryLocationName: String!
   solidSelection: [String!]
   assetSelection: [AssetKeyInput!]
-  assetCheckSelection: [AssetCheckHandleInput!]
+  assetCheckSelection: [AssetCheckKeyInput!]
 }
 
 input RepositorySelector {

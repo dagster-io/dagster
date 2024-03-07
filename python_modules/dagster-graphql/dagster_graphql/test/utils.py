@@ -39,7 +39,7 @@ class GqlAssetKey(TypedDict):
     path: Sequence[str]
 
 
-class GqlAssetCheckHandle(TypedDict):
+class GqlAssetCheckKey(TypedDict):
     assetKey: GqlAssetKey
     name: str
 
@@ -185,7 +185,7 @@ def infer_job_selector(
     job_name: str,
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[GqlAssetKey]] = None,
-    asset_check_selection: Optional[Sequence[GqlAssetCheckHandle]] = None,
+    asset_check_selection: Optional[Sequence[GqlAssetCheckKey]] = None,
 ) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(

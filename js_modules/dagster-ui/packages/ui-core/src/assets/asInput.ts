@@ -1,10 +1,10 @@
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionButton.types';
-import {AssetCheckHandleInput} from '../graphql/types';
+import {AssetCheckKeyInput} from '../graphql/types';
 
-export function getAssetCheckHandleInputs(
+export function getAssetCheckKeyInputs(
   assets: Pick<LaunchAssetExecutionAssetNodeFragment, 'assetKey' | 'assetChecksOrError'>[],
   jobName?: string,
-): AssetCheckHandleInput[] {
+): AssetCheckKeyInput[] {
   return assets.flatMap((a) =>
     a.assetChecksOrError.__typename === 'AssetChecks'
       ? a.assetChecksOrError.checks
@@ -29,6 +29,6 @@ export function asAssetKeyInput(assetOrAssetKey: {assetKey: {path: string[]}} | 
     : {path: assetOrAssetKey.assetKey.path};
 }
 
-export function asAssetCheckHandleInput(check: {name: string; assetKey: {path: string[]}}) {
+export function asAssetCheckKeyInput(check: {name: string; assetKey: {path: string[]}}) {
   return {name: check.name, assetKey: {path: check.assetKey.path}};
 }
