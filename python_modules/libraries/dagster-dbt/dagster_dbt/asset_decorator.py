@@ -24,7 +24,6 @@ from dagster import (
     multi_asset,
 )
 from dagster._utils.warnings import (
-    disable_dagster_warnings,
     experimental_warning,
 )
 
@@ -429,53 +428,52 @@ def get_dbt_multi_asset_args(
                 check_specs.append(check_spec)
 
         # Translate parent unique ids to dependencies
-        with disable_dagster_warnings():
-            output_internal_deps = internal_asset_deps.setdefault(output_name, set())
-            for parent_unique_id in parent_unique_ids:
-                dbt_parent_resource_props = dbt_nodes[parent_unique_id]
-                parent_asset_key = dagster_dbt_translator.get_asset_key(dbt_parent_resource_props)
-                parent_partition_mapping = dagster_dbt_translator.get_partition_mapping(
-                    dbt_resource_props,
-                    dbt_parent_resource_props=dbt_parent_resource_props,
-                )
-
-                parent_unique_ids_for_asset_key, parent_resource_types_for_asset_key = (
-                    dbt_unique_id_and_resource_types_by_asset_key.setdefault(
-                        parent_asset_key, (set(), set())
-                    )
-                )
-                parent_unique_ids_for_asset_key.add(parent_unique_id)
-                parent_resource_types_for_asset_key.add(dbt_parent_resource_props["resource_type"])
-
-                if parent_partition_mapping:
-                    experimental_warning("DagsterDbtTranslator.get_partition_mapping")
-
-                # Add this parent as an internal dependency
-                output_internal_deps.add(parent_asset_key)
-
-                # Mark this parent as an input if it has no dependencies
-                if parent_unique_id not in dbt_unique_id_deps:
-                    deps.add(
-                        AssetDep(
-                            asset=parent_asset_key,
-                            partition_mapping=parent_partition_mapping,
-                        )
-                    )
-
-            self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
+        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
+        for parent_unique_id in parent_unique_ids:
+            dbt_parent_resource_props = dbt_nodes[parent_unique_id]
+            parent_asset_key = dagster_dbt_translator.get_asset_key(dbt_parent_resource_props)
+            parent_partition_mapping = dagster_dbt_translator.get_partition_mapping(
                 dbt_resource_props,
-                dbt_parent_resource_props=dbt_resource_props,
+                dbt_parent_resource_props=dbt_parent_resource_props,
             )
-            if self_partition_mapping and has_self_dependency(dbt_resource_props):
-                experimental_warning("+meta.dagster.has_self_dependency")
 
+            parent_unique_ids_for_asset_key, parent_resource_types_for_asset_key = (
+                dbt_unique_id_and_resource_types_by_asset_key.setdefault(
+                    parent_asset_key, (set(), set())
+                )
+            )
+            parent_unique_ids_for_asset_key.add(parent_unique_id)
+            parent_resource_types_for_asset_key.add(dbt_parent_resource_props["resource_type"])
+
+            if parent_partition_mapping:
+                experimental_warning("DagsterDbtTranslator.get_partition_mapping")
+
+            # Add this parent as an internal dependency
+            output_internal_deps.add(parent_asset_key)
+
+            # Mark this parent as an input if it has no dependencies
+            if parent_unique_id not in dbt_unique_id_deps:
                 deps.add(
                     AssetDep(
-                        asset=asset_key,
-                        partition_mapping=self_partition_mapping,
+                        asset=parent_asset_key,
+                        partition_mapping=parent_partition_mapping,
                     )
                 )
-                output_internal_deps.add(asset_key)
+
+        self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
+            dbt_resource_props,
+            dbt_parent_resource_props=dbt_resource_props,
+        )
+        if self_partition_mapping and has_self_dependency(dbt_resource_props):
+            experimental_warning("+meta.dagster.has_self_dependency")
+
+            deps.add(
+                AssetDep(
+                    asset=asset_key,
+                    partition_mapping=self_partition_mapping,
+                )
+            )
+            output_internal_deps.add(asset_key)
 
     dbt_unique_ids_by_duplicate_asset_key = {
         asset_key: sorted(unique_ids)
