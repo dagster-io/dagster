@@ -317,7 +317,6 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
                 scenario.evaluation_time,
                 dynamic_partitions_store=instance,
             )
-
             if failures == "no_failures":
                 fail_asset_partitions: Set[AssetKeyPartitionKey] = set()
             elif failures == "root_failures":

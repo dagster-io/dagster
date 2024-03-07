@@ -1341,6 +1341,14 @@ class ExternalAssetNode(
         )
 
     @property
+    def is_materializable(self) -> bool:
+        return self.execution_type == AssetExecutionType.MATERIALIZATION
+
+    @property
+    def is_external(self) -> bool:
+        return self.execution_type != AssetExecutionType.MATERIALIZATION
+
+    @property
     def is_executable(self) -> bool:
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
