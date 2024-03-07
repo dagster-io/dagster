@@ -1186,6 +1186,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, metadata in metadata_by_key.items()
         }
 
+        replaced_owners_by_key = {
+            output_asset_key_replacements.get(key, key): owners
+            for key, owners in self.owners_by_key.items()
+        }
+
         replaced_attributes = dict(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -1221,6 +1226,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 **self._metadata_by_key,
                 **replaced_metadata_by_key,
             },
+            owners_by_key=replaced_owners_by_key,
             freshness_policies_by_key=replaced_freshness_policies_by_key,
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
