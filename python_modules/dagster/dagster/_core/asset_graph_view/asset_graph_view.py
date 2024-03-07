@@ -13,8 +13,18 @@ from typing import (
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import AllPartitionsSubset, StaticPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    PartitionDimensionDefinition,
+)
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    DefaultPartitionsSubset,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.time_window_partitions import (
+    PartitionKeysTimeWindowPartitionsSubset,
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -159,7 +169,13 @@ class AssetSlice:
 
     @property
     def time_windows(self) -> Sequence[TimeWindow]:
-        tw_partitions_def = _required_tw_partitions_def(self._partitions_def)
+        # <<<<<<< HEAD
+        #         tw_partitions_def = _required_tw_partitions_def(self._partitions_def)
+        # =======
+        tw_partitions_def = self._time_window_partitions_def_in_context()
+        check.inst(tw_partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed.")
+        assert isinstance(tw_partitions_def, TimeWindowPartitionsDefinition)  # appease type checker
+        # >>>>>>> f5ae87e2d8 (Support multi-partitioning in AssetSlice)
 
         if isinstance(self._compatible_subset.subset_value, TimeWindowPartitionsSubset):
             return self._compatible_subset.subset_value.included_time_windows
@@ -168,8 +184,40 @@ class AssetSlice:
                 self._asset_graph_view.effective_dt
             )
             return [TimeWindow(datetime.min, last_tw.end)] if last_tw else []
+        elif isinstance(self._compatible_subset.subset_value, DefaultPartitionsSubset):
+            check.inst(
+                self._partitions_def,
+                MultiPartitionsDefinition,
+                "Must be multi-partition if we got here.",
+            )
+            tw_partition_keys = set()
+            for multi_partition_key in self._compatible_subset.subset_value.get_partition_keys():
+                check.inst(multi_partition_key, MultiPartitionKey, "Must be multi partition key.")
+                assert isinstance(multi_partition_key, MultiPartitionKey)  # appease type checker
+                tm_partition_key = next(iter(multi_partition_key.keys_by_dimension.values()))
+                tw_partition_keys.add(tm_partition_key)
+            subset_from_tw = tw_partitions_def.subset_with_partition_keys(tw_partition_keys)
+            check.inst(
+                subset_from_tw,
+                (TimeWindowPartitionsSubset, PartitionKeysTimeWindowPartitionsSubset),
+                "Must be time window subset.",
+            )
+            if isinstance(subset_from_tw, TimeWindowPartitionsSubset):
+                return subset_from_tw.included_time_windows
+            elif isinstance(subset_from_tw, PartitionKeysTimeWindowPartitionsSubset):
+                return subset_from_tw.included_time_windows
+            else:
+                check.failed(f"Unsupported subset value: {self._compatible_subset.subset_value}")
         else:
             check.failed(f"Unsupported subset value: {self._compatible_subset.subset_value}")
+
+    def _time_window_partitions_def_in_context(self) -> Optional[TimeWindowPartitionsDefinition]:
+        pd = self._partitions_def
+        if isinstance(pd, TimeWindowPartitionsDefinition):
+            return pd
+        if isinstance(pd, MultiPartitionsDefinition):
+            return pd.time_window_partitions_def if pd.has_time_window_dimension else None
+        return None
 
     @property
     def is_empty(self) -> bool:
@@ -370,13 +418,72 @@ class AssetGraphView:
                 else self.create_empty_slice(asset_key)
             )
 
-        # Need to handle dynamic and multi-dimensional partitioning
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            if not partitions_def.has_time_window_dimension:
+                return self.get_asset_slice(asset_key)
+
+            multi_dim_info = self._get_multi_dim_info(asset_key)
+            last_tw = multi_dim_info.tw_partition_def.get_last_partition_window(self.effective_dt)
+            return (
+                self._build_multi_partition_slice(asset_key, multi_dim_info, last_tw)
+                if last_tw
+                else self.create_empty_slice(asset_key)
+            )
+
+        # Need to handle dynamic partitioning
         check.failed(f"Unsupported partitions_def: {partitions_def}")
 
     def create_empty_slice(self, asset_key: AssetKey) -> AssetSlice:
         return _slice_from_subset(
             self,
             AssetSubset.empty(asset_key, self._get_partitions_def(asset_key)),
+        )
+
+    class MultiDimInfo(NamedTuple):
+        tw_dim: PartitionDimensionDefinition
+        secondary_dim: PartitionDimensionDefinition
+
+        @property
+        def tw_partition_def(self) -> TimeWindowPartitionsDefinition:
+            check.inst(self.tw_dim.partitions_def, TimeWindowPartitionsDefinition)
+            assert isinstance(
+                self.tw_dim.partitions_def, TimeWindowPartitionsDefinition
+            )  # appease pyright
+            return self.tw_dim.partitions_def
+
+        @property
+        def secondary_partition_def(self) -> "PartitionsDefinition":
+            return self.secondary_dim.partitions_def
+
+    def _get_multi_dim_info(self, asset_key: AssetKey) -> "MultiDimInfo":
+        partitions_def = self._get_partitions_def(asset_key)
+        check.inst(partitions_def, MultiPartitionsDefinition)
+        assert isinstance(partitions_def, MultiPartitionsDefinition)  # appease pyright
+        return self.MultiDimInfo(
+            tw_dim=partitions_def.time_window_dimension,
+            secondary_dim=partitions_def.secondary_dimension,
+        )
+
+    def _build_multi_partition_slice(
+        self, asset_key: AssetKey, multi_dim_info: MultiDimInfo, last_tw: TimeWindow
+    ) -> "AssetSlice":
+        # Note: Potential perf improvement here. There is no way to encode a cartesian product
+        # in the underlying PartitionsSet. We could add a specialized PartitionsSubset
+        # subclass that itself composed two PartitionsSubset to avoid materializing the entire
+        # partitions range.
+        return self.get_asset_slice(asset_key).compute_intersection_with_partition_keys(
+            {
+                MultiPartitionKey(
+                    {
+                        multi_dim_info.tw_dim.name: tw_pk,
+                        multi_dim_info.secondary_dim.name: secondary_pk,
+                    }
+                )
+                for tw_pk in multi_dim_info.tw_partition_def.get_partition_keys_in_time_window(
+                    last_tw
+                )
+                for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys()
+            }
         )
 
 
