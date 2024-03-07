@@ -173,10 +173,13 @@ export function useAssetGraphExplorerFilters({
   });
 
   const filters: FilterObject[] = [];
-  if (allRepos.length > 1) {
+
+  // This is kind of odd, but rely on group filtering being enabled for
+  // showing the locations filter since the locationsFilter is controlled by app-wide context
+  if (allRepos.length > 1 && setGroupFilters) {
     filters.push(reposFilter);
   }
-  if (assetGroups) {
+  if (assetGroups && setGroupFilters) {
     filters.push(groupsFilter);
   }
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
@@ -187,7 +190,9 @@ export function useAssetGraphExplorerFilters({
   ) {
     filters.push(changedFilter);
   }
-  filters.push(kindTagsFilter);
+  if (setComputeKindTags) {
+    filters.push(kindTagsFilter);
+  }
   const {button, activeFiltersJsx} = useFilters({filters});
   if (allRepos.length <= 1 && !assetGroups) {
     return {button: null, activeFiltersJsx: null};

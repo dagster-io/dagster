@@ -85,15 +85,32 @@ export const AssetGroupRoot = ({
   );
 
   const [changedInBranchFilters, setChangeInBranchFilters] = React.useState<ChangeReason[]>([]);
-  function hideNodesMatchingInLineage(node: AssetNodeForGraphQueryFragment) {
-    if (!changedInBranchFilters.length) {
-      return false;
+
+  const hideNodesMatchingInLineage = React.useCallback(
+    (node: AssetNodeForGraphQueryFragment) => {
+      if (!changedInBranchFilters.length) {
+        return false;
+      }
+      const hasMatchingReason = node.changedReasons.find((reason) =>
+        changedInBranchFilters.includes(reason),
+      );
+      return !hasMatchingReason;
+    },
+    [changedInBranchFilters],
+  );
+
+  const setFilters = React.useCallback(({changedInBranch}: {changedInBranch?: ChangeReason[]}) => {
+    if (changedInBranch) {
+      setChangeInBranchFilters(changedInBranch);
+    } else {
+      setChangeInBranchFilters([]);
     }
-    const hasMatchingReason = node.changedReasons.find((reason) =>
-      changedInBranchFilters.includes(reason),
-    );
-    return !hasMatchingReason;
-  }
+  }, []);
+
+  const fetchOptions = React.useMemo(
+    () => ({groupSelector, hideNodesMatching: hideNodesMatchingInLineage}),
+    [groupSelector, hideNodesMatchingInLineage],
+  );
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
@@ -116,19 +133,13 @@ export const AssetGroupRoot = ({
       />
       {tab === 'lineage' ? (
         <AssetGraphExplorer
-          fetchOptions={{groupSelector, hideNodesMatching: hideNodesMatchingInLineage}}
+          fetchOptions={fetchOptions}
           options={{preferAssetRendering: true, explodeComposites: true}}
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
           filters={{changedInBranch: changedInBranchFilters}}
-          setFilters={({changedInBranch}) => {
-            if (changedInBranch) {
-              setChangeInBranchFilters(changedInBranch);
-            } else {
-              setChangeInBranchFilters([]);
-            }
-          }}
+          setFilters={setFilters}
         />
       ) : (
         <AssetsCatalogTable

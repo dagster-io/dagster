@@ -122,27 +122,29 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {explorerPath, onChangeExplorerPath} = props;
 
+  const {filters, setFilters} = props;
+
   const setComputeKindTags = React.useCallback(
     (tags: string[]) =>
-      props.setFilters?.({
-        ...props.filters,
+      setFilters?.({
+        ...filters,
         computeKindTags: tags,
       }),
-    [props],
+    [setFilters, filters],
   );
 
   const setGroupFilters = React.useCallback(
-    (groups: AssetGroupSelector[]) => props.setFilters?.({...props.filters, groups}),
-    [props],
+    (groups: AssetGroupSelector[]) => setFilters?.({...filters, groups}),
+    [filters, setFilters],
   );
 
   const setChangedInBranch = React.useCallback(
     (changedInBranch: ChangeReason[]) =>
-      props.setFilters?.({
-        ...props.filters,
+      setFilters?.({
+        ...filters,
         changedInBranch,
       }),
-    [props],
+    [filters, setFilters],
   );
 
   const {button, filterBar} = useAssetGraphExplorerFilters({
