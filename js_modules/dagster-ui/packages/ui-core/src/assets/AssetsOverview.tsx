@@ -8,7 +8,6 @@ import styled from 'styled-components';
 import {AssetGlobalLineageButton, AssetPageHeader} from './AssetPageHeader';
 import {ASSET_CATALOG_TABLE_QUERY} from './AssetsCatalogTable';
 import {fetchRecentlyVisitedAssetsFromLocalStorage} from './RecentlyVisitedAssetsStorage';
-import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
@@ -68,8 +67,6 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
   const assetCountByComputeKind: Record<string, number> = {};
   const assetCountByGroup: Record<string, number> = {};
   const assetCountByCodeLocation: Record<string, number> = {};
-
-  // TODO guard against the query data not containing the above fields?
 
   assets
     .filter((asset) => asset.definition)

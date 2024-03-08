@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {useCallback, useEffect, useRef} from 'react';
 
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
-import {SearchResult, SearchResultType} from './types';
+import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
 import {
   SearchPrimaryQuery,
   SearchPrimaryQueryVariables,
@@ -155,8 +155,8 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
     countsBySection.countsByComputeKind,
   ).map(([computeKind, count]) => ({
     label: computeKind,
-    description: 'Compute kind',
-    type: SearchResultType.ComputeKind,
+    description: '',
+    type: AssetFilterSearchResultType.ComputeKind,
     // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
     href: '/assets',
     numResults: count,
@@ -168,8 +168,8 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
         codeLocationAssetCount.repoAddress.name,
         codeLocationAssetCount.repoAddress.location,
       ),
-      description: 'Code location',
-      type: SearchResultType.CodeLocation,
+      description: '',
+      type: AssetFilterSearchResultType.CodeLocation,
       // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
       href: '/assets',
       numResults: codeLocationAssetCount.assetCount,
@@ -179,21 +179,19 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
   const groupResults: SearchResult[] = countsBySection.countPerAssetGroup.map(
     (groupAssetCount) => ({
       label: groupAssetCount.groupMetadata.groupName,
-      description: `Asset group in ${buildRepoPathForHuman(
-        groupAssetCount.groupMetadata.repositoryName,
-        groupAssetCount.groupMetadata.repositoryLocationName,
-      )}`,
-      type: SearchResultType.AssetGroup,
+      description: '',
+      type: AssetFilterSearchResultType.AssetGroup,
       // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
       href: '/assets',
+      numResults: groupAssetCount.assetCount,
     }),
   );
 
   const ownerResults: SearchResult[] = Object.entries(countsBySection.countsByOwner).map(
     ([owner, count]) => ({
       label: owner,
-      description: 'Owner',
-      type: SearchResultType.Asset,
+      description: '',
+      type: AssetFilterSearchResultType.Owner,
       // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
       href: '/assets',
       numResults: count,
@@ -202,12 +200,15 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
 
   const assets = nodes
     .filter(({definition}) => definition !== null)
-    .map(({key}) => {
+    .map(({key, definition}) => {
       return {
         label: displayNameForAssetKey(key),
         href: assetDetailsPathForKey(key),
         segments: key.path,
-        description: 'Asset',
+        description: `Asset in ${buildRepoPathForHuman(
+          definition!.repository.name,
+          definition!.repository.location.name,
+        )}`,
         type: SearchResultType.Asset,
       };
     });
