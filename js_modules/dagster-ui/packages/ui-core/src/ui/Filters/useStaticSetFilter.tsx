@@ -1,4 +1,4 @@
-import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
 import {Fragment, useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -35,6 +35,8 @@ export type StaticSetFilter<TValue> = FilterObject & {
   state: Set<TValue>;
   setState: (state: Set<TValue>) => void;
 };
+
+const selectAllSymbol = Symbol.for('useStaticSetFilter:SelectAll');
 
 export function useStaticSetFilter<TValue>({
   name,
@@ -74,6 +76,8 @@ export function useStaticSetFilter<TValue>({
     setState(state ? new Set(state) : new Set());
   }, [state]);
 
+  const currentQueryRef = useRef<string>('');
+
   const filterObj: StaticSetFilter<TValue> = useMemo(
     () => ({
       name,
@@ -81,8 +85,10 @@ export function useStaticSetFilter<TValue>({
       state: innerState,
       isActive: innerState.size > 0,
       getResults: (query) => {
+        currentQueryRef.current = query;
+        let results;
         if (query === '') {
-          return allValues.map(({value}, index) => ({
+          results = allValues.map(({value}, index) => ({
             label: (
               <SetFilterLabel
                 value={value}
@@ -94,27 +100,69 @@ export function useStaticSetFilter<TValue>({
             key: getKey?.(value) || index.toString(),
             value,
           }));
+        } else {
+          results = allValues
+            .filter(({match}) =>
+              match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
+            )
+            .map(({value}, index) => ({
+              label: (
+                <SetFilterLabel
+                  value={value}
+                  renderLabel={renderLabel}
+                  filter={filterObjRef.current}
+                  allowMultipleSelections={allowMultipleSelections}
+                />
+              ),
+              key: getKey?.(value) || index.toString(),
+              value,
+            }));
         }
-
-        return allValues
-          .filter(({match}) =>
-            match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
-          )
-          .map(({value}, index) => ({
-            label: (
-              <SetFilterLabel
-                value={value}
-                renderLabel={renderLabel}
-                filter={filterObjRef.current}
-                allowMultipleSelections={allowMultipleSelections}
-              />
-            ),
-            key: getKey?.(value) || index.toString(),
-            value,
-          }));
+        if (allowMultipleSelections) {
+          return [
+            {
+              label: <ButtonLink>Select all</ButtonLink>,
+              key: 'useStaticSetFilter:select-all-key',
+              value: selectAllSymbol,
+            },
+            ...results,
+          ];
+        }
+        return results;
       },
       onSelect: ({value, close}) => {
-        let newState = new Set(filterObjRef.current.state);
+        const state = filterObjRef.current.state;
+        if (typeof value === 'symbol' && value.toString() === selectAllSymbol.toString()) {
+          let selectResults;
+          if (currentQueryRef.current === '') {
+            selectResults = allValues;
+          } else {
+            selectResults = allValues.filter(({match}) =>
+              match.some((value) =>
+                value.toLowerCase().includes(currentQueryRef.current.toLowerCase()),
+              ),
+            );
+          }
+          const hasAnyUnselected = selectResults.find((result) => {
+            if (state instanceof Array) {
+              return state.indexOf(result.value) === -1;
+            } else if (state instanceof Set) {
+              return !state.has(result.value);
+            }
+            return true;
+          });
+          if (hasAnyUnselected) {
+            setState(new Set([...Array.from(state), ...selectResults.map(({value}) => value)]));
+          } else {
+            const stateCopy = new Set(state);
+            selectResults.forEach(({value}) => {
+              stateCopy.delete(value);
+            });
+            setState(stateCopy);
+          }
+          return;
+        }
+        let newState = new Set(state);
         if (newState.has(value)) {
           newState.delete(value);
         } else {
