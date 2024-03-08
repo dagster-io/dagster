@@ -61,6 +61,7 @@ from dagster_graphql.schema.solids import (
     GrapheneResourceRequirement,
     GrapheneSolidDefinition,
 )
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
 
 from ..implementation.fetch_assets import (
     build_partition_statuses,
@@ -303,6 +304,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     assetPartitionStatuses = graphene.NonNull(GrapheneAssetPartitionStatuses)
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
+    tags = non_null_list(GrapheneDefinitionTag)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
     opNames = non_null_list(graphene.String)

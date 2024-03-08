@@ -34,6 +34,17 @@ class GrapheneEventTag(graphene.ObjectType):
         super().__init__(key=key, value=value)
 
 
+class GrapheneDefinitionTag(graphene.ObjectType):
+    key = graphene.NonNull(graphene.String)
+    value = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DefinitionTag"
+
+    def __init__(self, key, value):
+        super().__init__(key=key, value=value)
+
+
 class GraphenePipelineTagAndValues(graphene.ObjectType):
     class Meta:
         description = """A run tag and the free-form values that have been associated
