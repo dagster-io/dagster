@@ -46,6 +46,7 @@ import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
 import corporate_fare from '../icon-svgs/corporate_fare.svg';
+import dash from '../icon-svgs/dash.svg';
 import datatype_array from '../icon-svgs/datatype_array.svg';
 import datatype_bool from '../icon-svgs/datatype_bool.svg';
 import datatype_number from '../icon-svgs/datatype_number.svg';
@@ -147,7 +148,6 @@ import star from '../icon-svgs/star.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
 import status from '../icon-svgs/status.svg';
 import sticky_note from '../icon-svgs/sticky_note.svg';
-import subtract from '../icon-svgs/subtract.svg';
 import sync_alt from '../icon-svgs/sync_alt.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
@@ -233,6 +233,7 @@ export const Icons = {
   chat_support,
   changes_present,
   concept_book,
+  dash,
   open_in_new,
   folder,
   tag,
@@ -334,7 +335,6 @@ export const Icons = {
   settings_backup_restore,
   sort_by_alpha,
   source,
-  subtract,
   speed,
   splitscreen,
   stacks,
