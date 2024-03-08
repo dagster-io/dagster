@@ -135,33 +135,26 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          style={{width: '100%'}}
-        >
-          <Box flex={{direction: 'row', alignItems: 'center'}}>
-            <StyledTag
-              $fillColor={Colors.backgroundGray()}
-              $interactive={false}
-              $textColor={Colors.textDefault()}
-            >
-              <Icon
-                name={iconForType(item.type)}
-                color={isHighlight ? Colors.textDefault() : Colors.textLight()}
-              />
-              {isAssetFilterSearchResultType(item.type) ? (
-                <SearchResultLabel>{assetFilterPrefixString(item.type)}:&nbsp;</SearchResultLabel>
-              ) : (
-                <></>
-              )}
-              {labelComponents.map((component) => component)}
-            </StyledTag>
-            <div style={{marginLeft: '8px'}}>
-              <Description isHighlight={isHighlight}>
-                {item.numResults ? `${item.numResults} assets` : item.description}
-              </Description>
-            </div>
-          </Box>
+        <Box flex={{direction: 'row', alignItems: 'center'}} style={{width: '100%'}}>
+          <StyledTag
+            $fillColor={Colors.backgroundGray()}
+            $interactive={false}
+            $textColor={Colors.textDefault()}
+          >
+            <Icon
+              name={iconForType(item.type)}
+              color={isHighlight ? Colors.textDefault() : Colors.textLight()}
+            />
+            {isAssetFilterSearchResultType(item.type) && (
+              <SearchResultLabel>{assetFilterPrefixString(item.type)}:&nbsp;</SearchResultLabel>
+            )}
+            {labelComponents.map((component) => component)}
+          </StyledTag>
+          <div style={{marginLeft: '8px'}}>
+            <Description isHighlight={isHighlight}>
+              {item.numResults ? `${item.numResults} assets` : item.description}
+            </Description>
+          </div>
         </Box>
       </ResultLink>
     </Item>
