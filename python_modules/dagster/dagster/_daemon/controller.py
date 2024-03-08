@@ -107,6 +107,9 @@ def daemon_controller_from_instance(
                 grpc_server_registry=grpc_server_registry,
             )
         )
+
+        configure_loggers(handler="default", formatter=log_format, log_level=log_level.upper())
+
         controller = stack.enter_context(
             DagsterDaemonController(
                 workspace_process_context,
@@ -115,8 +118,6 @@ def daemon_controller_from_instance(
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
                 grpc_server_registry=grpc_server_registry,
-                log_level=log_level,
-                log_format=log_format,
             )
         )
 
@@ -145,9 +146,6 @@ class DagsterDaemonController(AbstractContextManager):
         heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
-        handler: str = "default",
-        log_level: str = "info",
-        log_format: str = "colored",
     ):
         self._daemon_uuid = str(uuid.uuid4())
 
@@ -172,8 +170,6 @@ class DagsterDaemonController(AbstractContextManager):
             raise Exception("No daemons configured on the DagsterInstance")
 
         self._daemon_shutdown_event = threading.Event()
-
-        configure_loggers(handler=handler, formatter=log_format, log_level=log_level.upper())
 
         self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(
