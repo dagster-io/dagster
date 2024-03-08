@@ -130,7 +130,7 @@ export const SearchDialog = ({
     assetResults,
     assetFilterResults,
   } = groupSearchResults(primaryResults, secondaryResults, isAssetSearch);
-  const results = [...primaryResultsGroup, ...assetResults, ...assetFilterResults];
+  const results = [...primaryResultsGroup, ...assetResults];
 
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
@@ -309,6 +309,7 @@ export const SearchDialog = ({
               queryString={queryString}
               results={renderedResults}
               onClickResult={onClickResult}
+              filterResults={[]}
             />
           </Container>
         </Overlay>
@@ -338,6 +339,7 @@ export const SearchDialog = ({
             highlight={highlight}
             queryString={queryString}
             results={renderedResults}
+            filterResults={assetFilterResults}
             onClickResult={onClickResult}
           />
         </SearchResultsWrapper>
