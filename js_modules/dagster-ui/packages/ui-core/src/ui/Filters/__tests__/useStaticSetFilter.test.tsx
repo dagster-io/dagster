@@ -85,7 +85,34 @@ describe('useStaticSetFilter', () => {
     expect(cherry).not.toHaveClass('active');
   });
 
-  it('renders filtered results based on query', async () => {
+  it('does not render "Select all" if allowMultipleSelections is false', async () => {
+    const filter = renderHook(() =>
+      useStaticSetFilter({
+        ...testFilterProps,
+        allowMultipleSelections: false,
+      }),
+    );
+    const results = filter.result.current.getResults('a');
+    const {getByText, queryByText} = render(
+      <>
+        {results.map((r) => (
+          <span key={r.key}>{r.label}</span>
+        ))}
+      </>,
+    );
+
+    const apple = getByText('apple');
+    const banana = getByText('banana');
+    const cherry = queryByText('cherry');
+    const selectAll = queryByText('Select all');
+
+    expect(apple).toBeVisible();
+    expect(banana).toBeVisible();
+    expect(cherry).not.toBeInTheDocument();
+    expect(selectAll).not.toBeInTheDocument();
+  });
+
+  it('renders filtered results based on query and select all takes the query into account', async () => {
     const filter = renderHook(() => useStaticSetFilter(testFilterProps));
     const results = filter.result.current.getResults('a');
     const {getByText, queryByText} = render(
