@@ -8,7 +8,7 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {SearchResults} from './SearchResults';
-import {SearchResult, SearchResultType} from './types';
+import {SearchResult, SearchResultType, isAssetFilterSearchResultType} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -89,11 +89,8 @@ function groupSearchResults(
       assetResults: secondaryResults.filter(
         (result) => result.item.type === SearchResultType.Asset,
       ),
-      assetFilterResults: secondaryResults.filter(
-        (result) =>
-          result.item.type === SearchResultType.AssetGroup ||
-          result.item.type === SearchResultType.ComputeKind ||
-          result.item.type === SearchResultType.CodeLocation,
+      assetFilterResults: secondaryResults.filter((result) =>
+        isAssetFilterSearchResultType(result.item.type),
       ),
     };
   } else {
@@ -112,7 +109,7 @@ export const SearchDialog = ({
   isAssetSearch,
   displayAsOverlay = true,
 }: {
-  searchPlaceholder: string;
+  searchPlaceholder?: string;
   isAssetSearch: boolean;
   displayAsOverlay?: boolean;
 }) => {
@@ -263,6 +260,33 @@ export const SearchDialog = ({
     }
   };
 
+  const searchResults = (
+    <SearchResults
+      highlight={highlight}
+      queryString={queryString}
+      results={renderedResults}
+      filterResults={assetFilterResults}
+      onClickResult={onClickResult}
+    />
+  );
+
+  const searchInput = (
+    <SearchBox hasQueryString={!!queryString.length}>
+      <Icon name="search" color={Colors.accentGray()} size={20} />
+      <SearchInput
+        data-search-input="1"
+        autoFocus
+        spellCheck={false}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+        placeholder={isAssetSearch ? 'Search assets' : 'Search assets, jobs, schedules, sensors…'}
+        type="text"
+        value={queryString}
+      />
+      {loading ? <Spinner purpose="body-text" /> : null}
+    </SearchBox>
+  );
+
   if (displayAsOverlay) {
     return (
       <>
@@ -294,62 +318,18 @@ export const SearchDialog = ({
           transitionDuration={100}
         >
           <Container>
-            <SearchBox hasQueryString={!!queryString.length}>
-              <Icon name="search" color={Colors.accentGray()} size={20} />
-              <SearchInput
-                data-search-input="1"
-                autoFocus
-                spellCheck={false}
-                onChange={onChange}
-                onKeyDown={onKeyDown}
-                placeholder={
-                  isAssetSearch ? 'Search assets' : 'Search assets, jobs, schedules, sensors…'
-                }
-                type="text"
-                value={queryString}
-              />
-              {loading ? <Spinner purpose="body-text" /> : null}
-            </SearchBox>
-            <SearchResults
-              highlight={highlight}
-              queryString={queryString}
-              results={renderedResults}
-              onClickResult={onClickResult}
-              filterResults={[]}
-            />
+            {searchInput}
+            {searchResults}
           </Container>
         </Overlay>
       </>
     );
   } else {
     return (
-      <InPageSearchContainer>
-        <SearchBox hasQueryString={!!queryString.length}>
-          <Icon name="search" color={Colors.accentGray()} size={20} />
-          <SearchInput
-            data-search-input="1"
-            autoFocus
-            spellCheck={false}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
-            placeholder={
-              isAssetSearch ? 'Search assets' : 'Search assets, jobs, schedules, sensors…'
-            }
-            type="text"
-            value={queryString}
-          />
-          {loading ? <Spinner purpose="body-text" /> : null}
-        </SearchBox>
-        <SearchResultsWrapper>
-          <SearchResults
-            highlight={highlight}
-            queryString={queryString}
-            results={renderedResults}
-            filterResults={assetFilterResults}
-            onClickResult={onClickResult}
-          />
-        </SearchResultsWrapper>
-      </InPageSearchContainer>
+      <SearchInputWrapper>
+        {searchInput}
+        <SearchResultsWrapper>{searchResults}</SearchResultsWrapper>
+      </SearchInputWrapper>
     );
   }
 };
@@ -392,7 +372,7 @@ const Container = styled.div`
   }
 `;
 
-const InPageSearchContainer = styled.div`
+const SearchInputWrapper = styled.div`
   position: relative;
 `;
 

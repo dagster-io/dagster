@@ -1,12 +1,17 @@
-import {Colors, Icon, IconName, StyledTag} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, IconName, StyledTag} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {SearchResult, SearchResultType} from './types';
+import {
+  AssetFilterSearchResultType,
+  SearchResult,
+  SearchResultType,
+  isAssetFilterSearchResultType,
+} from './types';
 
-const iconForType = (type: SearchResultType): IconName => {
+const iconForType = (type: SearchResultType | AssetFilterSearchResultType): IconName => {
   switch (type) {
     case SearchResultType.Asset:
       return 'asset';
@@ -27,8 +32,29 @@ const iconForType = (type: SearchResultType): IconName => {
       return 'op';
     case SearchResultType.Resource:
       return 'resource';
+    case AssetFilterSearchResultType.CodeLocation:
+      return 'folder';
+    case AssetFilterSearchResultType.Owner:
+      return 'account_circle';
+    case AssetFilterSearchResultType.AssetGroup:
+      return 'asset_group';
     default:
       return 'source';
+  }
+};
+
+const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
+  switch (type) {
+    case AssetFilterSearchResultType.CodeLocation:
+      return 'Code location';
+    case AssetFilterSearchResultType.ComputeKind:
+      return 'Compute kind';
+    case AssetFilterSearchResultType.Owner:
+      return 'Owner';
+    case AssetFilterSearchResultType.AssetGroup:
+      return 'Group';
+    default:
+      return '';
   }
 };
 
@@ -39,24 +65,23 @@ interface ItemProps {
 }
 
 function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] {
-  const labelComponents = [];
-  let parsedString = '';
+  // Fuse provides indices of the label that match the query string.
+  // Use these match indices to display the label with the matching parts bolded.
+
   // Match indices can overlap, i.e. [0, 4] and [1, 1] can both be matches
   // So we merge them to be non-overlapping
   const mergedIndices: Fuse.RangeTuple[] = [];
-
   if (result.matches && result.matches.length > 0) {
     const match = result.matches[0]!; // Only one match per row, since we only match by label
 
     // The indices should be returned in sorted order, but we sort just in case
     const sortedIndices = Array.from(match.indices).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+    // Merge overlapping indices
     if (sortedIndices.length > 0) {
       mergedIndices.push(sortedIndices[0]!);
-
       for (let i = 1; i < sortedIndices.length; i++) {
         const last = mergedIndices[mergedIndices.length - 1]!;
         const current = sortedIndices[i]!;
-
         if (current[0] <= last[1]) {
           last[1] = Math.max(last[1], current[1]);
         } else {
@@ -66,6 +91,8 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] 
     }
   }
 
+  const labelComponents = [];
+  let parsedString = '';
   mergedIndices.forEach((indices) => {
     const stringBeforeMatch = result.item.label.slice(parsedString.length, indices[0]);
     labelComponents.push(<SearchResultLabel>{stringBeforeMatch}</SearchResultLabel>);
@@ -108,20 +135,34 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <StyledTag
-          $fillColor={Colors.backgroundGray()}
-          $interactive={false}
-          $textColor={Colors.textDefault()}
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          style={{width: '100%'}}
         >
-          <Icon
-            name={iconForType(item.type)}
-            color={isHighlight ? Colors.textDefault() : Colors.textLight()}
-          />
-          {labelComponents.map((component) => component)}
-        </StyledTag>
-        <div style={{marginLeft: '12px'}}>
-          <Description isHighlight={isHighlight}>{item.description}</Description>
-        </div>
+          <Box flex={{direction: 'row', alignItems: 'center'}}>
+            <StyledTag
+              $fillColor={Colors.backgroundGray()}
+              $interactive={false}
+              $textColor={Colors.textDefault()}
+            >
+              <Icon
+                name={iconForType(item.type)}
+                color={isHighlight ? Colors.textDefault() : Colors.textLight()}
+              />
+              {isAssetFilterSearchResultType(item.type) ? (
+                <SearchResultLabel>{assetFilterPrefixString(item.type)}:&nbsp;</SearchResultLabel>
+              ) : (
+                <></>
+              )}
+              {labelComponents.map((component) => component)}
+            </StyledTag>
+            <div style={{marginLeft: '8px'}}>
+              <Description isHighlight={isHighlight}>
+                {item.numResults ? `${item.numResults} assets` : item.description}
+              </Description>
+            </div>
+          </Box>
+        </Box>
       </ResultLink>
     </Item>
   );
