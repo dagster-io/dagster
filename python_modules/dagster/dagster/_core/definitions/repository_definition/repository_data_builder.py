@@ -50,6 +50,7 @@ from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import AssetKey
 
 
@@ -162,6 +163,7 @@ def build_caching_repository_data_from_list(
     sensors: Dict[str, SensorDefinition] = {}
     assets_defs: List[AssetsDefinition] = []
     asset_keys: Set[AssetKey] = set()
+    asset_check_keys: Set["AssetCheckKey"] = set()
     source_assets: List[SourceAsset] = []
     asset_checks_defs: List[AssetChecksDefinition] = []
     for definition in repository_definitions:
@@ -228,6 +230,10 @@ def build_caching_repository_data_from_list(
             source_assets.append(definition)
             asset_keys.add(definition.key)
         elif isinstance(definition, AssetChecksDefinition):
+            for key in definition.keys:
+                if key in asset_check_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
+            asset_check_keys.update(definition.keys)
             asset_checks_defs.append(definition)
         else:
             check.failed(f"Unexpected repository entry {definition}")
