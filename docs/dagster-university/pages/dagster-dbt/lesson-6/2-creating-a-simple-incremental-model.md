@@ -29,14 +29,13 @@ with
         select
             date_trunc('day', pickup_datetime) as date_of_business,
             count(*) as trip_count,
-            count(*) - lag(count(*), 1) over (order by date_trunc('day', pickup_datetime)) as trip_count_change,
             sum(duration) as total_duration,
             sum(duration) / count(*) as average_duration,
             sum(total_amount) as total_amount,
             sum(total_amount) / count(*) as average_amount,
             sum(case when duration > 30 then 1 else 0 end) / count(*) as pct_over_30_min
         from trips
-        group by date_of_business
+        group by all
     )
 select *
 from daily_summary
