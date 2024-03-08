@@ -318,18 +318,74 @@ export const SearchDialog = ({
           transitionDuration={100}
         >
           <Container>
+<<<<<<< HEAD
             {searchInput}
             {searchResults}
+=======
+            <SearchBox hasQueryString={!!queryString.length}>
+              <Icon name="search" color={Colors.accentGray()} size={20} />
+              <SearchInput
+                data-search-input="1"
+                autoFocus
+                spellCheck={false}
+                onChange={onChange}
+                onKeyDown={onKeyDown}
+                placeholder={
+                  isAssetSearch ? 'Search assets' : 'Search assets, jobs, schedules, sensors…'
+                }
+                type="text"
+                value={queryString}
+              />
+              {loading ? <Spinner purpose="body-text" /> : null}
+            </SearchBox>
+            <SearchResults
+              highlight={highlight}
+              queryString={queryString}
+              results={renderedResults}
+              onClickResult={onClickResult}
+              filterResults={[]}
+            />
+>>>>>>> 60e496c9bd (display filter results & bold matches)
           </Container>
         </Overlay>
       </>
     );
   } else {
     return (
+<<<<<<< HEAD
       <SearchInputWrapper>
         {searchInput}
         <SearchResultsWrapper>{searchResults}</SearchResultsWrapper>
       </SearchInputWrapper>
+=======
+      <InPageSearchContainer>
+        <SearchBox hasQueryString={!!queryString.length}>
+          <Icon name="search" color={Colors.accentGray()} size={20} />
+          <SearchInput
+            data-search-input="1"
+            autoFocus
+            spellCheck={false}
+            onChange={onChange}
+            onKeyDown={onKeyDown}
+            placeholder={
+              isAssetSearch ? 'Search assets' : 'Search assets, jobs, schedules, sensors…'
+            }
+            type="text"
+            value={queryString}
+          />
+          {loading ? <Spinner purpose="body-text" /> : null}
+        </SearchBox>
+        <SearchResultsWrapper>
+          <SearchResults
+            highlight={highlight}
+            queryString={queryString}
+            results={renderedResults}
+            filterResults={assetFilterResults}
+            onClickResult={onClickResult}
+          />
+        </SearchResultsWrapper>
+      </InPageSearchContainer>
+>>>>>>> 60e496c9bd (display filter results & bold matches)
     );
   }
 };
