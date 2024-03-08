@@ -21,6 +21,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.time_window_partitions import (
@@ -203,10 +204,9 @@ class AssetSlice:
                 return subset_from_tw.included_time_windows
             elif isinstance(subset_from_tw, PartitionKeysTimeWindowPartitionsSubset):
                 return subset_from_tw.included_time_windows
-            else:
-                check.failed(f"Unsupported subset value: {self._compatible_subset.subset_value}")
-        else:
             check.failed(f"Unsupported subset value: {self._compatible_subset.subset_value}")
+
+        check.failed(f"Unsupported partitions_def: {self._partitions_def}")
 
     def _time_window_partitions_def_in_context(self) -> Optional[TimeWindowPartitionsDefinition]:
         pd = self._partitions_def
@@ -401,10 +401,9 @@ class AssetGraphView:
         TODO: add language for dynamic partitioning when we support it
         """
         partitions_def = self._get_partitions_def(asset_key)
-        if partitions_def is None:
-            return self.get_asset_slice(asset_key)
-
-        if isinstance(partitions_def, StaticPartitionsDefinition):
+        if partitions_def is None or isinstance(
+            partitions_def, (DynamicPartitionsDefinition, StaticPartitionsDefinition)
+        ):
             return self.get_asset_slice(asset_key)
 
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
@@ -479,7 +478,10 @@ class AssetGraphView:
                 for tw_pk in multi_dim_info.tw_partition_def.get_partition_keys_in_time_window(
                     last_tw
                 )
-                for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys()
+                for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys(
+                    current_time=self.effective_dt,
+                    dynamic_partitions_store=self._queryer,
+                )
             }
         )
 

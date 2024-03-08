@@ -11,7 +11,10 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
@@ -255,3 +258,61 @@ def test_multi_dimesional_without_time_partition_latest_time_window() -> None:
     assert asset_graph_view.create_latest_time_window_slice(
         multi_dimensional.key
     ).compute_partition_keys() == set(partition_keys)
+
+
+def test_dynamic_partitioning_latest_time_window() -> None:
+    dynamic_partition_def = DynamicPartitionsDefinition(name="letters")
+    instance = DagsterInstance.ephemeral()
+    partition_keys = {"A", "B", "C"}
+    instance.add_dynamic_partitions("letters", list(partition_keys))
+
+    @asset(partitions_def=dynamic_partition_def)
+    def dynamic_asset() -> None: ...
+
+    daily_partitions_def = DailyPartitionsDefinition(
+        start_date=pendulum.datetime(2020, 1, 1), end_date=pendulum.datetime(2020, 1, 3)
+    )
+    multi_partitions_definition = MultiPartitionsDefinition(
+        {"daily": daily_partitions_def, "dynamic": dynamic_partition_def}
+    )
+
+    @asset(partitions_def=multi_partitions_definition)
+    def dynamic_multi_dimensional() -> None: ...
+
+    defs = Definitions([dynamic_asset, dynamic_multi_dimensional])
+
+    asset_graph_view = AssetGraphView.for_test(defs, instance)
+    assert (
+        asset_graph_view.get_asset_slice(dynamic_asset.key).compute_partition_keys()
+        == partition_keys
+    )
+    assert (
+        asset_graph_view.create_latest_time_window_slice(dynamic_asset.key).compute_partition_keys()
+        == partition_keys
+    )
+
+    partition_keys = []
+    jan_2_keys = []
+    for daily_pk in daily_partitions_def.get_partition_keys(dynamic_partitions_store=instance):
+        for dynamic_pk in dynamic_partition_def.get_partition_keys(
+            dynamic_partitions_store=instance
+        ):
+            if daily_pk == "2020-01-02":
+                jan_2_keys.append(MultiPartitionKey({"daily": daily_pk, "dynamic": dynamic_pk}))
+
+            partition_keys.append(MultiPartitionKey({"daily": daily_pk, "dynamic": dynamic_pk}))
+
+    assert asset_graph_view.get_asset_slice(
+        dynamic_multi_dimensional.key
+    ).compute_partition_keys() == set(partition_keys)
+    assert asset_graph_view.create_latest_time_window_slice(
+        dynamic_multi_dimensional.key
+    ).compute_partition_keys() == set(jan_2_keys)
+
+    assert _tw(
+        asset_graph_view.create_latest_time_window_slice(dynamic_multi_dimensional.key)
+    ).start == pendulum.datetime(2020, 1, 2)
+
+    assert _tw(
+        asset_graph_view.create_latest_time_window_slice(dynamic_multi_dimensional.key)
+    ).end == pendulum.datetime(2020, 1, 3)

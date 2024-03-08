@@ -525,7 +525,9 @@ class DynamicPartitionsDefinition(
                 check.failed(
                     "The instance is not available to load partitions. You may be seeing this error"
                     " when using dynamic partitions with a version of dagster-webserver or"
-                    " dagster-cloud that is older than 1.1.18."
+                    " dagster-cloud that is older than 1.1.18. The other possibility is that an"
+                    " internal framework error where a dynamic partitions store was not properly"
+                    " threaded down a call stack."
                 )
 
             return dynamic_partitions_store.get_dynamic_partitions(
@@ -545,7 +547,9 @@ class DynamicPartitionsDefinition(
                 check.failed(
                     "The instance is not available to load partitions. You may be seeing this error"
                     " when using dynamic partitions with a version of dagster-webserver or"
-                    " dagster-cloud that is older than 1.1.18."
+                    " dagster-cloud that is older than 1.1.18. The other possibility is that an"
+                    " internal framework error where a dynamic partitions store was not properly"
+                    " threaded down a call stack."
                 )
 
             return dynamic_partitions_store.has_dynamic_partition(
