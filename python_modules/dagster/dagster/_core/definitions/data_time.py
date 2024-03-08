@@ -175,7 +175,7 @@ class CachingDataTimeResolver:
     ) -> Mapping[AssetKey, "EventLogRecord"]:
         upstream_records: Dict[AssetKey, EventLogRecord] = {}
 
-        for parent_key in self.asset_graph.get_parents(asset_key):
+        for parent_key in self.asset_graph.get(asset_key).parent_keys:
             if not (
                 self.asset_graph.has(parent_key) and self.asset_graph.get(parent_key).is_executable
             ):
@@ -311,7 +311,7 @@ class CachingDataTimeResolver:
             return {key: None for key in self.asset_graph.get_materializable_roots(asset_key)}
         record_timestamp = check.not_none(record_timestamp)
 
-        partitions_def = self.asset_graph.get_partitions_def(asset_key)
+        partitions_def = self.asset_graph.get(asset_key).partitions_def
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
             return self._calculate_data_time_by_key_time_partitioned(
                 asset_key=asset_key,
@@ -377,7 +377,7 @@ class CachingDataTimeResolver:
             return current_time
 
         data_time = current_time
-        for parent_key in self.asset_graph.get_parents(asset_key):
+        for parent_key in self.asset_graph.get(asset_key).parent_keys:
             if parent_key not in self.asset_graph.materializable_asset_keys:
                 continue
             parent_data_time = self._get_in_progress_data_time_in_run(

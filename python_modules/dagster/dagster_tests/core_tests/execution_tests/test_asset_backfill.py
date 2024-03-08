@@ -465,7 +465,7 @@ def make_random_subset(
     # all partitions downstream of half of the partitions in each partitioned root asset
     root_asset_partitions: Set[AssetKeyPartitionKey] = set()
     for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
-        partitions_def = asset_graph.get_partitions_def(root_asset_key)
+        partitions_def = asset_graph.get(root_asset_key).partitions_def
 
         if partitions_def is not None:
             partition_keys = list(
@@ -498,7 +498,7 @@ def make_subset_from_partition_keys(
 ) -> AssetGraphSubset:
     root_asset_partitions: Set[AssetKeyPartitionKey] = set()
     for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
-        if asset_graph.get_partitions_def(root_asset_key) is not None:
+        if asset_graph.get(root_asset_key).is_partitioned:
             root_asset_partitions.update(
                 AssetKeyPartitionKey(root_asset_key, partition_key)
                 for partition_key in partition_keys

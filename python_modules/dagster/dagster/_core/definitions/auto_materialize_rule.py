@@ -859,7 +859,7 @@ class SkipOnNotAllParentsUpdatedRule(
             else:
                 # At least one upstream partition in each upstream asset must be updated in order
                 # for the candidate to be updated
-                parent_asset_keys = context.asset_graph.get_parents(context.asset_key)
+                parent_asset_keys = context.asset_graph.get(context.asset_key).parent_keys
                 updated_parent_keys = {ap.asset_key for ap in updated_parent_partitions}
                 non_updated_parent_keys = parent_asset_keys - updated_parent_keys
 
@@ -964,11 +964,11 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         partitioned parents, as their partitions encode the time windows they have processed.
         """
         updated_subsets_by_key = {}
-        for parent_asset_key in context.asset_graph.get_parents(context.asset_key):
+        for parent_asset_key in context.asset_graph.get(context.asset_key).parent_keys:
             # no need to incrementally calculate updated time-window partitions definitions, as
             # their partitions encode the time windows they have processed.
             if isinstance(
-                context.asset_graph.get_partitions_def(parent_asset_key),
+                context.asset_graph.get(parent_asset_key).partitions_def,
                 TimeWindowPartitionsDefinition,
             ):
                 continue
@@ -988,7 +988,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         """Returns if, for a given child asset partition, the given parent asset been updated with
         information from the required time window.
         """
-        parent_partitions_def = context.asset_graph.get_partitions_def(parent_asset_key)
+        parent_partitions_def = context.asset_graph.get(parent_asset_key).partitions_def
 
         if isinstance(parent_partitions_def, TimeWindowPartitionsDefinition):
             # for time window partitions definitions, we simply assert that all time partitions that
@@ -1069,7 +1069,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                         candidate,
                         updated_subsets_by_key.get(parent_asset_key, context.empty_subset()),
                     )
-                    for parent_asset_key in context.asset_graph.get_parents(candidate.asset_key)
+                    for parent_asset_key in context.asset_graph.get(candidate.asset_key).parent_keys
                 )
             },
         )

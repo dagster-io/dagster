@@ -256,7 +256,7 @@ def _mock_asset_backfill_runs(
     status: DagsterRunStatus,
     partition_key: Optional[str],
 ):
-    partitions_def = asset_graph.get_partitions_def(asset_key)
+    partitions_def = asset_graph.get(asset_key).partitions_def
 
     @asset(
         partitions_def=partitions_def,

@@ -198,7 +198,7 @@ class UnresolvedAssetJobDefinition(
 
         asset_keys_by_partitions_def = defaultdict(set)
         for asset_key in selected_asset_keys:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
             if partitions_def is not None:
                 asset_keys_by_partitions_def[partitions_def].add(asset_key)
 
