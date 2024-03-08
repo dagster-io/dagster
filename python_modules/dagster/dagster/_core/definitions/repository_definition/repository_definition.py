@@ -97,18 +97,16 @@ class RepositoryDefinition:
 
     def __init__(
         self,
-        name,
+        name: str,
         *,
-        repository_data,
-        description=None,
-        metadata=None,
-        repository_load_data=None,
+        repository_data: RepositoryData,
+        description: Optional[str] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._repository_data: RepositoryData = check.inst_param(
-            repository_data, "repository_data", RepositoryData
-        )
+        self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
         self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
@@ -136,7 +134,7 @@ class RepositoryDefinition:
         """Optional[MetadataMapping]: Arbitrary metadata for the repository."""
         return self._metadata
 
-    def load_all_definitions(self):
+    def load_all_definitions(self) -> None:
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
 

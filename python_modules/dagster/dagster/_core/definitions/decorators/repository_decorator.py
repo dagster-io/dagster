@@ -207,7 +207,7 @@ class _Repository:
                 name=self.name,
                 description=self.description,
                 metadata=self.metadata,
-                repository_data=repository_data,
+                repository_data=check.not_none(repository_data),
             )
 
             update_wrapper(repository_def, fn)
