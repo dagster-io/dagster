@@ -118,6 +118,9 @@ const List = styled.ul<ListProps>`
   padding: ${({hasResults}) => (hasResults ? '4px 0' : 'none')};
   list-style: none;
   overflow-y: auto;
+  background-color: ${Colors.backgroundDefault()};
+  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
+  border-radius: 4px;
 `;
 
 interface HighlightableTextProps {
@@ -126,7 +129,8 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.backgroundLight() : 'transparent')};
+  background-color: ${({isHighlight}) =>
+    isHighlight ? Colors.backgroundLight() : Colors.backgroundDefault()};
   box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentLime() : 'transparent')} 4px 0 0
     inset;
   color: ${Colors.textLight()};

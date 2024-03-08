@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {Box, Colors, Heading, Icon, Page, Spinner, TextInput} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, Page, Spinner} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useContext} from 'react';
 import {Link, useParams} from 'react-router-dom';
@@ -19,6 +19,7 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {TagIcon} from '../graph/OpTags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {SearchDialog} from '../search/SearchDialog';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
@@ -242,7 +243,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
       />
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'auto'}}>
         <Box padding={64} flex={{justifyContent: 'center', alignItems: 'center'}}>
-          <Box style={{width: '60%'}} flex={{direction: 'column', gap: 16}}>
+          <Box style={{width: '60%', minWidth: '600px'}} flex={{direction: 'column', gap: 16}}>
             <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
               <Heading>
                 {getGreeting(timezone)}
@@ -253,7 +254,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                 <AssetGlobalLineageButton />
               </Box>
             </Box>
-            <TextInput />
+            <SearchDialog searchPlaceholder="blah" isAssetSearch={true} displayAsOverlay={false} />
           </Box>
         </Box>
         <Box flex={{direction: 'column'}}>
