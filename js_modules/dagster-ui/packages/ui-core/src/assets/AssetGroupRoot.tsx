@@ -63,7 +63,10 @@ export const AssetGroupRoot = ({
 
   const onChangeExplorerPath = useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
-      history[mode](`${groupPath}/${explorerPathToString(path)}`);
+      history[mode]({
+        pathname: `${groupPath}/${explorerPathToString(path)}`,
+        search: history.location.search,
+      });
     },
     [groupPath, history],
   );
