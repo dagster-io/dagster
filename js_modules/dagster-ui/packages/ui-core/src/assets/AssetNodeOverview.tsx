@@ -60,7 +60,7 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
 import {Description} from '../pipelines/Description';
-import {PipelineReference} from '../pipelines/PipelineReference';
+import {PipelineTag} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -234,14 +234,13 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Jobs">
         {visibleJobNames.map((jobName) => (
-          <Tag key={jobName}>
-            <PipelineReference
-              isJob
-              showIcon
-              pipelineName={jobName}
-              pipelineHrefContext={repoAddress}
-            />
-          </Tag>
+          <PipelineTag
+            key={jobName}
+            isJob
+            showIcon
+            pipelineName={jobName}
+            pipelineHrefContext={repoAddress}
+          />
         ))}
       </AttributeAndValue>
       <AttributeAndValue label="Sensors">
@@ -450,16 +449,20 @@ const AttributeAndValue = ({
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
-}) => (
-  <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
-    <Subtitle2>{label}</Subtitle2>
-    <Body2 style={{maxWidth: '100%'}}>
-      <Box flex={{gap: 2}}>
-        {children && !(children instanceof Array && children.length === 0) ? children : <NoValue />}
-      </Box>
-    </Body2>
-  </Box>
-);
+}) => {
+  if (!children || (children instanceof Array && children.length === 0)) {
+    return <span />;
+  }
+
+  return (
+    <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
+      <Subtitle2>{label}</Subtitle2>
+      <Body2 style={{maxWidth: '100%'}}>
+        <Box flex={{gap: 2}}>{children}</Box>
+      </Body2>
+    </Box>
+  );
+};
 
 const NoValue = () => <Body2 color={Colors.textLighter()}>–</Body2>;
 
