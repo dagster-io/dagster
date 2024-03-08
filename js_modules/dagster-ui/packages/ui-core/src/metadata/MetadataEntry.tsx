@@ -167,6 +167,8 @@ export const MetadataEntry = ({
       );
     case 'FloatMetadataEntry':
       return <>{entry.floatValue}</>;
+    case 'TimestampMetadataEntry':
+      return <>{entry.timestamp}</>;
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
     case 'BoolMetadataEntry':
@@ -270,6 +272,9 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     }
     ... on FloatMetadataEntry {
       floatValue
+    }
+    ... on TimestampMetadataEntry {
+      timestamp
     }
     ... on IntMetadataEntry {
       intValue

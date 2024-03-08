@@ -417,7 +417,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
         Args:
             value (Union[float, datetime]): The unix timestamp value for a metadata entry. If a
-                datetime is provided, the timestamp will be extracted. datetimes without timestamps
+                datetime is provided, the timestamp will be extracted. datetimes without timezones
                 are not accepted, because their timestamps can be ambiguous.
         """
         if isinstance(value, float):
