@@ -1,4 +1,4 @@
-import {Colors, Icon, IconName} from '@dagster-io/ui-components';
+import {Colors, Icon, IconName, StyledTag} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -38,6 +38,51 @@ interface ItemProps {
   result: Fuse.FuseResult<SearchResult>;
 }
 
+function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] {
+  const labelComponents = [];
+  let parsedString = '';
+  // Match indices can overlap, i.e. [0, 4] and [1, 1] can both be matches
+  // So we merge them to be non-overlapping
+  const mergedIndices: Fuse.RangeTuple[] = [];
+
+  if (result.matches && result.matches.length > 0) {
+    const match = result.matches[0]!; // Only one match per row, since we only match by label
+
+    // The indices should be returned in sorted order, but we sort just in case
+    const sortedIndices = Array.from(match.indices).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+    if (sortedIndices.length > 0) {
+      mergedIndices.push(sortedIndices[0]!);
+
+      for (let i = 1; i < sortedIndices.length; i++) {
+        const last = mergedIndices[mergedIndices.length - 1]!;
+        const current = sortedIndices[i]!;
+
+        if (current[0] <= last[1]) {
+          last[1] = Math.max(last[1], current[1]);
+        } else {
+          mergedIndices.push(current);
+        }
+      }
+    }
+  }
+
+  mergedIndices.forEach((indices) => {
+    const stringBeforeMatch = result.item.label.slice(parsedString.length, indices[0]);
+    labelComponents.push(<SearchResultLabel>{stringBeforeMatch}</SearchResultLabel>);
+    parsedString += stringBeforeMatch;
+
+    const match = result.item.label.slice(indices[0], indices[1] + 1);
+    labelComponents.push(<SearchResultBoldedLabel>{match}</SearchResultBoldedLabel>);
+    parsedString += match;
+  });
+
+  const stringAfterMatch = result.item.label.substring(parsedString.length);
+  labelComponents.push(<SearchResultLabel>{stringAfterMatch}</SearchResultLabel>);
+  parsedString += stringAfterMatch;
+
+  return labelComponents;
+}
+
 const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
@@ -58,15 +103,23 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
     [onClickResult, result],
   );
 
+  const labelComponents = buildSearchLabel(result);
+
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <Icon
-          name={iconForType(item.type)}
-          color={isHighlight ? Colors.textDefault() : Colors.textLight()}
-        />
+        <StyledTag
+          $fillColor={Colors.backgroundGray()}
+          $interactive={false}
+          $textColor={Colors.textDefault()}
+        >
+          <Icon
+            name={iconForType(item.type)}
+            color={isHighlight ? Colors.textDefault() : Colors.textLight()}
+          />
+          {labelComponents.map((component) => component)}
+        </StyledTag>
         <div style={{marginLeft: '12px'}}>
-          <Label isHighlight={isHighlight}>{item.label}</Label>
           <Description isHighlight={isHighlight}>{item.description}</Description>
         </div>
       </ResultLink>
@@ -79,17 +132,18 @@ interface Props {
   onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
   queryString: string;
   results: Fuse.FuseResult<SearchResult>[];
+  filterResults: Fuse.FuseResult<SearchResult>[];
 }
 
 export const SearchResults = (props: Props) => {
-  const {highlight, onClickResult, queryString, results} = props;
+  const {highlight, onClickResult, queryString, results, filterResults} = props;
 
-  if (!results.length && queryString) {
+  if (!results.length && !filterResults.length && queryString) {
     return <NoResults>No results</NoResults>;
   }
 
   return (
-    <List hasResults={!!results.length}>
+    <List hasResults={!!results.length || !!filterResults.length}>
       {results.map((result, ii) => (
         <SearchResultItem
           key={result.item.href}
@@ -98,6 +152,21 @@ export const SearchResults = (props: Props) => {
           onClickResult={onClickResult}
         />
       ))}
+      {filterResults.length > 0 ? (
+        <>
+          <MatchingFiltersHeader>Matching filters</MatchingFiltersHeader>
+          {filterResults.map((result, ii) => (
+            <SearchResultItem
+              key={result.item.href}
+              isHighlight={highlight === ii + results.length}
+              result={result}
+              onClickResult={onClickResult}
+            />
+          ))}
+        </>
+      ) : (
+        <></>
+      )}
     </List>
   );
 };
@@ -126,6 +195,22 @@ const List = styled.ul<ListProps>`
 interface HighlightableTextProps {
   readonly isHighlight: boolean;
 }
+
+const MatchingFiltersHeader = styled.li`
+  background-color: ${Colors.backgroundDefault()};
+  padding: 8px 12px;
+  border-bottom: 1px solid ${Colors.backgroundGray()};
+  color: ${Colors.textLight()};
+  font-weight: 500;
+`;
+
+const SearchResultBoldedLabel = styled.span`
+  font-weight: 800;
+`;
+
+const SearchResultLabel = styled.span`
+  font-weight: 300;
+`;
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
@@ -157,11 +242,6 @@ const ResultLink = styled(Link)`
   &:hover {
     text-decoration: none;
   }
-`;
-
-const Label = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? Colors.textDefault() : Colors.textLight())};
-  font-weight: 500;
 `;
 
 const Description = styled.div<HighlightableTextProps>`
