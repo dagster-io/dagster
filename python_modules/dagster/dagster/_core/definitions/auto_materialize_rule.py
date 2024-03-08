@@ -3,13 +3,11 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Dict,
     Iterable,
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
 )
 
@@ -17,6 +15,11 @@ import pytz
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.asset_graph_view.cron import (
+    MissedTicksEvaluationData,
+    get_missed_ticks,
+    get_new_asset_partitions_to_request,
+)
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
@@ -28,11 +31,9 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
-    get_time_partitions_def,
 )
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
@@ -40,7 +41,6 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 from dagster._utils.schedules import (
-    cron_string_iterator,
     is_valid_cron_string,
     reverse_cron_string_iterator,
 )
@@ -290,105 +290,48 @@ class MaterializeOnCronRule(
     def description(self) -> str:
         return f"not materialized since last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
 
-    def missed_cron_ticks(
-        self, context: AssetConditionEvaluationContext
-    ) -> Sequence[datetime.datetime]:
-        """Returns the cron ticks which have been missed since the previous cursor was generated."""
-        # if it's the first time evaluating this rule, then just count the latest tick as missed
-        if not context.previous_evaluation or not context.previous_evaluation_timestamp:
-            previous_dt = next(
-                reverse_cron_string_iterator(
-                    end_timestamp=context.evaluation_time.timestamp(),
-                    cron_string=self.cron_schedule,
-                    execution_timezone=self.timezone,
-                )
-            )
-            return [previous_dt]
-        missed_ticks = []
-        for dt in cron_string_iterator(
-            start_timestamp=context.previous_evaluation_timestamp,
-            cron_string=self.cron_schedule,
-            execution_timezone=self.timezone,
-        ):
-            if dt > context.evaluation_time:
-                break
-            missed_ticks.append(dt)
-        return missed_ticks
-
-    def get_new_candidate_asset_partitions(
-        self, context: AssetConditionEvaluationContext, missed_ticks: Sequence[datetime.datetime]
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        if not missed_ticks:
-            return set()
-
-        partitions_def = context.partitions_def
-        if partitions_def is None:
-            return {AssetKeyPartitionKey(context.asset_key)}
-
-        # if all_partitions is set, then just return all partitions if any ticks have been missed
-        if self.all_partitions:
-            return {
-                AssetKeyPartitionKey(context.asset_key, partition_key)
-                for partition_key in partitions_def.get_partition_keys(
-                    current_time=context.evaluation_time,
-                    dynamic_partitions_store=context.instance_queryer,
-                )
-            }
-
-        # for partitions_defs without a time component, just return the last partition if any ticks
-        # have been missed
-        time_partitions_def = get_time_partitions_def(partitions_def)
-        if time_partitions_def is None:
-            return {
-                AssetKeyPartitionKey(
-                    context.asset_key,
-                    partitions_def.get_last_partition_key(
-                        dynamic_partitions_store=context.instance_queryer
-                    ),
-                )
-            }
-
-        missed_time_partition_keys = filter(
-            None,
-            [
-                time_partitions_def.get_last_partition_key(
-                    current_time=missed_tick,
-                    dynamic_partitions_store=context.instance_queryer,
-                )
-                for missed_tick in missed_ticks
-            ],
-        )
-        # for multi partitions definitions, request to materialize all partitions for each missed
-        # cron schedule tick
-        if isinstance(partitions_def, MultiPartitionsDefinition):
-            return {
-                AssetKeyPartitionKey(context.asset_key, partition_key)
-                for time_partition_key in missed_time_partition_keys
-                for partition_key in partitions_def.get_multipartition_keys_with_dimension_value(
-                    partitions_def.time_window_dimension.name,
-                    time_partition_key,
-                    dynamic_partitions_store=context.instance_queryer,
-                )
-            }
-        else:
-            return {
-                AssetKeyPartitionKey(context.asset_key, time_partition_key)
-                for time_partition_key in missed_time_partition_keys
-            }
-
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
         from .asset_condition.asset_condition import AssetConditionResult
 
-        missed_ticks = self.missed_cron_ticks(context)
-        new_asset_partitions = self.get_new_candidate_asset_partitions(context, missed_ticks)
+        # if it's the first time evaluating this rule, then just count the latest tick as missed
+        # by setting start_dt to None
+        start_dt = (
+            datetime.datetime.fromtimestamp(context.previous_evaluation_timestamp)
+            if context.previous_evaluation and context.previous_evaluation_timestamp
+            # None if it is the first tick
+            else None
+        )
+
+        missed_ticks = get_missed_ticks(
+            MissedTicksEvaluationData(
+                cron_schedule=self.cron_schedule,
+                cron_timezone=self.timezone,
+                start_dt=start_dt,
+                end_dt=context.evaluation_time,
+            )
+        )
+
+        new_asset_partitions = (
+            get_new_asset_partitions_to_request(
+                missed_ticks=missed_ticks,
+                asset_key=context.asset_key,
+                partitions_def=context.partitions_def,
+                dynamic_partitions_store=context.instance_queryer,
+                all_partitions=self.all_partitions,
+                end_dt=context.evaluation_time,
+            )
+            if missed_ticks
+            else set()
+        )
 
         # if it's the first time evaluating this rule, must query for the actual subset that has
         # been materialized since the previous cron tick, as materializations may have happened
         # before the previous evaluation, which
         # `context.materialized_requested_or_discarded_since_previous_tick_subset` would not capture
         if context.previous_evaluation is None:
+            check.invariant(missed_ticks, "Assuming at least one missed tick on first evaluation")
             new_asset_partitions -= context.instance_queryer.get_asset_subset_updated_after_time(
                 asset_key=context.asset_key, after_time=missed_ticks[-1]
             ).asset_partitions
