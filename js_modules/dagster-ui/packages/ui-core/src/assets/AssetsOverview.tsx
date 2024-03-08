@@ -49,11 +49,27 @@ type CountPerCodeLocation = {
   assetCount: number;
 };
 
-function buildAssetCountBySection(assets: AssetTableFragment[]): AssetCountsResult {
+type AssetDefinitionMetadata = {
+  definition: {
+    owners: Array<
+      {__typename: 'UserAssetOwner'; email: string} | {__typename: 'TeamAssetOwner'; team: string}
+    >;
+    computeKind: string | null;
+    groupName: string | null;
+    repository: {
+      name: string;
+      location: {name: string};
+    };
+  } | null;
+};
+
+export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): AssetCountsResult {
   const assetCountByOwner: Record<string, number> = {};
   const assetCountByComputeKind: Record<string, number> = {};
   const assetCountByGroup: Record<string, number> = {};
   const assetCountByCodeLocation: Record<string, number> = {};
+
+  // TODO guard against the query data not containing the above fields?
 
   assets
     .filter((asset) => asset.definition)
