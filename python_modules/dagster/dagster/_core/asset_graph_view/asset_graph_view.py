@@ -72,14 +72,14 @@ class AssetSlice:
     ```
 
     AssetSlice is read-only and tied to a specific AssetGraphView. Therefore
-    we can aggressively cached methods and properties. However different methods
+    we can aggressively use cached methods and properties. However different methods
     have different performance characterics so we have the following conventions:
 
     Naming conventions
     * Properties guaranteed to be fast.
     * Methods prefixed with `get_` do some work in-memory but not hugely expensive.
     * Methods prefixed with `compute_` do potentially expensive work, like compute
-    * partition mappings and query the instance.
+      partition mappings and query the instance.
     * Methods using "materialize" indicate that they fully materialize partition sets
       These can potentially be very expensive if the underlying partition set has
       an in-memory representation that involves large time windows. I.e. if
