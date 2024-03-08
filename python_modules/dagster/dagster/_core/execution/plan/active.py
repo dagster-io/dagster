@@ -270,7 +270,7 @@ class ActiveExecution:
             self._executable.append(key)
             del self._waiting_to_retry[key]
 
-    def sleep_interval(self):
+    def sleep_interval(self) -> float:
         now = time.time()
         intervals = []
         if self._waiting_to_retry:

@@ -10,6 +10,7 @@ from typing import (
 
 from typing_extensions import Self
 
+import dagster._check as check
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -129,11 +130,12 @@ class InstanceConcurrencyContext:
         return True
 
     def interval_to_next_pending_claim_check(self) -> float:
-        if not self._pending_claims:
-            return 0.0
-
+        check.invariant(
+            len(self._pending_timeouts) > 0,
+            "no pending timeouts, check has_pending_claims before calling interval_to_next_pending_claim_check",
+        )
         now = time.time()
-        return min([0, *[ready_at - now for ready_at in self._pending_timeouts.values()]])
+        return min(ready_at - now for ready_at in self._pending_timeouts.values())
 
     def pending_claim_steps(self) -> List[str]:
         return list(self._pending_claims)
