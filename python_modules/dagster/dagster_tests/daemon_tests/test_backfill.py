@@ -50,7 +50,7 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalRepository,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,

@@ -31,12 +31,12 @@ from dagster._serdes import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.code_location import (
+    from dagster._core.instance import DagsterInstance
+    from dagster._core.remote_representation.code_location import (
         CodeLocation,
         GrpcServerCodeLocation,
         InProcessCodeLocation,
     )
-    from dagster._core.instance import DagsterInstance
     from dagster._grpc.client import DagsterGrpcClient
 
 # This is a hard-coded name for the special "in-process" location.
@@ -199,7 +199,7 @@ class InProcessCodeLocationOrigin(
         return {}
 
     def create_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
-        from dagster._core.host_representation.code_location import (
+        from dagster._core.remote_representation.code_location import (
             InProcessCodeLocation,
         )
 
@@ -347,7 +347,7 @@ class GrpcServerCodeLocationOrigin(
         return {key: value for key, value in metadata.items() if value is not None}
 
     def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
-        from dagster._core.host_representation.code_location import (
+        from dagster._core.remote_representation.code_location import (
             GrpcServerCodeLocation,
         )
 
@@ -366,7 +366,7 @@ class GrpcServerCodeLocationOrigin(
         return GrpcServerCodeLocation(self, instance=instance)
 
     def create_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
-        from dagster._core.host_representation.code_location import (
+        from dagster._core.remote_representation.code_location import (
             GrpcServerCodeLocation,
         )
 

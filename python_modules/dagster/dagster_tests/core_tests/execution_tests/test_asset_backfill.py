@@ -55,7 +55,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.host_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.remote_representation.external_data import external_asset_nodes_from_defs
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -523,7 +523,7 @@ def get_asset_graph(
         for key in assets_def.keys
     }
     with patch(
-        "dagster._core.host_representation.external_data.get_builtin_partition_mapping_types"
+        "dagster._core.remote_representation.external_data.get_builtin_partition_mapping_types"
     ) as get_builtin_partition_mapping_types:
         get_builtin_partition_mapping_types.return_value = tuple(
             assets_def.infer_partition_mapping(

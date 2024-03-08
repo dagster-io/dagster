@@ -5,8 +5,8 @@ from unittest import mock
 
 import pytest
 from dagster import file_relative_path
-from dagster._core.host_representation import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._core.host_representation.feature_flags import (
+from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_representation.feature_flags import (
     CodeLocationFeatureFlags,
 )
 from dagster._core.test_utils import environ

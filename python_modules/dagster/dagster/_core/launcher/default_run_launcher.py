@@ -100,7 +100,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         # defer for perf
-        from dagster._core.host_representation.code_location import (
+        from dagster._core.remote_representation.code_location import (
             GrpcServerCodeLocation,
         )
 

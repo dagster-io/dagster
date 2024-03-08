@@ -37,12 +37,12 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.submit_asset_runs import submit_asset_run
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     ExternalSensor,
 )
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.origin import ExternalInstigatorOrigin
-from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

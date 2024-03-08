@@ -37,9 +37,9 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.host_representation.external_data import external_repository_data_from_def
-from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,

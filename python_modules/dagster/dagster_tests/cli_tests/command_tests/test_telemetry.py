@@ -32,9 +32,9 @@ from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.external_data import external_repository_data_from_def
-from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.telemetry import (
     TELEMETRY_STR,

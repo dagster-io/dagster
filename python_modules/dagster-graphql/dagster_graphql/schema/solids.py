@@ -5,9 +5,9 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
-from dagster._core.host_representation import RepresentedJob
-from dagster._core.host_representation.external import ExternalJob
-from dagster._core.host_representation.historical import HistoricalJob
+from dagster._core.remote_representation import RepresentedJob
+from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.dagster_run import RunsFilter

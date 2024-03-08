@@ -50,12 +50,12 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.launcher import RunLauncher
+from dagster._core.remote_representation.origin import (
     ExternalJobOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter

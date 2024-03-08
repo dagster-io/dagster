@@ -56,7 +56,7 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import (
+    from dagster._core.remote_representation.external import (
         ExternalJob,
         ExternalRepository,
         ExternalResource,
@@ -461,7 +461,7 @@ def hash_name(name: str) -> str:
 
 
 def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
-    from dagster._core.host_representation.external_data import (
+    from dagster._core.remote_representation.external_data import (
         ExternalDynamicPartitionsDefinitionData,
         ExternalMultiPartitionsDefinitionData,
     )
@@ -595,7 +595,7 @@ def log_external_repo_stats(
     external_repo: "ExternalRepository",
     external_job: Optional["ExternalJob"] = None,
 ):
-    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
+    from dagster._core.remote_representation.external import ExternalJob, ExternalRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")

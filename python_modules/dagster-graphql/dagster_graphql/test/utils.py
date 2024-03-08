@@ -6,8 +6,8 @@ from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
 import graphene
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget

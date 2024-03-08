@@ -18,10 +18,10 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.external_data import external_repository_data_from_def
-from dagster._core.host_representation.handle import RepositoryHandle
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.origin import (
     ExternalRepositoryOrigin,
     RegisteredCodeLocationOrigin,
 )

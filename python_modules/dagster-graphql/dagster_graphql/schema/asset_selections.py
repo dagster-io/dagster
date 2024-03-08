@@ -1,7 +1,7 @@
 import graphene
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import ExternalRepository
 
 from ..implementation.fetch_assets import get_asset_nodes_by_asset_key
 from .asset_key import GrapheneAssetKey

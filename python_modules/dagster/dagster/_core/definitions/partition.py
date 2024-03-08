@@ -711,7 +711,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         partition_key: str,
         job_name: Optional[str] = None,
     ) -> Mapping[str, str]:
-        from dagster._core.host_representation.external_data import (
+        from dagster._core.remote_representation.external_data import (
             external_partition_set_name_for_job_name,
         )
 

@@ -2,7 +2,7 @@ from typing import Sequence
 
 import dagster._check as check
 import graphene
-from dagster._core.host_representation import ExternalRepositoryOrigin
+from dagster._core.remote_representation import ExternalRepositoryOrigin
 
 from .util import ResolveInfo, non_null_list
 

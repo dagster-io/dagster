@@ -36,14 +36,14 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.remote_representation.origin import (
     ExternalInstigatorOrigin,
     ExternalJobOrigin,
     ExternalPartitionSetOrigin,
     ExternalRepositoryOrigin,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id

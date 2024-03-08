@@ -13,7 +13,7 @@ from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
-from dagster._core.host_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils import utc_datetime_from_timestamp

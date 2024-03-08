@@ -2041,7 +2041,7 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.host_representation.external_data import (
+        from dagster._core.remote_representation.external_data import (
             external_time_window_partitions_definition_from_def,
         )
 
@@ -2203,7 +2203,7 @@ class TimeWindowPartitionsSubset(
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.host_representation.external_data import (
+        from dagster._core.remote_representation.external_data import (
             external_time_window_partitions_definition_from_def,
         )
 

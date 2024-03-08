@@ -130,15 +130,15 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster._core.host_representation import (
+    from dagster._core.launcher import RunLauncher
+    from dagster._core.remote_representation import (
         CodeLocation,
         ExternalJob,
         ExternalJobOrigin,
         ExternalSensor,
         HistoricalJob,
     )
-    from dagster._core.host_representation.external import ExternalSchedule
-    from dagster._core.launcher import RunLauncher
+    from dagster._core.remote_representation.external import ExternalSchedule
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
@@ -1058,7 +1058,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_historical_job(self, snapshot_id: str) -> "HistoricalJob":
-        from dagster._core.host_representation import HistoricalJob
+        from dagster._core.remote_representation import HistoricalJob
 
         snapshot = self._run_storage.get_job_snapshot(snapshot_id)
         parent_snapshot = (
@@ -1472,7 +1472,7 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> DagsterRun:
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.definitions.utils import validate_tags
-        from dagster._core.host_representation.origin import ExternalJobOrigin
+        from dagster._core.remote_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 
         check.str_param(job_name, "job_name")
@@ -1620,7 +1620,7 @@ class DagsterInstance(DynamicPartitionsStore):
             ReexecutionStrategy,
         )
         from dagster._core.execution.plan.state import KnownExecutionState
-        from dagster._core.host_representation import CodeLocation, ExternalJob
+        from dagster._core.remote_representation import CodeLocation, ExternalJob
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)
@@ -2531,7 +2531,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             run_id (str): The id of the run.
         """
-        from dagster._core.host_representation import ExternalJobOrigin
+        from dagster._core.remote_representation import ExternalJobOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)

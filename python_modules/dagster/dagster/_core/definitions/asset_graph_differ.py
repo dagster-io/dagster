@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 import dagster._check as check
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.host_representation import ExternalRepository
+from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 if TYPE_CHECKING:
