@@ -99,9 +99,6 @@ def test_only_partition_keys() -> None:
         {"1", "2"}
     ).compute_partition_keys() == {"1", "2"}
 
-    assert (
-        asset_graph_view_t0.get_asset_slice(up_numbers.key)
-        .only_partition_keys({"4"})
-        .compute_partition_keys()
-        == set()
-    )
+    assert asset_graph_view_t0.get_asset_slice(up_numbers.key).only_partition_keys(
+        {"3"}
+    ).compute_partition_keys() == set(["3"])
