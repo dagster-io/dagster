@@ -1,6 +1,5 @@
 import datetime
 import logging
-import os
 import time
 from collections import defaultdict
 from typing import (
@@ -109,12 +108,12 @@ class AssetDaemonContext:
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
 
-        self._verbose_log_fn = (
-            self._logger.info if os.getenv("ASSET_DAEMON_VERBOSE_LOGS") else self._logger.debug
-        )
-
         # cache data before the tick starts
         self.prefetch()
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -234,7 +233,7 @@ class AssetDaemonContext:
 
             num_checked_assets = num_checked_assets + 1
             start_time = time.time()
-            self._verbose_log_fn(
+            self._logger.debug(
                 "Evaluating asset"
                 f" {asset_key.to_user_string()} ({num_checked_assets}/{num_auto_materialize_asset_keys})"
             )
