@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -12,7 +13,8 @@ from typing import (
 
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.data_version import StaleStatus
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -79,6 +81,22 @@ def _slice_from_subset(asset_graph_view: "AssetGraphView", subset: AssetSubset) 
     return AssetSlice(asset_graph_view, _AssetSliceCompatibleSubset(valid_subset))
 
 
+class SyncStatus(Enum):
+    SYNCED = "SYNCED"
+    UNSYNCED = "UNSYNCED"
+
+    @staticmethod
+    def from_stale_status(stale_status: StaleStatus) -> "SyncStatus":
+        """Convert a StaleStatus to a SyncStatus.
+
+        While this appears to lose information, we are redefining stale to unsynced and it is
+        a binary state, so this reflects that.
+
+        One will still be able to know why a partition is unsynced by looking at the causes API.
+        """
+        return SyncStatus.SYNCED if stale_status == StaleStatus.FRESH else SyncStatus.UNSYNCED
+
+
 class AssetSlice:
     """An asset slice represents a set of partitions for a given asset key. It is
     tied to a particular instance of an AssetGraphView, and is read-only.
@@ -130,6 +148,9 @@ class AssetSlice:
             for akpk in self._compatible_subset.asset_partitions
         }
 
+    def compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        return self._compatible_subset.asset_partitions
+
     @property
     def asset_key(self) -> AssetKey:
         return self._compatible_subset.asset_key
@@ -173,7 +194,6 @@ class AssetSlice:
         tw_partitions_def = self._time_window_partitions_def_in_context()
         check.inst(tw_partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed.")
         assert isinstance(tw_partitions_def, TimeWindowPartitionsDefinition)  # appease type checker
-
         if isinstance(self._compatible_subset.subset_value, TimeWindowPartitionsSubset):
             return self._compatible_subset.subset_value.included_time_windows
         elif isinstance(self._compatible_subset.subset_value, AllPartitionsSubset):
@@ -207,6 +227,17 @@ class AssetSlice:
 
         check.failed(f"Unsupported partitions_def: {self._partitions_def}")
 
+    def only_asset_partitions(
+        self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+    ) -> "AssetSlice":
+        return _slice_from_subset(
+            self._asset_graph_view,
+            self._compatible_subset
+            & AssetSubset.from_asset_partitions_set(
+                self.asset_key, self._partitions_def, asset_partitions
+            ),
+        )
+
     def _time_window_partitions_def_in_context(self) -> Optional[TimeWindowPartitionsDefinition]:
         pd = self._partitions_def
         if isinstance(pd, TimeWindowPartitionsDefinition):
@@ -218,6 +249,17 @@ class AssetSlice:
     @property
     def is_empty(self) -> bool:
         return self._compatible_subset.size == 0
+
+    @cached_method
+    def compute_unsynced(self) -> "AssetSlice":
+        return self._asset_graph_view.compute_unsynced_slice(self)
+
+    @cached_method
+    def compute_sync_statuses(self) -> Mapping[AssetKeyPartitionKey, SyncStatus]:
+        return self._asset_graph_view.compute_sync_statues(self)
+
+    def __repr__(self) -> str:
+        return f"AssetSlice(subset={self._compatible_subset})"
 
 
 class AssetGraphView:
@@ -483,6 +525,25 @@ class AssetGraphView:
                 )
             }
         )
+
+    def compute_unsynced_slice(self, asset_slice: AssetSlice) -> "AssetSlice":
+        return asset_slice.only_asset_partitions(
+            {
+                ak_pk
+                for ak_pk, status in self.compute_sync_statues(asset_slice).items()
+                if status == SyncStatus.UNSYNCED
+            }
+        )
+
+    def compute_sync_statues(
+        self, asset_slice: "AssetSlice"
+    ) -> Mapping[AssetKeyPartitionKey, SyncStatus]:
+        return {
+            ak_pk: SyncStatus.from_stale_status(
+                self._stale_resolver.get_status(asset_slice.asset_key, ak_pk.partition_key)
+            )
+            for ak_pk in asset_slice.compute_asset_partitions()
+        }
 
 
 def _required_tw_partitions_def(
