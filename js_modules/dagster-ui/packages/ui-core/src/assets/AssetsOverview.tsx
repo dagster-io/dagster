@@ -246,7 +246,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                 <AssetGlobalLineageButton />
               </Box>
             </Box>
-            <SearchDialog searchPlaceholder="blah" isAssetSearch={true} displayAsOverlay={false} />
+            <SearchDialog isAssetSearch={true} displayAsOverlay={false} />
           </Box>
         </Box>
         <Box flex={{direction: 'column'}}>
