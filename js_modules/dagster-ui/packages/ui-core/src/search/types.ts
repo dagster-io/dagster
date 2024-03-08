@@ -22,6 +22,7 @@ export type SearchResult = {
   href: string;
   type: SearchResultType;
   tags?: string;
+  numResults?: number;
 };
 
 export type ReadyResponse = {type: 'ready'};

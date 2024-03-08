@@ -130,11 +130,7 @@ export const SearchDialog = ({
         dispatch({
           type: 'complete-secondary',
           queryString: queryStringForResults,
-          results: results.filter(
-            (result) =>
-              result.item.type === SearchResultType.Asset ||
-              result.item.type === SearchResultType.AssetGroup,
-          ),
+          results: results.filter((result) => result.item.type === SearchResultType.Asset), // Only return asset results
         });
       } else {
         dispatch({type: 'complete-secondary', queryString: queryStringForResults, results});

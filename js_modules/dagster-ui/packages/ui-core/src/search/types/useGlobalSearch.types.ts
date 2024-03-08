@@ -76,6 +76,10 @@ export type SearchSecondaryQuery = {
             id: string;
             computeKind: string | null;
             groupName: string | null;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
             repository: {
               __typename: 'Repository';
               id: string;
