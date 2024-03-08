@@ -969,20 +969,29 @@ class PartitionsSubset(ABC, Generic[T_str]):
             )
         )
 
-    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
             return self
+        # Anything | AllPartitionsSubset = AllPartitionsSubset
+        if isinstance(other, AllPartitionsSubset):
+            return other
         return self.with_partition_keys(other.get_partition_keys())
 
-    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
+    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
+            return self.empty_subset()
+        # Anything - AllPartitionsSubset = Empty
+        if isinstance(other, AllPartitionsSubset):
             return self.empty_subset()
         return self.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
         )
 
-    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
+    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
+            return self
+        # Anything & AllPartitionsSubset = Anything
+        if isinstance(other, AllPartitionsSubset):
             return self
         return self.empty_subset().with_partition_keys(
             set(self.get_partition_keys()) & set(other.get_partition_keys())
