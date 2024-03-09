@@ -27,7 +27,7 @@ import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import validate_and_normalize_tags
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterUserCodeUnreachableError,
@@ -926,7 +926,10 @@ def _create_scheduler_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     tags = merge_dicts(
-        validate_tags(external_job.tags, allow_reserved_tags=False) or {},
+        validate_and_normalize_tags(
+            external_job.tags, allow_reserved_tags=False, warn_on_deprecated_tags=False
+        ).tags
+        or {},
         schedule_tags,
     )
 

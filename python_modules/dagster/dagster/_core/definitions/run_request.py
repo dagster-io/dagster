@@ -19,7 +19,7 @@ from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluatio
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import NormalizedTags, validate_and_normalize_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
@@ -165,7 +165,7 @@ class RunRequest(
         cls,
         run_key: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
-        tags: Optional[Mapping[str, Any]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         stale_assets_only: bool = False,
@@ -180,7 +180,7 @@ class RunRequest(
             run_config=check.opt_mapping_param(
                 convert_config_input(run_config), "run_config", key_type=str
             ),
-            tags=validate_tags(check.opt_mapping_param(tags, "tags", key_type=str)),
+            tags=validate_and_normalize_tags(tags).tags,
             job_name=check.opt_str_param(job_name, "job_name"),
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey

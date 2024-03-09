@@ -8,7 +8,7 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import validate_and_normalize_tags
 from dagster._core.instance import IS_AIRFLOW_INGEST_PIPELINE_STR
 
 from dagster_airflow.airflow_dag_converter import get_graph_definition_args
@@ -77,7 +77,7 @@ def make_dagster_job_from_airflow_dag(
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
         mutated_tags[IS_AIRFLOW_INGEST_PIPELINE_STR] = "true"
 
-    mutated_tags = validate_tags(mutated_tags)
+    mutated_tags = validate_and_normalize_tags(mutated_tags)
 
     node_dependencies, node_defs = get_graph_definition_args(dag=dag)
 

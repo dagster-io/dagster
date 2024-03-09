@@ -1,8 +1,9 @@
 import keyword
 import os
 import re
+import warnings
 from glob import glob
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 import yaml
 
@@ -91,10 +92,27 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return f"{name}({props_str})"
 
 
-def validate_tags(
-    tags: Optional[Mapping[str, Any]], allow_reserved_tags: bool = True
-) -> Mapping[str, str]:
+class NormalizedTags(NamedTuple):
+    tags: Mapping[str, str]
+
+    def with_normalized_tags(self, normalized_tags: "NormalizedTags") -> "NormalizedTags":
+        return NormalizedTags({**self.tags, **normalized_tags.tags})
+
+
+def validate_tags() -> int: ...
+
+
+def validate_and_normalize_tags(
+    tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
+    allow_reserved_tags: bool = True,
+    warn_on_deprecated_tags: bool = True,
+    warning_stacklevel: int = 4,
+) -> NormalizedTags:
+    if isinstance(tags, NormalizedTags):
+        return tags
+
     valid_tags: Dict[str, str] = {}
+    invalid_tag_keys = []
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):
             valid = False
@@ -118,16 +136,33 @@ def validate_tags(
         else:
             valid_tags[key] = value
 
+        if not is_valid_definition_tag_key(key):
+            invalid_tag_keys.append(key)
+
+    if invalid_tag_keys:
+        invalid_tag_keys_sample = invalid_tag_keys[: min(5, len(invalid_tag_keys))]
+        if warn_on_deprecated_tags:
+            warnings.warn(
+                f"Non-compliant tag keys like {invalid_tag_keys_sample} are deprecated. {VALID_DEFINITION_TAG_KEY_EXPLANATION}",
+                category=DeprecationWarning,
+                stacklevel=warning_stacklevel,
+            )
+
     if not allow_reserved_tags:
         check_reserved_tags(valid_tags)
 
-    return valid_tags
+    return NormalizedTags(valid_tags)
 
 
 # Inspired by allowed Kubernetes labels:
 # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
 VALID_DEFINITION_TAG_KEY_REGEX_STR = r"^([A-Za-z0-9_.-]{1,63}/)?[A-Za-z0-9_.-]{1,63}$"
 VALID_DEFINITION_TAG_KEY_REGEX = re.compile(VALID_DEFINITION_TAG_KEY_REGEX_STR)
+VALID_DEFINITION_TAG_KEY_EXPLANATION = (
+    "Allowed characters: alpha-numeric, '_', '-', '.'. "
+    "Tag keys can also contain a namespace section, separated by a '/'. Each section "
+    "must have <= 63 characters."
+)
 
 VALID_DEFINITION_TAG_VALUE_REGEX_STR = r"^[A-Za-z0-9_.-]{0,63}$"
 VALID_DEFINITION_TAG_VALUE_REGEX = re.compile(VALID_DEFINITION_TAG_VALUE_REGEX_STR)
@@ -155,9 +190,7 @@ def validate_definition_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapp
 
         if not is_valid_definition_tag_key(key):
             raise DagsterInvalidDefinitionError(
-                f"Invalid tag key: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
-                "Tag keys can also contain a namespace section, separated by a '/'. Each section "
-                "must have <= 63 characters."
+                f"Invalid tag key: {key}. {VALID_DEFINITION_TAG_KEY_EXPLANATION}"
             )
 
         if not is_valid_definition_tag_value(value):
