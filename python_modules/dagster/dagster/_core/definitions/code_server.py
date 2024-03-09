@@ -10,8 +10,9 @@ class CodeServer:
     def __init__(self, code_locations: List["CodeLocation"]):
         self.code_locations = code_locations
 
-    def on_code_server_start(self) -> None:
-        ...
+    # User can override this method to perform any necessary setup when the code server starts
+    def on_code_server_start(self) -> None: ...
+
 
 class CodeLocation(ABC):
     name: str
