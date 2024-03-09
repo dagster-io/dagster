@@ -1192,6 +1192,12 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Sequence[GrapheneMetadataEntry]:
         return list(iterate_metadata_entries(self._external_asset_node.metadata))
 
+    def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        return [
+            GrapheneDefinitionTag(key, value)
+            for key, value in (self._external_asset_node.tags or {}).items()
+        ]
+
     def resolve_op(
         self, _graphene_info: ResolveInfo
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:

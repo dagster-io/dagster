@@ -1195,6 +1195,7 @@ class ExternalAssetNode(
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
             ("metadata", Mapping[str, MetadataValue]),
+            ("tags", Optional[Mapping[str, str]]),
             ("group_name", Optional[str]),
             ("freshness_policy", Optional[FreshnessPolicy]),
             ("is_source", bool),
@@ -1234,6 +1235,7 @@ class ExternalAssetNode(
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         is_source: Optional[bool] = None,
@@ -1313,6 +1315,7 @@ class ExternalAssetNode(
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
             metadata=metadata,
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             group_name=check.opt_str_param(group_name, "group_name"),
             freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
@@ -1586,6 +1589,7 @@ def external_asset_nodes_from_defs(
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, RawMetadataMapping] = dict()
+    tags_by_asset_key: Dict[AssetKey, Mapping[str, str]] = dict()
     auto_materialize_policy_by_asset_key: Dict[AssetKey, AutoMaterializePolicy] = dict()
     backfill_policy_by_asset_key: Dict[AssetKey, Optional[BackfillPolicy]] = dict()
 
@@ -1645,6 +1649,7 @@ def external_asset_nodes_from_defs(
 
         for assets_def in [ad for ad in asset_layer.assets_defs if ad.is_executable]:
             metadata_by_asset_key.update(assets_def.metadata_by_key)
+            tags_by_asset_key.update(assets_def.tags_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
             auto_materialize_policy_by_asset_key.update(assets_def.auto_materialize_policies_by_key)
             backfill_policy_by_asset_key.update(
@@ -1723,6 +1728,7 @@ def external_asset_nodes_from_defs(
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 metadata=asset_metadata,
+                tags=tags_by_asset_key.get(asset_key),
                 is_source=execution_types_by_asset_key.get(asset_key)
                 != AssetExecutionType.MATERIALIZATION,
                 is_observable=is_observable_by_key.get(asset_key, False),

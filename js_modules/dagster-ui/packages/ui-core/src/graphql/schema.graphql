@@ -675,6 +675,7 @@ type AssetNode {
   assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
+  tags: [DefinitionTag!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
@@ -827,6 +828,11 @@ type PartitionStats {
   numPartitions: Int!
   numFailed: Int!
   numMaterializing: Int!
+}
+
+type DefinitionTag {
+  key: String!
+  value: String!
 }
 
 type PartitionDefinition {

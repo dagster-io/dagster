@@ -473,6 +473,7 @@ export type AssetNode = {
   staleCausesByPartition: Maybe<Array<Array<StaleCause>>>;
   staleStatus: Maybe<StaleStatus>;
   staleStatusByPartition: Array<StaleStatus>;
+  tags: Array<DefinitionTag>;
   targetingInstigators: Array<Instigator>;
   type: Maybe<ListDagsterType | NullableDagsterType | RegularDagsterType>;
 };
@@ -1074,6 +1075,12 @@ export type DefaultPartitionStatuses = {
   materializedPartitions: Array<Scalars['String']['output']>;
   materializingPartitions: Array<Scalars['String']['output']>;
   unmaterializedPartitions: Array<Scalars['String']['output']>;
+};
+
+export type DefinitionTag = {
+  __typename: 'DefinitionTag';
+  key: Scalars['String']['output'];
+  value: Scalars['String']['output'];
 };
 
 export type DeletePipelineRunResult =
@@ -6292,6 +6299,7 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('staleStatusByPartition')
         ? overrides.staleStatusByPartition!
         : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     targetingInstigators:
       overrides && overrides.hasOwnProperty('targetingInstigators')
         ? overrides.targetingInstigators!
@@ -7158,6 +7166,19 @@ export const buildDefaultPartitionStatuses = (
       overrides && overrides.hasOwnProperty('unmaterializedPartitions')
         ? overrides.unmaterializedPartitions!
         : [],
+  };
+};
+
+export const buildDefinitionTag = (
+  overrides?: Partial<DefinitionTag>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DefinitionTag'} & DefinitionTag => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefinitionTag');
+  return {
+    __typename: 'DefinitionTag',
+    key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'itaque',
+    value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'consequatur',
   };
 };
 

@@ -335,6 +335,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     jobNames
     isSource
     isExecutable
+    tags {
+      key
+      value
+    }
     owners {
       __typename
       ... on TeamAssetOwner {
