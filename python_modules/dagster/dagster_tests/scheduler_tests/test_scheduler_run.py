@@ -1887,7 +1887,23 @@ class TestSchedulerRun:
         with pendulum_freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
+        expected_schedule_time = freeze_datetime
+        freeze_datetime = freeze_datetime.add(seconds=2)
+
+        with pendulum_freeze_time(freeze_datetime):
+            iteration_times = evaluate_schedules(
+                workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1
+            )
+
+            assert len(iteration_times) == 1
+            assert (
+                iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                == expected_schedule_time.timestamp()
+            )
+            assert (
+                iteration_times[external_schedule.selector_id].last_iteration_timestamp
+                == expected_schedule_time.timestamp()
+            )
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1898,14 +1914,30 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                freeze_datetime,
+                expected_schedule_time,
                 TickStatus.FAILURE,
                 [],
                 f"Error occurred during the evaluation of schedule {schedule_name}",
                 expected_failure_count=1,
             )
 
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
+            new_iteration_times = evaluate_schedules(
+                workspace_context,
+                executor,
+                pendulum.now("UTC"),
+                max_tick_retries=1,
+                iteration_times=iteration_times,
+            )
+
+            assert len(new_iteration_times) == 1
+            assert (
+                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                > freeze_datetime.timestamp()
+            )
+            assert (
+                new_iteration_times[external_schedule.selector_id].last_iteration_timestamp
+                == freeze_datetime.timestamp()
+            )
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -1916,13 +1948,14 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                freeze_datetime,
+                expected_schedule_time,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
                 expected_failure_count=1,
             )
 
         freeze_datetime = freeze_datetime.add(days=1)
+        expected_schedule_time = expected_schedule_time.add(days=1)
         with pendulum_freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
 
@@ -1935,7 +1968,7 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                freeze_datetime,
+                expected_schedule_time,
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
                 expected_failure_count=0,
