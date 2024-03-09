@@ -648,8 +648,8 @@ def launch_scheduled_runs_for_schedule_iterator(
                 # Plan to run the same tick again right away
                 yield ScheduleIterationTimes(
                     cron_schedule=external_schedule.cron_schedule,
-                    next_iteration_timestamp=now_timestamp,
-                    last_iteration_timestamp=now_timestamp,
+                    next_iteration_timestamp=schedule_time.timestamp(),
+                    last_iteration_timestamp=schedule_time.timestamp(),
                 )
                 return
 
