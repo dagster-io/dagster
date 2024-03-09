@@ -1,6 +1,8 @@
 # from typing import Iterable
+from typing import Mapping
+
 from dagster import Definitions, asset
-from dagster._core.definitions.code_server import CodeLocation, CodeServer  # , ICodeServer
+from dagster._core.definitions.code_server import CodeLocation, MultiDefinitionsCodeLocation
 
 
 @asset
@@ -9,10 +11,13 @@ def an_asset_a() -> None:
 
 
 class ACodeLocation(CodeLocation):
-    name = "a_code_location"
-
+    # could put metadata here
+    # team = "some team name"
     def load_definitions(self) -> Definitions:
         return Definitions([an_asset_a])
+
+
+code_location = ACodeLocation()
 
 
 @asset
@@ -20,14 +25,12 @@ def an_asset_b() -> None:
     pass
 
 
-class BCodeLocation(CodeLocation):
-    name = "b_code_location"
-
-    def load_definitions(self) -> Definitions:
-        return Definitions([an_asset_b])
+class ABCodeLocation(MultiDefinitionsCodeLocation):
+    def load_definitions_dict(self) -> Mapping[str, Definitions]:
+        return {"a_defs": Definitions([an_asset_a]), "b_defs": Definitions([an_asset_b])}
 
 
-code_server = CodeServer(code_locations=[ACodeLocation(), BCodeLocation()])
+code_location = ABCodeLocation()
 
 # class CustomCodeServer(ICodeServer):
 #     def load_code_locations(self) -> Iterable[CodeLocation]:
