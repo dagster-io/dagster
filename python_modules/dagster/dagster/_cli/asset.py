@@ -7,12 +7,12 @@ from dagster._cli.workspace.cli_target import (
     get_repository_python_origin_from_kwargs,
     python_origin_target_argument,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.selector.subset_selector import parse_asset_selection
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import (
     recon_job_from_origin,
@@ -47,10 +47,8 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_def = recon_repo.get_definition()
 
-    asset_keys = parse_asset_selection(
-        assets_defs=list(repo_def.asset_graph.assets_defs),
-        asset_selection=kwargs["select"].split(","),
-    )
+    asset_selection = AssetSelection.from_coercible(kwargs["select"].split(","))
+    asset_keys = asset_selection.resolve(repo_def.asset_graph)
 
     implicit_job_def = repo_def.get_implicit_job_def_for_assets(asset_keys)
     # If we can't find an implicit job with all the given assets, it's because they couldn't be
@@ -94,17 +92,11 @@ def asset_list_command(**kwargs):
 
     select = kwargs.get("select")
     if select is not None:
-        asset_keys = parse_asset_selection(
-            assets_defs=list(repo_def.asset_graph.assets_defs),
-            asset_selection=select.split(","),
-            raise_on_clause_has_no_matches=False,
-        )
+        asset_selection = AssetSelection.from_coercible(kwargs["select"].split(","))
     else:
-        asset_keys = [
-            asset_key
-            for assets_def in repo_def.asset_graph.assets_defs
-            for asset_key in assets_def.keys
-        ]
+        asset_selection = AssetSelection.all()
+
+    asset_keys = asset_selection.resolve(repo_def.asset_graph, allow_missing=True)
 
     for asset_key in sorted(asset_keys):
         print(asset_key.to_user_string())  # noqa: T201

@@ -70,7 +70,9 @@ class DbtManifestAssetSelection(
             exclude=check.opt_str_param(exclude, "exclude", default=""),
         )
 
-    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing=False
+    ) -> AbstractSet[AssetKey]:
         dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
 
         keys = set()
