@@ -122,12 +122,14 @@ class AssetSlice:
     * Methods prefixed with `get_` do some work in-memory but not hugely expensive.
     * Methods prefixed with `compute_` do potentially expensive work, like compute
       partition mappings and query the instance.
-    * Methods using "materialize" indicate that they fully materialize partition sets
+
+      We also use this prefix to indicate that they fully materialize partition sets
       These can potentially be very expensive if the underlying partition set has
-      an in-memory representation that involves large time windows. I.e. if
-      the underlying PartitionsSubset in the ValidAssetSubset is a TimeWindowPartitionsSubset
-      Usage of these methods should be avoided if possible if you are potentially
-      dealing with slices with large time-based partition windows.
+      an in-memory representation that involves large time windows. I.e. if the
+      underlying PartitionsSubset in the ValidAssetSubset is a
+      TimeWindowPartitionsSubset Usage of these methods should be avoided if
+      possible if you are potentially dealing with slices with large time-based
+      partition windows.
     """
 
     def __init__(
