@@ -42,6 +42,8 @@ class TemporalContext(NamedTuple):
 class _AssetSliceCompatibleSubset(ValidAssetSubset): ...
 
 
+DEFAULT_PARTITION_KEY = "__default__"
+
 PartitionKey = NewType("PartitionKey", str)
 """
 PartitionKey is a string that represents a partition key. It is a new type so
@@ -54,6 +56,14 @@ the "all" partition key for unpartitioned assets.
 """
 
 
+def _to_partiton_key(partition_key: Optional[str]) -> PartitionKey:
+    return PartitionKey(partition_key) if partition_key else PartitionKey(DEFAULT_PARTITION_KEY)
+
+
+def _to_asset_partition_key(ak_pk: AssetKeyPartitionKey) -> "AssetPartitionKey":
+    return AssetPartitionKey(ak_pk.asset_key, _to_partiton_key(ak_pk.partition_key))
+
+
 class AssetPartitionKey(NamedTuple):
     """Represents a a partition in a particular asset. Prefer usage to AssetKeyPartitionKey.
     If you need to convert AssetKeyPartitionKeys to AssetPartitionKeys, use the static
@@ -61,7 +71,7 @@ class AssetPartitionKey(NamedTuple):
     """
 
     asset_key: AssetKey
-    partition_key: Optional[PartitionKey]
+    partition_key: PartitionKey
 
     @staticmethod
     def partition_keys_from_asset_key_partition_keys(
@@ -82,12 +92,7 @@ class AssetPartitionKey(NamedTuple):
     def from_asset_key_partition_keys(
         asset_key_partition_keys: Iterable[AssetKeyPartitionKey],
     ) -> AbstractSet["AssetPartitionKey"]:
-        return {
-            AssetPartitionKey(
-                akpk.asset_key, PartitionKey(akpk.partition_key) if akpk.partition_key else None
-            )
-            for akpk in asset_key_partition_keys
-        }
+        return {_to_asset_partition_key(akpk) for akpk in asset_key_partition_keys}
 
 
 def _slice_from_subset(asset_graph_view: "AssetGraphView", subset: AssetSubset) -> "AssetSlice":
@@ -142,9 +147,17 @@ class AssetSlice:
         return self._compatible_subset
 
     def compute_partition_keys(self) -> AbstractSet[PartitionKey]:
-        return AssetPartitionKey.partition_keys_from_asset_key_partition_keys(
-            self._compatible_subset.asset_partitions
-        )
+        if not self._compatible_subset.is_partitioned:
+            return (
+                {PartitionKey(DEFAULT_PARTITION_KEY)}
+                if self._compatible_subset.bool_value
+                else set()
+            )
+        else:
+            return {
+                PartitionKey(partition_key)
+                for partition_key in self._compatible_subset.subset_value.get_partition_keys()
+            }
 
     @property
     def asset_key(self) -> AssetKey:
@@ -190,13 +203,10 @@ class AssetSlice:
         return _slice_from_subset(
             self._asset_graph_view,
             self._compatible_subset
-            & AssetSubset.from_asset_partitions_set(
-                self.asset_key,
-                partitions_def,
-                {
-                    AssetKeyPartitionKey(self.asset_key, partition_key)
-                    for partition_key in partition_keys
-                },
+            & AssetSubset.from_partition_keys(
+                asset_key=self.asset_key,
+                partitions_def=partitions_def,
+                partition_keys=partition_keys,
             ),
         )
 

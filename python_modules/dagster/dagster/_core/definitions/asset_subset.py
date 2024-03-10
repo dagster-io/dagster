@@ -150,16 +150,22 @@ class AssetSubset(NamedTuple):
         if partitions_def is None:
             return ValidAssetSubset(asset_key=asset_key, value=bool(asset_partitions_set))
         else:
-            return ValidAssetSubset(
+            return AssetSubset.from_partition_keys(
                 asset_key=asset_key,
-                value=partitions_def.subset_with_partition_keys(
-                    {
-                        ap.partition_key
-                        for ap in asset_partitions_set
-                        if ap.partition_key is not None
-                    }
-                ),
+                partition_keys={
+                    ap.partition_key for ap in asset_partitions_set if ap.partition_key is not None
+                },
+                partitions_def=partitions_def,
             )
+
+    @staticmethod
+    def from_partition_keys(
+        asset_key: AssetKey, partition_keys: AbstractSet[str], partitions_def: PartitionsDefinition
+    ):
+        return ValidAssetSubset(
+            asset_key=asset_key,
+            value=partitions_def.subset_with_partition_keys(partition_keys=partition_keys),
+        )
 
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
         if not self.is_partitioned:
