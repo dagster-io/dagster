@@ -161,12 +161,11 @@ class AssetSubset(NamedTuple):
 
     @staticmethod
     def from_partition_keys(
-        asset_key: AssetKey,
-        partitions_def: PartitionsDefinition,
-        partition_keys: AbstractSet[str],
-    ) -> "ValidAssetSubset":
+        asset_key: AssetKey, partition_keys: AbstractSet[str], partitions_def: PartitionsDefinition
+    ):
         return ValidAssetSubset(
-            asset_key=asset_key, value=partitions_def.subset_with_partition_keys(partition_keys)
+            asset_key=asset_key,
+            value=partitions_def.subset_with_partition_keys(partition_keys=partition_keys),
         )
 
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
