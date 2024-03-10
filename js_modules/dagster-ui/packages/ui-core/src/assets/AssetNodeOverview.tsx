@@ -230,10 +230,11 @@ export const AssetNodeOverview = ({
     </Box>
   );
 
-  const renderAutomationDetailsSection = () => (
-    <Box flex={{direction: 'column', gap: 12}}>
-      <AttributeAndValue label="Jobs">
-        {visibleJobNames.map((jobName) => (
+  const renderAutomationDetailsSection = () => {
+    const attributes = [
+      {
+        label: 'Jobs',
+        children: visibleJobNames.map((jobName) => (
           <PipelineTag
             key={jobName}
             isJob
@@ -241,32 +242,52 @@ export const AssetNodeOverview = ({
             pipelineName={jobName}
             pipelineHrefContext={repoAddress}
           />
-        ))}
-      </AttributeAndValue>
-      <AttributeAndValue label="Sensors">
-        {sensors.length > 0 && (
+        )),
+      },
+      {
+        label: 'Sensors',
+        children: sensors.length > 0 && (
           <ScheduleOrSensorTag repoAddress={repoAddress} sensors={sensors} showSwitch={false} />
-        )}
-      </AttributeAndValue>
-      <AttributeAndValue label="Schedules">
-        {schedules.length > 0 && (
+        ),
+      },
+      {
+        label: 'Schedules',
+        children: schedules.length > 0 && (
           <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
-        )}
-      </AttributeAndValue>
-
-      <AttributeAndValue label="Auto-materialize policy">
-        {assetNode.autoMaterializePolicy && (
+        ),
+      },
+      {
+        label: 'Auto-materialize policy',
+        children: assetNode.autoMaterializePolicy && (
           <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
-        )}
-      </AttributeAndValue>
-
-      <AttributeAndValue label="Freshness policy">
-        {assetNode.freshnessPolicy && (
+        ),
+      },
+      {
+        label: 'Freshness policy',
+        children: assetNode.freshnessPolicy && (
           <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
-        )}
-      </AttributeAndValue>
-    </Box>
-  );
+        ),
+      },
+    ];
+
+    if (attributes.every((props) => isEmptyChildren(props.children))) {
+      return (
+        <SectionEmptyState
+          title="No automations found for this asset"
+          description="Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers."
+          learnMoreLink="https://docs.dagster.io/concepts/automation#automation"
+        />
+      );
+    }
+
+    return (
+      <Box flex={{direction: 'column', gap: 12}}>
+        {attributes.map((props) => (
+          <AttributeAndValue key={props.label} {...props} />
+        ))}
+      </Box>
+    );
+  };
 
   const renderComputeDetailsSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -443,6 +464,9 @@ const AssetNodeOverviewContainer = ({
   </Box>
 );
 
+const isEmptyChildren = (children: React.ReactNode) =>
+  !children || (children instanceof Array && children.length === 0);
+
 const AttributeAndValue = ({
   label,
   children,
@@ -450,8 +474,8 @@ const AttributeAndValue = ({
   label: React.ReactNode;
   children: React.ReactNode;
 }) => {
-  if (!children || (children instanceof Array && children.length === 0)) {
-    return <span />;
+  if (isEmptyChildren(children)) {
+    return null;
   }
 
   return (
