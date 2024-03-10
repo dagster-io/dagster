@@ -65,12 +65,12 @@ def _to_asset_partition_key(ak_pk: AssetKeyPartitionKey) -> "AssetPartitionKey":
 
 
 def _check_partition_key_str_set(
-    partition_keys: AbstractSet[str], partitions_def: "PartitionsDefinition"
+    str_partition_keys: AbstractSet[str], partitions_def: "PartitionsDefinition"
 ) -> AbstractSet[PartitionKey]:
-    for partition_key in partition_keys:
+    for partition_key in str_partition_keys:
         if not partitions_def.has_partition_key(partition_key):
             check.failed(f"Partition key {partition_key} not in partitions def {partitions_def}")
-    return {PartitionKey(pk) for pk in partition_keys}
+    return {PartitionKey(pk) for pk in str_partition_keys}
 
 
 class AssetPartitionKey(NamedTuple):
