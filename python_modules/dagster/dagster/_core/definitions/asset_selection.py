@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental_param, public
+from dagster._annotations import deprecated, experimental, experimental_param, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
@@ -383,6 +383,10 @@ class AssetSelection(ABC, BaseModel, frozen=True):
                 selection = key_selection
             return selection
 
+        elif string.startswith("tag:"):
+            tag_str = string[len("tag:") :]
+            return cls.tag_string(tag_str)
+
         check.failed(f"Invalid selection string: {string}")
 
     @classmethod
@@ -417,6 +421,17 @@ class AssetSelection(ABC, BaseModel, frozen=True):
                 " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
                 f" {type(selection)}."
             )
+
+    @public
+    @staticmethod
+    @experimental
+    def tag(cls, key: str, value: str) -> "AssetSelection":
+        return TagAssetSelection(key=key, value=value)
+
+    @classmethod
+    def tag_string(cls, string: str) -> "AssetSelection":
+        key, value = string.split("=")
+        return TagAssetSelection(key=key, value=value)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return AssetSelection.keys(*self.resolve(asset_graph))
@@ -909,3 +924,16 @@ class ParentSourcesAssetSelection(
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
+
+
+@whitelist_for_serdes
+class TagAssetSelection(AssetSelection, frozen=True):
+    key: str
+    value: str
+
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        return {
+            key
+            for key in asset_graph.materializable_asset_keys
+            if asset_graph.get(key).tags.get(self.key) == self.value
+        }

@@ -67,6 +67,10 @@ class AssetNode(BaseAssetNode):
         return self.assets_def.metadata_by_key.get(self.key, {})
 
     @property
+    def tags(self) -> Mapping[str, str]:
+        return self.assets_def.tags_by_key.get(self.key, {})
+
+    @property
     def is_partitioned(self) -> bool:
         return self.assets_def.partitions_def is not None
 
