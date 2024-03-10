@@ -19,7 +19,7 @@ from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluatio
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.utils import NormalizedTags, validate_and_normalize_tags
+from dagster._core.definitions.utils import NormalizedTags, normalize_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
@@ -180,7 +180,7 @@ class RunRequest(
             run_config=check.opt_mapping_param(
                 convert_config_input(run_config), "run_config", key_type=str
             ),
-            tags=validate_and_normalize_tags(tags).tags,
+            tags=normalize_tags(tags).tags,
             job_name=check.opt_str_param(job_name, "job_name"),
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey

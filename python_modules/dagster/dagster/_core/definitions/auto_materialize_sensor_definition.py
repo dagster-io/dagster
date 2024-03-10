@@ -5,7 +5,7 @@ from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 
 from .asset_selection import AssetSelection
 from .sensor_definition import DefaultSensorStatus, SensorDefinition, SensorType
-from .utils import check_valid_name, validate_and_normalize_tags
+from .utils import check_valid_name, normalize_tags
 
 
 @experimental
@@ -36,7 +36,7 @@ class AutoMaterializeSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
     ):
-        self._run_tags = validate_and_normalize_tags(run_tags).tags
+        self._run_tags = normalize_tags(run_tags).tags
 
         def evaluation_fn(context):
             raise NotImplementedError(

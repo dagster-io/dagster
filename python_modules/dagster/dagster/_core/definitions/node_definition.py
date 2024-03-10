@@ -17,7 +17,7 @@ from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvariantViolationError
 
 from .hook_definition import HookDefinition
-from .utils import NormalizedTags, check_valid_name, validate_and_normalize_tags
+from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.types.dagster_type import DagsterType
@@ -53,7 +53,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._tags = validate_and_normalize_tags(tags).tags
+        self._tags = normalize_tags(tags).tags
         self._input_defs = input_defs
         self._input_dict = {input_def.name: input_def for input_def in input_defs}
         check.invariant(len(self._input_defs) == len(self._input_dict), "Duplicate input def names")
@@ -204,7 +204,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         return PendingNodeInvocation(
             node_def=self,
             given_alias=given_alias,
-            tags=validate_and_normalize_tags(tags).tags if tags else None,
+            tags=normalize_tags(tags).tags if tags else None,
             hook_defs=hook_defs,
             retry_policy=retry_policy,
         )

@@ -80,7 +80,7 @@ from .metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
-from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, validate_and_normalize_tags
+from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -174,7 +174,7 @@ class JobDefinition(IHasInternalInit):
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
-        self._tags = validate_and_normalize_tags(tags).tags
+        self._tags = normalize_tags(tags).tags
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
         )

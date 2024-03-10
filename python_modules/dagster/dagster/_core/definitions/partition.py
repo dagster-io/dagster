@@ -48,7 +48,7 @@ from ..errors import (
     DagsterUnknownPartitionError,
 )
 from .config import ConfigMapping
-from .utils import validate_and_normalize_tags
+from .utils import normalize_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -726,7 +726,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             user_tags = self._tags_for_partition_key_fn(partition_key)
         else:
             user_tags = {}
-        user_tags = validate_and_normalize_tags(user_tags, allow_reserved_tags=False).tags
+        user_tags = normalize_tags(user_tags, allow_reserved_tags=False).tags
 
         system_tags = {
             **self.partitions_def.get_tags_for_partition_key(partition_key),

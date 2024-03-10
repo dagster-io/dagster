@@ -51,7 +51,7 @@ from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
-from .utils import NormalizedTags, check_valid_name, validate_and_normalize_tags
+from .utils import NormalizedTags, check_valid_name, normalize_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -645,7 +645,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation[T_NodeDefinition]":
-        tags = validate_and_normalize_tags(tags).tags
+        tags = normalize_tags(tags).tags
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=self.given_alias,
@@ -701,7 +701,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                 "constructed using the `@graph` decorator support this method."
             )
 
-        tags = validate_and_normalize_tags(tags)
+        tags = normalize_tags(tags)
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
         input_values = check.opt_mapping_param(input_values, "input_values")
         op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)

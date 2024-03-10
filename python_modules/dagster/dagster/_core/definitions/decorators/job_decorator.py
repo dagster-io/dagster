@@ -13,7 +13,7 @@ from ..logger_definition import LoggerDefinition
 from ..metadata import RawMetadataValue
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
-from ..utils import validate_and_normalize_tags
+from ..utils import normalize_tags
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ class _Job:
 
         self.name = name
         self.description = description
-        self.tags = validate_and_normalize_tags(tags, warning_stacklevel=5)
+        self.tags = normalize_tags(tags, warning_stacklevel=5)
         self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = convert_config_input(config)

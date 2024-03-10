@@ -99,15 +99,17 @@ class NormalizedTags(NamedTuple):
         return NormalizedTags({**self.tags, **normalized_tags.tags})
 
 
-def validate_tags() -> int: ...
-
-
-def validate_and_normalize_tags(
+def normalize_tags(
     tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
     allow_reserved_tags: bool = True,
     warn_on_deprecated_tags: bool = True,
     warning_stacklevel: int = 4,
 ) -> NormalizedTags:
+    """Normalizes JSON-object tags into string tags and warns on deprecated tags.
+
+    New tags properties should _not_ use this function, because it doesn't hard error on tags that
+    are no longer supported.
+    """
     if isinstance(tags, NormalizedTags):
         return tags
 
