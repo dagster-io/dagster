@@ -64,6 +64,15 @@ def _to_asset_partition_key(ak_pk: AssetKeyPartitionKey) -> "AssetPartitionKey":
     return AssetPartitionKey(ak_pk.asset_key, _to_partiton_key(ak_pk.partition_key))
 
 
+def _check_partition_key_str_set(
+    partition_keys: AbstractSet[str], partitions_def: "PartitionsDefinition"
+) -> AbstractSet[PartitionKey]:
+    for partition_key in partition_keys:
+        if not partitions_def.has_partition_key(partition_key):
+            check.failed(f"Partition key {partition_key} not in partitions def {partitions_def}")
+    return {PartitionKey(pk) for pk in partition_keys}
+
+
 class AssetPartitionKey(NamedTuple):
     """Represents a a partition in a particular asset. Prefer usage to AssetKeyPartitionKey.
     If you need to convert AssetKeyPartitionKeys to AssetPartitionKeys, use the static
@@ -84,7 +93,7 @@ class AssetPartitionKey(NamedTuple):
 
     @staticmethod
     def from_str_partition_keys(
-        asset_key: AssetKey, partition_keys: Iterable[str]
+        asset_key: AssetKey, partition_keys: Iterable[str], partitions_def: "PartitionsDefinition"
     ) -> AbstractSet["AssetPartitionKey"]:
         return {AssetPartitionKey(asset_key, PartitionKey(pk)) for pk in partition_keys}
 
@@ -191,22 +200,16 @@ class AssetSlice:
     def compute_child_slices(self) -> Mapping[AssetKey, "AssetSlice"]:
         return {ak: self.compute_child_slice(ak) for ak in self.child_keys}
 
-    def only_partition_keys(self, partition_keys: AbstractSet[str]) -> "AssetSlice":
+    def only_str_partition_keys(self, partition_keys: AbstractSet[str]) -> "AssetSlice":
         """Return a new AssetSlice with only the given partition keys if they are in the slice."""
         partitions_def = check.not_none(self._partitions_def, "Must have partitions def")
-        for partition_key in partition_keys:
-            if not partitions_def.has_partition_key(partition_key):
-                check.failed(
-                    f"Partition key {partition_key} not in partitions def {self._partitions_def}"
-                )
-
         return _slice_from_subset(
             self._asset_graph_view,
             self._compatible_subset
             & AssetSubset.from_partition_keys(
                 asset_key=self.asset_key,
                 partitions_def=partitions_def,
-                partition_keys=partition_keys,
+                partition_keys=_check_partition_key_str_set(partition_keys, partitions_def),
             ),
         )
 

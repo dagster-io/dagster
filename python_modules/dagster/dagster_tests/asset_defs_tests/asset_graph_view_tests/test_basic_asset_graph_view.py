@@ -73,12 +73,12 @@ def test_slice_traversal_static_partitions() -> None:
     }
 
     # subset of up to subset of down
-    assert up_slice.only_partition_keys({"2"}).compute_child_slice(
+    assert up_slice.only_str_partition_keys({"2"}).compute_child_slice(
         down_letters.key
     ).compute_partition_keys() == {"b"}
 
     # subset of down to subset of up
-    assert down_slice.only_partition_keys({"b"}).compute_parent_slice(
+    assert down_slice.only_str_partition_keys({"b"}).compute_parent_slice(
         up_numbers.key
     ).compute_partition_keys() == {"2"}
 
@@ -95,10 +95,10 @@ def test_only_partition_keys() -> None:
 
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance)
 
-    assert asset_graph_view_t0.get_asset_slice(up_numbers.key).only_partition_keys(
+    assert asset_graph_view_t0.get_asset_slice(up_numbers.key).only_str_partition_keys(
         {"1", "2"}
     ).compute_partition_keys() == {"1", "2"}
 
-    assert asset_graph_view_t0.get_asset_slice(up_numbers.key).only_partition_keys(
+    assert asset_graph_view_t0.get_asset_slice(up_numbers.key).only_str_partition_keys(
         {"3"}
     ).compute_partition_keys() == set(["3"])
