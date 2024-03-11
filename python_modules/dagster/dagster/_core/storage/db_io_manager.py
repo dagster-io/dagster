@@ -202,8 +202,8 @@ class DbIOManager(IOManager):
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
                     multi_partition_key_mappings = [
-                        partition_key.keys_by_dimension
-                        for partition_key in cast(MultiPartitionKey, context.asset_partition_keys)
+                        cast(MultiPartitionKey, partition_key).keys_by_dimension
+                        for partition_key in context.asset_partition_keys
                     ]
                     for part in context.asset_partitions_def.partitions_defs:
                         partitions = []
