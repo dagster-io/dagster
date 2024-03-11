@@ -237,7 +237,7 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_timestamp',
         timestamp: 1710187280.5,
-      }
+      };
     default:
       return assertUnreachable(type);
   }

@@ -172,6 +172,7 @@ export type AssetChecksQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
                           label: string;
                           description: string | null;
                         }

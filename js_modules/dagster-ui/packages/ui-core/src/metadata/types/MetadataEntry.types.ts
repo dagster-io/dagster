@@ -146,6 +146,7 @@ export type MetadataEntryFragment_TextMetadataEntry = {
 
 export type MetadataEntryFragment_TimestampMetadataEntry = {
   __typename: 'TimestampMetadataEntry';
+  timestamp: number | null;
   label: string;
   description: string | null;
 };
