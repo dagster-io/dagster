@@ -43,6 +43,7 @@ setup(
         "orjson",
         "requests",
         "rich",
+        "sqlglot[rs]",
         "typer>=0.9.0",
         "packaging",
     ],

@@ -17,6 +17,8 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
+    Tuple,
     Union,
     cast,
 )
@@ -27,10 +29,12 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetExecutionContext,
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
+    JsonMetadataValue,
     OpExecutionContext,
     Output,
     get_dagster_logger,
@@ -43,6 +47,13 @@ from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import Field, validator
+from sqlglot import (
+    MappingSchema,
+    exp,
+    parse_one,
+)
+from sqlglot.lineage import lineage
+from sqlglot.optimizer import optimize
 from typing_extensions import Literal
 
 from ..asset_utils import (
@@ -104,12 +115,18 @@ class DbtCliEventMessage:
         """The log level of the event."""
         return self.raw_event["info"]["level"]
 
+    @property
+    def has_column_lineage_metadata(self) -> bool:
+        """Whether the event has column level lineage metadata."""
+        return bool(self._event_history_metadata) and "parents" in self._event_history_metadata
+
     @public
     def to_default_asset_events(
         self,
         manifest: DbtManifestParam,
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
         context: Optional[OpExecutionContext] = None,
+        target_path: Optional[Path] = None,
     ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
@@ -117,6 +134,9 @@ class DbtCliEventMessage:
             manifest (Union[Mapping[str, Any], str, Path]): The dbt manifest blob.
             dagster_dbt_translator (DagsterDbtTranslator): Optionally, a custom translator for
                 linking dbt nodes to Dagster assets.
+            context (Optional[OpExecutionContext]): The execution context.
+            target_path (Optional[Path]): An explicit path to a target folder used to retrieve
+                dbt artifacts while generating events.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
@@ -175,6 +195,16 @@ class DbtCliEventMessage:
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             duration_seconds = (finished_at - started_at).total_seconds()
 
+            lineage_metadata = (
+                self._build_column_lineage_metadata(
+                    manifest=manifest,
+                    dagster_dbt_translator=dagster_dbt_translator,
+                    target_path=target_path,
+                )
+                if target_path
+                else {}
+            )
+
             if has_asset_def:
                 yield Output(
                     value=None,
@@ -183,6 +213,7 @@ class DbtCliEventMessage:
                         **default_metadata,
                         "Execution Duration": duration_seconds,
                         **adapter_response_metadata,
+                        **lineage_metadata,
                     },
                 )
             else:
@@ -195,6 +226,7 @@ class DbtCliEventMessage:
                         **default_metadata,
                         "Execution Duration": duration_seconds,
                         **adapter_response_metadata,
+                        **lineage_metadata,
                     },
                 )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
@@ -285,6 +317,107 @@ class DbtCliEventMessage:
         }
 
         return processed_adapter_response
+
+    def _build_column_lineage_metadata(
+        self,
+        manifest: Mapping[str, Any],
+        dagster_dbt_translator: DagsterDbtTranslator,
+        target_path: Path,
+    ) -> Dict[str, Any]:
+        """Process the lineage metadata for a dbt CLI event.
+
+        Args:
+            manifest (Mapping[str, Any]): The dbt manifest blob.
+            dagster_dbt_translator (DagsterDbtTranslator): The translator for dbt nodes to Dagster assets.
+            target_path (Path): The path to the dbt target folder.
+
+        Returns:
+            Dict[str, Any]: The lineage metadata.
+        """
+        if (
+            # The dbt project name is only available from the manifest in `dbt-core>=1.6`.
+            version.parse(dbt_version) < version.parse("1.6.0")
+            # Column lineage can only be built if initial metadata is provided.
+            or not self.has_column_lineage_metadata
+        ):
+            return {}
+
+        event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
+        unique_id: str = event_node_info["unique_id"]
+        dbt_resource_props: Dict[str, Any] = manifest["nodes"][unique_id]
+
+        # If the unique_id is a seed, then we don't need to process lineage.
+        if unique_id.startswith("seed"):
+            return {}
+
+        # 1. Retrieve the current node's SQL file and its parents' column schemas.
+        sqlglot_mapping_schema = MappingSchema()
+        for relation_name, relation_metadata in self._event_history_metadata["parents"].items():
+            sqlglot_mapping_schema.add_table(
+                table=relation_name,
+                column_mapping={
+                    column_name: column_metadata["data_type"]
+                    for column_name, column_metadata in relation_metadata["columns"].items()
+                },
+            )
+
+        node_sql_path = target_path.joinpath(
+            "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
+        )
+        node_ast = parse_one(sql=node_sql_path.read_text()).expression
+        optimized_node_ast = cast(
+            exp.Query,
+            optimize(
+                node_ast,
+                schema=sqlglot_mapping_schema,
+                validate_qualify_columns=False,  # Don't throw an error if we can't qualify a column without ambiguity.
+            ),
+        )
+
+        # 2. Retrieve the column names from the current node.
+        column_names = cast(exp.Query, optimized_node_ast).named_selects
+
+        # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
+        # TODO: this should be refactored as a Python object that renders the JSON metadata.
+        lineage_metadata: Dict[str, List[Tuple[AssetKey, str]]] = {}
+        for column_name in column_names:
+            dbt_parent_resource_props_by_alias: Dict[str, Dict[str, Any]] = {
+                parent_dbt_resource_props["alias"]: parent_dbt_resource_props
+                for parent_dbt_resource_props in map(
+                    lambda parent_unique_id: manifest["nodes"][parent_unique_id],
+                    dbt_resource_props["depends_on"]["nodes"],
+                )
+            }
+
+            parent_columns: Set[Tuple[AssetKey, str]] = set()
+            for sqlglot_lineage_node in lineage(
+                column=column_name, sql=optimized_node_ast, schema=sqlglot_mapping_schema
+            ).walk():
+                column = sqlglot_lineage_node.expression.find(exp.Column)
+                if column and column.table in dbt_parent_resource_props_by_alias:
+                    parent_resource_props = dbt_parent_resource_props_by_alias[column.table]
+                    parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
+
+                    parent_columns.add((parent_asset_key, column.name))
+
+            lineage_metadata[column_name] = list(parent_columns)
+
+        # 4. Render the lineage as a JSON blob.
+        # TODO: this should just call a method on a Python object that renders the JSON metadata.
+        return {
+            "dagster/column_lineage": JsonMetadataValue(
+                {
+                    column_name: [
+                        {
+                            "upstream_asset_key": parent_asset_key,
+                            "upstream_column_name": parent_column_name,
+                        }
+                        for parent_asset_key, parent_column_name in parent_columns
+                    ]
+                    for column_name, parent_columns in lineage_metadata.items()
+                }
+            )
+        }
 
 
 @dataclass
@@ -456,6 +589,7 @@ class DbtCliInvocation:
                 manifest=self.manifest,
                 dagster_dbt_translator=self.dagster_dbt_translator,
                 context=self.context,
+                target_path=self.target_path,
             )
 
     @public
@@ -489,14 +623,15 @@ class DbtCliInvocation:
                 if is_error_message:
                     self._error_messages.append(str(event))
 
-                # Attempt to parse the columns metadata from the event message.
+                # Attempt to parse the column level metadata from the event message.
                 # If it exists, save it as historical metadata to attach to the NodeFinished event.
                 if event.raw_event["info"]["name"] == "JinjaLogInfo":
                     with contextlib.suppress(orjson.JSONDecodeError):
-                        columns = orjson.loads(event.raw_event["info"]["msg"])
-                        event_history_metadata_by_unique_id[cast(str, unique_id)] = {
-                            "columns": columns
-                        }
+                        column_level_metadata = orjson.loads(event.raw_event["info"]["msg"])
+
+                        event_history_metadata_by_unique_id[cast(str, unique_id)] = (
+                            column_level_metadata
+                        )
 
                         # Don't show this message in stdout
                         continue

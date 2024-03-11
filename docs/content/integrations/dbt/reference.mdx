@@ -571,18 +571,18 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ---
 
-## Emit column schema as materialization metadata <Experimental />
+## Emit column-level metadata as materialization metadata <Experimental />
 
 <Note>
   <strong>
-    Emitting column schema as materialization metadata is currently an
+    Emitting column-level metadata as materialization metadata is currently an
     experimental feature.{" "}
   </strong>{" "}
-  To use this feature, you'll need to be on at least `dagster==1.6.6` and
-  `dagster-dbt==0.22.6`.
+  To use this feature, you'll need to be on at least `dagster>=1.6.12` and
+  `dagster-dbt>=0.22.12`.
 </Note>
 
-Dagster allows you to emit column schema [materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata), which includes the column names and data types of your materialized dbt models, seeds, and snapshots.
+Dagster allows you to emit column-level metadata, like column schema and column dependencies, as [materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata).
 
 With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
 
@@ -595,20 +595,20 @@ packages:
     revision: DAGSTER_VERSION # replace with the version of `dagster` you are using.
 ```
 
-Then, enable the `dagster.log_columns_in_relation()` macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) for the dbt resources that should emit column schema metadata. For example, adding the following snippet in `dbt_project.yml` enables this macro for all dbt models, seeds, and snapshots:
+Then, enable the `dagster.log_column_level_metadata()` macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) for the dbt resources that should emit column schema metadata. For example, adding the following snippet in `dbt_project.yml` enables this macro for all dbt models, seeds, and snapshots:
 
 ```yaml
 models:
   +post-hook:
-    - "{{ dagster.log_columns_in_relation() }}"
+    - "{{ dagster.log_column_level_metadata() }}"
 
 seeds:
   +post-hook:
-    - "{{ dagster.log_columns_in_relation() }}"
+    - "{{ dagster.log_column_level_metadata() }}"
 
 snapshots:
   +post-hook:
-    - "{{ dagster.log_columns_in_relation() }}"
+    - "{{ dagster.log_column_level_metadata() }}"
 ```
 
 ---
