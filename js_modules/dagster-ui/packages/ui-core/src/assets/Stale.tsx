@@ -26,7 +26,6 @@ import {numberFormatter} from '../ui/formatters';
 type StaleDataForNode = {
   staleCauses?: LiveDataForNode['staleCauses'];
   staleStatus?: LiveDataForNode['staleStatus'];
-  changedReasons?: LiveDataForNode['changedReasons'];
 };
 export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;

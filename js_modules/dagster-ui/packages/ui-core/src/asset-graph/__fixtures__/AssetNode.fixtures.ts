@@ -103,12 +103,6 @@ export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
 export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   stepKey: 'asset2',
   unstartedRunIds: ['ABCDEF'],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   inProgressRunIds: [],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
@@ -125,12 +119,6 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
 export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   stepKey: 'asset3',
   unstartedRunIds: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   inProgressRunIds: ['ABCDEF'],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
@@ -147,12 +135,6 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
 export const LiveDataForNodeRunFailed: LiveDataForNode = {
   stepKey: 'asset4',
   unstartedRunIds: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   inProgressRunIds: [],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
@@ -175,12 +157,6 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   stepKey: 'asset5',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -196,12 +172,6 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
 export const LiveDataForNodeMaterialized: LiveDataForNode = {
   stepKey: 'asset6',
   unstartedRunIds: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   inProgressRunIds: [],
   lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
@@ -220,12 +190,6 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
   stepKey: 'asset7',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: buildMaterializationEvent({
@@ -303,12 +267,6 @@ export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   stepKey: 'asset8',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: buildMaterializationEvent({
@@ -328,12 +286,6 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
   stepKey: 'asset9',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: buildMaterializationEvent({
@@ -356,12 +308,7 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   stepKey: 'asset10',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
+
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: buildMaterializationEvent({
@@ -384,12 +331,6 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
   stepKey: 'asset11',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: buildMaterializationEvent({
@@ -412,12 +353,6 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
   stepKey: 'asset12',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: buildMaterializationEvent({
@@ -443,12 +378,6 @@ export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterializationRunStatus: null,
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   lastObservation: null,
   lastMaterialization: null,
   runWhichFailedToMaterialize: buildRun({
@@ -470,12 +399,6 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   stepKey: 'source_asset2',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -493,12 +416,6 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   stepKey: 'source_asset3',
   unstartedRunIds: [],
   inProgressRunIds: ['ABCDEF'],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -524,12 +441,6 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   assetChecks: [],
   freshnessInfo: null,
   opNames: [],
@@ -548,12 +459,6 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [],
@@ -576,12 +481,6 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
   },
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -610,12 +509,6 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [],
@@ -634,12 +527,6 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: null,
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -668,12 +555,6 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
   staleCauses: [],
   assetChecks: [],
   freshnessInfo: null,
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   partitionStats: {
     numMaterialized: 0,
     numMaterializing: 5,
@@ -698,12 +579,6 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonData],
   assetChecks: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   freshnessInfo: null,
   partitionStats: {
     numMaterialized: 1500,
@@ -717,12 +592,6 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
 export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
   stepKey: 'asset23',
   unstartedRunIds: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   inProgressRunIds: [],
   lastMaterialization: {
     __typename: 'MaterializationEvent',
@@ -774,22 +643,10 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
     numFailed: 0,
   },
   opNames: [],
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
 };
 
 export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   stepKey: 'asset25',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
-    ChangeReason.PARTITIONS_DEFINITION,
-  ],
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: null,

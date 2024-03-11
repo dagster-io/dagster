@@ -201,6 +201,7 @@ export const ASSET_GRAPH_QUERY = gql`
     id
     groupName
     isExecutable
+    changedReasons
     hasMaterializePermission
     repository {
       id

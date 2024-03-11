@@ -1,8 +1,10 @@
 import {Box, Icon} from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import React, {useContext, useMemo} from 'react';
 
 import {GraphNode} from './Utils';
-import {AssetGroupSelector} from '../graphql/types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
+import {FeatureFlag, featureEnabled} from '../app/Flags';
+import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
@@ -18,25 +20,31 @@ type OptionalFilters =
       visibleAssetGroups?: null;
       computeKindTags?: null;
       setComputeKindTags?: null;
+      changedInBranch?: null;
+      setChangedInBranch?: null;
     }
   | {
-      assetGroups: AssetGroupSelector[];
-      visibleAssetGroups: AssetGroupSelector[];
-      setGroupFilters: (groups: AssetGroupSelector[]) => void;
-      computeKindTags: string[];
-      setComputeKindTags: (s: string[]) => void;
+      assetGroups?: AssetGroupSelector[];
+      visibleAssetGroups?: AssetGroupSelector[];
+      setGroupFilters?: (groups: AssetGroupSelector[]) => void;
+      computeKindTags?: string[];
+      setComputeKindTags?: (s: string[]) => void;
+      changedInBranch?: ChangeReason[];
+      setChangedInBranch?: (s: ChangeReason[]) => void;
     };
 
 type Props = {
   nodes: GraphNode[];
   clearExplorerPath: () => void;
   explorerPath: string;
+  isGlobalGraph: boolean;
 } & OptionalFilters;
 
 const emptyArray: any[] = [];
 
 export function useAssetGraphExplorerFilters({
   nodes,
+  isGlobalGraph,
   assetGroups,
   visibleAssetGroups,
   setGroupFilters,
@@ -44,10 +52,45 @@ export function useAssetGraphExplorerFilters({
   setComputeKindTags,
   explorerPath,
   clearExplorerPath,
+  changedInBranch,
+  setChangedInBranch,
 }: Props) {
   const {allRepos} = useContext(WorkspaceContext);
 
   const reposFilter = useCodeLocationFilter();
+
+  const changedFilter = useStaticSetFilter<ChangeReason>({
+    name: 'Changed in branch',
+    icon: 'new_in_branch',
+    allValues: Object.values(ChangeReason).map((reason) => ({
+      key: reason,
+      value: reason,
+      match: [reason],
+    })),
+    allowMultipleSelections: true,
+    menuWidth: '300px',
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="new_in_branch" />
+        <TruncatedTextWithFullTextOnHover
+          tooltipText={value}
+          text={
+            <span style={{textTransform: 'capitalize'}}>
+              {value.toLocaleLowerCase().replace('_', ' ')}
+            </span>
+          }
+        />
+      </Box>
+    ),
+    getStringValue: (value) => value[0] + value.slice(1).toLowerCase(),
+
+    state: useMemo(() => new Set(changedInBranch ?? []), [changedInBranch]),
+    onStateChanged: (values) => {
+      if (setChangedInBranch) {
+        setChangedInBranch(Array.from(values));
+      }
+    },
+  });
 
   const groupsFilter = useStaticSetFilter<AssetGroupSelector>({
     name: 'Asset Groups',
@@ -132,17 +175,29 @@ export function useAssetGraphExplorerFilters({
   });
 
   const filters: FilterObject[] = [];
-  if (allRepos.length > 1) {
+
+  if (allRepos.length > 1 && isGlobalGraph) {
     filters.push(reposFilter);
   }
-  if (assetGroups) {
+  if (assetGroups && setGroupFilters) {
     filters.push(groupsFilter);
   }
-  filters.push(kindTagsFilter);
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (
+    changedInBranch &&
+    featureEnabled(FeatureFlag.flagExperimentalBranchDiff) &&
+    isBranchDeployment
+  ) {
+    filters.push(changedFilter);
+  }
+  if (setComputeKindTags) {
+    filters.push(kindTagsFilter);
+  }
   const {button, activeFiltersJsx} = useFilters({filters});
-  if (allRepos.length <= 1 && !assetGroups) {
+  if (!filters.length) {
     return {button: null, activeFiltersJsx: null};
   }
+
   return {
     button,
     filterBar:

@@ -27,7 +27,6 @@ export type AssetNodeLiveFragment = {
   __typename: 'AssetNode';
   id: string;
   opNames: Array<string>;
-  changedReasons: Array<Types.ChangeReason>;
   staleStatus: Types.StaleStatus | null;
   repository: {__typename: 'Repository'; id: string};
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -120,7 +119,6 @@ export type AssetGraphLiveQuery = {
     __typename: 'AssetNode';
     id: string;
     opNames: Array<string>;
-    changedReasons: Array<Types.ChangeReason>;
     staleStatus: Types.StaleStatus | null;
     repository: {__typename: 'Repository'; id: string};
     assetKey: {__typename: 'AssetKey'; path: Array<string>};

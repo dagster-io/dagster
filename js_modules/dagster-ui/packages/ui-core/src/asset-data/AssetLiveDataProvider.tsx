@@ -166,7 +166,6 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         }
       }
     }
-    changedReasons
     freshnessInfo {
       ...AssetNodeLiveFreshnessInfo
     }

@@ -6,6 +6,7 @@ import {AssetLineageElements} from './AssetLineageElements';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {StaleReasonsTag} from './Stale';
 import {isRunlessEvent} from './isRunlessEvent';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {
   AssetMaterializationFragment,
   AssetObservationFragment,
@@ -25,10 +26,12 @@ export const LatestMaterializationMetadata = ({
   assetKey,
   latest,
   liveData,
+  definition,
 }: {
   assetKey: AssetKeyInput;
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
+  definition: Pick<AssetViewDefinitionNodeFragment, 'changedReasons'>;
 }) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
@@ -122,7 +125,7 @@ export const LatestMaterializationMetadata = ({
                     <>
                       <StaleReasonsTag assetKey={assetKey} liveData={liveData} />
                       <ChangedReasonsTag
-                        changedReasons={liveData?.changedReasons}
+                        changedReasons={definition.changedReasons}
                         assetKey={assetKey}
                       />
                     </>

@@ -121,6 +121,7 @@ export const AssetSidebarActivitySummary = ({
                   assetKey={asset.assetKey}
                   latest={displayedEvent}
                   liveData={liveData}
+                  definition={asset}
                 />
               </div>
             ) : loading ? (
