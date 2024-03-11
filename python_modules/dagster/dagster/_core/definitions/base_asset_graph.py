@@ -215,8 +215,18 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """
         return [set(level) for level in toposort.toposort(self.asset_dep_graph["upstream"])]
 
+    @cached_property
+    def unpartitioned_asset_keys(self) -> AbstractSet[AssetKey]:
+        return {node.key for node in self.asset_nodes if not node.is_partitioned}
+
     def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.group_name == group_name}
+
+    @cached_method
+    def asset_keys_for_partitions_def(
+        self, partitions_def: PartitionsDefinition
+    ) -> AbstractSet[AssetKey]:
+        return {node.key for node in self.asset_nodes if node.partitions_def == partitions_def}
 
     @cached_property
     def root_materializable_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -235,6 +245,12 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for asset in self.asset_nodes for key in asset.check_keys}
+
+    @cached_property
+    def all_partitions_defs(self) -> Sequence[PartitionsDefinition]:
+        return sorted(
+            set(node.partitions_def for node in self.asset_nodes if node.partitions_def), key=repr
+        )
 
     @cached_property
     def all_group_names(self) -> AbstractSet[str]:

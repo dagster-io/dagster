@@ -243,10 +243,9 @@ def build_caching_repository_data_from_list(
     )
     if assets_defs or source_assets or asset_checks_defs:
         for job_def in get_base_asset_jobs(
-            assets=asset_graph.assets_defs,
+            asset_graph=asset_graph,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
-            asset_checks=asset_checks_defs,
         ):
             jobs[job_def.name] = job_def
 
