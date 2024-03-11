@@ -1,4 +1,5 @@
 import {gql} from '@apollo/client';
+import qs from 'qs';
 import {useCallback, useEffect, useRef} from 'react';
 
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -12,10 +13,20 @@ import {
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {buildAssetCountBySection} from '../assets/AssetsOverview';
+import {GroupMetadata, buildAssetCountBySection} from '../assets/AssetsOverview';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
+
+const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
+  return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
+};
+
+const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
+  return `/assets?${qs.stringify({
+    computeKindTags: JSON.stringify([computeKind]),
+  })}`;
+};
 
 const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   const {data} = input;
@@ -178,8 +189,7 @@ const secondaryDataToSearchResults = (
       label: computeKind,
       description: '',
       type: AssetFilterSearchResultType.ComputeKind,
-      // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-      href: '/assets',
+      href: linkToAssetTableWithComputeKindFilter(computeKind),
       numResults: count,
     }));
 
@@ -202,8 +212,7 @@ const secondaryDataToSearchResults = (
         label: groupAssetCount.groupMetadata.groupName,
         description: '',
         type: AssetFilterSearchResultType.AssetGroup,
-        // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-        href: '/assets',
+        href: linkToAssetTableWithGroupFilter(groupAssetCount.groupMetadata),
         numResults: groupAssetCount.assetCount,
       }),
     );

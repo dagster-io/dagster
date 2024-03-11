@@ -32,7 +32,7 @@ type AssetCountsResult = {
   countPerCodeLocation: CountPerCodeLocation[];
 };
 
-type GroupMetadata = {
+export type GroupMetadata = {
   groupName: string;
   repositoryLocationName: string;
   repositoryName: string;
