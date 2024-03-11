@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import {AssetGlobalLineageButton, AssetPageHeader} from './AssetPageHeader';
 import {ASSET_CATALOG_TABLE_QUERY} from './AssetsCatalogTable';
 import {fetchRecentlyVisitedAssetsFromLocalStorage} from './RecentlyVisitedAssetsStorage';
+import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
@@ -49,17 +50,10 @@ type CountPerCodeLocation = {
 };
 
 type AssetDefinitionMetadata = {
-  definition: {
-    owners: Array<
-      {__typename: 'UserAssetOwner'; email: string} | {__typename: 'TeamAssetOwner'; team: string}
-    >;
-    computeKind: string | null;
-    groupName: string | null;
-    repository: {
-      name: string;
-      location: {name: string};
-    };
-  } | null;
+  definition: Pick<
+    AssetTableDefinitionFragment,
+    'owners' | 'computeKind' | 'groupName' | 'repository'
+  > | null;
 };
 
 export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): AssetCountsResult {
