@@ -96,6 +96,7 @@ export const AssetsCatalogTable = ({
     groups: AssetGroupSelector[];
     computeKindTags: string[];
     changedInBranch: ChangeReason[];
+    owners: string[];
   }>({
     encode: ({groups, computeKindTags, changedInBranch}) => ({
       groups: groups?.length ? JSON.stringify(groups) : undefined,
@@ -106,6 +107,7 @@ export const AssetsCatalogTable = ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
       computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
       changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
+      owners: qs.owners ? JSON.parse(qs.owners) : [],
     }),
   });
 
@@ -138,6 +140,16 @@ export const AssetsCatalogTable = ({
               filters.changedInBranch!.includes(reason),
             )
           ) {
+            return false;
+          }
+        }
+
+        if (filters.owners?.length) {
+          const owners =
+            a.definition?.owners.map((o) =>
+              o.__typename === 'TeamAssetOwner' ? o.team : o.email,
+            ) || [];
+          if (filters.owners.some((owner) => !owners.includes(owner))) {
             return false;
           }
         }
