@@ -1153,7 +1153,7 @@ def get_subset_selection_for_context(
     else:
         logger.info(
             "A dbt subsetted execution is not being performed. Because asset checks are enabled,"
-            f" converting the default dbt selection arguments `{default_dbt_selection}` with the "
+            f" converting the default dbt selection arguments `{default_dbt_selection}` to the "
             f"explicit set of models and tests: `{union_selected_dbt_resources}`"
         )
 
