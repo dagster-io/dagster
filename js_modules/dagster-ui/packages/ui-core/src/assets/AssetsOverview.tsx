@@ -20,7 +20,7 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {TagIcon} from '../graph/OpTags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {SearchDialog} from '../search/SearchDialog';
+import {AssetSearch} from '../search/AssetSearch';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
@@ -246,7 +246,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                 <AssetGlobalLineageButton />
               </Box>
             </Box>
-            <SearchDialog isAssetSearch={true} displayAsOverlay={false} />
+            <AssetSearch />
           </Box>
         </Box>
         <Box flex={{direction: 'column'}}>

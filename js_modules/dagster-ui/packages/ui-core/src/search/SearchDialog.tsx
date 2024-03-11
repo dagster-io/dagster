@@ -8,7 +8,7 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {SearchResults} from './SearchResults';
-import {SearchResult, SearchResultType, isAssetFilterSearchResultType} from './types';
+import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -72,47 +72,7 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
-type SearchResultGroups = {
-  primaryResults: Fuse.FuseResult<SearchResult>[];
-  assetResults: Fuse.FuseResult<SearchResult>[];
-  assetFilterResults: Fuse.FuseResult<SearchResult>[];
-};
-
-function groupSearchResults(
-  primaryResults: Fuse.FuseResult<SearchResult>[],
-  secondaryResults: Fuse.FuseResult<SearchResult>[],
-  isAssetSearch: boolean,
-): SearchResultGroups {
-  if (isAssetSearch) {
-    return {
-      primaryResults: [],
-      assetResults: secondaryResults.filter(
-        (result) => result.item.type === SearchResultType.Asset,
-      ),
-      assetFilterResults: secondaryResults.filter((result) =>
-        isAssetFilterSearchResultType(result.item.type),
-      ),
-    };
-  } else {
-    return {
-      primaryResults,
-      assetResults: secondaryResults.filter(
-        (result) => result.item.type === SearchResultType.Asset,
-      ),
-      assetFilterResults: [],
-    };
-  }
-}
-
-export const SearchDialog = ({
-  searchPlaceholder,
-  isAssetSearch,
-  displayAsOverlay = true,
-}: {
-  searchPlaceholder?: string;
-  isAssetSearch: boolean;
-  displayAsOverlay?: boolean;
-}) => {
+export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
     includeAssetFilters: false,
@@ -122,13 +82,7 @@ export const SearchDialog = ({
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, primaryResults, secondaryResults, highlight} = state;
 
-  const {
-    primaryResults: primaryResultsGroup,
-    assetResults,
-    assetFilterResults,
-  } = groupSearchResults(primaryResults, secondaryResults, isAssetSearch);
-  const results = [...primaryResultsGroup, ...assetResults];
-
+  const results = [...primaryResults, ...secondaryResults];
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
 
@@ -254,78 +208,61 @@ export const SearchDialog = ({
     }
   };
 
-  const searchResults = (
-    <SearchResults
-      highlight={highlight}
-      queryString={queryString}
-      results={renderedResults}
-      filterResults={assetFilterResults}
-      onClickResult={onClickResult}
-    />
-  );
-
-  const searchInput = (
-    <SearchBox hasQueryString={!!queryString.length}>
-      <Icon name="search" color={Colors.accentGray()} size={20} />
-      <SearchInput
-        data-search-input="1"
-        autoFocus
-        spellCheck={false}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        placeholder={isAssetSearch ? 'Search assets' : 'Search assets, jobs, schedules, sensors…'}
-        type="text"
-        value={queryString}
-      />
-      {loading ? <Spinner purpose="body-text" /> : null}
-    </SearchBox>
-  );
-
-  if (displayAsOverlay) {
-    return (
-      <>
-        <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-          <SearchTrigger onClick={openSearch} data-search-trigger="1">
-            <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-              <Box flex={{alignItems: 'center', gap: 4}}>
-                <div
-                  style={{
-                    height: '24px',
-                    width: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon name="search" color={Colors.navTextHover()} />
-                </div>
-                <div>{searchPlaceholder}</div>
-              </Box>
-              <SlashShortcut>/</SlashShortcut>
+  return (
+    <>
+      <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
+        <SearchTrigger onClick={openSearch} data-search-trigger="1">
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <Box flex={{alignItems: 'center', gap: 4}}>
+              <div
+                style={{
+                  height: '24px',
+                  width: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon name="search" color={Colors.navTextHover()} />
+              </div>
+              <div>{searchPlaceholder}</div>
             </Box>
-          </SearchTrigger>
-        </ShortcutHandler>
-        <Overlay
-          backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
-          isOpen={shown}
-          onClose={() => dispatch({type: 'hide-dialog'})}
-          transitionDuration={100}
-        >
-          <Container>
-            {searchInput}
-            {searchResults}
-          </Container>
-        </Overlay>
-      </>
-    );
-  } else {
-    return (
-      <SearchInputWrapper>
-        {searchInput}
-        <SearchResultsWrapper>{searchResults}</SearchResultsWrapper>
-      </SearchInputWrapper>
-    );
-  }
+            <SlashShortcut>/</SlashShortcut>
+          </Box>
+        </SearchTrigger>
+      </ShortcutHandler>
+      <Overlay
+        backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
+        isOpen={shown}
+        onClose={() => dispatch({type: 'hide-dialog'})}
+        transitionDuration={100}
+      >
+        <Container>
+          <SearchBox hasQueryString={!!queryString.length}>
+            <Icon name="search" color={Colors.accentGray()} size={20} />
+            <SearchInput
+              data-search-input="1"
+              autoFocus
+              spellCheck={false}
+              onChange={onChange}
+              onKeyDown={onKeyDown}
+              placeholder="Search assets, jobs, schedules, sensors…"
+              type="text"
+              value={queryString}
+            />
+            {loading ? <Spinner purpose="body-text" /> : null}
+          </SearchBox>
+          <SearchResults
+            highlight={highlight}
+            queryString={queryString}
+            results={renderedResults}
+            filterResults={[]}
+            onClickResult={onClickResult}
+          />
+        </Container>
+      </Overlay>
+    </>
+  );
 };
 
 const SearchTrigger = styled.button`
@@ -366,22 +303,11 @@ const Container = styled.div`
   }
 `;
 
-const SearchInputWrapper = styled.div`
-  position: relative;
-`;
-
-const SearchResultsWrapper = styled.div`
-  top: 60px;
-  position: absolute;
-  z-index: 1;
-  width: 100%;
-`;
-
 interface SearchBoxProps {
   readonly hasQueryString: boolean;
 }
 
-const SearchBox = styled.div<SearchBoxProps>`
+export const SearchBox = styled.div<SearchBoxProps>`
   border-radius: 12px;
   box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
 
@@ -392,7 +318,7 @@ const SearchBox = styled.div<SearchBoxProps>`
   padding: 12px 20px 12px 12px;
 `;
 
-const SearchInput = styled.input`
+export const SearchInput = styled.input`
   border: none;
   color: ${Colors.textLight()};
   font-family: ${FontFamily.default};
