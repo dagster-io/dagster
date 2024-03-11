@@ -11,7 +11,6 @@ from typing import (
     AbstractSet,
     Any,
     Iterable,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -21,6 +20,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import WeakSet
 
 import toposort as toposort_
 from typing_extensions import Final
@@ -144,8 +144,6 @@ class RequestUtilizationMetrics(TypedDict):
 
 
 class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
-    MAX_SUBMITS_WITHOUT_COMPACT = 10_000
-
     def __init__(
         self,
         max_workers: Optional[int] = None,
@@ -156,34 +154,24 @@ class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
         super().__init__(max_workers, thread_name_prefix, initializer, initargs)
         # The default threadpool class doesn't track the futures it creates,
         # so if we want to be able to count the number of running futures, we need to do it ourselves.
-        self._tracked_futures: List[Future] = []
-        self._submit_since_compact = 0
+        self._tracked_futures: WeakSet[Future] = WeakSet()
 
     def submit(self, fn, *args, **kwargs) -> Future:
         new_future = super().submit(fn, *args, **kwargs)
-        self._tracked_futures.append(new_future)
-        self._submit_since_compact += 1
-
-        # avoid checking all the futures on every submit, only compact
-        # after a number of calls. num_running_futures will also compact
-        # removing need to do it on submit
-        if self._submit_since_compact > self.MAX_SUBMITS_WITHOUT_COMPACT:
-            self._compact_and_count_not_done_futures()
-
+        self._tracked_futures.add(new_future)
         return new_future
 
     @property
     def max_workers(self) -> int:
         return self._max_workers
 
-    def _compact_and_count_not_done_futures(self) -> int:
-        self._tracked_futures = [f for f in self._tracked_futures if not f.done()]
-        self._submit_since_compact = 0
+    @property
+    def weak_tracked_futures_count(self) -> int:
         return len(self._tracked_futures)
 
     @property
     def num_running_futures(self) -> int:
-        return self._compact_and_count_not_done_futures() - self.num_queued_futures
+        return sum(1 for f in self._tracked_futures if not f.done()) - self.num_queued_futures
 
     @property
     def num_queued_futures(self) -> int:
