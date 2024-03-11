@@ -201,17 +201,20 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                    multi_partition_key_mapping = cast(
-                        MultiPartitionKey, context.asset_partition_key
-                    ).keys_by_dimension
+                    multi_partition_key_mappings = [
+                        partition_key.keys_by_dimension
+                        for partition_key in cast(MultiPartitionKey, context.asset_partition_keys)
+                    ]
                     for part in context.asset_partitions_def.partitions_defs:
-                        partition_key = multi_partition_key_mapping[part.name]
-                        if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
-                            partitions = part.partitions_def.time_window_for_partition_key(
-                                partition_key
-                            )
-                        else:
-                            partitions = [partition_key]
+                        partitions = []
+                        for multi_partition_key_mapping in multi_partition_key_mappings:
+                            partition_key = multi_partition_key_mapping[part.name]
+                            if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
+                                partitions.append(
+                                    part.partitions_def.time_window_for_partition_key(partition_key)
+                                )
+                            else:
+                                partitions.append(partition_key)
 
                         partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
                         if partition_expr is None:
