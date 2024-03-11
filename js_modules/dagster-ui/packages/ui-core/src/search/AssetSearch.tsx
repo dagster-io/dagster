@@ -19,7 +19,6 @@ type State = {
   searching: boolean;
   secondaryResults: Fuse.FuseResult<SearchResult>[];
   highlight: number;
-  loaded: boolean;
 };
 
 type Action =
@@ -48,7 +47,6 @@ const initialState: State = {
   searching: false,
   secondaryResults: [],
   highlight: 0,
-  loaded: false,
 };
 
 const DEBOUNCE_MSEC = 100;
@@ -69,7 +67,7 @@ function groupSearchResults(secondaryResults: Fuse.FuseResult<SearchResult>[]): 
 
 export const AssetSearch = () => {
   const history = useHistory();
-  const {loading, searchSecondary} = useGlobalSearch({
+  const {loading, searchSecondary, initialize} = useGlobalSearch({
     includeAssetFilters: true,
   });
 
@@ -88,10 +86,11 @@ export const AssetSearch = () => {
   const firstSearchTrace = React.useRef<null | Trace>(null);
 
   React.useEffect(() => {
+    initialize();
     if (!loading && secondaryResults) {
       firstSearchTrace.current?.endTrace();
     }
-  }, [loading, secondaryResults]);
+  }, [loading, secondaryResults, initialize]);
 
   const searchAndHandleSecondary = React.useCallback(
     async (queryString: string) => {
