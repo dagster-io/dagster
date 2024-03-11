@@ -645,11 +645,13 @@ def launch_scheduled_runs_for_schedule_iterator(
                     )
                     yield error_data
 
-                # Plan to run the same tick again right away
+                # Plan to run the same tick again using the schedule timestamp
+                # as both the next_iteration_timestamp and the last_iteration_timestmap
+                # (to ensure that the scheduler doesn't accidentally skip past it)
                 yield ScheduleIterationTimes(
                     cron_schedule=external_schedule.cron_schedule,
-                    next_iteration_timestamp=now_timestamp,
-                    last_iteration_timestamp=now_timestamp,
+                    next_iteration_timestamp=schedule_time.timestamp(),
+                    last_iteration_timestamp=schedule_time.timestamp(),
                 )
                 return
 
