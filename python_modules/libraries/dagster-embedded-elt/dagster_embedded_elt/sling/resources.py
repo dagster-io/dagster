@@ -362,7 +362,7 @@ class SlingResource(ConfigurableResource):
         replication_config: SlingReplicationParam,
         dagster_sling_translator: DagsterSlingTranslator,
         debug: bool = False,
-    ) -> Optional[Generator[MaterializeResult, None, None]]:
+    ) -> Generator[MaterializeResult, None, None]:
         """Runs a Sling replication from the given replication config.
 
         Args:
