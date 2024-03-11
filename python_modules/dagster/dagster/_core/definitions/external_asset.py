@@ -181,3 +181,14 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             return return_value
 
     return _shim_assets_def
+
+
+# Create unexecutable assets defs for each asset key in the provided assets def. This is used to
+# make a materializable assets def available only for loading in a job.
+def create_unexecutable_external_assets_from_assets_def(
+    assets_def: AssetsDefinition,
+) -> Sequence[AssetsDefinition]:
+    if not assets_def.is_executable:
+        return [assets_def]
+    else:
+        return [create_external_asset_from_source_asset(sa) for sa in assets_def.to_source_assets()]

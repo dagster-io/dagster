@@ -53,7 +53,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import create_test_asset_job, instance_for_test
 from dagster._core.types.dagster_type import Nothing
 
 
@@ -1274,14 +1274,10 @@ def test_graph_backed_asset_subset_context(
         out_2, out_3 = add_one(reused_output)
         return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
 
-    asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
-            [AssetsDefinition.from_graph(three, can_subset=True)],
-        )
-    )
+    job_def = create_test_asset_job([AssetsDefinition.from_graph(three, can_subset=True)])
 
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        result = job_def.execute_in_process(asset_selection=asset_selection, instance=instance)
         assert result.success
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)

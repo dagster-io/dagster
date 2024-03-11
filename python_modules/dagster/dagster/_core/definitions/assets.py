@@ -1112,7 +1112,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
-        is_subset: bool = False,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> "AssetsDefinition":
@@ -1277,7 +1276,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 **self._descriptions_by_key,
                 **replaced_descriptions_by_key,
             },
-            is_subset=is_subset,
+            is_subset=self.is_subset,
             check_specs_by_output_name=check_specs_by_output_name
             if check_specs_by_output_name
             else self.check_specs_by_output_name,

@@ -737,11 +737,9 @@ def create_test_asset_job(
     resources: Mapping[str, object] = {},
     **kwargs: Any,
 ) -> JobDefinition:
-    assets_defs = [a for a in assets if isinstance(a, AssetsDefinition)]
-    source_assets = [a for a in assets if isinstance(a, SourceAsset)]
-    selection = selection or assets_defs
+    selection = selection or [a for a in assets if a.is_executable]
     return Definitions(
-        assets=[*assets_defs, *source_assets],
+        assets=assets,
         jobs=[define_asset_job(name, selection, **kwargs)],
         resources=resources,
     ).get_job_def(name)

@@ -1,8 +1,10 @@
 from functools import cached_property
 from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
+import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_layer import subset_assets_defs
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetSpec,
@@ -215,7 +217,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
         # Build the set of AssetNodes. Each node holds key rather than object references to parent
         # and child nodes.
-        dep_graph = generate_asset_dep_graph(assets_defs, [])
+        dep_graph = generate_asset_dep_graph(assets_defs)
         asset_nodes_by_key = {
             key: AssetNode(
                 key=key,
@@ -301,3 +303,46 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             *(key for ad in self.assets_defs for key in ad.check_keys),
             *(key for acd in self.asset_checks_defs for key in acd.keys),
         }
+
+    def get_subset(
+        self,
+        executable_asset_keys: AbstractSet[AssetKey],
+        asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
+    ) -> "AssetGraph":
+        """Returns a new asset graph where only the provided asset keys are executable. All parent
+        keys of a selected executable asset will be included as unexecutable external assets (unless
+        they are themselves present in the executable selection).
+        """
+        from dagster._core.definitions.external_asset import (
+            create_unexecutable_external_assets_from_assets_def,
+        )
+
+        invalid_executable_keys = executable_asset_keys - self.executable_asset_keys
+        if invalid_executable_keys:
+            check.failed(
+                "Provided executable asset keys must be a subset of existing executable asset keys."
+                f" Invalid provided keys: {invalid_executable_keys}",
+            )
+
+        # subset_assets_defs returns two lists of Assetsfinitions-- those included and those
+        # excluded by the selection. These collections retain their original execution type. We need
+        # to convert the excluded assets to unexecutable external assets.
+        executable_assets_defs, excluded_assets_defs = subset_assets_defs(
+            self.assets_defs, executable_asset_keys, asset_check_keys
+        )
+        loadable_assets_defs = [
+            unexecutable_ad
+            for ad in excluded_assets_defs
+            for unexecutable_ad in create_unexecutable_external_assets_from_assets_def(ad)
+        ]
+
+        # ignore check keys that don't correspond to an AssetChecksDefinition
+        asset_checks_defs = list(
+            {
+                acd
+                for key, acd in self._asset_check_compute_defs_by_key.items()
+                if key in (asset_check_keys or []) and isinstance(acd, AssetChecksDefinition)
+            }
+        )
+
+        return self.from_assets([*executable_assets_defs, *loadable_assets_defs], asset_checks_defs)

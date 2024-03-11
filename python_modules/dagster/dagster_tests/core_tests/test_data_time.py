@@ -119,7 +119,6 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             result = build_asset_selection_job(
                 "materialize_job",
                 assets=all_assets,
-                source_assets=[],
                 asset_selection=AssetSelection.keys(*(AssetKey(c) for c in to_materialize)).resolve(
                     all_assets
                 ),

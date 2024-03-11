@@ -198,6 +198,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return {node.key for node in self.asset_nodes if node.is_executable}
 
     @cached_property
+    def unexecutable_asset_keys(self) -> AbstractSet[AssetKey]:
+        return {node.key for node in self.asset_nodes if not node.is_executable}
+
+    @cached_property
     def toposorted_asset_keys(self) -> Sequence[AssetKey]:
         """Return topologically sorted asset keys in graph. Keys with the same topological level are
         sorted alphabetically to provide stability.
