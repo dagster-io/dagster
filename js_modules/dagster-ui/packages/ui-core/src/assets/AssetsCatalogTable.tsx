@@ -3,11 +3,7 @@ import {Box, ButtonGroup, TextInput} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 
-import {
-  AssetGroupSuggest,
-  buildAssetGroupSelector,
-  useAssetGroupSelectorsForAssets,
-} from './AssetGroupSuggest';
+import {buildAssetGroupSelector, useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -21,15 +17,23 @@ import {
 } from './types/AssetsCatalogTable.types';
 import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, ChangeReason} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PageLoadTrace} from '../performance';
+import {useFilters} from '../ui/Filters';
+import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
+import {
+  useAssetKindTagsForAssets,
+  useComputeKindTagFilter,
+} from '../ui/Filters/useComputeKindTagFilter';
+import {FilterObject} from '../ui/Filters/useFilter';
 import {LoadingSpinner} from '../ui/Loading';
-
 type Asset = AssetTableFragment;
 
 function useAllAssets(groupSelector?: AssetGroupSelector): {
@@ -87,10 +91,22 @@ export const AssetsCatalogTable = ({
 }: AssetCatalogTableProps) => {
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
-  const [searchGroups, setSearchGroups] = useQueryPersistedState<AssetGroupSelector[]>({
-    queryKey: 'g',
-    decode: (qs) => (qs.groups ? JSON.parse(qs.groups) : []),
-    encode: (groups) => ({groups: groups.length ? JSON.stringify(groups) : undefined}),
+
+  const [filters, setFilters] = useQueryPersistedState<{
+    groups: AssetGroupSelector[];
+    computeKindTags: string[];
+    changedInBranch: ChangeReason[];
+  }>({
+    encode: ({groups, computeKindTags, changedInBranch}) => ({
+      groups: groups?.length ? JSON.stringify(groups) : undefined,
+      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
+      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+    }),
+    decode: (qs) => ({
+      groups: qs.groups ? JSON.parse(qs.groups) : [],
+      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
+      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
+    }),
   });
 
   const searchPath = (search || '')
@@ -99,16 +115,35 @@ export const AssetsCatalogTable = ({
     .trim();
 
   const {assets, query, error} = useAllAssets(groupSelector);
-  const assetGroupOptions = useAssetGroupSelectorsForAssets(assets);
   const pathMatches = useAssetSearch(searchPath, assets || []);
 
   const filtered = React.useMemo(
     () =>
-      pathMatches.filter(
-        (a) =>
-          !searchGroups.length || searchGroups.some((g) => isEqual(buildAssetGroupSelector(a), g)),
-      ),
-    [pathMatches, searchGroups],
+      pathMatches.filter((a) => {
+        if (filters.groups?.length) {
+          if (!filters.groups.some((g) => isEqual(buildAssetGroupSelector(a), g))) {
+            return false;
+          }
+        }
+
+        if (filters.computeKindTags?.length) {
+          if (!filters.computeKindTags.includes(a.definition?.computeKind ?? '')) {
+            return false;
+          }
+        }
+
+        if (filters.changedInBranch?.length) {
+          if (
+            !a.definition?.changedReasons.find((reason) =>
+              filters.changedInBranch!.includes(reason),
+            )
+          ) {
+            return false;
+          }
+        }
+        return true;
+      }),
+    [filters, pathMatches],
   );
 
   const {displayPathForAsset, displayed} =
@@ -124,6 +159,60 @@ export const AssetsCatalogTable = ({
       trace?.endTrace();
     }
   }, [loaded, trace]);
+
+  const setVisibleAssetGroups = React.useCallback(
+    (groups: AssetGroupSelector[]) => {
+      setFilters((existingFilters: typeof filters) => ({
+        ...existingFilters,
+        groups,
+      }));
+    },
+    [setFilters],
+  );
+
+  const setVisibleComputeKindTags = React.useCallback(
+    (computeKindTags: string[]) => {
+      setFilters((existingFilters: typeof filters) => ({
+        ...existingFilters,
+        computeKindTags,
+      }));
+    },
+    [setFilters],
+  );
+
+  const setVisibleChangedInBranch = React.useCallback(
+    (changeReasons: ChangeReason[]) => {
+      setFilters((existingFilters: typeof filters) => ({
+        ...existingFilters,
+        changedInBranch: changeReasons,
+      }));
+    },
+    [setFilters],
+  );
+
+  const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
+  const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
+
+  const groupsFilter = useAssetGroupFilter({
+    assetGroups: allAssetGroupOptions,
+    visibleAssetGroups: filters.groups,
+    setGroupFilters: setVisibleAssetGroups,
+  });
+  const changedInBranchFilter = useChangedFilter({
+    changedInBranch: filters.changedInBranch,
+    setChangedInBranch: setVisibleChangedInBranch,
+  });
+  const computeKindFilter = useComputeKindTagFilter({
+    allComputeKindTags,
+    computeKindTags: filters.computeKindTags,
+    setComputeKindTags: setVisibleComputeKindTags,
+  });
+  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter];
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (isBranchDeployment) {
+    uiFilters.push(changedInBranchFilter);
+  }
+  const {button, activeFiltersJsx} = useFilters({filters: uiFilters});
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {
@@ -151,6 +240,13 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
+      isFiltered={
+        !!(
+          filters.changedInBranch?.length ||
+          filters.computeKindTags?.length ||
+          filters.groups?.length
+        )
+      }
       actionBarComponents={
         <>
           <ButtonGroup<AssetViewType>
@@ -166,6 +262,7 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
+          {button}
           <TextInput
             value={search || ''}
             style={{width: '30vw', minWidth: 150, maxWidth: 400}}
@@ -176,19 +273,22 @@ export const AssetsCatalogTable = ({
             }
             onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
-          {!groupSelector ? (
-            <AssetGroupSuggest
-              assetGroups={assetGroupOptions}
-              value={searchGroups}
-              onChange={setSearchGroups}
-            />
-          ) : undefined}
         </>
+      }
+      belowActionBarComponents={
+        activeFiltersJsx.length ? (
+          <Box
+            border="top-and-bottom"
+            padding={12}
+            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+          >
+            {activeFiltersJsx}
+          </Box>
+        ) : null
       }
       refreshState={refreshState}
       prefixPath={prefixPath || []}
       searchPath={searchPath}
-      searchGroups={searchGroups}
       displayPathForAsset={displayPathForAsset}
       requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
     />

@@ -5,6 +5,7 @@ import * as Types from '../../graphql/types';
 export type AssetTableDefinitionFragment = {
   __typename: 'AssetNode';
   id: string;
+  changedReasons: Array<Types.ChangeReason>;
   groupName: string | null;
   opNames: Array<string>;
   isSource: boolean;
@@ -32,6 +33,7 @@ export type AssetTableFragment = {
   definition: {
     __typename: 'AssetNode';
     id: string;
+    changedReasons: Array<Types.ChangeReason>;
     groupName: string | null;
     opNames: Array<string>;
     isSource: boolean;

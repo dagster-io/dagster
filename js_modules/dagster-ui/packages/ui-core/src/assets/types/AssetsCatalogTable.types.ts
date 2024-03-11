@@ -16,6 +16,7 @@ export type AssetCatalogTableQuery = {
           definition: {
             __typename: 'AssetNode';
             id: string;
+            changedReasons: Array<Types.ChangeReason>;
             groupName: string | null;
             opNames: Array<string>;
             isSource: boolean;
@@ -59,6 +60,7 @@ export type AssetCatalogGroupTableQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
+    changedReasons: Array<Types.ChangeReason>;
     groupName: string | null;
     opNames: Array<string>;
     isSource: boolean;
@@ -84,6 +86,7 @@ export type AssetCatalogGroupTableQuery = {
 export type AssetCatalogGroupTableNodeFragment = {
   __typename: 'AssetNode';
   id: string;
+  changedReasons: Array<Types.ChangeReason>;
   groupName: string | null;
   opNames: Array<string>;
   isSource: boolean;

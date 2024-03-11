@@ -20,7 +20,7 @@ import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
+import {AssetKeyInput} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
@@ -32,22 +32,24 @@ interface Props {
   assets: Asset[];
   refreshState: QueryRefreshState;
   actionBarComponents: React.ReactNode;
+  belowActionBarComponents: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
   requery?: RefetchQueriesFunction;
   searchPath: string;
-  searchGroups: AssetGroupSelector[];
+  isFiltered: boolean;
 }
 
 export const AssetTable = ({
   assets,
   actionBarComponents,
+  belowActionBarComponents,
   refreshState,
   prefixPath,
   displayPathForAsset,
   requery,
   searchPath,
-  searchGroups,
+  isFiltered,
   view,
 }: Props) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
@@ -74,14 +76,10 @@ export const AssetTable = ({
               icon="search"
               title="No matching assets"
               description={
-                searchGroups.length ? (
+                isFiltered ? (
                   <div>
-                    No assets matching <strong>{searchPath}</strong> were found in{' '}
-                    {searchGroups.length === 1 ? (
-                      <strong>{searchGroups[0]?.groupName}</strong>
-                    ) : (
-                      'the selected asset groups'
-                    )}
+                    No assets matching <strong>{searchPath}</strong> were found in the selected
+                    filters
                   </div>
                 ) : (
                   <div>
@@ -100,18 +98,9 @@ export const AssetTable = ({
             icon="search"
             title="No assets"
             description={
-              searchGroups.length ? (
-                <div>
-                  No assets were found in{' '}
-                  {searchGroups.length === 1 ? (
-                    <strong>{searchGroups[0]?.groupName}</strong>
-                  ) : (
-                    'the selected asset groups'
-                  )}
-                </div>
-              ) : (
-                'No assets were found'
-              )
+              isFiltered
+                ? 'No assets were found matching the selected filters'
+                : 'No assets were found'
             }
           />
         </Box>
@@ -181,6 +170,7 @@ export const AssetTable = ({
             />
           </Box>
         </Box>
+        {belowActionBarComponents}
         {content()}
       </Box>
       <AssetWipeDialog
