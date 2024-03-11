@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import dagster._check as check
+import pendulum
 from dagster import AssetKey
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_condition.asset_condition import (
     AndAssetCondition,
     AssetCondition,
@@ -12,6 +14,7 @@ from dagster._core.definitions.asset_condition.asset_condition import (
 )
 from dagster._core.definitions.asset_condition.asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
+    NewAssetConditionEvaluationContext,
 )
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -30,13 +33,54 @@ class FalseAssetCondition(AssetCondition):
         return ""
 
     def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionResult:
-        return AssetConditionResult.create(context, true_subset=context.empty_subset())
+        if isinstance(context, NewAssetConditionEvaluationContext):
+            return AssetConditionResult(
+                condition=context.condition,
+                start_timestamp=context.start_timestamp,
+                end_timestamp=pendulum.now("UTC"),
+                true_subset=context.get_empty_subset(),
+                candidate_subset=context.candidate_slice.convert_to_valid_asset_subset(),
+                subsets_with_metadata=[],
+                child_results=[],
+                extra_state=None,
+            )
+        else:
+            return AssetConditionResult.create(context, true_subset=context.empty_subset())
 
 
 @dataclass(frozen=True)
 class AssetConditionScenarioState(ScenarioState):
     asset_condition: Optional[AssetCondition] = None
     previous_evaluation_state: Optional[AssetConditionEvaluationState] = None
+
+    def evaluate_new(
+        self, asset: CoercibleToAssetKey
+    ) -> Tuple["AssetConditionScenarioState", AssetConditionResult]:
+        asset_key = AssetKey.from_coercible(asset)
+        # ensure that the top level condition never returns any asset partitions, as otherwise the
+        # next evaluation will assume that those asset partitions were requested by the machinery
+        asset_condition = AndAssetCondition(
+            children=[check.not_none(self.asset_condition), FalseAssetCondition()]
+        )
+        with pendulum_freeze_time(self.current_time):
+            asset_graph_view = AssetGraphView.for_test(self.defs, self.instance)
+            candidate_slice = asset_graph_view.get_asset_slice(asset_key)
+
+            context = NewAssetConditionEvaluationContext.create(
+                condition=asset_condition,
+                candidate_slice=candidate_slice,
+                previous_evaluation_state=self.previous_evaluation_state,
+            )
+
+            full_result = asset_condition.evaluate(context)  # type: ignore
+            new_state = dataclasses.replace(
+                self,
+                previous_evaluation_state=AssetConditionEvaluationState.create(
+                    context,  # type: ignore
+                    full_result,
+                ),
+            )
+        return new_state, full_result.child_results[0]
 
     def evaluate(
         self, asset: CoercibleToAssetKey
