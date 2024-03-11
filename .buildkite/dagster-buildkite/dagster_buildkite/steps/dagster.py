@@ -111,7 +111,7 @@ def build_repo_wide_pyright_steps() -> List[CommandStep]:
             "make pyright",
         )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_python_changes())
+        .with_skip(skip_if_no_python_changes(overrides=["pyright"]))
         .build(),
     ]
 
