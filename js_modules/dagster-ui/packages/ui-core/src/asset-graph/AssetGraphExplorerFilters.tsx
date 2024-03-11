@@ -60,7 +60,6 @@ export function useAssetGraphExplorerFilters({
 
   const reposFilter = useCodeLocationFilter();
 
-
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
   const groupsFilter = useAssetGroupFilter({visibleAssetGroups, assetGroups, setGroupFilters});
 
