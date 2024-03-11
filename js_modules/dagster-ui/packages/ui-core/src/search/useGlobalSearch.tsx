@@ -141,62 +141,16 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   return allEntries;
 };
 
-const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
+const secondaryDataToSearchResults = (
+  input: {data?: SearchSecondaryQuery},
+  includeAssetFilters: boolean,
+) => {
   const {data} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
     return [];
   }
 
   const {nodes} = data.assetsOrError;
-
-  const countsBySection = buildAssetCountBySection(nodes);
-
-  const computeKindResults: SearchResult[] = Object.entries(
-    countsBySection.countsByComputeKind,
-  ).map(([computeKind, count]) => ({
-    label: computeKind,
-    description: '',
-    type: AssetFilterSearchResultType.ComputeKind,
-    // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-    href: '/assets',
-    numResults: count,
-  }));
-
-  const codeLocationResults: SearchResult[] = countsBySection.countPerCodeLocation.map(
-    (codeLocationAssetCount) => ({
-      label: buildRepoPathForHuman(
-        codeLocationAssetCount.repoAddress.name,
-        codeLocationAssetCount.repoAddress.location,
-      ),
-      description: '',
-      type: AssetFilterSearchResultType.CodeLocation,
-      // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-      href: '/assets',
-      numResults: codeLocationAssetCount.assetCount,
-    }),
-  );
-
-  const groupResults: SearchResult[] = countsBySection.countPerAssetGroup.map(
-    (groupAssetCount) => ({
-      label: groupAssetCount.groupMetadata.groupName,
-      description: '',
-      type: AssetFilterSearchResultType.AssetGroup,
-      // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-      href: '/assets',
-      numResults: groupAssetCount.assetCount,
-    }),
-  );
-
-  const ownerResults: SearchResult[] = Object.entries(countsBySection.countsByOwner).map(
-    ([owner, count]) => ({
-      label: owner,
-      description: '',
-      type: AssetFilterSearchResultType.Owner,
-      // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-      href: '/assets',
-      numResults: count,
-    }),
-  );
 
   const assets = nodes
     .filter(({definition}) => definition !== null)
@@ -213,13 +167,65 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
       };
     });
 
-  return [
-    ...assets,
-    ...computeKindResults,
-    ...codeLocationResults,
-    ...ownerResults,
-    ...groupResults,
-  ];
+  if (!includeAssetFilters) {
+    return [...assets];
+  } else {
+    const countsBySection = buildAssetCountBySection(nodes);
+
+    const computeKindResults: SearchResult[] = Object.entries(
+      countsBySection.countsByComputeKind,
+    ).map(([computeKind, count]) => ({
+      label: computeKind,
+      description: '',
+      type: AssetFilterSearchResultType.ComputeKind,
+      // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
+      href: '/assets',
+      numResults: count,
+    }));
+
+    const codeLocationResults: SearchResult[] = countsBySection.countPerCodeLocation.map(
+      (codeLocationAssetCount) => ({
+        label: buildRepoPathForHuman(
+          codeLocationAssetCount.repoAddress.name,
+          codeLocationAssetCount.repoAddress.location,
+        ),
+        description: '',
+        type: AssetFilterSearchResultType.CodeLocation,
+        // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
+        href: '/assets',
+        numResults: codeLocationAssetCount.assetCount,
+      }),
+    );
+
+    const groupResults: SearchResult[] = countsBySection.countPerAssetGroup.map(
+      (groupAssetCount) => ({
+        label: groupAssetCount.groupMetadata.groupName,
+        description: '',
+        type: AssetFilterSearchResultType.AssetGroup,
+        // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
+        href: '/assets',
+        numResults: groupAssetCount.assetCount,
+      }),
+    );
+
+    const ownerResults: SearchResult[] = Object.entries(countsBySection.countsByOwner).map(
+      ([owner, count]) => ({
+        label: owner,
+        description: '',
+        type: AssetFilterSearchResultType.Owner,
+        // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
+        href: '/assets',
+        numResults: count,
+      }),
+    );
+    return [
+      ...assets,
+      ...computeKindResults,
+      ...codeLocationResults,
+      ...ownerResults,
+      ...groupResults,
+    ];
+  }
 };
 
 const fuseOptions = {
@@ -250,7 +256,7 @@ type IndexBuffer = {
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
-export const useGlobalSearch = () => {
+export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boolean}) => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
@@ -300,13 +306,13 @@ export const useGlobalSearch = () => {
     if (!secondaryData) {
       return;
     }
-    const results = secondaryDataToSearchResults({data: secondaryData});
+    const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(results);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData]);
+  }, [consumeBufferEffect, secondaryData, includeAssetFilters]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);

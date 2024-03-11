@@ -8,7 +8,7 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {SearchResults} from './SearchResults';
-import {SearchResult, SearchResultType} from './types';
+import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -72,15 +72,11 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
-export const SearchDialog = ({
-  searchPlaceholder,
-  isAssetSearch,
-}: {
-  searchPlaceholder: string;
-  isAssetSearch: boolean;
-}) => {
+export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
   const history = useHistory();
-  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch();
+  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
+    includeAssetFilters: false,
+  });
   const trackEvent = useTrackEvent();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -124,17 +120,9 @@ export const SearchDialog = ({
   );
 
   const searchAndHandleSecondary = React.useCallback(
-    async (queryString: string, returnAssetFilters: boolean) => {
+    async (queryString: string) => {
       const {queryString: queryStringForResults, results} = await searchSecondary(queryString);
-      if (!returnAssetFilters) {
-        dispatch({
-          type: 'complete-secondary',
-          queryString: queryStringForResults,
-          results: results.filter((result) => result.item.type === SearchResultType.Asset), // Only return asset results
-        });
-      } else {
-        dispatch({type: 'complete-secondary', queryString: queryStringForResults, results});
-      }
+      dispatch({type: 'complete-secondary', queryString: queryStringForResults, results});
     },
     [searchSecondary],
   );
@@ -142,7 +130,7 @@ export const SearchDialog = ({
   const debouncedSearch = React.useMemo(() => {
     const debouncedSearch = debounce(async (queryString: string) => {
       searchAndHandlePrimary(queryString);
-      searchAndHandleSecondary(queryString, isAssetSearch);
+      searchAndHandleSecondary(queryString);
     }, DEBOUNCE_MSEC);
     return (queryString: string) => {
       if (!firstSearchTrace.current && isFirstSearch.current) {
@@ -153,7 +141,7 @@ export const SearchDialog = ({
       }
       return debouncedSearch(queryString);
     };
-  }, [searchAndHandlePrimary, searchAndHandleSecondary, isAssetSearch]);
+  }, [searchAndHandlePrimary, searchAndHandleSecondary]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;

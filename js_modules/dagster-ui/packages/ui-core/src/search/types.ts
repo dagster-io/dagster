@@ -23,17 +23,6 @@ export enum AssetFilterSearchResultType {
   AssetGroup = 'AssetFilterSearchResultType.AssetGroup',
 }
 
-export function isAssetFilterSearchResultType(
-  type: SearchResultType | AssetFilterSearchResultType,
-): type is AssetFilterSearchResultType {
-  return (
-    type === AssetFilterSearchResultType.AssetGroup ||
-    type === AssetFilterSearchResultType.CodeLocation ||
-    type === AssetFilterSearchResultType.ComputeKind ||
-    type === AssetFilterSearchResultType.Owner
-  );
-}
-
 export type SearchResult = {
   label: string;
   description: string;

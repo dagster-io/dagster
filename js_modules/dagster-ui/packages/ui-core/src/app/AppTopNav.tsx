@@ -180,7 +180,7 @@ export const AppTopNav = ({
             <div style={{width: '0px', height: '30px'}} />
           </ShortcutHandler>
         ) : null}
-        <SearchDialog searchPlaceholder={searchPlaceholder} isAssetSearch={false} />
+        <SearchDialog searchPlaceholder={searchPlaceholder} />
         {children}
       </Box>
     </AppTopNavContainer>
