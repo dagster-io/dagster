@@ -13,7 +13,11 @@ import {
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {GroupMetadata, buildAssetCountBySection} from '../assets/AssetsOverview';
+import {
+  GroupMetadata,
+  buildAssetCountBySection,
+  linkToCodeLocation,
+} from '../assets/AssetsOverview';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
@@ -25,6 +29,12 @@ const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
 const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
+  })}`;
+};
+
+const linkToAssetTableWithOwnerFilter = (owner: string) => {
+  return `/assets?${qs.stringify({
+    owners: JSON.stringify([owner]),
   })}`;
 };
 
@@ -201,8 +211,7 @@ const secondaryDataToSearchResults = (
         ),
         description: '',
         type: AssetFilterSearchResultType.CodeLocation,
-        // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-        href: '/assets',
+        href: linkToCodeLocation(codeLocationAssetCount.repoAddress),
         numResults: codeLocationAssetCount.assetCount,
       }),
     );
@@ -222,8 +231,7 @@ const secondaryDataToSearchResults = (
         label: owner,
         description: '',
         type: AssetFilterSearchResultType.Owner,
-        // TODO display correct link once https://github.com/dagster-io/dagster/pull/20342 lands
-        href: '/assets',
+        href: linkToAssetTableWithOwnerFilter(owner),
         numResults: count,
       }),
     );

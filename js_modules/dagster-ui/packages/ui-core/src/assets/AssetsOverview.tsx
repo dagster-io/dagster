@@ -186,7 +186,7 @@ const linkToAssetGraphComputeKind = (computeKind: string) => {
   })}`;
 };
 
-const linkToCodeLocation = (repoAddress: RepoAddress) => {
+export const linkToCodeLocation = (repoAddress: RepoAddress) => {
   return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
 };
 
