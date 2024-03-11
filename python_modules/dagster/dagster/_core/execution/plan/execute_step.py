@@ -899,8 +899,6 @@ def _log_materialization_or_observation_events_for_asset(
         assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
         if assets_def is not None:
             execution_type = assets_def.execution_type
-        elif asset_key in asset_layer.source_assets_by_key:
-            execution_type = asset_layer.source_assets_by_key[asset_key].execution_type
         else:
             # This is a situation that shouldn't really ever occur, but appears to be able to happen
             # when multiple output names point to the same asset key, which also shouldn't occur,
