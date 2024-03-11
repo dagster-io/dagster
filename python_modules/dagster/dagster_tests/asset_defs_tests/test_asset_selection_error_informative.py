@@ -1,10 +1,12 @@
 import re
+from importlib.util import find_spec
 
 import pytest
 from dagster import AssetSelection, Definitions, asset, define_asset_job
 from dagster._core.errors import DagsterInvalidSubsetError
 
 
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
 @pytest.mark.parametrize("group_name", [None, "my_group"])
 @pytest.mark.parametrize("asset_key_prefix", [[], ["my_prefix"]])
 def test_typo_asset_selection_one_similar(group_name, asset_key_prefix) -> None:
@@ -35,6 +37,7 @@ def test_typo_asset_selection_no_similar() -> None:
         defs.get_job_def("my_job")
 
 
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
 def test_typo_asset_selection_many_similar() -> None:
     @asset
     def asset1(): ...
@@ -59,6 +62,7 @@ def test_typo_asset_selection_many_similar() -> None:
         defs.get_job_def("my_job")
 
 
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
 def test_typo_asset_selection_wrong_prefix() -> None:
     @asset(key_prefix=["my", "prefix"])
     def asset1(): ...

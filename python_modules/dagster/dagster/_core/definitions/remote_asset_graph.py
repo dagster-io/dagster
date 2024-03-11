@@ -22,8 +22,8 @@ from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.workspace import IWorkspace
 
 from .backfill_policy import BackfillPolicy
@@ -34,7 +34,7 @@ from .partition import PartitionsDefinition
 from .partition_mapping import PartitionMapping
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external_data import (
+    from dagster._core.remote_representation.external_data import (
         ExternalAssetCheck,
         ExternalAssetNode,
     )
@@ -381,7 +381,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
                 )
             # for observable assets, we need to select the job based on the partitions def
             target_partitions_defs = {
-                self.get_partitions_def(asset_key) for asset_key in asset_keys
+                self.get(asset_key).partitions_def for asset_key in asset_keys
             }
             check.invariant(len(target_partitions_defs) == 1, "Expected exactly one partitions def")
             target_partitions_def = next(iter(target_partitions_defs))
@@ -484,7 +484,7 @@ def _build_execution_set_index(
     external_asset_nodes: Iterable["ExternalAssetNode"],
     external_asset_checks: Iterable["ExternalAssetCheck"],
 ) -> Mapping[AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]]:
-    from dagster._core.host_representation.external_data import ExternalAssetNode
+    from dagster._core.remote_representation.external_data import ExternalAssetNode
 
     all_items = [*external_asset_nodes, *external_asset_checks]
 

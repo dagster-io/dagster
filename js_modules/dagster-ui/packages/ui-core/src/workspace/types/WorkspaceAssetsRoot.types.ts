@@ -37,6 +37,10 @@ export type WorkspaceAssetsQuery = {
           description: string | null;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+          owners: Array<
+            | {__typename: 'TeamAssetOwner'; team: string}
+            | {__typename: 'UserAssetOwner'; email: string}
+          >;
           repository: {
             __typename: 'Repository';
             id: string;

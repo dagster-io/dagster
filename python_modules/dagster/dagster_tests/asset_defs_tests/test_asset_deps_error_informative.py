@@ -1,5 +1,6 @@
 import re
 import time
+from importlib.util import find_spec
 from typing import List
 
 import pytest
@@ -8,6 +9,7 @@ from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
 @pytest.mark.parametrize("group_name", [None, "my_group"])
 @pytest.mark.parametrize("asset_key_prefix", [[], ["my_prefix"]])
 def test_typo_upstream_asset_one_similar(group_name, asset_key_prefix) -> None:
@@ -49,6 +51,7 @@ def test_typo_upstream_asset_no_similar() -> None:
         Definitions(assets=[asset1, asset2])
 
 
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
 def test_typo_upstream_asset_many_similar() -> None:
     @asset
     def asset1(): ...
@@ -75,6 +78,7 @@ def test_typo_upstream_asset_many_similar() -> None:
         Definitions(assets=[asst, asset1, assets1, asset2])
 
 
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
 def test_typo_upstream_asset_wrong_prefix() -> None:
     @asset(key_prefix=["my", "prefix"])
     def asset1(): ...

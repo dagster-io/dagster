@@ -1,5 +1,6 @@
 import os
 import shutil
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
@@ -23,6 +24,8 @@ from dagster_dbt.core.resources_v2 import (
     DbtCliResource,
 )
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
+from dbt.version import __version__ as dbt_version
+from packaging import version
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
@@ -301,6 +304,42 @@ def test_dbt_cli_debug_execution(
 
     result = materialize([my_dbt_assets], resources={"dbt": dbt})
     assert result.success
+
+
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.7.9"),
+    reason="`dbt retry` with `--target-path` support is only available in `dbt-core>=1.7.9`",
+)
+def test_dbt_retry_execution(
+    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        test_jaffle_shop_path.joinpath(
+            os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH"]
+        ).unlink()
+
+        dbt_invocation = dbt.cli(["run"], context=context, raise_on_error=False)
+
+        assert not dbt_invocation.is_successful()
+        assert not list(dbt_invocation.stream())
+
+        yield from dbt.cli(["seed"], context=context).stream()
+        yield from replace(
+            dbt.cli(
+                ["retry"],
+                manifest=dbt_invocation.manifest,
+                dagster_dbt_translator=dbt_invocation.dagster_dbt_translator,
+                target_path=dbt_invocation.target_path,
+            ),
+            context=context,
+        ).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+    assert len(result.filter_events(lambda event: event.is_successful_output)) == len(
+        my_dbt_assets.keys_by_output_name.values()
+    )
 
 
 def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict[str, Any]) -> None:

@@ -4,7 +4,7 @@ from typing import Iterator, Optional, cast
 
 import pytest
 from dagster import DagsterInstance
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalRepository,
     InProcessCodeLocationOrigin,

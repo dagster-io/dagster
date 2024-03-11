@@ -4,15 +4,15 @@ import dagster._check as check
 import pytest
 from dagster._check import CheckError
 from dagster._core.code_pointer import ModuleCodePointer
-from dagster._core.host_representation.origin import (
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
-    InProcessCodeLocationOrigin,
-)
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
+)
+from dagster._core.remote_representation.origin import (
+    ExternalJobOrigin,
+    ExternalRepositoryOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,

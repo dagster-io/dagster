@@ -603,12 +603,12 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
             asset_graph = repo.asset_graph
             assert target_subset == AssetGraphSubset(
                 partitions_subsets_by_asset_key={
-                    AssetKey("hourly"): asset_graph.get_partitions_def(
+                    AssetKey("hourly"): asset_graph.get(
                         AssetKey("hourly")
-                    ).subset_with_partition_keys(hourly_partitions),
-                    AssetKey("daily"): asset_graph.get_partitions_def(
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
                 },
             )
 
@@ -668,15 +668,15 @@ def test_launch_asset_backfill_with_two_anchor_assets():
             asset_graph = repo.asset_graph
             assert target_subset == AssetGraphSubset(
                 partitions_subsets_by_asset_key={
-                    AssetKey("hourly1"): asset_graph.get_partitions_def(
+                    AssetKey("hourly1"): asset_graph.get(
                         AssetKey("hourly1")
-                    ).subset_with_partition_keys(hourly_partitions),
-                    AssetKey("hourly2"): asset_graph.get_partitions_def(
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    AssetKey("hourly2"): asset_graph.get(
                         AssetKey("hourly2")
-                    ).subset_with_partition_keys(hourly_partitions),
-                    AssetKey("daily"): asset_graph.get_partitions_def(
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
                 },
             )
 
@@ -724,13 +724,13 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                 non_partitioned_asset_keys={AssetKey("non_partitioned")},
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): (
-                        asset_graph.get_partitions_def(AssetKey("hourly"))
-                        .empty_subset()
+                        asset_graph.get(AssetKey("hourly"))
+                        .partitions_def.empty_subset()
                         .with_partition_keys(hourly_partitions)
                     ),
                     AssetKey("daily"): (
-                        asset_graph.get_partitions_def(AssetKey("daily"))
-                        .empty_subset()
+                        asset_graph.get(AssetKey("daily"))
+                        .partitions_def.empty_subset()
                         .with_partition_keys(["2020-01-02", "2020-01-03"])
                     ),
                 },

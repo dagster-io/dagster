@@ -13,7 +13,7 @@ from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
-from dagster._core.host_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils import utc_datetime_from_timestamp
@@ -64,7 +64,7 @@ def get_asset_backfill_preview(
     asset_partitions = []
 
     for asset_key in asset_backfill_data.get_targeted_asset_keys_topological_order(asset_graph):
-        if asset_graph.get_partitions_def(asset_key):
+        if asset_graph.get(asset_key).partitions_def:
             partitions_subset = asset_backfill_data.target_subset.partitions_subsets_by_asset_key[
                 asset_key
             ]

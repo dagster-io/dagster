@@ -92,6 +92,14 @@
 pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
 
+### CONSTRAINED BEYOND RUNTIME
+# The packages listed here are constrained beyond what is necessary for runtime
+# compatibility. Even though Dagster supports a wider range of versions at
+# runtime, some of these versions have bugged or incomplete type annotations
+# that trigger type errors
+apache-airflow>2.7
+pendulum<3
+
 # This is a temporary pin due to version conflicts between dbt 1.6 and some higher-order
 # dependencies of other integration libs. It is not important that the pyright typechecking env support
 # dbt 1.6, so we can pin. The pin can be removed at any time in the future so long as the env builds
@@ -113,7 +121,6 @@ dbt-core<1.6
 -e examples/docs_snippets[full]
 -e examples/feature_graph_backed_assets
 # -e examples/project_fully_featured
--e examples/project_du_dbt_starter
 # -e examples/quickstart_aws  # (analyzed but not installed)
 # -e examples/quickstart_etl  # (analyzed but not installed)
 # -e examples/quickstart_gcp  # (analyzed but not installed)

@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type SnapshotQueryVariables = Types.Exact<{
-  snapshotId: Types.Scalars['String'];
+  snapshotId: Types.Scalars['String']['input'];
 }>;
 
 export type SnapshotQuery = {

@@ -27,7 +27,7 @@ import {createGlobalStyle} from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {AppContext} from './AppContext';
-import {CustomAlertProvider} from './CustomAlertProvider';
+import {CustomAlertProvider, GlobalCustomAlertPortalStyle} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
@@ -211,6 +211,7 @@ export const AppProvider = (props: AppProviderProps) => {
         <GlobalTooltipStyle />
         <GlobalPopoverStyle />
         <GlobalDialogStyle />
+        <GlobalCustomAlertPortalStyle />
         <GlobalSuggestStyle />
         <ApolloProvider client={apolloClient}>
           <AssetLiveDataProvider>

@@ -22,7 +22,7 @@ from dagster._core.definitions.run_request import (
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.host_representation.origin import ExternalInstigatorOrigin
+from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import (

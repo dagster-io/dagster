@@ -132,7 +132,7 @@ def get_expected_data_time_for_asset_key(
         return context.data_time_resolver.get_current_data_time(asset_key, current_time)
     elif asset_graph.has_materializable_parents(asset_key):
         expected_data_time = None
-        for parent_key in asset_graph.get_parents(asset_key):
+        for parent_key in asset_graph.get(asset_key).parent_keys:
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
             if isinstance(asset_graph, RemoteAssetGraph) and context.will_update_asset_partition(
@@ -168,9 +168,10 @@ def freshness_evaluation_results_for_asset_key(
     asset_key = context.asset_key
     current_time = context.evaluation_time
 
-    if not context.asset_graph.get_downstream_freshness_policies(
-        asset_key=asset_key
-    ) or context.asset_graph.is_partitioned(asset_key):
+    if (
+        not context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+        or context.asset_graph.get(asset_key).is_partitioned
+    ):
         return context.empty_subset(), []
 
     # figure out the current contents of this asset
@@ -208,7 +209,7 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=context.asset_graph.get_freshness_policy(asset_key),
+        local_policy=context.asset_graph.get(asset_key).freshness_policy,
         policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,

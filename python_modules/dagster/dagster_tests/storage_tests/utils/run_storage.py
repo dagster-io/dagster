@@ -15,12 +15,12 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance, InstanceType
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+from dagster._core.remote_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance, InstanceType
-from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.snap import create_job_snapshot_id
 from dagster._core.storage.dagster_run import (

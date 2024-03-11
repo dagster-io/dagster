@@ -14,7 +14,7 @@ import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {isRunlessEvent} from './isRunlessEvent';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -197,7 +197,15 @@ export const AssetSidebarActivitySummary = ({
                     justifyContent: 'space-between',
                   }}
                 >
-                  <MiddleTruncate text={`${check.name}`} />
+                  <Link
+                    style={{display: 'flex', flex: 1, overflow: 'hidden'}}
+                    to={assetDetailsPathForAssetCheck({
+                      name: check.name,
+                      assetKey: asset.assetKey,
+                    })}
+                  >
+                    <MiddleTruncate text={check.name} />
+                  </Link>
                   {execution ? (
                     <AssetCheckStatusTag execution={execution} />
                   ) : (

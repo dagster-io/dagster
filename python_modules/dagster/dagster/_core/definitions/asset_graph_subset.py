@@ -83,7 +83,7 @@ class AssetGraphSubset(NamedTuple):
         """Returns an AssetSubset representing the subset of a specific asset that this
         AssetGraphSubset contains.
         """
-        partitions_def = asset_graph.get_partitions_def(asset_key)
+        partitions_def = asset_graph.get(asset_key).partitions_def
         if partitions_def is None:
             return AssetSubset(
                 asset_key=asset_key, value=asset_key in self.non_partitioned_asset_keys
@@ -100,7 +100,7 @@ class AssetGraphSubset(NamedTuple):
         self, asset_key: AssetKey, asset_graph: Optional[BaseAssetGraph] = None
     ) -> PartitionsSubset:
         if asset_graph:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
             if partitions_def is None:
                 check.failed("Can only call get_partitions_subset on a partitioned asset")
 
@@ -148,7 +148,7 @@ class AssetGraphSubset(NamedTuple):
             },
             "serializable_partitions_def_ids_by_asset_key": {
                 key.to_user_string(): check.not_none(
-                    asset_graph.get_partitions_def(key)
+                    asset_graph.get(key).partitions_def
                 ).get_serializable_unique_identifier(
                     dynamic_partitions_store=dynamic_partitions_store
                 )
@@ -156,7 +156,7 @@ class AssetGraphSubset(NamedTuple):
             },
             "partitions_def_class_names_by_asset_key": {
                 key.to_user_string(): check.not_none(
-                    asset_graph.get_partitions_def(key)
+                    asset_graph.get(key).partitions_def
                 ).__class__.__name__
                 for key, _ in self.partitions_subsets_by_asset_key.items()
             },
@@ -255,7 +255,7 @@ class AssetGraphSubset(NamedTuple):
         return AssetGraphSubset(
             partitions_subsets_by_asset_key={
                 asset_key: (
-                    cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
+                    cast(PartitionsDefinition, asset_graph.get(asset_key).partitions_def)
                     .empty_subset()
                     .with_partition_keys(partition_keys)
                 )
@@ -278,7 +278,7 @@ class AssetGraphSubset(NamedTuple):
 
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
 
             if partitions_def is None:
                 # Asset had a partitions definition at storage time, but no longer does
@@ -320,7 +320,7 @@ class AssetGraphSubset(NamedTuple):
                     )
                 continue
 
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
 
             if partitions_def is None:
                 if not allow_partial:
@@ -382,7 +382,7 @@ class AssetGraphSubset(NamedTuple):
         non_partitioned_asset_keys: Set[AssetKey] = set()
 
         for asset_key in asset_keys:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
             if partitions_def:
                 partitions_subsets_by_asset_key[asset_key] = (
                     partitions_def.empty_subset().with_partition_keys(

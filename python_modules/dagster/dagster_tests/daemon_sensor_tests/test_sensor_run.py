@@ -56,17 +56,17 @@ from dagster._core.definitions.sensor_definition import (
     SkipReason,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
+from dagster._core.remote_representation import (
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
     ExternalSensor,
 )
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,

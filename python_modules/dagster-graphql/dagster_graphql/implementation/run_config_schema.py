@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Mapping, Optional
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap
-from dagster._core.host_representation import RepresentedJob
-from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation import RepresentedJob
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 
 from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo

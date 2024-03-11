@@ -50,12 +50,12 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.launcher import RunLauncher
+from dagster._core.remote_representation.origin import (
     ExternalJobOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -622,6 +622,7 @@ def test_counter():
 
 def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
+    results = {}
     for target_id, future in futures.copy().items():
         if timeout is not None:
             future_timeout = max(0, timeout - (time.time() - start_time))
@@ -629,8 +630,10 @@ def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None
             future_timeout = None
 
         if not future.done():
-            future.result(timeout=future_timeout)
+            results[target_id] = future.result(timeout=future_timeout)
             del futures[target_id]
+
+    return results
 
 
 class SingleThreadPoolExecutor(ThreadPoolExecutor):

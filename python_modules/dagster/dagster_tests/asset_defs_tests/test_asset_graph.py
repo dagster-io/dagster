@@ -38,11 +38,11 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_representation.external_data import (
     external_asset_checks_from_defs,
     external_asset_nodes_from_defs,
 )
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 
@@ -83,18 +83,22 @@ def test_basics(asset_graph_from_assets):
 
     assets = [asset0, asset1, asset2, asset3]
     asset_graph = asset_graph_from_assets(assets)
+    asset0_node = asset_graph.get(asset0.key)
+    asset1_node = asset_graph.get(asset1.key)
+    asset2_node = asset_graph.get(asset2.key)
+    asset3_node = asset_graph.get(asset3.key)
 
     assert asset_graph.all_asset_keys == {asset0.key, asset1.key, asset2.key, asset3.key}
-    assert not asset_graph.is_partitioned(asset0.key)
-    assert asset_graph.is_partitioned(asset1.key)
-    assert asset_graph.have_same_partitioning(asset1.key, asset2.key)
-    assert not asset_graph.have_same_partitioning(asset1.key, asset3.key)
-    assert asset_graph.get_children(asset0.key) == {asset1.key, asset2.key}
-    assert asset_graph.get_parents(asset3.key) == {asset1.key, asset2.key}
-    for asset_def in assets:
-        assert asset_graph.get_execution_set_asset_keys(asset_def.key) == {asset_def.key}
-    assert asset_graph.get_code_version(asset0.key) == "1"
-    assert asset_graph.get_code_version(asset1.key) is None
+    assert not asset0_node.is_partitioned
+    assert asset1_node.is_partitioned
+    assert asset1_node.partitions_def == asset2_node.partitions_def
+    assert asset1_node.partitions_def != asset3_node.partitions_def
+    assert asset0_node.child_keys == {asset1.key, asset2.key}
+    assert asset3_node.parent_keys == {asset1.key, asset2.key}
+    for node in [asset0_node, asset1_node, asset2_node, asset3_node]:
+        assert node.execution_set_asset_keys == {node.key}
+    assert asset0_node.code_version == "1"
+    assert asset1_node.code_version is None
 
 
 def test_get_children_partitions_unpartitioned_parent_partitioned_child(
@@ -351,7 +355,7 @@ def test_required_multi_asset_sets_non_subsettable_multi_asset(
     asset_graph = asset_graph_from_assets([non_subsettable_multi_asset])
     for asset_key in non_subsettable_multi_asset.keys:
         assert (
-            asset_graph.get_execution_set_asset_keys(asset_key) == non_subsettable_multi_asset.keys
+            asset_graph.get(asset_key).execution_set_asset_keys == non_subsettable_multi_asset.keys
         )
 
 
@@ -366,7 +370,7 @@ def test_required_multi_asset_sets_subsettable_multi_asset(
 
     asset_graph = asset_graph_from_assets([subsettable_multi_asset])
     for asset_key in subsettable_multi_asset.keys:
-        assert asset_graph.get_execution_set_asset_keys(asset_key) == {asset_key}
+        assert asset_graph.get(asset_key).execution_set_asset_keys == {asset_key}
 
 
 def test_required_multi_asset_sets_graph_backed_multi_asset(
@@ -389,7 +393,7 @@ def test_required_multi_asset_sets_graph_backed_multi_asset(
     graph_backed_multi_asset = AssetsDefinition.from_graph(graph1)
     asset_graph = asset_graph_from_assets([graph_backed_multi_asset])
     for asset_key in graph_backed_multi_asset.keys:
-        assert asset_graph.get_execution_set_asset_keys(asset_key) == graph_backed_multi_asset.keys
+        assert asset_graph.get(asset_key).execution_set_asset_keys == graph_backed_multi_asset.keys
 
 
 def test_required_multi_asset_sets_same_op_in_different_assets(
@@ -404,7 +408,7 @@ def test_required_multi_asset_sets_same_op_in_different_assets(
 
     asset_graph = asset_graph_from_assets(assets)
     for asset_def in assets:
-        assert asset_graph.get_execution_set_asset_keys(asset_def.key) == {asset_def.key}
+        assert asset_graph.get(asset_def.key).execution_set_asset_keys == {asset_def.key}
 
 
 def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
@@ -424,8 +428,8 @@ def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., BaseAss
     if isinstance(asset_graph, RemoteAssetGraph):
         pytest.xfail("not supported with RemoteAssetGraph")
 
-    assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
-    assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
+    assert asset_graph.get(AssetKey("partitioned_source")).is_partitioned
+    assert asset_graph.get(AssetKey("downstream_of_partitioned_source")).is_partitioned
 
 
 def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAssetGraph]):

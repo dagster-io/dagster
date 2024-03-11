@@ -19,7 +19,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.host_representation.origin import ExternalInstigatorOrigin
+from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

@@ -2638,6 +2638,57 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[2]["unstartedRunIds"] == [run_id]
             assert assets_live_info[2]["inProgressRunIds"] == []
 
+    def test_asset_in_progress_already_materialized(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_selector(graphql_context, "output_then_hang_job")
+
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {
+                            "resources": {"hanging_asset_resource": {"config": {"file": path}}}
+                        },
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_ASSET_IN_PROGRESS_RUNS,
+                variables={
+                    "assetKeys": [
+                        {"path": "output_then_hang_asset"},
+                    ]
+                },
+            )
+            graphql_context.instance.run_launcher.terminate(run_id)
+
+            assert result.data
+            assert result.data["assetsLatestInfo"]
+
+            assets_live_info = result.data["assetsLatestInfo"]
+
+            assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
+            assert len(assets_live_info) == 1
+
+            assert assets_live_info[0]["assetKey"]["path"] == ["output_then_hang_asset"]
+            assert assets_live_info[0]["latestMaterialization"] is not None
+            assert assets_live_info[0]["unstartedRunIds"] == []
+            assert assets_live_info[0]["inProgressRunIds"] == []
+
     def test_graph_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "hanging_graph_asset_job")
 

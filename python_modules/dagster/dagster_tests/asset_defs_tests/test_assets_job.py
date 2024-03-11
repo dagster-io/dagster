@@ -38,6 +38,7 @@ from dagster._core.definitions import AssetIn, SourceAsset, asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
+from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
@@ -1950,16 +1951,17 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
     def unpartitioned_asset(): ...
 
     jobs = get_base_asset_jobs(
-        assets=[
-            daily_asset,
-            daily_asset2,
-            daily_asset_different_start_date,
-            hourly_asset,
-            unpartitioned_asset,
-        ],
+        asset_graph=AssetGraph.from_assets(
+            [
+                daily_asset,
+                daily_asset2,
+                daily_asset_different_start_date,
+                hourly_asset,
+                unpartitioned_asset,
+            ]
+        ),
         executor_def=None,
         resource_defs={},
-        asset_checks=[],
     )
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {
@@ -1994,14 +1996,15 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     def asset_x(asset_b: B): ...
 
     jobs = get_base_asset_jobs(
-        assets=[
-            asset_x,
-            create_external_asset_from_source_asset(asset_a),
-            create_external_asset_from_source_asset(asset_b),
-        ],
+        asset_graph=AssetGraph.from_assets(
+            [
+                asset_x,
+                create_external_asset_from_source_asset(asset_a),
+                create_external_asset_from_source_asset(asset_b),
+            ]
+        ),
         executor_def=None,
         resource_defs={},
-        asset_checks=[],
     )
     assert len(jobs) == 2
     assert {job_def.name for job_def in jobs} == {
@@ -2876,3 +2879,36 @@ def test_exclude_assets_without_keys():
     ).get_job_def("foo_job")
 
     assert foo_job.execute_in_process().success
+
+
+def test_mixed_asset_job():
+    with disable_dagster_warnings():
+
+        class MyIOManager(IOManager):
+            def handle_output(self, context, obj):
+                pass
+
+            def load_input(self, context):
+                return 5
+
+        @observable_source_asset
+        def foo():
+            return DataVersion("alpha")
+
+        @asset
+        def bar(foo):
+            return foo + 1
+
+        defs = Definitions(
+            assets=[foo, bar],
+            jobs=[define_asset_job("mixed_assets_job", [foo, bar])],
+            resources={"io_manager": MyIOManager()},
+        )
+
+        job_def = defs.get_job_def("mixed_assets_job")
+        result = job_def.execute_in_process()
+        assert result.success
+        assert len(result.asset_materializations_for_node("foo")) == 0
+        assert len(result.asset_observations_for_node("foo")) == 1
+        assert len(result.asset_materializations_for_node("bar")) == 1
+        assert len(result.asset_observations_for_node("bar")) == 0

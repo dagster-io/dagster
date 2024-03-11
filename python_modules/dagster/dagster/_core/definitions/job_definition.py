@@ -87,8 +87,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
-    from dagster._core.host_representation.job_index import JobIndex
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+    from dagster._core.remote_representation.job_index import JobIndex
     from dagster._core.snap import JobSnapshot
 
     from .run_config_schema import RunConfigSchema
@@ -817,7 +817,7 @@ class JobDefinition(IHasInternalInit):
 
         new_job = build_asset_selection_job(
             name=self.name,
-            assets=set(self.asset_layer.assets_defs_by_key.values()),
+            assets=self.asset_layer.assets_defs,
             source_assets=self.asset_layer.source_assets_by_key.values(),
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
@@ -954,7 +954,7 @@ class JobDefinition(IHasInternalInit):
         return self.get_job_index().job_snapshot
 
     def get_job_index(self) -> "JobIndex":
-        from dagster._core.host_representation import JobIndex
+        from dagster._core.remote_representation import JobIndex
         from dagster._core.snap import JobSnapshot
 
         return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())

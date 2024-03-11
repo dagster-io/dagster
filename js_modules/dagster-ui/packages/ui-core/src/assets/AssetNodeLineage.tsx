@@ -134,7 +134,7 @@ const LineageDepthControl = ({
         <Button
           disabled={value <= 1}
           onClick={() => onChange(value - 1)}
-          icon={<Icon name="subtract" />}
+          icon={<Icon name="dash" />}
         />
         <TextInput
           min={1}

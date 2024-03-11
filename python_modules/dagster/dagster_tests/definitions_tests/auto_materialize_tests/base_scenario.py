@@ -74,7 +74,7 @@ from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, 
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -410,7 +410,7 @@ class AssetReconciliationScenario(
                 auto_observe_asset_keys={
                     key
                     for key in asset_graph.observable_asset_keys
-                    if asset_graph.get_auto_observe_interval_minutes(key) is not None
+                    if asset_graph.get(key).auto_observe_interval_minutes is not None
                 },
                 respect_materialization_data_versions=respect_materialization_data_versions,
                 logger=logging.getLogger("dagster.amp"),

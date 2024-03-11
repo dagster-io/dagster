@@ -37,12 +37,12 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.submit_asset_runs import submit_asset_run
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     ExternalSensor,
 )
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.origin import ExternalInstigatorOrigin
-from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -683,14 +683,14 @@ class AssetDaemon(DagsterDaemon):
             auto_materialize_asset_keys = {
                 target_key
                 for target_key in eligible_keys
-                if asset_graph.get_auto_materialize_policy(target_key) is not None
+                if asset_graph.get(target_key).auto_materialize_policy is not None
             }
             num_target_assets = len(auto_materialize_asset_keys)
 
             auto_observe_asset_keys = {
                 key
                 for key in eligible_keys
-                if asset_graph.get_auto_observe_interval_minutes(key) is not None
+                if asset_graph.get(key).auto_observe_interval_minutes is not None
             }
             num_auto_observe_assets = len(auto_observe_asset_keys)
 
@@ -860,7 +860,7 @@ class AssetDaemon(DagsterDaemon):
                 )
                 evaluations_by_asset_key = {
                     evaluation_record.asset_key: evaluation_record.get_evaluation_with_run_ids(
-                        partitions_def=asset_graph.get_partitions_def(evaluation_record.asset_key)
+                        partitions_def=asset_graph.get(evaluation_record.asset_key).partitions_def
                     )
                     for evaluation_record in evaluation_records
                 }

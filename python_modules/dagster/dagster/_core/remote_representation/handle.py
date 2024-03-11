@@ -2,14 +2,14 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple
 
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.host_representation.origin import (
+from dagster._core.origin import RepositoryPythonOrigin
+from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     ExternalRepositoryOrigin,
 )
-from dagster._core.origin import RepositoryPythonOrigin
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.code_location import CodeLocation
+    from dagster._core.remote_representation.code_location import CodeLocation
 
 
 class RepositoryHandle(
@@ -24,7 +24,7 @@ class RepositoryHandle(
     )
 ):
     def __new__(cls, repository_name: str, code_location: "CodeLocation"):
-        from dagster._core.host_representation.code_location import CodeLocation
+        from dagster._core.remote_representation.code_location import CodeLocation
 
         check.inst_param(code_location, "code_location", CodeLocation)
         return super(RepositoryHandle, cls).__new__(

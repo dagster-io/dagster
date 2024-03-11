@@ -13,22 +13,22 @@ from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.build_resources import build_resources
 from dagster._core.execution.context.output import build_output_context
-from dagster._core.host_representation import (
-    ExternalJob,
-    ExternalSchedule,
-    GrpcServerCodeLocationOrigin,
-    InProcessCodeLocationOrigin,
-)
-from dagster._core.host_representation.origin import (
-    ExternalInstigatorOrigin,
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
-)
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
+)
+from dagster._core.remote_representation import (
+    ExternalJob,
+    ExternalSchedule,
+    GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
+)
+from dagster._core.remote_representation.origin import (
+    ExternalInstigatorOrigin,
+    ExternalJobOrigin,
+    ExternalRepositoryOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

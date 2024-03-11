@@ -3,7 +3,7 @@ import sys
 from contextlib import contextmanager
 
 from dagster import job, op, repository
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     JobHandle,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )

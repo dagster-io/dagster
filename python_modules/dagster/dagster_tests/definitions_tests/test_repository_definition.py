@@ -7,7 +7,6 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
-    Definitions,
     GraphDefinition,
     IOManager,
     JobDefinition,
@@ -1482,23 +1481,3 @@ def test_auto_materialize_sensors_conflict():
                 AutoMaterializeSensorDefinition("a", asset_selection=[asset1]),
                 AutoMaterializeSensorDefinition("b", asset_selection=[asset1, asset2]),
             ]
-
-
-def test_invalid_asset_selection():
-    source_asset = SourceAsset("source_asset")
-
-    @asset
-    def asset1(): ...
-
-    @sensor(asset_selection=[source_asset, asset1])
-    def sensor1(): ...
-
-    Definitions(assets=[source_asset, asset1], sensors=[sensor1])
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="specified both regular assets and external"
-    ):
-        Definitions(
-            assets=[source_asset, asset1],
-            jobs=[define_asset_job("foo", selection=[source_asset, asset1])],
-        ).get_all_job_defs()

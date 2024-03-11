@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple, Unio
 
 import dagster._check as check
 from dagster._core.code_pointer import rebase_file
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils.yaml_utils import load_yaml_from_path
 

@@ -12,14 +12,14 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalRepository,
     GrpcServerCodeLocation,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.host_representation.feature_flags import get_feature_flags_for_location
-from dagster._core.host_representation.grpc_server_state_subscriber import (
+from dagster._core.remote_representation.feature_flags import get_feature_flags_for_location
+from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
     LocationStateSubscriber,
@@ -53,7 +53,7 @@ from .used_solid import GrapheneUsedSolid
 from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external_data import ExternalAssetNode
+    from dagster._core.remote_representation.external_data import ExternalAssetNode
 
 GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 

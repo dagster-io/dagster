@@ -46,8 +46,8 @@ if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster._core.host_representation.origin import ExternalJobOrigin
     from dagster._core.instance import DagsterInstance
+    from dagster._core.remote_representation.origin import ExternalJobOrigin
     from dagster._core.scheduler.instigation import (
         AutoMaterializeAssetEvaluationRecord,
         InstigatorState,

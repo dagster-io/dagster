@@ -17,7 +17,8 @@ from dagster._core.errors import (
     DagsterCodeLocationNotFoundError,
 )
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     CodeLocation,
     CodeLocationOrigin,
     ExternalExecutionPlan,
@@ -26,19 +27,18 @@ from dagster._core.host_representation import (
     GrpcServerCodeLocation,
     RepositoryHandle,
 )
-from dagster._core.host_representation.grpc_server_registry import (
+from dagster._core.remote_representation.grpc_server_registry import (
     GrpcServerRegistry,
 )
-from dagster._core.host_representation.grpc_server_state_subscriber import (
+from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget
@@ -56,7 +56,7 @@ from .workspace import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation import (
+    from dagster._core.remote_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
         ExternalPartitionNamesData,

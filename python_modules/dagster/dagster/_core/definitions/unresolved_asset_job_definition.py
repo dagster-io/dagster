@@ -183,22 +183,11 @@ class UnresolvedAssetJobDefinition(
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
         assets = asset_graph.assets_defs
         selected_asset_keys = self.selection.resolve(asset_graph)
-
-        if (
-            len(selected_asset_keys & asset_graph.materializable_asset_keys) > 0
-            and len(selected_asset_keys & asset_graph.external_asset_keys) > 0
-        ):
-            raise DagsterInvalidDefinitionError(
-                f"Asset selection for job '{self.name}' specified both regular assets and external "
-                "assets. This is not currently supported. Selections must be all regular "
-                "assets or all source assets.",
-            )
-
         selected_asset_checks = self.selection.resolve_checks(asset_graph)
 
         asset_keys_by_partitions_def = defaultdict(set)
         for asset_key in selected_asset_keys:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
             if partitions_def is not None:
                 asset_keys_by_partitions_def[partitions_def].add(asset_key)
 

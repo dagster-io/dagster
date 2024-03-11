@@ -3,10 +3,10 @@
 import * as Types from '../../graphql/types';
 
 export type LogTelemetryMutationVariables = Types.Exact<{
-  action: Types.Scalars['String'];
-  metadata: Types.Scalars['String'];
-  clientTime: Types.Scalars['String'];
-  clientId: Types.Scalars['String'];
+  action: Types.Scalars['String']['input'];
+  metadata: Types.Scalars['String']['input'];
+  clientTime: Types.Scalars['String']['input'];
+  clientId: Types.Scalars['String']['input'];
 }>;
 
 export type LogTelemetryMutation = {

@@ -22,7 +22,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-from dagster._core.host_representation import InProcessCodeLocationOrigin
+from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -189,8 +189,8 @@ def test_cross_repo_dep_with_source_asset(instance):
         _make_context(instance, ["defs1", "downstream_defs"])
     )
     assert len(asset_graph.external_asset_keys) == 0
-    assert asset_graph.get_parents(AssetKey("downstream")) == {AssetKey("asset1")}
-    assert asset_graph.get_children(AssetKey("asset1")) == {AssetKey("downstream")}
+    assert asset_graph.get(AssetKey("downstream")).parent_keys == {AssetKey("asset1")}
+    assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream")}
     assert (
         asset_graph.get_repository_handle(
             AssetKey("asset1")
@@ -212,8 +212,8 @@ def test_cross_repo_dep_no_source_asset(instance):
         _make_context(instance, ["defs1", "downstream_defs_no_source"])
     )
     assert len(asset_graph.external_asset_keys) == 0
-    assert asset_graph.get_parents(AssetKey("downstream_non_arg_dep")) == {AssetKey("asset1")}
-    assert asset_graph.get_children(AssetKey("asset1")) == {AssetKey("downstream_non_arg_dep")}
+    assert asset_graph.get(AssetKey("downstream_non_arg_dep")).parent_keys == {AssetKey("asset1")}
+    assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream_non_arg_dep")}
     assert (
         asset_graph.get_repository_handle(
             AssetKey("asset1")
@@ -235,8 +235,8 @@ def test_cross_repo_dep_no_source_asset(instance):
 def test_partitioned_source_asset(instance):
     asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
 
-    assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
-    assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
+    assert asset_graph.get(AssetKey("partitioned_source")).is_partitioned
+    assert asset_graph.get(AssetKey("downstream_of_partitioned_source")).is_partitioned
 
 
 def test_get_implicit_job_name_for_assets(instance):
@@ -324,9 +324,9 @@ def test_get_implicit_job_name_for_assets(instance):
 def test_auto_materialize_policy(instance):
     asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
 
-    assert asset_graph.get_auto_materialize_policy(
+    assert asset_graph.get(
         AssetKey("downstream_of_partitioned_source")
-    ) == AutoMaterializePolicy.eager(
+    ).auto_materialize_policy == AutoMaterializePolicy.eager(
         max_materializations_per_minute=75,
     )
 
@@ -400,16 +400,16 @@ backfill_assets_defs = Definitions(
 def test_assets_with_backfill_policies(instance):
     asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["backfill_assets_defs"]))
     assert (
-        asset_graph.get_backfill_policy(AssetKey("static_partitioned_single_run_backfill_asset"))
+        asset_graph.get(AssetKey("static_partitioned_single_run_backfill_asset")).backfill_policy
         == BackfillPolicy.single_run()
     )
     assert (
-        asset_graph.get_backfill_policy(AssetKey("non_partitioned_single_run_backfill_asset"))
+        asset_graph.get(AssetKey("non_partitioned_single_run_backfill_asset")).backfill_policy
         == BackfillPolicy.single_run()
     )
-    assert asset_graph.get_backfill_policy(
+    assert asset_graph.get(
         AssetKey("static_partitioned_multi_run_backfill_asset")
-    ) == BackfillPolicy.multi_run(5)
+    ).backfill_policy == BackfillPolicy.multi_run(5)
 
 
 @asset(deps=[SourceAsset("b")])

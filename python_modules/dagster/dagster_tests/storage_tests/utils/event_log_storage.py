@@ -72,15 +72,15 @@ from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
+from dagster._core.remote_representation.external_data import (
     external_partitions_definition_from_def,
 )
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
 )

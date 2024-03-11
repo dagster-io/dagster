@@ -104,8 +104,8 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.log_manager import coerce_valid_log_level
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
@@ -1318,7 +1318,7 @@ def first_asset(dummy_source_asset):
 def hanging_asset(context, first_asset):
     """Asset that hangs forever, used to test in-progress ops."""
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
-        ff.write("yup")
+        ff.write("yup")  # signals test to terminate run
 
     while True:
         time.sleep(0.1)
@@ -1332,6 +1332,21 @@ def never_runs_asset(hanging_asset):
 hanging_job = define_asset_job(
     name="hanging_job",
     selection=[first_asset, hanging_asset, never_runs_asset],
+)
+
+
+@asset(io_manager_key="dummy_io_manager", required_resource_keys={"hanging_asset_resource"})
+def output_then_hang_asset(context):
+    yield Output(5)
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")  # signals test to terminate run
+    while True:
+        time.sleep(0.1)
+
+
+output_then_hang_job = define_asset_job(
+    name="output_then_hang_job",
+    selection=[output_then_hang_asset],
 )
 
 
@@ -1920,6 +1935,7 @@ def define_asset_jobs() -> Sequence[UnresolvedAssetJobDefinition]:
         hanging_graph_asset_job,
         hanging_job,
         hanging_partition_asset_job,
+        output_then_hang_job,
         multi_partitions_fail_job,
         multi_partitions_job,
         named_groups_job,
@@ -2018,6 +2034,7 @@ def define_assets():
         dummy_source_asset,
         hanging_partition_asset,
         hanging_graph_asset,
+        output_then_hang_asset,
         downstream_asset,
         subsettable_checked_multi_asset,
         check_in_op_asset,

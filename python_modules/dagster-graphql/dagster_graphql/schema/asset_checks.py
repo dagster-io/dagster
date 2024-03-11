@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation.external_data import ExternalAssetCheck
+from dagster._core.remote_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,

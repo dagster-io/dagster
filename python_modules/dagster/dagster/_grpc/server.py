@@ -42,7 +42,10 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
     user_code_error_boundary,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.libraries import DagsterLibraryRegistry
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
     ExternalPartitionExecutionErrorData,
     ExternalRepositoryErrorData,
@@ -51,10 +54,7 @@ from dagster._core.host_representation.external_data import (
     external_job_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.origin import ExternalRepositoryOrigin
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.libraries import DagsterLibraryRegistry
-from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.remote_representation.origin import ExternalRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget

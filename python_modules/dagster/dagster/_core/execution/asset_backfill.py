@@ -211,7 +211,7 @@ class AssetBackfillData(NamedTuple):
             for asset_key in self.target_subset.asset_keys
             if all(
                 parent not in self.target_subset.asset_keys
-                for parent in instance_queryer.asset_graph.get_parents(asset_key)
+                for parent in instance_queryer.asset_graph.get(asset_key).parent_keys
                 - {asset_key}  # Do not include an asset as its own parent
             )
         }
@@ -321,7 +321,7 @@ class AssetBackfillData(NamedTuple):
         def _get_status_for_asset_key(
             asset_key: AssetKey,
         ) -> Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]:
-            if asset_graph.get_partitions_def(asset_key) is not None:
+            if asset_graph.get(asset_key).is_partitioned:
                 materialized_subset = self.materialized_subset.get_partitions_subset(
                     asset_key, asset_graph
                 )
@@ -456,7 +456,7 @@ class AssetBackfillData(NamedTuple):
         for partitions_by_asset_selector in partitions_by_assets:
             asset_key = partitions_by_asset_selector.asset_key
             partitions = partitions_by_asset_selector.partitions
-            partition_def = asset_graph.get_partitions_def(asset_key)
+            partition_def = asset_graph.get(asset_key).partitions_def
             if partitions and partition_def:
                 if partitions.partition_range:
                     # a range of partitions is selected
@@ -512,14 +512,14 @@ class AssetBackfillData(NamedTuple):
             partitioned_asset_keys = {
                 asset_key
                 for asset_key in asset_selection
-                if asset_graph.get_partitions_def(asset_key) is not None
+                if asset_graph.get(asset_key).is_partitioned
             }
 
             root_partitioned_asset_keys = (
                 AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
             )
             root_partitions_defs = {
-                asset_graph.get_partitions_def(asset_key)
+                asset_graph.get(asset_key).partitions_def
                 for asset_key in root_partitioned_asset_keys
             }
             if len(root_partitions_defs) > 1:
@@ -631,7 +631,7 @@ def _get_requested_asset_partitions_from_run_requests(
             selected_assets = cast(Sequence[AssetKey], run_request.asset_selection)
             check.invariant(len(selected_assets) > 0)
             partitions_defs = set(
-                asset_graph.get_partitions_def(asset_key) for asset_key in selected_assets
+                asset_graph.get(asset_key).partitions_def for asset_key in selected_assets
             )
             check.invariant(
                 len(partitions_defs) == 1,
@@ -775,7 +775,7 @@ def _check_target_partitions_subset_is_valid(
             f"Asset {asset_key} existed at storage-time, but no longer does"
         )
 
-    partitions_def = asset_graph.get_partitions_def(asset_key)
+    partitions_def = asset_graph.get(asset_key).partitions_def
 
     if target_partitions_subset:  # Asset was partitioned at storage time
         if partitions_def is None:
@@ -1255,7 +1255,7 @@ def execute_asset_backfill_iteration_inner(
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
     asset_backfill_policies = [
-        asset_graph.get_backfill_policy(asset_key)
+        asset_graph.get(asset_key).backfill_policy
         for asset_key in {
             asset_partition.asset_key for asset_partition in asset_partitions_to_request
         }
@@ -1318,20 +1318,18 @@ def can_run_with_parent(
     this tick.
     """
     parent_target_subset = target_subset.get_asset_subset(parent.asset_key, asset_graph)
-    parent_backfill_policy = asset_graph.get_backfill_policy(parent.asset_key)
     candidate_target_subset = target_subset.get_asset_subset(candidate.asset_key, asset_graph)
-    candidate_backfill_policy = asset_graph.get_backfill_policy(candidate.asset_key)
     partition_mapping = asset_graph.get_partition_mapping(
-        candidate.asset_key, in_asset_key=parent.asset_key
+        candidate.asset_key, parent_asset_key=parent.asset_key
     )
 
+    parent_node = asset_graph.get(parent.asset_key)
+    candidate_node = asset_graph.get(candidate.asset_key)
     # checks if there is a simple partition mapping between the parent and the child
     has_identity_partition_mapping = (
         # both unpartitioned
-        (
-            not asset_graph.is_partitioned(candidate.asset_key)
-            and not asset_graph.is_partitioned(parent.asset_key)
-        )
+        not candidate_node.is_partitioned
+        and not parent_node.is_partitioned
         # normal identity partition mapping
         or isinstance(partition_mapping, IdentityPartitionMapping)
         # for assets with the same time partitions definition, a non-offset partition
@@ -1343,10 +1341,9 @@ def can_run_with_parent(
         )
     )
     return (
-        parent_backfill_policy == candidate_backfill_policy
-        and asset_graph.get_repository_handle(candidate.asset_key)
-        is asset_graph.get_repository_handle(parent.asset_key)
-        and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+        parent_node.backfill_policy == candidate_node.backfill_policy
+        and parent_node.priority_repository_handle is candidate_node.priority_repository_handle
+        and parent_node.partitions_def == candidate_node.partitions_def
         and (
             parent.partition_key in asset_partitions_to_request_map[parent.asset_key]
             or parent in candidates_unit
@@ -1359,14 +1356,14 @@ def can_run_with_parent(
             # parent if...
             or (
                 # there is a backfill policy for the parent
-                parent_backfill_policy is not None
+                parent_node.backfill_policy is not None
                 # the same subset of parents is targeted as the child
                 and parent_target_subset.value == candidate_target_subset.value
                 and (
                     # there is no limit on the size of a single run or...
-                    parent_backfill_policy.max_partitions_per_run is None
+                    parent_node.backfill_policy.max_partitions_per_run is None
                     # a single run can materialize all requested parent partitions
-                    or parent_backfill_policy.max_partitions_per_run
+                    or parent_node.backfill_policy.max_partitions_per_run
                     > len(asset_partitions_to_request_map[parent.asset_key])
                 )
                 # all targeted parents are being requested this tick

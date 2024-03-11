@@ -380,7 +380,7 @@ def test_definitions_conflicting_checks():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Detected conflicting node definitions with the same name "asset1_check1"',
+        match="Duplicate asset check key.+asset1.+check1",
     ):
         Definitions(asset_checks=[make_check(), make_check()])
 

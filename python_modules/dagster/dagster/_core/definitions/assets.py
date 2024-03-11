@@ -1,5 +1,6 @@
 import json
 import warnings
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -266,10 +267,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
         for output_name, asset_key in keys_by_output_name.items():
             output_def, _ = node_def.resolve_output_to_origin(output_name, None)
-            self._metadata_by_key[asset_key] = merge_dicts(
-                output_def.metadata,
-                self._metadata_by_key.get(asset_key, {}),
-            )
+            self._metadata_by_key[asset_key] = {
+                **output_def.metadata,
+                **self._metadata_by_key.get(asset_key, {}),
+            }
             # We construct description from three sources of truth here. This
             # highly unfortunate. See commentary in @multi_asset's call to dagster_internal_init.
             description = (
@@ -1186,6 +1187,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, metadata in metadata_by_key.items()
         }
 
+        replaced_owners_by_key = {
+            output_asset_key_replacements.get(key, key): owners
+            for key, owners in self.owners_by_key.items()
+        }
+
         replaced_attributes = dict(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -1221,6 +1227,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 **self._metadata_by_key,
                 **replaced_metadata_by_key,
             },
+            owners_by_key=replaced_owners_by_key,
             freshness_policies_by_key=replaced_freshness_policies_by_key,
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
@@ -1458,7 +1465,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             asset_keys = ", ".join(sorted(([asset_key.to_string() for asset_key in self.keys])))
             return f"AssetsDefinition with keys {asset_keys}"
 
-    @property
+    @cached_property
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
         return non_secure_md5_hash_str((json.dumps(sorted(self.keys))).encode("utf-8"))

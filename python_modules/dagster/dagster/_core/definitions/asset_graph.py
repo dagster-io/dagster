@@ -17,6 +17,7 @@ from dagster._core.definitions.base_asset_graph import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
@@ -60,6 +61,10 @@ class AssetNode(BaseAssetNode):
     @property
     def is_executable(self) -> bool:
         return self.assets_def.is_executable
+
+    @property
+    def metadata(self) -> ArbitraryMetadataMapping:
+        return self.assets_def.metadata_by_key.get(self.key, {})
 
     @property
     def is_partitioned(self) -> bool:
@@ -245,12 +250,12 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 asset_unit_keys if asset_or_check_key in asset_unit_keys else {asset_or_check_key}
             )
 
-    def get_assets_def(self, asset_key: AssetKey) -> AssetsDefinition:
-        return self.get(asset_key).assets_def
-
     @cached_property
     def assets_defs(self) -> Sequence[AssetsDefinition]:
         return list(dict.fromkeys(asset.assets_def for asset in self.asset_nodes))
+
+    def assets_defs_for_keys(self, keys: Iterable[AssetKey]) -> Sequence[AssetsDefinition]:
+        return list(dict.fromkeys([self.get(key).assets_def for key in keys]))
 
     @property
     def asset_checks_defs(self) -> Sequence[AssetChecksDefinition]:

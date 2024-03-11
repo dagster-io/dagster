@@ -41,7 +41,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAs
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
 )
@@ -102,7 +102,7 @@ class AssetRuleEvaluationSpec(NamedTuple):
         """
         subset = AssetSubset.from_asset_partitions_set(
             asset_key,
-            asset_graph.get_partitions_def(asset_key),
+            asset_graph.get(asset_key).partitions_def,
             {
                 AssetKeyPartitionKey(asset_key, partition_key)
                 for partition_key in self.partitions or [None]
@@ -156,7 +156,7 @@ class AssetDaemonScenarioState(ScenarioState):
             auto_materialize_asset_keys={
                 key
                 for key in self.asset_graph.materializable_asset_keys
-                if self.asset_graph.get_auto_materialize_policy(key) is not None
+                if self.asset_graph.get(key).auto_materialize_policy is not None
             },
             instance=self.instance,
             materialize_run_tags={},
@@ -165,7 +165,7 @@ class AssetDaemonScenarioState(ScenarioState):
             auto_observe_asset_keys={
                 key
                 for key in self.asset_graph.external_asset_keys
-                if self.asset_graph.get_auto_observe_interval_minutes(key) is not None
+                if self.asset_graph.get(key).auto_observe_interval_minutes is not None
             },
             respect_materialization_data_versions=False,
             logger=self.logger,
@@ -253,7 +253,7 @@ class AssetDaemonScenarioState(ScenarioState):
             ]
             new_evaluations = [
                 e.get_evaluation_with_run_ids(
-                    self.asset_graph.get_partitions_def(e.asset_key)
+                    self.asset_graph.get(e.asset_key).partitions_def
                 ).evaluation
                 for e in check.not_none(
                     self.instance.schedule_storage
@@ -398,7 +398,7 @@ class AssetDaemonScenarioState(ScenarioState):
         assert (
             new_run_ids_for_asset
             == evaluation_record.get_evaluation_with_run_ids(
-                self.asset_graph.get_partitions_def(key)
+                self.asset_graph.get(key).partitions_def
             ).run_ids
         )
 

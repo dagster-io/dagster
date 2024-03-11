@@ -7,11 +7,11 @@ import time
 from typing import Any
 
 import pytest
-from dagster._core.host_representation import ExternalRepositoryOrigin
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalRepositoryOrigin
+from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
     instance_for_test,
 )

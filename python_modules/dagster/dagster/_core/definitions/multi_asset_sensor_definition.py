@@ -259,7 +259,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset_graph = self._repository_def.asset_graph
         for asset_key in self._monitored_asset_keys:
             assets_def = (
-                asset_graph.get_assets_def(asset_key) if asset_graph.has_asset(asset_key) else None
+                asset_graph.get(asset_key).assets_def if asset_graph.has(asset_key) else None
             )
             self._assets_by_key[asset_key] = assets_def
 
@@ -683,8 +683,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 )
             else:
                 return asset_def
-        elif repo_def.asset_graph.has_asset(asset_key):
-            return repo_def.asset_graph.get_assets_def(asset_key)
+        elif repo_def.asset_graph.has(asset_key):
+            return repo_def.asset_graph.get(asset_key).assets_def
         else:
             raise DagsterInvalidInvocationError(
                 f"Asset key {asset_key} not monitored in sensor and does not exist in target jobs"

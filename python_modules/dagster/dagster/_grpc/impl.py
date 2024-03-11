@@ -41,8 +41,10 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
-from dagster._core.host_representation import external_job_data_from_def
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_representation import external_job_data_from_def
+from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -54,8 +56,6 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
     job_name_for_external_partition_set_name,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,

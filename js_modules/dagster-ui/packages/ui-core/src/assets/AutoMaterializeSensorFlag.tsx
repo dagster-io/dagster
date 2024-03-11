@@ -9,7 +9,7 @@ type FlagState = 'unknown' | 'has-sensor-amp' | 'has-global-amp';
 
 export const useAutoMaterializeSensorFlag = (): FlagState => {
   const {data} = useQuery<AutoMaterializeSensorFlagQuery, AutoMaterializeSensorFlagQueryVariables>(
-    AUTO_MATERIALIZE_POLICY_SENSOR_FLAG,
+    AUTO_MATERIALIZE_POLICY_SENSOR_FLAG_QUERY,
   );
   if (!data) {
     return 'unknown';
@@ -17,7 +17,7 @@ export const useAutoMaterializeSensorFlag = (): FlagState => {
   return data?.instance.useAutoMaterializeSensors ? 'has-sensor-amp' : 'has-global-amp';
 };
 
-const AUTO_MATERIALIZE_POLICY_SENSOR_FLAG = gql`
+export const AUTO_MATERIALIZE_POLICY_SENSOR_FLAG_QUERY = gql`
   query AutoMaterializeSensorFlag {
     instance {
       id

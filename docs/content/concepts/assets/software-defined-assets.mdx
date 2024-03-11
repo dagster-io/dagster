@@ -562,7 +562,7 @@ Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataV
 To attach metadata, supply a `metadata` dictionary to the asset:
 
 ```python file=/concepts/assets/asset_definition_metadata.py startafter=start_example endbefore=end_example
-@asset(metadata={"owner": "alice@mycompany.com", "priority": "high"})
+@asset(metadata={"priority": "high"})
 def my_asset():
     return 5
 ```

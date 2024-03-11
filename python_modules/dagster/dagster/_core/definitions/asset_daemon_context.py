@@ -53,9 +53,9 @@ def get_implicit_auto_materialize_policy(
     asset_key: AssetKey, asset_graph: BaseAssetGraph
 ) -> Optional[AutoMaterializePolicy]:
     """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
-    auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
+    auto_materialize_policy = asset_graph.get(asset_key).auto_materialize_policy
     if auto_materialize_policy is None:
-        time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
+        time_partitions_def = get_time_partitions_def(asset_graph.get(asset_key).partitions_def)
         if time_partitions_def is None:
             max_materializations_per_minute = None
         elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
@@ -141,15 +141,13 @@ class AssetDaemonContext:
         return {
             parent
             for asset_key in self.auto_materialize_asset_keys
-            for parent in self.asset_graph.get_parents(asset_key)
+            for parent in self.asset_graph.get(asset_key).parent_keys
         } | self.auto_materialize_asset_keys
 
     @property
     def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
         return [
-            key
-            for key in self.auto_materialize_asset_keys_and_parents
-            if self.asset_graph.has_asset(key)
+            key for key in self.auto_materialize_asset_keys_and_parents if self.asset_graph.has(key)
         ]
 
     @property
@@ -192,7 +190,7 @@ class AssetDaemonContext:
         """
         # convert the legacy AutoMaterializePolicy to an Evaluator
         asset_condition = check.not_none(
-            self.asset_graph.get_auto_materialize_policy(asset_key)
+            self.asset_graph.get(asset_key).auto_materialize_policy
         ).to_asset_condition()
 
         asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
@@ -269,9 +267,9 @@ class AssetDaemonContext:
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
             # materialize all of them
-            execution_unit_keys = self.asset_graph.get_execution_set_asset_keys(asset_key)
-            if len(execution_unit_keys) > 1 and num_requested > 0:
-                for neighbor_key in execution_unit_keys:
+            execution_set_keys = self.asset_graph.get(asset_key).execution_set_asset_keys
+            if len(execution_set_keys) > 1 and num_requested > 0:
+                for neighbor_key in execution_set_keys:
                     expected_data_time_mapping[neighbor_key] = expected_data_time
 
                     # make sure that the true_subset of the neighbor is accurate -- when it was
@@ -355,7 +353,7 @@ def build_run_requests(
 
     for asset_partition in asset_partitions:
         assets_to_reconcile_by_partitions_def_partition_key[
-            asset_graph.get_partitions_def(asset_partition.asset_key), asset_partition.partition_key
+            asset_graph.get(asset_partition.asset_key).partitions_def, asset_partition.partition_key
         ].add(asset_partition.asset_key)
 
     run_requests = []
@@ -416,7 +414,7 @@ def build_run_requests_with_backfill_policies(
     # here we are grouping assets by their partitions def and partition keys selected.
     for asset_key, partition_keys in asset_partition_keys.items():
         assets_to_reconcile_by_partitions_def_partition_keys[
-            asset_graph.get_partitions_def(asset_key),
+            asset_graph.get(asset_key).partitions_def,
             frozenset(partition_keys) if partition_keys else None,
         ].add(asset_key)
 
@@ -434,7 +432,7 @@ def build_run_requests_with_backfill_policies(
             run_requests.append(RunRequest(asset_selection=list(asset_keys), tags=tags))
         else:
             backfill_policies = {
-                check.not_none(asset_graph.get_backfill_policy(asset_key))
+                check.not_none(asset_graph.get(asset_key).backfill_policy)
                 for asset_key in asset_keys
             }
             if len(backfill_policies) == 1:
@@ -453,7 +451,7 @@ def build_run_requests_with_backfill_policies(
             else:
                 # if backfill policies are different, we need to backfill them separately
                 for asset_key in asset_keys:
-                    backfill_policy = asset_graph.get_backfill_policy(asset_key)
+                    backfill_policy = asset_graph.get(asset_key).backfill_policy
                     run_requests.extend(
                         _build_run_requests_with_backfill_policy(
                             [asset_key],
@@ -567,7 +565,7 @@ def get_auto_observe_run_requests(
     assets_to_auto_observe: Set[AssetKey] = set()
     for asset_key in auto_observe_asset_keys:
         last_observe_request_timestamp = last_observe_request_timestamp_by_asset_key.get(asset_key)
-        auto_observe_interval_minutes = asset_graph.get_auto_observe_interval_minutes(asset_key)
+        auto_observe_interval_minutes = asset_graph.get(asset_key).auto_observe_interval_minutes
 
         if auto_observe_interval_minutes and (
             last_observe_request_timestamp is None
@@ -583,7 +581,7 @@ def get_auto_observe_run_requests(
     for repository_asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe):
         asset_keys_by_partitions_def = defaultdict(list)
         for asset_key in repository_asset_keys:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
             asset_keys_by_partitions_def[partitions_def].append(asset_key)
         partitions_def_and_asset_key_groups.extend(asset_keys_by_partitions_def.values())
 

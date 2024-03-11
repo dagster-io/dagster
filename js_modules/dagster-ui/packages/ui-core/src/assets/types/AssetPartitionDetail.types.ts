@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type AssetPartitionDetailQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  partitionKey: Types.Scalars['String'];
+  partitionKey: Types.Scalars['String']['input'];
 }>;
 
 export type AssetPartitionDetailQuery = {
@@ -354,7 +354,7 @@ export type AssetPartitionLatestRunFragment = {
 
 export type AssetPartitionStaleQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  partitionKey: Types.Scalars['String'];
+  partitionKey: Types.Scalars['String']['input'];
 }>;
 
 export type AssetPartitionStaleQuery = {
