@@ -28,7 +28,7 @@ def normalize_names(names):
         name = camel_to_snake1.sub(r"\1_\2", name)
         return camel_to_snake2.sub(r"\1_\2", name).lower()
 
-    return map(normalize, names)
+    return [normalize(n) for n in names]
 
 
 DataFrameUtilities = {
