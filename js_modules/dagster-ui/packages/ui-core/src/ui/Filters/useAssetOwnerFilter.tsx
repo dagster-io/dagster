@@ -1,8 +1,7 @@
-import {Box, Icon} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {useStaticSetFilter} from './useStaticSetFilter';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
 
 const emptyArray: any[] = [];
 
@@ -15,6 +14,7 @@ export const useAssetOwnerFilter = ({
   owners?: null | string[];
   setOwners?: null | ((s: string[]) => void);
 }) => {
+  const {UserDisplay} = useLaunchPadHooks();
   return useStaticSetFilter<string>({
     name: 'Owner',
     icon: 'account_circle',
@@ -27,12 +27,7 @@ export const useAssetOwnerFilter = ({
       [allAssetOwners],
     ),
     menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="account_circle" />
-        <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
-      </Box>
-    ),
+    renderLabel: ({value}) => <UserDisplay email={value} isFilter={true} />,
     getStringValue: (value) => value,
     state: owners ?? emptyArray,
     onStateChanged: (values) => {
