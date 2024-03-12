@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -11,10 +12,12 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
 
+from pydantic import BaseModel
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -1129,3 +1132,62 @@ class MetadataEntry(
     def value(self):
         """Alias of `entry_data`."""
         return self.entry_data
+
+
+T_NamespacedMetadataEntries = TypeVar(
+    "T_NamespacedMetadataEntries", bound="NamespacedMetadataEntries"
+)
+
+
+class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
+    """Extend this class to define a set of metadata fields in the same namespace.
+
+    Supports splatting to a dictionary that can be placed inside a metadata argument along with
+    other dictionary-structured metadata.
+
+    .. code-block:: python
+
+        my_metadata: NamespacedMetadataEntries = ...
+        return MaterializeResult(metadata={**my_metadata, ...})
+    """
+
+    @classmethod
+    @abstractmethod
+    def namespace(cls) -> str:
+        raise NotImplementedError()
+
+    def keys(self) -> AbstractSet[str]:
+        dictionary = self.dict()
+        return {
+            f"{self.namespace()}/{key}" for key in dictionary.keys() if dictionary[key] is not None
+        }
+
+    def __getitem__(self, key: str) -> Any:
+        return self.dict()[key.split("/", 1)[1]]
+
+    @classmethod
+    def from_dict(
+        cls: Type[T_NamespacedMetadataEntries], metadata_dict: Mapping[str, Any]
+    ) -> T_NamespacedMetadataEntries:
+        derived_dict = {
+            key.split("/", 1)[1]: value.value if isinstance(value, MetadataValue) else value
+            for key, value in metadata_dict.items()
+            if key.startswith(f"{cls.namespace()}/")
+        }
+
+        return cls.parse_obj(derived_dict)
+
+
+class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
+    """Metadata entries that apply to definitions, observations, or materializations of assets that
+    are tables.
+
+    Args:
+        column_schema (Optional[TableSchema]): The schema of the columns in the table.
+    """
+
+    column_schema: Optional[TableSchema] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster"
