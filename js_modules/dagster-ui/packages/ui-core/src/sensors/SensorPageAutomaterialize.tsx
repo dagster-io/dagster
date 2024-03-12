@@ -41,10 +41,6 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
 
-  const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
-    ASSET_SENSOR_TICKS_QUERY,
-  );
-
   const variables: AssetSensorTicksQueryVariables = useMemo(() => {
     if (timeRange || statuses) {
       return {
@@ -67,6 +63,11 @@ export const SensorPageAutomaterialize = (props: Props) => {
       afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
     };
   }, [sensor, repoAddress, statuses, timeRange]);
+
+  const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
+    ASSET_SENSOR_TICKS_QUERY,
+    {variables},
+  );
 
   function fetchData() {
     fetch({

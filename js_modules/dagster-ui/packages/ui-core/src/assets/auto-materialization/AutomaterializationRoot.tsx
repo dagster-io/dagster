@@ -65,9 +65,6 @@ const GlobalAutomaterializationRoot = () => {
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
 
-  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
-    ASSET_DAEMON_TICKS_QUERY,
-  );
   const [isPaused, setIsPaused] = useState(false);
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
@@ -83,6 +80,10 @@ const GlobalAutomaterializationRoot = () => {
       afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
     };
   }, [statuses, timeRange]);
+  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
+    ASSET_DAEMON_TICKS_QUERY,
+    {variables},
+  );
   function fetchData() {
     fetch({
       variables,
