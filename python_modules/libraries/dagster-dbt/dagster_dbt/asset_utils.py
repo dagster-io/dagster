@@ -367,18 +367,20 @@ def default_metadata_from_dbt_resource_props(
     metadata: Dict[str, Any] = {}
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
-        return TableMetadataEntries(
-            column_schema=TableSchema(
-                columns=[
-                    TableColumn(
-                        name=column_name,
-                        type=column_info.get("data_type") or "?",
-                        description=column_info.get("description"),
-                    )
-                    for column_name, column_info in columns.items()
-                ]
+        return dict(
+            TableMetadataEntries(
+                column_schema=TableSchema(
+                    columns=[
+                        TableColumn(
+                            name=column_name,
+                            type=column_info.get("data_type") or "?",
+                            description=column_info.get("description"),
+                        )
+                        for column_name, column_info in columns.items()
+                    ]
+                )
             )
-        ).dict()
+        )
     return metadata
 
 
@@ -778,3 +780,24 @@ def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
     has_self_dependency = dagster_metadata.get("has_self_dependency", False)
 
     return has_self_dependency
+
+
+from dagster import MaterializeResult, asset
+from pydantic import BaseModel
+
+
+class ColumnLineage(BaseModel):
+    bar: str
+
+
+@asset
+def my_asset():
+    mat_result = MaterializeResult(metadata={"foo": ColumnLineage(bar="baz")})
+    assert mat_result.get_event_log_representation().metadata["foo"] == {"bar": "baz"}
+    assert mat_result.metadata["foo"] == ColumnLineage(bar="baz")
+
+    mat_result = MaterializeResult(
+        metadata=dict(TableMetadataEntries(column_lineage=ColumnLineage(bar="baz")))
+    )
+    assert mat_result.get_event_log_representation().metadata["foo"] == {"bar": "baz"}
+    assert mat_result.metadata["foo"] == ColumnLineage(bar="baz")

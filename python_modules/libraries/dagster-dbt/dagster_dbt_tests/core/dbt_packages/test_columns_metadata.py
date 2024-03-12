@@ -51,7 +51,7 @@ def test_columns_metadata(test_metadata_manifest: Dict[str, Any]) -> None:
         }
 
         for output in output_by_dbt_unique_id.values():
-            assert TableMetadataEntries.from_dict(output.metadata).column_schema is not None
+            assert TableMetadataEntries.extract(output.metadata).column_schema is not None
 
         customers_output = output_by_dbt_unique_id["model.test_dagster_metadata.customers"]
         assert (
@@ -66,7 +66,7 @@ def test_columns_metadata(test_metadata_manifest: Dict[str, Any]) -> None:
                     TableColumn("customer_lifetime_value", type="DOUBLE"),
                 ]
             )
-            == TableMetadataEntries.from_dict(customers_output.metadata).column_schema
+            == TableMetadataEntries.extract(customers_output.metadata).column_schema
         )
 
         yield from events
