@@ -27,6 +27,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PageLoadTrace} from '../performance';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {
   useAssetKindTagsForAssets,
@@ -96,16 +97,19 @@ export const AssetsCatalogTable = ({
     groups: AssetGroupSelector[];
     computeKindTags: string[];
     changedInBranch: ChangeReason[];
+    owners: string[];
   }>({
-    encode: ({groups, computeKindTags, changedInBranch}) => ({
+    encode: ({groups, computeKindTags, changedInBranch, owners}) => ({
       groups: groups?.length ? JSON.stringify(groups) : undefined,
       computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
       changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+      owners: owners?.length ? JSON.stringify(owners) : undefined,
     }),
     decode: (qs) => ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
       computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
       changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
+      owners: qs.owners ? JSON.parse(qs.owners) : [],
     }),
   });
 
@@ -138,6 +142,16 @@ export const AssetsCatalogTable = ({
               filters.changedInBranch!.includes(reason),
             )
           ) {
+            return false;
+          }
+        }
+
+        if (filters.owners?.length) {
+          const owners =
+            a.definition?.owners.map((o) =>
+              o.__typename === 'TeamAssetOwner' ? o.team : o.email,
+            ) || [];
+          if (filters.owners.some((owner) => !owners.includes(owner))) {
             return false;
           }
         }
@@ -180,6 +194,16 @@ export const AssetsCatalogTable = ({
     [setFilters],
   );
 
+  const setOwners = React.useCallback(
+    (owners: string[]) => {
+      setFilters((existingFilters: typeof filters) => ({
+        ...existingFilters,
+        owners,
+      }));
+    },
+    [setFilters],
+  );
+
   const setVisibleChangedInBranch = React.useCallback(
     (changeReasons: ChangeReason[]) => {
       setFilters((existingFilters: typeof filters) => ({
@@ -192,6 +216,7 @@ export const AssetsCatalogTable = ({
 
   const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
   const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
+  const allAssetOwners = useAssetOwnersForAssets(pathMatches);
 
   const groupsFilter = useAssetGroupFilter({
     assetGroups: allAssetGroupOptions,
@@ -207,7 +232,12 @@ export const AssetsCatalogTable = ({
     computeKindTags: filters.computeKindTags,
     setComputeKindTags: setVisibleComputeKindTags,
   });
-  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter];
+  const ownersFilter = useAssetOwnerFilter({
+    allAssetOwners,
+    owners: filters.owners,
+    setOwners,
+  });
+  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter];
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
   if (isBranchDeployment) {
     uiFilters.push(changedInBranchFilter);
@@ -244,7 +274,8 @@ export const AssetsCatalogTable = ({
         !!(
           filters.changedInBranch?.length ||
           filters.computeKindTags?.length ||
-          filters.groups?.length
+          filters.groups?.length ||
+          filters.owners?.length
         )
       }
       actionBarComponents={
