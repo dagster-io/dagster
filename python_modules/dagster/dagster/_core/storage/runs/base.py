@@ -161,14 +161,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_run_tags(
         self,
-        tag_keys: Optional[Sequence[str]] = None,
+        tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[Tuple[str, Set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
 
         Args:
-            tag_keys (Optional[Sequence[str]]): tag keys to filter by.
+            tag_keys (Sequence[str]): tag keys to filter by.
 
         Returns:
             List[Tuple[str, Set[str]]]

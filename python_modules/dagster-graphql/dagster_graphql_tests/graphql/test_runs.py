@@ -78,19 +78,6 @@ mutation DeleteRun($runId: String!) {
 }
 """
 
-ALL_TAGS_QUERY = """
-{
-  runTagsOrError {
-    ... on RunTags {
-      tags {
-        key
-        values
-      }
-    }
-  }
-}
-"""
-
 ALL_TAG_KEYS_QUERY = """
 {
   runTagKeysOrError {
@@ -351,12 +338,6 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         # check presence rather than set equality since we might have extra tags in cloud
         assert "fruit" in tag_keys
         assert "veggie" in tag_keys
-
-        all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
-        tags = all_tags_result.data["runTagsOrError"]["tags"]
-        tags_dict = {item["key"]: item["values"] for item in tags}
-        assert tags_dict["fruit"] == ["apple"]
-        assert tags_dict["veggie"] == ["carrot"]
 
         filtered_tags_result = execute_dagster_graphql(
             read_context, FILTERED_TAGS_QUERY, variables={"tagKeys": ["fruit"]}
