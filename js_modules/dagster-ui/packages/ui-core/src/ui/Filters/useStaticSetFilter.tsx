@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
+import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
 import {Fragment, useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -27,6 +27,7 @@ type Args<TValue> = {
   onStateChanged?: (state: Set<TValue>) => void;
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
+  selectAllText?: React.ReactNode;
   menuWidth?: number | string;
   closeOnSelect?: boolean;
 };
@@ -53,6 +54,7 @@ export function useStaticSetFilter<TValue>({
   allowMultipleSelections = true,
   matchType = 'any-of',
   closeOnSelect = false,
+  selectAllText,
 }: Args<TValue>): StaticSetFilter<TValue> {
   const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
 
@@ -121,7 +123,17 @@ export function useStaticSetFilter<TValue>({
         if (allowMultipleSelections) {
           return [
             {
-              label: <ButtonLink>Select all</ButtonLink>,
+              label: (
+                <SetFilterLabel
+                  value={selectAllSymbol}
+                  renderLabel={() => <>{selectAllText ?? 'Select all'}</>}
+                  isForcedActive={
+                    (state instanceof Set ? state.size : state?.length) === allValues.length
+                  }
+                  filter={filterObjRef.current}
+                  allowMultipleSelections={allowMultipleSelections}
+                />
+              ),
               key: 'useStaticSetFilter:select-all-key',
               value: selectAllSymbol,
             },
@@ -207,6 +219,7 @@ export function useStaticSetFilter<TValue>({
       allValues,
       allowMultipleSelections,
       getKey,
+      selectAllText,
     ],
   );
   const filterObjRef = useUpdatingRef(filterObj);
@@ -309,12 +322,13 @@ export function capitalizeFirstLetter(string: string) {
 
 type SetFilterLabelProps = {
   value: any;
+  isForcedActive?: boolean;
   filter: StaticSetFilter<any>;
   renderLabel: (value: any) => JSX.Element;
   allowMultipleSelections: boolean;
 };
 export function SetFilterLabel(props: SetFilterLabelProps) {
-  const {value, filter, renderLabel, allowMultipleSelections} = props;
+  const {value, filter, isForcedActive, renderLabel, allowMultipleSelections} = props;
   const isActive = filter.state.has(value);
 
   const labelRef = useRef<HTMLDivElement>(null);
@@ -328,7 +342,9 @@ export function SetFilterLabel(props: SetFilterLabelProps) {
       margin={allowMultipleSelections ? {left: 2} : {}}
       style={{maxWidth: '500px'}}
     >
-      {allowMultipleSelections ? <Checkbox checked={isActive} size="small" readOnly /> : null}
+      {allowMultipleSelections ? (
+        <Checkbox checked={isForcedActive || isActive} size="small" readOnly />
+      ) : null}
       <Box
         flex={{direction: 'row', alignItems: 'center', grow: 1, shrink: 1}}
         style={{overflow: 'hidden'}}
