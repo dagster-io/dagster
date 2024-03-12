@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import {AssetGlobalLineageButton, AssetPageHeader} from './AssetPageHeader';
 import {ASSET_CATALOG_TABLE_QUERY} from './AssetsCatalogTable';
 import {fetchRecentlyVisitedAssetsFromLocalStorage} from './RecentlyVisitedAssetsStorage';
-import {AssetTableFragment} from './types/AssetTableFragment.types';
+import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
@@ -33,7 +33,7 @@ type AssetCountsResult = {
   countPerCodeLocation: CountPerCodeLocation[];
 };
 
-type GroupMetadata = {
+export type GroupMetadata = {
   groupName: string;
   repositoryLocationName: string;
   repositoryName: string;
@@ -49,7 +49,14 @@ type CountPerCodeLocation = {
   assetCount: number;
 };
 
-function buildAssetCountBySection(assets: AssetTableFragment[]): AssetCountsResult {
+type AssetDefinitionMetadata = {
+  definition: Pick<
+    AssetTableDefinitionFragment,
+    'owners' | 'computeKind' | 'groupName' | 'repository'
+  > | null;
+};
+
+export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): AssetCountsResult {
   const assetCountByOwner: Record<string, number> = {};
   const assetCountByComputeKind: Record<string, number> = {};
   const assetCountByGroup: Record<string, number> = {};
@@ -173,7 +180,7 @@ const linkToAssetGraphComputeKind = (computeKind: string) => {
   })}`;
 };
 
-const linkToCodeLocation = (repoAddress: RepoAddress) => {
+export const linkToCodeLocation = (repoAddress: RepoAddress) => {
   return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
 };
 

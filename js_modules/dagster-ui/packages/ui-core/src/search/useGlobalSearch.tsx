@@ -1,8 +1,9 @@
 import {gql} from '@apollo/client';
+import qs from 'qs';
 import {useCallback, useEffect, useRef} from 'react';
 
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
-import {SearchResult, SearchResultType} from './types';
+import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
 import {
   SearchPrimaryQuery,
   SearchPrimaryQueryVariables,
@@ -12,9 +13,30 @@ import {
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {
+  GroupMetadata,
+  buildAssetCountBySection,
+  linkToCodeLocation,
+} from '../assets/AssetsOverview';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
+
+const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
+  return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
+};
+
+const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
+  return `/assets?${qs.stringify({
+    computeKindTags: JSON.stringify([computeKind]),
+  })}`;
+};
+
+const linkToAssetTableWithOwnerFilter = (owner: string) => {
+  return `/assets?${qs.stringify({
+    owners: JSON.stringify([owner]),
+  })}`;
+};
 
 const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   const {data} = input;
@@ -140,24 +162,87 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   return allEntries;
 };
 
-const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
+const secondaryDataToSearchResults = (
+  input: {data?: SearchSecondaryQuery},
+  includeAssetFilters: boolean,
+) => {
   const {data} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
     return [];
   }
 
   const {nodes} = data.assetsOrError;
-  return nodes
+
+  const assets = nodes
     .filter(({definition}) => definition !== null)
-    .map(({key}) => {
+    .map(({key, definition}) => {
       return {
         label: displayNameForAssetKey(key),
         href: assetDetailsPathForKey(key),
         segments: key.path,
-        description: 'Asset',
+        description: `Asset in ${buildRepoPathForHuman(
+          definition!.repository.name,
+          definition!.repository.location.name,
+        )}`,
         type: SearchResultType.Asset,
       };
     });
+
+  if (!includeAssetFilters) {
+    return [...assets];
+  } else {
+    const countsBySection = buildAssetCountBySection(nodes);
+
+    const computeKindResults: SearchResult[] = Object.entries(
+      countsBySection.countsByComputeKind,
+    ).map(([computeKind, count]) => ({
+      label: computeKind,
+      description: '',
+      type: AssetFilterSearchResultType.ComputeKind,
+      href: linkToAssetTableWithComputeKindFilter(computeKind),
+      numResults: count,
+    }));
+
+    const codeLocationResults: SearchResult[] = countsBySection.countPerCodeLocation.map(
+      (codeLocationAssetCount) => ({
+        label: buildRepoPathForHuman(
+          codeLocationAssetCount.repoAddress.name,
+          codeLocationAssetCount.repoAddress.location,
+        ),
+        description: '',
+        type: AssetFilterSearchResultType.CodeLocation,
+        href: linkToCodeLocation(codeLocationAssetCount.repoAddress),
+        numResults: codeLocationAssetCount.assetCount,
+      }),
+    );
+
+    const groupResults: SearchResult[] = countsBySection.countPerAssetGroup.map(
+      (groupAssetCount) => ({
+        label: groupAssetCount.groupMetadata.groupName,
+        description: '',
+        type: AssetFilterSearchResultType.AssetGroup,
+        href: linkToAssetTableWithGroupFilter(groupAssetCount.groupMetadata),
+        numResults: groupAssetCount.assetCount,
+      }),
+    );
+
+    const ownerResults: SearchResult[] = Object.entries(countsBySection.countsByOwner).map(
+      ([owner, count]) => ({
+        label: owner,
+        description: '',
+        type: AssetFilterSearchResultType.Owner,
+        href: linkToAssetTableWithOwnerFilter(owner),
+        numResults: count,
+      }),
+    );
+    return [
+      ...assets,
+      ...computeKindResults,
+      ...codeLocationResults,
+      ...ownerResults,
+      ...groupResults,
+    ];
+  }
 };
 
 const fuseOptions = {
@@ -174,6 +259,12 @@ type IndexBuffer = {
   cancel: () => void;
 };
 
+// These are the versions of the primary and secondary data queries. They are used to
+// version the cache in indexedDB. When the data in the cache must be invalidated, this version
+// should be bumped to prevent fetching stale data.
+export const SEARCH_PRIMARY_DATA_VERSION = 1;
+export const SEARCH_SECONDARY_DATA_VERSION = 1;
+
 /**
  * Perform global search populated by two lazy queries, to be initialized upon some
  * interaction with the search input. Each query result list is packaged and sent to a worker
@@ -188,7 +279,7 @@ type IndexBuffer = {
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
-export const useGlobalSearch = () => {
+export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boolean}) => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
@@ -199,6 +290,7 @@ export const useGlobalSearch = () => {
   } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
     query: SEARCH_PRIMARY_QUERY,
     key: 'SearchPrimary',
+    version: SEARCH_PRIMARY_DATA_VERSION,
   });
 
   const {
@@ -208,6 +300,7 @@ export const useGlobalSearch = () => {
   } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
     query: SEARCH_SECONDARY_QUERY,
     key: 'SearchSecondary',
+    version: SEARCH_SECONDARY_DATA_VERSION,
   });
 
   const consumeBufferEffect = useCallback(
@@ -238,13 +331,13 @@ export const useGlobalSearch = () => {
     if (!secondaryData) {
       return;
     }
-    const results = secondaryDataToSearchResults({data: secondaryData});
+    const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(results);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData]);
+  }, [consumeBufferEffect, secondaryData, includeAssetFilters]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
@@ -389,6 +482,24 @@ export const SEARCH_SECONDARY_QUERY = gql`
           }
           definition {
             id
+            computeKind
+            groupName
+            owners {
+              ... on TeamAssetOwner {
+                team
+              }
+              ... on UserAssetOwner {
+                email
+              }
+            }
+            repository {
+              id
+              name
+              location {
+                id
+                name
+              }
+            }
           }
         }
       }

@@ -74,7 +74,9 @@ const DEBOUNCE_MSEC = 100;
 
 export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
   const history = useHistory();
-  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch();
+  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
+    includeAssetFilters: false,
+  });
   const trackEvent = useTrackEvent();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);

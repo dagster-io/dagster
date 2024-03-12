@@ -4,6 +4,11 @@ import React from 'react';
 
 const ONE_WEEK = 1000 * 60 * 60 * 24 * 7;
 
+type CacheData<TQuery> = {
+  data: TQuery;
+  version: number;
+};
+
 /**
  * Returns data from the indexedDB cache initially while loading is true.
  * Fetches data from the network/cache initially and does not receive any updates afterwards
@@ -11,16 +16,18 @@ const ONE_WEEK = 1000 * 60 * 60 * 24 * 7;
 export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVariables>({
   key,
   query,
+  version,
   variables,
 }: {
   key: string;
   query: DocumentNode;
+  version: number;
   variables?: TVariables;
 }) {
   const client = useApolloClient();
 
   const lru = React.useMemo(
-    () => cache<string, TQuery>({dbName: `indexdbQueryCache:${key}`, maxCount: 1}),
+    () => cache<string, CacheData<TQuery>>({dbName: `indexdbQueryCache:${key}`, maxCount: 1}),
     [key],
   );
 
@@ -33,11 +40,13 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       if (await lru.has('cache')) {
         const {value} = await lru.get('cache');
         if (value) {
-          setData(value);
+          if (version === (value.version || null)) {
+            setData(value.data);
+          }
         }
       }
     })();
-  }, [lru]);
+  }, [lru, version]);
 
   const didFetch = React.useRef(false);
 
@@ -55,11 +64,15 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       variables,
     });
     setLoading(false);
-    lru.set('cache', data, {
-      expiry: new Date(Date.now() + ONE_WEEK),
-    });
+    lru.set(
+      'cache',
+      {data, version},
+      {
+        expiry: new Date(Date.now() + ONE_WEEK),
+      },
+    );
     setData(data);
-  }, [client, lru, query, variables]);
+  }, [client, lru, query, variables, version]);
 
   return {
     fetch,

@@ -4,9 +4,9 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {SearchResult, SearchResultType} from './types';
+import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
 
-const iconForType = (type: SearchResultType): IconName => {
+const iconForType = (type: SearchResultType | AssetFilterSearchResultType): IconName => {
   switch (type) {
     case SearchResultType.Asset:
       return 'asset';
