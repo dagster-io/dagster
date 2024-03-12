@@ -1507,3 +1507,10 @@ def test_opt_iterable():
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
         check.opt_iterable_param(["atr", None], "nonedoesntcount", of_type=str)
+
+
+def test_inst_type_narrowing() -> None:
+    def _takes_any_returns_in(obj: object) -> int:
+        return check.inst(obj, int)
+
+    assert _takes_any_returns_in(1) == 1

@@ -650,7 +650,7 @@ def opt_inst_param(
 
 @overload
 def opt_inst_param(
-    obj: T,
+    obj: Optional[T],
     param_name: str,
     ttype: TypeOrTupleOfTypes,
     default: Optional[T] = ...,
@@ -670,21 +670,21 @@ def opt_inst_param(
     return default if obj is None else obj
 
 
-def inst(obj: T, ttype: TypeOrTupleOfTypes, additional_message: Optional[str] = None) -> T:
+def inst(obj: object, ttype: TypeOrTupleOfTypes, additional_message: Optional[str] = None) -> T:
     if not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, additional_message)
-    return obj
+    return cast(T, obj)
 
 
 def opt_inst(
-    obj: T,
+    obj: object,
     ttype: TypeOrTupleOfTypes,
     additional_message: Optional[str] = None,
     default: Optional[T] = None,
 ) -> Optional[T]:
     if obj is not None and not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, additional_message)
-    return default if obj is None else obj
+    return default if obj is None else cast(T, obj)
 
 
 # ########################
