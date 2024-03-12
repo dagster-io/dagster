@@ -16,8 +16,11 @@ from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 
+from .utils import validate_definition_tags
+
 
 @experimental_param(param="owners")
+@experimental_param(param="tags")
 class AssetOut(
     NamedTuple(
         "_AssetOut",
@@ -35,6 +38,7 @@ class AssetOut(
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
             ("owners", PublicAttr[Optional[Sequence[str]]]),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
         ],
     )
 ):
@@ -69,6 +73,8 @@ class AssetOut(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
     """
 
     def __new__(
@@ -86,6 +92,7 @@ class AssetOut(
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         owners: Optional[Sequence[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -117,6 +124,7 @@ class AssetOut(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            tags=validate_definition_tags(tags),
         )
 
     def to_out(self) -> Out:

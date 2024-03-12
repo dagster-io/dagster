@@ -124,6 +124,51 @@ def validate_tags(
     return valid_tags
 
 
+# Inspired by allowed Kubernetes labels:
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+VALID_DEFINITION_TAG_KEY_REGEX_STR = r"^([A-Za-z0-9_.-]{1,63}/)?[A-Za-z0-9_.-]{1,63}$"
+VALID_DEFINITION_TAG_KEY_REGEX = re.compile(VALID_DEFINITION_TAG_KEY_REGEX_STR)
+
+VALID_DEFINITION_TAG_VALUE_REGEX_STR = r"^[A-Za-z0-9_.-]{0,63}$"
+VALID_DEFINITION_TAG_VALUE_REGEX = re.compile(VALID_DEFINITION_TAG_VALUE_REGEX_STR)
+
+
+def is_valid_definition_tag_key(key: str) -> bool:
+    return bool(VALID_DEFINITION_TAG_KEY_REGEX.match(key))
+
+
+def is_valid_definition_tag_value(key: str) -> bool:
+    return bool(VALID_DEFINITION_TAG_VALUE_REGEX.match(key))
+
+
+def validate_definition_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
+    """More restrictive than validate_tags."""
+    if tags is None:
+        return tags
+
+    for key, value in tags.items():
+        if not isinstance(key, str):
+            raise DagsterInvalidDefinitionError("Tag keys must be strings")
+
+        if not isinstance(value, str):
+            raise DagsterInvalidDefinitionError("Tag values must be strings")
+
+        if not is_valid_definition_tag_key(key):
+            raise DagsterInvalidDefinitionError(
+                f"Invalid tag key: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
+                "Tag keys can also contain a namespace section, separated by a '/'. Each section "
+                "must have <= 63 characters."
+            )
+
+        if not is_valid_definition_tag_value(value):
+            raise DagsterInvalidDefinitionError(
+                f"Invalid tag value: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
+                "Must have <= 63 characters."
+            )
+
+    return tags
+
+
 def validate_group_name(group_name: Optional[str]) -> str:
     """Ensures a string name is valid and returns a default if no name provided."""
     if group_name:

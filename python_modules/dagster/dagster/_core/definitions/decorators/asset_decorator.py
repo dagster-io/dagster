@@ -51,7 +51,12 @@ from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
-from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel
+from ..utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    DEFAULT_OUTPUT,
+    NoValueSentinel,
+    validate_definition_tags,
+)
 
 
 @overload
@@ -68,6 +73,7 @@ def asset(
     ins: Optional[Mapping[str, AssetIn]] = ...,
     deps: Optional[Iterable[CoercibleToAssetDep]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
+    tags: Optional[Mapping[str, Optional[Mapping[str, str]]]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
@@ -97,6 +103,7 @@ def asset(
 @experimental_param(param="auto_materialize_policy")
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
+@experimental_param(param="tags")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
 )
@@ -108,6 +115,7 @@ def asset(
     ins: Optional[Mapping[str, AssetIn]] = None,
     deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
+    tags: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
@@ -162,6 +170,8 @@ def asset(
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
@@ -226,6 +236,7 @@ def asset(
             ins=ins,
             deps=upstream_asset_deps,
             metadata=metadata,
+            tags=validate_definition_tags(tags),
             description=description,
             config_schema=config_schema,
             required_resource_keys=required_resource_keys,
@@ -299,6 +310,7 @@ class _Asset:
         ins: Optional[Mapping[str, AssetIn]] = None,
         deps: Optional[Iterable[AssetDep]] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
+        tags: Optional[Mapping[str, str]] = None,
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
         required_resource_keys: Optional[Set[str]] = None,
@@ -325,6 +337,7 @@ class _Asset:
         self.ins = ins or {}
         self.deps = deps or []
         self.metadata = metadata
+        self.tags = tags
         self.description = description
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys"
@@ -485,6 +498,7 @@ class _Asset:
             selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
             metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
+            tags_by_key={out_asset_key: self.tags} if self.tags else None,
             # see comment in @multi_asset's call to dagster_internal_init for the gory details
             # this is best understood as an _override_ which @asset does not support
             descriptions_by_key=None,
@@ -862,6 +876,11 @@ def multi_asset(
             for asset_key, props in props_by_asset_key.items()
             if props.metadata is not None
         }
+        tags_by_key = {
+            asset_key: props.tags
+            for asset_key, props in props_by_asset_key.items()
+            if props.tags is not None
+        }
         owners_by_key = {
             asset_key: props.owners
             for asset_key, props in props_by_asset_key.items()
@@ -893,6 +912,7 @@ def multi_asset(
             # in OutputDefinitions in @multi_asset
             descriptions_by_key=None,
             metadata_by_key=metadata_by_key,
+            tags_by_key=tags_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
