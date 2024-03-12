@@ -60,7 +60,7 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
 import {Description} from '../pipelines/Description';
-import {PipelineReference} from '../pipelines/PipelineReference';
+import {PipelineTag} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -230,44 +230,64 @@ export const AssetNodeOverview = ({
     </Box>
   );
 
-  const renderAutomationDetailsSection = () => (
-    <Box flex={{direction: 'column', gap: 12}}>
-      <AttributeAndValue label="Jobs">
-        {visibleJobNames.map((jobName) => (
-          <Tag key={jobName}>
-            <PipelineReference
-              isJob
-              showIcon
-              pipelineName={jobName}
-              pipelineHrefContext={repoAddress}
-            />
-          </Tag>
-        ))}
-      </AttributeAndValue>
-      <AttributeAndValue label="Sensors">
-        {sensors.length > 0 && (
+  const renderAutomationDetailsSection = () => {
+    const attributes = [
+      {
+        label: 'Jobs',
+        children: visibleJobNames.map((jobName) => (
+          <PipelineTag
+            key={jobName}
+            isJob
+            showIcon
+            pipelineName={jobName}
+            pipelineHrefContext={repoAddress}
+          />
+        )),
+      },
+      {
+        label: 'Sensors',
+        children: sensors.length > 0 && (
           <ScheduleOrSensorTag repoAddress={repoAddress} sensors={sensors} showSwitch={false} />
-        )}
-      </AttributeAndValue>
-      <AttributeAndValue label="Schedules">
-        {schedules.length > 0 && (
+        ),
+      },
+      {
+        label: 'Schedules',
+        children: schedules.length > 0 && (
           <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
-        )}
-      </AttributeAndValue>
-
-      <AttributeAndValue label="Auto-materialize policy">
-        {assetNode.autoMaterializePolicy && (
+        ),
+      },
+      {
+        label: 'Auto-materialize policy',
+        children: assetNode.autoMaterializePolicy && (
           <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
-        )}
-      </AttributeAndValue>
-
-      <AttributeAndValue label="Freshness policy">
-        {assetNode.freshnessPolicy && (
+        ),
+      },
+      {
+        label: 'Freshness policy',
+        children: assetNode.freshnessPolicy && (
           <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
-        )}
-      </AttributeAndValue>
-    </Box>
-  );
+        ),
+      },
+    ];
+
+    if (attributes.every((props) => isEmptyChildren(props.children))) {
+      return (
+        <SectionEmptyState
+          title="No automations found for this asset"
+          description="Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers."
+          learnMoreLink="https://docs.dagster.io/concepts/automation#automation"
+        />
+      );
+    }
+
+    return (
+      <Box flex={{direction: 'column', gap: 12}}>
+        {attributes.map((props) => (
+          <AttributeAndValue key={props.label} {...props} />
+        ))}
+      </Box>
+    );
+  };
 
   const renderComputeDetailsSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -444,22 +464,29 @@ const AssetNodeOverviewContainer = ({
   </Box>
 );
 
+const isEmptyChildren = (children: React.ReactNode) =>
+  !children || (children instanceof Array && children.length === 0);
+
 const AttributeAndValue = ({
   label,
   children,
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
-}) => (
-  <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
-    <Subtitle2>{label}</Subtitle2>
-    <Body2 style={{maxWidth: '100%'}}>
-      <Box flex={{gap: 2}}>
-        {children && !(children instanceof Array && children.length === 0) ? children : <NoValue />}
-      </Box>
-    </Body2>
-  </Box>
-);
+}) => {
+  if (isEmptyChildren(children)) {
+    return null;
+  }
+
+  return (
+    <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
+      <Subtitle2>{label}</Subtitle2>
+      <Body2 style={{maxWidth: '100%'}}>
+        <Box flex={{gap: 2}}>{children}</Box>
+      </Body2>
+    </Box>
+  );
+};
 
 const NoValue = () => <Body2 color={Colors.textLighter()}>–</Body2>;
 

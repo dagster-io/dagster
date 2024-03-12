@@ -1,5 +1,6 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {PipelineSnapshotLink} from './PipelinePathUtils';
 import {RepoAddress} from '../workspace/types';
@@ -67,3 +68,19 @@ export const PipelineReference = ({
     </Box>
   );
 };
+
+export const PipelineTag = (props: Props) => {
+  return (
+    <PipelineTagWrap>
+      <Tag tooltipText={props.pipelineName}>
+        <PipelineReference {...props} />
+      </Tag>
+    </PipelineTagWrap>
+  );
+};
+
+const PipelineTagWrap = styled.span`
+  span {
+    line-height: 0;
+  }
+`;
