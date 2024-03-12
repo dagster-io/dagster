@@ -114,7 +114,7 @@ export const StaleReasonsTag = ({
   if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
     return <div />;
   }
-  const label = <Caption>Outdated ({numberFormatter.format(liveData.staleCauses.length)})</Caption>;
+  const label = <Caption>Unsynced ({numberFormatter.format(liveData.staleCauses.length)})</Caption>;
   return (
     <Box
       flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
