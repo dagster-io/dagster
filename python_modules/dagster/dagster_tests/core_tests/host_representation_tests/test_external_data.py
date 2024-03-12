@@ -840,7 +840,7 @@ def test_unused_source_asset():
 
 
 def test_used_source_asset():
-    bar = SourceAsset(key=AssetKey("bar"), description="def")
+    bar = SourceAsset(key=AssetKey("bar"), description="def", tags={"biz": "baz"})
 
     @asset
     def foo(bar):
@@ -870,6 +870,7 @@ def test_used_source_asset():
             metadata={
                 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
             },
+            tags={"biz": "baz"},
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),

@@ -166,6 +166,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             # we create an AssetsDefinition.
             required_resource_keys=source_asset._required_resource_keys,  # noqa: SLF001
             freshness_policy=source_asset.freshness_policy,
+            tags=source_asset.tags,
         )
         def _shim_assets_def(context: AssetExecutionContext):
             if not source_asset.observe_fn:

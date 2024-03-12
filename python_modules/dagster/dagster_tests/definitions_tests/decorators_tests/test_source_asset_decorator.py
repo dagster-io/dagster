@@ -1,4 +1,5 @@
 import pytest
+from dagster import AssetSpec, multi_observable_source_asset
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
@@ -101,3 +102,31 @@ def test_op_tags():
     def op_tags_specified(): ...
 
     assert op_tags_specified.op.tags == tags
+
+
+def test_tags():
+    tags = {"foo": "bar"}
+
+    @observable_source_asset(tags=tags)
+    def asset1(): ...
+
+    assert asset1.tags == tags
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @observable_source_asset(tags={"a%": "b"})
+        def asset1(): ...
+
+
+def test_multi_observable_source_asset_tags():
+    tags = {"foo": "bar"}
+
+    @multi_observable_source_asset(specs=[AssetSpec("asset1", tags=tags)])
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == tags
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_observable_source_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])
+        def assets(): ...
