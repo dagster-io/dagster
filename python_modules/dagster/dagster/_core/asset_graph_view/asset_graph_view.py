@@ -169,13 +169,9 @@ class AssetSlice:
 
     @property
     def time_windows(self) -> Sequence[TimeWindow]:
-        # <<<<<<< HEAD
-        #         tw_partitions_def = _required_tw_partitions_def(self._partitions_def)
-        # =======
         tw_partitions_def = self._time_window_partitions_def_in_context()
         check.inst(tw_partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed.")
         assert isinstance(tw_partitions_def, TimeWindowPartitionsDefinition)  # appease type checker
-        # >>>>>>> f5ae87e2d8 (Support multi-partitioning in AssetSlice)
 
         if isinstance(self._compatible_subset.subset_value, TimeWindowPartitionsSubset):
             return self._compatible_subset.subset_value.included_time_windows
