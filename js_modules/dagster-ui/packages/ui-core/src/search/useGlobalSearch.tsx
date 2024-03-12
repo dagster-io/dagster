@@ -249,6 +249,7 @@ const fuseOptions = {
   keys: ['label', 'segments', 'tags', 'type'],
   threshold: 0.3,
   useExtendedSearch: true,
+  includeMatches: true,
 };
 
 const EMPTY_RESPONSE = {queryString: '', results: []};
