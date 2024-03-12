@@ -1164,21 +1164,20 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
     def _strip_namespace_from_key(key: str) -> str:
         return key.split("/", 1)[1]
 
-    def dict(self):
-        return {self._namespaced_key(key): getattr(self, key) for key in self.__fields__.keys()}
-
     def keys(self) -> AbstractSet[str]:
         return {
             self._namespaced_key(key)
             for key in self.__fields__.keys()
+            # getattr returns the pydantic property on the subclass
             if getattr(self, key) is not None
         }
 
     def __getitem__(self, key: str) -> Any:
+        # getattr returns the pydantic property on the subclass
         return getattr(self, self._strip_namespace_from_key(key))
 
     @classmethod
-    def from_dict(
+    def extract(
         cls: Type[T_NamespacedMetadataEntries], metadata_dict: Mapping[str, Any]
     ) -> T_NamespacedMetadataEntries:
         kwargs = {}
