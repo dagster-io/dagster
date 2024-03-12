@@ -38,7 +38,6 @@ export function useQueryRefreshAtInterval(
   queryResult: Pick<QueryResult<any, any>, 'refetch' | 'loading' | 'networkStatus'>,
   intervalMs: number,
   enabled = true,
-  customRefetch?: () => void,
 ) {
   const timer = useRef<number>();
   const loadingStartMs = useRef<number>();
@@ -46,9 +45,6 @@ export function useQueryRefreshAtInterval(
 
   const queryResultRef = useRef(queryResult);
   queryResultRef.current = queryResult;
-
-  const customRefetchRef = useRef(customRefetch);
-  customRefetchRef.current = customRefetch;
 
   // Sanity check - don't use this hook alongside a useQuery pollInterval
   if (queryResult.networkStatus === NetworkStatus.poll) {
@@ -75,7 +71,7 @@ export function useQueryRefreshAtInterval(
       !searchVisible &&
       (searchVisibilityDidInterrupt.current || documentVisiblityDidInterrupt.current)
     ) {
-      customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
+      queryResultRef.current?.refetch();
       documentVisiblityDidInterrupt.current = false;
       searchVisibilityDidInterrupt.current = false;
     }
@@ -118,7 +114,7 @@ export function useQueryRefreshAtInterval(
         searchVisibilityDidInterrupt.current = true;
         return;
       }
-      customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
+      queryResultRef.current?.refetch();
     }, adjustedIntervalMs);
 
     return () => {
@@ -137,11 +133,7 @@ export function useQueryRefreshAtInterval(
       nextFireMs,
       nextFireDelay,
       networkStatus: queryResult.networkStatus,
-      refetch: (...props) => {
-        return customRefetchRef.current
-          ? (customRefetchRef.current() as any)
-          : queryResult.refetch(...props);
-      },
+      refetch: queryResult.refetch,
     }),
     [nextFireMs, nextFireDelay, queryResult],
   );
