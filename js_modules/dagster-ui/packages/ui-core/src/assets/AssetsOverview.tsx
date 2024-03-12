@@ -259,7 +259,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
           )}
           {Object.keys(assetCountBySection.countsByOwner).length > 0 && (
             <>
-              <SectionHeader sectionName="Owner" />
+              <SectionHeader sectionName="Owners" />
               <SectionBody>
                 {Object.entries(assetCountBySection.countsByOwner).map(([label, count]) => (
                   <CountForAssetType key={label} assetsCount={count}>
@@ -271,7 +271,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
           )}
           {Object.keys(assetCountBySection.countsByComputeKind).length > 0 && (
             <>
-              <SectionHeader sectionName="Compute kind" />
+              <SectionHeader sectionName="Compute kinds" />
               <SectionBody>
                 {Object.entries(assetCountBySection.countsByComputeKind).map(([label, count]) => (
                   <CountForAssetType key={label} assetsCount={count}>
