@@ -31,7 +31,7 @@ interface ITableSchemaProps {
 export const isCanonicalTableSchemaEntry = (
   m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
 ): m is TableSchemaMetadataEntry =>
-  m.__typename === 'TableSchemaMetadataEntry' && m.label === 'columns';
+  m.__typename === 'TableSchemaMetadataEntry' && m.label === 'dagster/column_schema';
 
 export const TableSchema = ({
   schema,
