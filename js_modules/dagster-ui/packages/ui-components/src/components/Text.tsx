@@ -82,6 +82,12 @@ export const CaptionSubtitle = styled(Text)`
   line-height: 16px;
 `;
 
+export const CaptionBolded = styled(Text)`
+  font-family: ${FontFamily.default};
+  font-size: 12px;
+  font-weight: 900;
+`;
+
 export const Code = styled(Text)`
   background-color: ${Colors.backgroundBlue()};
   border-radius: 2px;

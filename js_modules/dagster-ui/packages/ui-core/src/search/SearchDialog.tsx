@@ -256,6 +256,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
             highlight={highlight}
             queryString={queryString}
             results={renderedResults}
+            filterResults={[]}
             onClickResult={onClickResult}
           />
         </Container>
@@ -306,7 +307,10 @@ interface SearchBoxProps {
   readonly hasQueryString: boolean;
 }
 
-const SearchBox = styled.div<SearchBoxProps>`
+export const SearchBox = styled.div<SearchBoxProps>`
+  border-radius: 12px;
+  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
+
   align-items: center;
   border-bottom: ${({hasQueryString}) =>
     hasQueryString ? `1px solid ${Colors.keylineDefault()}` : 'none'};
@@ -314,7 +318,7 @@ const SearchBox = styled.div<SearchBoxProps>`
   padding: 12px 20px 12px 12px;
 `;
 
-const SearchInput = styled.input`
+export const SearchInput = styled.input`
   border: none;
   color: ${Colors.textLight()};
   font-family: ${FontFamily.default};
