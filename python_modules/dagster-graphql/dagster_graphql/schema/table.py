@@ -1,5 +1,6 @@
 import graphene
 
+from .asset_key import GrapheneAssetKey
 from .util import non_null_list
 
 
@@ -45,10 +46,36 @@ class GrapheneTable(graphene.ObjectType):
         name = "Table"
 
 
+class GrapheneTableColumnDep(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    columnName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "TableColumnDep"
+
+
+class GrapheneTableColumnSpec(graphene.ObjectType):
+    columnName = graphene.NonNull(graphene.String)
+    tableColumnDeps = non_null_list(GrapheneTableColumnDep)
+
+    class Meta:
+        name = "TableColumnSpec"
+
+
+class GrapheneTableSpec(graphene.ObjectType):
+    columnSpecs = graphene.NonNull(GrapheneTableColumnSpec)
+
+    class Meta:
+        name = "TableSpec"
+
+
 types = [
     GrapheneTable,
     GrapheneTableSchema,
     GrapheneTableColumn,
     GrapheneTableColumnConstraints,
     GrapheneTableConstraints,
+    GrapheneTableColumnDep,
+    GrapheneTableColumnSpec,
+    GrapheneTableSpec,
 ]

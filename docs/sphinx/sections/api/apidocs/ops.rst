@@ -101,6 +101,8 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 
 .. autoclass:: TableSchemaMetadataValue
 
+.. autoclass:: TableSpecMetadataValue
+
 .. autoclass:: TextMetadataValue
 
 .. autoclass:: TimestampMetadataValue

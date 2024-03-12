@@ -67,6 +67,7 @@ from .metadata import (
     TableRecord as TableRecord,
     TableSchema as TableSchema,
     TableSchemaMetadataValue as TableSchemaMetadataValue,
+    TableSpecMetadataValue as TableSpecMetadataValue,
     TextMetadataValue as TextMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )

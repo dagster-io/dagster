@@ -2,6 +2,7 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
@@ -259,3 +260,76 @@ class TableColumnConstraints(
 
 
 _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
+
+
+# ###########################
+# ##### TABLE COLUMN LINEAGE
+# ###########################
+
+
+@whitelist_for_serdes
+class TableColumnDep(
+    NamedTuple(
+        "_TableColumnDep",
+        [
+            ("asset_key", PublicAttr[AssetKey]),
+            ("column_name", PublicAttr[str]),
+        ],
+    )
+):
+    """Object representing an identifier for a column in an asset."""
+
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        column_name: str,
+    ):
+        return super(TableColumnDep, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            column_name=check.str_param(column_name, "column_name"),
+        )
+
+
+@whitelist_for_serdes
+class TableColumnSpec(
+    NamedTuple(
+        "_TableColumnSpec",
+        [
+            ("column_name", PublicAttr[str]),
+            ("table_column_deps", PublicAttr[Sequence[TableColumnDep]]),
+        ],
+    )
+):
+    """Represents the core attributes of a column for the current tabular asset."""
+
+    def __new__(
+        cls,
+        column_name: str,
+        table_column_deps: Sequence[TableColumnDep],
+    ):
+        return super(TableColumnSpec, cls).__new__(
+            cls,
+            column_name=check.str_param(column_name, "column_name"),
+            table_column_deps=check.list_param(
+                table_column_deps, "table_column_deps", TableColumnDep
+            ),
+        )
+
+
+@whitelist_for_serdes
+class TableSpec(
+    NamedTuple(
+        "_TableSpec",
+        [
+            ("column_specs", PublicAttr[Sequence[TableColumnSpec]]),
+        ],
+    )
+):
+    """Represents the core attributes of a tabular asset."""
+
+    def __new__(cls, column_specs: Sequence[TableColumnSpec]):
+        return super(TableSpec, cls).__new__(
+            cls,
+            column_specs=check.list_param(column_specs, "column_specs", TableColumnSpec),
+        )
