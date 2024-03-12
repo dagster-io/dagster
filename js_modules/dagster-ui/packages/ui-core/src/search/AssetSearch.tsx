@@ -107,7 +107,7 @@ export const AssetSearch = () => {
     return (queryString: string) => {
       if (!firstSearchTrace.current && isFirstSearch.current) {
         isFirstSearch.current = false;
-        const trace = createTrace('SearchDialog:FirstSearch');
+        const trace = createTrace('AssetSearch:FirstSearch');
         firstSearchTrace.current = trace;
         trace.startTrace();
       }

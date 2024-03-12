@@ -1,4 +1,12 @@
-import {Box, Colors, Icon, IconName, StyledTag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  CaptionBolded,
+  Colors,
+  Icon,
+  IconName,
+  StyledTag,
+} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -95,16 +103,16 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] 
   let parsedString = '';
   mergedIndices.forEach((indices) => {
     const stringBeforeMatch = result.item.label.slice(parsedString.length, indices[0]);
-    labelComponents.push(<SearchResultLabel>{stringBeforeMatch}</SearchResultLabel>);
+    labelComponents.push(<Caption>{stringBeforeMatch}</Caption>);
     parsedString += stringBeforeMatch;
 
     const match = result.item.label.slice(indices[0], indices[1] + 1);
-    labelComponents.push(<SearchResultBoldedLabel>{match}</SearchResultBoldedLabel>);
+    labelComponents.push(<CaptionBolded>{match}</CaptionBolded>);
     parsedString += match;
   });
 
   const stringAfterMatch = result.item.label.substring(parsedString.length);
-  labelComponents.push(<SearchResultLabel>{stringAfterMatch}</SearchResultLabel>);
+  labelComponents.push(<Caption>{stringAfterMatch}</Caption>);
   parsedString += stringAfterMatch;
 
   return labelComponents;
@@ -135,7 +143,7 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <Box flex={{direction: 'row', alignItems: 'center'}} style={{width: '100%'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>
           <StyledTag
             $fillColor={Colors.backgroundGray()}
             $interactive={false}
@@ -146,7 +154,7 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
               color={isHighlight ? Colors.textDefault() : Colors.textLight()}
             />
             {isAssetFilterSearchResultType(item.type) && (
-              <SearchResultLabel>{assetFilterPrefixString(item.type)}:&nbsp;</SearchResultLabel>
+              <Caption>{assetFilterPrefixString(item.type)}:&nbsp;</Caption>
             )}
             {labelComponents.map((component) => component)}
           </StyledTag>
@@ -236,14 +244,6 @@ const MatchingFiltersHeader = styled.li`
   border-bottom: 1px solid ${Colors.backgroundGray()};
   color: ${Colors.textLight()};
   font-weight: 500;
-`;
-
-const SearchResultBoldedLabel = styled.span`
-  font-weight: 800;
-`;
-
-const SearchResultLabel = styled.span`
-  font-weight: 300;
 `;
 
 const Item = styled.li<HighlightableTextProps>`
