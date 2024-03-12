@@ -61,6 +61,7 @@ from dagster_graphql.schema.solids import (
     GrapheneResourceRequirement,
     GrapheneSolidDefinition,
 )
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
 
 from ..implementation.fetch_assets import (
     build_partition_statuses,
@@ -303,6 +304,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     assetPartitionStatuses = graphene.NonNull(GrapheneAssetPartitionStatuses)
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
+    tags = non_null_list(GrapheneDefinitionTag)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
     opNames = non_null_list(graphene.String)
@@ -1189,6 +1191,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneMetadataEntry]:
         return list(iterate_metadata_entries(self._external_asset_node.metadata))
+
+    def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        return [
+            GrapheneDefinitionTag(key, value)
+            for key, value in (self._external_asset_node.tags or {}).items()
+        ]
 
     def resolve_op(
         self, _graphene_info: ResolveInfo

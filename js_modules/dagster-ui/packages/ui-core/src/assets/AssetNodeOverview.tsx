@@ -227,6 +227,17 @@ export const AssetNodeOverview = ({
           <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
         )}
       </AttributeAndValue>
+      <AttributeAndValue label="Tags">
+        {assetNode.tags && assetNode.tags.length > 0 && (
+          <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
+            {assetNode.tags.map((tag, idx) => (
+              <Tag key={idx}>
+                {tag.key}={tag.value}
+              </Tag>
+            ))}
+          </Box>
+        )}
+      </AttributeAndValue>
     </Box>
   );
 
