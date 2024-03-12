@@ -90,7 +90,7 @@ const GlobalAutomaterializationRoot = () => {
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(fetchData, [variables]);
-  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
+  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses);
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 
