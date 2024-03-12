@@ -121,15 +121,20 @@ class AssetNode(BaseAssetNode):
 
 
 class AssetGraph(BaseAssetGraph[AssetNode]):
-    _asset_checks_defs_by_key: Mapping[AssetCheckKey, AssetChecksDefinition]
+    # maps asset check keys to the definition where it is computed
+    _asset_check_compute_defs_by_key: Mapping[
+        AssetCheckKey, Union[AssetsDefinition, AssetChecksDefinition]
+    ]
 
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, AssetNode],
-        asset_checks_defs_by_key: Mapping[AssetCheckKey, AssetChecksDefinition],
+        asset_check_compute_defs_by_key: Mapping[
+            AssetCheckKey, Union[AssetsDefinition, AssetChecksDefinition]
+        ],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
-        self._asset_checks_defs_by_key = asset_checks_defs_by_key
+        self._asset_check_compute_defs_by_key = asset_check_compute_defs_by_key
         self._asset_nodes_by_check_key = {
             **{
                 check_key: asset
@@ -137,9 +142,9 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 for check_key in asset.check_keys
             },
             **{
-                key: asset_nodes_by_key[checks_def.asset_key]
-                for key, checks_def in asset_checks_defs_by_key.items()
-                if checks_def.asset_key in asset_nodes_by_key
+                key: asset_nodes_by_key[acd.asset_key]
+                for key, acd in asset_check_compute_defs_by_key.items()
+                if isinstance(acd, AssetChecksDefinition) and acd.asset_key in asset_nodes_by_key
             },
         }
 
@@ -226,13 +231,14 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             for key in ad.keys
         }
 
-        asset_checks_defs_by_key = {
-            key: check for check in (asset_checks or []) for key in check.keys
+        asset_check_compute_defs_by_key = {
+            **{key: checks_def for checks_def in (asset_checks or []) for key in checks_def.keys},
+            **{key: assets_def for assets_def in assets_defs for key in assets_def.check_keys},
         }
 
         return AssetGraph(
             asset_nodes_by_key=asset_nodes_by_key,
-            asset_checks_defs_by_key=asset_checks_defs_by_key,
+            asset_check_compute_defs_by_key=asset_check_compute_defs_by_key,
         )
 
     def get_execution_set_asset_and_check_keys(
@@ -240,8 +246,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     ) -> AbstractSet[AssetKeyOrCheckKey]:
         if isinstance(asset_or_check_key, AssetKey):
             return self.get(asset_or_check_key).execution_set_asset_and_check_keys
-        # only checks emitted by AssetsDefinition have required keys
-        elif asset_or_check_key in self._asset_checks_defs_by_key:
+        # all AssetsCheckDefinition can emit only as subset of keys
+        elif isinstance(
+            self._asset_check_compute_defs_by_key[asset_or_check_key], AssetChecksDefinition
+        ):
             return {asset_or_check_key}
         else:
             asset_node = self._asset_nodes_by_check_key[asset_or_check_key]
@@ -252,11 +260,44 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
     @cached_property
     def assets_defs(self) -> Sequence[AssetsDefinition]:
-        return list(dict.fromkeys(asset.assets_def for asset in self.asset_nodes))
+        return list(
+            {
+                *(asset.assets_def for asset in self.asset_nodes),
+                *(
+                    ad
+                    for ad in self._asset_check_compute_defs_by_key.values()
+                    if isinstance(ad, AssetsDefinition)
+                ),
+            }
+        )
 
-    def assets_defs_for_keys(self, keys: Iterable[AssetKey]) -> Sequence[AssetsDefinition]:
-        return list(dict.fromkeys([self.get(key).assets_def for key in keys]))
+    def assets_defs_for_keys(
+        self, keys: Iterable[AssetKeyOrCheckKey]
+    ) -> Sequence[AssetsDefinition]:
+        return list(
+            {
+                *[self.get(key).assets_def for key in keys if isinstance(key, AssetKey)],
+                *[
+                    ad
+                    for k, ad in self._asset_check_compute_defs_by_key.items()
+                    if k in keys and isinstance(ad, AssetsDefinition)
+                ],
+            }
+        )
 
     @property
     def asset_checks_defs(self) -> Sequence[AssetChecksDefinition]:
-        return list(dict.fromkeys(self._asset_checks_defs_by_key.values()))
+        return list(
+            {
+                acd
+                for acd in self._asset_check_compute_defs_by_key.values()
+                if isinstance(acd, AssetChecksDefinition)
+            }
+        )
+
+    @cached_property
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return {
+            *(key for ad in self.assets_defs for key in ad.check_keys),
+            *(key for acd in self.asset_checks_defs for key in acd.keys),
+        }
