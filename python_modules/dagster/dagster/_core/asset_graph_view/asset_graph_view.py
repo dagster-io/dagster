@@ -1,5 +1,14 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, NewType, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Mapping,
+    NamedTuple,
+    NewType,
+    Optional,
+    Sequence,
+    cast,
+)
 
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
@@ -150,20 +159,17 @@ class AssetSlice:
 
     @property
     def time_windows(self) -> Sequence[TimeWindow]:
-        check.inst(self._partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed.")
-        assert isinstance(
-            self._partitions_def, TimeWindowPartitionsDefinition
-        )  # appease type checker
+        tw_partitions_def = _required_tw_partitions_def(self._partitions_def)
+
         if isinstance(self._compatible_subset.subset_value, TimeWindowPartitionsSubset):
             return self._compatible_subset.subset_value.included_time_windows
         elif isinstance(self._compatible_subset.subset_value, AllPartitionsSubset):
-            last_tw = self._partitions_def.get_last_partition_window(
+            last_tw = tw_partitions_def.get_last_partition_window(
                 self._asset_graph_view.effective_dt
             )
             return [TimeWindow(datetime.min, last_tw.end)] if last_tw else []
         else:
             check.failed(f"Unsupported subset value: {self._compatible_subset.subset_value}")
-
 
     @property
     def is_empty(self) -> bool:
@@ -324,19 +330,12 @@ class AssetGraphView:
         )
 
     def create_from_time_window(self, asset_key: AssetKey, time_window: TimeWindow) -> AssetSlice:
-        partitions_def = self._get_partitions_def(asset_key)
-        check.inst(
-            partitions_def,
-            TimeWindowPartitionsDefinition,
-            "Must be a time-windowed partition definition",
-        )
-        assert isinstance(partitions_def, TimeWindowPartitionsDefinition)  # appease type checker
         return _slice_from_subset(
             self,
             AssetSubset(
                 asset_key=asset_key,
                 value=TimeWindowPartitionsSubset(
-                    partitions_def=partitions_def,
+                    partitions_def=_required_tw_partitions_def(self._get_partitions_def(asset_key)),
                     num_partitions=None,
                     included_time_windows=[time_window],
                 ),
@@ -379,3 +378,12 @@ class AssetGraphView:
             self,
             AssetSubset.empty(asset_key, self._get_partitions_def(asset_key)),
         )
+
+
+def _required_tw_partitions_def(
+    partitions_def: Optional["PartitionsDefinition"],
+) -> TimeWindowPartitionsDefinition:
+    return cast(
+        TimeWindowPartitionsDefinition,
+        check.inst(partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed."),
+    )
