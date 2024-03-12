@@ -97,13 +97,13 @@ def test_partition_option_with_non_partitioned_asset():
 def test_asset_key_missing():
     with instance_for_test():
         result = invoke_materialize("nonexistent_asset")
-        assert "no AssetsDefinition objects supply these keys" in str(result.exception)
+        assert "No qualified assets to execute found" in str(result.exception)
 
 
 def test_one_of_the_asset_keys_missing():
     with instance_for_test():
         result = invoke_materialize("asset1,nonexistent_asset")
-        assert "no AssetsDefinition objects supply these keys" in str(result.exception)
+        assert "No qualified assets to execute found" in str(result.exception)
 
 
 def test_conflicting_partitions():

@@ -634,7 +634,9 @@ def test_bad_coerce():
 
 
 def test_bad_resolve():
-    with pytest.raises(DagsterInvalidSubsetError, match=r"AssetKey\(s\) \['foo'\] were selected"):
+    with pytest.raises(
+        DagsterInvalidSubsetError, match=r"AssetKey\(s\) {AssetKey\(\['foo'\]\)} were selected"
+    ):
 
         @repository
         def _fails():

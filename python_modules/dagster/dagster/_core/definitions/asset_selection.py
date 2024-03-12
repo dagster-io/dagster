@@ -328,28 +328,18 @@ class AssetSelection(ABC, BaseModel, frozen=True):
         return SubtractAssetSelection(left=self, right=other)
 
     def resolve(
-        self,
-        all_assets: Union[Iterable[Union[AssetsDefinition, SourceAsset]], BaseAssetGraph],
-        allow_missing: bool = False,
+        self, all_assets: Union[Iterable[Union[AssetsDefinition, SourceAsset]], BaseAssetGraph]
     ) -> AbstractSet[AssetKey]:
-        """Returns the set of asset keys in all_assets that match this selection.
-
-        Args:
-            allow_missing (bool): If False, will raise an error if any of the leaf selections in the
-                asset selection target entities that don't exist in the set of provided assets.
-        """
         if isinstance(all_assets, BaseAssetGraph):
             asset_graph = all_assets
         else:
             check.iterable_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
             asset_graph = AssetGraph.from_assets(all_assets)
 
-        return self.resolve_inner(asset_graph, allow_missing=allow_missing)
+        return self.resolve_inner(asset_graph)
 
     @abstractmethod
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         raise NotImplementedError()
 
     def resolve_checks(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
@@ -363,38 +353,37 @@ class AssetSelection(ABC, BaseModel, frozen=True):
         asset_keys = self.resolve(asset_graph)
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 
-    @classmethod
-    def from_string(cls, string: str) -> "AssetSelection":
+    @staticmethod
+    def _selection_from_string(string: str) -> "AssetSelection":
+        from dagster._core.definitions import AssetSelection
+
         if string == "*":
-            return cls.all()
+            return AssetSelection.all()
 
         parts = parse_clause(string)
-        if parts is not None:
-            key_selection = cls.keys(parts.item_name)
-            if parts.up_depth and parts.down_depth:
-                selection = key_selection.upstream(parts.up_depth) | key_selection.downstream(
-                    parts.down_depth
-                )
-            elif parts.up_depth:
-                selection = key_selection.upstream(parts.up_depth)
-            elif parts.down_depth:
-                selection = key_selection.downstream(parts.down_depth)
-            else:
-                selection = key_selection
-            return selection
+        if not parts:
+            check.failed(f"Invalid selection string: {string}")
+        u, item, d = parts
 
-        check.failed(f"Invalid selection string: {string}")
+        selection: AssetSelection = AssetSelection.keys(item)
+        if u:
+            selection = selection.upstream(u)
+        if d:
+            selection = selection.downstream(d)
+        return selection
 
     @classmethod
     def from_coercible(cls, selection: CoercibleToAssetSelection) -> "AssetSelection":
         if isinstance(selection, str):
-            return cls.from_string(selection)
+            return cls._selection_from_string(selection)
         elif isinstance(selection, AssetSelection):
             return selection
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, str) for el in selection
         ):
-            return reduce(operator.or_, [cls.from_string(cast(str, s)) for s in selection])
+            return reduce(
+                operator.or_, [cls._selection_from_string(cast(str, s)) for s in selection]
+            )
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
         ):
@@ -442,9 +431,7 @@ class AssetSelection(ABC, BaseModel, frozen=True):
 class AllSelection(AssetSelection, frozen=True):
     include_sources: Optional[bool] = None
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         return (
             asset_graph.all_asset_keys
             if self.include_sources
@@ -460,9 +447,7 @@ class AllSelection(AssetSelection, frozen=True):
 
 @whitelist_for_serdes
 class AllAssetCheckSelection(AssetSelection, frozen=True):
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
     def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
@@ -479,9 +464,7 @@ class AllAssetCheckSelection(AssetSelection, frozen=True):
 class AssetChecksForAssetKeysSelection(AssetSelection, frozen=True):
     selected_asset_keys: Sequence[AssetKey]
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
     def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
@@ -499,9 +482,7 @@ class AssetChecksForAssetKeysSelection(AssetSelection, frozen=True):
 class AssetCheckKeysSelection(AssetSelection, frozen=True):
     selected_asset_check_keys: Sequence[AssetCheckKey]
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
     def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
@@ -523,15 +504,9 @@ class AndAssetSelection(
 ):
     operands: Sequence[AssetSelection]
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         return reduce(
-            operator.and_,
-            (
-                selection.resolve_inner(asset_graph, allow_missing=allow_missing)
-                for selection in self.operands
-            ),
+            operator.and_, (selection.resolve_inner(asset_graph) for selection in self.operands)
         )
 
     def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
@@ -562,15 +537,9 @@ class OrAssetSelection(
 ):
     operands: Sequence[AssetSelection]
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         return reduce(
-            operator.or_,
-            (
-                selection.resolve_inner(asset_graph, allow_missing=allow_missing)
-                for selection in self.operands
-            ),
+            operator.or_, (selection.resolve_inner(asset_graph) for selection in self.operands)
         )
 
     def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
@@ -602,12 +571,8 @@ class SubtractAssetSelection(
     left: AssetSelection
     right: AssetSelection
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
-        return self.left.resolve_inner(
-            asset_graph, allow_missing=allow_missing
-        ) - self.right.resolve_inner(asset_graph, allow_missing=allow_missing)
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        return self.left.resolve_inner(asset_graph) - self.right.resolve_inner(asset_graph)
 
     def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
         return self.left.resolve_checks_inner(asset_graph) - self.right.resolve_checks_inner(
@@ -635,10 +600,8 @@ class SinksAssetSelection(
 ):
     child: AssetSelection
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
-        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        selection = self.child.resolve_inner(asset_graph)
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
@@ -653,10 +616,8 @@ class RequiredNeighborsAssetSelection(
 ):
     child: AssetSelection
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
-        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        selection = self.child.resolve_inner(asset_graph)
         output = set(selection)
         for asset_key in selection:
             output.update(asset_graph.get(asset_key).execution_set_asset_keys)
@@ -674,10 +635,8 @@ class RootsAssetSelection(
 ):
     child: AssetSelection
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
-        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        selection = self.child.resolve_inner(asset_graph)
         return fetch_sources(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
@@ -694,10 +653,8 @@ class DownstreamAssetSelection(
     depth: Optional[int]
     include_self: bool
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
-        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        selection = self.child.resolve_inner(asset_graph)
         return operator.sub(
             reduce(
                 operator.or_,
@@ -724,9 +681,7 @@ class GroupsAssetSelection(AssetSelection, frozen=True):
     selected_groups: Sequence[str]
     include_sources: bool
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
             if self.include_sources
@@ -753,38 +708,30 @@ class GroupsAssetSelection(AssetSelection, frozen=True):
 class KeysAssetSelection(AssetSelection, frozen=True):
     selected_keys: Sequence[AssetKey]
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         specified_keys = set(self.selected_keys)
-        missing_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
+        invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
 
-        if not allow_missing:
-            # Arbitrary limit to avoid huge error messages
-            keys_to_suggest = list(missing_keys)[:4]
-            suggestions = ""
-            for invalid_key in keys_to_suggest:
-                similar_names = resolve_similar_asset_names(invalid_key, asset_graph.all_asset_keys)
-                if similar_names:
-                    # Arbitrarily limit to 10 similar names to avoid a huge error message
-                    subset_similar_names = similar_names[:10]
-                    similar_to_string = ", ".join(
-                        (similar.to_string() for similar in subset_similar_names)
-                    )
-                    suggestions += (
-                        f"\n\nFor selected asset {invalid_key.to_string()}, did you mean one of "
-                        f"the following?\n\t{similar_to_string}"
-                    )
-
-            if missing_keys:
-                raise DagsterInvalidSubsetError(
-                    f"AssetKey(s) {[k.to_user_string() for k in missing_keys]} were selected, but "
-                    "no AssetsDefinition objects supply these keys. Make sure all keys are spelled "
-                    "correctly, and all AssetsDefinitions are correctly added to the "
-                    f"`Definitions`.{suggestions}"
+        # Arbitrary limit to avoid huge error messages
+        keys_to_suggest = list(invalid_keys)[:4]
+        suggestions = ""
+        for invalid_key in keys_to_suggest:
+            similar_names = resolve_similar_asset_names(invalid_key, asset_graph.all_asset_keys)
+            if similar_names:
+                # Arbitrarily limit to 10 similar names to avoid a huge error message
+                subset_similar_names = similar_names[:10]
+                similar_to_string = ", ".join(
+                    (similar.to_string() for similar in subset_similar_names)
                 )
+                suggestions += f"\n\nFor selected asset {invalid_key.to_string()}, did you mean one of the following?\n\t{similar_to_string}"
 
-        return specified_keys - missing_keys
+        if invalid_keys:
+            raise DagsterInvalidSubsetError(
+                f"AssetKey(s) {invalid_keys} were selected, but no AssetsDefinition objects supply "
+                "these keys. Make sure all keys are spelled correctly, and all AssetsDefinitions "
+                f"are correctly added to the `Definitions`.{suggestions}"
+            )
+        return specified_keys
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
@@ -804,9 +751,7 @@ class KeyPrefixesAssetSelection(AssetSelection, frozen=True):
     selected_key_prefixes: Sequence[Sequence[str]]
     include_sources: bool
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
             if self.include_sources
@@ -864,10 +809,8 @@ class UpstreamAssetSelection(
     depth: Optional[int]
     include_self: bool
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
-        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        selection = self.child.resolve_inner(asset_graph)
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
@@ -898,10 +841,8 @@ class ParentSourcesAssetSelection(
 ):
     child: AssetSelection
 
-    def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
-    ) -> AbstractSet[AssetKey]:
-        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+    def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        selection = self.child.resolve_inner(asset_graph)
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph)
