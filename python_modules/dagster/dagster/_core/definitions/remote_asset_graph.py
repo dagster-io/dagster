@@ -336,6 +336,10 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def asset_checks(self) -> Sequence["ExternalAssetCheck"]:
         return list(dict.fromkeys(self._asset_checks_by_key.values()))
 
+    @cached_property
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return {key for asset in self.asset_nodes for key in asset.check_keys}
+
     def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if job_name in node.job_names}
 

@@ -242,9 +242,9 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             self.asset_dep_graph, self.observable_asset_keys | self.materializable_asset_keys
         )
 
-    @cached_property
-    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        return {key for asset in self.asset_nodes for key in asset.check_keys}
+    @property
+    @abstractmethod
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]: ...
 
     @cached_property
     def all_partitions_defs(self) -> Sequence[PartitionsDefinition]:
