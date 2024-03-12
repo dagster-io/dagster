@@ -66,7 +66,7 @@ def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
 
 def get_run_tags(
     graphene_info: "ResolveInfo",
-    tag_keys: Optional[List[str]] = None,
+    tag_keys: List[str],
     value_prefix: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneRunTags":

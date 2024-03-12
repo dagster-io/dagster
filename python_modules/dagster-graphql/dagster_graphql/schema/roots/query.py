@@ -803,7 +803,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runTagsOrError(
         self,
         graphene_info: ResolveInfo,
-        tagKeys: Optional[List[str]] = None,
+        tagKeys: List[str],
         valuePrefix: Optional[str] = None,
         limit: Optional[int] = None,
     ):
