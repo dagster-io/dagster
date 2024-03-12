@@ -77,7 +77,9 @@ def test_external_repository_data(snapshot):
 
 
 def test_external_job_data(snapshot):
-    snapshot.assert_match(serialize_pp(external_job_data_from_def(foo_job)))
+    snapshot.assert_match(
+        serialize_pp(external_job_data_from_def(foo_job, include_parent_snapshot=True))
+    )
 
 
 @mock.patch("dagster._core.remote_representation.job_index.create_job_snapshot_id")

@@ -45,6 +45,7 @@ from dagster._core.remote_representation.origin import (
     ExternalRepositoryOrigin,
 )
 from dagster._core.snap import ExecutionPlanSnapshot
+from dagster._core.snap.job_snapshot import JobSnapshot
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
@@ -513,6 +514,10 @@ class ExternalJob(RepresentedJob):
     @property
     def metadata(self) -> Mapping[str, MetadataValue]:
         return self._job_index.job_snapshot.metadata
+
+    @property
+    def job_snapshot(self) -> JobSnapshot:
+        return self._job_index.job_snapshot
 
     @property
     def computed_job_snapshot_id(self) -> str:

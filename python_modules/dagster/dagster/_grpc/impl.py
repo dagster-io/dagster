@@ -278,6 +278,7 @@ def get_external_pipeline_subset_result(
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
     asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
+    include_parent_snapshot: bool,
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
@@ -286,7 +287,9 @@ def get_external_pipeline_subset_result(
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
         )
-        external_job_data = external_job_data_from_def(definition)
+        external_job_data = external_job_data_from_def(
+            definition, include_parent_snapshot=include_parent_snapshot
+        )
         return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
     except Exception:
         return ExternalJobSubsetResult(

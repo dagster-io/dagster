@@ -400,6 +400,7 @@ class InProcessCodeLocation(CodeLocation):
             selector.op_selection,
             selector.asset_selection,
             selector.asset_check_selection,
+            include_parent_snapshot=True,
         )
 
     def get_external_execution_plan(
@@ -808,13 +809,25 @@ class GrpcServerCodeLocation(CodeLocation):
 
         external_repository = self.get_repository(selector.repository_name)
         job_handle = JobHandle(selector.job_name, external_repository.handle)
-        return sync_get_external_job_subset_grpc(
+        subset = sync_get_external_job_subset_grpc(
             self.client,
             job_handle.get_external_origin(),
-            selector.op_selection,
-            selector.asset_selection,
-            selector.asset_check_selection,
+            include_parent_snapshot=False,
+            op_selection=selector.op_selection,
+            asset_selection=selector.asset_selection,
+            asset_check_selection=selector.asset_check_selection,
         )
+        if subset.external_job_data:
+            full_job = self.get_repository(selector.repository_name).get_full_external_job(
+                selector.job_name
+            )
+            subset = subset._replace(
+                external_job_data=subset.external_job_data._replace(
+                    parent_job_snapshot=full_job.job_snapshot
+                )
+            )
+
+        return subset
 
     def get_external_partition_config(
         self,

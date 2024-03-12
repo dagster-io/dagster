@@ -1412,7 +1412,11 @@ def external_repository_data_from_def(
         )
     else:
         job_datas = sorted(
-            list(map(external_job_data_from_def, jobs)),
+            list(
+                map(
+                    lambda job: external_job_data_from_def(job, include_parent_snapshot=False), jobs
+                )
+            ),
             key=lambda pd: pd.name,
         )
         job_refs = None
@@ -1783,12 +1787,14 @@ def external_asset_nodes_from_defs(
     return asset_nodes
 
 
-def external_job_data_from_def(job_def: JobDefinition) -> ExternalJobData:
+def external_job_data_from_def(
+    job_def: JobDefinition, include_parent_snapshot: bool
+) -> ExternalJobData:
     check.inst_param(job_def, "job_def", JobDefinition)
     return ExternalJobData(
         name=job_def.name,
         job_snapshot=job_def.get_job_snapshot(),
-        parent_job_snapshot=job_def.get_parent_job_snapshot(),
+        parent_job_snapshot=job_def.get_parent_job_snapshot() if include_parent_snapshot else None,
         active_presets=active_presets_from_job_def(job_def),
     )
 
