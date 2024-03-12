@@ -19,7 +19,8 @@ def make_io_manager(source_asset: SourceAsset, input_value=5, expected_metadata=
         def load_input(self, context):
             self.loaded_input = True
             assert context.asset_key == source_asset.key
-            assert context.upstream_output.metadata == expected_metadata
+            for key, value in expected_metadata.items():
+                assert context.upstream_output.metadata[key] == value
             return input_value
 
     return MyIOManager()
