@@ -24,7 +24,11 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+    DagsterUserCodeProcessError,
+)
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -146,10 +150,14 @@ class CodeLocation(AbstractContextManager):
         subset_result = self.get_subset_external_job_result(selector)
         external_data = subset_result.external_job_data
         if external_data is None:
-            check.failed(
-                f"Failed to fetch subset data, success: {subset_result.success} error:"
-                f" {subset_result.error}"
-            )
+            error = check.not_none(subset_result.error)
+            if error.cls_name == "DagsterInvalidSubsetError":
+                raise DagsterInvalidSubsetError(check.not_none(error.message))
+            else:
+                check.failed(
+                    f"Failed to fetch subset data, success: {subset_result.success} error:"
+                    f" {error}"
+                )
 
         return ExternalJob(external_data, repo_handle)
 
