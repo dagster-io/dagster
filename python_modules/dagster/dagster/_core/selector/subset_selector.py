@@ -17,7 +17,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     TypeVar,
 )
 
@@ -282,7 +281,13 @@ def fetch_connected_assets_definitions(
     return frozenset(name_to_definition_map[n] for n in connected_names)
 
 
-def parse_clause(clause: str) -> Optional[Tuple[int, str, int]]:
+class GraphSelectionClause(NamedTuple):
+    up_depth: int
+    item_name: str
+    down_depth: int
+
+
+def parse_clause(clause: str) -> Optional[GraphSelectionClause]:
     def _get_depth(part: str) -> int:
         if part == "":
             return 0
@@ -303,7 +308,7 @@ def parse_clause(clause: str) -> Optional[Tuple[int, str, int]]:
     up_depth = _get_depth(ancestor_part)
     down_depth = _get_depth(descendant_part)
 
-    return (up_depth, item_name, down_depth)
+    return GraphSelectionClause(up_depth, item_name, down_depth)
 
 
 def parse_items_from_selection(selection: Sequence[str]) -> Sequence[str]:
