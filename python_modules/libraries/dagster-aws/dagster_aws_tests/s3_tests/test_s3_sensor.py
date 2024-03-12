@@ -47,3 +47,17 @@ def test_get_s3_keys():
         # according to: https://wiki.python.org/moin/HowTo/Sorting/.
         keys = get_s3_keys(bucket=bucket_name, prefix=prefix, since_key=thousand_and_one_keys[999])
         assert len(keys) == 1, "1 key should be returned"
+
+        #  test pagination with since_key > 1000
+        for i in range(1002, 1101):
+            put_key_in_bucket(key=f"foo-{i}", body="test")
+        thousand_and_one_hundred_keys = get_s3_keys(bucket=bucket_name, prefix=prefix)
+        assert len(thousand_and_one_hundred_keys) == 1100, "1100 keys should be returned"
+
+        # keys are sorted by LastModified time, with a resolution of 1 second, so the key at index 999 will vary.
+        # The test would be flaky if sorted was not guaranteed to be stable, which it is
+        # according to: https://wiki.python.org/moin/HowTo/Sorting/.
+        keys = get_s3_keys(
+            bucket=bucket_name, prefix=prefix, since_key=thousand_and_one_hundred_keys[1090]
+        )
+        assert len(keys) == 9, "9 keys should be returned"
