@@ -11,6 +11,7 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
+    DagsterInvalidSubsetError,
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.instance import DagsterInstance
@@ -129,50 +130,53 @@ def _create_asset_run(
         check.failed("Expected RunRequest to have an asset selection")
 
     for _ in range(EXECUTION_PLAN_CREATION_RETRIES + 1):
-        # create a new request context for each run in case the code location server
-        # is swapped out in the middle of the submission process
-        workspace = workspace_process_context.create_request_context()
-        execution_data = _get_job_execution_data_from_run_request(
-            asset_graph,
-            run_request,
-            instance,
-            workspace=workspace,
-            run_request_execution_data_cache=run_request_execution_data_cache,
-        )
-        check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CREATED")
-        check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
-
-        # retry until the execution plan targets the asset selection
-        if _execution_plan_targets_asset_selection(
-            execution_data.external_execution_plan.execution_plan_snapshot,
-            check.not_none(run_request.asset_selection),
-        ):
-            external_job = execution_data.external_job
-            external_execution_plan = execution_data.external_execution_plan
-            partitions_def = execution_data.partitions_def
-
-            run = instance.create_run(
-                job_snapshot=external_job.job_snapshot,
-                execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-                parent_job_snapshot=external_job.parent_job_snapshot,
-                job_name=external_job.name,
-                run_id=run_id,
-                resolved_op_selection=None,
-                op_selection=None,
-                run_config={},
-                step_keys_to_execute=None,
-                tags=run_request.tags,
-                root_run_id=None,
-                parent_run_id=None,
-                status=DagsterRunStatus.NOT_STARTED,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
-                asset_selection=frozenset(run_request.asset_selection),
-                asset_check_selection=None,
-                asset_job_partitions_def=partitions_def,
+        try:
+            # create a new request context for each run in case the code location server
+            # is swapped out in the middle of the submission process
+            workspace = workspace_process_context.create_request_context()
+            execution_data = _get_job_execution_data_from_run_request(
+                asset_graph,
+                run_request,
+                instance,
+                workspace=workspace,
+                run_request_execution_data_cache=run_request_execution_data_cache,
             )
+            check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CREATED")
+            check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
 
-            return run
+            # retry until the execution plan targets the asset selection
+            if _execution_plan_targets_asset_selection(
+                execution_data.external_execution_plan.execution_plan_snapshot,
+                check.not_none(run_request.asset_selection),
+            ):
+                external_job = execution_data.external_job
+                external_execution_plan = execution_data.external_execution_plan
+                partitions_def = execution_data.partitions_def
+
+                run = instance.create_run(
+                    job_snapshot=external_job.job_snapshot,
+                    execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+                    parent_job_snapshot=external_job.parent_job_snapshot,
+                    job_name=external_job.name,
+                    run_id=run_id,
+                    resolved_op_selection=None,
+                    op_selection=None,
+                    run_config={},
+                    step_keys_to_execute=None,
+                    tags=run_request.tags,
+                    root_run_id=None,
+                    parent_run_id=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
+                    asset_selection=frozenset(run_request.asset_selection),
+                    asset_check_selection=None,
+                    asset_job_partitions_def=partitions_def,
+                )
+
+                return run
+        except DagsterInvalidSubsetError:
+            pass
 
         logger.warning(
             "Execution plan is out of sync with the workspace. Pausing run submission for "
