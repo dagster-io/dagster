@@ -5133,6 +5133,18 @@ export type TableColumnConstraints = {
   unique: Scalars['Boolean']['output'];
 };
 
+export type TableColumnDep = {
+  __typename: 'TableColumnDep';
+  assetKey: AssetKey;
+  columnName: Scalars['String']['output'];
+};
+
+export type TableColumnSpec = {
+  __typename: 'TableColumnSpec';
+  columnName: Scalars['String']['output'];
+  tableColumnDeps: Array<TableColumnDep>;
+};
+
 export type TableConstraints = {
   __typename: 'TableConstraints';
   other: Array<Scalars['String']['output']>;
@@ -5156,6 +5168,11 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
   description: Maybe<Scalars['String']['output']>;
   label: Scalars['String']['output'];
   schema: TableSchema;
+};
+
+export type TableSpec = {
+  __typename: 'TableSpec';
+  columnSpecs: TableColumnSpec;
 };
 
 export type Target = {
@@ -14130,6 +14147,40 @@ export const buildTableColumnConstraints = (
   };
 };
 
+export const buildTableColumnDep = (
+  overrides?: Partial<TableColumnDep>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnDep'} & TableColumnDep => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnDep');
+  return {
+    __typename: 'TableColumnDep',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    columnName:
+      overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'vitae',
+  };
+};
+
+export const buildTableColumnSpec = (
+  overrides?: Partial<TableColumnSpec>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnSpec'} & TableColumnSpec => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnSpec');
+  return {
+    __typename: 'TableColumnSpec',
+    columnName:
+      overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'quam',
+    tableColumnDeps:
+      overrides && overrides.hasOwnProperty('tableColumnDeps') ? overrides.tableColumnDeps! : [],
+  };
+};
+
 export const buildTableConstraints = (
   overrides?: Partial<TableConstraints>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -14197,6 +14248,23 @@ export const buildTableSchemaMetadataEntry = (
         : relationshipsToOmit.has('TableSchema')
         ? ({} as TableSchema)
         : buildTableSchema({}, relationshipsToOmit),
+  };
+};
+
+export const buildTableSpec = (
+  overrides?: Partial<TableSpec>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableSpec'} & TableSpec => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableSpec');
+  return {
+    __typename: 'TableSpec',
+    columnSpecs:
+      overrides && overrides.hasOwnProperty('columnSpecs')
+        ? overrides.columnSpecs!
+        : relationshipsToOmit.has('TableColumnSpec')
+        ? ({} as TableColumnSpec)
+        : buildTableColumnSpec({}, relationshipsToOmit),
   };
 };
 

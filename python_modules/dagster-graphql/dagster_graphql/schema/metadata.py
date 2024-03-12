@@ -1,7 +1,7 @@
 import graphene
 
 from .asset_key import GrapheneAssetKey
-from .table import GrapheneTable, GrapheneTableSchema
+from .table import GrapheneTable, GrapheneTableSchema, GrapheneTableSpec
 
 
 class GrapheneMetadataItemDefinition(graphene.ObjectType):
@@ -50,6 +50,14 @@ class GrapheneTableSchemaMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
         name = "TableSchemaMetadataEntry"
+
+
+class GrapheneTableSpecMetadataEntry(graphene.ObjectType):
+    spec = graphene.NonNull(GrapheneTableSpec)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "TableSpecMetadataEntry"
 
 
 class GrapheneJsonMetadataEntry(graphene.ObjectType):

@@ -3107,6 +3107,20 @@ type TableConstraints {
   other: [String!]!
 }
 
+type TableColumnDep {
+  assetKey: AssetKey!
+  columnName: String!
+}
+
+type TableColumnSpec {
+  columnName: String!
+  tableColumnDeps: [TableColumnDep!]!
+}
+
+type TableSpec {
+  columnSpecs: TableColumnSpec!
+}
+
 type PipelineTag {
   key: String!
   value: String!

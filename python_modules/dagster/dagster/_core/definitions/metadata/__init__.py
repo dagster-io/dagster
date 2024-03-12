@@ -2,7 +2,6 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -24,6 +23,7 @@ from typing_extensions import Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, experimental, public
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
@@ -41,20 +41,19 @@ from dagster._utils.warnings import (
 from .table import (  # re-exported
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
+    TableColumnSpec as TableColumnSpec,
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
+    TableSpec,
 )
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.events import AssetKey
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 
 RawMetadataValue = Union[
     "MetadataValue",
     TableSchema,
-    "AssetKey",
+    AssetKey,
     os.PathLike,
     Dict[Any, Any],
     float,
@@ -109,9 +108,11 @@ def normalize_metadata(
     return normalized_metadata
 
 
-def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]":
-    from dagster._core.definitions.events import AssetKey
+def has_corresponding_metadata_value_class(obj: Any) -> bool:
+    return isinstance(obj, (str, float, bool, int, list, dict, os.PathLike, AssetKey, TableSchema))
 
+
+def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]":
     if isinstance(raw_value, MetadataValue):
         return raw_value
     elif isinstance(raw_value, str):
@@ -130,6 +131,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
+    elif isinstance(raw_value, TableSpec):
+        return MetadataValue.table_spec(raw_value)
     elif raw_value is None:
         return MetadataValue.null()
 
@@ -573,6 +576,20 @@ class MetadataValue(ABC, Generic[T_Packable]):
             schema (TableSchema): The table schema for a metadata entry.
         """
         return TableSchemaMetadataValue(schema)
+
+    @public
+    @staticmethod
+    def table_spec(
+        spec: TableSpec,
+    ) -> "TableSpecMetadataValue":
+        """Static constructor for a metadata value wrapping a table spec as
+        :py:class:`TableSpecMetadataValue`. Can be used as the value type
+        for the `metadata` parameter for supported events.
+
+        Args:
+            spec (TableSpec): The table spec for a metadata entry.
+        """
+        return TableSpecMetadataValue(spec)
 
     @public
     @staticmethod
@@ -1051,6 +1068,29 @@ class TableSchemaMetadataValue(
         return self.schema
 
 
+@whitelist_for_serdes
+class TableSpecMetadataValue(
+    NamedTuple("_TableSpecMetadataValue", [("table_spec", PublicAttr[TableSpec])]),
+    MetadataValue[TableSpec],
+):
+    """Representation of the specification of arbitrary tabular data.
+
+    Args:
+        table_spec (TableSchema): The dictionary containing the schema representation.
+    """
+
+    def __new__(cls, table_spec: TableSpec):
+        return super(TableSpecMetadataValue, cls).__new__(
+            cls, check.inst_param(table_spec, "table_spec", TableSpec)
+        )
+
+    @public
+    @property
+    def value(self) -> TableSpec:
+        """TableSpec: The wrapped :py:class:`TableSpec`."""
+        return self.table_spec
+
+
 @whitelist_for_serdes(storage_name="NullMetadataEntryData")
 class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None]):
     """Representation of null."""
@@ -1259,9 +1299,11 @@ class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
 
     Args:
         column_schema (Optional[TableSchema]): The schema of the columns in the table.
+        table_spec (Optional[TableSpec]): The specifications of the table.
     """
 
     column_schema: Optional[TableSchema] = None
+    table_spec: Optional[TableSpec] = None
 
     @classmethod
     def namespace(cls) -> str:
