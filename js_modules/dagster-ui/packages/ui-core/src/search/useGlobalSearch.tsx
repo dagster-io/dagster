@@ -259,10 +259,11 @@ type IndexBuffer = {
   cancel: () => void;
 };
 
-// This is the version of the secondary query, used as part of the cache key.
-// When the data in the cache must be invalidated, this version should be bumped to prevent
-// fetching stale data.
-export const SEARCH_SECONDARY_DATA_VERSION = 'v1;';
+// These are the versions of the primary and secondary data queries. They are used to
+// version the cache in indexedDB. When the data in the cache must be invalidated, this version
+// should be bumped to prevent fetching stale data.
+export const SEARCH_PRIMARY_DATA_VERSION = 1;
+export const SEARCH_SECONDARY_DATA_VERSION = 1;
 
 /**
  * Perform global search populated by two lazy queries, to be initialized upon some
@@ -289,6 +290,7 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
     query: SEARCH_PRIMARY_QUERY,
     key: 'SearchPrimary',
+    version: SEARCH_PRIMARY_DATA_VERSION,
   });
 
   const {
@@ -297,7 +299,8 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
     loading: secondaryDataLoading,
   } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
     query: SEARCH_SECONDARY_QUERY,
-    key: `SearchSecondary:${SEARCH_SECONDARY_DATA_VERSION}`,
+    key: 'SearchSecondary',
+    version: SEARCH_SECONDARY_DATA_VERSION,
   });
 
   const consumeBufferEffect = useCallback(
