@@ -1156,26 +1156,40 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
     def namespace(cls) -> str:
         raise NotImplementedError()
 
+    @classmethod
+    def _namespaced_key(cls, key: str) -> str:
+        return f"{cls.namespace()}/{key}"
+
+    @staticmethod
+    def _strip_namespace_from_key(key: str) -> str:
+        return key.split("/", 1)[1]
+
+    def dict(self):
+        return {self._namespaced_key(key): getattr(self, key) for key in self.__fields__.keys()}
+
     def keys(self) -> AbstractSet[str]:
-        dictionary = self.dict()
         return {
-            f"{self.namespace()}/{key}" for key in dictionary.keys() if dictionary[key] is not None
+            self._namespaced_key(key)
+            for key in self.__fields__.keys()
+            if getattr(self, key) is not None
         }
 
     def __getitem__(self, key: str) -> Any:
-        return self.dict()[key.split("/", 1)[1]]
+        return getattr(self, self._strip_namespace_from_key(key))
 
     @classmethod
     def from_dict(
         cls: Type[T_NamespacedMetadataEntries], metadata_dict: Mapping[str, Any]
     ) -> T_NamespacedMetadataEntries:
-        derived_dict = {
-            key.split("/", 1)[1]: value.value if isinstance(value, MetadataValue) else value
-            for key, value in metadata_dict.items()
-            if key.startswith(f"{cls.namespace()}/")
-        }
+        kwargs = {}
+        for namespaced_key, value in metadata_dict.items():
+            splits = namespaced_key.split("/")
+            if len(splits) == 2:
+                namespace, key = splits
+                if namespace == cls.namespace() and key in cls.__fields__:
+                    kwargs[key] = value.value if isinstance(value, MetadataValue) else value
 
-        return cls.parse_obj(derived_dict)
+        return cls(**kwargs)
 
 
 class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
