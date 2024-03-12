@@ -438,7 +438,7 @@ class SqlRunStorage(RunStorage):
 
     def get_run_tags(
         self,
-        tag_keys: Optional[Sequence[str]] = None,
+        tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[Tuple[str, Set[str]]]:
@@ -447,9 +447,8 @@ class SqlRunStorage(RunStorage):
             db_select([RunTagsTable.c.key, RunTagsTable.c.value])
             .distinct()
             .order_by(RunTagsTable.c.key, RunTagsTable.c.value)
+            .where(RunTagsTable.c.key.in_(tag_keys))
         )
-        if tag_keys:
-            query = query.where(RunTagsTable.c.key.in_(tag_keys))
         if value_prefix:
             query = query.where(RunTagsTable.c.value.startswith(value_prefix))
         if limit:
