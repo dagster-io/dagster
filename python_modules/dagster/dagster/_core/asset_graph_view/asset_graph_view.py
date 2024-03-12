@@ -159,7 +159,8 @@ class AssetSlice:
 
     @property
     def time_windows(self) -> Sequence[TimeWindow]:
-        # TODO: support this for all subset values
+        """Get the time windows for the asset slice. Only supports explicitly time-windowed partitions for now."""
+        # Only supports explicitly time-windows partitions for now
         tw_partitions_def = _required_tw_partitions_def(self._partitions_def)
 
         if isinstance(self._compatible_subset.subset_value, TimeWindowPartitionsSubset):
