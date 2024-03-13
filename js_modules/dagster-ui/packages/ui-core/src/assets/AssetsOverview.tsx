@@ -189,7 +189,9 @@ const CountForAssetType = ({children, assetsCount}: AssetOverviewCategoryProps) 
       flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
       style={{width: 'calc(33% - 16px)'}}
     >
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>{children}</Box>
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} style={{width: '70%'}}>
+        {children}
+      </Box>
       {assetsCount !== 0 && <AssetCount>{assetsCount} assets</AssetCount>}
     </Box>
   );
@@ -310,7 +312,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                 {recentlyVisitedAssets.map((assetKey, idx) => (
                   <CountForAssetType key={idx} assetsCount={0}>
                     <Icon name="asset" />
-                    <Link to={`/assets/${assetKey.path.join('/')}`}>
+                    <Link to={`/assets/${assetKey.path.join('/')}`} style={TextOverflowStyle}>
                       {displayNameForAssetKey(assetKey)}
                     </Link>
                   </CountForAssetType>
@@ -339,7 +341,9 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                 {assetCountBySection.countsByComputeKind.map(({computeKind, assetCount}) => (
                   <CountForAssetType key={computeKind} assetsCount={assetCount}>
                     <TagIcon label={computeKind} />
-                    <Link to={linkToAssetGraphComputeKind(computeKind)}>{computeKind}</Link>
+                    <Link to={linkToAssetGraphComputeKind(computeKind)} style={TextOverflowStyle}>
+                      {computeKind}
+                    </Link>
                   </CountForAssetType>
                 ))}
               </SectionBody>
@@ -379,7 +383,10 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     assetsCount={countPerCodeLocation.assetCount}
                   >
                     <Icon name="folder" />
-                    <Link to={linkToCodeLocation(countPerCodeLocation.repoAddress)}>
+                    <Link
+                      to={linkToCodeLocation(countPerCodeLocation.repoAddress)}
+                      style={TextOverflowStyle}
+                    >
                       {repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
                     </Link>
                   </CountForAssetType>
@@ -406,4 +413,18 @@ const SectionName = styled.span`
 const AssetCount = styled.span`
   color: ${Colors.textLight()};
   font-size: 14px;
+
+  width: 30%;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
 `;
+
+const TextOverflowStyle: React.CSSProperties = {
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  width: '100%',
+};
