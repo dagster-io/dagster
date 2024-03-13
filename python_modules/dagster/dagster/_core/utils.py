@@ -201,30 +201,40 @@ def is_valid_email(email: str) -> bool:
 
 
 @dataclass_transform(frozen_default=True)
-def strict_dataclass(cls):
+def strict_dataclass(positional_args: Optional[AbstractSet[str]] = None):
     """The decorated class functions exactly like a class decorated with the pydantic.dataclass
     decorator, with two exceptions:
     - It's frozen. I.e. mutation is not allowed.
-    - The constructor does strict validation of arguments, i.e. keyword arguments not corresponding
-        to fields of the class are not allowed.
+    - The constructor does not accept keyword arguments that aren't fields of the class.
+    - By default, the constructor does not accept positional arguments, but this can be overridden
+        with positional_args.
     """
-    cls = pydantic_dataclass(cls, frozen=True)
-    original_init = cls.__init__
 
-    @wraps(original_init)
-    def new_init(self, *args, **kwargs):
-        valid_fields = set(self.__annotations__.keys())
+    def decorator(cls):
+        cls = pydantic_dataclass(cls, frozen=True, config=dict(extra="forbid"))
+        original_init = cls.__init__
 
-        annotation_keys_list = list(self.__annotations__.keys())
-        # if len(args) > len(annotation_keys_list):
-        #     raise ValueError(f"Expected at most {len(annotation_keys_list)} positional arguments, but ")
-        all_args = kwargs.keys() | {annotation_keys_list[i] for i in range(len(args))}
+        @wraps(original_init)
+        def new_init(self, *args, **kwargs):
+            annotation_keys_list = list(self.__pydantic_fields__.keys())
+            if len(args) > len(annotation_keys_list):
+                raise TypeError(
+                    f"{cls.__name__} constructor takes at most {len(annotation_keys_list)} positional "
+                    f"arguments, but {len(args)} were given"
+                )
+            positionally_supplied_args = {annotation_keys_list[i] for i in range(len(args))}
+            illegal_positionally_supplied_args = positionally_supplied_args - (
+                positional_args or set()
+            )
+            if illegal_positionally_supplied_args:
+                raise TypeError(
+                    "These arguments must be specified as keyword arguments, not positional "
+                    f"arguments: {illegal_positionally_supplied_args}"
+                )
 
-        extra_fields = all_args - valid_fields
-        if extra_fields:
-            raise TypeError(f"Extra fields provided: {extra_fields}")
+            original_init(self, *args, **kwargs)
 
-        original_init(self, *args, **kwargs)
+        cls.__init__ = new_init
+        return cls
 
-    cls.__init__ = new_init
-    return cls
+    return decorator
