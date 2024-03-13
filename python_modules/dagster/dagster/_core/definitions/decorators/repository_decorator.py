@@ -24,7 +24,6 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from ..asset_checks import AssetChecksDefinition
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..job_definition import JobDefinition
@@ -136,7 +135,6 @@ class _Repository:
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,
-                        AssetChecksDefinition,
                     ),
                 ):
                     bad_defns.append((i, type(definition)))

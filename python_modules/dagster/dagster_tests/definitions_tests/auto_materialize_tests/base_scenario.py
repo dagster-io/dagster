@@ -193,7 +193,7 @@ class AssetReconciliationScenario(
             or isinstance(a, SourceAsset)
             for a in assets
         ):
-            asset_graph = AssetGraph.from_assets(assets, asset_checks=asset_checks)
+            asset_graph = AssetGraph.from_assets([*assets, *(asset_checks or [])])
             auto_materialize_asset_keys = (
                 asset_selection.resolve(asset_graph)
                 if asset_selection is not None

@@ -547,7 +547,7 @@ def test_to_serializable_asset_selection():
     @asset_check(asset=asset1)
     def check1(): ...
 
-    asset_graph = AssetGraph.from_assets([asset1, asset2], asset_checks=[check1])
+    asset_graph = AssetGraph.from_assets([asset1, asset2, check1])
 
     def assert_serializable_same(asset_selection: AssetSelection) -> None:
         assert asset_selection.to_serializable_asset_selection(asset_graph) == asset_selection

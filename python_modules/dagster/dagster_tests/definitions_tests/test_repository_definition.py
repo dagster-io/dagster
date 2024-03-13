@@ -664,7 +664,7 @@ def test_assets_checks():
     def my_repo():
         return [foo, foo_check]
 
-    assert my_repo.asset_checks_defs_by_key[next(iter(foo_check.keys))] == foo_check
+    assert my_repo.asset_checks_defs_by_key[next(iter(foo_check.check_keys))] == foo_check
 
 
 def test_direct_assets():

@@ -1,193 +1,71 @@
 from typing import (
-    TYPE_CHECKING,
     Any,
-    Dict,
-    Iterable,
-    Iterator,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
 )
 
 from dagster import _check as check
-from dagster._annotations import experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.events import (
-    AssetKey,
-    CoercibleToAssetKeyPrefix,
-)
-from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._annotations import experimental
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_requirement import (
-    RequiresResources,
-    ResourceAddable,
-    ResourceRequirement,
-    merge_resource_defs,
-)
 from dagster._core.errors import DagsterAssetCheckFailedError
 from dagster._core.types.dagster_type import Nothing
 
-if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
 
-
-@experimental
-class AssetChecksDefinitionInputOutputProps(NamedTuple):
-    asset_check_keys_by_output_name: Mapping[str, AssetCheckKey]
-    asset_keys_by_input_name: Mapping[str, AssetKey]
-
-    def with_asset_key_prefix(
-        self, prefix: CoercibleToAssetKeyPrefix
-    ) -> "AssetChecksDefinitionInputOutputProps":
-        return self._replace(
-            asset_check_keys_by_output_name={
-                output_name: check_key.with_asset_key_prefix(prefix)
-                for output_name, check_key in self.asset_check_keys_by_output_name.items()
-            },
-            asset_keys_by_input_name={
-                input_name: asset_key.with_prefix(prefix)
-                for input_name, asset_key in self.asset_keys_by_input_name.items()
-            },
-        )
-
-
-@experimental
-class AssetChecksDefinition(ResourceAddable, RequiresResources):
+class AssetChecksDefinition(AssetsDefinition):
     """Defines a set of checks that are produced by the same op or op graph.
 
-    AssetChecksDefinition are typically not instantiated directly, but rather produced using a
-    decorator like :py:func:`@asset_check <asset>`.
+    AssetChecksDefinition should not be instantiated directly, but rather produced using the `@asset_check` decorator or `AssetChecksDefinition.create` method.
     """
 
-    def __init__(
-        self,
+    @staticmethod
+    def create(
         *,
-        node_def: NodeDefinition,
-        resource_defs: Mapping[str, ResourceDefinition],
-        specs: Sequence[AssetCheckSpec],
-        input_output_props: AssetChecksDefinitionInputOutputProps,
-        # if adding new fields, make sure to handle them in the get_attributes_dict method
+        keys_by_input_name: Mapping[str, AssetKey],
+        node_def: OpDefinition,
+        check_specs_by_output_name: Mapping[str, AssetCheckSpec],
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
-        self._node_def = node_def
-        self._resource_defs = resource_defs
-        self._specs = check.sequence_param(specs, "specs", of_type=AssetCheckSpec)
-        self._input_output_props = check.inst_param(
-            input_output_props, "input_output_props", AssetChecksDefinitionInputOutputProps
-        )
-        self._specs_by_handle = {spec.key: spec for spec in specs}
-        self._specs_by_output_name = {
-            output_name: self._specs_by_handle[check_key]
-            for output_name, check_key in input_output_props.asset_check_keys_by_output_name.items()
-        }
-
-    @public
-    @property
-    def node_def(self) -> NodeDefinition:
-        """The op or op graph that can be executed to check the assets."""
-        return self._node_def
-
-    @public
-    @property
-    def name(self) -> str:
-        return self.spec.name
-
-    @public
-    @property
-    def description(self) -> Optional[str]:
-        return self.spec.description
-
-    @public
-    @property
-    def asset_key(self) -> AssetKey:
-        return self.spec.asset_key
-
-    @public
-    @property
-    def spec(self) -> AssetCheckSpec:
-        if len(self._specs_by_output_name) > 1:
-            check.failed(
-                "Tried to retrieve single-check property from a checks definition with multiple"
-                " checks: " + ", ".join(spec.name for spec in self._specs_by_output_name.values()),
-            )
-
-        return next(iter(self.specs))
-
-    @public
-    @property
-    def specs(self) -> Iterable[AssetCheckSpec]:
-        return self._specs_by_output_name.values()
-
-    @property
-    def keys(self) -> Iterable[AssetCheckKey]:
-        return self._specs_by_handle.keys()
-
-    @property
-    def specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
-        return self._specs_by_output_name
-
-    @property
-    def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        return self._input_output_props.asset_keys_by_input_name
-
-    def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
-        yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
-        for source_key, resource_def in self._resource_defs.items():
-            yield from resource_def.get_resource_requirements(outer_context=source_key)
-
-    def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
-        return self._specs_by_handle[asset_check_key]
-
-    @public
-    @property
-    def required_resource_keys(self) -> Set[str]:
-        """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition."""
-        return {requirement.key for requirement in self.get_resource_requirements()}
-
-    @property
-    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
-        return self._resource_defs
-
-    def with_resources(
-        self, resource_defs: Mapping[str, ResourceDefinition]
-    ) -> "AssetChecksDefinition":
-        attributes_dict = self.get_attributes_dict()
-        attributes_dict["resource_defs"] = merge_resource_defs(
-            old_resource_defs=self._resource_defs,
-            resource_defs_to_merge_in=resource_defs,
-            requires_resources=self,
-        )
-        return self.__class__(**attributes_dict)
-
-    def get_attributes_dict(self) -> Dict[str, Any]:
-        return dict(
-            node_def=self._node_def,
-            resource_defs=self._resource_defs,
-            specs=self._specs,
-            input_output_props=self._input_output_props,
+        """Create an AssetChecksDefinition."""
+        return AssetChecksDefinition(
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name={},
+            node_def=node_def,
+            partitions_def=None,
+            partition_mappings=None,
+            asset_deps=None,
+            selected_asset_keys=None,
+            can_subset=False,
+            resource_defs=resource_defs,
+            group_names_by_key=None,
+            metadata_by_key=None,
+            tags_by_key=None,
+            freshness_policies_by_key=None,
+            auto_materialize_policies_by_key=None,
+            backfill_policy=None,
+            descriptions_by_key=None,
+            check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=None,
+            is_subset=False,
+            owners_by_key=None,
         )
 
-    def with_attributes(
-        self,
-        asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    ) -> "AssetChecksDefinition":
-        attributes_dict = self.get_attributes_dict()
-        if asset_key_prefix is not None:
-            attributes_dict["specs"] = [
-                spec.with_asset_key_prefix(asset_key_prefix) for spec in self._specs
-            ]
-            attributes_dict["input_output_props"] = self._input_output_props.with_asset_key_prefix(
-                asset_key_prefix
-            )
 
-        return AssetChecksDefinition(**attributes_dict)
+# This is still needed in a few places where we need to handle normal AssetsDefinition and
+# AssetChecksDefinition differently, but eventually those areas should be refactored and this should
+# be removed.
+def has_only_asset_checks(assets_def: AssetsDefinition) -> bool:
+    return len(assets_def.keys) == 0 and len(assets_def.check_keys) > 0
 
 
 @experimental
 def build_asset_with_blocking_check(
     asset_def: "AssetsDefinition",
-    checks: Sequence[AssetChecksDefinition],
+    checks: Sequence["AssetsDefinition"],
 ) -> "AssetsDefinition":
     from dagster import AssetIn, In, OpExecutionContext, Output, op
     from dagster._core.definitions.decorators.asset_decorator import graph_asset_no_defaults
@@ -195,7 +73,7 @@ def build_asset_with_blocking_check(
 
     check_specs = []
     for c in checks:
-        check_specs.extend(c.specs)
+        check_specs.extend(c.check_specs)
 
     check_output_names = [c.get_python_identifier() for c in check_specs]
 

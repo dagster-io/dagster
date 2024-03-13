@@ -374,7 +374,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, owners in (owners_by_key or {}).items()
         }
 
-    @staticmethod
     def dagster_internal_init(
         *,
         keys_by_input_name: Mapping[str, AssetKey],
@@ -899,6 +898,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def has_keys(self) -> bool:
         return len(self.keys) > 0
 
+    @property
+    def has_check_keys(self) -> bool:
+        return len(self.check_keys) > 0
+
     @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
@@ -945,7 +948,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
+        upstream_keys = {
+            *(dep_key for key in self.keys for dep_key in self.asset_deps[key]),
+            *(spec.asset_key for spec in self.check_specs if spec.asset_key not in self.keys),
+        }
+
         return {
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
