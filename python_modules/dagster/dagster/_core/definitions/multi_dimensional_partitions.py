@@ -445,10 +445,10 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     @property
     def time_window_partitions_def(self) -> TimeWindowPartitionsDefinition:
         check.invariant(self.has_time_window_dimension, "Must have time window dimension")
-        assert isinstance(
-            self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition
-        )  # appease pyright
-        return check.inst(self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition)
+        return cast(
+            TimeWindowPartitionsDefinition,
+            check.inst(self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition),
+        )
 
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         if not isinstance(partition_key, MultiPartitionKey):
