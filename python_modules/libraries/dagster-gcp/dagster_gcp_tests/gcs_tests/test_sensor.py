@@ -10,9 +10,9 @@ from dagster_gcp.gcs.sensor import get_gcs_keys
 @pytest.mark.parametrize(
     "test_name, since_key, blob_prefix, nb_bucket_keys, expected_keys",
     [
-        ("no key in bucket", None, "", 0, []),
-        ("one key in bucket", None, "", 1, ["foo-1"]),
-        ("two keys in bucket with one key offset", "foo-1", "", 2, ["foo-2"]),
+        ("no key in bucket", None, None, 0, []),
+        ("one key in bucket", None, None, 1, ["foo-1"]),
+        ("two keys in bucket with one key offset", "foo-1", None, 2, ["foo-2"]),
         ("three keys in bucket with wrong prefix", None, "bar", 3, []),
         ("three keys in bucket with correct prefix", None, "foo", 3, ["foo-1", "foo-2", "foo-3"]),
         (
@@ -22,13 +22,13 @@ from dagster_gcp.gcs.sensor import get_gcs_keys
             1003,
             ["foo-1000", "foo-1001", "foo-1002", "foo-1003"],
         ),
-        ("two thousand keys in bucket with offset of -1", "foo-1199", "", 1200, ["foo-1200"]),
+        ("two thousand keys in bucket with offset of -1", "foo-1199", None, 1200, ["foo-1200"]),
     ],
 )
 def test_get_gcs_keys(
     test_name: str,
     since_key: Optional[str],
-    blob_prefix: str,
+    blob_prefix: Optional[str],
     nb_bucket_keys: int,
     expected_keys: List[str],
 ):
@@ -69,7 +69,7 @@ def test_get_gcs_keys(
         returned_keys = []
         offset = 0
         for idx, key in enumerate(bucket_keys[offset:]):
-            if key.name.startswith(prefix):
+            if not prefix or key.name.startswith(prefix):
                 returned_keys.append(key)
 
         return MockBlobIterator(returned_keys)

@@ -4,12 +4,12 @@ from google.cloud import storage
 MAX_KEYS = 1000
 
 
-def get_gcs_keys(bucket, prefix="", since_key=None, gcs_session=None):
+def get_gcs_keys(bucket, prefix=None, since_key=None, gcs_session=None):
     """Return a list of updated keys in a GCS bucket.
 
     Args:
         bucket (str): The name of the GCS bucket.
-        prefix (str): The prefix to filter the keys by.
+        prefix (Optional[str]): The prefix to filter the keys by.
         since_key (Optional[str]): The key to start from. If provided, only keys updated after this key will be returned.
         gcs_session (Optional[google.cloud.storage.client.Client]): A GCS client session. If not provided, a new session will be created.
 
@@ -51,7 +51,7 @@ def get_gcs_keys(bucket, prefix="", since_key=None, gcs_session=None):
                 context.update_cursor(last_key)
     """
     check.str_param(bucket, "bucket")
-    check.str_param(prefix, "prefix")
+    check.opt_str_param(prefix, "prefix")
     check.opt_str_param(since_key, "since_key")
 
     if not gcs_session:
