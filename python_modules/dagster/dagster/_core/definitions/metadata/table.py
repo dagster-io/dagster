@@ -2,7 +2,7 @@ from typing import Mapping, Optional, Sequence, Union
 
 from pydantic.dataclasses import dataclass
 
-from dagster._annotations import experimental, public
+from dagster._annotations import PublicAttr, experimental, public
 from dagster._serdes.serdes import whitelist_for_serdes
 
 # ########################
@@ -18,7 +18,7 @@ class TableRecord:
     strings, integers, floats, or bools.
     """
 
-    data: Mapping[str, Union[str, int, float, bool]]
+    data: PublicAttr[Mapping[str, Union[str, int, float, bool]]]
 
 
 # ########################
@@ -38,10 +38,65 @@ class TableConstraints:
         other (List[str]): Descriptions of arbitrary table-level constraints.
     """
 
-    other: Sequence[str]
+    other: PublicAttr[Sequence[str]]
 
 
 _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
+
+# ########################
+# ##### TABLE COLUMN CONSTRAINTS
+# ########################
+
+
+@whitelist_for_serdes
+@dataclass(frozen=True, config=dict(extra="forbid"))
+class TableColumnConstraints:
+    """Descriptor for a table column's constraints. Nullability and uniqueness are specified with
+    boolean properties. All other constraints are described using arbitrary strings under the
+    `other` property.
+
+    Args:
+        nullable (Optional[bool]): If true, this column can hold null values.
+        unique (Optional[bool]): If true, all values in this column must be unique.
+        other (Sequence[str]): Descriptions of arbitrary column-level constraints
+            not expressible by the predefined properties.
+    """
+
+    nullable: PublicAttr[bool] = True
+    unique: PublicAttr[bool] = False
+    other: PublicAttr[Optional[Sequence[str]]] = None
+
+
+_DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
+
+
+# ########################
+# ##### TABLE COLUMN
+# ########################
+
+
+@whitelist_for_serdes
+@dataclass(frozen=True, config=dict(extra="forbid"))
+class TableColumn:
+    """Descriptor for a table column. The only property that must be specified
+    by the user is `name`. If no `type` is specified, `string` is assumed. If
+    no `constraints` are specified, the column is assumed to be nullable
+    (i.e. `required = False`) and have no other constraints beyond the data type.
+
+    Args:
+        name (List[str]): Descriptions of arbitrary table-level constraints.
+        type (Optional[str]): The type of the column. Can be an arbitrary
+            string. Defaults to `"string"`.
+        description (Optional[str]): Description of this column. Defaults to `None`.
+        constraints (Optional[TableColumnConstraints]): Column-level constraints.
+            If unspecified, column is nullable with no constraints.
+    """
+
+    name: PublicAttr[str]
+    type: PublicAttr[str] = "string"
+    description: PublicAttr[Optional[str]] = None
+    constraints: PublicAttr[TableColumnConstraints] = _DEFAULT_TABLE_COLUMN_CONSTRAINTS
+
 
 # ########################
 # ##### TABLE SCHEMA
@@ -49,7 +104,6 @@ _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
 
 
 @whitelist_for_serdes
-@experimental
 @dataclass(frozen=True, config=dict(extra="forbid"))
 class TableSchema:
     """Representation of a schema for tabular data.
@@ -108,8 +162,8 @@ class TableSchema:
         constraints (Optional[TableConstraints]): The constraints of the table.
     """
 
-    columns: Sequence["TableColumn"]
-    constraints: "TableConstraints" = _DEFAULT_TABLE_CONSTRAINTS
+    columns: PublicAttr[Sequence[TableColumn]]
+    constraints: PublicAttr[TableConstraints] = _DEFAULT_TABLE_CONSTRAINTS
 
     @public
     @staticmethod
@@ -122,58 +176,3 @@ class TableSchema:
                 TableColumn(name=name, type=type_str) for name, type_str in name_type_dict.items()
             ]
         )
-
-
-# ########################
-# ##### TABLE COLUMN CONSTRAINTS
-# ########################
-
-
-@whitelist_for_serdes
-@dataclass(frozen=True, config=dict(extra="forbid"))
-class TableColumnConstraints:
-    """Descriptor for a table column's constraints. Nullability and uniqueness are specified with
-    boolean properties. All other constraints are described using arbitrary strings under the
-    `other` property.
-
-    Args:
-        nullable (Optional[bool]): If true, this column can hold null values.
-        unique (Optional[bool]): If true, all values in this column must be unique.
-        other (Sequence[str]): Descriptions of arbitrary column-level constraints
-            not expressible by the predefined properties.
-    """
-
-    nullable: bool = True
-    unique: bool = False
-    other: Optional[Sequence[str]] = None
-
-
-_DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
-
-
-# ########################
-# ##### TABLE COLUMN
-# ########################
-
-
-@whitelist_for_serdes
-@dataclass(frozen=True, config=dict(extra="forbid"))
-class TableColumn:
-    """Descriptor for a table column. The only property that must be specified
-    by the user is `name`. If no `type` is specified, `string` is assumed. If
-    no `constraints` are specified, the column is assumed to be nullable
-    (i.e. `required = False`) and have no other constraints beyond the data type.
-
-    Args:
-        name (List[str]): Descriptions of arbitrary table-level constraints.
-        type (Optional[str]): The type of the column. Can be an arbitrary
-            string. Defaults to `"string"`.
-        description (Optional[str]): Description of this column. Defaults to `None`.
-        constraints (Optional[TableColumnConstraints]): Column-level constraints.
-            If unspecified, column is nullable with no constraints.
-    """
-
-    name: str
-    type: str = "string"
-    description: Optional[str] = None
-    constraints: "TableColumnConstraints" = _DEFAULT_TABLE_COLUMN_CONSTRAINTS
