@@ -30,14 +30,17 @@ interface Props {
 
 export const SideNavItem = (props: Props) => {
   const {active = false, item} = props;
-  const {type, icon, label} = item;
+  const {type, icon, label, rightElement} = item;
   const content = (
     <Box
-      padding={{vertical: 4, horizontal: 12}}
-      flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+      padding={{vertical: 4, left: 12, right: 8}}
+      flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
     >
-      {icon}
-      {label}
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} className="iconAndLabel">
+        {icon}
+        {label}
+      </Box>
+      <div>{rightElement}</div>
     </Box>
   );
 
@@ -76,8 +79,10 @@ const StyledSideNavLink = styled(Link)<{$active: boolean}>`
     text-decoration: none;
   }
 
-  ${IconWrapper} {
-    background-color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
+  .iconAndLabel {
+    ${IconWrapper} {
+      background-color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
+    }
   }
 `;
 

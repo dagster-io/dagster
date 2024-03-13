@@ -24,4 +24,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Use new asset automation page',
     flagType: FeatureFlag.flagUseNewAutomationPage,
   },
+  {
+    key: 'Use new settings page',
+    flagType: FeatureFlag.flagSettingsPage,
+  },
 ];
