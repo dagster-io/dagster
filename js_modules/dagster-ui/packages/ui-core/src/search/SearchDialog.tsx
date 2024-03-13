@@ -326,6 +326,7 @@ export const SearchInput = styled.input`
   margin-left: 4px;
   outline: none;
   width: 100%;
+  background-color: transparent;
 
   &::placeholder {
     color: ${Colors.textLighter()};
