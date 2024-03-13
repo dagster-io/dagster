@@ -16,7 +16,7 @@ import {useState} from 'react';
 import {TableSchemaFragment} from './types/TableSchema.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
-import {MaterializationEvent, TableSchemaMetadataEntry} from '../graphql/types';
+import {JsonMetadataEntry, MaterializationEvent, TableSchemaMetadataEntry} from '../graphql/types';
 
 type ITableSchema = TableSchemaFragment;
 
@@ -28,10 +28,14 @@ interface ITableSchemaProps {
   itemHorizontalPadding?: Spacing;
 }
 
-export const isCanonicalTableSchemaEntry = (
+export const isCanonicalColumnSchemaEntry = (
   m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
 ): m is TableSchemaMetadataEntry =>
   m.__typename === 'TableSchemaMetadataEntry' && m.label === 'dagster/column_schema';
+
+export const isCanonicalColumnLineageEntry = (
+  m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
+): m is JsonMetadataEntry => m.__typename === 'JsonMetadataEntry' && m.label === 'lineage';
 
 export const TableSchema = ({
   schema,
@@ -85,7 +89,7 @@ export const TableSchema = ({
                 <Mono>{column.name}</Mono>
               </td>
               <td>
-                <TypeTag type={column.type} icon={iconForType(column.type)} />
+                <TypeTag type={column.type} />
                 {!column.constraints.nullable && NonNullableTag}
                 {column.constraints.unique && UniqueTag}
                 {column.constraints.other.map((constraint, i) => (
@@ -128,11 +132,13 @@ const iconForType = (type: string): IconName | null => {
   return null;
 };
 
-const TypeTag = ({type = '', icon}: {type: string; icon: IconName | null}) => {
+export const TypeTag = ({type = ''}: {type: string}) => {
   if (type.trim().replace(/\?/g, '').length === 0) {
     // Do not render type '' or '?' or any other empty value.
     return <span />;
   }
+
+  const icon = iconForType(type);
 
   return (
     <Tag intent="none">

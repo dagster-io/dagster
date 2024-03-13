@@ -4,7 +4,12 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetColumnLineageLocal,
+  AssetColumnLineages,
+} from './lineage/useColumnLineageDataForAssets';
 import {AssetKey, AssetViewParams} from './types';
+import {AssetColumnsNode} from '../asset-graph/AssetColumnsNode';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
@@ -23,10 +28,14 @@ export const AssetNodeLineageGraph = ({
   assetKey,
   assetGraphData,
   params,
+  columnLineageData,
+  column,
 }: {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   params: AssetViewParams;
+  columnLineageData: AssetColumnLineages;
+  column: string | undefined;
 }) => {
   const assetGraphId = toGraphId(assetKey);
 
@@ -66,6 +75,69 @@ export const AssetNodeLineageGraph = ({
     );
   }
 
+  const visibleColumns: {[graphId: string]: AssetColumnLineageLocal[''][]} = {};
+  const visibleEdges: typeof layout.edges = [];
+
+  if (column) {
+    type Item = {graphId: string; column: string};
+    const visited = new Set<string>();
+    const queue: Item[] = [{graphId: assetGraphId, column}];
+    let item: Item | undefined;
+
+    while ((item = queue.pop())) {
+      if (!item) {
+        continue;
+      }
+      const {graphId, column} = item;
+      visited.add(JSON.stringify(item));
+
+      let lineageForColumn = columnLineageData[graphId]?.[column];
+      if (!lineageForColumn) {
+        lineageForColumn = {
+          name: column,
+          description: 'Not found in column metadata',
+          type: null,
+          downstream: [],
+          upstream: [],
+        };
+      }
+
+      visibleColumns[graphId] = visibleColumns[graphId] || [];
+      visibleColumns[graphId]?.push(lineageForColumn);
+
+      for (const upstream of lineageForColumn.upstream) {
+        for (const upstreamAssetKey of upstream.assetKeys) {
+          const upstreamGraphId = toGraphId(upstreamAssetKey);
+          const item = {graphId: upstreamGraphId, column: upstream.columnName};
+          if (!visited.has(JSON.stringify(item))) {
+            queue.push(item);
+            const edge = layout.edges.find(
+              (e) => e.fromId === upstreamGraphId && e.toId === graphId,
+            );
+            if (edge) {
+              visibleEdges.push(edge);
+            }
+          }
+        }
+      }
+      for (const downstream of lineageForColumn.downstream) {
+        for (const downstreamAssetKey of downstream.assetKeys) {
+          const downstreamGraphId = toGraphId(downstreamAssetKey);
+          const item = {graphId: downstreamGraphId, column: downstream.columnName};
+          if (!visited.has(JSON.stringify(item))) {
+            queue.push(item);
+            const edge = layout.edges.find(
+              (e) => e.fromId === downstreamGraphId && e.toId === graphId,
+            );
+            if (edge) {
+              visibleEdges.push(edge);
+            }
+          }
+        }
+      }
+    }
+  }
+
   return (
     <SVGViewport
       ref={(r) => (viewportEl.current = r || undefined)}
@@ -102,7 +174,7 @@ export const AssetNodeLineageGraph = ({
           <AssetEdges
             selected={null}
             highlighted={highlighted}
-            edges={layout.edges}
+            edges={column ? visibleEdges : layout.edges}
             viewportRect={viewportRect}
             direction="horizontal"
           />
@@ -113,10 +185,7 @@ export const AssetNodeLineageGraph = ({
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
                 <ExpandedGroupNode
-                  group={{
-                    ...group,
-                    assets: groupedAssets[group.id]!,
-                  }}
+                  group={{...group, assets: groupedAssets[group.id]!}}
                   minimal={scale < MINIMAL_SCALE}
                   setHighlighted={setHighlighted}
                 />
@@ -149,6 +218,12 @@ export const AssetNodeLineageGraph = ({
                 >
                   {!graphNode ? (
                     <AssetNodeLink assetKey={{path}} />
+                  ) : column ? (
+                    <AssetColumnsNode
+                      definition={graphNode.definition}
+                      columns={visibleColumns[graphNode.id] || []}
+                      selected={graphNode.id === assetGraphId}
+                    />
                   ) : scale < MINIMAL_SCALE ? (
                     <AssetNodeContextMenuWrapper {...contextMenuProps}>
                       <AssetNodeMinimal
