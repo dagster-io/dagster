@@ -1,7 +1,10 @@
 from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
 
+from pydantic import BaseModel
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
+from dagster._core.events import AssetKey
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
@@ -259,3 +262,17 @@ class TableColumnConstraints(
 
 
 _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
+
+
+# ###########################
+# ##### TABLE COLUMN LINEAGE
+# ###########################
+
+
+class AssetColumnDep(BaseModel, frozen=True):
+    asset_key: AssetKey
+    column_name: str
+
+
+class TableColumnLineages(BaseModel, frozen=True):
+    column_lineages: Mapping[str, Sequence[AssetColumnDep]]
