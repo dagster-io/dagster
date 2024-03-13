@@ -36,7 +36,7 @@ export const AppTopNav = ({
   allowGlobalReload = false,
 }: Props) => {
   const history = useHistory();
-  const {flagSettingsPage} = useFeatureFlags();
+  const {flagSettingsPage, flagUseNewOverviewPage} = useFeatureFlags();
 
   const navLinks = () => {
     return [
@@ -80,7 +80,7 @@ export const AppTopNav = ({
             shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
           >
             <TopNavLink
-              to="/assets"
+              to={flagUseNewOverviewPage ? '/assets-overview' : '/assets'}
               data-cy="AppTopNav_AssetsLink"
               isActive={(_, location) => {
                 const {pathname} = location;
