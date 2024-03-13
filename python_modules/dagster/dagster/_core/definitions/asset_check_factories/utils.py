@@ -1,5 +1,5 @@
 import datetime
-from typing import Iterator, Optional, Sequence, Union, cast
+from typing import Iterator, Optional, Sequence, Union
 
 from dagster import _check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity, AssetCheckSpec
@@ -8,7 +8,7 @@ from dagster._core.definitions.decorators.asset_check_decorator import (
     MultiAssetCheckFunction,
     multi_asset_check,
 )
-from dagster._core.definitions.metadata import JsonMetadataValue
+from dagster._core.definitions.metadata import FreshnessMetadataSet, JsonMetadataValue
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
@@ -138,13 +138,7 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
         return asset_record.timestamp
     else:
         metadata = check.not_none(asset_record.asset_observation).metadata
-        value = metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY].value
-        check.invariant(
-            isinstance(value, float),
-            f"Unexpected metadata value type for '{LAST_UPDATED_TIMESTAMP_METADATA_KEY}': "
-            f"{type(metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY])}",
-        )
-        return cast(float, value)
+        return check.not_none(FreshnessMetadataSet.extract(metadata).last_updated_timestamp).value
 
 
 def get_last_updated_timestamp(
@@ -155,9 +149,11 @@ def get_last_updated_timestamp(
     if record.asset_materialization is not None:
         return record.timestamp
     elif record.asset_observation is not None:
-        metadata_value = record.asset_observation.metadata.get("dagster/last_updated_timestamp")
+        metadata_value = FreshnessMetadataSet.extract(
+            record.asset_observation.metadata
+        ).last_updated_timestamp
         if metadata_value is not None:
-            return check.float_param(metadata_value.value, "last_updated_timestamp")
+            return metadata_value.value
         else:
             context.log.warning(
                 f"Could not find last updated timestamp in observation record for asset key "

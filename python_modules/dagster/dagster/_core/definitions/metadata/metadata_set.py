@@ -9,7 +9,13 @@ from dagster._model import DagsterModel
 from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import flatten_annotation_unions
 
-from .metadata_value import MetadataValue, TableColumnLineage, TableSchema
+from .metadata_value import (
+    JsonMetadataValue,
+    MetadataValue,
+    TableColumnLineage,
+    TableSchema,
+    TimestampMetadataValue,
+)
 
 T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
 
@@ -153,6 +159,45 @@ class TableMetadataSet(NamespacedMetadataSet):
 
     column_schema: Optional[TableSchema] = None
     column_lineage: Optional[TableColumnLineage] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster"
+
+
+class FreshnessMetadataSet(NamespacedMetadataSet):
+    """Metadata entries that apply to asset observations and describe the freshness of the asset.
+
+    Args:
+        last_updated_timestamp (Optional[TimestampMetadataValue]): The timestamp of the last known
+            update to the asset.
+    """
+
+    last_updated_timestamp: Optional[TimestampMetadataValue] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster"
+
+
+class FreshnessCheckMetadataSet(NamespacedMetadataSet):
+    """Metadata entries that apply to freshness check evaluations.
+
+    Args:
+        freshness_params (Optional[JsonMetadataValue]): The parameters of the rule used for the
+            freshness check.
+        overdue_deadline_timestamp (Optional[TimestampMetadataValue]): The time by which an update
+            was expected to occur.
+        overdue_seconds (Optional[float]): If an update did not occur by the deadline, the number
+            of seconds that elapsed between the deadline and the time the check was evaluated.
+        last_updated_timestamp (Optional[TimestampMetadataValue]): The timestamp of the last known
+            update to the asset, at the time of the check evaluation.
+    """
+
+    freshness_params: Optional[JsonMetadataValue] = None
+    overdue_deadline_timestamp: Optional[TimestampMetadataValue] = None
+    overdue_seconds: Optional[float] = None
+    last_updated_timestamp: Optional[TimestampMetadataValue] = None
 
     @classmethod
     def namespace(cls) -> str:
