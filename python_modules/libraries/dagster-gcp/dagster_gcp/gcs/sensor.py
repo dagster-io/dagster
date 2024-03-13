@@ -18,9 +18,10 @@ def get_gcs_keys(bucket, prefix="", since_key=None, gcs_session=None):
 
     Example:
         .. code-block:: python
+
             @resource
             def google_cloud_storage_client(context):
-                return storage.Client().from_service_account_json("my-service-account.json
+                return storage.Client().from_service_account_json("my-service-account.json")
 
             @sensor(job=my_job, required_resource_keys={"google_cloud_storage_client"})
             def my_gcs_sensor(context):
