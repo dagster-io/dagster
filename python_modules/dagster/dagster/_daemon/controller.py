@@ -48,6 +48,9 @@ HEARTBEAT_CHECK_INTERVAL = 60
 
 RELOAD_WORKSPACE_INTERVAL = 60
 
+# Number of seconds the workspace can fail to refresh before restarting the daemon.
+DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE = 300
+
 # Amount of time that a local code server spun up by the daemon will keep running
 # after it is no longer receiving any heartbeat pings - for this duration there may be
 # multiple code server processes running
@@ -266,6 +269,22 @@ class DagsterDaemonController(AbstractContextManager):
                 " They may be running more slowly than expected or hanging."
             )
 
+    def check_workspace_freshness(self, last_workspace_update_time: float) -> float:
+        nowish = pendulum.now("UTC").float_timestamp
+        try:
+            if (nowish - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
+                if self._grpc_server_registry:
+                    self._grpc_server_registry.clear_all_grpc_endpoints()
+                self._workspace_process_context.refresh_workspace()
+                return pendulum.now("UTC").float_timestamp
+        except Exception:
+            if (nowish - last_workspace_update_time) > DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE:
+                self._logger.exception("Daemon controller surpassed workspace freshness tolerance.")
+                raise
+            else:
+                self._logger.exception("Daemon controller failed to refresh workspace. Still within freshness tolerance.")
+        return last_workspace_update_time
+
     def check_daemon_loop(self) -> None:
         start_time = time.time()
         last_heartbeat_check_time = start_time
@@ -276,18 +295,16 @@ class DagsterDaemonController(AbstractContextManager):
                 self.check_daemon_threads()
 
                 # periodically refresh the shared workspace context
-                if (time.time() - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
-                    if self._grpc_server_registry:
-                        self._grpc_server_registry.clear_all_grpc_endpoints()
-                    self._workspace_process_context.refresh_workspace()
-                    last_workspace_update_time = time.time()
+                last_workspace_update_time = self.check_workspace_freshness(
+                    last_workspace_update_time
+                )
 
                 if self._instance.daemon_skip_heartbeats_without_errors:
                     # If we're skipping heartbeats without errors, we just check the threads.
                     # If there's no errors, the daemons won't be writing heartbeats.
                     continue
 
-                now = time.time()
+                now = pendulum.now("UTC").float_timestamp
                 # Give the daemon enough time to send an initial heartbeat before checking
                 if (
                     (now - start_time) < 2 * self._heartbeat_interval_seconds
@@ -296,7 +313,7 @@ class DagsterDaemonController(AbstractContextManager):
                     continue
 
                 self.check_daemon_heartbeats()
-                last_heartbeat_check_time = time.time()
+                last_heartbeat_check_time = pendulum.now("UTC").float_timestamp
 
     def __exit__(
         self,
