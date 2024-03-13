@@ -56,6 +56,158 @@ def root_property(fn: Callable[[Any], T]) -> Callable[[Any], T]:
 
 
 @dataclass(frozen=True)
+class NewAssetConditionEvaluationContext:
+    """This is a new version of the AssetConditionEvaluationContext that is significantly
+    simplified. Refactoring will need to be done to convert all existing uses of the old class,
+    so for now just keeping this as a separate class.
+    """
+
+    from ...asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
+
+    condition: "AssetCondition"
+    root_condition: "AssetCondition"
+
+    asset_graph_view: AssetGraphView
+    candidate_slice: AssetSlice
+
+    previous_evaluation: Optional["AssetConditionEvaluation"]
+    previous_evaluation_state: Optional["AssetConditionEvaluationState"]
+
+    evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"]
+
+    start_timestamp: datetime.datetime
+
+    @staticmethod
+    def create(
+        condition: "AssetCondition",
+        candidate_slice: AssetSlice,
+        previous_evaluation_state: Optional["AssetConditionEvaluationState"] = None,
+        evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"] = {},
+    ) -> "NewAssetConditionEvaluationContext":
+        """Creates a new evaluation context for evaluating a condition over a given candidate slice."""
+        return NewAssetConditionEvaluationContext(
+            condition=condition,
+            root_condition=condition,
+            asset_graph_view=candidate_slice._asset_graph_view,  # noqa
+            candidate_slice=candidate_slice,
+            previous_evaluation=previous_evaluation_state.previous_evaluation
+            if previous_evaluation_state
+            else None,
+            previous_evaluation_state=previous_evaluation_state,
+            evaluation_state_by_key=evaluation_state_by_key,
+            start_timestamp=pendulum.now("UTC"),
+        )
+
+    def for_child(
+        self, condition: "AssetCondition", candidate_slice: AssetSlice
+    ) -> "NewAssetConditionEvaluationContext":
+        """Creates a new evaluation context for evaluating a child condition over a given candidate
+        slice.
+        """
+        return dataclasses.replace(
+            self,
+            condition=condition,
+            candidate_slice=candidate_slice,
+            previous_evaluation=self.previous_evaluation.for_child(condition)
+            if self.previous_evaluation
+            else None,
+            start_timestamp=pendulum.now("UTC"),
+        )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.candidate_slice.asset_key
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self.candidate_slice.partitions_def
+
+    @property
+    def _instance_queryer(self) -> CachingInstanceQueryer:
+        return self.asset_graph_view._stale_resolver.instance_queryer  # noqa
+
+    @property
+    def _asset_graph(self) -> BaseAssetGraph:
+        return self.asset_graph_view.asset_graph
+
+    @property
+    def candidate_subset(self) -> ValidAssetSubset:
+        # this property is just here to make this new context object work in old call sites, but
+        # would likely be removed in a full refactor
+        return self.candidate_slice.convert_to_valid_asset_subset()
+
+    @property
+    def previous_candidate_subset(self) -> AssetSubset:
+        if self.previous_evaluation is None:
+            return self.get_empty_subset()
+        candidate_subset = self.previous_evaluation.candidate_subset
+        if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
+            return AssetSubset.all(
+                self.asset_key,
+                self.partitions_def,
+                self._instance_queryer,
+                self.asset_graph_view.effective_dt,
+            )
+        else:
+            return candidate_subset
+
+    @property
+    def previous_true_subset(self) -> AssetSubset:
+        if self.previous_evaluation is None:
+            return self.get_empty_subset()
+        return self.previous_evaluation.true_subset
+
+    @property
+    def previous_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
+        if self.previous_evaluation is None:
+            return []
+        return self.previous_evaluation.subsets_with_metadata
+
+    @property
+    def previous_max_storage_id(self) -> Optional[int]:
+        if self.previous_evaluation_state is None:
+            return None
+        return self.previous_evaluation_state.max_storage_id
+
+    @property
+    def new_max_storage_id(self) -> Optional[int]:
+        # realistically, when constructing the asset graph view, we should always be passing in a
+        # last event id, and so that's the value we should return from here. However, this is not
+        # the case at the moment, so we just manually query the latest event id.
+        #
+        # this would result in issues in the real world, as this value may change over the course
+        # of a tick.
+        #
+        # return self.asset_graph_view.last_event_id
+        return self._instance_queryer.instance.event_log_storage.get_maximum_record_id()
+
+    @property
+    def evaluation_time(self) -> datetime.datetime:
+        return self.asset_graph_view.effective_dt
+
+    def compute_parent_updated_since_previous_tick_slice(self) -> AssetSlice:
+        return self.asset_graph_view.compute_asset_slice_with_newly_updated_parents(
+            asset_key=self.asset_key,
+            cursor=self.previous_max_storage_id,
+        )
+
+    def compute_parent_asset_partition_keys(
+        self, asset_partition_key: AssetKeyPartitionKey
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        return self.asset_graph_view.asset_graph.get_parents_partitions(
+            dynamic_partitions_store=self._instance_queryer,
+            current_time=self.asset_graph_view.effective_dt,
+            asset_key=asset_partition_key.asset_key,
+            partition_key=asset_partition_key.partition_key,
+        ).parent_partitions
+
+    def get_empty_subset(self) -> ValidAssetSubset:
+        return AssetSubset.empty(
+            self.candidate_slice.asset_key, self.candidate_slice.partitions_def
+        )
+
+
+@dataclass(frozen=True)
 class AssetConditionEvaluationContext:
     """Context object containing methods and properties used for evaluating the entire state of an
     asset's automation rules.

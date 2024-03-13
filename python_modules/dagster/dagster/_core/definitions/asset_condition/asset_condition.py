@@ -1,9 +1,11 @@
 import functools
 import hashlib
 from abc import ABC, abstractmethod, abstractproperty
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    DefaultDict,
     Dict,
     FrozenSet,
     List,
@@ -11,6 +13,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -20,16 +23,20 @@ from typing import (
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
 from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
 
 from ..asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
     from ..auto_materialize_rule import AutoMaterializeRule
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .asset_condition_evaluation_context import (
+        AssetConditionEvaluationContext,
+        NewAssetConditionEvaluationContext,
+    )
 
 
 T = TypeVar("T")
@@ -74,6 +81,33 @@ def get_serializable_candidate_subset(
     return candidate_subset
 
 
+def _group_metadata(
+    asset_key: AssetKey,
+    partitions_def: Optional[PartitionsDefinition],
+    metadata_by_asset_partition_key: Mapping[AssetKeyPartitionKey, MetadataMapping],
+) -> DefaultDict[FrozenSet[Tuple[str, MetadataValue]], ValidAssetSubset]:
+    """Groups metadata associated with asset partitions into AssetSubsets which share the same
+    metadata values. This allows these values to be stored more efficiently.
+    """
+    asset_partition_keys_by_frozen_metadata: Dict[
+        FrozenSet[Tuple[str, MetadataValue]], Set[AssetKeyPartitionKey]
+    ] = defaultdict(set)
+    for asset_partition_key, metadata in metadata_by_asset_partition_key.items():
+        asset_partition_keys_by_frozen_metadata[frozenset(metadata.items())].add(
+            asset_partition_key
+        )
+
+    asset_subsets_by_frozen_metadata = defaultdict(
+        lambda: AssetSubset.empty(asset_key, partitions_def)
+    )
+    for frozen_metadata, asset_partitions in asset_partition_keys_by_frozen_metadata.items():
+        asset_subsets_by_frozen_metadata[frozen_metadata] = AssetSubset.from_asset_partitions_set(
+            asset_key, partitions_def, asset_partitions
+        )
+
+    return asset_subsets_by_frozen_metadata
+
+
 class AssetConditionResult(NamedTuple):
     condition: "AssetCondition"
     start_timestamp: float
@@ -92,7 +126,7 @@ class AssetConditionResult(NamedTuple):
         true_subset: AssetSubset,
         child_results: Sequence["AssetConditionResult"],
     ) -> "AssetConditionResult":
-        """Returns a new AssetConditionEvaluation from the given child results."""
+        """Returns a new AssetConditionResult from the given child results."""
         return AssetConditionResult(
             condition=context.condition,
             start_timestamp=context.start_timestamp,
@@ -111,7 +145,7 @@ class AssetConditionResult(NamedTuple):
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: PackableValue = None,
     ) -> "AssetConditionResult":
-        """Returns a new AssetConditionEvaluation from the given parameters."""
+        """Returns a new AssetConditionResult from the given parameters."""
         return AssetConditionResult(
             condition=context.condition,
             start_timestamp=context.start_timestamp,
@@ -119,6 +153,62 @@ class AssetConditionResult(NamedTuple):
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
             subsets_with_metadata=subsets_with_metadata,
+            child_results=[],
+            extra_state=extra_state,
+        )
+
+    @staticmethod
+    def create_from_previous_evaluation(
+        context: "NewAssetConditionEvaluationContext",
+        new_evaluated_slice: AssetSlice,
+        new_true_slice: AssetSlice,
+        new_metadata_by_asset_partition_key: Mapping[AssetKeyPartitionKey, MetadataMapping] = {},
+        extra_state: PackableValue = None,
+        ignore_subset: Optional[AssetSubset] = None,
+    ) -> "AssetConditionResult":
+        """Returns a new AssetConditionResult which combines data from the previous tick."""
+        from .asset_condition import AssetSubsetWithMetadata
+
+        asset_subsets_by_frozen_metadata = _group_metadata(
+            context.asset_key, context.partitions_def, new_metadata_by_asset_partition_key
+        )
+        for previous_subset_with_metadata in context.previous_subsets_with_metadata:
+            # only carry forward previous metadata values if you do not have new metadata for them
+            carry_forward_subset = (
+                previous_subset_with_metadata.subset.as_valid(context.partitions_def)
+                - new_evaluated_slice.convert_to_valid_asset_subset()
+                # - ignore_subset
+            )
+            if carry_forward_subset.size > 0:
+                asset_subsets_by_frozen_metadata[previous_subset_with_metadata.frozen_metadata] |= (
+                    carry_forward_subset
+                )
+
+        # Second, we calculate the new true subset based on a combination of the previous value
+        # and our newly-computed value
+        true_subset = (
+            new_true_slice.convert_to_valid_asset_subset()
+            | (
+                # carry forward any previously-true values that were not re-evaluated this tick
+                # and were not explicitly excluded from being carried forward
+                context.previous_true_subset.as_valid(context.partitions_def)
+                - new_evaluated_slice.convert_to_valid_asset_subset()
+                # - ignore_subset
+            )
+            # only candidates can be true
+            & context.candidate_slice.convert_to_valid_asset_subset()
+        )
+
+        return AssetConditionResult(
+            condition=context.condition,
+            start_timestamp=context.start_timestamp.timestamp(),
+            end_timestamp=pendulum.now("UTC").timestamp(),
+            true_subset=true_subset,
+            candidate_subset=context.candidate_slice.convert_to_valid_asset_subset(),
+            subsets_with_metadata=[
+                AssetSubsetWithMetadata(subset, dict(metadata))
+                for metadata, subset in asset_subsets_by_frozen_metadata.items()
+            ],
             child_results=[],
             extra_state=extra_state,
         )
@@ -256,7 +346,8 @@ class AssetConditionEvaluationState(NamedTuple):
 
     @staticmethod
     def create(
-        context: "AssetConditionEvaluationContext", root_result: AssetConditionResult
+        context: "AssetConditionEvaluationContext",
+        root_result: AssetConditionResult,
     ) -> "AssetConditionEvaluationState":
         """Convenience constructor to generate an AssetConditionEvaluationState from the root result
         and the context in which it was evaluated.
@@ -469,14 +560,28 @@ class AndAssetCondition(
         return "All of"
 
     def evaluate(self, context: "AssetConditionEvaluationContext") -> AssetConditionResult:
+        from .asset_condition_evaluation_context import NewAssetConditionEvaluationContext
+
         child_results: List[AssetConditionResult] = []
-        true_subset = context.candidate_subset
-        for child in self.children:
-            child_context = context.for_child(condition=child, candidate_subset=true_subset)
-            child_result = child.evaluate(child_context)
-            child_results.append(child_result)
-            true_subset &= child_result.true_subset
-        return AssetConditionResult.create_from_children(context, true_subset, child_results)
+        # just doing this the gross way for now, as I don't want to break all existing tests
+        if isinstance(context, NewAssetConditionEvaluationContext):
+            true_slice = context.candidate_slice
+            for child in self.children:
+                child_context = context.for_child(condition=child, candidate_slice=true_slice)
+                child_result = child.evaluate(child_context)
+                child_results.append(child_result)
+                true_slice &= child_result.true_subset
+            return AssetConditionResult.create_from_children(
+                context, true_slice.convert_to_valid_asset_subset(), child_results
+            )
+        else:
+            true_subset = context.candidate_subset
+            for child in self.children:
+                child_context = context.for_child(condition=child, candidate_subset=true_subset)
+                child_result = child.evaluate(child_context)
+                child_results.append(child_result)
+                true_subset &= child_result.true_subset
+            return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
 class OrAssetCondition(

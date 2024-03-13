@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, NewType, Optional
+from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, NewType, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -104,6 +104,9 @@ class AssetSlice:
             for akpk in self._compatible_subset.asset_partitions
         }
 
+    def compute_asset_partition_keys(self) -> AbstractSet[AssetKeyPartitionKey]:
+        return self._compatible_subset.asset_partitions
+
     @property
     def asset_key(self) -> AssetKey:
         return self._compatible_subset.asset_key
@@ -117,7 +120,7 @@ class AssetSlice:
         return self._asset_graph_view.asset_graph.get(self.asset_key).child_keys
 
     @property
-    def _partitions_def(self) -> Optional["PartitionsDefinition"]:
+    def partitions_def(self) -> Optional["PartitionsDefinition"]:
         return self._asset_graph_view.asset_graph.get(self.asset_key).partitions_def
 
     @cached_method
@@ -136,11 +139,45 @@ class AssetSlice:
     def compute_child_slices(self) -> Mapping[AssetKey, "AssetSlice"]:
         return {ak: self.compute_child_slice(ak) for ak in self.child_keys}
 
+    def compute_outdated_slice(self) -> "AssetSlice":
+        """Returns the subslice of the current slice that is outdated."""
+        outdated_asset_partitions = {
+            asset_partition_key
+            for asset_partition_key in self.compute_asset_partition_keys()
+            if self._asset_graph_view._queryer.get_outdated_ancestors(
+                asset_partition=asset_partition_key
+            )
+        }
+        return self._asset_graph_view.get_asset_slice_from_asset_partition_keys(
+            self.asset_key, outdated_asset_partitions
+        )
+
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str]
     ) -> "AssetSlice":
         """Return a new AssetSlice with only the given partition keys if they are in the slice."""
         return self._asset_graph_view.compute_intersection_with_partition_keys(partition_keys, self)
+
+    def __or__(self, other: Union["AssetSlice", "AssetSubset"]) -> "AssetSlice":
+        if isinstance(other, AssetSlice):
+            return _slice_from_subset(
+                self._asset_graph_view, self._compatible_subset | other._compatible_subset
+            )
+        return _slice_from_subset(self._asset_graph_view, self._compatible_subset | other)
+
+    def __sub__(self, other: Union["AssetSlice", "AssetSubset"]) -> "AssetSlice":
+        if isinstance(other, AssetSlice):
+            return _slice_from_subset(
+                self._asset_graph_view, self._compatible_subset - other._compatible_subset
+            )
+        return _slice_from_subset(self._asset_graph_view, self._compatible_subset - other)
+
+    def __and__(self, other: Union["AssetSlice", "AssetSubset"]) -> "AssetSlice":
+        if isinstance(other, AssetSlice):
+            return _slice_from_subset(
+                self._asset_graph_view, self._compatible_subset & other._compatible_subset
+            )
+        return _slice_from_subset(self._asset_graph_view, self._compatible_subset & other)
 
 
 class AssetGraphView:
@@ -245,6 +282,18 @@ class AssetGraphView:
             ),
         )
 
+    def get_asset_slice_from_asset_partition_keys(
+        self, asset_key: "AssetKey", asset_partition_keys: AbstractSet[AssetKeyPartitionKey]
+    ) -> "AssetSlice":
+        return _slice_from_subset(
+            self,
+            AssetSubset.from_asset_partitions_set(
+                asset_key=asset_key,
+                partitions_def=self._get_partitions_def(asset_key),
+                asset_partitions_set=asset_partition_keys,
+            ),
+        )
+
     def compute_parent_asset_slice(
         self, parent_asset_key: AssetKey, asset_slice: AssetSlice
     ) -> AssetSlice:
@@ -295,3 +344,19 @@ class AssetGraphView:
                 asset_slice.asset_key, partitions_def, partition_keys
             ),
         )
+
+    def compute_asset_slice_with_newly_updated_parents(
+        self, asset_key: AssetKey, cursor: Optional[int]
+    ) -> "AssetSlice":
+        """Computes the slice of the asset that has parents with new materialization events since
+        the cursor.
+        """
+        asset_partitions, _ = (
+            self._queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
+                latest_storage_id=cursor,
+                child_asset_key=asset_key,
+            )
+        )
+        return self.get_asset_slice_from_asset_partition_keys(asset_key, asset_partitions)
+
+    def compute_outdated_asset_slice(self, asset_key: AssetKey) -> "AssetSlice": ...

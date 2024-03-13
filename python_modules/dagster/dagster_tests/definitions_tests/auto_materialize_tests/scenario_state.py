@@ -242,6 +242,10 @@ class ScenarioState:
     def asset_graph(self) -> AssetGraph:
         return self.scenario_spec.asset_graph
 
+    @property
+    def defs(self) -> Definitions:
+        return self.scenario_spec.defs
+
     def with_current_time(self, time: str) -> Self:
         return dataclasses.replace(self, scenario_spec=self.scenario_spec.with_current_time(time))
 
