@@ -483,6 +483,17 @@ def test_reuse_task_definition(instance, ecs):
         container_name,
     )
 
+    # Changed linuxParameters fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["linuxParameters"] = {
+        "capabilities": {"add": ["SYS_PTRACE"]},
+        "initProcessEnabled": True,
+    }
+    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
     # Any other diff passes
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["somethingElse"] = "boom"
@@ -687,6 +698,11 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
 
     repository_credentials = "fake-secret-arn"
 
+    linux_parameters = {
+        "capabilities": {"add": ["SYS_PTRACE"]},
+        "initProcessEnabled": True,
+    }
+
     # You can provide a family or a task definition ARN
     with instance_cm(
         {
@@ -700,6 +716,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
                 "mount_points": mount_points,
                 "volumes": volumes,
                 "repository_credentials": repository_credentials,
+                "linux_parameters": linux_parameters,
             },
             "container_name": container_name,
         }
@@ -745,6 +762,8 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
             container_definition["repositoryCredentials"]["credentialsParameter"]
             == repository_credentials
         )
+
+        assert container_definition["linuxParameters"] == linux_parameters
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,
