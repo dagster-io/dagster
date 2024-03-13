@@ -29,6 +29,7 @@ class DagsterEcsTaskDefinitionConfig(
             ("mount_points", Sequence[Mapping[str, Any]]),
             ("volumes", Sequence[Mapping[str, Any]]),
             ("repository_credentials", Optional[str]),
+            ("linux_parameters", Optional[Mapping[str, Any]]),
         ],
     )
 ):
@@ -56,6 +57,7 @@ class DagsterEcsTaskDefinitionConfig(
         mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
         repository_credentials: Optional[str] = None,
+        linux_parameters: Optional[Mapping[str, Any]] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -77,6 +79,7 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_sequence_param(mount_points, "mount_points"),
             check.opt_sequence_param(volumes, "volumes"),
             check.opt_str_param(repository_credentials, "repository_credentials"),
+            check.opt_mapping_param(linux_parameters, "linux_parameters"),
         )
 
     def task_definition_dict(self):
@@ -108,6 +111,7 @@ class DagsterEcsTaskDefinitionConfig(
                         if self.repository_credentials
                         else {}
                     ),
+                    ({"linuxParameters": self.linux_parameters} if self.linux_parameters else {}),
                 ),
                 *self.sidecars,
             ],
@@ -172,6 +176,7 @@ class DagsterEcsTaskDefinitionConfig(
             repository_credentials=container_definition.get("repositoryCredentials", {}).get(
                 "credentialsParameter"
             ),
+            linux_parameters=container_definition.get("linuxParameters"),
         )
 
 
