@@ -18,7 +18,6 @@ from dagster import (
     job,
     op,
 )
-from dagster._check import CheckError
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import (
@@ -36,6 +35,7 @@ from dagster._core.definitions.metadata.table import (
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.snap.node import build_node_defs_snapshot
 from dagster._serdes.serdes import deserialize_value, serialize_value
+from pydantic import ValidationError
 
 
 def step_events_of_type(result: ExecutionResult, node_name: str, event_type: DagsterEventType):
@@ -238,7 +238,7 @@ def test_table_column_values(key, value):
         "constraints": TableColumnConstraints(other=["foo"]),
     }
     kwargs[key] = value
-    with pytest.raises(CheckError):
+    with pytest.raises(ValidationError):
         TableColumn(**kwargs)
 
 
@@ -251,7 +251,7 @@ def test_table_constraints_keys():
 def test_table_constraints(key, value):
     kwargs = {"other": ["foo"]}
     kwargs[key] = value
-    with pytest.raises(CheckError):
+    with pytest.raises(ValidationError):
         TableConstraints(**kwargs)
 
 
@@ -269,12 +269,12 @@ def test_table_column_constraints_values(key, value):
         "other": ["foo"],
     }
     kwargs[key] = value
-    with pytest.raises(CheckError):
+    with pytest.raises(ValidationError):
         TableColumnConstraints(**kwargs)
 
 
 def test_table_schema_keys():
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         TableSchema(bad_key="foo")
 
 
@@ -292,7 +292,7 @@ def test_table_schema_values(key, value):
         ],
     }
     kwargs[key] = value
-    with pytest.raises(CheckError):
+    with pytest.raises(ValidationError):
         TableSchema(**kwargs)
 
 

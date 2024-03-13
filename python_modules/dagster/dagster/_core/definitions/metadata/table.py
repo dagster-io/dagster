@@ -1,8 +1,7 @@
 from typing import Mapping, Optional, Sequence, Union
 
-from pydantic import BaseModel
-
 from dagster._annotations import experimental, public
+from dagster._core.utils import strict_dataclass
 from dagster._serdes.serdes import whitelist_for_serdes
 
 # ########################
@@ -12,7 +11,8 @@ from dagster._serdes.serdes import whitelist_for_serdes
 
 @experimental
 @whitelist_for_serdes
-class TableRecord(BaseModel, frozen=True):
+@strict_dataclass
+class TableRecord:
     """Represents one record in a table. Field keys are arbitrary strings-- field values must be
     strings, integers, floats, or bools.
     """
@@ -26,7 +26,8 @@ class TableRecord(BaseModel, frozen=True):
 
 
 @whitelist_for_serdes
-class TableConstraints(BaseModel, frozen=True):
+@strict_dataclass
+class TableConstraints:
     """Descriptor for "table-level" constraints. Presently only one property,
     `other` is supported. This contains strings describing arbitrary
     table-level constraints. A table-level constraint is a constraint defined
@@ -47,7 +48,9 @@ _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
 
 
 @whitelist_for_serdes
-class TableSchema(BaseModel, frozen=True):
+@experimental
+@strict_dataclass
+class TableSchema:
     """Representation of a schema for tabular data.
 
     Schema is composed of two parts:
@@ -126,7 +129,8 @@ class TableSchema(BaseModel, frozen=True):
 
 
 @whitelist_for_serdes
-class TableColumnConstraints(BaseModel, frozen=True):
+@strict_dataclass
+class TableColumnConstraints:
     """Descriptor for a table column's constraints. Nullability and uniqueness are specified with
     boolean properties. All other constraints are described using arbitrary strings under the
     `other` property.
@@ -134,13 +138,13 @@ class TableColumnConstraints(BaseModel, frozen=True):
     Args:
         nullable (Optional[bool]): If true, this column can hold null values.
         unique (Optional[bool]): If true, all values in this column must be unique.
-        other (List[str]): Descriptions of arbitrary column-level constraints
+        other (Sequence[str]): Descriptions of arbitrary column-level constraints
             not expressible by the predefined properties.
     """
 
-    nullable: bool
-    unique: bool
-    other: Optional[Sequence[str]]
+    nullable: bool = True
+    unique: bool = False
+    other: Optional[Sequence[str]] = None
 
 
 _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
@@ -152,7 +156,8 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 
 
 @whitelist_for_serdes
-class TableColumn(BaseModel, frozen=True):
+@strict_dataclass
+class TableColumn:
     """Descriptor for a table column. The only property that must be specified
     by the user is `name`. If no `type` is specified, `string` is assumed. If
     no `constraints` are specified, the column is assumed to be nullable
@@ -169,5 +174,5 @@ class TableColumn(BaseModel, frozen=True):
 
     name: str
     type: str = "string"
-    description: Optional[str]
+    description: Optional[str] = None
     constraints: "TableColumnConstraints" = _DEFAULT_TABLE_COLUMN_CONSTRAINTS
