@@ -24,5 +24,5 @@ Next, you’ll notice that there is a dbt project called `analytics` in the repo
 
     - `models/sources/raw_taxis.yml`
     - `models/staging/staging.yml`
-    - `models/staging/stg_trips.yml`
-    - `models/staging/stg_zones.yml`
+    - `models/staging/stg_trips.sql`
+    - `models/staging/stg_zones.sql`
