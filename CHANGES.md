@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.6.9 (core) / 0.22.8 (libraries)
+## 1.6.9 (core) / 0.22.9 (libraries)
 
 ### New
 
