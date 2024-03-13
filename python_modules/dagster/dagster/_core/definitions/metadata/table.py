@@ -1,7 +1,8 @@
 from typing import Mapping, Optional, Sequence, Union
 
+from pydantic.dataclasses import dataclass
+
 from dagster._annotations import experimental, public
-from dagster._core.utils import strict_dataclass
 from dagster._serdes.serdes import whitelist_for_serdes
 
 # ########################
@@ -11,7 +12,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 
 @experimental
 @whitelist_for_serdes
-@strict_dataclass
+@dataclass(frozen=True, config=dict(extra="forbid"))
 class TableRecord:
     """Represents one record in a table. Field keys are arbitrary strings-- field values must be
     strings, integers, floats, or bools.
@@ -26,7 +27,7 @@ class TableRecord:
 
 
 @whitelist_for_serdes
-@strict_dataclass
+@dataclass(frozen=True, config=dict(extra="forbid"))
 class TableConstraints:
     """Descriptor for "table-level" constraints. Presently only one property,
     `other` is supported. This contains strings describing arbitrary
@@ -49,7 +50,7 @@ _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
 
 @whitelist_for_serdes
 @experimental
-@strict_dataclass
+@dataclass(frozen=True, config=dict(extra="forbid"))
 class TableSchema:
     """Representation of a schema for tabular data.
 
@@ -129,7 +130,7 @@ class TableSchema:
 
 
 @whitelist_for_serdes
-@strict_dataclass
+@dataclass(frozen=True, config=dict(extra="forbid"))
 class TableColumnConstraints:
     """Descriptor for a table column's constraints. Nullability and uniqueness are specified with
     boolean properties. All other constraints are described using arbitrary strings under the
@@ -156,7 +157,7 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 
 
 @whitelist_for_serdes
-@strict_dataclass
+@dataclass(frozen=True, config=dict(extra="forbid"))
 class TableColumn:
     """Descriptor for a table column. The only property that must be specified
     by the user is `name`. If no `type` is specified, `string` is assumed. If

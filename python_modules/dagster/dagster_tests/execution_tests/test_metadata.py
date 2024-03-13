@@ -225,7 +225,7 @@ bad_values = {
 
 
 def test_table_column_keys():
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         TableColumn(bad_key="foo", description="bar", type="string")
 
 
@@ -243,7 +243,7 @@ def test_table_column_values(key, value):
 
 
 def test_table_constraints_keys():
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         TableColumn(bad_key="foo")
 
 
@@ -256,7 +256,7 @@ def test_table_constraints(key, value):
 
 
 def test_table_column_constraints_keys():
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         TableColumnConstraints(bad_key="foo")
 
 
