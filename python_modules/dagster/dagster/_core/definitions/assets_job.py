@@ -5,6 +5,7 @@ from typing import (
     Any,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -66,14 +67,10 @@ def get_base_asset_jobs(
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
     if len(asset_graph.all_partitions_defs) == 0:
-        executable_asset_keys = asset_graph.executable_asset_keys
-        loadable_asset_keys = asset_graph.all_asset_keys - executable_asset_keys
         return [
             build_assets_job(
                 name=ASSET_BASE_JOB_PREFIX,
-                executable_assets=asset_graph.assets_defs_for_keys(executable_asset_keys),
-                loadable_assets=asset_graph.assets_defs_for_keys(loadable_asset_keys),
-                asset_checks=asset_graph.asset_checks_defs,
+                asset_graph=asset_graph,
                 executor_def=executor_def,
                 resource_defs=resource_defs,
             )
@@ -85,13 +82,15 @@ def get_base_asset_jobs(
                 *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
                 *asset_graph.unpartitioned_asset_keys,
             }
-            loadable_asset_keys = asset_graph.all_asset_keys - executable_asset_keys
             jobs.append(
                 build_assets_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    executable_assets=asset_graph.assets_defs_for_keys(executable_asset_keys),
-                    loadable_assets=asset_graph.assets_defs_for_keys(loadable_asset_keys),
-                    asset_checks=asset_graph.asset_checks_defs,
+                    # For now, to preserve behavior keep all asset checks in all base jobs.
+                    # When checks support partitions, they should only go in the corresponding
+                    # partitioned job.
+                    asset_graph.get_subset(
+                        executable_asset_keys, asset_check_keys=asset_graph.asset_check_keys
+                    ),
                     resource_defs=resource_defs,
                     executor_def=executor_def,
                     partitions_def=partitions_def,
@@ -102,9 +101,7 @@ def get_base_asset_jobs(
 
 def build_assets_job(
     name: str,
-    executable_assets: Sequence[Union[AssetsDefinition, SourceAsset]],
-    loadable_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
-    asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
+    asset_graph: AssetGraph,
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[
@@ -126,11 +123,7 @@ def build_assets_job(
 
     Args:
         name (str): The name of the job.
-        executable_assets (Sequence[Union[AssetsDefinition, SourceAsset]]): A sequence of AssetsDefinitions or SourceAssets
-            to be executed by the job. SourceAssets must be observable.
-        loadable_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
-            AssetsDefinitions or SourceAssets that are not exectued by this job, but that are
-            available to be loaded as inputs by executable assets.
+        asset_graph (AssetGraph): The asset graph that contains the assets and checks to be executed.
         resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
@@ -155,70 +148,38 @@ def build_assets_job(
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-    check.str_param(name, "name")
-    check.iterable_param(executable_assets, "assets", of_type=(AssetsDefinition, SourceAsset))
-    for asset in executable_assets:
-        if not asset.is_executable:
-            keys = [asset.key] if isinstance(asset, SourceAsset) else asset.keys
-            check.failed(f"Passed unexecutable keys to executable_assets: {keys}")
-
-    loadable_assets = check.opt_sequence_param(
-        loadable_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
-    )
-    asset_checks = check.opt_sequence_param(
-        asset_checks, "asset_checks", of_type=AssetChecksDefinition
-    )
-    check.opt_str_param(description, "description")
-    check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
-
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
-    assets = [asset for asset in executable_assets if isinstance(asset, AssetsDefinition)]
-    resolved_source_assets = [
-        asset for asset in executable_assets if isinstance(asset, SourceAsset)
-    ]
-    for asset in loadable_assets or []:
-        if isinstance(asset, AssetsDefinition):
-            resolved_source_assets += asset.to_source_assets()
-        elif isinstance(asset, SourceAsset):
-            resolved_source_assets.append(asset)
-
     # figure out what partitions (if any) exist for this job
-    partitions_def = partitions_def or build_job_partitions_from_assets(assets)
+    partitions_def = partitions_def or build_job_partitions_from_assets(
+        asset_graph.assets_defs_for_keys(asset_graph.executable_asset_keys)
+    )
 
     deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
-        assets, asset_checks
+        asset_graph,
     )
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
-        assets = _attempt_resolve_cycles(assets, resolved_source_assets)
-
+        asset_graph = _attempt_resolve_node_cycles(asset_graph)
         deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
-            assets,
-            asset_checks,
+            asset_graph,
         )
 
-    if len(assets) > 0 or len(asset_checks) > 0:
-        node_defs = [
-            *(asset.node_def for asset in assets),
-            *(asset_check.node_def for asset_check in asset_checks),
-        ]
-        observable_source_assets_by_node_handle = {}
-    else:
-        node_defs = []
-        observable_source_assets_by_node_handle: Mapping[NodeHandle, SourceAsset] = {}
-        for asset in resolved_source_assets:
-            if (
-                isinstance(asset, SourceAsset)
-                and asset.is_observable
-                and asset.node_def is not None
-            ):
-                node_defs.append(asset.node_def)
-                node_handle = NodeHandle(asset.node_def.name, parent=None)
-                observable_source_assets_by_node_handle[node_handle] = asset
+    node_defs = [
+        *(
+            asset.node_def
+            for asset in asset_graph.assets_defs_for_keys(
+                [
+                    *asset_graph.executable_asset_keys,
+                    *asset_graph.asset_check_keys,
+                ]
+            )
+        ),
+        *(asset_check.node_def for asset_check in asset_graph.asset_checks_defs),
+    ]
 
     graph = GraphDefinition(
         name=name,
@@ -233,14 +194,11 @@ def build_assets_job(
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
         graph_def=graph,
         asset_checks_defs_by_node_handle=asset_checks_defs_by_node_handle,
-        source_assets=resolved_source_assets,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
-        observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
+        asset_graph=asset_graph,
     )
 
-    all_resource_defs = get_all_resource_defs(
-        assets, asset_checks, resolved_source_assets, wrapped_resource_defs
-    )
+    all_resource_defs = get_all_resource_defs(asset_graph, wrapped_resource_defs)
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
@@ -337,15 +295,15 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
 
 
 def build_node_deps(
-    assets_defs: Iterable[AssetsDefinition],
-    asset_checks_defs: Sequence[AssetChecksDefinition],
+    asset_graph: AssetGraph,
 ) -> Tuple[
     DependencyMapping[NodeInvocation],
     Mapping[NodeHandle, AssetsDefinition],
     Mapping[NodeHandle, AssetChecksDefinition],
 ]:
     # sort so that nodes get a consistent name
-    assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
+    assets_defs = sorted(asset_graph.assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
+    asset_checks_defs = asset_graph.asset_checks_defs
 
     # if the same graph/op is used in multiple assets_definitions, their invocations must have
     # different names. we keep track of definitions that share a name and add a suffix to their
@@ -353,7 +311,7 @@ def build_node_deps(
     collisions: Dict[str, int] = {}
     assets_defs_by_node_handle: Dict[NodeHandle, AssetsDefinition] = {}
     node_alias_and_output_by_asset_key: Dict[AssetKey, Tuple[str, str]] = {}
-    for assets_def in assets_defs:
+    for assets_def in (ad for ad in assets_defs if ad.is_executable):
         node_name = assets_def.node_def.name
         if collisions.get(node_name):
             collisions[node_name] += 1
@@ -466,10 +424,7 @@ def _has_cycles(
         return True
 
 
-def _attempt_resolve_cycles(
-    assets_defs: Iterable["AssetsDefinition"],
-    source_assets: Iterable["SourceAsset"],
-) -> Sequence["AssetsDefinition"]:
+def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
     """DFS starting at root nodes to color the asset dependency graph. Each time you leave your
     current AssetsDefinition, the color increments.
 
@@ -483,76 +438,56 @@ def _attempt_resolve_cycles(
     This ensures that no asset that shares a node with another asset will be downstream of
     that asset via a different node (i.e. there will be no cycles).
     """
-    from dagster._core.selector.subset_selector import generate_asset_dep_graph
-
-    # get asset dependencies
-    asset_deps = generate_asset_dep_graph(assets_defs, source_assets)
-
-    # index AssetsDefinitions by their asset names
-    assets_defs_by_asset_key: Dict[AssetKey, AssetsDefinition] = {}
-    for assets_def in assets_defs:
-        for asset_key in assets_def.keys:
-            assets_defs_by_asset_key[asset_key] = assets_def
-
     # color for each asset
-    colors = {}
+    colors: Dict[AssetKey, int] = {}
 
     # recursively color an asset and all of its downstream assets
-    def _dfs(key, cur_color):
+    def _dfs(key: AssetKey, cur_color: int):
+        node = asset_graph.get(key)
         colors[key] = cur_color
-        if key in assets_defs_by_asset_key:
-            cur_node_asset_keys = assets_defs_by_asset_key[key].keys
-        else:
-            # in a SourceAsset, treat all downstream as if they're in the same node
-            cur_node_asset_keys = asset_deps["downstream"][key]
+        # in an external asset, treat all downstream as if they're in the same node
+        cur_node_asset_keys = node.assets_def.keys if node.is_materializable else node.child_keys
 
-        for downstream_key in asset_deps["downstream"][key]:
+        for child_key in node.child_keys:
             # if the downstream asset is in the current node,keep the same color
-            if downstream_key in cur_node_asset_keys:
-                new_color = cur_color
-            else:
-                new_color = cur_color + 1
+            new_color = cur_color if child_key in cur_node_asset_keys else cur_color + 1
 
             # if current color of the downstream asset is less than the new color, re-do dfs
-            if colors.get(downstream_key, -1) < new_color:
-                _dfs(downstream_key, new_color)
+            if colors.get(child_key, -1) < new_color:
+                _dfs(child_key, new_color)
 
-    # validate that there are no cycles in the overall asset graph
-    toposorted = list(toposort(asset_deps["upstream"]))
-
-    # dfs for each root node
-    for root_name in toposorted[0]:
-        _dfs(root_name, 0)
+    # dfs for each root node; will throw an error if there are key-level cycles
+    root_keys = asset_graph.toposorted_asset_keys_by_level[0]
+    for key in root_keys:
+        _dfs(key, 0)
 
     color_mapping_by_assets_defs: Dict[AssetsDefinition, Any] = defaultdict(
         lambda: defaultdict(set)
     )
     for key, color in colors.items():
-        # ignore source assets
-        if key not in assets_defs_by_asset_key:
-            continue
-        color_mapping_by_assets_defs[assets_defs_by_asset_key[key]][color].add(key)
+        node = asset_graph.get(key)
+        color_mapping_by_assets_defs[node.assets_def][color].add(key)
 
-    ret = []
+    subsetted_assets_defs: List[AssetsDefinition] = []
     for assets_def, color_mapping in color_mapping_by_assets_defs.items():
-        if len(color_mapping) == 1 or not assets_def.can_subset:
-            ret.append(assets_def)
+        if assets_def.is_external or len(color_mapping) == 1 or not assets_def.can_subset:
+            subsetted_assets_defs.append(assets_def)
         else:
             for asset_keys in color_mapping.values():
-                ret.append(assets_def.subset_for(asset_keys, selected_asset_check_keys=None))
+                subsetted_assets_defs.append(
+                    assets_def.subset_for(asset_keys, selected_asset_check_keys=None)
+                )
 
-    return ret
+    return AssetGraph.from_assets(subsetted_assets_defs, asset_graph.asset_checks_defs)
 
 
 def _ensure_resources_dont_conflict(
-    assets: Iterable[AssetsDefinition],
-    source_assets: Sequence[SourceAsset],
+    asset_graph: AssetGraph,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
     """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict."""
     resource_defs_from_assets = {}
-    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
-    for asset in all_assets:
+    for asset in asset_graph.assets_defs:
         for resource_key, resource_def in asset.resource_defs.items():
             if resource_key not in resource_defs_from_assets:
                 resource_defs_from_assets[resource_key] = resource_def
@@ -578,44 +513,39 @@ def _ensure_resources_dont_conflict(
 
 
 def check_resources_satisfy_requirements(
-    assets: Iterable[AssetsDefinition],
-    source_assets: Sequence[SourceAsset],
-    asset_checks: Iterable[AssetChecksDefinition],
+    asset_graph: AssetGraph,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
     """Ensures that between the provided resources on an asset and the resource_defs mapping, that all resource requirements are satisfied.
 
     Note that resources provided on assets cannot satisfy resource requirements provided on other assets.
     """
-    _ensure_resources_dont_conflict(assets, source_assets, resource_defs)
+    _ensure_resources_dont_conflict(asset_graph, resource_defs)
 
-    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
-    for asset in all_assets:
+    for assets_def in asset_graph.assets_defs:
         ensure_requirements_satisfied(
-            merge_dicts(resource_defs, asset.resource_defs), list(asset.get_resource_requirements())
+            merge_dicts(resource_defs, assets_def.resource_defs),
+            list(assets_def.get_resource_requirements()),
         )
-    for asset_check in asset_checks:
+    for asset_checks_def in asset_graph.asset_checks_defs:
         ensure_requirements_satisfied(
-            merge_dicts(resource_defs, asset_check.resource_defs),
-            list(asset_check.get_resource_requirements()),
+            merge_dicts(resource_defs, asset_checks_def.resource_defs),
+            list(asset_checks_def.get_resource_requirements()),
         )
 
 
 def get_all_resource_defs(
-    assets: Iterable[AssetsDefinition],
-    asset_checks: Iterable[AssetChecksDefinition],
-    source_assets: Sequence[SourceAsset],
+    asset_graph: AssetGraph,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, ResourceDefinition]:
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
-    check_resources_satisfy_requirements(assets, source_assets, asset_checks, resource_defs)
+    check_resources_satisfy_requirements(asset_graph, resource_defs)
 
     all_resource_defs = dict(resource_defs)
-    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
-    for asset in all_assets:
-        all_resource_defs = merge_dicts(all_resource_defs, asset.resource_defs)
+    for assets_def in asset_graph.assets_defs:
+        all_resource_defs = merge_dicts(all_resource_defs, assets_def.resource_defs)
 
-    for asset_check in asset_checks:
-        all_resource_defs = merge_dicts(all_resource_defs, asset_check.resource_defs)
+    for asset_checks_def in asset_graph.asset_checks_defs:
+        all_resource_defs = merge_dicts(all_resource_defs, asset_checks_def.resource_defs)
 
     return all_resource_defs

@@ -44,6 +44,7 @@ from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
     from dagster._core.definitions.job_definition import JobDefinition
@@ -407,8 +408,7 @@ class AssetLayer(NamedTuple):
         graph_def: GraphDefinition,
         assets_defs_by_outer_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
         asset_checks_defs_by_node_handle: Mapping[NodeHandle, "AssetChecksDefinition"],
-        observable_source_assets_by_node_handle: Mapping[NodeHandle, "SourceAsset"],
-        source_assets: Sequence["SourceAsset"],
+        asset_graph: "AssetGraph",
     ) -> "AssetLayer":
         """Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
         corresponding AssetsDefinition objects.
@@ -419,18 +419,9 @@ class AssetLayer(NamedTuple):
             assets_defs_by_outer_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
         """
-        from dagster._core.definitions.external_asset import (
-            create_external_asset_from_source_asset,
+        unexecutable_assets_defs = asset_graph.assets_defs_for_keys(
+            asset_graph.unexecutable_asset_keys
         )
-
-        # Eliminate source assets here
-        observable_assets_defs_by_node_handle = {
-            k: create_external_asset_from_source_asset(sa)
-            for k, sa in observable_source_assets_by_node_handle.items()
-        }
-        unexecutable_assets_defs = [
-            create_external_asset_from_source_asset(sa) for sa in source_assets
-        ]
 
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
@@ -571,31 +562,10 @@ class AssetLayer(NamedTuple):
             key: assets_def
             for assets_def in (
                 *assets_defs_by_outer_node_handle.values(),
-                *observable_assets_defs_by_node_handle.values(),
                 *unexecutable_assets_defs,
             )
             for key in assets_def.keys
         }
-
-        for node_handle, assets_def in observable_assets_defs_by_node_handle.items():
-            node_def = assets_def.node_def
-            check.invariant(len(node_def.output_defs) == 1)
-            output_name = node_def.output_defs[0].name
-            # resolve graph output to the op output it comes from
-            inner_output_def, inner_node_handle = node_def.resolve_output_to_origin(
-                output_name, handle=node_handle
-            )
-            node_output_handle = NodeOutputHandle(
-                check.not_none(inner_node_handle), inner_output_def.name
-            )
-
-            asset_info_by_output[node_output_handle] = AssetOutputInfo(
-                assets_def.key,
-                partitions_fn=None,
-                partitions_def=assets_def.partitions_def,
-                is_required=True,
-                code_version=inner_output_def.code_version,
-            )
 
         assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {
             # nodes for assets
@@ -848,7 +818,6 @@ class AssetLayer(NamedTuple):
 def build_asset_selection_job(
     name: str,
     assets: Iterable["AssetsDefinition"],
-    source_assets: Iterable["SourceAsset"],
     asset_checks: Iterable["AssetChecksDefinition"],
     executor_def: Optional[ExecutorDefinition] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
@@ -863,22 +832,24 @@ def build_asset_selection_job(
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional[RetryPolicy] = None,
 ) -> "JobDefinition":
+    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.assets_job import build_assets_job
+    from dagster._core.definitions.external_asset import (
+        create_unexecutable_external_assets_from_assets_def,
+    )
 
     if asset_selection is None and asset_check_selection is None:
         # no selections, include everything
         included_assets = list(assets)
         excluded_assets = []
-        included_source_assets = list(source_assets)
         included_checks_defs = list(asset_checks)
     else:
         # Filter to assets that match either selected assets or include a selected check.
         # E.g. a multi asset can be included even if it's not in asset_selection, if it has a selected check
         # defined with check_specs
-        (included_assets, excluded_assets) = _subset_assets_defs(
+        (included_assets, excluded_assets) = subset_assets_defs(
             assets, asset_selection or set(), asset_check_selection
         )
-        included_source_assets = _subset_source_assets(source_assets, asset_selection or set())
 
         if asset_check_selection is None:
             # If assets were selected and checks are None, then include all checks on the selected assets.
@@ -906,21 +877,23 @@ def build_asset_selection_job(
                 f"{partitions_def}.",
             )
 
-    all_included_assets = [*included_assets, *included_source_assets]
-    executable_assets = [asset for asset in all_included_assets if asset.is_executable]
-    loadable_assets = [
-        *(asset for asset in all_included_assets if not asset.is_executable),
-        *(asset for asset in source_assets if asset not in included_source_assets),
-        *excluded_assets,
+    executable_assets_defs = [asset for asset in included_assets if asset.is_executable]
+    unexecutable_assets_defs = [
+        unexecutable_ad
+        for ad in (
+            *(asset for asset in included_assets if not asset.is_executable),
+            *excluded_assets,
+        )
+        for unexecutable_ad in create_unexecutable_external_assets_from_assets_def(ad)
     ]
-    final_asset_checks = included_checks_defs
+    asset_graph = AssetGraph.from_assets(
+        [*executable_assets_defs, *unexecutable_assets_defs], included_checks_defs
+    )
 
     return build_assets_job(
         name=name,
-        executable_assets=executable_assets,
-        asset_checks=final_asset_checks,
+        asset_graph=asset_graph,
         config=config,
-        loadable_assets=loadable_assets,
         resource_defs=resource_defs,
         executor_def=executor_def,
         partitions_def=partitions_def,
@@ -933,7 +906,7 @@ def build_asset_selection_job(
     )
 
 
-def _subset_assets_defs(
+def subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
     selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
@@ -958,7 +931,7 @@ def _subset_assets_defs(
         # if no checks were selected, filter to checks that target selected assets
         else:
             selected_check_subset = {
-                handle for handle in asset.check_keys if handle.asset_key in selected_subset
+                key for key in asset.check_keys if key.asset_key in selected_subset
             }
 
         # all assets in this def are selected

@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.source_asset import SourceAsset
 
 MAX_NUM = sys.maxsize
 
@@ -116,7 +115,7 @@ class AssetSelectionData(
 
 
 def generate_asset_dep_graph(
-    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
+    assets_defs: Iterable["AssetsDefinition"],
 ) -> DependencyGraph[AssetKey]:
     upstream: Dict[AssetKey, Set[AssetKey]] = {}
     downstream: Dict[AssetKey, Set[AssetKey]] = {}
@@ -483,7 +482,7 @@ def parse_asset_selection(
     if len(asset_selection) == 1 and asset_selection[0] == "*":
         return {key for ad in assets_defs for key in ad.keys}
 
-    graph = generate_asset_dep_graph(assets_defs, [])
+    graph = generate_asset_dep_graph(assets_defs)
     assets_set: Set[AssetKey] = set()
 
     # loop over clauses
