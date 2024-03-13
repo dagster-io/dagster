@@ -1,12 +1,12 @@
 import {useEffect, useState} from 'react';
 
 export const useDelayedState = (delayMsec: number) => {
-  const [value, setValue] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setValue(true), delayMsec);
+    const timer = setTimeout(() => setReady(true), delayMsec);
     return () => clearTimeout(timer);
   }, [delayMsec]);
 
-  return value;
+  return ready;
 };
