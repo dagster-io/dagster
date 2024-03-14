@@ -1,8 +1,7 @@
 import {NetworkStatus, ObservableQuery, QueryResult} from '@apollo/client';
 import {RefreshableCountdown, useCountdown} from '@dagster-io/ui-components';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {isSearchVisible, useSearchVisibility} from '../search/useSearchVisibility';
 
@@ -54,9 +53,9 @@ export function useQueryRefreshAtInterval(
   }
 
   const {nextFireMs, nextFireDelay, refetch} = useRefreshAtInterval({
-    async refreshFunction() {
+    refreshFunction: useCallback(async () => {
       return await queryResult?.refetch();
-    },
+    }, [queryResult]),
     intervalMs,
     enabled,
   });
@@ -98,12 +97,12 @@ export function useRefreshAtInterval<T>({
 
   const [loading, setLoading] = useState(false);
 
-  const refresh = useConstantCallback(async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     const result = await refreshFunction();
     setLoading(false);
     return result;
-  });
+  }, [refreshFunction]);
 
   useEffect(() => {
     if (!enabled) {
