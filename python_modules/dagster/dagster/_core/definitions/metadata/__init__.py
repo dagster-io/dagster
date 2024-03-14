@@ -17,7 +17,6 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -130,8 +129,6 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         return MetadataValue.table_schema(raw_value)
     elif raw_value is None:
         return MetadataValue.null()
-    elif isinstance(raw_value, BaseModel):
-        return MetadataValue.pydantic(raw_value)
 
     raise DagsterInvalidMetadata(
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
@@ -557,10 +554,6 @@ class MetadataValue(ABC, Generic[T_Packable]):
         for the `metadata` parameter for supported events.
         """
         return NullMetadataValue()
-
-    @staticmethod
-    def pydantic(obj: BaseModel) -> TypedJsonMetadataValue:
-        return TypedJsonMetadataValue(python_class_name=obj.__class__.__name__, data=obj.dict())
 
 
 # ########################
