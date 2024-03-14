@@ -126,7 +126,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
         }) ?? []
       );
     },
-    // The allTicks array changes every 2 seconds because we we query every 2 seconds.
+    // The allTicks array changes every 2 seconds because we query every 2 seconds.
     // This would cause everything to re-render, to avoid that we memoize the ticks array that we pass around
     // using the ID and status of the ticks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
