@@ -15,7 +15,7 @@ export interface QueryRefreshState {
   refetch: ObservableQuery['refetch'];
 }
 
-export interface RefreshState<T> {
+export interface RefreshState<T = void> {
   nextFireMs: number | null | undefined;
   nextFireDelay: number; // seconds
   refetch: () => Promise<T>;
@@ -73,7 +73,7 @@ export function useQueryRefreshAtInterval(
   );
 }
 
-export function useRefreshAtInterval<T>({
+export function useRefreshAtInterval<T = void>({
   refresh,
   intervalMs,
   enabled,
@@ -97,7 +97,7 @@ export function useRefreshAtInterval<T>({
 
   const [loading, setLoading] = useState(false);
 
-  const refresh = useCallback(async () => {
+  const refreshFn = useCallback(async () => {
     setLoading(true);
     const result = await refresh();
     setLoading(false);
@@ -113,11 +113,11 @@ export function useRefreshAtInterval<T>({
       !searchVisible &&
       (searchVisibilityDidInterrupt.current || documentVisiblityDidInterrupt.current)
     ) {
-      refresh();
+      refreshFn();
       documentVisiblityDidInterrupt.current = false;
       searchVisibilityDidInterrupt.current = false;
     }
-  }, [documentVisible, enabled, searchVisible, refresh]);
+  }, [documentVisible, enabled, searchVisible, refreshFn]);
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -156,13 +156,13 @@ export function useRefreshAtInterval<T>({
         searchVisibilityDidInterrupt.current = true;
         return;
       }
-      refresh();
+      refreshFn();
     }, adjustedIntervalMs);
 
     return () => {
       clearTimeout(timer.current);
     };
-  }, [loading, intervalMs, enabled, refresh]);
+  }, [loading, intervalMs, enabled, refreshFn]);
 
   // Expose the next fire time both as a unix timstamp and as a "seconds" interval
   // so the <QueryRefreshCountdown> can display the number easily.
@@ -174,9 +174,9 @@ export function useRefreshAtInterval<T>({
     () => ({
       nextFireMs,
       nextFireDelay,
-      refetch: refresh,
+      refetch: refreshFn,
     }),
-    [nextFireMs, nextFireDelay, refresh],
+    [nextFireMs, nextFireDelay, refreshFn],
   );
 }
 

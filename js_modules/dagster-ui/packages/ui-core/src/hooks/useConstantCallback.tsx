@@ -8,5 +8,5 @@ import {useUpdatingRef} from './useUpdatingRef';
  */
 export function useConstantCallback<T extends (...args: any[]) => any>(callback: T): T {
   const callbackRef = useUpdatingRef(callback);
-  return useCallback((...args: Parameters<T>) => callbackRef.current(...args), [callbackRef]);
+  return useCallback((...args: any[]) => callbackRef.current(...args), [callbackRef]) as T;
 }

@@ -9,12 +9,13 @@ import {
   AssetSensorTicksQueryVariables,
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
-import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
 import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
+import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../instigation/util';
@@ -41,41 +42,47 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
 
-  const variables: AssetSensorTicksQueryVariables = useMemo(() => {
-    if (timeRange || statuses) {
+  const getVariables = useCallback(
+    (currentTime = Date.now()) => {
+      if (timeRange || statuses) {
+        return {
+          sensorSelector: {
+            sensorName: sensor.name,
+            repositoryName: repoAddress.name,
+            repositoryLocationName: repoAddress.location,
+          },
+          afterTimestamp: timeRange?.[0],
+          beforeTimestamp: timeRange?.[1],
+          statuses,
+        };
+      }
       return {
         sensorSelector: {
           sensorName: sensor.name,
           repositoryName: repoAddress.name,
           repositoryLocationName: repoAddress.location,
         },
-        afterTimestamp: timeRange?.[0],
-        beforeTimestamp: timeRange?.[1],
-        statuses,
+        afterTimestamp: (currentTime - TWENTY_MINUTES) / 1000,
       };
-    }
-    return {
-      sensorSelector: {
-        sensorName: sensor.name,
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
-      },
-      afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
-    };
-  }, [sensor, repoAddress, statuses, timeRange]);
+    },
+    [sensor, repoAddress, statuses, timeRange],
+  );
 
   const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
     ASSET_SENSOR_TICKS_QUERY,
-    {
-      variables,
-    },
   );
 
   useLayoutEffect(() => {
-    fetch({variables});
-  }, [fetch, variables]);
+    fetch({variables: getVariables()});
+  }, [fetch, getVariables]);
 
-  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses);
+  const refresh = useConstantCallback(async () => await fetch({variables: getVariables()}));
+
+  useRefreshAtInterval({
+    refresh,
+    enabled: !isPaused && !timeRange && !statuses,
+    intervalMs: 2 * 1000,
+  });
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 

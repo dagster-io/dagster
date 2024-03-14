@@ -25,10 +25,11 @@ import {
 } from './types/AssetDaemonTicksQuery.types';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
-import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {assertUnreachable} from '../../app/Util';
 import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
+import {useConstantCallback} from '../../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
@@ -68,30 +69,37 @@ const GlobalAutomaterializationRoot = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
-  const variables: AssetDaemonTicksQueryVariables = useMemo(() => {
-    if (timeRange || statuses) {
+  const getVariables = useCallback(
+    (now = Date.now()) => {
+      if (timeRange || statuses) {
+        return {
+          afterTimestamp: timeRange?.[0],
+          beforeTimestamp: timeRange?.[1],
+          statuses,
+        };
+      }
       return {
-        afterTimestamp: timeRange?.[0],
-        beforeTimestamp: timeRange?.[1],
-        statuses,
+        afterTimestamp: (now - TWENTY_MINUTES) / 1000,
       };
-    }
-    return {
-      afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
-    };
-  }, [statuses, timeRange]);
+    },
+    [statuses, timeRange],
+  );
 
   const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
     ASSET_DAEMON_TICKS_QUERY,
-    {variables},
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
-    fetch({variables});
-  }, [fetch, variables]);
+    fetch({variables: getVariables()});
+  }, [fetch, getVariables]);
 
-  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses);
+  const refresh = useConstantCallback(async () => await fetch({variables: getVariables()}));
+
+  useRefreshAtInterval({
+    refresh,
+    enabled: !isPaused && !timeRange && !statuses,
+    intervalMs: 2 * 1000,
+  });
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 
