@@ -110,7 +110,10 @@ export const SensorPageAutomaterialize = (props: Props) => {
     return [];
   }, [data]);
 
-  const ids = useMemo(() => allTicks.map((tick) => `${tick.id}:${tick.status}`), [allTicks]);
+  const ids = useMemo(
+    () => allTicks.slice(100).map((tick) => `${tick.id}:${tick.status}`),
+    [allTicks],
+  );
 
   while (ids.length < 100) {
     // Because we refresh this query every 2 seconds, the array changes every 2 seconds.
@@ -137,7 +140,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [...ids.slice(0, 100)],
+    ids,
   );
 
   const onHoverTick = useCallback(
