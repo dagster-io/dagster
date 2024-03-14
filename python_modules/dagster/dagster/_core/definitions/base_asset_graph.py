@@ -82,7 +82,7 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def group_name(self) -> Optional[str]: ...
+    def group_name(self) -> str: ...
 
     @property
     @abstractmethod
