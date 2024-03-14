@@ -263,6 +263,7 @@ from dagster._core.definitions.metadata import (
     TableMetadataValue as TableMetadataValue,
     TableSchemaMetadataValue as TableSchemaMetadataValue,
     TextMetadataValue as TextMetadataValue,
+    TimestampMetadataValue as TimestampMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
 from dagster._core.definitions.metadata.table import (

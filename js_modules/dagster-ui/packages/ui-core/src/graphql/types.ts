@@ -179,6 +179,7 @@ export type AssetCheckEvaluation = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   severity: AssetCheckSeverity;
@@ -456,6 +457,7 @@ export type AssetNode = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   op: Maybe<SolidDefinition>;
@@ -1043,6 +1045,7 @@ export type DagsterType = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Maybe<Scalars['String']['output']>;
@@ -1134,6 +1137,7 @@ export type DisplayableEvent = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
 };
@@ -1207,6 +1211,7 @@ export type EngineEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -1445,6 +1450,7 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     outputName: Scalars['String']['output'];
@@ -1543,6 +1549,7 @@ export type ExpectationResult = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   success: Scalars['Boolean']['output'];
@@ -1568,6 +1575,7 @@ export type FailureMetadata = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
 };
@@ -1672,6 +1680,7 @@ export type HandledOutputEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     outputName: Scalars['String']['output'];
@@ -1740,6 +1749,7 @@ export type IPipelineSnapshot = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   modes: Array<Mode>;
@@ -1808,6 +1818,7 @@ export type InputDefinition = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Scalars['String']['output'];
@@ -2028,6 +2039,7 @@ export type Job = IPipelineSnapshot &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -2215,6 +2227,7 @@ export type ListDagsterType = DagsterType &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     name: Maybe<Scalars['String']['output']>;
@@ -2257,6 +2270,7 @@ export type LoadedInputEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -2421,6 +2435,7 @@ export type MaterializationEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     partition: Maybe<Scalars['String']['output']>;
@@ -2796,6 +2811,7 @@ export type NullableDagsterType = DagsterType &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     name: Maybe<Scalars['String']['output']>;
@@ -2844,6 +2860,7 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   op: ObjectStoreOperationType;
@@ -2882,6 +2899,7 @@ export type ObservationEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     partition: Maybe<Scalars['String']['output']>;
@@ -2921,6 +2939,7 @@ export type OutputDefinition = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Scalars['String']['output'];
@@ -3239,6 +3258,7 @@ export type Pipeline = IPipelineSnapshot &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -3463,6 +3483,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -3890,6 +3911,7 @@ export type RegularDagsterType = DagsterType & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Maybe<Scalars['String']['output']>;
@@ -4107,6 +4129,7 @@ export type ResourceInitFailureEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4143,6 +4166,7 @@ export type ResourceInitStartedEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4179,6 +4203,7 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4891,6 +4916,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   status: AssetConditionEvaluationStatus;
@@ -4994,6 +5020,7 @@ export type StepWorkerStartedEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -5030,6 +5057,7 @@ export type StepWorkerStartingEvent = DisplayableEvent &
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -5226,6 +5254,13 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimestampMetadataEntry = MetadataEntry & {
+  __typename: 'TimestampMetadataEntry';
+  description: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  timestamp: Maybe<Scalars['Float']['output']>;
+};
+
 export type TypeCheck = DisplayableEvent & {
   __typename: 'TypeCheck';
   description: Maybe<Scalars['String']['output']>;
@@ -5246,6 +5281,7 @@ export type TypeCheck = DisplayableEvent & {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   success: Scalars['Boolean']['output'];
@@ -5283,6 +5319,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -14387,6 +14424,21 @@ export const buildTimePartitionStatuses = (
   return {
     __typename: 'TimePartitionStatuses',
     ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
+  };
+};
+
+export const buildTimestampMetadataEntry = (
+  overrides?: Partial<TimestampMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TimestampMetadataEntry'} & TimestampMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimestampMetadataEntry');
+  return {
+    __typename: 'TimestampMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolores',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'fuga',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 9.36,
   };
 };
 

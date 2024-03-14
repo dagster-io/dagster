@@ -217,6 +217,12 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -360,6 +366,12 @@ export type RunDagsterRunEventFragment_EngineEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -508,6 +520,12 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   } | null;
@@ -640,6 +658,12 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -764,6 +788,12 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   typeCheck: {
@@ -885,6 +915,12 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -1065,6 +1101,12 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -1228,6 +1270,12 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -1374,6 +1422,12 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -1503,6 +1557,12 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -1626,6 +1686,12 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -1751,6 +1817,12 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -1885,6 +1957,12 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -2009,6 +2087,12 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -2221,6 +2305,12 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -2346,6 +2436,12 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -2470,6 +2566,12 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };

@@ -137,6 +137,12 @@ export type AssetCheckTableFragment = {
             };
           }
         | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+        | {
+            __typename: 'TimestampMetadataEntry';
+            timestamp: number | null;
+            label: string;
+            description: string | null;
+          }
         | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
       >;
     } | null;

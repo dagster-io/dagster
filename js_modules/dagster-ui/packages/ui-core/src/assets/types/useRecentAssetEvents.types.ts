@@ -137,6 +137,12 @@ export type AssetMaterializationFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetLineage: Array<{
@@ -281,6 +287,12 @@ export type AssetObservationFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -450,6 +462,12 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number | null;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -604,6 +622,12 @@ export type AssetEventsQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number | null;
                 label: string;
                 description: string | null;
               }

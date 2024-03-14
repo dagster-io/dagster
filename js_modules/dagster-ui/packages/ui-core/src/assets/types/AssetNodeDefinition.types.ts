@@ -709,6 +709,12 @@ export type AssetNodeDefinitionFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   type:
@@ -854,6 +860,12 @@ export type AssetNodeDefinitionFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -2104,6 +2116,12 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -3350,6 +3368,12 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -4583,6 +4607,12 @@ export type AssetNodeDefinitionFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number | null;
               label: string;
               description: string | null;
             }
@@ -5839,6 +5869,12 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -7081,6 +7117,12 @@ export type AssetNodeDefinitionFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -8331,6 +8373,12 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -9564,6 +9612,12 @@ export type AssetNodeDefinitionFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number | null;
               label: string;
               description: string | null;
             }
@@ -10820,6 +10874,12 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -12062,6 +12122,12 @@ export type AssetNodeDefinitionFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -13312,6 +13378,12 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -14545,6 +14617,12 @@ export type AssetNodeDefinitionFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number | null;
               label: string;
               description: string | null;
             }

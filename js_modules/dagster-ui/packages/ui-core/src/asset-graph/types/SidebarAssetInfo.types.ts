@@ -118,6 +118,12 @@ export type SidebarAssetFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   freshnessPolicy: {
@@ -859,6 +865,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -2109,6 +2121,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -3355,6 +3373,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -4588,6 +4612,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number | null;
               label: string;
               description: string | null;
             }
@@ -5844,6 +5874,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -7086,6 +7122,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -8336,6 +8378,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -9569,6 +9617,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number | null;
               label: string;
               description: string | null;
             }
@@ -10825,6 +10879,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -12067,6 +12127,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -13317,6 +13383,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -14550,6 +14622,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number | null;
               label: string;
               description: string | null;
             }
@@ -15801,6 +15879,12 @@ export type SidebarAssetQuery = {
               label: string;
               description: string | null;
             }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number | null;
+              label: string;
+              description: string | null;
+            }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         freshnessPolicy: {
@@ -16552,6 +16636,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
                           label: string;
                           description: string | null;
                         }
@@ -17808,6 +17898,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'UrlMetadataEntry';
                           url: string;
                           label: string;
@@ -19060,6 +19156,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'UrlMetadataEntry';
                           url: string;
                           label: string;
@@ -20293,6 +20395,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -21560,6 +21668,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'UrlMetadataEntry';
                           url: string;
                           label: string;
@@ -22808,6 +22922,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
                           label: string;
                           description: string | null;
                         }
@@ -24064,6 +24184,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'UrlMetadataEntry';
                           url: string;
                           label: string;
@@ -25297,6 +25423,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }
@@ -26564,6 +26696,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'UrlMetadataEntry';
                           url: string;
                           label: string;
@@ -27812,6 +27950,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
                           label: string;
                           description: string | null;
                         }
@@ -29068,6 +29212,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number | null;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'UrlMetadataEntry';
                           url: string;
                           label: string;
@@ -30301,6 +30451,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number | null;
                     label: string;
                     description: string | null;
                   }

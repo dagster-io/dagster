@@ -144,6 +144,13 @@ export type MetadataEntryFragment_TextMetadataEntry = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_TimestampMetadataEntry = {
+  __typename: 'TimestampMetadataEntry';
+  timestamp: number | null;
+  label: string;
+  description: string | null;
+};
+
 export type MetadataEntryFragment_UrlMetadataEntry = {
   __typename: 'UrlMetadataEntry';
   url: string;
@@ -167,6 +174,7 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_TableMetadataEntry
   | MetadataEntryFragment_TableSchemaMetadataEntry
   | MetadataEntryFragment_TextMetadataEntry
+  | MetadataEntryFragment_TimestampMetadataEntry
   | MetadataEntryFragment_UrlMetadataEntry;
 
 export type TableSchemaForMetadataEntryFragment = {

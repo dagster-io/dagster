@@ -127,6 +127,12 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -248,6 +254,12 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -472,6 +484,12 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number | null;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -608,6 +626,12 @@ export type AssetConditionEvaluationRecordFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number | null;
                 label: string;
                 description: string | null;
               }
@@ -838,6 +862,12 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number | null;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'UrlMetadataEntry';
                         url: string;
                         label: string;
@@ -980,6 +1010,12 @@ export type GetEvaluationsQuery = {
                     | {
                         __typename: 'TextMetadataEntry';
                         text: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number | null;
                         label: string;
                         description: string | null;
                       }
@@ -1179,6 +1215,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number | null;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -1315,6 +1357,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number | null;
                 label: string;
                 description: string | null;
               }

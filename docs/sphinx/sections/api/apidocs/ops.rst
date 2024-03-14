@@ -103,6 +103,8 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 
 .. autoclass:: TextMetadataValue
 
+.. autoclass:: TimestampMetadataValue
+
 .. autoclass:: UrlMetadataValue
 
 Tables

@@ -160,6 +160,12 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -303,6 +309,12 @@ export type LogsScrollingTableMessageFragment_EngineEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -451,6 +463,12 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   } | null;
@@ -583,6 +601,12 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -707,6 +731,12 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   typeCheck: {
@@ -828,6 +858,12 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -1008,6 +1044,12 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -1171,6 +1213,12 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -1316,6 +1364,12 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -1445,6 +1499,12 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -1568,6 +1628,12 @@ export type LogsScrollingTableMessageFragment_ObservationEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -1693,6 +1759,12 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -1827,6 +1899,12 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -1951,6 +2029,12 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -2163,6 +2247,12 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number | null;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
@@ -2288,6 +2378,12 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -2412,6 +2508,12 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number | null;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };

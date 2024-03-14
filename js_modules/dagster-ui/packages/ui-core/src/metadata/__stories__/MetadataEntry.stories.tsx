@@ -34,6 +34,7 @@ const MetadataEntryTypes: MetadataEntryFragment['__typename'][] = [
   'TableMetadataEntry',
   'TableSchemaMetadataEntry',
   'NotebookMetadataEntry',
+  'TimestampMetadataEntry',
 ];
 
 const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
@@ -229,6 +230,13 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_path',
         path: '/this/is/a/notebook-path',
+      };
+    case 'TimestampMetadataEntry':
+      return {
+        __typename: 'TimestampMetadataEntry',
+        description: 'This is the description',
+        label: 'my_timestamp',
+        timestamp: 1710187280.5,
       };
     default:
       return assertUnreachable(type);
