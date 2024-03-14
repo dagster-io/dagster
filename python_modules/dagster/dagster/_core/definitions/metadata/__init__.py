@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -11,10 +12,12 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
 
+from pydantic import BaseModel
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -1129,3 +1132,93 @@ class MetadataEntry(
     def value(self):
         """Alias of `entry_data`."""
         return self.entry_data
+
+
+T_NamespacedMetadataEntries = TypeVar(
+    "T_NamespacedMetadataEntries", bound="NamespacedMetadataEntries"
+)
+
+
+class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
+    """Extend this class to define a set of metadata fields in the same namespace.
+
+    Supports splatting to a dictionary that can be placed inside a metadata argument along with
+    other dictionary-structured metadata.
+
+    .. code-block:: python
+
+        my_metadata: NamespacedMetadataEntries = ...
+        return MaterializeResult(metadata={**my_metadata, ...})
+    """
+
+    @classmethod
+    @abstractmethod
+    def namespace(cls) -> str:
+        raise NotImplementedError()
+
+    @classmethod
+    def _namespaced_key(cls, key: str) -> str:
+        return f"{cls.namespace()}/{key}"
+
+    @staticmethod
+    def _strip_namespace_from_key(key: str) -> str:
+        return key.split("/", 1)[1]
+
+    def keys(self) -> AbstractSet[str]:
+        return {
+            self._namespaced_key(key)
+            for key in self.__fields__.keys()
+            # getattr returns the pydantic property on the subclass
+            if getattr(self, key) is not None
+        }
+
+    def __getitem__(self, key: str) -> Any:
+        # getattr returns the pydantic property on the subclass
+        return getattr(self, self._strip_namespace_from_key(key))
+
+    @classmethod
+    def extract(
+        cls: Type[T_NamespacedMetadataEntries], metadata: Mapping[str, Any]
+    ) -> T_NamespacedMetadataEntries:
+        """Extracts entries from the provided metadata dictionary into an instance of this class.
+
+        Ignores any entries in the metadata dictionary whose keys don't correspond to fields on this
+        class.
+
+        In general, the following should always pass:
+
+        .. code-block:: python
+
+            class MyMetadataEntries(NamedspacedMetadataEntries):
+                ...
+
+            metadata_entries: MyMetadataEntries  = ...
+            assert MyMetadataEntries.extract(dict(metadata_entries)) == metadata_entries
+
+        Args:
+            metadata (Mapping[str, Any]): A dictionary of metadata entries.
+        """
+        kwargs = {}
+        for namespaced_key, value in metadata.items():
+            splits = namespaced_key.split("/")
+            if len(splits) == 2:
+                namespace, key = splits
+                if namespace == cls.namespace() and key in cls.__fields__:
+                    kwargs[key] = value.value if isinstance(value, MetadataValue) else value
+
+        return cls(**kwargs)
+
+
+class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
+    """Metadata entries that apply to definitions, observations, or materializations of assets that
+    are tables.
+
+    Args:
+        column_schema (Optional[TableSchema]): The schema of the columns in the table.
+    """
+
+    column_schema: Optional[TableSchema] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster"

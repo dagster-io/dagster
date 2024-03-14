@@ -25,7 +25,6 @@ from dagster import (
     DefaultScheduleStatus,
     FreshnessPolicy,
     In,
-    MetadataValue,
     Nothing,
     Out,
     RunConfig,
@@ -38,6 +37,7 @@ from dagster import (
 from dagster._core.definitions.decorators.asset_decorator import (
     _validate_and_assign_output_names_to_check_specs,
 )
+from dagster._core.definitions.metadata import TableMetadataEntries
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
@@ -367,16 +367,18 @@ def default_metadata_from_dbt_resource_props(
     metadata: Dict[str, Any] = {}
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
-        metadata["columns"] = MetadataValue.table_schema(
-            TableSchema(
-                columns=[
-                    TableColumn(
-                        name=column_name,
-                        type=column_info.get("data_type") or "?",
-                        description=column_info.get("description"),
-                    )
-                    for column_name, column_info in columns.items()
-                ]
+        return dict(
+            TableMetadataEntries(
+                column_schema=TableSchema(
+                    columns=[
+                        TableColumn(
+                            name=column_name,
+                            type=column_info.get("data_type") or "?",
+                            description=column_info.get("description"),
+                        )
+                        for column_name, column_info in columns.items()
+                    ]
+                )
             )
         )
     return metadata
@@ -778,3 +780,24 @@ def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
     has_self_dependency = dagster_metadata.get("has_self_dependency", False)
 
     return has_self_dependency
+
+
+from dagster import MaterializeResult, asset
+from pydantic import BaseModel
+
+
+class ColumnLineage(BaseModel):
+    bar: str
+
+
+@asset
+def my_asset():
+    mat_result = MaterializeResult(metadata={"foo": ColumnLineage(bar="baz")})
+    assert mat_result.get_event_log_representation().metadata["foo"] == {"bar": "baz"}
+    assert mat_result.metadata["foo"] == ColumnLineage(bar="baz")
+
+    mat_result = MaterializeResult(
+        metadata=dict(TableMetadataEntries(column_lineage=ColumnLineage(bar="baz")))
+    )
+    assert mat_result.get_event_log_representation().metadata["foo"] == {"bar": "baz"}
+    assert mat_result.metadata["foo"] == ColumnLineage(bar="baz")

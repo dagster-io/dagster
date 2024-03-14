@@ -10,6 +10,7 @@ from dagster import (
     TableSchema,
     materialize,
 )
+from dagster._core.definitions.metadata import TableMetadataEntries
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 
@@ -50,7 +51,7 @@ def test_columns_metadata(test_metadata_manifest: Dict[str, Any]) -> None:
         }
 
         for output in output_by_dbt_unique_id.values():
-            assert "columns" in output.metadata
+            assert TableMetadataEntries.extract(output.metadata).column_schema is not None
 
         customers_output = output_by_dbt_unique_id["model.test_dagster_metadata.customers"]
         assert (
@@ -65,7 +66,7 @@ def test_columns_metadata(test_metadata_manifest: Dict[str, Any]) -> None:
                     TableColumn("customer_lifetime_value", type="DOUBLE"),
                 ]
             )
-            == customers_output.metadata["columns"].value
+            == TableMetadataEntries.extract(customers_output.metadata).column_schema
         )
 
         yield from events
