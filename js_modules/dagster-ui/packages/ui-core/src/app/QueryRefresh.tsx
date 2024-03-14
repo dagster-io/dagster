@@ -53,7 +53,7 @@ export function useQueryRefreshAtInterval(
   }
 
   const {nextFireMs, nextFireDelay, refetch} = useRefreshAtInterval({
-    refreshFunction: useCallback(async () => {
+    refresh: useCallback(async () => {
       return await queryResult?.refetch();
     }, [queryResult]),
     intervalMs,
@@ -74,11 +74,11 @@ export function useQueryRefreshAtInterval(
 }
 
 export function useRefreshAtInterval<T>({
-  refreshFunction,
+  refresh,
   intervalMs,
   enabled,
 }: {
-  refreshFunction: () => Promise<T>;
+  refresh: () => Promise<T>;
   intervalMs: number;
   enabled?: boolean;
 }) {
@@ -99,10 +99,10 @@ export function useRefreshAtInterval<T>({
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    const result = await refreshFunction();
+    const result = await refresh();
     setLoading(false);
     return result;
-  }, [refreshFunction]);
+  }, [refresh]);
 
   useEffect(() => {
     if (!enabled) {
