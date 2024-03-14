@@ -287,12 +287,15 @@ def test_pydantic_snowflake_resource_duplicate_auth():
 
 def test_fetch_last_updated_timestamps_empty():
     with pytest.raises(CheckError):
-        fetch_last_updated_timestamps(snowflake_connection={}, schema="TESTSCHEMA", tables=[])
+        fetch_last_updated_timestamps(
+            snowflake_connection={}, schema="TESTSCHEMA", database="TESTDB", tables=[]
+        )
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.integration
-def test_fetch_last_updated_timestamps():
+@pytest.mark.parametrize("db_str", [None, "TESTDB"])
+def test_fetch_last_updated_timestamps(db_str: str):
     start_time = pendulum.now("UTC").timestamp()
     table_name = "the_table"
     with temporary_snowflake_table() as table_name:
@@ -301,7 +304,10 @@ def test_fetch_last_updated_timestamps():
         def freshness_observe(snowflake: SnowflakeResource) -> ObserveResult:
             with snowflake.get_connection() as conn:
                 freshness_for_table = fetch_last_updated_timestamps(
-                    snowflake_connection=conn, schema="TESTSCHEMA", tables=[table_name]
+                    snowflake_connection=conn,
+                    database="TESTDB",
+                    tables=[table_name],
+                    schema="TESTSCHEMA",
                 )[table_name].timestamp()
                 return ObserveResult(
                     data_version=DataVersion("foo"),
@@ -317,8 +323,7 @@ def test_fetch_last_updated_timestamps():
                     account=os.getenv("SNOWFLAKE_ACCOUNT"),
                     user=os.environ["SNOWFLAKE_USER"],
                     password=os.getenv("SNOWFLAKE_PASSWORD"),
-                    database="TESTDB",
-                    schema="TESTSCHEMA",
+                    database="TESTDB" if db_str is None else db_str,
                 )
             },
         )
