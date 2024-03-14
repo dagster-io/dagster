@@ -22,6 +22,7 @@ from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.workspace import IWorkspace
@@ -62,8 +63,8 @@ class RemoteAssetNode(BaseAssetNode):
     ##### COMMON ASSET NODE INTERFACE
 
     @property
-    def group_name(self) -> Optional[str]:
-        return self._priority_node.group_name
+    def group_name(self) -> str:
+        return self._priority_node.group_name or DEFAULT_GROUP_NAME
 
     @cached_property
     def is_materializable(self) -> bool:

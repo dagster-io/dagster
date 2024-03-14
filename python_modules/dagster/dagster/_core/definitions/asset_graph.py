@@ -24,6 +24,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import (
     generate_asset_dep_graph,
 )
@@ -45,8 +46,8 @@ class AssetNode(BaseAssetNode):
         self._check_keys = check_keys
 
     @property
-    def group_name(self) -> Optional[str]:
-        return self.assets_def.group_names_by_key.get(self.key)
+    def group_name(self) -> str:
+        return self.assets_def.group_names_by_key.get(self.key, DEFAULT_GROUP_NAME)
 
     @property
     def is_materializable(self) -> bool:
