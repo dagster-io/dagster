@@ -1,6 +1,33 @@
 # Changelog
 
-## 1.6.9 (core) / 0.22.8 (libraries)
+## 1.6.10 (core) / 0.22.10 (libraries)
+
+### New
+
+- Latency improvements to the scheduler when running many simultaneous schedules.
+
+### Bugfixes
+
+- The performance of loading the Definitions snapshot from a code server when large `@multi_asset` s are in use has been drastically improved.
+- The snowflake quickstart example project now renames the “by” column to avoid reserved snowflake names. Thanks @[jcampbell](https://github.com/jcampbell)!
+- The existing group name (if any) for an asset is now retained if `the_asset.with_attributes` is called without providing a group name. Previously, the existing group name was erroneously dropped. Thanks @[ion-elgreco](https://github.com/ion-elgreco)!
+- [dagster-dbt] Fixed an issue where Dagster events could not be streamed from `dbt source freshness`.
+- [dagster university] Removed redundant use of `MetadataValue` in Essentials course. Thanks @[stianthaulow](https://github.com/stianthaulow)!
+- [ui] Increased the max number of plots on the asset plots page to 100.
+
+### Breaking Changes
+
+- The `tag_keys` argument on `DagsterInstance.get_run_tags`is no longer optional. This has been done to remove an easy way of accidentally executing an extremely expensive database operation.
+
+### Dagster Cloud
+
+- The maximum number of concurrent runs across all branch deployments is now configurable. This setting can now be set via GraphQL or the CLI.
+- [ui] In Insights, fixed display of table rows with zero change in value from the previous time period.
+- [ui] Added deployment-level Insights.
+- [ui] Fixed an issue causing void invoices to show up as “overdue” on the billing page.
+- [experimental] Branch deployments can now indicate the new and modified assets in the branch deployment as compared to the main deployment. To enable this feature, turn on the “Enable experimental branch deployment asset graph diffing” user setting.
+
+## 1.6.9 (core) / 0.22.9 (libraries)
 
 ### New
 
