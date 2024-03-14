@@ -927,6 +927,7 @@ type AssetCheckEvaluation {
   targetMaterialization: AssetCheckEvaluationTargetMaterializationData
   metadataEntries: [MetadataEntry!]!
   severity: AssetCheckSeverity!
+  description: String
   success: Boolean!
 }
 

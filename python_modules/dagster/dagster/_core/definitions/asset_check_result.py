@@ -30,6 +30,7 @@ class AssetCheckResult(
             ("check_name", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("severity", PublicAttr[AssetCheckSeverity]),
+            ("description", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -48,7 +49,8 @@ class AssetCheckResult(
             list, and one of the data classes returned by a MetadataValue static method.
         severity (AssetCheckSeverity):
             Severity of the check. Defaults to ERROR.
-
+        description (Optional[str]):
+            A text description of the result of the check evaluation.
     """
 
     def __new__(
@@ -59,6 +61,7 @@ class AssetCheckResult(
         check_name: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
+        description: Optional[str] = None,
     ):
         normalized_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -70,6 +73,7 @@ class AssetCheckResult(
             passed=check.bool_param(passed, "passed"),
             metadata=normalized_metadata,
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
+            description=check.opt_str_param(description, "description"),
         )
 
     def to_asset_check_evaluation(
@@ -149,6 +153,7 @@ class AssetCheckResult(
             metadata=self.metadata,
             target_materialization_data=target_materialization_data,
             severity=self.severity,
+            description=self.description,
         )
 
     def get_spec_python_identifier(

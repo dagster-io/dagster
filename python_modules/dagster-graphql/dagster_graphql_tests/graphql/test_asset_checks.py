@@ -87,6 +87,7 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!) {
             metadataEntries {
                 label
             }
+            description
         }
     }
 }
@@ -475,6 +476,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         storage_id=42, run_id="bizbuz", timestamp=3.3
                     ),
                     severity=AssetCheckSeverity.ERROR,
+                    description="evaluation description",
                 ),
                 timestamp=evaluation_timestamp,
             )
@@ -501,6 +503,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         "metadataEntries": [
                             {"label": "foo"},
                         ],
+                        "description": "evaluation description",
                     },
                 }
             ],

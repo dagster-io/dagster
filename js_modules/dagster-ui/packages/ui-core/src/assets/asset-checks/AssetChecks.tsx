@@ -295,6 +295,11 @@ export const AssetChecks = ({
               headerWrapperProps={headerWrapperProps}
               arrowSide="right"
             >
+              {lastExecution?.evaluation?.description ? (
+                <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
+                  <Body2>{lastExecution.evaluation.description}</Body2>
+                </Box>
+              ) : null}
               <Box padding={{top: 12}} flex={{direction: 'column', gap: 12}}>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 24}}>
                   <Box flex={{direction: 'column', gap: 6}}>
