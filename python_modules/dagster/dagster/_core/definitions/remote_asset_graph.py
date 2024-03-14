@@ -230,18 +230,21 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         repo_node_pairs_by_key: Dict[
             AssetKey, List[Tuple[RepositoryHandle, "ExternalAssetNode"]]
         ] = defaultdict(list)
+        # Build the dependency graph of asset keys.
+        upstream: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
+        downstream: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
+
         for repo_handle, node in repo_handle_external_asset_nodes:
             repo_node_pairs_by_key[node.asset_key].append((repo_handle, node))
-
-        # Build the dependency graph of asset keys.
-        all_keys = {node.asset_key for _, node in repo_handle_external_asset_nodes}
-        upstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
-        downstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
-        for _, node in repo_handle_external_asset_nodes:
             for dep in node.dependencies:
                 upstream[node.asset_key].add(dep.upstream_asset_key)
                 downstream[dep.upstream_asset_key].add(node.asset_key)
+
         dep_graph: DependencyGraph[AssetKey] = {"upstream": upstream, "downstream": downstream}
+
+        check_keys_by_asset_key: Dict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        for c in external_asset_checks:
+            check_keys_by_asset_key[c.asset_key].add(c.key)
 
         # Build the set of RemoteAssetNodes in topological order so that each node can hold
         # references to its parents.
@@ -252,7 +255,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
                 child_keys=dep_graph["downstream"][key],
                 execution_set_keys=execution_sets_by_key[key],
                 repo_node_pairs=repo_node_pairs,
-                check_keys={check.key for check in external_asset_checks if check.asset_key == key},
+                check_keys=check_keys_by_asset_key[key],
             )
             for key, repo_node_pairs in repo_node_pairs_by_key.items()
         }
