@@ -2,6 +2,7 @@ import * as dagre from 'dagre';
 
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import {IBounds, IPoint} from '../graph/common';
+import {ChangeReason} from '../graphql/types';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
 
@@ -286,6 +287,7 @@ export const getAssetNodeDimensions = (def: {
   graphName: string | null;
   description?: string | null;
   computeKind: string | null;
+  changedReasons?: ChangeReason[];
 }) => {
   const width = 320;
 
@@ -298,6 +300,9 @@ export const getAssetNodeDimensions = (def: {
     if (def.isPartitioned) {
       height += 40;
     }
+  }
+  if (def.changedReasons?.length) {
+    height += 30;
   }
 
   height += 30; // tags beneath
