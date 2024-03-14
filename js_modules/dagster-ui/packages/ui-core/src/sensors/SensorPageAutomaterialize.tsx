@@ -126,7 +126,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const ticks = useMemo(
     () => {
       return (
-        allTicks.map((tick, index) => {
+        allTicks.slice(100).map((tick, index) => {
           const nextTick = allTicks[index - 1];
           // For ticks that get stuck in "Started" state without an endTimestamp.
           if (nextTick && isStuckStartedTick(tick, index)) {

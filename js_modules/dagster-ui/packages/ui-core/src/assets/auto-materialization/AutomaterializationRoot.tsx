@@ -133,7 +133,7 @@ const GlobalAutomaterializationRoot = () => {
     () => {
       const ticks = data?.autoMaterializeTicks;
       return (
-        ticks?.map((tick, index) => {
+        ticks?.slice(100).map((tick, index) => {
           const nextTick = ticks[index - 1];
           // For ticks that get stuck in "Started" state without an endTimestamp.
           if (nextTick && isStuckStartedTick(tick, index)) {
