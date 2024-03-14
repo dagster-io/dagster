@@ -15,7 +15,6 @@ import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/Aut
 import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
-import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../instigation/util';
@@ -76,7 +75,10 @@ export const SensorPageAutomaterialize = (props: Props) => {
     fetch({variables: getVariables()});
   }, [fetch, getVariables]);
 
-  const refresh = useConstantCallback(async () => await fetch({variables: getVariables()}));
+  const refresh = useCallback(
+    async () => await fetch({variables: getVariables()}),
+    [fetch, getVariables],
+  );
 
   useRefreshAtInterval({
     refresh,

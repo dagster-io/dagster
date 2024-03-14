@@ -29,7 +29,6 @@ import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {assertUnreachable} from '../../app/Util';
 import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
-import {useConstantCallback} from '../../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
@@ -93,7 +92,10 @@ const GlobalAutomaterializationRoot = () => {
     fetch({variables: getVariables()});
   }, [fetch, getVariables]);
 
-  const refresh = useConstantCallback(async () => await fetch({variables: getVariables()}));
+  const refresh = useCallback(
+    async () => await fetch({variables: getVariables()}),
+    [fetch, getVariables],
+  );
 
   useRefreshAtInterval({
     refresh,
