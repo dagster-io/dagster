@@ -19,7 +19,6 @@
 
 - The `tag_keys` argument on `DagsterInstance.get_run_tags`is no longer optional. This has been done to remove an easy way of accidentally executing an extremely expensive database operation.
 
-
 ### Dagster Cloud
 
 - The maximum number of concurrent runs across all branch deployments is now configurable. This setting can now be set via GraphQL or the CLI.
