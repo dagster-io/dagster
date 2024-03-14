@@ -1,4 +1,6 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
+
+from pydantic import BaseModel
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -133,31 +135,19 @@ class TableSchema(
 
 
 @whitelist_for_serdes
-class TableConstraints(
-    NamedTuple(
-        "TableConstraints",
-        [
-            ("other", PublicAttr[Sequence[str]]),
-        ],
-    )
-):
-    """Descriptor for "table-level" constraints. Presently only one property,
-    `other` is supported. This contains strings describing arbitrary
-    table-level constraints. A table-level constraint is a constraint defined
-    in terms of multiple columns (e.g. col_A > col_B) or in terms of rows.
+class TableConstraints(BaseModel):
+    other: Sequence[str]
 
-    Args:
-        other (List[str]): Descriptions of arbitrary table-level constraints.
-    """
+    def __init__(self, other: Sequence[str]):
+        """Descriptor for "table-level" constraints. Presently only one property,
+        `other` is supported. This contains strings describing arbitrary
+        table-level constraints. A table-level constraint is a constraint defined
+        in terms of multiple columns (e.g. col_A > col_B) or in terms of rows.
 
-    def __new__(
-        cls,
-        other: Sequence[str],
-    ):
-        return super(TableConstraints, cls).__new__(
-            cls,
-            other=check.sequence_param(other, "other", of_type=str),
-        )
+        Args:
+            other (List[str]): Descriptions of arbitrary table-level constraints.
+        """
+        super().__init__(other=other)
 
 
 _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
@@ -168,17 +158,7 @@ _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
 
 
 @whitelist_for_serdes
-class TableColumn(
-    NamedTuple(
-        "TableColumn",
-        [
-            ("name", PublicAttr[str]),
-            ("type", PublicAttr[str]),
-            ("description", PublicAttr[Optional[str]]),
-            ("constraints", PublicAttr["TableColumnConstraints"]),
-        ],
-    )
-):
+class TableColumn(BaseModel):
     """Descriptor for a table column. The only property that must be specified
     by the user is `name`. If no `type` is specified, `string` is assumed. If
     no `constraints` are specified, the column is assumed to be nullable
@@ -193,27 +173,25 @@ class TableColumn(
             If unspecified, column is nullable with no constraints.
     """
 
-    def __new__(
-        cls,
+    name: str
+    type: str
+    description: Optional[str]
+    constraints: "TableColumnConstraints"
+
+    def __init__(
+        self,
         name: str,
         type: str = "string",  # noqa: A002
         description: Optional[str] = None,
         constraints: Optional["TableColumnConstraints"] = None,
     ):
-        return super(TableColumn, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            type=check.str_param(type, "type"),
-            description=check.opt_str_param(description, "description"),
-            constraints=cast(
-                "TableColumnConstraints",
-                check.opt_inst_param(
-                    constraints,
-                    "constraints",
-                    TableColumnConstraints,
-                    default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
-                ),
-            ),
+        super().__init__(
+            name=name,
+            type=type,
+            description=description,
+            constraints=constraints
+            if constraints is not None
+            else _DEFAULT_TABLE_COLUMN_CONSTRAINTS,
         )
 
 
