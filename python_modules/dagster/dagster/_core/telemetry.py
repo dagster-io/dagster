@@ -778,11 +778,10 @@ def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext
 TELEMETRY_TEXT = """
   %(telemetry)s
 
-  As an open source project, we collect usage statistics to inform development priorities. For more
+  As an open-source project, we collect usage statistics to inform development priorities. For more
   information, read https://docs.dagster.io/getting-started/telemetry.
 
-  We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
-  any data that is processed within solids and pipelines.
+  We will not see or store any data that is processed by your code.
 
   To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file if necessary:
 
