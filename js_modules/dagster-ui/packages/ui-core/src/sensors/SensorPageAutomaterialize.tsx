@@ -126,7 +126,9 @@ export const SensorPageAutomaterialize = (props: Props) => {
         }) ?? []
       );
     },
-    // memoize by id/status of ticks
+    // The allTicks array changes every 2 seconds because we we query every 2 seconds.
+    // This would cause everything to re-render, to avoid that we memoize the ticks array that we pass around
+    // using the ID and status of the ticks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(allTicks.map((tick) => `${tick.id}:${tick.status}`))],
   );
