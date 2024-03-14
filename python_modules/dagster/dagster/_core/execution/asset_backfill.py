@@ -883,8 +883,7 @@ def execute_asset_backfill_iteration(
     logger.info(f"Evaluating asset backfill {backfill.backfill_id}")
 
     workspace_context = workspace_process_context.create_request_context()
-
-    asset_graph = RemoteAssetGraph.from_workspace(workspace_context)
+    asset_graph = workspace_context.asset_graph
 
     if not backfill.is_asset_backfill:
         check.failed("Backfill must be an asset backfill")

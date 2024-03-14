@@ -6,7 +6,6 @@ from dagster._core.definitions.data_version import (
     StaleStatus,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.remote_representation.external import (
     ExternalSchedule,
@@ -20,7 +19,7 @@ def resolve_stale_or_missing_assets(
     run_request: RunRequest,
     instigator: Union[ExternalSensor, ExternalSchedule],
 ) -> Sequence[AssetKey]:
-    asset_graph = RemoteAssetGraph.from_workspace(context.create_request_context())
+    asset_graph = context.create_request_context().asset_graph
     asset_selection = (
         run_request.asset_selection
         if run_request.asset_selection is not None
