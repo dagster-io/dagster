@@ -1178,10 +1178,28 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
 
     @classmethod
     def extract(
-        cls: Type[T_NamespacedMetadataEntries], metadata_dict: Mapping[str, Any]
+        cls: Type[T_NamespacedMetadataEntries], metadata: Mapping[str, Any]
     ) -> T_NamespacedMetadataEntries:
+        """Extracts entries from the provided metadata dictionary into an instance of this class.
+
+        Ignores any entries in the metadata dictionary whose keys don't correspond to fields on this
+        class.
+
+        In general, the following should always pass:
+
+        .. code-block:: python
+
+            class MyMetadataEntries(NamedspacedMetadataEntries):
+                ...
+
+            metadata_entries: MyMetadataEntries  = ...
+            assert MyMetadataEntries.extract(dict(metadata_entries)) == metadata_entries
+
+        Args:
+            metadata (Mapping[str, Any]): A dictionary of metadata entries.
+        """
         kwargs = {}
-        for namespaced_key, value in metadata_dict.items():
+        for namespaced_key, value in metadata.items():
             splits = namespaced_key.split("/")
             if len(splits) == 2:
                 namespace, key = splits
