@@ -7,6 +7,7 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_layer import subset_assets_defs
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetExecutionType,
     AssetSpec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
@@ -121,6 +122,16 @@ class AssetNode(BaseAssetNode):
             return {self.key}
         else:
             return {*self.assets_def.keys, *self.assets_def.check_keys}
+
+    ##### ASSET GRAPH SPECIFIC INTERFACE
+
+    @property
+    def execution_type(self) -> AssetExecutionType:
+        return self.assets_def.execution_type
+
+    @property
+    def io_manager_key(self) -> str:
+        return self.assets_def.get_io_manager_key_for_asset_key(self.key)
 
 
 class AssetGraph(BaseAssetGraph[AssetNode]):
