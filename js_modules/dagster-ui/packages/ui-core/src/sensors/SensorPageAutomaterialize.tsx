@@ -126,8 +126,9 @@ export const SensorPageAutomaterialize = (props: Props) => {
         }) ?? []
       );
     },
+    // memoize by id/status of ticks
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(allTicks)],
+    [JSON.stringify(allTicks.map((tick) => `${tick.id}:${tick.status}`))],
   );
 
   const onHoverTick = useCallback(

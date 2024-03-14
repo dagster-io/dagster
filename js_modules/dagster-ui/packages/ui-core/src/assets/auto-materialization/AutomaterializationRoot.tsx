@@ -121,10 +121,7 @@ const GlobalAutomaterializationRoot = () => {
   const data = queryResult.data ?? queryResult.previousData;
 
   const allTicks = useMemo(() => {
-    if (data?.sensorOrError.__typename === 'Sensor') {
-      return data.sensorOrError.sensorState.ticks;
-    }
-    return [];
+    return data?.autoMaterializeTicks || [];
   }, [data]);
 
   const ticks = useMemo(
@@ -143,8 +140,9 @@ const GlobalAutomaterializationRoot = () => {
         }) ?? []
       );
     },
+    // memoize by id/status of ticks
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(allTicks)],
+    [JSON.stringify(allTicks.map((tick) => `${tick.id}:${tick.status}`))],
   );
 
   const onHoverTick = useCallback(
