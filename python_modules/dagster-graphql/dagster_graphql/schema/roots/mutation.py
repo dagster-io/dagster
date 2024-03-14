@@ -3,7 +3,6 @@ from typing import Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
@@ -727,7 +726,7 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
 
         reporting_user_tags = {**graphene_info.context.get_reporting_user_tags()}
 
-        asset_graph = RemoteAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
 
         assert_permission_for_asset_graph(
             graphene_info, asset_graph, [asset_key], Permissions.REPORT_RUNLESS_ASSET_EVENTS

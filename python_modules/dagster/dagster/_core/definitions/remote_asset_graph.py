@@ -24,7 +24,6 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.workspace.workspace import IWorkspace
 
 from .backfill_policy import BackfillPolicy
 from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph, BaseAssetNode
@@ -207,34 +206,6 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_checks_by_key = asset_checks_by_key
         self._asset_check_execution_sets_by_key = asset_check_execution_sets_by_key
-
-    @classmethod
-    def from_workspace(cls, context: IWorkspace) -> "RemoteAssetGraph":
-        code_locations = (
-            location_entry.code_location
-            for location_entry in context.get_workspace_snapshot().values()
-            if location_entry.code_location
-        )
-        repos = (
-            repo
-            for code_location in code_locations
-            for repo in code_location.get_repositories().values()
-        )
-        repo_handle_external_asset_nodes: Sequence[
-            Tuple[RepositoryHandle, "ExternalAssetNode"]
-        ] = []
-        asset_checks: Sequence["ExternalAssetCheck"] = []
-
-        for repo in repos:
-            for external_asset_node in repo.get_external_asset_nodes():
-                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
-
-            asset_checks.extend(repo.get_external_asset_checks())
-
-        return cls.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
-            external_asset_checks=asset_checks,
-        )
 
     @classmethod
     def from_repository_handles_and_external_asset_nodes(

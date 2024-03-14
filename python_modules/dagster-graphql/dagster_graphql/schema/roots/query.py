@@ -954,7 +954,7 @@ class GrapheneQuery(graphene.ObjectType):
             if repo is not None:
                 return repo.asset_graph
             else:
-                return RemoteAssetGraph.from_workspace(graphene_info.context)
+                return graphene_info.context.asset_graph
 
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
