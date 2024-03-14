@@ -703,7 +703,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
         asset_partitions_def = (
-            self.job_def.asset_layer.partitions_def_for_asset(asset_key) if asset_key else None
+            self.job_def.asset_layer.get(asset_key).partitions_def if asset_key else None
         )
         return InputContext(
             job_name=self.job_def.name,
@@ -1020,7 +1020,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_layer = self.job_def.asset_layer
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
         if upstream_asset_key:
-            upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+            upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
             assets_def = asset_layer.assets_def_for_node(self.node_handle)
             partitions_def = assets_def.partitions_def if assets_def else None
             explicit_partition_mapping = self.job_def.asset_layer.partition_mapping_for_node_input(
@@ -1097,7 +1097,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return (
             upstream_asset_key is not None
-            and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
+            and asset_layer.get(upstream_asset_key).partitions_def is not None
         )
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
@@ -1108,7 +1108,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             asset_layer.asset_key_for_input(self.node_handle, input_name)
         )
         upstream_asset_partitions_def = check.not_none(
-            asset_layer.partitions_def_for_asset(upstream_asset_key)
+            asset_layer.get(upstream_asset_key).partitions_def
         )
 
         partition_key_ranges = subset.get_partition_key_ranges(
@@ -1132,7 +1132,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         if upstream_asset_key is not None:
-            upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+            upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
 
             if upstream_asset_partitions_def is not None:
                 partitions_def = assets_def.partitions_def if assets_def else None
@@ -1264,7 +1264,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if upstream_asset_key is None:
             raise ValueError("The input has no corresponding asset")
 
-        upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+        upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
 
         if not upstream_asset_partitions_def:
             raise ValueError(
@@ -1311,7 +1311,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_key = asset_layer.asset_key_for_output(self.node_handle, output_name)
         if asset_key is None:
             return False
-        return asset_layer.is_observable_for_asset(asset_key)
+        return asset_layer.get(asset_key).is_observable
 
 
 class TypeCheckContext:

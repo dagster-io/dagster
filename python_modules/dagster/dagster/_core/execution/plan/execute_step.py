@@ -245,10 +245,10 @@ def _step_output_error_checked_user_event_sequence(
             if (
                 asset_info is not None
                 and asset_info.is_required
-                and asset_layer.has_assets_def_for_asset(asset_info.key)
+                and asset_layer.has(asset_info.key)
             ):
-                assets_def = asset_layer.assets_def_for_asset(asset_info.key)
-                if assets_def is not None:
+                if asset_layer.has(asset_info.key):
+                    assets_def = asset_layer.get(asset_info.key).assets_def
                     all_dependent_keys = asset_layer.downstream_assets_for_asset(asset_info.key)
                     step_local_asset_keys = step_context.get_output_asset_keys()
                     step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
@@ -311,9 +311,7 @@ def _step_output_error_checked_user_event_sequence(
                 step_context.node_handle, step_output_def.name
             )
             # We require explicitly returned/yielded for asset observations
-            is_observable_asset = asset_key is not None and asset_layer.is_observable_for_asset(
-                asset_key
-            )
+            is_observable_asset = asset_key is not None and asset_layer.get(asset_key).is_observable
 
             if step_output_def.dagster_type.is_nothing and not is_observable_asset:
                 step_context.log.info(
@@ -693,7 +691,7 @@ def _get_output_asset_events(
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
     return (
-        step_context.job_def.asset_layer.code_version_for_asset(asset_key)
+        step_context.job_def.asset_layer.get(asset_key).code_version
         or step_context.dagster_run.run_id
     )
 

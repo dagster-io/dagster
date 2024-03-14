@@ -299,14 +299,20 @@ class RepositoryDefinition:
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
             base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
-            if all(base_job.asset_layer.is_executable_for_asset(key) for key in asset_keys):
+            asset_layer = base_job.asset_layer
+            if all(
+                asset_layer.has(key) and asset_layer.get(key).is_executable for key in asset_keys
+            ):
                 return base_job
         else:
             i = 0
             while self.has_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
                 base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
-
-                if all(base_job.asset_layer.is_executable_for_asset(key) for key in asset_keys):
+                asset_layer = base_job.asset_layer
+                if all(
+                    asset_layer.has(key) and asset_layer.get(key).is_executable
+                    for key in asset_keys
+                ):
                     return base_job
 
                 i += 1
