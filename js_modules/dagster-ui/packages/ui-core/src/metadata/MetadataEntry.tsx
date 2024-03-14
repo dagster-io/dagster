@@ -32,6 +32,14 @@ import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress'
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
+  'dagster_dbt/select',
+  'dagster_dbt/exclude',
+  'dagster-dbt/select',
+  'dagster-dbt/exclude',
+  'dagster_dbt/manifest',
+  'dagster_dbt/dagster_dbt_translator',
+]);
 
 export const LogRowStructuredContentTable = ({
   rows,
@@ -73,10 +81,12 @@ export const MetadataEntries = ({
   }
   return (
     <LogRowStructuredContentTable
-      rows={entries.map((entry) => ({
-        label: entry.label,
-        item: <MetadataEntry entry={entry} expandSmallValues={expandSmallValues} />,
-      }))}
+      rows={entries
+        .filter((entry) => !HIDDEN_METADATA_ENTRY_LABELS.has(entry.label))
+        .map((entry) => ({
+          label: entry.label,
+          item: <MetadataEntry entry={entry} expandSmallValues={expandSmallValues} />,
+        }))}
     />
   );
 };

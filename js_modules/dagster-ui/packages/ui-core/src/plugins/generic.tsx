@@ -1,6 +1,7 @@
 import {Button, Dialog, DialogBody, DialogFooter, Icon} from '@dagster-io/ui-components';
 import {useEffect, useState} from 'react';
 
+import {HIDDEN_METADATA_ENTRY_LABELS} from '../metadata/MetadataEntry';
 import {IPluginSidebarProps} from '../plugins';
 
 export const SidebarComponent = (props: IPluginSidebarProps) => {
@@ -13,7 +14,7 @@ export const SidebarComponent = (props: IPluginSidebarProps) => {
   }, []);
 
   const metadata = props.definition.metadata
-    .filter((m) => m.key !== 'kind')
+    .filter((m) => m.key !== 'kind' || !HIDDEN_METADATA_ENTRY_LABELS.has(m.key))
     .sort((a, b) => a.key.localeCompare(b.key));
 
   if (metadata.length === 0) {
