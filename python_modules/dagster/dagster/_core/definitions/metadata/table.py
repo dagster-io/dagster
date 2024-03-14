@@ -136,17 +136,18 @@ class TableSchema(
 
 @whitelist_for_serdes
 class TableConstraints(BaseModel):
+    """Descriptor for "table-level" constraints. Presently only one property,
+    `other` is supported. This contains strings describing arbitrary
+    table-level constraints. A table-level constraint is a constraint defined
+    in terms of multiple columns (e.g. col_A > col_B) or in terms of rows.
+
+    Args:
+        other (List[str]): Descriptions of arbitrary table-level constraints.
+    """
+
     other: Sequence[str]
 
     def __init__(self, other: Sequence[str]):
-        """Descriptor for "table-level" constraints. Presently only one property,
-        `other` is supported. This contains strings describing arbitrary
-        table-level constraints. A table-level constraint is a constraint defined
-        in terms of multiple columns (e.g. col_A > col_B) or in terms of rows.
-
-        Args:
-            other (List[str]): Descriptions of arbitrary table-level constraints.
-        """
         super().__init__(other=other)
 
 
