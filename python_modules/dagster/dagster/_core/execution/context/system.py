@@ -931,10 +931,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def is_asset_check_step(self) -> bool:
-        """Whether this step corresponds to an asset check."""
-        return (
-            self.job_def.asset_layer.asset_checks_defs_by_node_handle.get(self.node_handle)
-            is not None
+        """Whether this step corresponds to at least one asset check."""
+        return any(
+            self.job_def.asset_layer.asset_check_key_for_output(self.node_handle, output.name)
+            for output in self.step.step_outputs
         )
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
@@ -1097,6 +1097,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return (
             upstream_asset_key is not None
+            and asset_layer.has(upstream_asset_key)
             and asset_layer.get(upstream_asset_key).partitions_def is not None
         )
 

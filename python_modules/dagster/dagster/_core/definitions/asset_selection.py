@@ -10,7 +10,6 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental_param, public
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -182,14 +181,10 @@ class AssetSelection(ABC, BaseModel, frozen=True):
 
     @public
     @staticmethod
-    def checks(*asset_checks: AssetChecksDefinition) -> "AssetCheckKeysSelection":
+    def checks(*assets_defs: AssetsDefinition) -> "AssetCheckKeysSelection":
         """Returns a selection that includes all of the provided asset checks."""
         return AssetCheckKeysSelection(
-            selected_asset_check_keys=[
-                AssetCheckKey(asset_key=AssetKey.from_coercible(spec.asset_key), name=spec.name)
-                for checks_def in asset_checks
-                for spec in checks_def.specs
-            ]
+            selected_asset_check_keys=[key for ad in assets_defs for key in ad.check_keys]
         )
 
     @public

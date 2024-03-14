@@ -396,6 +396,9 @@ def prefix_assets(
 
     """
     asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.keys}
+    check_target_keys = {
+        key.asset_key for assets_def in assets_defs for key in assets_def.check_keys
+    }
     source_asset_keys = {source_asset.key for source_asset in source_assets}
 
     if isinstance(key_prefix, str):
@@ -408,8 +411,8 @@ def prefix_assets(
             asset_key: AssetKey([*key_prefix, *asset_key.path]) for asset_key in assets_def.keys
         }
         input_asset_key_replacements = {}
-        for dep_asset_key in assets_def.dependency_keys:
-            if dep_asset_key in asset_keys:
+        for dep_asset_key in assets_def.keys_by_input_name.values():
+            if dep_asset_key in asset_keys or dep_asset_key in check_target_keys:
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
                     [*key_prefix, *dep_asset_key.path]
                 )

@@ -42,9 +42,10 @@ def test_asset_check_decorator():
     def check1():
         return AssetCheckResult(passed=True)
 
-    assert check1.name == "check1"
-    assert check1.description == "desc"
-    assert check1.asset_key == AssetKey("asset1")
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.name == "check1"
+    assert spec.description == "desc"
+    assert spec.asset_key == AssetKey("asset1")
 
 
 def test_asset_check_decorator_name():
@@ -52,7 +53,8 @@ def test_asset_check_decorator_name():
     def _check():
         return AssetCheckResult(passed=True)
 
-    assert _check.name == "check1"
+    spec = _check.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.name == "check1"
 
 
 def test_asset_check_with_prefix():
@@ -63,7 +65,10 @@ def test_asset_check_with_prefix():
     def my_check():
         return AssetCheckResult(passed=True)
 
-    assert my_check.asset_key == AssetKey(["prefix", "asset1"])
+    spec = my_check.get_spec_for_check_key(
+        AssetCheckKey(AssetKey(["prefix", "asset1"]), "my_check")
+    )
+    assert spec.asset_key == AssetKey(["prefix", "asset1"])
 
 
 def test_asset_check_input_with_prefix():
@@ -74,7 +79,10 @@ def test_asset_check_input_with_prefix():
     def my_check(asset1):
         return AssetCheckResult(passed=True)
 
-    assert my_check.asset_key == AssetKey(["prefix", "asset1"])
+    spec = my_check.get_spec_for_check_key(
+        AssetCheckKey(AssetKey(["prefix", "asset1"]), "my_check")
+    )
+    assert spec.asset_key == AssetKey(["prefix", "asset1"])
 
 
 def test_execute_asset_and_check():
@@ -84,10 +92,9 @@ def test_execute_asset_and_check():
     @asset_check(asset=asset1, description="desc")
     def check1(context: AssetExecutionContext):
         assert context.asset_key_for_input("asset1") == asset1.key
-        asset_check_spec = context.asset_check_spec
         return AssetCheckResult(
-            asset_key=asset_check_spec.asset_key,
-            check_name=asset_check_spec.name,
+            asset_key=asset1.key,
+            check_name="check1",
             passed=True,
             metadata={"foo": "bar"},
         )
@@ -162,10 +169,9 @@ def test_execute_check_and_asset_in_separate_run():
     @asset_check(asset=asset1, description="desc")
     def check1(context: AssetExecutionContext):
         assert context.asset_key_for_input("asset1") == asset1.key
-        asset_check_spec = context.asset_check_spec
         return AssetCheckResult(
-            asset_key=asset_check_spec.asset_key,
-            check_name=asset_check_spec.name,
+            asset_key=asset1.key,
+            check_name="check1",
             passed=True,
             metadata={"foo": "bar"},
         )
@@ -537,8 +543,9 @@ def test_managed_input():
 
         def handle_output(self, context, obj): ...
 
-    assert check1.name == "check1"
-    assert check1.asset_key == asset1.key
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.name == "check1"
+    assert spec.asset_key == asset1.key
 
     assert execute_assets_and_checks(
         assets=[asset1], asset_checks=[check1], resources={"io_manager": MyIOManager()}
@@ -570,8 +577,9 @@ def test_managed_input_with_context():
         assert asset1 == 4
         return AssetCheckResult(passed=True)
 
-    assert check1.name == "check1"
-    assert check1.asset_key == asset1.key
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.name == "check1"
+    assert spec.asset_key == asset1.key
 
     execute_assets_and_checks(assets=[asset1], asset_checks=[check1])
 

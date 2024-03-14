@@ -24,8 +24,7 @@ from dagster._annotations import (
     experimental,
     public,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
@@ -590,34 +589,6 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             return set()
         return self.assets_def.keys
 
-    @public
-    @property
-    def has_asset_checks_def(self) -> bool:
-        """Return a boolean indicating the presence of a backing AssetChecksDefinition
-        for the current execution.
-
-        Returns:
-            bool: True if there is a backing AssetChecksDefinition for the current execution, otherwise False.
-        """
-        return self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle) is not None
-
-    @public
-    @property
-    def asset_checks_def(self) -> AssetChecksDefinition:
-        """The backing AssetChecksDefinition for what is currently executing, errors if not
-        available.
-
-        Returns:
-            AssetChecksDefinition.
-        """
-        asset_checks_def = self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle)
-        if asset_checks_def is None:
-            raise DagsterInvalidPropertyError(
-                f"Op '{self.op.name}' does not have an asset checks definition."
-            )
-
-        return asset_checks_def
-
     @property
     def is_subset(self):
         """Whether the current AssetsDefinition is subsetted. Note that this can be True inside a
@@ -630,13 +601,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        if self.has_assets_def:
-            return self.assets_def.check_keys
-
-        if self.has_asset_checks_def:
-            check.failed("Subset selection is not yet supported within an AssetChecksDefinition")
-
-        return set()
+        return self.assets_def.check_keys if self.has_assets_def else set()
 
     @public
     @property
@@ -1315,14 +1280,6 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         self._step_execution_context.set_data_version(asset_key, data_version)
 
-    @property
-    def asset_check_spec(self) -> AssetCheckSpec:
-        asset_checks_def = check.not_none(
-            self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle),
-            "This context does not correspond to an AssetChecksDefinition",
-        )
-        return asset_checks_def.spec
-
     # In this mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.
     @property
@@ -1777,25 +1734,8 @@ class AssetExecutionContext(OpExecutionContext):
     @public
     @property
     @_copy_docs_from_op_execution_context
-    def has_asset_checks_def(self) -> bool:
-        return self.op_execution_context.has_asset_checks_def
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def asset_checks_def(self) -> AssetChecksDefinition:
-        return self.op_execution_context.asset_checks_def
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
     def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return self.op_execution_context.selected_asset_check_keys
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def asset_check_spec(self) -> AssetCheckSpec:
-        return self.op_execution_context.asset_check_spec
 
     #### data lineage related
 

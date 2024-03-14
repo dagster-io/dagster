@@ -7,10 +7,7 @@ from dagster._annotations import experimental
 from dagster._config import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_checks import (
-    AssetChecksDefinition,
-    AssetChecksDefinitionInputOutputProps,
-)
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.assets import AssetsDefinition
@@ -232,19 +229,14 @@ def asset_check(
             retry_policy=retry_policy,
         )(fn)
 
-        checks_def = AssetChecksDefinition(
+        return AssetChecksDefinition.create(
+            keys_by_input_name={
+                input_tuple[0]: asset_key
+                for asset_key, input_tuple in input_tuples_by_asset_key.items()
+            },
             node_def=op_def,
             resource_defs=wrap_resources_for_execution(resource_defs),
-            specs=[spec],
-            input_output_props=AssetChecksDefinitionInputOutputProps(
-                asset_keys_by_input_name={
-                    input_tuple[0]: asset_key
-                    for asset_key, input_tuple in input_tuples_by_asset_key.items()
-                },
-                asset_check_keys_by_output_name={op_def.output_defs[0].name: spec.key},
-            ),
+            check_specs_by_output_name={op_def.output_defs[0].name: spec},
         )
-
-        return checks_def
 
     return inner
