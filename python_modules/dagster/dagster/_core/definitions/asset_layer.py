@@ -610,12 +610,12 @@ class AssetLayer(NamedTuple):
         return {k for k, v in self.asset_deps.items() if asset_key in v}
 
     @property
-    def asset_keys(self) -> Iterable[AssetKey]:
-        return self.dependency_node_handles_by_asset_key.keys()
+    def all_asset_keys(self) -> Iterable[AssetKey]:
+        return set(self.assets_defs_by_key.keys())
 
     @property
-    def has_assets_defs(self) -> bool:
-        return len(self.assets_defs_by_key) > 0
+    def executable_asset_keys(self) -> Iterable[AssetKey]:
+        return self.dependency_node_handles_by_asset_key.keys()
 
     @property
     def assets_defs(self) -> Set["AssetsDefinition"]:
@@ -760,12 +760,8 @@ class AssetLayer(NamedTuple):
     ) -> Optional[AssetCheckKey]:
         return self.check_key_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
 
-    def group_names_by_assets(self) -> Mapping[AssetKey, str]:
-        return {
-            key: assets_def.group_names_by_key[key]
-            for key, assets_def in self.assets_defs_by_key.items()
-            if key in assets_def.group_names_by_key
-        }
+    def group_name_for_asset(self, asset_key: AssetKey) -> str:
+        return self.assets_defs_by_key[asset_key].group_names_by_key[asset_key]
 
     def partitions_def_for_asset(self, asset_key: AssetKey) -> Optional["PartitionsDefinition"]:
         assets_def = self.assets_defs_by_key.get(asset_key)

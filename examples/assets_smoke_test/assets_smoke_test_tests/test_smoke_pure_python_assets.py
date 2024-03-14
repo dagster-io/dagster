@@ -10,7 +10,7 @@ def empty_dataframe_from_column_schema(column_schema: TableSchema) -> DataFrame:
 
 class SmokeIOManager(InMemoryIOManager):
     def load_input(self, context):
-        if context.asset_key not in context.step_context.job_def.asset_layer.asset_keys:
+        if context.asset_key not in context.step_context.job_def.asset_layer.executable_asset_keys:
             column_schema = context.upstream_output.metadata["column_schema"]
             return empty_dataframe_from_column_schema(column_schema)
         else:

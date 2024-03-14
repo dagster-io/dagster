@@ -624,7 +624,7 @@ def _get_output_asset_events(
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
-        and asset_key in step_context.job_def.asset_layer.asset_keys
+        and asset_key in step_context.job_def.asset_layer.executable_asset_keys
     ):
         assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)

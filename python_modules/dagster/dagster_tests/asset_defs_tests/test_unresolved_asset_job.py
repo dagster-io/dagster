@@ -448,7 +448,7 @@ def test_define_selection_job_assets_definition_selection():
     all_assets = [asset1, asset2, asset3]
 
     job1 = create_test_asset_job(all_assets, selection=[asset1, asset2])
-    asset_keys = list(job1.asset_layer.asset_keys)
+    asset_keys = list(job1.asset_layer.executable_asset_keys)
     assert len(asset_keys) == 2
     assert set(asset_keys) == {asset1.key, asset2.key}
     job1.execute_in_process()

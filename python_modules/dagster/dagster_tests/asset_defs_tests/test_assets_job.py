@@ -2081,7 +2081,7 @@ def test_selection_multi_component():
 
     assert Definitions(
         assets=[source_asset, asset1], jobs=[define_asset_job("something", selection="abc/asset1")]
-    ).get_job_def("something").asset_layer.asset_keys == {AssetKey(["abc", "asset1"])}
+    ).get_job_def("something").asset_layer.executable_asset_keys == {AssetKey(["abc", "asset1"])}
 
 
 @pytest.mark.parametrize(
