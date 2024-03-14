@@ -707,10 +707,7 @@ def external_asset_graph_from_assets_by_repo_name(
     for repo_name, assets in assets_by_repo_name.items():
         repo = Definitions(assets=assets).get_repository_def()
 
-        external_asset_nodes = external_asset_nodes_from_defs(
-            repo.get_all_jobs(),
-            repo.asset_graph.assets_defs,
-        )
+        external_asset_nodes = external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph)
         repo_handle = MagicMock(repository_name=repo_name)
         from_repository_handles_and_external_asset_nodes.extend(
             [(repo_handle, asset_node) for asset_node in external_asset_nodes]
