@@ -120,20 +120,17 @@ const GlobalAutomaterializationRoot = () => {
 
   const data = queryResult.data ?? queryResult.previousData;
 
-  const ids = data ? data.autoMaterializeTicks.map((tick) => `${tick.id}:${tick.status}`) : [];
-  while (ids.length < 100) {
-    // Because we refresh this query every 2 seconds, the array changes every 2 seconds.
-    // To avoid re-rendering the whole page every 2 seconds we use the tickID and tickStatus
-    // of the first 100 ticks in order to memoize the ticks array we pass around so that it only
-    // changes if a tick changes or is added/removed.
-    ids.push('');
-  }
+  const allTicks = useMemo(() => {
+    if (data?.sensorOrError.__typename === 'Sensor') {
+      return data.sensorOrError.sensorState.ticks;
+    }
+    return [];
+  }, [data]);
 
   const ticks = useMemo(
     () => {
-      const ticks = data?.autoMaterializeTicks;
       return (
-        ticks?.slice(100).map((tick, index) => {
+        allTicks?.map((tick, index) => {
           const nextTick = ticks[index - 1];
           // For ticks that get stuck in "Started" state without an endTimestamp.
           if (nextTick && isStuckStartedTick(tick, index)) {
@@ -147,7 +144,7 @@ const GlobalAutomaterializationRoot = () => {
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [...ids.slice(0, 100)],
+    [JSON.stringify(allTicks)],
   );
 
   const onHoverTick = useCallback(
