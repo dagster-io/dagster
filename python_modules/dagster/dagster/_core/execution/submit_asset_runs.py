@@ -192,7 +192,7 @@ def _create_asset_run(
         # likely is outdated and targeting the wrong job, refetch the asset
         # graph from the workspace
         workspace = workspace_process_context.create_request_context()
-        asset_graph = RemoteAssetGraph.from_workspace(workspace)
+        asset_graph = workspace.asset_graph
 
     check.failed(
         f"Failed to target asset selection {run_request.asset_selection} in run after retrying."

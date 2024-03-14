@@ -486,7 +486,7 @@ class AssetDaemon(DagsterDaemon):
                 if not get_has_migrated_to_sensors(instance):
                     # Do a one-time migration to create the cursors for each sensor, based on the
                     # existing cursor for the legacy AMP tick
-                    asset_graph = RemoteAssetGraph.from_workspace(workspace)
+                    asset_graph = workspace.asset_graph
                     pre_sensor_cursor = _get_pre_sensor_auto_materialize_cursor(
                         instance, asset_graph
                     )
@@ -648,7 +648,7 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        asset_graph = RemoteAssetGraph.from_workspace(workspace)
+        asset_graph = workspace.asset_graph
 
         instance: DagsterInstance = workspace_process_context.instance
         error_info = None

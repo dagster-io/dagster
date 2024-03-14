@@ -69,7 +69,6 @@ from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
@@ -391,7 +390,7 @@ class AssetReconciliationScenario(
                     assert (
                         workspace.get_code_location_error("test_location") is None
                     ), workspace.get_code_location_error("test_location")
-                    asset_graph = RemoteAssetGraph.from_workspace(workspace)
+                    asset_graph = workspace.asset_graph
 
             auto_materialize_asset_keys = (
                 self.asset_selection.resolve(asset_graph)

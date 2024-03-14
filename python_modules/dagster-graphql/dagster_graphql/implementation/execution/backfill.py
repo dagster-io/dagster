@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, List, Sequence, Union, cast
 
 import dagster._check as check
 import pendulum
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
 from dagster._core.errors import (
     DagsterError,
@@ -46,7 +45,7 @@ def get_asset_backfill_preview(
 ) -> Sequence["GrapheneAssetPartitions"]:
     from ...schema.backfill import GrapheneAssetPartitions
 
-    asset_graph = RemoteAssetGraph.from_workspace(graphene_info.context)
+    asset_graph = graphene_info.context.asset_graph
 
     check.invariant(backfill_preview_params.get("assetSelection") is not None)
     check.invariant(backfill_preview_params.get("partitionNames") is not None)
@@ -198,7 +197,7 @@ def create_and_launch_partition_backfill(
         if backfill_params.get("fromFailure"):
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
-        asset_graph = RemoteAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
 
         assert_permission_for_asset_graph(
             graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
@@ -227,7 +226,7 @@ def create_and_launch_partition_backfill(
         if backfill_params.get("fromFailure"):
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
-        asset_graph = RemoteAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
         assert_permission_for_asset_graph(
             graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
         )
@@ -265,7 +264,7 @@ def cancel_partition_backfill(
         check.failed(f"No backfill found for id: {backfill_id}")
 
     if backfill.is_asset_backfill:
-        asset_graph = RemoteAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
         assert_permission_for_asset_graph(
             graphene_info,
             asset_graph,
