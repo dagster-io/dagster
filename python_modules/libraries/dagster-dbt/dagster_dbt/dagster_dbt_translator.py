@@ -9,7 +9,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import public
-from dagster._core.definitions.events import (
+from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
