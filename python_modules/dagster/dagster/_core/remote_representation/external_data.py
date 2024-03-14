@@ -1669,7 +1669,9 @@ def external_asset_nodes_from_defs(
             if len(assets_def.keys) == 1 and assets_def.check_keys and not assets_def.can_subset:
                 execution_set_identifiers[assets_def.key] = assets_def.unique_id
 
-        group_name_by_asset_key.update(asset_layer.group_names_by_assets())
+        group_name_by_asset_key.update(
+            {k: asset_layer.group_name_for_asset(k) for k in asset_layer.all_asset_keys}
+        )
 
     asset_nodes: List[ExternalAssetNode] = []
 

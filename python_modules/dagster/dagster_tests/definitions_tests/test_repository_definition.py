@@ -688,7 +688,7 @@ def test_direct_assets():
         return [foo, asset1, asset2]
 
     assert len(my_repo.get_all_jobs()) == 1
-    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+    assert set(my_repo.get_all_jobs()[0].asset_layer.executable_asset_keys) == {
         AssetKey(["asset1"]),
         AssetKey(["asset2"]),
     }
@@ -1192,7 +1192,7 @@ def test_list_load():
         return [all_assets]
 
     assert len(assets_repo.get_all_jobs()) == 1
-    assert set(assets_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+    assert set(assets_repo.get_all_jobs()[0].asset_layer.executable_asset_keys) == {
         AssetKey(["asset1"]),
         AssetKey(["asset2"]),
     }
@@ -1240,7 +1240,7 @@ def test_list_load():
         return [combo_list]
 
     assert len(combo_repo.get_all_jobs()) == 2
-    assert set(combo_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+    assert set(combo_repo.get_all_jobs()[0].asset_layer.executable_asset_keys) == {
         AssetKey(["asset3"]),
     }
 
@@ -1418,7 +1418,7 @@ def test_base_jobs():
     assert sorted(repo.get_implicit_asset_job_names()) == ["__ASSET_JOB_0", "__ASSET_JOB_1"]
     assert repo.get_implicit_job_def_for_assets(
         [asset1.key, asset2.key]
-    ).asset_layer.asset_keys == {
+    ).asset_layer.executable_asset_keys == {
         asset1.key,
         asset2.key,
     }

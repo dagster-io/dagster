@@ -770,7 +770,9 @@ class JobDefinition(IHasInternalInit):
         check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
         nonexistent_assets = [
-            asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
+            asset
+            for asset in asset_selection
+            if asset not in self.asset_layer.executable_asset_keys
         ]
         nonexistent_asset_strings = [
             asset_str
