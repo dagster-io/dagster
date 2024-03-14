@@ -25,7 +25,7 @@ import {
 } from './types/AssetDaemonTicksQuery.types';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
-import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {assertUnreachable} from '../../app/Util';
 import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
@@ -65,32 +65,43 @@ const GlobalAutomaterializationRoot = () => {
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
 
-  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
-    ASSET_DAEMON_TICKS_QUERY,
-  );
   const [isPaused, setIsPaused] = useState(false);
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
-  const variables: AssetDaemonTicksQueryVariables = useMemo(() => {
-    if (timeRange || statuses) {
+  const getVariables = useCallback(
+    (now = Date.now()) => {
+      if (timeRange || statuses) {
+        return {
+          afterTimestamp: timeRange?.[0],
+          beforeTimestamp: timeRange?.[1],
+          statuses,
+        };
+      }
       return {
-        afterTimestamp: timeRange?.[0],
-        beforeTimestamp: timeRange?.[1],
-        statuses,
+        afterTimestamp: (now - TWENTY_MINUTES) / 1000,
       };
-    }
-    return {
-      afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
-    };
-  }, [statuses, timeRange]);
-  function fetchData() {
-    fetch({
-      variables,
-    });
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(fetchData, [variables]);
-  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
+    },
+    [statuses, timeRange],
+  );
+
+  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
+    ASSET_DAEMON_TICKS_QUERY,
+  );
+
+  useLayoutEffect(() => {
+    fetch({variables: getVariables()});
+  }, [fetch, getVariables]);
+
+  const refresh = useCallback(
+    async () => await fetch({variables: getVariables()}),
+    [fetch, getVariables],
+  );
+
+  useRefreshAtInterval({
+    refresh,
+    enabled: !isPaused && !timeRange && !statuses,
+    intervalMs: 2 * 1000,
+  });
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 
@@ -109,19 +120,14 @@ const GlobalAutomaterializationRoot = () => {
 
   const data = queryResult.data ?? queryResult.previousData;
 
-  const ids = data ? data.autoMaterializeTicks.map((tick) => `${tick.id}:${tick.status}`) : [];
-  while (ids.length < 100) {
-    // Super hacky but we need to keep the memo args length the same...
-    // And the memo below prevents us from changing the ticks reference every second
-    // which avoids a bunch of re-rendering
-    ids.push('');
-  }
+  const allTicks = useMemo(() => {
+    return data?.autoMaterializeTicks || [];
+  }, [data]);
 
   const ticks = useMemo(
     () => {
-      const ticks = data?.autoMaterializeTicks;
       return (
-        ticks?.map((tick, index) => {
+        allTicks?.map((tick, index) => {
           const nextTick = ticks[index - 1];
           // For ticks that get stuck in "Started" state without an endTimestamp.
           if (nextTick && isStuckStartedTick(tick, index)) {
@@ -134,8 +140,11 @@ const GlobalAutomaterializationRoot = () => {
         }) ?? []
       );
     },
+    // The allTicks array changes every 2 seconds because we query every 2 seconds.
+    // This would cause everything to re-render, to avoid that we memoize the ticks array that we pass around
+    // using the ID and status of the ticks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [...ids.slice(0, 100)],
+    [JSON.stringify(allTicks.map((tick) => `${tick.id}:${tick.status}`))],
   );
 
   const onHoverTick = useCallback(
