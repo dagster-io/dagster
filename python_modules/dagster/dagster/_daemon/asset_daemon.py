@@ -672,7 +672,7 @@ class AssetDaemon(DagsterDaemon):
 
             if sensor:
                 eligible_keys = check.not_none(sensor.asset_selection).resolve(
-                    RemoteAssetGraph.from_external_repository(check.not_none(repository))
+                    check.not_none(repository).asset_graph
                 )
             else:
                 eligible_keys = {

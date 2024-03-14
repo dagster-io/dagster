@@ -14,7 +14,6 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
@@ -223,7 +222,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
     assert external_repo.has_external_sensor("default_auto_materialize_sensor")
     assert external_repo.has_external_sensor("my_custom_policy_sensor")
 
-    asset_graph = RemoteAssetGraph.from_external_repository(external_repo)
+    asset_graph = external_repo.asset_graph
 
     # default sensor includes all assets that weren't covered by the custom one
 
@@ -293,7 +292,7 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
     assert external_repo.has_external_sensor("normal_sensor")
     assert external_repo.has_external_sensor("my_custom_policy_sensor")
 
-    asset_graph = RemoteAssetGraph.from_external_repository(external_repo)
+    asset_graph = external_repo.asset_graph
 
     # Custom sensor covered all the valid assets
     custom_sensor = external_repo.get_external_sensor("my_custom_policy_sensor")

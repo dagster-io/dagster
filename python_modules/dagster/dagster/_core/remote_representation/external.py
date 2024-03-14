@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import cached_property
 from threading import RLock
 from typing import (
     TYPE_CHECKING,
@@ -75,6 +76,7 @@ from .job_index import JobIndex
 from .represented import RepresentedJob
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 
@@ -186,15 +188,13 @@ class ExternalRepository:
     @property
     @cached_method
     def _external_sensors(self) -> Dict[str, "ExternalSensor"]:
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-
         sensor_datas = {
             external_sensor_data.name: ExternalSensor(external_sensor_data, self._handle)
             for external_sensor_data in self.external_repository_data.external_sensor_datas
         }
 
         if self._instance.auto_materialize_use_sensors:
-            asset_graph = RemoteAssetGraph.from_external_repository(self)
+            asset_graph = self.asset_graph
 
             has_any_auto_observe_source_assets = False
 
@@ -372,6 +372,18 @@ class ExternalRepository:
 
     def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata
+
+    @cached_property
+    def asset_graph(self) -> "RemoteAssetGraph":
+        """Returns a repository scoped RemoteAssetGraph."""
+        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+
+        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
+            repo_handle_external_asset_nodes=[
+                (self.handle, asset_node) for asset_node in self.get_external_asset_nodes()
+            ],
+            external_asset_checks=self.get_external_asset_checks(),
+        )
 
 
 class ExternalJob(RepresentedJob):
