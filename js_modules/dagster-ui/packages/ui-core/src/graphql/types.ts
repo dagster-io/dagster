@@ -5258,7 +5258,7 @@ export type TimestampMetadataEntry = MetadataEntry & {
   __typename: 'TimestampMetadataEntry';
   description: Maybe<Scalars['String']['output']>;
   label: Scalars['String']['output'];
-  timestamp: Maybe<Scalars['Float']['output']>;
+  timestamp: Scalars['Float']['output'];
 };
 
 export type TypeCheck = DisplayableEvent & {

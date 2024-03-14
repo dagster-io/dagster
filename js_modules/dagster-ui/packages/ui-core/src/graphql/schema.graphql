@@ -2672,7 +2672,7 @@ type NullMetadataEntry implements MetadataEntry {
 type TimestampMetadataEntry implements MetadataEntry {
   label: String!
   description: String
-  timestamp: Float
+  timestamp: Float!
 }
 
 scalar Cursor

@@ -129,7 +129,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -256,7 +256,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -485,7 +485,7 @@ export type AssetConditionEvaluationRecordFragment = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -631,7 +631,7 @@ export type AssetConditionEvaluationRecordFragment = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -863,7 +863,7 @@ export type GetEvaluationsQuery = {
                       }
                     | {
                         __typename: 'TimestampMetadataEntry';
-                        timestamp: number | null;
+                        timestamp: number;
                         label: string;
                         description: string | null;
                       }
@@ -1015,7 +1015,7 @@ export type GetEvaluationsQuery = {
                       }
                     | {
                         __typename: 'TimestampMetadataEntry';
-                        timestamp: number | null;
+                        timestamp: number;
                         label: string;
                         description: string | null;
                       }
@@ -1216,7 +1216,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -1362,7 +1362,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }

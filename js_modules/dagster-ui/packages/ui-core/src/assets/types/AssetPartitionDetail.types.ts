@@ -172,7 +172,7 @@ export type AssetPartitionDetailQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -341,7 +341,7 @@ export type AssetPartitionDetailQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }

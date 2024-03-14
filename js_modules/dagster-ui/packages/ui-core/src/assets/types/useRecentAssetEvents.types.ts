@@ -139,7 +139,7 @@ export type AssetMaterializationFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -289,7 +289,7 @@ export type AssetObservationFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -463,7 +463,7 @@ export type AssetEventsQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -627,7 +627,7 @@ export type AssetEventsQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
