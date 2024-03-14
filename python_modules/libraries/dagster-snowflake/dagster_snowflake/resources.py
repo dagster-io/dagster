@@ -721,6 +721,7 @@ def fetch_last_updated_timestamps(
     snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],
     schema: str,
     tables: Sequence[str],
+    database: Optional[str] = None,
 ) -> Mapping[str, datetime]:
     """Fetch the last updated times of a list of tables in Snowflake.
 
@@ -730,17 +731,23 @@ def fetch_last_updated_timestamps(
         snowflake_connection (Union[SqlDbConnection, SnowflakeConnection]): A connection to Snowflake.
             Accepts either a SnowflakeConnection or a sqlalchemy connection object,
             which are the two types of connections emittable from the snowflake resource.
-        schema (str): The schema of the table.
+        schema (str): The schema of the tables to fetch the last updated time for.
         tables (Sequence[str]): A list of table names to fetch the last updated time for.
+        database (Optional[str]): The database of the table. Only required if the connection
+            has not been set with a database.
 
     Returns:
         Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
     """
     check.invariant(len(tables) > 0, "Must provide at least one table name to query upon.")
     tables_str = ", ".join([f"'{table_name}'" for table_name in tables])
+    fully_qualified_table_name = (
+        f"{database}.information_schema.tables" if database else "information_schema.tables"
+    )
+
     query = f"""
     SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered 
-    FROM information_schema.tables
+    FROM {fully_qualified_table_name}
     WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
     """
     result = snowflake_connection.cursor().execute(query)
