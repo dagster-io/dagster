@@ -113,9 +113,10 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const ids = useMemo(() => allTicks.map((tick) => `${tick.id}:${tick.status}`), [allTicks]);
 
   while (ids.length < 100) {
-    // Super hacky but we need to keep the memo args length the same...
-    // And the memo below prevents us from changing the ticks reference every second
-    // which avoids a bunch of re-rendering
+    // Because we refresh this query every 2 seconds, the array changes every 2 seconds.
+    // To avoid re-rendering the whole page every 2 seconds we use the tickID and tickStatus
+    // of the first 100 ticks in order to memoize the ticks array we pass around so that it only
+    // changes if a tick changes or is added/removed.
     ids.push('');
   }
 
