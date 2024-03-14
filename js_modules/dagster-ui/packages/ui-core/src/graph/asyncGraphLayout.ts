@@ -15,7 +15,7 @@ import {
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
 // If you're working on the layout logic, set to false so hot-reloading re-computes the layout
-const CACHING_ENABLED = false;
+const CACHING_ENABLED = true;
 
 // Op Graph
 
@@ -66,7 +66,7 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
   }
 
   return `${JSON.stringify(opts)}${JSON.stringify({
-    version: 1,
+    version: 2,
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
     nodes: Object.keys(graphData.nodes)
