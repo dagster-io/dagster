@@ -6,7 +6,7 @@ from typing import Iterable, Optional, Sequence
 import dagster._check as check
 
 from .asset_checks import AssetChecksDefinition
-from .events import (
+from .asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )

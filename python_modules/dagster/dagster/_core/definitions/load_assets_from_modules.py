@@ -22,13 +22,13 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .assets import AssetsDefinition
-from .cacheable_assets import CacheableAssetsDefinition
-from .events import (
+from .asset_key import (
     AssetKey,
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from .assets import AssetsDefinition
+from .cacheable_assets import CacheableAssetsDefinition
 from .source_asset import SourceAsset
 
 
