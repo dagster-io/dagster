@@ -65,9 +65,6 @@ const GlobalAutomaterializationRoot = () => {
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
 
-  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
-    ASSET_DAEMON_TICKS_QUERY,
-  );
   const [isPaused, setIsPaused] = useState(false);
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
@@ -83,14 +80,18 @@ const GlobalAutomaterializationRoot = () => {
       afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
     };
   }, [statuses, timeRange]);
-  function fetchData() {
-    fetch({
-      variables,
-    });
-  }
+
+  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
+    ASSET_DAEMON_TICKS_QUERY,
+    {variables},
+  );
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(fetchData, [variables]);
-  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
+  useLayoutEffect(() => {
+    fetch({variables});
+  }, [fetch, variables]);
+
+  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses);
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 

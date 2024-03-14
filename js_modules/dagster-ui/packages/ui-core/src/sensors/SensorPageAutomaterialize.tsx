@@ -41,10 +41,6 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
 
-  const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
-    ASSET_SENSOR_TICKS_QUERY,
-  );
-
   const variables: AssetSensorTicksQueryVariables = useMemo(() => {
     if (timeRange || statuses) {
       return {
@@ -68,15 +64,18 @@ export const SensorPageAutomaterialize = (props: Props) => {
     };
   }, [sensor, repoAddress, statuses, timeRange]);
 
-  function fetchData() {
-    fetch({
+  const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
+    ASSET_SENSOR_TICKS_QUERY,
+    {
       variables,
-    });
-  }
+    },
+  );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(fetchData, [variables]);
-  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
+  useLayoutEffect(() => {
+    fetch({variables});
+  }, [fetch, variables]);
+
+  useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses);
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 
