@@ -495,7 +495,6 @@ class JobSubsetSnapshotArgs(
             ("op_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
-            ("include_parent_snapshot", bool),
         ],
     )
 ):
@@ -505,7 +504,6 @@ class JobSubsetSnapshotArgs(
         op_selection: Optional[Sequence[str]],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-        include_parent_snapshot: Optional[bool] = None,
     ):
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
@@ -516,9 +514,6 @@ class JobSubsetSnapshotArgs(
             asset_selection=check.opt_nullable_set_param(asset_selection, "asset_selection"),
             asset_check_selection=check.opt_nullable_set_param(
                 asset_check_selection, "asset_check_selection"
-            ),
-            include_parent_snapshot=(
-                include_parent_snapshot if include_parent_snapshot is not None else True
             ),
         )
 

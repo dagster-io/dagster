@@ -44,6 +44,6 @@ def external_job_from_recon_job(recon_job, op_selection, repository_handle, asse
         job_def = recon_job.get_definition()
 
     return ExternalJob(
-        external_job_data_from_def(job_def, include_parent_snapshot=True),
+        external_job_data_from_def(job_def),
         repository_handle=repository_handle,
     )

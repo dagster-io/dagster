@@ -740,7 +740,6 @@ class DagsterApiServer(DagsterApiServicer):
                     job_subset_snapshot_args.op_selection,
                     job_subset_snapshot_args.asset_selection,
                     job_subset_snapshot_args.asset_check_selection,
-                    job_subset_snapshot_args.include_parent_snapshot,
                 )
             )
         except Exception:
@@ -793,9 +792,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
-            ser_job_data = serialize_value(
-                external_job_data_from_def(job_def, include_parent_snapshot=False)
-            )
+            ser_job_data = serialize_value(external_job_data_from_def(job_def))
             return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:
             return api_pb2.ExternalJobReply(
