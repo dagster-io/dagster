@@ -837,10 +837,17 @@ def _pack_value(
     ):
         klass_name = val.__class__.__name__
         if not whitelist_map.has_object_serializer(klass_name):
-            raise SerializationError(
-                "Can only serialize whitelisted namedtuples, received"
-                f" {val}.\nDescent path: {descent_path}",
-            )
+            if isinstance(val, pydantic.BaseModel):
+                whitelist_map.register_object(
+                    klass_name,
+                    val.__class__,
+                    PydanticModelSerializer,
+                )
+            else:
+                raise SerializationError(
+                    "Can only serialize whitelisted namedtuples, received"
+                    f" {val}.\nDescent path: {descent_path}",
+                )
         serializer = whitelist_map.get_object_serializer(klass_name)
         return serializer.pack(val, whitelist_map, descent_path)
     if isinstance(val, set):
