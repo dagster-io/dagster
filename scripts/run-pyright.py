@@ -94,6 +94,16 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--skip-typecheck",
+    action="store_true",
+    default=False,
+    help=(
+        "Skip type checking, i.e. actually running pyright. This only makes sense when used together"
+        " with `--rebuild` or `--update-pins` to build an environment."
+    ),
+)
+
+parser.add_argument(
     "paths",
     type=str,
     nargs="*",
@@ -113,6 +123,7 @@ class Params(TypedDict):
     rebuild: bool
     update_pins: bool
     venv_python: str
+    skip_typecheck: bool
 
 
 class Position(TypedDict):
@@ -222,6 +233,7 @@ def get_params(args: argparse.Namespace) -> Params:
         rebuild=args.rebuild,
         unannotated=args.unannotated,
         venv_python=venv_python,
+        skip_typecheck=args.skip_typecheck,
     )
 
 
@@ -346,7 +358,6 @@ def run_pyright(
     pinned_deps: bool,
     venv_python: str,
 ) -> RunResult:
-    normalize_env(env, rebuild, pinned_deps, venv_python)
     with temp_pyright_config_file(env, unannotated) as config_path:
         base_pyright_cmd = " ".join(
             [
@@ -502,17 +513,23 @@ if __name__ == "__main__":
         env_path_map = map_paths_to_envs(params["targets"])
     else:
         env_path_map = {env: None for env in params["targets"]}
-    run_results = [
-        run_pyright(
-            env,
-            paths=env_path_map[env],
-            rebuild=params["rebuild"],
-            unannotated=params["unannotated"],
-            pinned_deps=params["update_pins"],
-            venv_python=params["venv_python"],
-        )
-        for env in env_path_map
-    ]
-    merged_result = reduce(merge_pyright_results, run_results)
-    print_output(merged_result, params["json"])
-    sys.exit(merged_result["returncode"])
+
+    for env in env_path_map:
+        normalize_env(env, params["rebuild"], params["update_pins"], params["venv_python"])
+    if params["skip_typecheck"]:
+        print("Successfully built environments. Skipping typecheck.")
+    if not params["skip_typecheck"]:
+        run_results = [
+            run_pyright(
+                env,
+                paths=env_path_map[env],
+                rebuild=params["rebuild"],
+                unannotated=params["unannotated"],
+                pinned_deps=params["update_pins"],
+                venv_python=params["venv_python"],
+            )
+            for env in env_path_map
+        ]
+        merged_result = reduce(merge_pyright_results, run_results)
+        print_output(merged_result, params["json"])
+        sys.exit(merged_result["returncode"])
