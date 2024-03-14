@@ -103,10 +103,8 @@ class AssetGraphDiffer:
             base_workspace, code_location_name, repository_name
         )
         return AssetGraphDiffer(
-            branch_asset_graph=lambda: RemoteAssetGraph.from_external_repository(branch_repo),
-            base_asset_graph=(lambda: RemoteAssetGraph.from_external_repository(base_repo))
-            if base_repo is not None
-            else None,
+            branch_asset_graph=lambda: branch_repo.asset_graph,
+            base_asset_graph=(lambda: base_repo.asset_graph) if base_repo is not None else None,
         )
 
     def _compare_base_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:

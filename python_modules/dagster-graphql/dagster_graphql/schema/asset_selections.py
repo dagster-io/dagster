@@ -1,6 +1,5 @@
 import graphene
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.remote_representation.external import ExternalRepository
 
 from ..implementation.fetch_assets import get_asset_nodes_by_asset_key
@@ -21,7 +20,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
         return str(self._asset_selection)
 
     def resolve_assetKeys(self, _graphene_info):
-        asset_graph = RemoteAssetGraph.from_external_repository(self._external_repository)
+        asset_graph = self._external_repository.asset_graph
         return [
             GrapheneAssetKey(path=asset_key.path)
             for asset_key in self._asset_selection.resolve(asset_graph)
@@ -30,7 +29,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
     def resolve_assets(self, graphene_info):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
 
-        asset_graph = RemoteAssetGraph.from_external_repository(self._external_repository)
+        asset_graph = self._external_repository.asset_graph
         asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info)
 
         return [

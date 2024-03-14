@@ -567,7 +567,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             return []
 
         instance = graphene_info.context.instance
-        asset_graph = RemoteAssetGraph.from_external_repository(self._external_repository)
+        asset_graph = self._external_repository.asset_graph
         asset_key = self._external_asset_node.asset_key
 
         # in the future, we can share this same CachingInstanceQueryer across all
@@ -885,7 +885,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetFreshnessInfo]:
         if self._external_asset_node.freshness_policy:
-            asset_graph = RemoteAssetGraph.from_external_repository(self._external_repository)
+            asset_graph = self._external_repository.asset_graph
             return get_freshness_info(
                 asset_key=self._external_asset_node.asset_key,
                 # in the future, we can share this same CachingInstanceQueryer across all
@@ -929,7 +929,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_sensors = self._external_repository.get_external_sensors()
         external_schedules = self._external_repository.get_external_schedules()
 
-        asset_graph = RemoteAssetGraph.from_external_repository(self._external_repository)
+        asset_graph = self._external_repository.asset_graph
 
         job_names = {
             job_name
@@ -959,7 +959,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return results
 
     def _get_auto_materialize_external_sensor(self) -> Optional[ExternalSensor]:
-        asset_graph = RemoteAssetGraph.from_external_repository(self._external_repository)
+        asset_graph = self._external_repository.asset_graph
 
         asset_key = self._external_asset_node.asset_key
         matching_sensors = [
