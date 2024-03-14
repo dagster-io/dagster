@@ -30,6 +30,7 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -427,7 +428,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
                 if input_asset_key:
-                    io_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+                    io_manager_key = (
+                        asset_layer.get(input_asset_key).io_manager_key
+                        if asset_layer.has(input_asset_key)
+                        else DEFAULT_IO_MANAGER_KEY
+                    )
                     yield InputManagerRequirement(
                         key=io_manager_key,
                         node_description=node_description,

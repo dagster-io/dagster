@@ -20,15 +20,10 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_spec import (
-    AssetExecutionType,
-)
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import (
-    ArbitraryMetadataMapping,
     RawMetadataValue,
 )
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.selector.subset_selector import AssetSelectionData
 
 from ..errors import (
@@ -45,7 +40,7 @@ from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
     from dagster._core.definitions.job_definition import JobDefinition
@@ -606,11 +601,11 @@ class AssetLayer(NamedTuple):
     def has_asset_check_defs(self) -> bool:
         return len(self.asset_checks_defs_by_node_handle) > 0
 
-    def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
-        return self.asset_graph.has(asset_key)
+    def get(self, asset_key: AssetKey) -> "AssetNode":
+        return self.asset_graph.get(asset_key)
 
-    def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
-        return self.asset_graph.get(asset_key).assets_def
+    def has(self, asset_key: AssetKey) -> bool:
+        return self.asset_graph.has(asset_key)
 
     def node_output_handle_for_asset(self, asset_key: AssetKey) -> NodeOutputHandle:
         matching_handles = [
@@ -683,48 +678,6 @@ class AssetLayer(NamedTuple):
             None,
         )
 
-    def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return (
-            self.asset_graph.get(asset_key).io_manager_key
-            if self.asset_graph.has(asset_key)
-            else DEFAULT_IO_MANAGER_KEY
-        )
-
-    def execution_type_for_asset(self, asset_key: AssetKey) -> AssetExecutionType:
-        return self.asset_graph.get(asset_key).execution_type
-
-    def is_executable_for_asset(self, asset_key: AssetKey) -> bool:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return self.asset_graph.has(asset_key) and self.asset_graph.get(asset_key).is_executable
-
-    def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return self.asset_graph.has(asset_key) and self.asset_graph.get(asset_key).is_observable
-
-    def is_materializable_for_asset(self, asset_key: AssetKey) -> bool:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return self.asset_graph.has(asset_key) and self.asset_graph.get(asset_key).is_materializable
-
-    def is_graph_backed_asset(self, asset_key: AssetKey) -> bool:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return self.asset_graph.has(asset_key) and isinstance(
-            self.asset_graph.get(asset_key).assets_def.node_def, GraphDefinition
-        )
-
-    def code_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return (
-            self.asset_graph.get(asset_key).code_version
-            if self.asset_graph.has(asset_key)
-            else None
-        )
-
-    def metadata_for_asset(
-        self, asset_key: AssetKey
-    ) -> Optional[Mapping[str, ArbitraryMetadataMapping]]:
-        return self.asset_graph.get(asset_key).metadata
-
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetOutputInfo]:
@@ -741,17 +694,6 @@ class AssetLayer(NamedTuple):
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetCheckKey]:
         return self.check_key_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
-
-    def group_name_for_asset(self, asset_key: AssetKey) -> str:
-        return self.asset_graph.get(asset_key).group_name
-
-    def partitions_def_for_asset(self, asset_key: AssetKey) -> Optional["PartitionsDefinition"]:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return (
-            self.asset_graph.get(asset_key).partitions_def
-            if self.asset_graph.has(asset_key)
-            else None
-        )
 
     def partition_mapping_for_node_input(
         self, node_handle: NodeHandle, upstream_asset_key: AssetKey

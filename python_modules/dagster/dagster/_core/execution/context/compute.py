@@ -1034,9 +1034,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         """
         asset_key = self.asset_key_for_output(output_name)
-        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
-            asset_key
-        )
+        result = self._step_execution_context.job_def.asset_layer.get(asset_key).partitions_def
         if result is None:
             raise DagsterInvariantViolationError(
                 f"Attempting to access partitions def for asset {asset_key}, but it is not"
@@ -1074,9 +1072,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         """
         asset_key = self.asset_key_for_input(input_name)
-        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
-            asset_key
-        )
+        result = self._step_execution_context.job_def.asset_layer.get(asset_key).partitions_def
         if result is None:
             raise DagsterInvariantViolationError(
                 f"Attempting to access partitions def for asset {asset_key}, but it is not"

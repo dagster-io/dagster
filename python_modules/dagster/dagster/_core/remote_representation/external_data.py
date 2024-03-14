@@ -1626,9 +1626,7 @@ def external_asset_nodes_from_defs(
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, job_def))
             asset_info_by_asset_key[output_key] = asset_info
-            execution_types_by_asset_key[output_key] = asset_layer.execution_type_for_asset(
-                output_key
-            )
+            execution_types_by_asset_key[output_key] = asset_layer.get(output_key).execution_type
 
             for upstream_key in upstream_asset_keys:
                 partition_mapping = asset_layer.partition_mapping_for_node_input(
@@ -1670,7 +1668,7 @@ def external_asset_nodes_from_defs(
                 execution_set_identifiers[assets_def.key] = assets_def.unique_id
 
         group_name_by_asset_key.update(
-            {k: asset_layer.group_name_for_asset(k) for k in asset_layer.all_asset_keys}
+            {k: asset_layer.get(k).group_name for k in asset_layer.all_asset_keys}
         )
 
     asset_nodes: List[ExternalAssetNode] = []
