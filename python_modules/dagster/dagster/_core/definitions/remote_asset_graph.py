@@ -237,18 +237,6 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         )
 
     @classmethod
-    def from_external_repository(
-        cls, external_repository: ExternalRepository
-    ) -> "RemoteAssetGraph":
-        return cls.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=[
-                (external_repository.handle, asset_node)
-                for asset_node in external_repository.get_external_asset_nodes()
-            ],
-            external_asset_checks=external_repository.get_external_asset_checks(),
-        )
-
-    @classmethod
     def from_repository_handles_and_external_asset_nodes(
         cls,
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
