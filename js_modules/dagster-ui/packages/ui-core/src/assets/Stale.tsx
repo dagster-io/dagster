@@ -30,8 +30,22 @@ type StaleDataForNode = {
 export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
 
-export const isAssetStale = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
-  liveData && liveData.staleStatus === StaleStatus.STALE;
+export const isAssetStale = (
+  assetKey: AssetKeyInput,
+  liveData?: Pick<StaleDataForNode, 'staleStatus'>,
+  include: 'all' | 'upstream' | 'self' = 'all',
+) => {
+  if (liveData && liveData.staleStatus === StaleStatus.STALE) {
+    if (include === 'all') {
+      return true;
+    } else {
+      const grouped = groupedCauses(assetKey, include, liveData);
+      const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+      return totalCauses > 0;
+    }
+  }
+  return false;
+};
 
 const LABELS = {
   self: {
@@ -79,7 +93,7 @@ export const StaleReasonsLabel = ({
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
 }) => {
-  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
+  if (!isAssetStale(assetKey, liveData, include)) {
     return null;
   }
 
@@ -111,10 +125,12 @@ export const StaleReasonsTag = ({
   include?: 'all' | 'upstream' | 'self';
   onClick?: () => void;
 }) => {
-  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
+  const grouped = groupedCauses(assetKey, include, liveData);
+  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+  if (!totalCauses) {
     return <div />;
   }
-  const label = <Caption>Unsynced ({numberFormatter.format(liveData.staleCauses.length)})</Caption>;
+  const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
   return (
     <Box
       flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
@@ -191,10 +207,10 @@ const StaleCausesPopoverSummary = ({
   include?: 'all' | 'upstream' | 'self';
 }) => {
   const grouped = groupedCauses(assetKey, include, liveData);
-  const totalCauses = liveData?.staleCauses?.length;
+  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
 
   if (!totalCauses) {
-    // Should never happen since the parent of this component should check that the asset is stale before rendering the popover
+    // Can happen if the parent didn't checked the grouped causes
     return <div />;
   }
   return (

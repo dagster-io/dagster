@@ -55,7 +55,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
     const staleOrMissing = React.useMemo(
       () =>
         data?.assetNodes
-          .filter((node) => isAssetStale(node) || isAssetMissing(node))
+          .filter((node) => isAssetStale(node.assetKey, node, 'all') || isAssetMissing(node))
           .map(asAssetKeyInput),
       [data],
     );
