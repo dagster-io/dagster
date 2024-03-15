@@ -1,19 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  Heading,
-  NonIdealState,
-  PageHeader,
-  Spinner,
-  TextInput,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
-import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
 import {
@@ -23,8 +13,6 @@ import {
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -42,10 +30,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-export const OverviewSchedulesRoot = () => {
-  useTrackPageView();
-  useDocumentTitle('Overview | Schedules');
-
+export const OverviewSchedules = () => {
   const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -239,11 +224,7 @@ export const OverviewSchedulesRoot = () => {
   const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
 
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="schedules" refreshState={refreshState} />}
-      />
+    <>
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
@@ -301,7 +282,7 @@ export const OverviewSchedulesRoot = () => {
           {content()}
         </>
       )}
-    </Box>
+    </>
   );
 };
 

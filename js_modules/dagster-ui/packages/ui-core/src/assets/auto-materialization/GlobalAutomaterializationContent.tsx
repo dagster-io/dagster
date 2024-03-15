@@ -1,18 +1,6 @@
 import {useLazyQuery} from '@apollo/client';
-import {
-  Alert,
-  Box,
-  Checkbox,
-  Colors,
-  Heading,
-  Page,
-  PageHeader,
-  Spinner,
-  Subtitle2,
-  Table,
-} from '@dagster-io/ui-components';
+import {Alert, Box, Checkbox, Colors, Spinner, Subtitle2, Table} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
-import {Redirect} from 'react-router-dom';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
@@ -26,14 +14,10 @@ import {
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
-import {assertUnreachable} from '../../app/Util';
-import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
-import {OverviewTabs} from '../../overview/OverviewTabs';
-import {useAutoMaterializeSensorFlag} from '../AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 const MINUTE = 60 * 1000;
@@ -41,25 +25,7 @@ const THREE_MINUTES = 3 * MINUTE;
 const FIVE_MINUTES = 5 * MINUTE;
 const TWENTY_MINUTES = 20 * MINUTE;
 
-// Determine whether the user is flagged to see automaterialize policies as
-// sensors. If so, redirect to the Sensors overview.
-export const AutomaterializationRoot = () => {
-  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
-  switch (automaterializeSensorsFlagState) {
-    case 'unknown':
-      return <div />; // Waiting for result
-    case 'has-global-amp':
-      return <GlobalAutomaterializationRoot />;
-    case 'has-sensor-amp':
-      return <Redirect to="/overview/sensors" />;
-    default:
-      assertUnreachable(automaterializeSensorsFlagState);
-  }
-};
-
-const GlobalAutomaterializationRoot = () => {
-  useTrackPageView();
-
+export const GlobalAutomaterializationContent = () => {
   const automaterialize = useAutomaterializeDaemonStatus();
   const confirm = useConfirmation();
 
@@ -152,8 +118,7 @@ const GlobalAutomaterializationRoot = () => {
   );
 
   return (
-    <Page>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="amp" />} />
+    <>
       <Box padding={{vertical: 12, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
         <Alert
           intent="info"
@@ -249,6 +214,6 @@ const GlobalAutomaterializationRoot = () => {
           )}
         </>
       )}
-    </Page>
+    </>
   );
 };

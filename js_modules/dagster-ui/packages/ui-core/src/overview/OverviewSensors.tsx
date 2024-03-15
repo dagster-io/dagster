@@ -1,28 +1,20 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  Heading,
-  NonIdealState,
-  PageHeader,
-  Spinner,
-  TextInput,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useMemo, useState} from 'react';
 
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewSensorTable} from './OverviewSensorsTable';
-import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
 import {OverviewSensorsQuery, OverviewSensorsQueryVariables} from './types/OverviewSensors.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {SensorType} from '../graphql/types';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -61,10 +53,7 @@ const SENSOR_TYPE_TO_FILTER: Partial<Record<SensorType, ReturnType<typeof toSetF
 };
 const ALL_SENSOR_TYPE_FILTERS = Object.values(SENSOR_TYPE_TO_FILTER);
 
-export const OverviewSensorsRoot = () => {
-  useTrackPageView();
-  useDocumentTitle('Overview | Sensors');
-
+export const OverviewSensors = () => {
   const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -281,11 +270,7 @@ export const OverviewSensorsRoot = () => {
   const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
 
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="sensors" refreshState={refreshState} />}
-      />
+    <>
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{
@@ -311,14 +296,17 @@ export const OverviewSensorsRoot = () => {
             style={{width: '340px'}}
           />
         </Box>
-        <Tooltip
-          content="You do not have permission to start or stop these schedules"
-          canShow={anySensorsVisible && !viewerHasAnyInstigationPermission}
-          placement="top-end"
-          useDisabledButtonTooltipFix
-        >
-          <SensorBulkActionMenu sensors={checkedSensors} onDone={() => refreshState.refetch()} />
-        </Tooltip>
+        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+          <QueryRefreshCountdown refreshState={refreshState} />
+          <Tooltip
+            content="You do not have permission to start or stop these schedules"
+            canShow={anySensorsVisible && !viewerHasAnyInstigationPermission}
+            placement="top-end"
+            useDisabledButtonTooltipFix
+          >
+            <SensorBulkActionMenu sensors={checkedSensors} onDone={() => refreshState.refetch()} />
+          </Tooltip>
+        </Box>
       </Box>
       {activeFiltersJsx.length ? (
         <Box
@@ -343,7 +331,7 @@ export const OverviewSensorsRoot = () => {
           {content()}
         </>
       )}
-    </Box>
+    </>
   );
 };
 

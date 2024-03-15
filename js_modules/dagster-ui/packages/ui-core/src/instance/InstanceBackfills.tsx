@@ -3,10 +3,7 @@ import {
   Box,
   Colors,
   CursorPaginationControls,
-  Heading,
   NonIdealState,
-  Page,
-  PageHeader,
   Spinner,
 } from '@dagster-io/ui-components';
 
@@ -20,11 +17,14 @@ import {
 } from './types/InstanceBackfills.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {BulkActionStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {OverviewTabs} from '../overview/OverviewTabs';
 import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {useFilters} from '../ui/Filters';
@@ -170,19 +170,19 @@ export const InstanceBackfills = () => {
   };
 
   return (
-    <Page>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="backfills" refreshState={refreshState} />}
-      />
-      <Box padding={{vertical: 12, horizontal: 20}}>
+    <>
+      <Box
+        padding={{vertical: 12, horizontal: 20}}
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+      >
         <Box flex={{direction: 'column', gap: 8}}>
           <div>{button}</div>
           {activeFiltersJsx}
         </Box>
+        <QueryRefreshCountdown refreshState={refreshState} />
       </Box>
       {content()}
-    </Page>
+    </>
   );
 };
 
