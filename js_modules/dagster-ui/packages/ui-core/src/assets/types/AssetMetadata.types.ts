@@ -116,7 +116,7 @@ export type AssetNodeOpMetadataFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -270,7 +270,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1522,7 +1522,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2774,7 +2774,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -4017,7 +4017,7 @@ export type AssetNodeOpMetadataFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -5275,7 +5275,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6527,7 +6527,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7779,7 +7779,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -9022,7 +9022,7 @@ export type AssetNodeOpMetadataFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -10280,7 +10280,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -11532,7 +11532,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -12784,7 +12784,7 @@ export type AssetNodeOpMetadataFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -14027,7 +14027,7 @@ export type AssetNodeOpMetadataFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }

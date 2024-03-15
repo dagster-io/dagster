@@ -120,7 +120,7 @@ export type SidebarAssetFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -870,7 +870,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2122,7 +2122,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -3374,7 +3374,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -4617,7 +4617,7 @@ export type SidebarAssetFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -5875,7 +5875,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7127,7 +7127,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -8379,7 +8379,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -9622,7 +9622,7 @@ export type SidebarAssetFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -10880,7 +10880,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -12132,7 +12132,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -13384,7 +13384,7 @@ export type SidebarAssetFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -14627,7 +14627,7 @@ export type SidebarAssetFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -15881,7 +15881,7 @@ export type SidebarAssetQuery = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -16641,7 +16641,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -17899,7 +17899,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -19157,7 +19157,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -20400,7 +20400,7 @@ export type SidebarAssetQuery = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -21669,7 +21669,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -22927,7 +22927,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -24185,7 +24185,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -25428,7 +25428,7 @@ export type SidebarAssetQuery = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -26697,7 +26697,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -27955,7 +27955,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -29213,7 +29213,7 @@ export type SidebarAssetQuery = {
                         }
                       | {
                           __typename: 'TimestampMetadataEntry';
-                          timestamp: number | null;
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -30456,7 +30456,7 @@ export type SidebarAssetQuery = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }

@@ -25,10 +25,13 @@ import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {TableMetadataEntry} from '../graphql/types';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
 export const LogRowStructuredContentTable = ({
   rows,
@@ -168,7 +171,7 @@ export const MetadataEntry = ({
     case 'FloatMetadataEntry':
       return <>{entry.floatValue}</>;
     case 'TimestampMetadataEntry':
-      return <>{entry.timestamp}</>;
+      return <TimestampDisplay timestamp={entry.timestamp} timeFormat={TIME_FORMAT} />;
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
     case 'BoolMetadataEntry':

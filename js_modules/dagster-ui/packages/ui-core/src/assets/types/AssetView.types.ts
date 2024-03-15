@@ -776,7 +776,7 @@ export type AssetViewDefinitionQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -945,7 +945,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -2207,7 +2207,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -3469,7 +3469,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -4715,7 +4715,7 @@ export type AssetViewDefinitionQuery = {
                     }
                   | {
                       __typename: 'TimestampMetadataEntry';
-                      timestamp: number | null;
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -5988,7 +5988,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -7250,7 +7250,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -8512,7 +8512,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -9758,7 +9758,7 @@ export type AssetViewDefinitionQuery = {
                     }
                   | {
                       __typename: 'TimestampMetadataEntry';
-                      timestamp: number | null;
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -11031,7 +11031,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -12293,7 +12293,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -13555,7 +13555,7 @@ export type AssetViewDefinitionQuery = {
                           }
                         | {
                             __typename: 'TimestampMetadataEntry';
-                            timestamp: number | null;
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -14801,7 +14801,7 @@ export type AssetViewDefinitionQuery = {
                     }
                   | {
                       __typename: 'TimestampMetadataEntry';
-                      timestamp: number | null;
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -16661,7 +16661,7 @@ export type AssetViewDefinitionNodeFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -16815,7 +16815,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -18067,7 +18067,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -19319,7 +19319,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -20562,7 +20562,7 @@ export type AssetViewDefinitionNodeFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -21820,7 +21820,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -23072,7 +23072,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -24324,7 +24324,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -25567,7 +25567,7 @@ export type AssetViewDefinitionNodeFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -26825,7 +26825,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -28077,7 +28077,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -29329,7 +29329,7 @@ export type AssetViewDefinitionNodeFragment = {
                   }
                 | {
                     __typename: 'TimestampMetadataEntry';
-                    timestamp: number | null;
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -30572,7 +30572,7 @@ export type AssetViewDefinitionNodeFragment = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }

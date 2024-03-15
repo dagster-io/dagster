@@ -149,7 +149,7 @@ export type DagsterTypeFragment_ListDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -1396,7 +1396,7 @@ export type DagsterTypeFragment_ListDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -2643,7 +2643,7 @@ export type DagsterTypeFragment_ListDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -3866,7 +3866,7 @@ export type DagsterTypeFragment_ListDagsterType = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -5117,7 +5117,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -6364,7 +6364,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -7611,7 +7611,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -8834,7 +8834,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -10085,7 +10085,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -11332,7 +11332,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -12579,7 +12579,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
             }
           | {
               __typename: 'TimestampMetadataEntry';
-              timestamp: number | null;
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -13802,7 +13802,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -15032,7 +15032,7 @@ export type InnerDagsterTypeFragment_ListDagsterType = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -16257,7 +16257,7 @@ export type InnerDagsterTypeFragment_NullableDagsterType = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }
@@ -17482,7 +17482,7 @@ export type InnerDagsterTypeFragment_RegularDagsterType = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {
         __typename: 'TimestampMetadataEntry';
-        timestamp: number | null;
+        timestamp: number;
         label: string;
         description: string | null;
       }

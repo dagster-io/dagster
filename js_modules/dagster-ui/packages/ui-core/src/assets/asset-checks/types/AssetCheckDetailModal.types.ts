@@ -135,7 +135,7 @@ export type AssetCheckExecutionFragment = {
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
       | {
           __typename: 'TimestampMetadataEntry';
-          timestamp: number | null;
+          timestamp: number;
           label: string;
           description: string | null;
         }
@@ -286,7 +286,7 @@ export type AssetCheckDetailsQuery = {
         | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
         | {
             __typename: 'TimestampMetadataEntry';
-            timestamp: number | null;
+            timestamp: number;
             label: string;
             description: string | null;
           }

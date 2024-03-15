@@ -156,7 +156,7 @@ class GrapheneNullMetadataEntry(graphene.ObjectType):
 
 
 class GrapheneTimestampMetadataEntry(graphene.ObjectType):
-    timestamp = graphene.Field(graphene.Float)
+    timestamp = graphene.NonNull(graphene.Float)
 
     class Meta:
         interfaces = (GrapheneMetadataEntry,)

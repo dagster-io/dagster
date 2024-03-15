@@ -142,7 +142,7 @@ export type AssetOverviewMetadataEventsQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -284,7 +284,7 @@ export type AssetOverviewMetadataEventsQuery = {
               }
             | {
                 __typename: 'TimestampMetadataEntry';
-                timestamp: number | null;
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
