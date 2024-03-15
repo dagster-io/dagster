@@ -79,7 +79,9 @@ export const StaleReasonsLabel = ({
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
 }) => {
-  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
+  const grouped = groupedCauses(assetKey, include, liveData);
+  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+  if (!isAssetStale(liveData) || !totalCauses) {
     return null;
   }
 
@@ -191,10 +193,10 @@ const StaleCausesPopoverSummary = ({
   include?: 'all' | 'upstream' | 'self';
 }) => {
   const grouped = groupedCauses(assetKey, include, liveData);
-  const totalCauses = liveData?.staleCauses?.length;
+  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
 
   if (!totalCauses) {
-    // Should never happen since the parent of this component should check that the asset is stale before rendering the popover
+    // Can happen if the parent didn't checked the grouped causes
     return <div />;
   }
   return (
