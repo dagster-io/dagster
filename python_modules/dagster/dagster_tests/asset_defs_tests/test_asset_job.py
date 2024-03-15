@@ -46,8 +46,8 @@ from dagster._config import StringSource
 from dagster._core.definitions import AssetIn, SourceAsset, asset
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_job import get_base_asset_jobs
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
-from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
@@ -1398,7 +1398,7 @@ def test_asset_selection_reconstructable():
                 job_def=my_job, asset_selection=frozenset([AssetKey("f")])
             )
             reconstructable_foo_job = build_reconstructable_job(
-                "dagster_tests.asset_defs_tests.test_assets_job",
+                "dagster_tests.asset_defs_tests.test_asset_job",
                 "reconstruct_asset_job",
                 reconstructable_args=tuple(),
                 reconstructable_kwargs={},

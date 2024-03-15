@@ -69,7 +69,7 @@ def get_base_asset_jobs(
 ) -> Sequence[JobDefinition]:
     if len(asset_graph.all_partitions_defs) == 0:
         return [
-            build_assets_job(
+            build_asset_job(
                 name=ASSET_BASE_JOB_PREFIX,
                 asset_graph=asset_graph,
                 executor_def=executor_def,
@@ -90,7 +90,7 @@ def get_base_asset_jobs(
                 *asset_graph.orphan_asset_check_keys
             )
             jobs.append(
-                build_assets_job(
+                build_asset_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
                     get_asset_graph_for_job(asset_graph, selection),
                     resource_defs=resource_defs,
@@ -101,7 +101,7 @@ def get_base_asset_jobs(
         return jobs
 
 
-def build_assets_job(
+def build_asset_job(
     name: str,
     asset_graph: AssetGraph,
     resource_defs: Optional[Mapping[str, object]] = None,
