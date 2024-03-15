@@ -51,6 +51,9 @@ class AssetCheckKey(NamedTuple):
     def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
         return self._replace(asset_key=self.asset_key.with_prefix(prefix))
 
+    def to_user_string(self) -> str:
+        return f"{self.asset_key.to_user_string()}:{self.name}"
+
 
 @experimental
 class AssetCheckSpec(

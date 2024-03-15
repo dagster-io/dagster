@@ -362,13 +362,17 @@ class AssetSelection(ABC, BaseModel, frozen=True):
     ) -> AbstractSet[AssetKey]:
         raise NotImplementedError()
 
-    def resolve_checks(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks(
+        self, asset_graph: AssetGraph, allow_missing: bool = False
+    ) -> AbstractSet[AssetCheckKey]:
         """We don't need this method currently, but it makes things consistent with resolve_inner. Currently
         we don't store checks in the RemoteAssetGraph, so we only support AssetGraph.
         """
-        return self.resolve_checks_inner(asset_graph)
+        return self.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks_inner(
+        self, asset_graph: AssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
         """By default, resolve to checks that target the selected assets. This is overriden for particular selections."""
         asset_keys = self.resolve(asset_graph)
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
@@ -475,7 +479,9 @@ class AllAssetCheckSelection(AssetSelection, frozen=True):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks_inner(
+        self, asset_graph: AssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
         return asset_graph.asset_check_keys
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
@@ -494,7 +500,9 @@ class AssetChecksForAssetKeysSelection(AssetSelection, frozen=True):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks_inner(
+        self, asset_graph: AssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
         return {
             handle
             for handle in asset_graph.asset_check_keys
@@ -514,12 +522,20 @@ class AssetCheckKeysSelection(AssetSelection, frozen=True):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
-        return {
-            handle
-            for handle in asset_graph.asset_check_keys
-            if handle in self.selected_asset_check_keys
-        }
+    def resolve_checks_inner(
+        self, asset_graph: AssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
+        specified_keys = set(self.selected_asset_check_keys)
+        missing_keys = {key for key in specified_keys if key not in asset_graph.asset_check_keys}
+
+        if not allow_missing and missing_keys:
+            raise DagsterInvalidSubsetError(
+                f"AssetCheckKey(s) {[k.to_user_string() for k in missing_keys]} were selected, but "
+                "no definitions supply these keys. Make sure all keys are spelled "
+                "correctly, and all definitions are correctly added to the "
+                f"`Definitions`."
+            )
+        return specified_keys & asset_graph.asset_check_keys
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
@@ -544,10 +560,15 @@ class AndAssetSelection(
             ),
         )
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks_inner(
+        self, asset_graph: AssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
         return reduce(
             operator.and_,
-            (selection.resolve_checks_inner(asset_graph) for selection in self.operands),
+            (
+                selection.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
+                for selection in self.operands
+            ),
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
@@ -583,10 +604,15 @@ class OrAssetSelection(
             ),
         )
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks_inner(
+        self, asset_graph: AssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
         return reduce(
             operator.or_,
-            (selection.resolve_checks_inner(asset_graph) for selection in self.operands),
+            (
+                selection.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
+                for selection in self.operands
+            ),
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
@@ -619,10 +645,12 @@ class SubtractAssetSelection(
             asset_graph, allow_missing=allow_missing
         ) - self.right.resolve_inner(asset_graph, allow_missing=allow_missing)
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
-        return self.left.resolve_checks_inner(asset_graph) - self.right.resolve_checks_inner(
-            asset_graph
-        )
+    def resolve_checks_inner(
+        self, asset_graph: AssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
+        return self.left.resolve_checks_inner(
+            asset_graph, allow_missing=allow_missing
+        ) - self.right.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self.replace(
