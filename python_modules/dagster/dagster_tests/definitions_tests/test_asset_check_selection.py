@@ -1,3 +1,4 @@
+import pytest
 from dagster import (
     AssetCheckResult,
     AssetSelection,
@@ -10,6 +11,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.errors import DagsterInvalidSubsetError
 
 
 @asset
@@ -201,3 +203,24 @@ def test_checks_on_asset():
         AssetCheckKey(asset_with_checks.key, "check1"),
         AssetCheckKey(asset_with_checks.key, "check2"),
     }
+
+
+def test_check_keys_selection():
+    assets = [asset1, asset2]
+    asset_checks = [asset1_check1, asset1_check2, asset2_check1]
+    defs = Definitions(assets=assets, asset_checks=asset_checks)
+    asset_graph = defs.get_asset_graph()
+    keys = {
+        AssetCheckKey(asset_key=asset1.key, name="asset1_check1"),
+        AssetCheckKey(asset_key=asset1.key, name="asset1_check2"),
+    }
+    assert AssetSelection.checks(*keys).resolve_checks(asset_graph) == keys
+
+    fake_key = AssetCheckKey(asset_key=asset1.key, name="fake")
+    assert AssetSelection.checks(fake_key).resolve_checks(asset_graph, allow_missing=True) == set()
+
+    with pytest.raises(
+        DagsterInvalidSubsetError,
+        match=r"AssetCheckKey\(s\) \['asset1:fake'\] were selected, but no definitions supply these keys..*",
+    ):
+        AssetSelection.checks(fake_key).resolve_checks(asset_graph)

@@ -71,7 +71,7 @@ class DbtManifestAssetSelection(
         )
 
     def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing=False
+        self, asset_graph: BaseAssetGraph, allow_missing: bool = False
     ) -> AbstractSet[AssetKey]:
         dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
 
@@ -89,7 +89,9 @@ class DbtManifestAssetSelection(
 
         return keys
 
-    def resolve_checks_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
         if not self.dagster_dbt_translator.settings.enable_asset_checks:
             return set()
 
