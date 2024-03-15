@@ -34,7 +34,8 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
-from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
@@ -233,6 +234,10 @@ class AutoMaterializeRule(ABC):
                 If False, skips only partitions targeted by a backfill. Defaults to False.
         """
         return SkipOnBackfillInProgressRule(all_partitions)
+
+    @staticmethod
+    def skip_on_run_in_progress() -> "SkipOnRunInProgressRule":
+        return SkipOnRunInProgressRule()
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -1203,3 +1208,33 @@ class DiscardOnMaxMaterializationsExceededRule(
                 context.asset_key, context.partitions_def, rate_limited_asset_partitions
             ),
         )
+
+
+@whitelist_for_serdes
+class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgressRule", [])):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    @property
+    def description(self) -> str:
+        return "in-progress run for asset"
+
+    def evaluate_for_asset(
+        self, context: AssetConditionEvaluationContext
+    ) -> "AssetConditionResult":
+        from .asset_condition.asset_condition import AssetConditionResult
+
+        if context.partitions_def is not None:
+            raise DagsterInvariantViolationError(
+                "SkipOnRunInProgressRule is currently only support for non-partitioned assets."
+            )
+        instance = context.instance_queryer.instance
+        planned_materialization_info = (
+            instance.event_log_storage.get_latest_planned_materialization_info(context.asset_key)
+        )
+        if planned_materialization_info:
+            dagster_run = instance.get_run_by_id(planned_materialization_info.run_id)
+            if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
+                return AssetConditionResult.create(context, context.candidate_subset)
+        return AssetConditionResult.create(context, context.empty_subset())

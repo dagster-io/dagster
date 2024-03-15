@@ -37,6 +37,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
+from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
@@ -221,7 +222,7 @@ class ScenarioSpec:
     def with_all_eager(self, max_materializations_per_minute: int = 1) -> "ScenarioSpec":
         return self.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.eager(
-                max_materializations_per_minute=max_materializations_per_minute
+                max_materializations_per_minute=max_materializations_per_minute,
             )
         )
 
@@ -256,6 +257,24 @@ class ScenarioState:
         return dataclasses.replace(
             self, scenario_spec=self.scenario_spec.with_asset_properties(keys, **kwargs)
         )
+
+    def with_in_progress_run_for_asset(self, asset_key: CoercibleToAssetKey) -> Self:
+        with pendulum_freeze_time(self.current_time):
+            asset_key = AssetKey.from_coercible(asset_key)
+            job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
+                asset_keys=[asset_key]
+            )
+            assert job_def
+            execution_plan = create_execution_plan(job_def, run_config={})
+            self.instance.create_run_for_job(
+                job_def=job_def,
+                run_id="in_progress_run",
+                status=DagsterRunStatus.STARTED,
+                asset_selection=frozenset({AssetKey.from_coercible(asset_key)}),
+                execution_plan=execution_plan,
+            )
+            assert self.instance.get_run_by_id("in_progress_run")
+        return self
 
     def with_runs(self, *run_requests: RunRequest) -> Self:
         start = datetime.datetime.now()
