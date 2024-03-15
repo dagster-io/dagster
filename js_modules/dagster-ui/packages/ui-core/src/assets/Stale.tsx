@@ -30,8 +30,22 @@ type StaleDataForNode = {
 export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
 
-export const isAssetStale = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
-  liveData && liveData.staleStatus === StaleStatus.STALE;
+export const isAssetStale = (
+  assetKey: AssetKeyInput,
+  liveData?: Pick<StaleDataForNode, 'staleStatus'>,
+  include: 'all' | 'upstream' | 'self' = 'all',
+) => {
+  if (liveData && liveData.staleStatus === StaleStatus.STALE) {
+    if (include === 'all') {
+      return true;
+    } else {
+      const grouped = groupedCauses(assetKey, include, liveData);
+      const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+      return totalCauses > 0;
+    }
+  }
+  return false;
+};
 
 const LABELS = {
   self: {
@@ -79,9 +93,7 @@ export const StaleReasonsLabel = ({
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
 }) => {
-  const grouped = groupedCauses(assetKey, include, liveData);
-  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
-  if (!isAssetStale(liveData) || !totalCauses) {
+  if (!isAssetStale(assetKey, liveData, include)) {
     return null;
   }
 
@@ -113,7 +125,7 @@ export const StaleReasonsTag = ({
   include?: 'all' | 'upstream' | 'self';
   onClick?: () => void;
 }) => {
-  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
+  if (!isAssetStale(assetKey, liveData, 'upstream') || !liveData?.staleCauses?.length) {
     return <div />;
   }
   const label = <Caption>Unsynced ({numberFormatter.format(liveData.staleCauses.length)})</Caption>;

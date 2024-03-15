@@ -177,7 +177,7 @@ export const AssetNodeMinimal = ({
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   const isChanged = definition.changedReasons.length;
-  const isStale = isAssetStale(liveData);
+  const isStale = isAssetStale(assetKey, liveData, 'upstream');
 
   return (
     <AssetInsetForHoverEffect>
