@@ -36,7 +36,7 @@ setup(
     packages=find_packages(exclude=["dagster_polars_tests*"]),
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.6.10",
+        "dagster==1.6.11",
         "polars>=0.20.0",
         "pyarrow>=8.0.0",
         "typing-extensions>=4.7.0",

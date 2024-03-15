@@ -34,6 +34,6 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_docker_tests*"]),
     python_requires=">=3.8,<3.13",
-    install_requires=["dagster==1.6.10", "docker", "docker-image-py"],
+    install_requires=["dagster==1.6.11", "docker", "docker-image-py"],
     zip_safe=False,
 )
