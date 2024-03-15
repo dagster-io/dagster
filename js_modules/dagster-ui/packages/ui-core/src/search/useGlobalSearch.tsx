@@ -193,15 +193,15 @@ const secondaryDataToSearchResults = (
   } else {
     const countsBySection = buildAssetCountBySection(nodes);
 
-    const computeKindResults: SearchResult[] = Object.entries(
-      countsBySection.countsByComputeKind,
-    ).map(([computeKind, count]) => ({
-      label: computeKind,
-      description: '',
-      type: AssetFilterSearchResultType.ComputeKind,
-      href: linkToAssetTableWithComputeKindFilter(computeKind),
-      numResults: count,
-    }));
+    const computeKindResults: SearchResult[] = countsBySection.countsByComputeKind.map(
+      ({computeKind, assetCount}) => ({
+        label: computeKind,
+        description: '',
+        type: AssetFilterSearchResultType.ComputeKind,
+        href: linkToAssetTableWithComputeKindFilter(computeKind),
+        numResults: assetCount,
+      }),
+    );
 
     const codeLocationResults: SearchResult[] = countsBySection.countPerCodeLocation.map(
       (codeLocationAssetCount) => ({
@@ -226,13 +226,13 @@ const secondaryDataToSearchResults = (
       }),
     );
 
-    const ownerResults: SearchResult[] = Object.entries(countsBySection.countsByOwner).map(
-      ([owner, count]) => ({
+    const ownerResults: SearchResult[] = countsBySection.countsByOwner.map(
+      ({owner, assetCount}) => ({
         label: owner,
         description: '',
         type: AssetFilterSearchResultType.Owner,
         href: linkToAssetTableWithOwnerFilter(owner),
-        numResults: count,
+        numResults: assetCount,
       }),
     );
     return [
