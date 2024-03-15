@@ -181,7 +181,22 @@ class AssetSelection(ABC, BaseModel, frozen=True):
 
     @public
     @staticmethod
-    def checks(*assets_defs: AssetsDefinition) -> "AssetCheckKeysSelection":
+    def checks(
+        *assets_defs_or_check_keys: Union[AssetsDefinition, AssetCheckKey],
+    ) -> "AssetCheckKeysSelection":
+        """Returns a selection that includes all of the provided asset checks or check keys."""
+        assets_defs = [ad for ad in assets_defs_or_check_keys if isinstance(ad, AssetsDefinition)]
+        check_keys = [key for key in assets_defs_or_check_keys if isinstance(key, AssetCheckKey)]
+        return AssetCheckKeysSelection(
+            selected_asset_check_keys=[
+                *(key for ad in assets_defs for key in ad.check_keys),
+                *check_keys,
+            ]
+        )
+
+    @public
+    @staticmethod
+    def check_keys(*assets_defs: AssetsDefinition) -> "AssetCheckKeysSelection":
         """Returns a selection that includes all of the provided asset checks."""
         return AssetCheckKeysSelection(
             selected_asset_check_keys=[key for ad in assets_defs for key in ad.check_keys]

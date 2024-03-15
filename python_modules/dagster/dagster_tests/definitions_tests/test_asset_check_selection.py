@@ -201,3 +201,14 @@ def test_checks_on_asset():
         AssetCheckKey(asset_with_checks.key, "check1"),
         AssetCheckKey(asset_with_checks.key, "check2"),
     }
+
+
+def test_keys_selection():
+    assets = [asset1, asset2]
+    asset_checks = [asset1_check1, asset1_check2, asset2_check1]
+    defs = Definitions(assets=assets, asset_checks=asset_checks)
+    keys = {
+        AssetCheckKey(asset_key=asset1.key, name="asset1_check1"),
+        AssetCheckKey(asset_key=asset1.key, name="asset1_check2"),
+    }
+    assert AssetSelection.checks(*keys).resolve_checks(defs.get_asset_graph()) == keys
