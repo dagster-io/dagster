@@ -163,6 +163,7 @@ export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
   assetKey: AssetKey;
   checkName: Scalars['String']['output'];
+  description: Maybe<Scalars['String']['output']>;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -5670,6 +5671,8 @@ export const buildAssetCheckEvaluation = (
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
     checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'sed',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quia',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     severity:

@@ -35,6 +35,7 @@ export type AssetChecksQuery = {
                     __typename: 'AssetCheckEvaluation';
                     severity: Types.AssetCheckSeverity;
                     timestamp: number;
+                    description: string | null;
                     targetMaterialization: {
                       __typename: 'AssetCheckEvaluationTargetMaterializationData';
                       timestamp: number;

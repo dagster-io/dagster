@@ -58,6 +58,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
     evaluation {
       severity
       timestamp
+      description
       targetMaterialization {
         timestamp
         runId
