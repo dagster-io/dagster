@@ -1415,9 +1415,7 @@ def external_repository_data_from_def(
     else:
         job_datas = sorted(
             list(
-                map(
-                    lambda job: external_job_data_from_def(job, include_parent_snapshot=False), jobs
-                )
+                map(lambda job: external_job_data_from_def(job, include_parent_snapshot=True), jobs)
             ),
             key=lambda pd: pd.name,
         )
