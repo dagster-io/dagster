@@ -1,9 +1,7 @@
 from functools import cached_property
 from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
-import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_layer import subset_assets_defs
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
@@ -272,37 +270,3 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for ad in self.assets_defs for key in ad.check_keys}
-
-    def get_subset(
-        self,
-        executable_asset_keys: AbstractSet[AssetKey],
-        asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
-    ) -> "AssetGraph":
-        """Returns a new asset graph where only the provided asset keys are executable. All parent
-        keys of a selected executable asset will be included as unexecutable external assets (unless
-        they are themselves present in the executable selection).
-        """
-        from dagster._core.definitions.external_asset import (
-            create_unexecutable_external_assets_from_assets_def,
-        )
-
-        invalid_executable_keys = executable_asset_keys - self.executable_asset_keys
-        if invalid_executable_keys:
-            check.failed(
-                "Provided executable asset keys must be a subset of existing executable asset keys."
-                f" Invalid provided keys: {invalid_executable_keys}",
-            )
-
-        # subset_assets_defs returns two lists of Assetsfinitions-- those included and those
-        # excluded by the selection. These collections retain their original execution type. We need
-        # to convert the excluded assets to unexecutable external assets.
-        executable_assets_defs, excluded_assets_defs = subset_assets_defs(
-            self.assets_defs, executable_asset_keys, asset_check_keys
-        )
-        loadable_assets_defs = [
-            unexecutable_ad
-            for ad in excluded_assets_defs
-            for unexecutable_ad in create_unexecutable_external_assets_from_assets_def(ad)
-        ]
-
-        return self.from_assets([*executable_assets_defs, *loadable_assets_defs])

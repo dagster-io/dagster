@@ -1316,9 +1316,8 @@ def test_external_time_window_valid_partition_key():
 def test_external_assets_def_to_external_asset_graph() -> None:
     asset_one = next(iter(external_assets_from_specs([AssetSpec("asset_one")])))
 
-    assets_job = define_asset_job("assets_job", [asset_one])
     external_asset_nodes = _get_external_asset_nodes_from_definitions(
-        Definitions(assets=[asset_one], jobs=[assets_job])
+        Definitions(assets=[asset_one])
     )
 
     assert len(external_asset_nodes) == 1

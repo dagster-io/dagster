@@ -195,14 +195,6 @@ class AssetSelection(ABC, BaseModel, frozen=True):
         )
 
     @public
-    @staticmethod
-    def check_keys(*assets_defs: AssetsDefinition) -> "AssetCheckKeysSelection":
-        """Returns a selection that includes all of the provided asset checks."""
-        return AssetCheckKeysSelection(
-            selected_asset_check_keys=[key for ad in assets_defs for key in ad.check_keys]
-        )
-
-    @public
     def downstream(
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "DownstreamAssetSelection":
