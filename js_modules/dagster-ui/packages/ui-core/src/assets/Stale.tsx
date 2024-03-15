@@ -125,10 +125,12 @@ export const StaleReasonsTag = ({
   include?: 'all' | 'upstream' | 'self';
   onClick?: () => void;
 }) => {
-  if (!isAssetStale(assetKey, liveData, 'upstream') || !liveData?.staleCauses?.length) {
+  const grouped = groupedCauses(assetKey, include, liveData);
+  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+  if (!totalCauses) {
     return <div />;
   }
-  const label = <Caption>Unsynced ({numberFormatter.format(liveData.staleCauses.length)})</Caption>;
+  const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
   return (
     <Box
       flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
