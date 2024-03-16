@@ -608,6 +608,7 @@ class ScheduleDefinition(IHasInternalInit):
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
+        self._environment_vars = self._environment_vars or None
 
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
 
@@ -820,7 +821,7 @@ class ScheduleDefinition(IHasInternalInit):
         additional_warn_text="Setting this property no longer has any effect.",
     )
     @property
-    def environment_vars(self) -> Mapping[str, str]:
+    def environment_vars(self) -> Optional[Mapping[str, str]]:
         """Mapping[str, str]: Environment variables to export to the cron schedule."""
         return self._environment_vars
 

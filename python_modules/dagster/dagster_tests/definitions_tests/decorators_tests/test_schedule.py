@@ -1,6 +1,7 @@
 import inspect
 import json
 import re
+import warnings
 from datetime import datetime
 
 import pendulum
@@ -446,3 +447,15 @@ def test_vixie_cronstring_schedule():
     assert execution_data.run_requests
     assert len(execution_data.run_requests) == 1
     assert execution_data.run_requests[0].tags.get("foo") == "FOO"
+
+
+def test__empty_schedule_definition__no_raise_DepreciationWarning() -> None:
+    """Test that ScheduleDefinition() does not raise a DeprecationWarning.
+    
+    This test ensures that the warning is not raised when the `environment_vars` 
+    argument is not passed, thus adhering to the deprecation policy.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+
+        ScheduleDefinition()
