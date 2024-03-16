@@ -816,6 +816,7 @@ def build_output_context(
     op_def: Optional["OpDefinition"] = None,
     asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
+    step_context: Optional["StepExecutionContext"] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -842,6 +843,8 @@ def build_output_context(
         asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
             output.
         partition_key: Optional[str]: String value representing partition key to execute with.
+        step_context (Optional[StepExecutionContext]): The step context to use for this output context.
+            For internal use.
 
     Examples:
         .. code-block:: python
@@ -853,6 +856,7 @@ def build_output_context(
 
     """
     from dagster._core.definitions import OpDefinition
+    from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.execution.context_creation_job import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
 
@@ -868,6 +872,7 @@ def build_output_context(
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
+    step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
 
     return OutputContext(
         step_key=step_key,
@@ -882,7 +887,7 @@ def build_output_context(
         version=version,
         resource_config=resource_config,
         resources=resources,
-        step_context=None,
+        step_context=step_context,
         op_def=op_def,
         asset_info=AssetOutputInfo(key=asset_key) if asset_key else None,
         partition_key=partition_key,
