@@ -1,3 +1,18 @@
+diff --git a/node_modules/dagre/lib/layout.js b/node_modules/dagre/lib/layout.js
+index 26b0730..31b1d99 100644
+--- a/node_modules/dagre/lib/layout.js
++++ b/node_modules/dagre/lib/layout.js
+@@ -94,8 +94,8 @@ function updateInputGraph(inputGraph, layoutGraph) {
+   inputGraph.graph().height = layoutGraph.graph().height;
+ }
+ 
+-var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy"];
+-var graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb" };
++var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy","clusterpaddingtop", "clusterpaddingbottom"];
++var graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb", clusterpaddingtop: 20, clusterpaddingbottom: 20 };
+ var graphAttrs = ["acyclicer", "ranker", "rankdir", "align"];
+ var nodeNumAttrs = ["width", "height"];
+ var nodeDefaults = { width: 0, height: 0 };
 diff --git a/node_modules/dagre/lib/order/index.js b/node_modules/dagre/lib/order/index.js
 index 4ac2d9f..a2182fe 100644
 --- a/node_modules/dagre/lib/order/index.js
@@ -13,3 +28,39 @@ index 4ac2d9f..a2182fe 100644
      });
    });
  }
+diff --git a/node_modules/dagre/lib/position/bk.js b/node_modules/dagre/lib/position/bk.js
+index 4aeec72..b3fccb4 100644
+--- a/node_modules/dagre/lib/position/bk.js
++++ b/node_modules/dagre/lib/position/bk.js
+@@ -265,7 +265,7 @@ function horizontalCompaction(g, layering, root, align, reverseSep) {
+ function buildBlockGraph(g, layering, root, reverseSep) {
+   var blockGraph = new Graph(),
+     graphLabel = g.graph(),
+-    sepFn = sep(graphLabel.nodesep, graphLabel.edgesep, reverseSep);
++    sepFn = sep(graphLabel.nodesep, graphLabel.edgesep, reverseSep, graphLabel.clusterpaddingtop, graphLabel.clusterpaddingbottom);
+ 
+   _.forEach(layering, function(layer) {
+     var u;
+@@ -376,7 +376,7 @@ function positionX(g) {
+   return balance(xss, g.graph().align);
+ }
+ 
+-function sep(nodeSep, edgeSep, reverseSep) {
++function sep(nodeSep, edgeSep, reverseSep, clusterpaddingtop, clusterpaddingbottom) {
+   return function(g, v, w) {
+     var vLabel = g.node(v);
+     var wLabel = g.node(w);
+@@ -395,8 +395,11 @@ function sep(nodeSep, edgeSep, reverseSep) {
+     }
+     delta = 0;
+ 
+-    sum += (vLabel.dummy ? edgeSep : nodeSep) / 2;
+-    sum += (wLabel.dummy ? edgeSep : nodeSep) / 2;
++    var vPadding = vLabel.borderType === "borderRight" ? clusterpaddingbottom : clusterpaddingtop;
++    var wPadding = wLabel.borderType === "borderRight" ? clusterpaddingbottom : clusterpaddingtop;
++
++    sum += (vLabel.dummy ? vLabel.dummy === "border" ? vPadding : edgeSep : nodeSep) / 2;
++    sum += (wLabel.dummy ? wLabel.dummy === "border" ? wPadding : edgeSep : nodeSep) / 2;
+ 
+     sum += wLabel.width / 2;
+     if (_.has(wLabel, "labelpos")) {
