@@ -12,6 +12,7 @@ import {
 import React, {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {AssetColumnLineageGraph} from './AssetColumnLineageGraph';
 import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {asAssetKeyInput} from './asInput';
@@ -134,13 +135,20 @@ export const AssetNodeLineage = ({
           Not all upstream/downstream assets shown. Increase the depth to show more.
         </DepthHidesAssetsNotice>
       )}
-      <AssetNodeLineageGraph
-        assetKey={assetKey}
-        assetGraphData={assetGraphData}
-        params={params}
-        columnLineageData={columnLineageData}
-        column={column}
-      />
+      {column ? (
+        <AssetColumnLineageGraph
+          assetKey={assetKey}
+          assetGraphData={assetGraphData}
+          columnLineageData={columnLineageData}
+          column={column}
+        />
+      ) : (
+        <AssetNodeLineageGraph
+          assetKey={assetKey}
+          assetGraphData={assetGraphData}
+          params={params}
+        />
+      )}
     </Box>
   );
 };

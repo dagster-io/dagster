@@ -26,10 +26,6 @@ export type AssetColumnLineageLocal = {
       assetKeys: AssetKeyInput[];
       columnName: string;
     }[];
-    downstream: {
-      assetKeys: AssetKeyInput[];
-      columnName: string;
-    }[];
   };
 };
 
@@ -66,7 +62,6 @@ const getColumnLineage = (
           assetKeys: u.upstream_asset_key.map((path) => ({path})),
           columnName: u.upstream_column_name,
         })),
-        downstream: [],
       },
     ]),
   );
