@@ -21,6 +21,7 @@ import {GraphData, toGraphId} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {ClearButton} from '../ui/ClearButton';
 
 export const AssetNodeLineage = ({
   params,
@@ -54,7 +55,11 @@ export const AssetNodeLineage = ({
     Object.values(assetGraphData.nodes).map(asAssetKeyInput),
   );
   const columnLineage = columnLineageData[toGraphId(assetKey)];
-  const [column, setColumn] = useQueryPersistedState<string | undefined>({queryKey: 'column'});
+  const [column, setColumn] = useQueryPersistedState<string | null>({
+    queryKey: 'column',
+    decode: (qs) => qs.column || null,
+    encode: (column) => ({column: column || undefined}),
+  });
 
   return (
     <Box
@@ -80,10 +85,20 @@ export const AssetNodeLineage = ({
           onChange={(depth) => setParams({...params, lineageDepth: depth})}
           max={maxDepth}
         />
+        Column
         {columnLineage ? (
           <Suggest
-            resetOnClose
-            inputProps={{placeholder: 'Select a column…'}}
+            resetOnQuery={false}
+            resetOnClose={false}
+            resetOnSelect={false}
+            inputProps={{
+              placeholder: 'Select a column…',
+              rightElement: column ? (
+                <ClearButton onClick={() => setColumn(null)} style={{marginTop: 5, marginRight: 4}}>
+                  <Icon name="cancel" />
+                </ClearButton>
+              ) : undefined,
+            }}
             selectedItem={column}
             items={Object.keys(columnLineage)}
             noResults="No matching columns"

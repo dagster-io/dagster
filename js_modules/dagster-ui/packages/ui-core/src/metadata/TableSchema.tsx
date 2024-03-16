@@ -16,7 +16,14 @@ import {useState} from 'react';
 import {TableSchemaFragment} from './types/TableSchema.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
-import {JsonMetadataEntry, MaterializationEvent, TableSchemaMetadataEntry} from '../graphql/types';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {
+  AssetKeyInput,
+  JsonMetadataEntry,
+  MaterializationEvent,
+  TableSchemaMetadataEntry,
+} from '../graphql/types';
+import {AnchorButton} from '../ui/AnchorButton';
 
 type ITableSchema = TableSchemaFragment;
 
@@ -26,6 +33,7 @@ interface ITableSchemaProps {
   schema: ITableSchema;
   schemaLoadTimestamp?: number | undefined;
   itemHorizontalPadding?: Spacing;
+  assetKeyForColumnSchema?: AssetKeyInput;
 }
 
 export const isCanonicalColumnSchemaEntry = (
@@ -41,6 +49,7 @@ export const TableSchema = ({
   schema,
   schemaLoadTimestamp,
   itemHorizontalPadding,
+  assetKeyForColumnSchema,
 }: ITableSchemaProps) => {
   const multiColumnConstraints = schema.constraints?.other || [];
   const [filter, setFilter] = useState('');
@@ -80,6 +89,7 @@ export const TableSchema = ({
             <td>Column name</td>
             <td style={{width: 200}}>Type</td>
             <td>Description</td>
+            {assetKeyForColumnSchema ? <td style={{width: 56}} /> : undefined}
           </tr>
         </thead>
         <tbody>
@@ -97,6 +107,19 @@ export const TableSchema = ({
                 ))}
               </td>
               <td>{column.description}</td>
+              {assetKeyForColumnSchema ? (
+                <td style={{padding: '4px 12px'}}>
+                  <Tooltip content="View column lineage">
+                    <AnchorButton
+                      icon={<Icon name="column_lineage" />}
+                      to={assetDetailsPathForKey(assetKeyForColumnSchema, {
+                        view: 'lineage',
+                        column: column.name,
+                      })}
+                    />
+                  </Tooltip>
+                </td>
+              ) : undefined}
             </tr>
           ))}
           {rows.length === 0 && (

@@ -56,7 +56,7 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {TableSchema} from '../metadata/TableSchema';
+import {TableSchema, isCanonicalColumnLineageEntry} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
@@ -108,6 +108,8 @@ export const AssetNodeOverview = ({
     definition: assetNode,
     definitionLoadTimestamp: assetNodeLoadTimestamp,
   });
+
+  const columnSchema = materialization?.metadataEntries.find(isCanonicalColumnLineageEntry);
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'row'}}>
@@ -391,6 +393,7 @@ export const AssetNodeOverview = ({
               <TableSchema
                 schema={tableSchema.schema}
                 schemaLoadTimestamp={tableSchemaLoadTimestamp}
+                assetKeyForColumnSchema={columnSchema ? assetNode.assetKey : undefined}
               />
             </LargeCollapsibleSection>
           )}
