@@ -1,10 +1,22 @@
+import os
+
 import pytest
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
+from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (
+    execute_assets_and_checks,
+)
 from mock import MagicMock
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.assets.asset_checks.asset_with_check import (
     defs as asset_with_check_defs,
+)
+from docs_snippets.concepts.assets.asset_checks.db_partitions import (
+    defs as db_partitions_defs,
+    no_nones_in_dataframe,
+    partitioned_dataframe_asset,
 )
 from docs_snippets.concepts.assets.asset_checks.factory import (
     check_blobs,
@@ -13,6 +25,10 @@ from docs_snippets.concepts.assets.asset_checks.factory import (
 )
 from docs_snippets.concepts.assets.asset_checks.metadata import defs as metadata_defs
 from docs_snippets.concepts.assets.asset_checks.orders_check import defs as orders_defs
+from docs_snippets.concepts.assets.asset_checks.partitions import (
+    greater_than_zero,
+    partitioned_asset,
+)
 from docs_snippets.concepts.assets.asset_checks.severity import defs as severity_defs
 
 
@@ -53,3 +69,46 @@ def test_factory_execute():
         m.execute.call_args_list[1][0][0]
         == "select * from orders where order_id is null"
     )
+
+
+def test_partitions():
+    with instance_for_test() as instance:
+        execute_assets_and_checks(
+            instance=instance, assets=[partitioned_asset], partition_key="1"
+        )
+        execute_assets_and_checks(
+            instance=instance, assets=[partitioned_asset], partition_key="2"
+        )
+        execute_assets_and_checks(
+            instance=instance,
+            assets=[partitioned_asset],
+            asset_checks=[greater_than_zero],
+            partition_key="3",
+        )
+
+
+def test_db_partitions(tmp_path):
+    io_manager = duckdb_pandas_io_manager.configured(
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    )
+
+    with instance_for_test() as instance:
+        execute_assets_and_checks(
+            instance=instance,
+            assets=[partitioned_dataframe_asset],
+            partition_key="a",
+            resources={"io_manager": io_manager},
+        )
+        execute_assets_and_checks(
+            instance=instance,
+            assets=[partitioned_dataframe_asset],
+            partition_key="b",
+            resources={"io_manager": io_manager},
+        )
+        execute_assets_and_checks(
+            instance=instance,
+            assets=[partitioned_dataframe_asset],
+            asset_checks=[no_nones_in_dataframe],
+            partition_key="c",
+            resources={"io_manager": io_manager},
+        )
