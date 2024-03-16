@@ -992,9 +992,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "InvalidSubsetError"
         assert (
             result.data["launchPipelineExecution"]["message"]
-            == "dagster._core.errors.DagsterInvalidSubsetError: Asset checks provided in"
-            " asset_check_selection argument AssetCheckKey(asset_key=AssetKey(['asset_1']),"
-            " name='non-existent-check') do not exist in parent asset group or job.\n"
+            == "dagster._core.errors.DagsterInvalidSubsetError: AssetCheckKey(s)"
+            " ['asset_1:non-existent-check'] were selected, but no definitions supply these keys."
+            " Make sure all keys are spelled correctly, and all definitions are correctly added to"
+            " the `Definitions`.\n"
         )
 
     def test_launch_subset_asset_no_check(self, graphql_context: WorkspaceRequestContext):

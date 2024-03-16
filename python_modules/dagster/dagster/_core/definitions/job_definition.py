@@ -25,6 +25,7 @@ from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.dependency import (
     Node,
     NodeHandle,
@@ -64,7 +65,7 @@ from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 
-from .asset_layer import AssetLayer, build_asset_selection_job
+from .asset_layer import AssetLayer
 from .config import ConfigMapping
 from .dependency import (
     DependencyMapping,
@@ -756,77 +757,43 @@ class JobDefinition(IHasInternalInit):
             return self._get_job_def_for_op_selection(op_selection)
         if asset_selection or asset_check_selection:
             return self._get_job_def_for_asset_selection(
-                asset_selection=asset_selection, asset_check_selection=asset_check_selection
+                AssetSelectionData(
+                    asset_selection=asset_selection,
+                    asset_check_selection=asset_check_selection,
+                    parent_job_def=self,
+                )
             )
         else:
             return self
 
     def _get_job_def_for_asset_selection(
-        self,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
-        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
-
-        nonexistent_assets = [
-            asset
-            for asset in asset_selection
-            if asset not in self.asset_layer.executable_asset_keys
-        ]
-        nonexistent_asset_strings = [
-            asset_str
-            for asset_str in (asset.to_string() for asset in nonexistent_assets)
-            if asset_str
-        ]
-        if nonexistent_assets:
-            raise DagsterInvalidSubsetError(
-                "Assets provided in asset_selection argument "
-                f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
-            )
-
-        # Test that selected asset checks exist
-        all_check_keys = self.asset_layer.node_output_handles_by_asset_check_key.keys()
-
-        nonexistent_asset_checks = [
-            asset_check
-            for asset_check in asset_check_selection or set()
-            if asset_check not in all_check_keys
-        ]
-        nonexistent_asset_check_strings = [
-            str(asset_check) for asset_check in nonexistent_asset_checks
-        ]
-        if nonexistent_asset_checks:
-            raise DagsterInvalidSubsetError(
-                "Asset checks provided in asset_check_selection argument"
-                f" {', '.join(nonexistent_asset_check_strings)} do not exist in parent asset group"
-                " or job."
-            )
-
-        asset_selection_data = AssetSelectionData(
-            asset_selection=asset_selection,
-            asset_check_selection=asset_check_selection,
-            parent_job_def=self,
+        from dagster._core.definitions.assets_job import (
+            build_assets_job,
+            get_asset_graph_for_job,
         )
 
-        check.invariant(
-            self.asset_layer.executable_asset_keys,
-            "Asset layer must have at least one executable asset key",
-        )
+        # If a non-null check selection is provided, use that. Otherwise the selection will resolve
+        # to all checks matching a selected asset by default.
+        selection = AssetSelection.keys(*selection_data.asset_selection)
+        if selection_data.asset_check_selection is not None:
+            selection = selection.without_checks() | AssetSelection.checks(
+                *selection_data.asset_check_selection
+            )
 
-        new_job = build_asset_selection_job(
+        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+
+        return build_assets_job(
             name=self.name,
-            assets=self.asset_layer.assets_defs,
+            asset_graph=job_asset_graph,
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
             description=self.description,
             tags=self.tags,
-            asset_selection=asset_selection,
-            asset_check_selection=asset_check_selection,
-            asset_selection_data=asset_selection_data,
             config=self.config_mapping or self.partitioned_config,
+            _asset_selection_data=selection_data,
         )
-        return new_job
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
         try:

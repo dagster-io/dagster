@@ -31,6 +31,7 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
@@ -1299,7 +1300,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self,
         selected_asset_keys: AbstractSet[AssetKey],
         selected_asset_check_keys: AbstractSet[AssetCheckKey],
-    ):
+    ) -> SubselectedGraphDefinition:
         from dagster._core.definitions.graph_definition import GraphDefinition
 
         if not isinstance(self.node_def, GraphDefinition):
@@ -1389,7 +1390,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 out_asset_key: set(self._keys_by_input_name.values())
                 for out_asset_key in subsetted_keys_by_output_name.values()
             }
-
             replaced_attributes = dict(
                 keys_by_input_name=subsetted_keys_by_input_name,
                 keys_by_output_name=subsetted_keys_by_output_name,

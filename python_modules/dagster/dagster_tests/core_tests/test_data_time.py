@@ -18,7 +18,6 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
@@ -27,6 +26,7 @@ from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.event_api import EventRecordsFilter
+from dagster._core.test_utils import create_test_asset_job
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -116,12 +116,9 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             runs_to_expected_data_times_index
         ):
             # materialize selected assets
-            result = build_asset_selection_job(
-                "materialize_job",
-                assets=all_assets,
-                asset_selection=AssetSelection.keys(*(AssetKey(c) for c in to_materialize)).resolve(
-                    all_assets
-                ),
+            result = create_test_asset_job(
+                all_assets,
+                selection=AssetSelection.keys(*(AssetKey(c) for c in to_materialize)),
             ).execute_in_process(instance=instance)
 
             assert result.success

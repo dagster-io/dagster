@@ -366,7 +366,6 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
 
     # now build the subset job
     job = create_test_asset_job(final_assets, selection=job_selection)
-
     with instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {

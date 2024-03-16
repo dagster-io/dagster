@@ -17,11 +17,13 @@ from typing import (
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import has_only_asset_checks
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
 
@@ -45,7 +47,6 @@ from .metadata import RawMetadataValue
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .resource_requirement import ensure_requirements_satisfied
-from .source_asset import SourceAsset
 from .utils import DEFAULT_IO_MANAGER_KEY
 
 # Prefix for auto created jobs that are used to materialize assets
@@ -82,15 +83,15 @@ def get_base_asset_jobs(
                 *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
                 *asset_graph.unpartitioned_asset_keys,
             }
+            # For now, to preserve behavior keep all asset checks in all base jobs. When checks
+            # support partitions, they should only go in the corresponding partitioned job.
+            selection = (
+                AssetSelection.keys(*executable_asset_keys) | AssetSelection.all_asset_checks()
+            )
             jobs.append(
                 build_assets_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    # For now, to preserve behavior keep all asset checks in all base jobs.
-                    # When checks support partitions, they should only go in the corresponding
-                    # partitioned job.
-                    asset_graph.get_subset(
-                        executable_asset_keys, asset_check_keys=asset_graph.asset_check_keys
-                    ),
+                    get_asset_graph_for_job(asset_graph, selection),
                     resource_defs=resource_defs,
                     executor_def=executor_def,
                     partitions_def=partitions_def,
@@ -123,7 +124,10 @@ def build_assets_job(
 
     Args:
         name (str): The name of the job.
-        asset_graph (AssetGraph): The asset graph that contains the assets and checks to be executed.
+        asset_graph (AssetGraph): The asset graph that contains the assets and checks to be
+            executed. Any assets in the graph that you do not wish to be executed must be
+            unexecutable. You can create an AssetGraph that selects the desired executable assets
+            using `get_asset_graph_job_subset`.
         resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
@@ -151,10 +155,8 @@ def build_assets_job(
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
-
-    # figure out what partitions (if any) exist for this job
-    partitions_def = partitions_def or build_job_partitions_from_assets(
-        asset_graph.assets_defs_for_keys(asset_graph.executable_asset_keys)
+    partitions_def = _infer_and_validate_common_partitions_def(
+        asset_graph, asset_graph.executable_asset_keys, partitions_def
     )
 
     deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
@@ -223,35 +225,159 @@ def build_assets_job(
     )
 
 
-def build_job_partitions_from_assets(
-    assets: Iterable[Union[AssetsDefinition, SourceAsset]],
-) -> Optional[PartitionsDefinition]:
-    assets_with_partitions_defs = [assets_def for assets_def in assets if assets_def.partitions_def]
+def get_asset_graph_for_job(
+    parent_asset_graph: AssetGraph, selection: AssetSelection
+) -> AssetGraph:
+    """Subset an AssetGraph to create an AssetGraph representing an asset job.
 
-    if len(assets_with_partitions_defs) == 0:
-        return None
+    The provided selection must satisfy certain constraints to comprise a valid asset job:
 
-    first_asset_with_partitions_def: Union[AssetsDefinition, SourceAsset] = (
-        assets_with_partitions_defs[0]
+    - The selected keys must be a subset of the existing executable asset keys.
+    - The selected keys must have at most one non-null partitions definition.
+
+    The returned AssetGraph will contain only the selected keys within executable AssetsDefinitions.
+    Any unselected dependencies will be included as unexecutable AssetsDefinitions.
+    """
+    from dagster._core.definitions.external_asset import (
+        create_unexecutable_external_assets_from_assets_def,
     )
-    for asset in assets_with_partitions_defs:
-        if asset.partitions_def != first_asset_with_partitions_def.partitions_def:
-            first_asset_key = _key_for_asset(asset).to_string()
-            second_asset_key = _key_for_asset(first_asset_with_partitions_def).to_string()
-            raise DagsterInvalidDefinitionError(
-                "When an assets job contains multiple partitioned assets, they must have the "
-                f"same partitions definitions, but asset '{first_asset_key}' and asset "
-                f"'{second_asset_key}' have different partitions definitions. "
+
+    selected_keys = selection.resolve(parent_asset_graph)
+    invalid_keys = selected_keys - parent_asset_graph.executable_asset_keys
+    if invalid_keys:
+        raise DagsterInvalidDefinitionError(
+            "Selected keys keys must be a subset of existing executable asset keys."
+            f" Invalid selected keys: {invalid_keys}",
+        )
+
+    _infer_and_validate_common_partitions_def(parent_asset_graph, selected_keys)
+
+    selected_check_keys = selection.resolve_checks(parent_asset_graph)
+
+    # _subset_assets_defs returns two lists of Assetsfinitions-- those included and those
+    # excluded by the selection. These collections retain their original execution type. We need
+    # to convert the excluded assets to unexecutable external assets.
+    executable_assets_defs, excluded_assets_defs = _subset_assets_defs(
+        parent_asset_graph.assets_defs, selected_keys, selected_check_keys
+    )
+
+    # Ideally we would include only the logical dependencies of our executable asset keys in our job
+    # asset graph. These could be obtained by calling `AssetsDefinition.dependency_keys` for each
+    # executable assets def.
+    #
+    # However, this is insufficient due to the way multi-asset subsetting works. Our execution
+    # machinery needs the AssetNodes for any input or output asset of a multi-asset that is touched
+    # by our selection, regardless of whether these assets are in our selection or their
+    # dependencies. Thus for now we retrieve all of these keys with `node_keys_by_{input,output}_name`.
+    # This is something we should probably fix in the future by appropriately adjusting multi-asset
+    # subsets.
+    other_keys = {
+        *(k for ad in executable_assets_defs for k in ad.node_keys_by_input_name.values()),
+        *(k for ad in executable_assets_defs for k in ad.node_keys_by_output_name.values()),
+    } - selected_keys
+    other_assets_defs, _ = _subset_assets_defs(excluded_assets_defs, other_keys, None)
+    unexecutable_assets_defs = [
+        unexecutable_ad
+        for ad in other_assets_defs
+        for unexecutable_ad in create_unexecutable_external_assets_from_assets_def(ad)
+    ]
+
+    return AssetGraph.from_assets([*executable_assets_defs, *unexecutable_assets_defs])
+
+
+def _subset_assets_defs(
+    assets: Iterable["AssetsDefinition"],
+    selected_asset_keys: AbstractSet[AssetKey],
+    selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+) -> Tuple[
+    Sequence["AssetsDefinition"],
+    Sequence["AssetsDefinition"],
+]:
+    """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
+    representing the included/excluded definitions.
+    """
+    included_assets: Set[AssetsDefinition] = set()
+    excluded_assets: Set[AssetsDefinition] = set()
+
+    # Do not match any assets with no keys
+    for asset in set(a for a in assets if a.has_keys or a.has_check_keys):
+        # intersection
+        selected_subset = selected_asset_keys & asset.keys
+
+        # if specific checks were selected, only include those
+        if selected_asset_check_keys is not None:
+            selected_check_subset = selected_asset_check_keys & asset.check_keys
+        # if no checks were selected, filter to checks that target selected assets
+        else:
+            selected_check_subset = {
+                key for key in asset.check_keys if key.asset_key in selected_asset_keys
+            }
+
+        # all assets in this def are selected
+        if selected_subset == asset.keys and selected_check_subset == asset.check_keys:
+            included_assets.add(asset)
+        # no assets in this def are selected
+        elif len(selected_subset) == 0 and len(selected_check_subset) == 0:
+            excluded_assets.add(asset)
+        elif asset.can_subset:
+            # subset of the asset that we want
+            subset_asset = asset.subset_for(selected_asset_keys, selected_check_subset)
+            included_assets.add(subset_asset)
+            # subset of the asset that we don't want
+            excluded_assets.add(
+                asset.subset_for(
+                    selected_asset_keys=asset.keys - subset_asset.keys,
+                    selected_asset_check_keys=(asset.check_keys - subset_asset.check_keys),
+                )
+            )
+        else:
+            raise DagsterInvalidSubsetError(
+                f"When building job, the AssetsDefinition '{asset.node_def.name}' "
+                f"contains asset keys {sorted(list(asset.keys))} and check keys "
+                f"{sorted(list(asset.check_keys))}, but "
+                f"attempted to select only {sorted(list(selected_subset))}. "
+                "This AssetsDefinition does not support subsetting. Please select all "
+                "asset keys produced by this asset.\n\nIf using an AssetSelection, you may "
+                "use required_multi_asset_neighbors() to select any remaining assets, for "
+                "example:\nAssetSelection.keys('my_asset').required_multi_asset_neighbors()"
             )
 
-    return first_asset_with_partitions_def.partitions_def
+    return (
+        list(included_assets),
+        list(excluded_assets),
+    )
 
 
-def _key_for_asset(asset: Union[AssetsDefinition, SourceAsset]) -> AssetKey:
-    if isinstance(asset, AssetsDefinition):
-        return next(iter(asset.keys))
+def _infer_and_validate_common_partitions_def(
+    asset_graph: AssetGraph,
+    asset_keys: Iterable[AssetKey],
+    required_partitions_def: Optional[PartitionsDefinition] = None,
+) -> Optional[PartitionsDefinition]:
+    keys_by_partitions_def = defaultdict(set)
+    for key in asset_keys:
+        partitions_def = asset_graph.get(key).partitions_def
+        if partitions_def is not None:
+            if required_partitions_def is not None and partitions_def != required_partitions_def:
+                raise DagsterInvalidDefinitionError(
+                    f"Executable asset {key} has a different partitions definition than"
+                    f" the one specified for the job. Specifed partitions definition: {required_partitions_def}."
+                    f" Asset partitions definition: {partitions_def}."
+                )
+            keys_by_partitions_def[partitions_def].add(key)
+
+    if len(keys_by_partitions_def) > 1:
+        keys_by_partitions_def_str = "\n".join(
+            f"{partitions_def}: {asset_keys}"
+            for partitions_def, asset_keys in keys_by_partitions_def.items()
+        )
+        raise DagsterInvalidDefinitionError(
+            f"Selected assets must have the same partitions definitions, but the"
+            f" selected assets have different partitions definitions: \n{keys_by_partitions_def_str}"
+        )
+    elif len(keys_by_partitions_def) == 1:
+        return next(iter(keys_by_partitions_def.keys()))
     else:
-        return asset.key
+        return None
 
 
 def _get_blocking_asset_check_output_handles_by_asset_key(
