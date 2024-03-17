@@ -86,37 +86,42 @@ export const AssetNodeLineage = ({
           onChange={(depth) => setParams({...params, lineageDepth: depth})}
           max={maxDepth}
         />
-        Column
-        {columnLineage ? (
-          <Suggest
-            resetOnQuery={false}
-            resetOnClose={false}
-            resetOnSelect={false}
-            inputProps={{
-              placeholder: 'Select a column…',
-              rightElement: column ? (
-                <ClearButton onClick={() => setColumn(null)} style={{marginTop: 5, marginRight: 4}}>
-                  <Icon name="cancel" />
-                </ClearButton>
-              ) : undefined,
-            }}
-            selectedItem={column}
-            items={Object.keys(columnLineage)}
-            noResults="No matching columns"
-            onItemSelect={setColumn}
-            inputValueRenderer={(item) => item}
-            itemPredicate={(query, item) =>
-              item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
-            }
-            itemRenderer={(item, itemProps) => (
-              <MenuItem
-                active={itemProps.modifiers.active}
-                onClick={(e) => itemProps.handleClick(e)}
-                text={item}
-                key={item}
-              />
-            )}
-          />
+        {columnLineage || column ? (
+          <>
+            Column
+            <Suggest
+              resetOnQuery={false}
+              resetOnClose={false}
+              resetOnSelect={false}
+              inputProps={{
+                placeholder: 'Select a column…',
+                rightElement: column ? (
+                  <ClearButton
+                    onClick={() => setColumn(null)}
+                    style={{marginTop: 5, marginRight: 4}}
+                  >
+                    <Icon name="cancel" />
+                  </ClearButton>
+                ) : undefined,
+              }}
+              selectedItem={column}
+              items={Object.keys(columnLineage || {})}
+              noResults="No matching columns"
+              onItemSelect={setColumn}
+              inputValueRenderer={(item) => item}
+              itemPredicate={(query, item) =>
+                item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+              }
+              itemRenderer={(item, itemProps) => (
+                <MenuItem
+                  active={itemProps.modifiers.active}
+                  onClick={(e) => itemProps.handleClick(e)}
+                  text={item}
+                  key={item}
+                />
+              )}
+            />
+          </>
         ) : undefined}
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
@@ -140,7 +145,7 @@ export const AssetNodeLineage = ({
           assetKey={assetKey}
           assetGraphData={assetGraphData}
           columnLineageData={columnLineageData}
-          column={column}
+          focusedColumn={column}
         />
       ) : (
         <AssetNodeLineageGraph

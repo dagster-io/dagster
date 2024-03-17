@@ -46,6 +46,7 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
    */
   groupPaddingTop: number;
   groupPaddingBottom: number;
+  groupRendering: 'if-varied' | 'always';
 };
 
 export type LayoutAssetGraphOptions = {
@@ -66,6 +67,7 @@ export const Config = {
     nodeHeight: 'auto',
     groupPaddingTop: 65,
     groupPaddingBottom: -15,
+    groupRendering: 'if-varied',
   },
   vertical: {
     ranker: 'tight-tree',
@@ -79,6 +81,7 @@ export const Config = {
     nodeHeight: 'auto',
     groupPaddingTop: 40,
     groupPaddingBottom: -20,
+    groupRendering: 'if-varied',
   },
 };
 
@@ -114,7 +117,9 @@ export const layoutAssetGraph = (
   }
 
   // Add all the group boxes to the graph
-  const groupsPresent = Object.keys(groups).length > 1;
+  const groupsPresent =
+    config.groupRendering === 'if-varied' ? Object.keys(groups).length > 1 : true;
+
   if (groupsPresent) {
     Object.keys(groups).forEach((groupId) => {
       if (expandedGroups.includes(groupId)) {

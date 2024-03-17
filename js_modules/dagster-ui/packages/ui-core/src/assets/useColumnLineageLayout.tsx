@@ -13,13 +13,14 @@ const LINEAGE_GRAPH_COLUMN_LAYOUT_OPTIONS: LayoutAssetGraphOptions = {
     edgesep: 0,
     groupPaddingBottom: -5,
     groupPaddingTop: 68,
+    groupRendering: 'always',
   },
 };
 
-type Item = {assetGraphId: string; column: string};
+type Item = {assetGraphId: string; column: string; direction?: 'upstream' | 'downstream'};
 
 export function toColumnGraphId(item: {assetGraphId: string; column: string}) {
-  return JSON.stringify(item);
+  return JSON.stringify({assetGraphId: item.assetGraphId, column: item.column});
 }
 export function fromColumnGraphId(id: string) {
   return JSON.parse(id) as {assetGraphId: string; column: string};
@@ -44,55 +45,70 @@ export function useColumnLineageLayout(
       upstream: {},
     };
 
+    const downstreams = buildReverseEdgeLookupTable(columnLineageData);
+
+    const addEdge = (upstreamId: string, downstreamId: string) => {
+      columnGraphData.upstream[downstreamId] = columnGraphData.upstream[downstreamId] || {};
+      columnGraphData.upstream[downstreamId]![upstreamId] = true;
+      columnGraphData.downstream[upstreamId] = columnGraphData.downstream[upstreamId] || {};
+      columnGraphData.downstream[upstreamId]![downstreamId] = true;
+    };
+
     const groups = new Set<string>();
     const queue: Item[] = [{assetGraphId, column}];
     let item: Item | undefined;
-
-    const downstreams = buildReverseEdgeLookupTable(columnLineageData);
 
     while ((item = queue.pop())) {
       if (!item) {
         continue;
       }
       const id = toColumnGraphId(item);
-      const {assetGraphId, column} = item;
-      const assetGraphNode = assetGraphData.nodes[assetGraphId];
-      if (columnGraphData.nodes[id] || !assetGraphNode) {
+      const {assetGraphId, column, direction} = item;
+      const assetNode = assetGraphData.nodes[assetGraphId];
+      if (columnGraphData.nodes[id] || !assetNode) {
         continue; // visited already
       }
 
-      columnGraphData.nodes[id] = {
-        assetKey: assetGraphNode.assetKey,
-        definition: {
-          ...assetGraphNode.definition,
-          groupName: `${tokenForAssetKey(assetGraphNode.assetKey)}`,
-        },
+      const columnGraphNode = {
         id,
+        assetKey: assetNode.assetKey,
+        definition: {
+          ...assetNode.definition,
+          groupName: `${tokenForAssetKey(assetNode.assetKey)}`,
+        },
       };
+      columnGraphData.nodes[id] = columnGraphNode;
+      groups.add(groupIdForNode(columnGraphNode));
 
-      const lineageForColumn = columnLineageData[assetGraphId]?.[column];
-
-      for (const upstream of lineageForColumn?.upstream || []) {
-        for (const upstreamAssetKey of upstream.assetKeys) {
-          const upstreamGraphId = toGraphId(upstreamAssetKey);
-          const upstreamItem = {assetGraphId: upstreamGraphId, column: upstream.columnName};
-          const upstreamId = toColumnGraphId(upstreamItem);
-          queue.push(upstreamItem);
-          columnGraphData.upstream[id] = columnGraphData.upstream[id] || {};
-          columnGraphData.upstream[id]![upstreamId] = true;
-          columnGraphData.downstream[upstreamId] = columnGraphData.downstream[upstreamId] || {};
-          columnGraphData.downstream[upstreamId]![id] = true;
+      if (!direction || direction === 'upstream') {
+        const lineageForColumn = columnLineageData[assetGraphId]?.[column];
+        for (const upstream of lineageForColumn?.upstream || []) {
+          for (const upstreamAssetKey of upstream.assetKeys) {
+            const upstreamGraphId = toGraphId(upstreamAssetKey);
+            const upstreamItem: Item = {
+              assetGraphId: upstreamGraphId,
+              column: upstream.columnName,
+              direction: 'upstream',
+            };
+            if (assetGraphData.nodes[upstreamItem.assetGraphId]) {
+              queue.push(upstreamItem);
+              addEdge(toColumnGraphId(upstreamItem), id);
+            }
+          }
         }
       }
-      for (const downstreamId of Object.keys(downstreams[id] || {})) {
-        queue.push(fromColumnGraphId(downstreamId));
-        columnGraphData.downstream[id] = columnGraphData.downstream[id] || {};
-        columnGraphData.downstream[id]![downstreamId] = true;
-        columnGraphData.upstream[downstreamId] = columnGraphData.upstream[downstreamId] || {};
-        columnGraphData.upstream[downstreamId]![id] = true;
+      if (!direction || direction === 'downstream') {
+        for (const downstreamId of Object.keys(downstreams[id] || {})) {
+          const downstreamItem: Item = {
+            ...fromColumnGraphId(downstreamId),
+            direction: 'downstream',
+          };
+          if (assetGraphData.nodes[downstreamItem.assetGraphId]) {
+            queue.push(downstreamItem);
+            addEdge(id, downstreamId);
+          }
+        }
       }
-
-      groups.add(groupIdForNode(columnGraphData.nodes[id]!));
     }
 
     return {columnGraphData, groups: Array.from(groups)};

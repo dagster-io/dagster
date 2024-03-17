@@ -8,7 +8,6 @@ import {fromColumnGraphId, useColumnLineageLayout} from './useColumnLineageLayou
 import {AssetColumnNode, AssetColumnsGroupNode} from '../asset-graph/AssetColumnsNode';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
-import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, fromGraphId, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {isNodeOffscreen} from '../graph/common';
@@ -18,32 +17,27 @@ export const AssetColumnLineageGraph = ({
   assetKey,
   assetGraphData,
   columnLineageData,
-  column,
+  focusedColumn,
 }: {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   columnLineageData: AssetColumnLineages;
-  column: string;
+  focusedColumn: string;
 }) => {
-  const assetGraphId = toGraphId(assetKey);
+  const focusedAssetGraphId = toGraphId(assetKey);
 
   const [highlighted, setHighlighted] = useState<string[] | null>(null);
 
   const {layout, loading} = useColumnLineageLayout(
     assetGraphData,
-    assetGraphId,
-    column,
+    focusedAssetGraphId,
+    focusedColumn,
     columnLineageData,
   );
 
   const viewportEl = useRef<SVGViewport>();
-  //   const history = useHistory();
 
-  //   const onClickAsset = (key: AssetKey) => {
-  //     history.push(assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors'}));
-  //   };
-
-  useLastSavedZoomLevel(viewportEl, layout, assetGraphId);
+  useLastSavedZoomLevel(viewportEl, layout, focusedAssetGraphId);
 
   if (!layout || loading) {
     return (
@@ -88,7 +82,6 @@ export const AssetColumnLineageGraph = ({
                   style={{overflow: 'visible'}}
                   onMouseEnter={() => setHighlighted([id])}
                   onMouseLeave={() => setHighlighted(null)}
-                  // onClick={() => onClickAsset({path})}
                   onDoubleClick={(e) => {
                     viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
                     e.stopPropagation();
@@ -97,7 +90,7 @@ export const AssetColumnLineageGraph = ({
                   <AssetNodeContextMenuWrapper {...contextMenuProps}>
                     <AssetColumnsGroupNode
                       definition={graphNode!.definition}
-                      selected={assetGraphId === groupAssetGraphId}
+                      selected={focusedAssetGraphId === groupAssetGraphId}
                       height={bounds.height}
                     />
                   </AssetNodeContextMenuWrapper>
@@ -118,18 +111,12 @@ export const AssetColumnLineageGraph = ({
             .map(({id, bounds}) => {
               const {assetGraphId, column} = fromColumnGraphId(id);
               const assetKey = fromGraphId(assetGraphId);
-              const graphNode = assetGraphData.nodes[assetGraphId];
 
               const col = columnLineageData[assetGraphId]?.[column] || {
                 name: column,
                 description: 'Not found in column metadata',
                 type: null,
                 upstream: [],
-              };
-
-              const contextMenuProps = {
-                graphData: assetGraphData,
-                node: graphNode!,
               };
 
               return (
@@ -144,13 +131,11 @@ export const AssetColumnLineageGraph = ({
                     e.stopPropagation();
                   }}
                 >
-                  {!graphNode ? (
-                    <AssetNodeLink assetKey={assetKey} />
-                  ) : (
-                    <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                      <AssetColumnNode column={col} />
-                    </AssetNodeContextMenuWrapper>
-                  )}
+                  <AssetColumnNode
+                    assetKey={assetKey}
+                    column={col}
+                    selected={assetGraphId === focusedAssetGraphId && focusedColumn === column}
+                  />
                 </foreignObject>
               );
             })}

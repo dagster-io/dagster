@@ -274,7 +274,11 @@ const AssetNodeShowOnHover = styled.span`
   display: none;
 `;
 
-export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
+export const AssetNodeBox = styled.div<{
+  $isSource: boolean;
+  $selected: boolean;
+  $noScale?: boolean;
+}>`
   ${(p) =>
     p.$isSource
       ? `border: 2px dashed ${p.$selected ? Colors.accentGrayHover() : Colors.accentGray()}`
@@ -290,7 +294,7 @@ export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>
   &:hover {
     ${(p) => !p.$selected && `border: 2px solid ${Colors.lineageNodeBorderHover()};`};
     box-shadow: ${Colors.shadowDefault()} 0px 1px 4px 0px;
-    scale: 1.03;
+    scale: ${(p) => (p.$noScale ? '1' : '1.03')};
     ${AssetNodeShowOnHover} {
       display: initial;
     }
