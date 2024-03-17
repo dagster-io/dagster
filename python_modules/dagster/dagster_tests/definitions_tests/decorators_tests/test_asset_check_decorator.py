@@ -1,12 +1,14 @@
 import re
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import pytest
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
+    AssetSelection,
     ConfigurableResource,
     DagsterEventType,
     DagsterInstance,
@@ -20,9 +22,14 @@ from dagster import (
     asset,
     asset_check,
     define_asset_job,
+    multi_asset_check,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+)
 
 
 def execute_assets_and_checks(
@@ -31,9 +38,20 @@ def execute_assets_and_checks(
     raise_on_error: bool = True,
     resources=None,
     instance=None,
+    selection: Optional[AssetSelection] = None,
 ) -> ExecuteInProcessResult:
-    defs = Definitions(assets=assets, asset_checks=asset_checks, resources=resources)
-    job_def = defs.get_implicit_global_asset_job_def()
+    defs = Definitions(
+        assets=assets,
+        asset_checks=asset_checks,
+        resources=resources,
+        jobs=[
+            define_asset_job(
+                "job1",
+                selection=selection or (AssetSelection.all() | AssetSelection.all_asset_checks()),
+            )
+        ],
+    )
+    job_def = defs.get_job_def("job1")
     return job_def.execute_in_process(raise_on_error=raise_on_error, instance=instance)
 
 
@@ -597,3 +615,163 @@ def test_doesnt_invoke_io_manager():
         return AssetCheckResult(passed=True)
 
     execute_assets_and_checks(asset_checks=[check1], resources={"io_manager": DummyIOManager()})
+
+
+def assert_check_eval(
+    check_eval,
+    asset_key: AssetKey,
+    check_name: str,
+    passed: bool,
+    run_id: str,
+    instance: DagsterInstance,
+):
+    assert check_eval.asset_key == asset_key
+    assert check_eval.check_name == check_name
+    assert check_eval.passed == passed
+
+    assert check_eval.target_materialization_data is not None
+    assert check_eval.target_materialization_data.run_id == run_id
+    materialization_record = instance.fetch_materializations(
+        records_filter=asset_key, limit=1
+    ).records[0]
+    assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
+    assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
+
+
+def test_multi_asset_check():
+    @asset
+    def asset1(): ...
+
+    @asset
+    def asset2(): ...
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset1),
+            AssetCheckSpec("check3", asset=asset2),
+        ]
+    )
+    def checks(context):
+        materialization_records = context.instance.get_event_records(
+            EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
+        )
+        assert len(materialization_records) == 2
+        assert {record.asset_key for record in materialization_records} == {asset1.key, asset2.key}
+
+        yield AssetCheckResult(passed=True, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=False, asset_key="asset1", check_name="check2")
+        yield AssetCheckResult(passed=True, asset_key="asset2", check_name="check3")
+
+    instance = DagsterInstance.ephemeral()
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2],
+        asset_checks=[checks],
+        instance=instance,
+    )
+
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 3
+
+    assert_check_eval(check_evals[0], asset1.key, "check1", True, result.run_id, instance)
+    assert_check_eval(check_evals[1], asset1.key, "check2", False, result.run_id, instance)
+    assert_check_eval(check_evals[2], asset2.key, "check3", True, result.run_id, instance)
+
+    assert (
+        len(
+            instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
+            )
+        )
+        == 3
+    )
+    assert (
+        len(
+            instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION)
+            )
+        )
+        == 3
+    )
+    assert (
+        len(
+            instance.event_log_storage.get_asset_check_execution_history(
+                AssetCheckKey(asset_key=AssetKey("asset1"), name="check1"), limit=10
+            )
+        )
+        == 1
+    )
+
+    with pytest.raises(DagsterInvalidSubsetError):
+        execute_assets_and_checks(
+            asset_checks=[checks],
+            instance=instance,
+            selection=AssetSelection.checks(AssetCheckKey(asset2.key, "check3")),
+        )
+
+
+def test_multi_asset_check_subset():
+    @asset
+    def asset1(): ...
+
+    @asset
+    def asset2(): ...
+
+    asset1_check1 = AssetCheckSpec("check1", asset=asset1)
+    asset2_check3 = AssetCheckSpec("check3", asset=asset2)
+
+    @multi_asset_check(
+        specs=[asset1_check1, AssetCheckSpec("check2", asset=asset1), asset2_check3],
+        can_subset=True,
+    )
+    def checks(context):
+        assert context.selected_asset_check_keys == {asset1_check1.key, asset2_check3.key}
+
+        yield AssetCheckResult(passed=True, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=False, asset_key="asset2", check_name="check3")
+
+    instance = DagsterInstance.ephemeral()
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2],
+        asset_checks=[checks],
+        instance=instance,
+        selection=AssetSelection.assets(asset1, asset2).without_checks()
+        | AssetSelection.checks(
+            AssetCheckKey(asset1.key, "check1"), AssetCheckKey(asset2.key, "check3")
+        ),
+    )
+
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+
+    assert_check_eval(check_evals[0], asset1.key, "check1", True, result.run_id, instance)
+    assert_check_eval(check_evals[1], asset2.key, "check3", False, result.run_id, instance)
+
+    assert (
+        len(
+            instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
+            )
+        )
+        == 2
+    )
+    assert (
+        len(
+            instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION)
+            )
+        )
+        == 2
+    )
+    assert (
+        len(
+            instance.event_log_storage.get_asset_check_execution_history(
+                AssetCheckKey(asset_key=AssetKey("asset1"), name="check1"), limit=10
+            )
+        )
+        == 1
+    )

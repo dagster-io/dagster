@@ -577,7 +577,7 @@ def multi_asset(
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         can_subset (bool): If this asset's computation can emit a subset of the asset
-            keys based on the context.selected_assets argument. Defaults to False.
+            keys based on the context.selected_asset_keys argument. Defaults to False.
         resource_defs (Optional[Mapping[str, object]]):
             (Experimental) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
