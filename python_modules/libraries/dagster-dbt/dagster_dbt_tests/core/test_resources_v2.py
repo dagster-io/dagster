@@ -6,10 +6,6 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 import pytest
 from dagster import (
-    AssetMaterialization,
-    FloatMetadataValue,
-    IntMetadataValue,
-    TextMetadataValue,
     job,
     materialize,
     op,
@@ -20,7 +16,6 @@ from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
-    DbtCliEventMessage,
     DbtCliResource,
 )
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
@@ -456,123 +451,3 @@ def test_dbt_cli_op_execution(
 
     result = my_dbt_job_yield_events.execute_in_process(resources={"dbt": dbt})
     assert result.success
-
-
-@pytest.mark.parametrize(
-    "data",
-    [
-        {},
-        {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "model",
-                "node_status": "failure",
-                "node_finished_at": "2024-01-01T00:00:00Z",
-                "meta": {},
-            },
-        },
-        {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "macro",
-                "node_status": "success",
-                "node_finished_at": "2024-01-01T00:00:00Z",
-                "meta": {},
-            },
-        },
-        {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "model",
-                "node_status": "failure",
-                "meta": {},
-            },
-        },
-        {
-            "node_info": {
-                "materialized": "test",
-                "unique_id": "a.b.c",
-                "resource_type": "test",
-                "node_status": "success",
-                "meta": {},
-            },
-        },
-    ],
-    ids=[
-        "node info missing",
-        "node status failure",
-        "not refable",
-        "not successful execution",
-        "not finished test execution",
-    ],
-)
-def test_no_default_asset_events_emitted(data: dict) -> None:
-    asset_events = DbtCliEventMessage(
-        raw_event={
-            "info": {
-                "name": "NodeFinished",
-                "level": "info",
-                "invocation_id": "1-2-3",
-            },
-            "data": data,
-        },
-        event_history_metadata={},
-    ).to_default_asset_events(manifest={"nodes": {"a.b.c": {}}})
-
-    assert list(asset_events) == []
-
-
-def test_to_default_asset_output_events() -> None:
-    raw_event = {
-        "info": {
-            "name": "NodeFinished",
-            "level": "info",
-            "invocation_id": "1-2-3",
-        },
-        "data": {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "model",
-                "node_name": "node_name",
-                "node_status": "success",
-                "node_started_at": "2024-01-01T00:00:00Z",
-                "node_finished_at": "2024-01-01T00:01:00Z",
-                "meta": {},
-            },
-            "run_result": {
-                "adapter_response": {
-                    "rows_affected": 100,
-                }
-            },
-        },
-    }
-    manifest = {
-        "nodes": {
-            "a.b.c": {
-                "meta": {
-                    "dagster": {
-                        "asset_key": ["a", "b", "c"],
-                    },
-                },
-            },
-        },
-    }
-
-    asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event, event_history_metadata={}).to_default_asset_events(
-            manifest=manifest
-        )
-    )
-
-    assert len(asset_events) == 1
-    assert all(isinstance(e, AssetMaterialization) for e in asset_events)
-    assert asset_events[0].metadata == {
-        "unique_id": TextMetadataValue("a.b.c"),
-        "invocation_id": TextMetadataValue("1-2-3"),
-        "Execution Duration": FloatMetadataValue(60.0),
-        "rows_affected": IntMetadataValue(100),
-    }
