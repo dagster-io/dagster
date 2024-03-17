@@ -83,17 +83,15 @@ export function useColumnLineageLayout(
       if (!direction || direction === 'upstream') {
         const lineageForColumn = columnLineageData[assetGraphId]?.[column];
         for (const upstream of lineageForColumn?.upstream || []) {
-          for (const upstreamAssetKey of upstream.assetKeys) {
-            const upstreamGraphId = toGraphId(upstreamAssetKey);
-            const upstreamItem: Item = {
-              assetGraphId: upstreamGraphId,
-              column: upstream.columnName,
-              direction: 'upstream',
-            };
-            if (assetGraphData.nodes[upstreamItem.assetGraphId]) {
-              queue.push(upstreamItem);
-              addEdge(toColumnGraphId(upstreamItem), id);
-            }
+          const upstreamGraphId = toGraphId(upstream.assetKey);
+          const upstreamItem: Item = {
+            assetGraphId: upstreamGraphId,
+            column: upstream.columnName,
+            direction: 'upstream',
+          };
+          if (assetGraphData.nodes[upstreamItem.assetGraphId]) {
+            queue.push(upstreamItem);
+            addEdge(toColumnGraphId(upstreamItem), id);
           }
         }
       }
@@ -131,12 +129,10 @@ function buildReverseEdgeLookupTable(columnLineageData: AssetColumnLineages) {
         assetGraphId: downstreamAssetGraphId,
         column: downstreamColumnName,
       });
-      for (const {assetKeys, columnName} of upstream) {
-        for (const assetKey of assetKeys) {
-          const key = toColumnGraphId({assetGraphId: toGraphId(assetKey), column: columnName});
-          downstreams[key] = downstreams[key] || {};
-          downstreams[key]![downstreamKey] = true;
-        }
+      for (const {assetKey, columnName} of upstream) {
+        const key = toColumnGraphId({assetGraphId: toGraphId(assetKey), column: columnName});
+        downstreams[key] = downstreams[key] || {};
+        downstreams[key]![downstreamKey] = true;
       }
     });
   });
