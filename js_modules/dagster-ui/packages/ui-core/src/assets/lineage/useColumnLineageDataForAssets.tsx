@@ -31,6 +31,12 @@ export type AssetColumnLineageLocal = {
 
 export type AssetColumnLineages = {[graphId: string]: AssetColumnLineageLocal | undefined};
 
+/**
+ * The column definitions and the column lineage are in two separate metadata entries,
+ * and the definitions may be specified in definition-time or materialization-time metadata.
+ * Parse them both and combine the results into a single representation of asset columns
+ * that is easier for the rest of the front-end to use.
+ */
 const getColumnLineage = (
   asset: AssetColumnLineageQuery['assetNodes'][0],
 ): AssetColumnLineageLocal | undefined => {
