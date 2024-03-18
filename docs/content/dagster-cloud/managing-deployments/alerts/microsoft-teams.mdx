@@ -1,0 +1,96 @@
+---
+title: "Microsoft Teams + Dagster Cloud"
+---
+
+# Microsoft Teams & Dagster Cloud
+
+<ApplicableDagsterProduct />
+
+Dagster Cloud supports sending alerts to Microsoft Teams using incoming webhooks.
+
+---
+
+## Connecting Microsoft Teams to Dagster Cloud
+
+<!-- TODO: Test as a viewer -->
+
+### Step 1: Create an incoming webhook in Microsoft Teams
+
+To create an incoming webhook, follow the instructions in the [Microsoft Teams documentation](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook).
+
+Keep the webhook URL handy - you'll need it in the next step.
+
+### Step 2: Create an alert policy in Dagster Cloud
+
+Creating an alert policy can be done using the Dagster Cloud UI or in code.
+
+<TabGroup>
+<TabItem name="In the UI">
+
+#### In the UI
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users">
+    <strong>Organization Admin</strong>, <strong>Admin</strong>, or{" "}
+    <strong>Editor</strong>
+  </a>{" "}
+  permissions are required to manage alerts in Dagster Cloud.
+</Note>
+
+1. Create and configure an alert policy. Refer to the [alert policy documentation](/dagster-cloud/managing-deployments/alerts#creating-alert-policies) for more info.
+2. In the **Notification Service** section of the **Create alert policy** window, select the **Microsoft Teams** option.
+3. Paste the webhook URL into the field that displays.
+4. Click **Save policy**.
+
+</TabItem>
+<TabItem name="In code">
+
+#### In code
+
+In this example, we'll configure a Teams alert for when a Hybrid Agent goes down.
+
+```yaml
+alert_policies:
+  - name: "email-alert-policy"
+    description: "An alert policy to email company executives during job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "AGENT_UNAVAILABLE"
+    notification_service:
+      microsoft_teams:
+        webhook_url: "https://yourdomain.webhook.office.com/..."
+```
+
+If the agent stops heartbeating, a message will be sent via the [incoming webhook URL](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook).
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Cloud alerts"
+    href="/dagster-cloud/managing-deployments/alerts"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing code locations"
+    href="/dagster-cloud/managing-deployments/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deployment settings"
+    href="/dagster-cloud/managing-deployments/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-cloud CLI"
+    href="/dagster-cloud/managing-deployments/dagster-cloud-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster_cloud.yaml"
+    href="/dagster-cloud/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+</ArticleList>
