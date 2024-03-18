@@ -97,3 +97,43 @@ def test_with_custom_name(replication_config: SlingReplicationParam):
     def my_third_sling_assets(): ...
 
     assert my_third_sling_assets.op.name == "custom_name"
+
+
+def test_base_with_meta_config_translator():
+    @sling_assets(
+        replication_config=file_relative_path(
+            __file__, "replication_configs/base_with_meta_config/replication.yaml"
+        )
+    )
+    def my_sling_assets(): ...
+
+    assert my_sling_assets.keys == {
+        AssetKey(["target", "public", "all_users"]),
+        AssetKey(["target", "public", "finance_departments_old"]),
+        AssetKey(["target", "public", "transactions"]),
+        AssetKey(["target", "public", "accounts"]),
+    }
+
+    assert my_sling_assets.asset_deps == {
+        AssetKey(["target", "public", "accounts"]): {AssetKey(["public", "accounts"])},
+        AssetKey(["target", "public", "finance_departments_old"]): {
+            AssetKey(["public", "finance_departments_old"])
+        },
+        AssetKey(["target", "public", "transactions"]): {AssetKey(["public", "transactions"])},
+        AssetKey(["target", "public", "all_users"]): {AssetKey(["public", "all_users"])},
+    }
+
+    assert my_sling_assets.descriptions_by_key == {
+        AssetKey(
+            ["target", "public", "all_users"]
+        ): 'select all_user_id, name \nfrom public."all_Users"\n',
+        AssetKey(["target", "public", "transactions"]): "Example Description!",
+    }
+
+    assert my_sling_assets.group_names_by_key == {
+        AssetKey(["target", "public", "users"]): "group_1",
+        AssetKey(["target", "public", "finance_departments_old"]): "group_2",
+        AssetKey(["target", "public", "accounts"]): "default",
+        AssetKey(["target", "public", "all_users"]): "default",
+        AssetKey(["target", "public", "transactions"]): "default",
+    }
