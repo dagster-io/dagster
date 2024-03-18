@@ -6,36 +6,31 @@ title: "Microsoft Teams + Dagster Cloud"
 
 <ApplicableDagsterProduct />
 
-Dagster Cloud supports sending alerts to Microsoft Teams using incoming webhooks.
+Dagster Cloud supports [sending alerts](/dagster-cloud/managing-deployment/alerts) to Microsoft Teams using incoming webhooks.
 
 ---
 
-## Connecting Microsoft Teams to Dagster Cloud
+## Prerequisites
 
-<!-- TODO: Test as a viewer -->
+- **Permissions in Microsoft Teams** that allow you to create an incoming webhook
+- **Organization, Admin, or Editor permissions in Dagster Cloud**, which are required to create and manage alerts
 
-### Step 1: Create an incoming webhook in Microsoft Teams
+---
+
+## Step 1: Create an incoming webhook in Microsoft Teams
 
 To create an incoming webhook, follow the instructions in the [Microsoft Teams documentation](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook).
 
-Keep the webhook URL handy - you'll need it in the next step.
+---
 
-### Step 2: Create an alert policy in Dagster Cloud
+## Step 2: Create an alert policy in Dagster Cloud
 
 Creating an alert policy can be done using the Dagster Cloud UI or in code.
 
 <TabGroup>
 <TabItem name="In the UI">
 
-#### In the UI
-
-<Note>
-  <a href="/dagster-cloud/account/managing-users">
-    <strong>Organization Admin</strong>, <strong>Admin</strong>, or{" "}
-    <strong>Editor</strong>
-  </a>{" "}
-  permissions are required to manage alerts in Dagster Cloud.
-</Note>
+### In the UI
 
 1. Create and configure an alert policy. Refer to the [alert policy documentation](/dagster-cloud/managing-deployments/alerts#creating-alert-policies) for more info.
 2. In the **Notification Service** section of the **Create alert policy** window, select the **Microsoft Teams** option.
@@ -45,7 +40,7 @@ Creating an alert policy can be done using the Dagster Cloud UI or in code.
 </TabItem>
 <TabItem name="In code">
 
-#### In code
+### In code
 
 In this example, we'll configure a Teams alert for when a Hybrid Agent goes down.
 
