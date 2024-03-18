@@ -46,8 +46,10 @@ from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
 if TYPE_CHECKING:
     from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 
-MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
+DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
+DAGSTER_DBT_SELECT_METADATA_KEY = "dagster_dbt/select"
+DAGSTER_DBT_EXCLUDE_METADATA_KEY = "dagster_dbt/exclude"
 
 
 def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
@@ -304,7 +306,9 @@ def get_manifest_and_translator_from_dbt_assets(
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
     first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
-    manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(MANIFEST_METADATA_KEY)
+    manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(
+        DAGSTER_DBT_MANIFEST_METADATA_KEY
+    )
     if manifest_wrapper is None:
         raise DagsterInvariantViolationError(
             f"Expected to find dbt manifest metadata on asset {first_asset_key.to_user_string()},"
@@ -696,7 +700,9 @@ def get_asset_deps(
         metadata = merge_dicts(
             dagster_dbt_translator.get_metadata(dbt_resource_props),
             {
-                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest) if manifest else None,
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest)
+                if manifest
+                else None,
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
         )

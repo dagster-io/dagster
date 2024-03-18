@@ -28,8 +28,10 @@ from dagster._utils.warnings import (
 )
 
 from .asset_utils import (
+    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
+    DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_SELECT_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
-    MANIFEST_METADATA_KEY,
     default_asset_check_fn,
     default_code_version_fn,
     get_deps,
@@ -320,21 +322,21 @@ def dbt_assets(
         dagster_dbt_translator=dagster_dbt_translator,
     )
 
-    if op_tags and "dagster-dbt/select" in op_tags:
+    if op_tags and DAGSTER_DBT_SELECT_METADATA_KEY in op_tags:
         raise DagsterInvalidDefinitionError(
-            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            f"To specify a dbt selection, use the 'select' argument, not '{DAGSTER_DBT_SELECT_METADATA_KEY}'"
             " with op_tags"
         )
 
-    if op_tags and "dagster-dbt/exclude" in op_tags:
+    if op_tags and DAGSTER_DBT_EXCLUDE_METADATA_KEY in op_tags:
         raise DagsterInvalidDefinitionError(
-            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            f"To specify a dbt exclusion, use the 'exclude' argument, not '{DAGSTER_DBT_EXCLUDE_METADATA_KEY}'"
             " with op_tags"
         )
 
     resolved_op_tags = {
-        **({"dagster-dbt/select": select} if select else {}),
-        **({"dagster-dbt/exclude": exclude} if exclude else {}),
+        **({DAGSTER_DBT_SELECT_METADATA_KEY: select} if select else {}),
+        **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude} if exclude else {}),
         **(op_tags if op_tags else {}),
     }
 
@@ -404,7 +406,7 @@ def get_dbt_multi_asset_args(
             is_required=False,
             metadata={  # type: ignore
                 **dagster_dbt_translator.get_metadata(dbt_resource_props),
-                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),

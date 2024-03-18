@@ -10,7 +10,7 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
-import {MetadataEntry} from '../metadata/MetadataEntry';
+import {HIDDEN_METADATA_ENTRY_LABELS, MetadataEntry} from '../metadata/MetadataEntry';
 import {isCanonicalTableSchemaEntry} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 import {titleForRun} from '../runs/RunUtils';
@@ -89,9 +89,14 @@ export const AssetEventMetadataEntriesTable = ({
 
   const filteredRows = useMemo(
     () =>
-      allRows
-        .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
-        .filter((row) => !(hideTableSchema && isCanonicalTableSchemaEntry(row.entry))),
+      allRows.filter(
+        (row) =>
+          !filter ||
+          row.entry.label.toLowerCase().includes(filter.toLowerCase()) ||
+          !HIDDEN_METADATA_ENTRY_LABELS.has(row.entry.label) ||
+          !hideTableSchema ||
+          !isCanonicalTableSchemaEntry(row.entry),
+      ),
     [allRows, filter, hideTableSchema],
   );
 
