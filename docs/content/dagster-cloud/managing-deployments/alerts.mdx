@@ -1,19 +1,23 @@
 ---
-title: "Alerts in Dagster Cloud | Dagster Docs"
+title: "Dagster Cloud alerts | Dagster Docs"
 description: "Create and configure alerts in Dagster Cloud."
 ---
 
-# Alerts in Dagster Cloud
+# Dagster Cloud alerts
 
 <ApplicableDagsterProduct />
 
-Alert policies define which events will trigger an alert, the conditions under which an alert will be sent, and how the alert will be sent.
-
-Additionally, alert policies are configured on a **per-deployment basis**. For example, asset alerts configured in a `prod` deployment are only applicable to assets in that deployment.
+Using Dagster Cloud's built-in alerting system, you can stay in the loop on the events occurring in your deployment. Dagster Cloud alerts integrate with several popular services, allowing you to deliver notifications when and where they're most needed.
 
 ---
 
-## Alert policy types
+## How it works
+
+Alerts are created using **alert policies**. An alert policy defines [the conditions that will trigger an alert](#alert-policy-types) and [how the alert will be sent](#supported-notification-services). For example, you can create a policy that sends an alert to a Slack channel when any asset in a specific asset group fails to materialize.
+
+Alert policies are configured on a **per-deployment basis**. This means, for example, that asset alerts configured in a `prod` deployment are only applicable to assets in that deployment.
+
+### Alert policy types
 
 <table
   className="table"
@@ -92,9 +96,7 @@ Additionally, alert policies are configured on a **per-deployment basis**. For e
   </tbody>
 </table>
 
----
-
-## Supported notification services
+### Supported notification services
 
 Dagster Cloud can send notifications via:
 
@@ -177,7 +179,7 @@ Dagster Cloud can send notifications via:
      </ul>
    </details>
 
-7. In the **Notification service** section, select how the alert will be delivered. Refer to the [Supported notification services](#supported-notification-services) for information about setting up these services.
+7. In the **Notification service** section, select how the alert will be delivered. Refer to the [Supported notification services](#supported-notification-services) section for information about setting up these services.
 
    **Note**: If creating an asset alert, an additional **Email asset owners (experimental)** option will be available.
 
