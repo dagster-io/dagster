@@ -1,4 +1,4 @@
-import {QueryResult, gql, useQuery} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup, TextInput} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -20,9 +20,10 @@ import {AssetViewType, useAssetView} from './useAssetView';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector, ChangeReason} from '../graphql/types';
+import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PageLoadTrace} from '../performance';
 import {useFilters} from '../ui/Filters';
@@ -37,44 +38,81 @@ import {FilterObject} from '../ui/Filters/useFilter';
 import {LoadingSpinner} from '../ui/Loading';
 type Asset = AssetTableFragment;
 
-function useAllAssets(groupSelector?: AssetGroupSelector): {
-  query: QueryResult<AssetCatalogTableQuery, any> | QueryResult<AssetCatalogGroupTableQuery, any>;
-  assets: Asset[] | undefined;
-  error: PythonErrorFragment | undefined;
-} {
-  const assetsQuery = useQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>(
-    ASSET_CATALOG_TABLE_QUERY,
-    {
-      skip: !!groupSelector,
+function useAllAssets(groupSelector?: AssetGroupSelector) {
+  const client = useApolloClient();
+  const [{error, assets}, setErrorAndAssets] = React.useState<{
+    error: PythonErrorFragment | undefined;
+    assets: Asset[] | undefined;
+  }>({error: undefined, assets: undefined});
+
+  /*
+   * Query for the data / read the cache but don't subscribe to updates to the query like useQuery would do.
+   * In our case the virtualized asset table rows will fetch more fields on their respective asset nodes
+   * which would end up triggering a slow normalization process that tries to update this query which can return an
+   * extremely large number of assets (700k is the max at the time of this comment).
+   */
+  const assetsQuery = useConstantCallback(async () => {
+    function onData(queryData: typeof data) {
+      const assetsOrError = queryData?.assetsOrError;
+      setErrorAndAssets({
+        error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
+        assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
+      });
+    }
+    const cacheData = client.readQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
+      query: ASSET_CATALOG_TABLE_QUERY,
+    });
+    if (cacheData) {
+      onData(cacheData);
+    }
+    const {data} = await client.query<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
+      query: ASSET_CATALOG_TABLE_QUERY,
       notifyOnNetworkStatusChange: true,
-    },
-  );
-  const groupQuery = useQuery<AssetCatalogGroupTableQuery, AssetCatalogGroupTableQueryVariables>(
-    ASSET_CATALOG_GROUP_TABLE_QUERY,
-    {
-      skip: !groupSelector,
+    });
+    onData(data);
+  });
+
+  const groupQuery = React.useCallback(async () => {
+    if (!groupSelector) {
+      return;
+    }
+    function onData(queryData: typeof data) {
+      setErrorAndAssets({
+        error: undefined,
+        assets: queryData.assetNodes?.map(definitionToAssetTableFragment),
+      });
+    }
+    const start = performance.now();
+    console.log('read from cache', start);
+    const cacheData = client.readQuery<
+      AssetCatalogGroupTableQuery,
+      AssetCatalogGroupTableQueryVariables
+    >({
+      query: ASSET_CATALOG_GROUP_TABLE_QUERY,
+      variables: {group: groupSelector},
+    });
+    console.log('read from cache done', performance.now() - start);
+    if (cacheData) {
+      onData(cacheData);
+    }
+    const {data} = await client.query<
+      AssetCatalogGroupTableQuery,
+      AssetCatalogGroupTableQueryVariables
+    >({
+      query: ASSET_CATALOG_GROUP_TABLE_QUERY,
       variables: {group: groupSelector},
       notifyOnNetworkStatusChange: true,
-    },
-  );
+    });
+    onData(data);
+  }, [groupSelector, client]);
 
   return React.useMemo(() => {
-    if (groupSelector) {
-      const assetNodes = groupQuery.data?.assetNodes;
-      return {
-        query: groupQuery,
-        error: undefined,
-        assets: assetNodes?.map(definitionToAssetTableFragment),
-      };
-    }
-
-    const assetsOrError = assetsQuery.data?.assetsOrError;
     return {
-      query: assetsQuery,
-      error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
-      assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
+      assets,
+      error,
+      query: groupSelector ? groupQuery : assetsQuery,
     };
-  }, [assetsQuery, groupQuery, groupSelector]);
+  }, [assets, assetsQuery, error, groupQuery, groupSelector]);
 }
 
 interface AssetCatalogTableProps {
@@ -165,7 +203,11 @@ export const AssetsCatalogTable = ({
       ? buildFlatProps(filtered, prefixPath)
       : buildNamespaceProps(filtered, prefixPath);
 
-  const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
+  const refreshState = useRefreshAtInterval({
+    refresh: query,
+    intervalMs: FIFTEEN_SECONDS,
+    leading: true,
+  });
 
   const loaded = !!assets;
   React.useEffect(() => {

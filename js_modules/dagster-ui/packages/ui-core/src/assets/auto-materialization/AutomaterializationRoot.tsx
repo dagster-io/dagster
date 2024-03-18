@@ -11,7 +11,7 @@ import {
   Subtitle2,
   Table,
 } from '@dagster-io/ui-components';
-import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Redirect} from 'react-router-dom';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
@@ -88,10 +88,6 @@ const GlobalAutomaterializationRoot = () => {
     ASSET_DAEMON_TICKS_QUERY,
   );
 
-  useLayoutEffect(() => {
-    fetch({variables: getVariables()});
-  }, [fetch, getVariables]);
-
   const refresh = useCallback(
     async () => await fetch({variables: getVariables()}),
     [fetch, getVariables],
@@ -101,6 +97,7 @@ const GlobalAutomaterializationRoot = () => {
     refresh,
     enabled: !isPaused && !timeRange && !statuses,
     intervalMs: 2 * 1000,
+    leading: true,
   });
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
