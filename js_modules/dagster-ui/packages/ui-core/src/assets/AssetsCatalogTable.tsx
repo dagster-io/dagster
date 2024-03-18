@@ -48,12 +48,6 @@ function useAllAssets(groupSelector?: AssetGroupSelector) {
     assets: Asset[] | undefined;
   }>({error: undefined, assets: undefined});
 
-  /*
-   * Query for the data / read the cache but don't subscribe to updates to the query like useQuery would do.
-   * In our case the virtualized asset table rows will fetch more fields on their respective asset nodes
-   * which would end up triggering a slow normalization process that tries to update this query which can return an
-   * extremely large number of assets (700k is the max at the time of this comment).
-   */
   const assetsQuery = useConstantCallback(async () => {
     function onData(queryData: typeof data) {
       const assetsOrError = queryData?.assetsOrError;
