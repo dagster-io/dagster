@@ -4,14 +4,19 @@ import Router, {MemoryRouter} from 'react-router-dom';
 
 import {AnalyticsContext} from '../../app/analytics';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
-import {buildAsset, buildAssetKey} from '../../graphql/types';
+import {buildAsset, buildAssetConnection, buildAssetKey} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import AssetsCatalogRoot, {ASSETS_CATALOG_ROOT_QUERY} from '../AssetsCatalogRoot';
+import {ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
 import {fetchRecentlyVisitedAssetsFromLocalStorage} from '../RecentlyVisitedAssetsStorage';
 import {
   AssetsCatalogRootQuery,
   AssetsCatalogRootQueryVariables,
 } from '../types/AssetsCatalogRoot.types';
+import {
+  AssetCatalogTableQuery,
+  AssetCatalogTableQueryVariables,
+} from '../types/AssetsCatalogTable.types';
 
 // Mock the `useParams` hook to override the asset key in the URL.
 jest.mock('react-router-dom', () => ({
@@ -87,6 +92,14 @@ describe('RecentlyVisitedAssetsStorage', () => {
               assetOrError: {
                 __typename: 'AssetNotFoundError',
               },
+            },
+          }),
+          buildQueryMock<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
+            query: ASSET_CATALOG_TABLE_QUERY,
+            data: {
+              assetsOrError: buildAssetConnection({
+                nodes: new Array(12).fill(buildAsset()),
+              }),
             },
           }),
         ]}
