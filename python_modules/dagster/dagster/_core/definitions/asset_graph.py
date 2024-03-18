@@ -7,7 +7,7 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets import AssetsDefinition, asset_owner_to_str
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
@@ -44,6 +44,10 @@ class AssetNode(BaseAssetNode):
         self._check_keys = check_keys
 
     @property
+    def description(self) -> Optional[str]:
+        return self.assets_def.descriptions_by_key.get(self.key)
+
+    @property
     def group_name(self) -> str:
         return self.assets_def.group_names_by_key.get(self.key, DEFAULT_GROUP_NAME)
 
@@ -66,6 +70,16 @@ class AssetNode(BaseAssetNode):
     @property
     def metadata(self) -> ArbitraryMetadataMapping:
         return self.assets_def.metadata_by_key.get(self.key, {})
+
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self.assets_def.tags_by_key.get(self.key, {})
+
+    @property
+    def owners(self) -> Sequence[str]:
+        return [
+            asset_owner_to_str(owner) for owner in self.assets_def.owners_by_key.get(self.key, [])
+        ]
 
     @property
     def is_partitioned(self) -> bool:

@@ -1,6 +1,6 @@
 import {useLazyQuery} from '@apollo/client';
 import {Alert, Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
-import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
 import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
@@ -71,10 +71,6 @@ export const SensorPageAutomaterialize = (props: Props) => {
     ASSET_SENSOR_TICKS_QUERY,
   );
 
-  useLayoutEffect(() => {
-    fetch({variables: getVariables()});
-  }, [fetch, getVariables]);
-
   const refresh = useCallback(
     async () => await fetch({variables: getVariables()}),
     [fetch, getVariables],
@@ -84,6 +80,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
     refresh,
     enabled: !isPaused && !timeRange && !statuses,
     intervalMs: 2 * 1000,
+    leading: true,
   });
 
   const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);

@@ -19,6 +19,7 @@ export interface RefreshState<T = void> {
   nextFireMs: number | null | undefined;
   nextFireDelay: number; // seconds
   refetch: () => Promise<T>;
+  loading: boolean;
 }
 
 /**
@@ -76,11 +77,13 @@ export function useQueryRefreshAtInterval(
 export function useRefreshAtInterval<T = void>({
   refresh,
   intervalMs,
-  enabled,
+  enabled = true,
+  leading,
 }: {
   refresh: () => Promise<T>;
   intervalMs: number;
   enabled?: boolean;
+  leading?: boolean;
 }) {
   const timer = useRef<number>();
   const loadingStartMs = useRef<number>();
@@ -95,6 +98,8 @@ export function useRefreshAtInterval<T = void>({
   const searchVisibilityDidInterrupt = useRef(false);
   const searchVisible = useSearchVisibility();
 
+  const didMakeLeadingQuery = useRef(false);
+
   const [loading, setLoading] = useState(false);
 
   const refreshFn = useCallback(async () => {
@@ -105,19 +110,29 @@ export function useRefreshAtInterval<T = void>({
   }, [refresh]);
 
   useEffect(() => {
+    // Whenever the refresh function changes we need to refire the leading query
+    if (leading) {
+      didMakeLeadingQuery.current = false;
+    }
+  }, [leading, refreshFn]);
+
+  useEffect(() => {
     if (!enabled) {
       return;
     }
     if (
       documentVisible &&
       !searchVisible &&
-      (searchVisibilityDidInterrupt.current || documentVisiblityDidInterrupt.current)
+      (searchVisibilityDidInterrupt.current ||
+        documentVisiblityDidInterrupt.current ||
+        (leading && !didMakeLeadingQuery.current))
     ) {
       refreshFn();
       documentVisiblityDidInterrupt.current = false;
       searchVisibilityDidInterrupt.current = false;
+      didMakeLeadingQuery.current = true;
     }
-  }, [documentVisible, enabled, searchVisible, refreshFn]);
+  }, [documentVisible, enabled, searchVisible, refreshFn, leading]);
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -172,11 +187,12 @@ export function useRefreshAtInterval<T = void>({
   // can be memoized / pure components.
   return useMemo<RefreshState<T>>(
     () => ({
+      loading,
       nextFireMs,
       nextFireDelay,
       refetch: refreshFn,
     }),
-    [nextFireMs, nextFireDelay, refreshFn],
+    [loading, nextFireMs, nextFireDelay, refreshFn],
   );
 }
 
@@ -210,10 +226,16 @@ export const QueryRefreshCountdown = ({
   refreshState,
   dataDescription,
 }: {
-  refreshState: QueryRefreshState;
+  refreshState: QueryRefreshState | RefreshState;
   dataDescription?: string;
 }) => {
-  const status = refreshState.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
+  const status = (
+    'networkStatus' in refreshState
+      ? refreshState.networkStatus === NetworkStatus.ready
+      : !refreshState.loading
+  )
+    ? 'counting'
+    : 'idle';
   const timeRemaining = useCountdown({duration: refreshState.nextFireDelay, status});
 
   return (

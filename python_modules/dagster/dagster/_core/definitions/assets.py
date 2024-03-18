@@ -91,6 +91,15 @@ class TeamAssetOwner(NamedTuple):
 AssetOwner = Union[UserAssetOwner, TeamAssetOwner]
 
 
+def asset_owner_to_str(owner: AssetOwner) -> str:
+    if isinstance(owner, UserAssetOwner):
+        return owner.email
+    elif isinstance(owner, TeamAssetOwner):
+        return owner.team
+    else:
+        check.failed(f"Unexpected owner type {type(owner)}")
+
+
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 
@@ -1478,6 +1487,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 resource_defs=self.resource_defs,
                 partitions_def=self.partitions_def,
                 group_name=self.group_names_by_key[key],
+                tags=self.tags_by_key.get(key),
             )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
