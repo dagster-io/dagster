@@ -208,8 +208,8 @@ def test_selections(
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
 
     assert my_dbt_assets.keys == expected_asset_keys
-    assert my_dbt_assets.op.tags.get("dagster-dbt/select") == select
-    assert my_dbt_assets.op.tags.get("dagster-dbt/exclude") == exclude
+    assert my_dbt_assets.op.tags.get("dagster_dbt/select") == select
+    assert my_dbt_assets.op.tags.get("dagster_dbt/exclude") == exclude
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
@@ -310,7 +310,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
     assert my_dbt_assets.op.tags == {
         **op_tags,
         "kind": "dbt",
-        "dagster-dbt/select": "fqn:*",
+        "dagster_dbt/select": "fqn:*",
     }
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, op_tags=op_tags, select="raw_customers+")
@@ -319,7 +319,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
     assert my_dbt_assets_with_select.op.tags == {
         **op_tags,
         "kind": "dbt",
-        "dagster-dbt/select": "raw_customers+",
+        "dagster_dbt/select": "raw_customers+",
     }
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, op_tags=op_tags, exclude="raw_customers+")
@@ -328,8 +328,8 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
     assert my_dbt_assets_with_exclude.op.tags == {
         **op_tags,
         "kind": "dbt",
-        "dagster-dbt/select": "fqn:*",
-        "dagster-dbt/exclude": "raw_customers+",
+        "dagster_dbt/select": "fqn:*",
+        "dagster_dbt/exclude": "raw_customers+",
     }
 
     @dbt_assets(
@@ -343,35 +343,35 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
     assert my_dbt_assets_with_select_and_exclude.op.tags == {
         **op_tags,
         "kind": "dbt",
-        "dagster-dbt/select": "raw_customers+",
-        "dagster-dbt/exclude": "customers",
+        "dagster_dbt/select": "raw_customers+",
+        "dagster_dbt/exclude": "customers",
     }
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            "To specify a dbt selection, use the 'select' argument, not 'dagster_dbt/select'"
             " with op_tags"
         ),
     ):
 
         @dbt_assets(
             manifest=test_jaffle_shop_manifest,
-            op_tags={"dagster-dbt/select": "raw_customers+"},
+            op_tags={"dagster_dbt/select": "raw_customers+"},
         )
         def select_tag(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster_dbt/exclude'"
             " with op_tags"
         ),
     ):
 
         @dbt_assets(
             manifest=test_jaffle_shop_manifest,
-            op_tags={"dagster-dbt/exclude": "raw_customers+"},
+            op_tags={"dagster_dbt/exclude": "raw_customers+"},
         )
         def exclude_tag(): ...
 

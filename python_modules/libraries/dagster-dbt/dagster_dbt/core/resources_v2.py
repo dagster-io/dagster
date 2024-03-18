@@ -46,6 +46,8 @@ from pydantic import Field, validator
 from typing_extensions import Literal
 
 from ..asset_utils import (
+    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
+    DAGSTER_DBT_SELECT_METADATA_KEY,
     dagster_name_fn,
     default_metadata_from_dbt_resource_props,
     get_manifest_and_translator_from_dbt_assets,
@@ -1037,8 +1039,8 @@ class DbtCliResource(ConfigurableResource):
             selection_args = get_subset_selection_for_context(
                 context=context,
                 manifest=manifest,
-                select=context.op.tags.get("dagster-dbt/select"),
-                exclude=context.op.tags.get("dagster-dbt/exclude"),
+                select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
+                exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
                 dagster_dbt_translator=dagster_dbt_translator,
             )
         else:
