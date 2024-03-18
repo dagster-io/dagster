@@ -185,15 +185,15 @@ function getGreeting(timezone: string) {
 
 const CountForAssetType = ({children, assetsCount}: AssetOverviewCategoryProps) => {
   return (
-    <Box
-      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-      style={{width: 'calc(33% - 16px)'}}
-    >
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} style={{width: '70%'}}>
+    <ColumnContainer>
+      <Box
+        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+        style={assetsCount !== 0 ? {width: '70%'} : {width: '100%'}}
+      >
         {children}
       </Box>
       {assetsCount !== 0 && <AssetCount>{assetsCount} assets</AssetCount>}
-    </Box>
+    </ColumnContainer>
   );
 };
 
@@ -362,7 +362,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     <Link to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}>
                       {assetGroupCount.groupMetadata.groupName}
                     </Link>
-                    <span style={{color: Colors.textLighter()}}>
+                    <span style={{...TextOverflowStyle, ...{color: Colors.textLighter()}}}>
                       {repoAddressAsHumanString({
                         name: assetGroupCount.groupMetadata.repositoryName,
                         location: assetGroupCount.groupMetadata.repositoryLocationName,
@@ -428,3 +428,15 @@ const TextOverflowStyle: React.CSSProperties = {
   textOverflow: 'ellipsis',
   width: '100%',
 };
+
+const ColumnContainer = styled.div`
+  width: calc(33% - 16px);
+  @media (max-width: 800px) {
+    width: calc(100% - 16px);
+  }
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+`;
