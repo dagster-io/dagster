@@ -38,6 +38,9 @@ import {FilterObject} from '../ui/Filters/useFilter';
 import {LoadingSpinner} from '../ui/Loading';
 type Asset = AssetTableFragment;
 
+let globalTableCache: AssetCatalogTableQuery;
+const groupTableCache = new Map();
+
 function useAllAssets(groupSelector?: AssetGroupSelector) {
   const client = useApolloClient();
   const [{error, assets}, setErrorAndAssets] = React.useState<{
@@ -59,16 +62,14 @@ function useAllAssets(groupSelector?: AssetGroupSelector) {
         assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
       });
     }
-    const cacheData = client.readQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
-      query: ASSET_CATALOG_TABLE_QUERY,
-    });
-    if (cacheData) {
-      onData(cacheData);
+    if (globalTableCache) {
+      onData(globalTableCache);
     }
     const {data} = await client.query<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
       query: ASSET_CATALOG_TABLE_QUERY,
-      notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'no-cache',
     });
+    globalTableCache = data;
     onData(data);
   });
 
@@ -82,18 +83,9 @@ function useAllAssets(groupSelector?: AssetGroupSelector) {
         assets: queryData.assetNodes?.map(definitionToAssetTableFragment),
       });
     }
-    const start = performance.now();
-    console.log('read from cache', start);
-    const cacheData = client.readQuery<
-      AssetCatalogGroupTableQuery,
-      AssetCatalogGroupTableQueryVariables
-    >({
-      query: ASSET_CATALOG_GROUP_TABLE_QUERY,
-      variables: {group: groupSelector},
-    });
-    console.log('read from cache done', performance.now() - start);
-    if (cacheData) {
-      onData(cacheData);
+    const cacheKey = JSON.stringify(groupSelector);
+    if (groupTableCache.has(cacheKey)) {
+      onData(groupTableCache.get(cacheKey));
     }
     const {data} = await client.query<
       AssetCatalogGroupTableQuery,
@@ -101,8 +93,9 @@ function useAllAssets(groupSelector?: AssetGroupSelector) {
     >({
       query: ASSET_CATALOG_GROUP_TABLE_QUERY,
       variables: {group: groupSelector},
-      notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'no-cache',
     });
+    groupTableCache.set(cacheKey, data);
     onData(data);
   }, [groupSelector, client]);
 
@@ -363,7 +356,7 @@ export const AssetsCatalogTable = ({
       prefixPath={prefixPath || []}
       searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
-      requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
+      requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY, fetchPolicy: 'no-cache'}]}
     />
   );
 };
