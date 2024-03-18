@@ -54,7 +54,10 @@ def _get_external_asset_nodes_from_definitions(
     defs: Definitions,
 ) -> Sequence[ExternalAssetNode]:
     repo = defs.get_repository_def()
-    return external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph.assets_defs)
+    return sorted(
+        external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph),
+        key=lambda n: n.asset_key,
+    )
 
 
 def test_single_asset_job():
@@ -256,7 +259,7 @@ def test_two_asset_job():
         Definitions(
             assets=[asset1, asset2],
             jobs=[define_asset_job("assets_job", [asset1, asset2])],
-        )
+        ),
     )
 
     assert external_asset_nodes == [
@@ -298,14 +301,11 @@ def test_input_name_matches_output_name():
     def something(result):
         pass
 
-    external_asset_nodes = sorted(
-        _get_external_asset_nodes_from_definitions(
-            Definitions(
-                assets=[not_result, something],
-                jobs=[define_asset_job("assets_job", [something])],
-            )
-        ),
-        key=lambda n: n.asset_key,
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[not_result, something],
+            jobs=[define_asset_job("assets_job", [something])],
+        )
     )
 
     assert external_asset_nodes == [
@@ -628,18 +628,8 @@ def test_inter_op_dependency():
         )
     )
     # sort so that test is deterministic
-    sorted_nodes = sorted(
-        [
-            node._replace(
-                dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
-                depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
-            )
-            for node in external_asset_nodes
-        ],
-        key=lambda n: n.asset_key,
-    )
 
-    assert sorted_nodes == [
+    assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey(["downstream"]),
             dependencies=[
@@ -765,11 +755,8 @@ def test_source_asset_with_op():
 
     assets_job = define_asset_job("assets_job", [bar])
 
-    external_asset_nodes = sorted(
-        _get_external_asset_nodes_from_definitions(
-            Definitions(assets=[foo, bar], jobs=[assets_job])
-        ),
-        key=lambda n: n.asset_key,
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[foo, bar], jobs=[assets_job])
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -805,9 +792,8 @@ def test_unused_source_asset():
     foo = SourceAsset(key=AssetKey("foo"), description="abc")
     bar = SourceAsset(key=AssetKey("bar"), description="def")
 
-    external_asset_nodes = sorted(
-        _get_external_asset_nodes_from_definitions(Definitions(assets=[foo, bar])),
-        key=lambda n: n.asset_key,
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[foo, bar])
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -848,14 +834,11 @@ def test_used_source_asset():
 
     job1 = define_asset_job("job1", [foo])
 
-    external_asset_nodes = sorted(
-        _get_external_asset_nodes_from_definitions(
-            Definitions(
-                assets=[bar, foo],
-                jobs=[job1],
-            )
-        ),
-        key=lambda n: n.asset_key,
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[bar, foo],
+            jobs=[job1],
+        )
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -927,21 +910,7 @@ def test_graph_output_metadata_and_description():
         Definitions(assets=[zero, three_asset], jobs=[assets_job])
     )
 
-    # sort so that test is deterministic
-    sorted_nodes = sorted(
-        [
-            node._replace(
-                dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
-                depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
-                op_names=sorted(node.op_names),
-                metadata=node.metadata,
-            )
-            for node in external_asset_nodes
-        ],
-        key=lambda n: n.asset_key,
-    )
-
-    assert sorted_nodes == [
+    assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey(["three"]),
             dependencies=[ExternalAssetDependency(AssetKey(["zero"]))],
@@ -1042,20 +1011,8 @@ def test_nasty_nested_graph_asset():
     external_asset_nodes = _get_external_asset_nodes_from_definitions(
         Definitions(assets=[zero, eight_and_five, thirteen_and_six, twenty], jobs=[assets_job])
     )
-    # sort so that test is deterministic
-    sorted_nodes = sorted(
-        [
-            node._replace(
-                dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
-                depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
-                op_names=sorted(node.op_names),
-            )
-            for node in external_asset_nodes
-        ],
-        key=lambda n: n.asset_key,
-    )
 
-    assert sorted_nodes[-3:] == [
+    assert external_asset_nodes[-3:] == [
         ExternalAssetNode(
             asset_key=AssetKey(["thirteen"]),
             dependencies=[
@@ -1314,15 +1271,39 @@ def test_external_time_window_valid_partition_key():
     )
 
 
-def test_external_assets_def_to_external_asset_graph() -> None:
-    asset_one = next(iter(external_assets_from_specs([AssetSpec("asset_one")])))
-
-    external_asset_nodes = _get_external_asset_nodes_from_definitions(
-        Definitions(assets=[asset_one])
+def test_external_assets_def_to_external_asset_graph():
+    asset1, asset2 = external_assets_from_specs(
+        [AssetSpec("asset1"), AssetSpec("asset2", deps=["asset1"])]
     )
 
-    assert len(external_asset_nodes) == 1
-    assert next(iter(external_asset_nodes)).is_executable is False
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[asset1, asset2])
+    )
+
+    assert len(external_asset_nodes) == 2
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey(["asset1"]),
+            dependencies=[],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("asset2"))],
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
+            },
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("asset2"),
+            dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["asset1"]))],
+            depended_by=[],
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
+            },
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+    ]
 
 
 def test_historical_external_asset_node_that_models_underlying_external_assets_def() -> None:
