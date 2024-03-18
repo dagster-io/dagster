@@ -12,6 +12,7 @@ type CacheData<TQuery> = {
 /**
  * Returns data from the indexedDB cache initially while loading is true.
  * Fetches data from the network/cache initially and does not receive any updates afterwards
+ * Uses fetch-policy: no-cache to avoid slow apollo cache normalization
  */
 export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVariables>({
   key,
@@ -62,6 +63,8 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     const {data} = await client.query<TQuery, TVariables>({
       query,
       variables,
+      fetchPolicy: 'no-cache', // Don't store the result in the cache,
+      // should help avoid page stuttering due to granular updates to the data
     });
     setLoading(false);
     lru.set(
