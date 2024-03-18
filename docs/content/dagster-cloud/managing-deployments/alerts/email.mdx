@@ -1,0 +1,102 @@
+---
+title: "Email & Dagster Cloud | Dagster Docs"
+---
+
+# Email & Dagster Cloud
+
+<ApplicableDagsterProduct />
+
+Dagster Cloud supports [sending alerts](/dagster-cloud/managing-deployment/alerts) as emails to one or more recipients.
+
+---
+
+## Creating an alert policy
+
+Creating an alert policy can be done using the Dagster Cloud UI or in code.
+
+<TabGroup>
+<TabItem name="In the UI">
+
+### In the UI
+
+1. Create and configure an alert policy. Refer to the [alert policy documentation](/dagster-cloud/managing-deployments/alerts#creating-alert-policies) for more info.
+
+2. In the **Notification Service** section of the **Create alert policy** window, select the **Email** option.
+
+3. In the field that displays, enter the email address notifications should be sent to. To add multiple recipients, press **Enter** after each email address.
+
+   <!-- ![Email alert configured to alert two recipients](/images/dagster-cloud/alerts/cloud-email-alert-creation.png) -->
+
+   <Image
+   alt="Email alert configured to alert two recipients"
+   src="/images/dagster-cloud/alerts/cloud-email-alert-creation.png"
+   width={1571}
+   height={178}
+   />
+
+4. Click **Save policy**.
+
+</TabItem>
+<TabItem name="In code">
+
+### In code
+
+In this example, we'll configure an email alert when a job fails. This job, named `important_job`, has a `level` tag of `"critical"`:
+
+```python
+def important_computation():
+    ...
+
+
+@job(tags={"level": "critical"})
+def important_job():
+    important_computation()
+```
+
+In the alert policies YAML file, we'll define a policy that listens for jobs with a `level` tag of `critical` to fail. When this occurs, an email notification will be sent to `richard.hendricks@hooli.com` and `nelson.bighetti@hooli.com`:
+
+```yaml
+alert_policies:
+  - name: "email-alert-policy"
+    description: "An alert policy to email company executives during job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "JOB_FAILURE"
+    notification_service:
+      email:
+        email_addresses:
+          - "richard.hendricks@hooli.com"
+          - "nelson.bighetti@hooli.com"
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Cloud alerts"
+    href="/dagster-cloud/managing-deployments/alerts"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing code locations"
+    href="/dagster-cloud/managing-deployments/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deployment settings"
+    href="/dagster-cloud/managing-deployments/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-cloud CLI"
+    href="/dagster-cloud/managing-deployments/dagster-cloud-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster_cloud.yaml"
+    href="/dagster-cloud/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+</ArticleList>
