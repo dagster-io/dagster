@@ -24,7 +24,7 @@ export const AssetColumnsGroupNode = ({
   height: number;
 }) => {
   return (
-    <AssetInsetForHoverEffect>
+    <AssetInsetForHoverEffect style={{marginLeft: 12, marginRight: 12}}>
       <AssetNodeContainer $selected={selected}>
         <div style={{minHeight: 24}} />
         <AssetNodeBox $selected={selected} $isSource={definition.isSource} $noScale>
@@ -46,13 +46,15 @@ export const AssetColumnNode = ({
   selected: boolean;
 }) => {
   return (
-    <Box style={{width: '100%', height: 32}} flex={{direction: 'column'}}>
+    <Box margin={{horizontal: 12}} style={{height: 32}} flex={{direction: 'column'}}>
       <Tooltip key={column.name} content={column.description || 'No description provided'}>
         <ColumnLink
           to={assetDetailsPathForKey(assetKey, {view: 'lineage', column: column.name})}
           $selected={selected}
         >
-          <Caption>{column.name}</Caption>
+          <Caption style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+            {column.name}
+          </Caption>
           <TypeTag type={column.type || ''} />
         </ColumnLink>
       </Tooltip>
