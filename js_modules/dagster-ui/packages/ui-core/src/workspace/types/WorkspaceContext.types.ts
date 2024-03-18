@@ -93,10 +93,6 @@ export type RootWorkspaceQuery = {
                       id: string;
                       selectorId: string;
                       status: Types.InstigationStatus;
-                      typeSpecificData:
-                        | {__typename: 'ScheduleData'}
-                        | {__typename: 'SensorData'; lastCursor: string | null}
-                        | null;
                     };
                   }>;
                   partitionSets: Array<{
@@ -193,10 +189,6 @@ export type WorkspaceLocationNodeFragment = {
               id: string;
               selectorId: string;
               status: Types.InstigationStatus;
-              typeSpecificData:
-                | {__typename: 'ScheduleData'}
-                | {__typename: 'SensorData'; lastCursor: string | null}
-                | null;
             };
           }>;
           partitionSets: Array<{
@@ -274,10 +266,6 @@ export type WorkspaceLocationFragment = {
         id: string;
         selectorId: string;
         status: Types.InstigationStatus;
-        typeSpecificData:
-          | {__typename: 'ScheduleData'}
-          | {__typename: 'SensorData'; lastCursor: string | null}
-          | null;
       };
     }>;
     partitionSets: Array<{
@@ -332,10 +320,6 @@ export type WorkspaceRepositoryFragment = {
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
-      typeSpecificData:
-        | {__typename: 'ScheduleData'}
-        | {__typename: 'SensorData'; lastCursor: string | null}
-        | null;
     };
   }>;
   partitionSets: Array<{
@@ -378,9 +362,5 @@ export type WorkspaceSensorFragment = {
     id: string;
     selectorId: string;
     status: Types.InstigationStatus;
-    typeSpecificData:
-      | {__typename: 'ScheduleData'}
-      | {__typename: 'SensorData'; lastCursor: string | null}
-      | null;
   };
 };
