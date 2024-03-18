@@ -91,6 +91,15 @@ class TeamAssetOwner(NamedTuple):
 AssetOwner = Union[UserAssetOwner, TeamAssetOwner]
 
 
+def asset_owner_to_str(owner: AssetOwner) -> str:
+    if isinstance(owner, UserAssetOwner):
+        return owner.email
+    elif isinstance(owner, TeamAssetOwner):
+        return owner.team
+    else:
+        check.failed(f"Unexpected owner type {type(owner)}")
+
+
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 

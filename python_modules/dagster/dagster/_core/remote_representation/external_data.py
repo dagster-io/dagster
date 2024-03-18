@@ -55,7 +55,7 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.assets import (
     AssetOwner,
     AssetsDefinition,
-    UserAssetOwner,
+    asset_owner_to_str,
 )
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -1722,8 +1722,7 @@ def external_asset_nodes_from_defs(
                 execution_set_identifier=execution_set_identifiers.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
                 owners=[
-                    owner.email if isinstance(owner, UserAssetOwner) else owner.team
-                    for owner in owners_by_asset_key.get(asset_key, [])
+                    asset_owner_to_str(owner) for owner in owners_by_asset_key.get(asset_key, [])
                 ],
             )
         )
