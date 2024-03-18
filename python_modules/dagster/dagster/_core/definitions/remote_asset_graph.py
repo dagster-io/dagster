@@ -62,6 +62,10 @@ class RemoteAssetNode(BaseAssetNode):
     ##### COMMON ASSET NODE INTERFACE
 
     @property
+    def description(self) -> Optional[str]:
+        return self._priority_node.op_description
+
+    @property
     def group_name(self) -> str:
         return self._priority_node.group_name or DEFAULT_GROUP_NAME
 
@@ -84,6 +88,14 @@ class RemoteAssetNode(BaseAssetNode):
     @property
     def metadata(self) -> ArbitraryMetadataMapping:
         return self._priority_node.metadata
+
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self._priority_node.tags or {}
+
+    @property
+    def owners(self) -> Sequence[str]:
+        return self._priority_node.owners or []
 
     @property
     def is_partitioned(self) -> bool:
