@@ -91,7 +91,9 @@ def sling_assets(
                 description=dagster_sling_translator.get_description(stream),
                 code_version=code_version,
                 freshness_policy=dagster_sling_translator.get_freshness_policy(stream),
-                auto_materialize_policy = dagster_sling_translator.get_auto_materialize_policy(stream),
+                auto_materialize_policy=dagster_sling_translator.get_auto_materialize_policy(
+                    stream
+                ),
             )
         )
 
