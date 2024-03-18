@@ -79,6 +79,34 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     version.parse(dbt_version) < version.parse("1.6.0"),
     reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
 )
+def test_no_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(
+            [
+                "build",
+                "--vars",
+                json.dumps({"dagster_enable_parent_relation_metadata_collection": False}),
+            ],
+            context=context,
+        ).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+
+    assert result.success
+    assert all(
+        not event.materialization.metadata.get("dagster/column_lineage")
+        for event in result.get_asset_materialization_events()
+    )
+
+
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.6.0"),
+    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
+)
 @pytest.mark.parametrize(
     "asset_key_selection",
     [
