@@ -87,8 +87,8 @@ def sling_assets(
             AssetSpec(
                 key=dagster_sling_translator.get_asset_key(stream),
                 deps=dagster_sling_translator.get_deps_asset_key(stream),
-                group_name = dagster_sling_translator.get_group_name(stream),
-                description = dagster_sling_translator.get_description(stream),
+                group_name=dagster_sling_translator.get_group_name(stream),
+                description=dagster_sling_translator.get_description(stream),
                 code_version=code_version,
                 freshness_policy=dagster_sling_translator.get_freshness_policy(stream),
                 auto_materialize_policy = dagster_sling_translator.get_auto_materialize_policy(stream),
