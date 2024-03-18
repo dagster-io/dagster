@@ -1,8 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
 
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
-import {AssetMaterializationFragment} from './types/useRecentAssetEvents.types';
+import {AssetColumnLineageQuery} from './lineage/types/useColumnLineageDataForAssets.types';
 import {isCanonicalColumnSchemaEntry} from '../metadata/TableSchema';
+
+type AssetDefinitionWithMetadata = AssetColumnLineageQuery['assetNodes'][0];
 
 /**
  * This helper pulls the `columns` metadata entry from the most recent materialization
@@ -14,21 +15,20 @@ export function buildConsolidatedColumnSchema({
   definition,
   definitionLoadTimestamp,
 }: {
-  materialization: Pick<AssetMaterializationFragment, 'metadataEntries' | 'timestamp'> | undefined;
-  definition: AssetNodeDefinitionFragment | undefined;
+  materialization:
+    | Pick<AssetDefinitionWithMetadata['assetMaterializations'][0], 'metadataEntries' | 'timestamp'>
+    | undefined;
+  definition: Pick<AssetDefinitionWithMetadata, 'metadataEntries'> | undefined;
   definitionLoadTimestamp: number | undefined;
 }) {
   const materializationTableSchema = materialization?.metadataEntries.find(
     isCanonicalColumnSchemaEntry,
   );
-  const materializationTableSchemaLoadTimestamp = materialization
-    ? Number(materialization.timestamp)
-    : undefined;
+  const materializationTimestamp = materialization ? Number(materialization.timestamp) : undefined;
   const definitionTableSchema = definition?.metadataEntries.find(isCanonicalColumnSchemaEntry);
 
   let tableSchema = materializationTableSchema ?? definitionTableSchema;
-  const tableSchemaLoadTimestamp =
-    materializationTableSchemaLoadTimestamp ?? definitionLoadTimestamp;
+  const tableSchemaLoadTimestamp = materializationTimestamp ?? definitionLoadTimestamp;
 
   // Merge the descriptions from the definition table schema with the materialization table schema
   if (materializationTableSchema && definitionTableSchema) {
@@ -46,6 +46,6 @@ export function buildConsolidatedColumnSchema({
       schema: {...materializationTableSchema.schema, columns: mergedColumns},
     };
   }
-
+  console.log(tableSchema);
   return {tableSchema, tableSchemaLoadTimestamp};
 }

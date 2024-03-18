@@ -223,6 +223,7 @@ export const MetadataEntry = ({
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
+          modalWidth={900}
           copyContent={() => JSON.stringify(entry.schema, null, 2)}
           content={() => (
             <Box
@@ -368,6 +369,7 @@ const PythonArtifactLink = ({
 const MetadataEntryModalAction = (props: {
   children: React.ReactNode;
   label: string;
+  modalWidth?: number;
   content: () => React.ReactNode;
   copyContent: () => string;
 }) => {
@@ -377,7 +379,7 @@ const MetadataEntryModalAction = (props: {
       <MetadataEntryAction onClick={() => setOpen(true)}>{props.children}</MetadataEntryAction>
       <Dialog
         icon="info"
-        style={{width: 'auto', minWidth: 400, maxWidth: '80vw'}}
+        style={{width: props.modalWidth || 'auto', minWidth: 400, maxWidth: '80vw'}}
         title={props.label}
         onClose={() => setOpen(false)}
         isOpen={open}

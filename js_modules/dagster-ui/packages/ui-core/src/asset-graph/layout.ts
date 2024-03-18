@@ -47,6 +47,10 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
   groupPaddingTop: number;
   groupPaddingBottom: number;
   groupRendering: 'if-varied' | 'always';
+
+  /** Supported in Dagre, just not documented. Additional spacing between group nodes */
+  clusterpaddingtop?: number;
+  clusterpaddingbottom?: number;
 };
 
 export type LayoutAssetGraphOptions = {

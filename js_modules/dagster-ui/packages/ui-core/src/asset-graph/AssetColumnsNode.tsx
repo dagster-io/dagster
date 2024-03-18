@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, StyledTag, Tooltip} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, StyledTag, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -9,18 +9,22 @@ import {
   AssetNodeContainer,
 } from './AssetNode';
 import {AssetNodeFragment} from './types/AssetNode.types';
+import {Timestamp} from '../app/time/Timestamp';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetColumnLineageLocal} from '../assets/lineage/useColumnLineageDataForAssets';
+import {AssetColumnLineageLocalColumn} from '../assets/lineage/useColumnLineageDataForAssets';
+import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetKeyInput} from '../graphql/types';
-import {TypeTag} from '../metadata/TableSchema';
+import {iconForColumnType} from '../metadata/TableSchema';
 
 export const AssetColumnsGroupNode = ({
   selected,
   definition,
   height,
+  asOf,
 }: {
   selected: boolean;
   definition: AssetNodeFragment;
+  asOf: string | undefined;
   height: number;
 }) => {
   return (
@@ -30,7 +34,15 @@ export const AssetColumnsGroupNode = ({
         <AssetNodeBox $selected={selected} $isSource={definition.isSource} $noScale>
           <AssetNameRow definition={definition} />
           <Box style={{height: height - 60}} flex={{direction: 'column'}}></Box>
+          <Box border="top" padding={{horizontal: 8, vertical: 2}} style={{minHeight: 22}}>
+            {asOf ? (
+              <Caption color={Colors.textLighter()}>
+                <Timestamp timestamp={{ms: Number(asOf)}} />
+              </Caption>
+            ) : undefined}
+          </Box>
         </AssetNodeBox>
+        <AssetComputeKindTag definition={definition} style={{right: 10, paddingTop: 7}} />
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
@@ -42,9 +54,11 @@ export const AssetColumnNode = ({
   selected,
 }: {
   assetKey: AssetKeyInput;
-  column: AssetColumnLineageLocal[''];
+  column: AssetColumnLineageLocalColumn;
   selected: boolean;
 }) => {
+  const icon = iconForColumnType(column.type ?? '');
+
   return (
     <Box margin={{horizontal: 12}} style={{height: 32}} flex={{direction: 'column'}}>
       <Tooltip key={column.name} content={column.description || 'No description provided'}>
@@ -52,10 +66,10 @@ export const AssetColumnNode = ({
           to={assetDetailsPathForKey(assetKey, {view: 'lineage', column: column.name})}
           $selected={selected}
         >
+          {icon ? <Icon name={icon} /> : <span style={{width: 16}} />}
           <Caption style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
             {column.name}
           </Caption>
-          <TypeTag type={column.type || ''} />
         </ColumnLink>
       </Tooltip>
     </Box>
@@ -65,11 +79,10 @@ export const AssetColumnNode = ({
 const ColumnLink = styled(Link)<{$selected: boolean}>`
   height: 28px;
   margin: 2px 0;
-  padding-left: 8px;
+  padding-left: 2px;
   padding-right: 4px;
   display: flex;
   gap: 4px;
-  justify-content: space-between;
   align-items: center;
   transition: background 100ms linear;
   border-radius: 8px;

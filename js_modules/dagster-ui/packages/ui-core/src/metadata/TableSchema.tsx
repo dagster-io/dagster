@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import {useState} from 'react';
+import {createContext, useContext, useState} from 'react';
 
 import {TableSchemaFragment} from './types/TableSchema.types';
 import {Timestamp} from '../app/time/Timestamp';
@@ -23,6 +23,7 @@ import {
   MaterializationEvent,
   TableSchemaMetadataEntry,
 } from '../graphql/types';
+import {Description} from '../pipelines/Description';
 import {AnchorButton} from '../ui/AnchorButton';
 
 type ITableSchema = TableSchemaFragment;
@@ -33,7 +34,6 @@ interface ITableSchemaProps {
   schema: ITableSchema;
   schemaLoadTimestamp?: number | undefined;
   itemHorizontalPadding?: Spacing;
-  assetKeyForColumnSchema?: AssetKeyInput;
 }
 
 export const isCanonicalColumnSchemaEntry = (
@@ -45,12 +45,17 @@ export const isCanonicalColumnLineageEntry = (
   m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
 ): m is JsonMetadataEntry => m.__typename === 'JsonMetadataEntry' && m.label === 'lineage';
 
+export const TableSchemaLineageContext = createContext<{assetKey: AssetKeyInput | null}>({
+  assetKey: null,
+});
+
 export const TableSchema = ({
   schema,
   schemaLoadTimestamp,
   itemHorizontalPadding,
-  assetKeyForColumnSchema,
 }: ITableSchemaProps) => {
+  const {assetKey} = useContext(TableSchemaLineageContext);
+
   const multiColumnConstraints = schema.constraints?.other || [];
   const [filter, setFilter] = useState('');
   const rows = schema.columns.filter(
@@ -89,7 +94,7 @@ export const TableSchema = ({
             <td>Column name</td>
             <td style={{width: 200}}>Type</td>
             <td>Description</td>
-            {assetKeyForColumnSchema ? <td style={{width: 56}} /> : undefined}
+            {assetKey ? <td style={{width: 56}} /> : undefined}
           </tr>
         </thead>
         <tbody>
@@ -106,13 +111,15 @@ export const TableSchema = ({
                   <ArbitraryConstraintTag key={i} constraint={constraint} />
                 ))}
               </td>
-              <td>{column.description}</td>
-              {assetKeyForColumnSchema ? (
+              <td>
+                <Description description={column.description} />
+              </td>
+              {assetKey ? (
                 <td style={{padding: '4px 12px'}}>
                   <Tooltip content="View column lineage">
                     <AnchorButton
                       icon={<Icon name="column_lineage" />}
-                      to={assetDetailsPathForKey(assetKeyForColumnSchema, {
+                      to={assetDetailsPathForKey(assetKey, {
                         view: 'lineage',
                         column: column.name,
                       })}
@@ -135,7 +142,7 @@ export const TableSchema = ({
   );
 };
 
-const iconForType = (type: string): IconName | null => {
+export const iconForColumnType = (type: string): IconName | null => {
   const lower = type.toLowerCase();
   if (lower.includes('bool')) {
     return 'datatype_bool';
@@ -161,7 +168,7 @@ export const TypeTag = ({type = ''}: {type: string}) => {
     return <span />;
   }
 
-  const icon = iconForType(type);
+  const icon = iconForColumnType(type);
 
   return (
     <Tag intent="none">

@@ -19,16 +19,19 @@ export type AssetColumnLineageServer = {
   }[];
 };
 
+export type AssetColumnLineageLocalColumn = {
+  name: string;
+  type: string | null;
+  description: string | null;
+  asOf: string | undefined; // materialization timestamp
+  upstream: {
+    assetKey: AssetKeyInput;
+    columnName: string;
+  }[];
+};
+
 export type AssetColumnLineageLocal = {
-  [column: string]: {
-    name: string;
-    type: string | null;
-    description: string | null;
-    upstream: {
-      assetKey: AssetKeyInput;
-      columnName: string;
-    }[];
-  };
+  [column: string]: AssetColumnLineageLocalColumn;
 };
 
 export type AssetColumnLineages = {[graphId: string]: AssetColumnLineageLocal | undefined};
@@ -64,6 +67,7 @@ const getColumnLineage = (
       column,
       {
         name: column,
+        asOf: materialization?.timestamp,
         type: schemaParsed[column]?.type || null,
         description: schemaParsed[column]?.description || null,
         upstream: m.map((u) => ({

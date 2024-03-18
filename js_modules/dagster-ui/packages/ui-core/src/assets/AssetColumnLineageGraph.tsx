@@ -75,6 +75,9 @@ export const AssetColumnLineageGraph = ({
                 node: graphNode!,
               };
 
+              const cols = columnLineageData[groupAssetGraphId] || {};
+              const colsAsOf = Object.values(cols)[0]?.asOf;
+
               return (
                 <foreignObject
                   {...bounds}
@@ -92,6 +95,7 @@ export const AssetColumnLineageGraph = ({
                       definition={graphNode!.definition}
                       selected={focusedAssetGraphId === groupAssetGraphId}
                       height={bounds.height}
+                      asOf={colsAsOf}
                     />
                   </AssetNodeContextMenuWrapper>
                 </foreignObject>
@@ -117,6 +121,7 @@ export const AssetColumnLineageGraph = ({
                 description: 'Not found in column metadata',
                 type: null,
                 upstream: [],
+                asOf: undefined,
               };
 
               return (
