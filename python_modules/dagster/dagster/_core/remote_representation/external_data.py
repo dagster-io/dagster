@@ -1750,6 +1750,7 @@ def external_asset_nodes_from_defs(
                     metadata=asset.metadata_by_key.get(key),
                     group_name=group_name,
                     is_source=True,
+                    tags=asset.tags_by_key.get(key),
                     is_observable=asset.is_observable,
                     auto_observe_interval_minutes=asset.auto_observe_interval_minutes,
                     partitions_def_data=(

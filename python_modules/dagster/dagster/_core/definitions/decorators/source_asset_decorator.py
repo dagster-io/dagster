@@ -23,10 +23,8 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.source_asset import (
-    SourceAsset,
-    SourceAssetObserveFunction,
-)
+from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
+from dagster._core.definitions.utils import validate_definition_tags
 
 
 @overload
@@ -50,6 +48,7 @@ def observable_source_asset(
     auto_observe_interval_minutes: Optional[float] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> "_ObservableSourceAsset": ...
 
 
@@ -71,6 +70,7 @@ def observable_source_asset(
     auto_observe_interval_minutes: Optional[float] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
 
@@ -109,6 +109,8 @@ def observable_source_asset(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
     """
     if observe_fn is not None:
@@ -129,6 +131,7 @@ def observable_source_asset(
         auto_observe_interval_minutes,
         freshness_policy,
         op_tags,
+        tags=validate_definition_tags(tags),
     )
 
 
@@ -149,6 +152,7 @@ class _ObservableSourceAsset:
         auto_observe_interval_minutes: Optional[float] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         op_tags: Optional[Mapping[str, Any]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         self.key = key
         self.name = name
@@ -168,6 +172,7 @@ class _ObservableSourceAsset:
         self.auto_observe_interval_minutes = auto_observe_interval_minutes
         self.freshness_policy = freshness_policy
         self.op_tags = op_tags
+        self.tags = tags
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
         source_asset_key, source_asset_name = resolve_asset_key_and_name_for_decorator(
@@ -201,6 +206,7 @@ class _ObservableSourceAsset:
             partitions_def=self.partitions_def,
             auto_observe_interval_minutes=self.auto_observe_interval_minutes,
             freshness_policy=self.freshness_policy,
+            tags=self.tags,
         )
 
 
