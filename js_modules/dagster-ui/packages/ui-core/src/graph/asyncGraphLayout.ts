@@ -10,7 +10,7 @@ import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../as
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
 // If you're working on the layout logic, set to false so hot-reloading re-computes the layout
-const CACHING_ENABLED = false;
+const CACHING_ENABLED = true;
 
 // Op Graph
 

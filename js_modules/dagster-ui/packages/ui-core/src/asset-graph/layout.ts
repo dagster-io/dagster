@@ -72,6 +72,7 @@ export const Config = {
     groupPaddingTop: 65,
     groupPaddingBottom: -15,
     groupRendering: 'if-varied',
+    clusterpaddingtop: 100,
   },
   vertical: {
     ranker: 'tight-tree',
