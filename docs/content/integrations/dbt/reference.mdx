@@ -396,8 +396,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 <Note>
 In Dagster, tags are key-value pairs. However, in dbt, tags are strings. To bridge this divide, the dbt tag string is used as the Dagster tag key, and the Dagster tag value is set to special sentinel value `"__dagster_no_value"`.
 
-Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored by default.
-</Note>
+Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored by default. </Note>
 
 For dbt models, seeds, and snapshots, the default Dagster tags will be the dbt node's configured tags.
 
@@ -419,7 +418,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         dagster_tags = {}
         for tag in dbt_tags:
             key, _, value = tag.partition("=")
-            
+
             dagster_tags[key] = value if value else "__dagster_no_value"
 
         return dagster_tags

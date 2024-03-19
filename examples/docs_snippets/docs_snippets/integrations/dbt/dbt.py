@@ -274,12 +274,9 @@ def scope_custom_tags_dagster_dbt_translator():
             dbt_tags = dbt_resource_props.get("tags", [])
             dagster_tags = {}
             for tag in dbt_tags:
-                if "=" in tag:
-                    key, value = tag.split("=")
-                else:
-                    key, value = tag, "__dagster_no_value"
+                key, _, value = tag.partition("=")
 
-                dagster_tags[key] = value
+                dagster_tags[key] = value if value else "__dagster_no_value"
 
             return dagster_tags
 
