@@ -374,7 +374,7 @@ const MinimalAssetNodeBox = styled.div<{
   ${(p) =>
     p.$isQueued
       ? `
-        animation: pulse 0.5s infinite alternate; 
+        animation: pulse 0.75s infinite alternate; 
         @keyframes pulse {
           0% {
             border-color: ${Colors.replaceAlpha(p.$border, 0.2)};
