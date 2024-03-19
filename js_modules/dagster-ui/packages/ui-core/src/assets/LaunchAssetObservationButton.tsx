@@ -141,7 +141,7 @@ async function stateForObservingAssets(
   if (assets.some((x) => !x.isObservable)) {
     return {
       type: 'error',
-      error: 'One or more of the selected source assets are unversioned and cannot be observed.',
+      error: 'One or more of the selected source assets is not an observable asset.',
     };
   }
   const repoAddress = buildRepoAddress(
