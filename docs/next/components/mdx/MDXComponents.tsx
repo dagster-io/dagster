@@ -31,7 +31,6 @@ import ScimSupportedFeatures from './includes/dagster-cloud/ScimSupportedFeature
 import AmazonEcsEnvVarsConfiguration from './includes/dagster-cloud/agents/AmazonEcsEnvVarsConfiguration.mdx';
 import DockerEnvVarsConfiguration from './includes/dagster-cloud/agents/DockerEnvVarsConfiguration.mdx';
 import K8sEnvVarsConfiguration from './includes/dagster-cloud/agents/K8sEnvVarsConfiguration.mdx';
-import SetAlertsCLI from './includes/dagster-cloud/alerts/SetAlertsCLI.mdx';
 import DagsterDevTabs from './includes/dagster/DagsterDevTabs.mdx';
 import DagsterVersion from './includes/dagster/DagsterVersion.mdx';
 import RawComputeLogs from './includes/dagster/concepts/logging/RawComputeLogs.mdx';
@@ -818,7 +817,6 @@ export default {
   K8sEnvVarsConfiguration,
   DockerEnvVarsConfiguration,
   AmazonEcsEnvVarsConfiguration,
-  SetAlertsCLI,
   ArticleList,
   ArticleListItem,
   ExampleItemSmall,
