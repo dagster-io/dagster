@@ -19,7 +19,7 @@ export const SVGSaveZoomLevel = ({scale}: {scale: number}) => {
 export function useLastSavedZoomLevel(
   viewportEl: MutableRefObject<SVGViewport | undefined>,
   layout: import('../asset-graph/layout').AssetGraphLayout | null,
-  assetGraphId: string,
+  graphFocusChangeKey: string,
 ) {
   useEffect(() => {
     if (viewportEl.current && layout) {
@@ -27,5 +27,5 @@ export function useLastSavedZoomLevel(
       viewportEl.current.autocenter(false, lastZoomLevel);
       viewportEl.current.focus();
     }
-  }, [viewportEl, layout, assetGraphId]);
+  }, [viewportEl, layout, graphFocusChangeKey]);
 }
