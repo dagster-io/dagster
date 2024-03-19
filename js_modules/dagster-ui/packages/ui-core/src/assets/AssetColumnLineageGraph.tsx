@@ -1,5 +1,5 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import {useRef, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
@@ -38,6 +38,20 @@ export const AssetColumnLineageGraph = ({
   const viewportEl = useRef<SVGViewport>();
 
   useLastSavedZoomLevel(viewportEl, layout, focusedAssetGraphId);
+
+  const bolded = useMemo(() => {
+    const bolded = new Set<string>();
+    if (!highlighted || !layout) {
+      return bolded;
+    }
+
+    for (const id of highlighted) {
+      bolded.add(id);
+      layout.edges.filter((e) => e.fromId === id).forEach((e) => bolded.add(e.toId));
+      layout.edges.filter((e) => e.toId === id).forEach((e) => bolded.add(e.fromId));
+    }
+    return bolded;
+  }, [layout, highlighted]);
 
   if (!layout || loading) {
     return (
@@ -139,6 +153,7 @@ export const AssetColumnLineageGraph = ({
                   <AssetColumnNode
                     assetKey={assetKey}
                     column={col}
+                    bolded={bolded.has(id)}
                     selected={assetGraphId === focusedAssetGraphId && focusedColumn === column}
                   />
                 </foreignObject>

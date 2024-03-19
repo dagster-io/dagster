@@ -52,22 +52,31 @@ export const AssetColumnNode = ({
   assetKey,
   column,
   selected,
+  bolded,
 }: {
   assetKey: AssetKeyInput;
   column: AssetColumnLineageLocalColumn;
   selected: boolean;
+  bolded: boolean;
 }) => {
   const icon = iconForColumnType(column.type ?? '');
 
   return (
-    <Box margin={{horizontal: 12}} style={{height: 32}} flex={{direction: 'column'}}>
+    <Box flex={{direction: 'column'}}>
       <Tooltip key={column.name} content={column.description || 'No description provided'}>
         <ColumnLink
           to={assetDetailsPathForKey(assetKey, {view: 'lineage', column: column.name})}
           $selected={selected}
         >
           {icon ? <Icon name={icon} /> : <span style={{width: 16}} />}
-          <Caption style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+          <Caption
+            style={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontWeight: bolded ? 600 : 'initial',
+            }}
+          >
             {column.name}
           </Caption>
         </ColumnLink>
@@ -78,7 +87,7 @@ export const AssetColumnNode = ({
 
 const ColumnLink = styled(Link)<{$selected: boolean}>`
   height: 28px;
-  margin: 2px 0;
+  margin: 2px 12px;
   padding-left: 2px;
   padding-right: 4px;
   display: flex;
