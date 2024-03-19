@@ -196,3 +196,24 @@ def test_base_with_meta_config_translator():
         AssetKey(["target", "public", "transactions"])
         in my_sling_assets.auto_materialize_policies_by_key
     )
+
+
+def test_base_with_custom_asset_key_prefix():
+    class CustomPrefixDagsterSlingTranslator(DagsterSlingTranslator):
+        target_prefix: str = "custom"
+
+    @sling_assets(
+        replication_config=file_relative_path(
+            __file__, "replication_configs/base_config/replication.yaml"
+        ),
+        dagster_sling_translator=CustomPrefixDagsterSlingTranslator(),
+    )
+    def my_sling_assets(): ...
+
+    assert my_sling_assets.keys == {
+        AssetKey(["custom", "public", "users"]),
+        AssetKey(["custom", "public", "accounts"]),
+        AssetKey(["custom", "public", "all_users"]),
+        AssetKey(["custom", "departments"]),
+        AssetKey(["custom", "public", "transactions"]),
+    }

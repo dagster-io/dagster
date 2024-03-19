@@ -1,5 +1,4 @@
 import re
-from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Optional
 
 from dagster import (
@@ -11,7 +10,6 @@ from dagster import (
 from dagster._annotations import public
 
 
-@dataclass
 class DagsterSlingTranslator:
     target_prefix: str = "target"
 
