@@ -58,10 +58,10 @@ if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.instance import DagsterInstance
 
+    from .assets import AssetsDefinition
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
-    from .source_asset import SourceAsset
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -151,7 +151,7 @@ InputSource: TypeAlias = Union[
     InvokedNodeOutputHandle,
     InputMappingNode,
     DynamicFanIn,
-    "SourceAsset",
+    "AssetsDefinition",
     List[Union[InvokedNodeOutputHandle, InputMappingNode]],
 ]
 
@@ -289,7 +289,7 @@ class CompleteCompositionContext(NamedTuple):
     dependencies: DependencyMapping[NodeInvocation]
     input_mappings: Sequence[InputMapping]
     output_mapping_dict: Mapping[str, OutputMapping]
-    node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]]
+    node_input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]]
 
     @staticmethod
     def create(
@@ -299,12 +299,12 @@ class CompleteCompositionContext(NamedTuple):
         output_mapping_dict: Mapping[str, OutputMapping],
         pending_invocations: Mapping[str, "PendingNodeInvocation"],
     ) -> "CompleteCompositionContext":
-        from .source_asset import SourceAsset
+        from .assets import AssetsDefinition
 
         dep_dict: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
         node_def_dict: Dict[str, NodeDefinition] = {}
         input_mappings = []
-        node_input_source_assets: Dict[str, Dict[str, "SourceAsset"]] = defaultdict(dict)
+        node_input_assets: Dict[str, Dict[str, "AssetsDefinition"]] = defaultdict(dict)
 
         for node in pending_invocations.values():
             _not_invoked_warning(node, source, name)
@@ -325,8 +325,8 @@ class CompleteCompositionContext(NamedTuple):
                     input_mappings.append(
                         node.input_def.mapping_to(invocation.node_name, input_name)
                     )
-                elif isinstance(node, SourceAsset):
-                    node_input_source_assets[invocation.node_name][input_name] = node
+                elif isinstance(node, AssetsDefinition):
+                    node_input_assets[invocation.node_name][input_name] = node
                 elif isinstance(node, list):
                     entries: List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]] = []
                     for idx, fanned_in_node in enumerate(node):
@@ -370,7 +370,7 @@ class CompleteCompositionContext(NamedTuple):
             dep_dict,
             input_mappings,
             output_mapping_dict,
-            node_input_source_assets=node_input_source_assets,
+            node_input_assets=node_input_assets,
         )
 
 
@@ -538,6 +538,8 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     def _process_argument_node(
         self, node_name: str, output_node, input_name: str, input_bindings, arg_desc: str
     ) -> None:
+        from .assets import AssetsDefinition
+        from .external_asset import create_external_asset_from_source_asset
         from .source_asset import SourceAsset
 
         # already set - conflict between kwargs and args
@@ -547,8 +549,10 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                 f" argument '{input_name}'"
             )
 
-        if isinstance(
-            output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn, SourceAsset)
+        if isinstance(output_node, SourceAsset):
+            input_bindings[input_name] = create_external_asset_from_source_asset(output_node)
+        elif isinstance(
+            output_node, (AssetsDefinition, InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn)
         ):
             input_bindings[input_name] = output_node
 
@@ -976,7 +980,7 @@ def do_composition(
     Sequence[NodeDefinition],
     Optional[ConfigMapping],
     Sequence[str],
-    Mapping[str, Mapping[str, "SourceAsset"]],
+    Mapping[str, Mapping[str, "AssetsDefinition"]],
 ]:
     """This a function used by both @job and @graph to implement their composition
     function which is our DSL for constructing a dependency graph.
@@ -1085,7 +1089,7 @@ def do_composition(
         context.node_defs,
         config_mapping,
         compute_fn.positional_inputs(),
-        context.node_input_source_assets,
+        context.node_input_assets,
     )
 
 
