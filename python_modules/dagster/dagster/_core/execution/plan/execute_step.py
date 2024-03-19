@@ -249,15 +249,13 @@ def _step_output_error_checked_user_event_sequence(
             ):
                 if asset_layer.has(asset_info.key):
                     assets_def = asset_layer.get(asset_info.key).assets_def
-                    all_dependent_keys = asset_layer.downstream_assets_for_asset(asset_info.key)
+                    all_dependent_keys = asset_layer.get(asset_info.key).child_keys
                     step_local_asset_keys = step_context.get_output_asset_keys()
                     step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
                     for dependent_key in step_local_dependent_keys:
                         output_name = assets_def.get_output_name_for_asset_key(dependent_key)
                         # Need to skip self-dependent assets (possible with partitions)
-                        self_dep = dependent_key in asset_layer.upstream_assets_for_asset(
-                            asset_info.key
-                        )
+                        self_dep = dependent_key in asset_layer.get(asset_info.key).parent_keys
                         if not self_dep and step_context.has_seen_output(output_name):
                             raise DagsterInvariantViolationError(
                                 f'Asset "{dependent_key.to_user_string()}" was yielded before its'
@@ -705,7 +703,7 @@ def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
     input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
-    deps = step_context.job_def.asset_layer.upstream_assets_for_asset(asset_key)
+    deps = step_context.job_def.asset_layer.get(asset_key).parent_keys
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
         # to step execution. For inputs internal to this step, it may trigger a query to retrieve

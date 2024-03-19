@@ -541,15 +541,6 @@ class AssetLayer(NamedTuple):
             assets_defs_by_check_key=assets_defs_by_check_key,
         )
 
-    def upstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        return self.asset_graph.get(asset_key).parent_keys
-
-    def downstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        # TODO: remove built-in existence check when callsites are updated to check existence
-        return (
-            self.asset_graph.get(asset_key).child_keys if self.asset_graph.has(asset_key) else set()
-        )
-
     @property
     def all_asset_keys(self) -> Iterable[AssetKey]:
         return self.asset_graph.all_asset_keys
