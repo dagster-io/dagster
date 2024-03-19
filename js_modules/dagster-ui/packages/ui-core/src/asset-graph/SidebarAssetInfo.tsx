@@ -32,6 +32,7 @@ import {
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {TableSchemaLineageContext} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
@@ -159,7 +160,12 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
       {assetMetadata.length > 0 && (
         <SidebarSection title="Metadata">
-          <AssetMetadataTable assetMetadata={assetMetadata} repoLocation={repoAddress?.location} />
+          <TableSchemaLineageContext.Provider value={{assetKey: asset.assetKey}}>
+            <AssetMetadataTable
+              assetMetadata={assetMetadata}
+              repoLocation={repoAddress?.location}
+            />
+          </TableSchemaLineageContext.Provider>
         </SidebarSection>
       )}
 

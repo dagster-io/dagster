@@ -43,7 +43,7 @@
     "codemirror": "^5.65.2",
     "color": "^3.0.0",
     "cronstrue": "^1.84.0",
-    "dagre": "^0.8.5",
+    "dagre": "dagster-io/dagre#0.8.5",
     "date-fns": "^2.28.0",
     "dayjs": "^1.11.7",
     "deepmerge": "^4.2.2",

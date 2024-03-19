@@ -1,8 +1,9 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetEdges} from '../asset-graph/AssetEdges';
@@ -11,13 +12,13 @@ import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
+import {LayoutAssetGraphOptions} from '../asset-graph/layout';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
-import {getJSONForKey} from '../hooks/useStateWithStorage';
 
-const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
+const LINEAGE_GRAPH_OPTIONS: LayoutAssetGraphOptions = {direction: 'horizontal'};
 
 export const AssetNodeLineageGraph = ({
   assetKey,
@@ -42,7 +43,7 @@ export const AssetNodeLineageGraph = ({
 
   const [highlighted, setHighlighted] = useState<string[] | null>(null);
 
-  const {layout, loading} = useAssetLayout(assetGraphData, allGroups, 'horizontal');
+  const {layout, loading} = useAssetLayout(assetGraphData, allGroups, LINEAGE_GRAPH_OPTIONS);
   const viewportEl = useRef<SVGViewport>();
   const history = useHistory();
 
@@ -50,13 +51,7 @@ export const AssetNodeLineageGraph = ({
     history.push(assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors'}));
   };
 
-  useEffect(() => {
-    if (viewportEl.current && layout) {
-      const lastZoomLevel = Number(getJSONForKey(LINEAGE_GRAPH_ZOOM_LEVEL));
-      viewportEl.current.autocenter(false, lastZoomLevel);
-      viewportEl.current.focus();
-    }
-  }, [viewportEl, layout, assetGraphId]);
+  useLastSavedZoomLevel(viewportEl, layout, assetGraphId);
 
   if (!layout || loading) {
     return (
@@ -113,10 +108,7 @@ export const AssetNodeLineageGraph = ({
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
                 <ExpandedGroupNode
-                  group={{
-                    ...group,
-                    assets: groupedAssets[group.id]!,
-                  }}
+                  group={{...group, assets: groupedAssets[group.id]!}}
                   minimal={scale < MINIMAL_SCALE}
                   setHighlighted={setHighlighted}
                 />
@@ -172,17 +164,6 @@ export const AssetNodeLineageGraph = ({
       )}
     </SVGViewport>
   );
-};
-
-const SVGSaveZoomLevel = ({scale}: {scale: number}) => {
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(LINEAGE_GRAPH_ZOOM_LEVEL, JSON.stringify(scale));
-    } catch (err) {
-      // no-op
-    }
-  }, [scale]);
-  return <></>;
 };
 
 const SVGContainer = styled.svg`
