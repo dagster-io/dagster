@@ -199,14 +199,11 @@ def test_base_with_meta_config_translator():
 
 
 def test_base_with_custom_asset_key_prefix():
-    class CustomPrefixDagsterSlingTranslator(DagsterSlingTranslator):
-        target_prefix: str = "custom"
-
     @sling_assets(
         replication_config=file_relative_path(
             __file__, "replication_configs/base_config/replication.yaml"
         ),
-        dagster_sling_translator=CustomPrefixDagsterSlingTranslator(),
+        dagster_sling_translator=DagsterSlingTranslator(target_prefix="custom"),
     )
     def my_sling_assets(): ...
 
