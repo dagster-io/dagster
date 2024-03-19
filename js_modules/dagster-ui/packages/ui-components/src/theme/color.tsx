@@ -8,6 +8,29 @@ const getColor = memoize((semanticName: ColorName): string => {
   return palette[semanticName];
 });
 
+export function replaceAlpha(rgbaString: string, newAlpha: number) {
+  // Check if the input string is in the correct format
+  const rgbaRegex = /^rgba?\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*),(\s*[\d.]+\s*)\)$/;
+  const match = rgbaString.match(rgbaRegex);
+  if (!match) {
+    console.error('Invalid RGBA string format.');
+    return null;
+  }
+
+  // Extract RGB values
+  const red = parseInt(match[1]!.trim(), 10);
+  const green = parseInt(match[2]!.trim(), 10);
+  const blue = parseInt(match[3]!.trim(), 10);
+
+  // Ensure alpha value is within the range [0, 1]
+  const clampedAlpha = Math.max(0, Math.min(newAlpha, 1));
+
+  // Construct the new RGBA string with the updated alpha value
+  const newRgbaString = `rgba(${red},${green},${blue},${clampedAlpha})`;
+
+  return newRgbaString;
+}
+
 export const browserColorScheme = () => getColor(ColorName.BrowserColorScheme);
 export const colorKeylineDefault = () => getColor(ColorName.KeylineDefault);
 export const colorLinkDefault = () => getColor(ColorName.LinkDefault);

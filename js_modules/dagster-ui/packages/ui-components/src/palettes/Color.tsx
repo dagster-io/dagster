@@ -116,4 +116,5 @@ export {
   colorDataVizVioletAlt as dataVizVioletAlt,
   colorDataVizYellow as dataVizYellow,
   colorDataVizYellowAlt as dataVizYellowAlt,
+  replaceAlpha,
 } from '../theme/color';
