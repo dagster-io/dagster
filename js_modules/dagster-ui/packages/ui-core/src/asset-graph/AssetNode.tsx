@@ -7,7 +7,6 @@ import styled, {CSSObject} from 'styled-components';
 
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {AssetLatestRunSpinner} from './AssetRunLinking';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
@@ -32,7 +31,6 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
   const isSource = definition.isSource;
 
   const {liveData} = useAssetLiveData(definition.assetKey);
-
   return (
     <AssetInsetForHoverEffect>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
@@ -179,6 +177,9 @@ export const AssetNodeMinimal = ({
   const isChanged = definition.changedReasons.length;
   const isStale = isAssetStale(assetKey, liveData, 'upstream');
 
+  const queuedRuns = liveData?.unstartedRunIds.length;
+  const inProgressRuns = liveData?.inProgressRunIds.length;
+
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
@@ -193,6 +194,8 @@ export const AssetNodeMinimal = ({
             $isSource={isSource}
             $background={background}
             $border={border}
+            $inProgress={!!inProgressRuns}
+            $isQueued={!!queuedRuns}
           >
             {isChanged ? (
               <MinimalNodeChangedDot
@@ -203,9 +206,6 @@ export const AssetNodeMinimal = ({
             {isStale ? (
               <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} include="upstream" />
             ) : null}
-            <AssetNodeSpinnerContainer>
-              <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-            </AssetNodeSpinnerContainer>
             <MinimalName style={{fontSize: 28}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 20})}
             </MinimalName>
@@ -323,12 +323,6 @@ const AssetName = styled.div<{$isSource: boolean}>`
   border-top-right-radius: 8px;
 `;
 
-const AssetNodeSpinnerContainer = styled.div`
-  top: 50%;
-  position: absolute;
-  transform: translate(8px, -16px);
-`;
-
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
   height: 100%;
 `;
@@ -338,13 +332,59 @@ const MinimalAssetNodeBox = styled.div<{
   $selected: boolean;
   $background: string;
   $border: string;
+  $inProgress: boolean;
+  $isQueued: boolean;
 }>`
   background: ${(p) => p.$background};
+  overflow: hidden;
   ${(p) =>
     p.$isSource
       ? `border: 4px dashed ${p.$selected ? Colors.accentGray() : p.$border}`
       : `border: 4px solid ${p.$selected ? Colors.lineageNodeBorderSelected() : p.$border}`};
+  ${(p) =>
+    p.$inProgress
+      ? `
+      background-color: ${p.$background};
+      &::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        background-image: linear-gradient(90deg, ${Colors.replaceAlpha(
+          p.$background,
+          0,
+        )} 0, ${Colors.replaceAlpha(p.$background, 0)} 0%, ${Colors.replaceAlpha(
+          p.$background,
+          0.2,
+        )});
+        animation: shimmer 1.5s infinite;
+        content: '';
+      }
 
+      @keyframes shimmer {
+        100% {
+          transform: translateX(100%);
+        }
+      }
+  `
+      : ''}
+
+  ${(p) =>
+    p.$isQueued
+      ? `
+        animation: pulse 0.75s infinite alternate; 
+        @keyframes pulse {
+          0% {
+            border-color: ${Colors.replaceAlpha(p.$border, 0.2)};
+          }
+          100% {
+            border-color: ${Colors.replaceAlpha(p.$border, 1)};
+          }
+        }
+      `
+      : ''}
   border-radius: 16px;
   position: relative;
   padding: 2px;
