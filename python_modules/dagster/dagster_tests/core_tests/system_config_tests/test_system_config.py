@@ -284,7 +284,7 @@ def test_op_config_error():
         parent_handle=None,
         resource_defs={},
         asset_layer=job_def.asset_layer,
-        node_input_source_assets={},
+        input_assets={},
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_op"].config_type
