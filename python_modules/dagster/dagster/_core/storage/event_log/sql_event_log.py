@@ -203,10 +203,14 @@ class SqlEventLogStorage(EventLogStorage):
             if event.dagster_event.partition:
                 partition = event.dagster_event.partition
 
+        serialized_event = serialize_value(event)
+        if len(serialized_event) > MAX_SERIALIZED_EVENT_LENGTH:
+            serialized_event = serialized_event[:MAX_SERIALIZED_EVENT_LENGTH-3] + "..."
+
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(
             run_id=event.run_id,
-            event=serialize_value(event),
+            event=serialized_event,
             dagster_event_type=dagster_event_type,
             timestamp=self._event_insert_timestamp(event),
             step_key=step_key,
