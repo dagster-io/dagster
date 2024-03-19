@@ -6,7 +6,7 @@ export type AssetNodeDefinitionFragment = {
   __typename: 'AssetNode';
   id: string;
   description: string | null;
-  groupName: string | null;
+  groupName: string;
   graphName: string | null;
   opNames: Array<string>;
   opVersion: string | null;
