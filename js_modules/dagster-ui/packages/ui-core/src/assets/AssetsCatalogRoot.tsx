@@ -12,6 +12,7 @@ import {
   AssetsCatalogRootQuery,
   AssetsCatalogRootQueryVariables,
 } from './types/AssetsCatalogRoot.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -49,6 +50,7 @@ export const AssetsCatalogRoot = ({
   const trace = usePageLoadTrace(
     currentPath && currentPath.length === 0 ? 'AssetsCatalogRoot' : 'AssetCatalogAssetView',
   );
+  const {currentDeploymentName} = React.useContext(CloudOSSContext);
 
   React.useEffect(() => {
     // If the asset exists, add it to the recently visited list
