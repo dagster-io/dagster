@@ -21,6 +21,7 @@ from typing import (
     cast,
 )
 
+import dagster._check as check
 import dateutil.parser
 import orjson
 from dagster import (
@@ -1148,23 +1149,16 @@ class DbtCliResource(ConfigurableResource):
                 [assets_def]
             )
 
-            # When dbt is enabled with asset checks, we turn off any indirection with dbt selection.
-            # This way, the Dagster context completely determines what is executed in a dbt
-            # invocation.
-            if dagster_dbt_translator.settings.enable_asset_checks:
-                logger.info(
-                    "Setting environment variable `DBT_INDIRECT_SELECTION` to 'empty'. When dbt "
-                    "tests are modeled as asset checks, they are executed through explicit selection."
-                )
-                env["DBT_INDIRECT_SELECTION"] = "empty"
-
-            selection_args = get_subset_selection_for_context(
+            selection_args, indirect_selection = get_subset_selection_for_context(
                 context=context,
                 manifest=manifest,
                 select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
                 exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
                 dagster_dbt_translator=dagster_dbt_translator,
             )
+
+            if indirect_selection:
+                env["DBT_INDIRECT_SELECTION"] = indirect_selection
         else:
             manifest = validate_manifest(manifest) if manifest else {}
 
@@ -1208,8 +1202,9 @@ def get_subset_selection_for_context(
     select: Optional[str],
     exclude: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
-) -> List[str]:
-    """Generate a dbt selection string to materialize the selected resources in a subsetted execution context.
+) -> Tuple[List[str], Optional[str]]:
+    """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
+    resources in a subsetted execution context.
 
     See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
 
@@ -1224,6 +1219,14 @@ def get_subset_selection_for_context(
 
             If the current execution context is not performing a subsetted execution,
             return CLI arguments composed of the inputed selection and exclusion arguments.
+        Optional[str]: A value for the DBT_INDIRECT_SELECTION environment variable
+
+                    if dagster_dbt_translator.settings.enable_asset_checks:
+                if (
+                    assets_def.node_check_specs_by_output_name
+                    != assets_def.check_specs_by_output_name
+                ):
+                    env["DBT_INDIRECT_SELECTION"] = "empty"
     """
     default_dbt_selection = []
     if select:
@@ -1234,19 +1237,25 @@ def get_subset_selection_for_context(
     dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
     dbt_resource_props_by_test_name = get_dbt_resource_props_by_test_name(manifest)
 
+    assets_def = context.assets_def
+    is_asset_subset = assets_def.keys_by_output_name != assets_def.node_keys_by_output_name
+    is_checks_subset = (
+        assets_def.check_specs_by_output_name != assets_def.node_check_specs_by_output_name
+    )
+
     # It's nice to use the default dbt selection arguments when not subsetting for readability.
     # However with asset checks, we make a tradeoff between readability and functionality for the user.
     # This is because we use an explicit selection of each individual dbt resource we execute to ensure
     # we control which models *and tests* run. By using explicit selection, we allow the user to
     # also subset the execution of dbt tests.
-    if not context.is_subset and not dagster_dbt_translator.settings.enable_asset_checks:
+    if not (is_asset_subset or is_checks_subset):
         logger.info(
             "A dbt subsetted execution is not being performed. Using the default dbt selection"
             f" arguments `{default_dbt_selection}`."
         )
-        return default_dbt_selection
+        return default_dbt_selection, None
 
-    selected_dbt_resources = []
+    selected_dbt_non_test_resources = []
     for output_name in context.selected_output_names:
         dbt_resource_props = dbt_resource_props_by_output_name[output_name]
 
@@ -1254,8 +1263,9 @@ def get_subset_selection_for_context(
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
         fqn_selector = f"fqn:{'.'.join(dbt_resource_props['fqn'])}"
 
-        selected_dbt_resources.append(fqn_selector)
+        selected_dbt_non_test_resources.append(fqn_selector)
 
+    selected_dbt_tests = []
     for _, check_name in context.selected_asset_check_keys:
         test_resource_props = dbt_resource_props_by_test_name[check_name]
 
@@ -1263,25 +1273,32 @@ def get_subset_selection_for_context(
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
         fqn_selector = f"fqn:{'.'.join(test_resource_props['fqn'])}"
 
-        selected_dbt_resources.append(fqn_selector)
+        selected_dbt_tests.append(fqn_selector)
+
+    if is_asset_subset:
+        selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
+        indirect_selection = "empty"
+        logger.info(
+            "A dbt subsetted execution is being performed. Overriding default dbt selection"
+            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`. "
+            "Because asset checks are subsetted, setting DBT_INDIRECT_SELECTION=empty"
+        )
+
+    else:
+        check.invariant(is_checks_subset)
+        selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
+        indirect_selection = "empty"
+        logger.info(
+            "A dbt subsetted execution is being performed. Overriding default dbt selection"
+            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`. "
+            "Because asset checks are subsetted, setting DBT_INDIRECT_SELECTION=empty"
+        )
 
     # Take the union of all the selected resources.
     # https://docs.getdbt.com/reference/node-selection/set-operators#unions
     union_selected_dbt_resources = ["--select"] + [" ".join(selected_dbt_resources)]
 
-    if context.is_subset:
-        logger.info(
-            "A dbt subsetted execution is being performed. Overriding default dbt selection"
-            f" arguments `{default_dbt_selection}` with arguments: `{union_selected_dbt_resources}`"
-        )
-    else:
-        logger.info(
-            "A dbt subsetted execution is not being performed. Because asset checks are enabled,"
-            f" converting the default dbt selection arguments `{default_dbt_selection}` with the "
-            f"explicit set of models and tests: `{union_selected_dbt_resources}`"
-        )
-
-    return union_selected_dbt_resources
+    return union_selected_dbt_resources, indirect_selection
 
 
 def get_dbt_resource_props_by_output_name(

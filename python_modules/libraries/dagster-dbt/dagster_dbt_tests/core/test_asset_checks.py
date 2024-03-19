@@ -286,7 +286,7 @@ def test_materialize_no_selection(
     assert not result.success  # fail_tests_model fails
     assert len(result.get_asset_materialization_events()) == 10
     assert len(result.get_asset_check_evaluations()) == 24
-    assert len(result.get_asset_observation_events()) == 0
+    assert len(result.get_asset_observation_events()) == 1
 
 
 def test_materialize_asset_and_checks(
