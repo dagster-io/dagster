@@ -39,18 +39,18 @@ export const AssetColumnLineageGraph = ({
 
   useLastSavedZoomLevel(viewportEl, layout, focusedAssetGraphId);
 
-  const bolded = useMemo(() => {
-    const bolded = new Set<string>();
+  const blue = useMemo(() => {
+    const blue = new Set<string>();
     if (!highlighted || !layout) {
-      return bolded;
+      return blue;
     }
 
     for (const id of highlighted) {
-      bolded.add(id);
-      layout.edges.filter((e) => e.fromId === id).forEach((e) => bolded.add(e.toId));
-      layout.edges.filter((e) => e.toId === id).forEach((e) => bolded.add(e.fromId));
+      blue.add(id);
+      layout.edges.filter((e) => e.fromId === id).forEach((e) => blue.add(e.toId));
+      layout.edges.filter((e) => e.toId === id).forEach((e) => blue.add(e.fromId));
     }
-    return bolded;
+    return blue;
   }, [layout, highlighted]);
 
   if (!layout || loading) {
@@ -150,12 +150,7 @@ export const AssetColumnLineageGraph = ({
                     e.stopPropagation();
                   }}
                 >
-                  <AssetColumnNode
-                    assetKey={assetKey}
-                    column={col}
-                    bolded={bolded.has(id)}
-                    selected={assetGraphId === focusedAssetGraphId && focusedColumn === column}
-                  />
+                  <AssetColumnNode assetKey={assetKey} column={col} blueBackground={blue.has(id)} />
                 </foreignObject>
               );
             })}

@@ -15,6 +15,7 @@ import {AssetColumnLineageLocalColumn} from '../assets/lineage/useColumnLineageD
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetKeyInput} from '../graphql/types';
 import {iconForColumnType} from '../metadata/TableSchema';
+import {Description} from '../pipelines/Description';
 
 export const AssetColumnsGroupNode = ({
   selected,
@@ -51,32 +52,34 @@ export const AssetColumnsGroupNode = ({
 export const AssetColumnNode = ({
   assetKey,
   column,
-  selected,
-  bolded,
+  blueBackground,
 }: {
   assetKey: AssetKeyInput;
   column: AssetColumnLineageLocalColumn;
-  selected: boolean;
-  bolded: boolean;
+  blueBackground: boolean;
 }) => {
   const icon = iconForColumnType(column.type ?? '');
 
   return (
     <Box flex={{direction: 'column'}}>
-      <Tooltip key={column.name} content={column.description || 'No description provided'}>
+      <Tooltip
+        key={column.name}
+        position="bottom-left"
+        content={
+          <div style={{maxWidth: 500}}>
+            <Description
+              maxHeight={400}
+              description={column.description || 'No description provided'}
+            />
+          </div>
+        }
+      >
         <ColumnLink
           to={assetDetailsPathForKey(assetKey, {view: 'lineage', column: column.name})}
-          $selected={selected}
+          $blueBackground={blueBackground}
         >
           {icon ? <Icon name={icon} /> : <span style={{width: 16}} />}
-          <Caption
-            style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontWeight: bolded ? 600 : 'initial',
-            }}
-          >
+          <Caption style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
             {column.name}
           </Caption>
         </ColumnLink>
@@ -85,7 +88,7 @@ export const AssetColumnNode = ({
   );
 };
 
-const ColumnLink = styled(Link)<{$selected: boolean}>`
+const ColumnLink = styled(Link)<{$blueBackground: boolean}>`
   height: 28px;
   margin: 2px 12px;
   padding-left: 2px;
@@ -101,7 +104,7 @@ const ColumnLink = styled(Link)<{$selected: boolean}>`
     color: ${Colors.textLight()};
   }
   ${(p) =>
-    p.$selected
+    p.$blueBackground
       ? `
     background: ${Colors.backgroundBlue()}`
       : `
