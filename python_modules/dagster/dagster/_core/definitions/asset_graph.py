@@ -1,5 +1,6 @@
+from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
+from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import (
@@ -146,15 +147,15 @@ class AssetNode(BaseAssetNode):
 
 
 class AssetGraph(BaseAssetGraph[AssetNode]):
-    _asset_check_defs_by_key: Mapping[AssetCheckKey, AssetsDefinition]
+    _assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition]
 
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, AssetNode],
-        asset_check_defs_by_key: Mapping[AssetCheckKey, AssetsDefinition],
+        assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
-        self._asset_check_defs_by_key = asset_check_defs_by_key
+        self._assets_defs_by_check_key = assets_defs_by_check_key
         self._asset_nodes_by_check_key = {
             check_key: asset
             for asset in asset_nodes_by_key.values()
@@ -223,27 +224,29 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # Build the set of AssetNodes. Each node holds key rather than object references to parent
         # and child nodes.
         dep_graph = generate_asset_dep_graph(assets_defs)
+
+        assets_defs_by_check_key: Dict[AssetCheckKey, AssetsDefinition] = {}
+        check_keys_by_asset_key: DefaultDict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        for ad in assets_defs:
+            for ck in ad.check_keys:
+                check_keys_by_asset_key[ck.asset_key].add(ck)
+                assets_defs_by_check_key[ck] = ad
+
         asset_nodes_by_key = {
             key: AssetNode(
                 key=key,
                 parent_keys=dep_graph["upstream"][key],
                 child_keys=dep_graph["downstream"][key],
                 assets_def=ad,
-                check_keys={
-                    *(ck for ad in assets_defs for ck in ad.check_keys if ck.asset_key == key),
-                },
+                check_keys=check_keys_by_asset_key[key],
             )
             for ad in assets_defs
             for key in ad.keys
         }
 
-        asset_check_defs_by_key = {
-            key: assets_def for assets_def in assets_defs for key in assets_def.check_keys
-        }
-
         return AssetGraph(
             asset_nodes_by_key=asset_nodes_by_key,
-            asset_check_defs_by_key=asset_check_defs_by_key,
+            assets_defs_by_check_key=assets_defs_by_check_key,
         )
 
     def get_execution_set_asset_and_check_keys(
@@ -263,7 +266,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return list(
             {
                 *(asset.assets_def for asset in self.asset_nodes),
-                *(ad for ad in self._asset_check_defs_by_key.values()),
+                *(ad for ad in self._assets_defs_by_check_key.values()),
             }
         )
 
@@ -274,9 +277,9 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             {
                 *[self.get(key).assets_def for key in keys if isinstance(key, AssetKey)],
                 *[
-                    ad
-                    for k, ad in self._asset_check_defs_by_key.items()
-                    if k in keys and isinstance(ad, AssetsDefinition)
+                    self._assets_defs_by_check_key[key]
+                    for key in keys
+                    if isinstance(key, AssetCheckKey)
                 ],
             }
         )
