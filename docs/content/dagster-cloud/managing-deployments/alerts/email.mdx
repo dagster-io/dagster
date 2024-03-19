@@ -16,7 +16,7 @@ Dagster Cloud supports [sending alerts](/dagster-cloud/managing-deployments/aler
 
 ## Creating an alert policy
 
-Creating an alert policy can be done using the Dagster Cloud UI or a YAML file.
+Creating an alert policy can be done using the Dagster Cloud UI or the `dagster-cloud` CLI and a YAML file.
 
 <TabGroup>
 <TabItem name="In the UI">
@@ -41,13 +41,13 @@ Creating an alert policy can be done using the Dagster Cloud UI or a YAML file.
 4. Click **Save policy**.
 
 </TabItem>
-<TabItem name="In a YAML file">
+<TabItem name="dagster-cloud CLI">
 
-### In a YAML file
+### dagster-cloud CLI
 
 To define an email alert policy in code, use the `notification_service.email.email_addresses` key to provide a list of recipient email addresses. For example:
 
-```yaml
+```yaml file=/dagster_cloud/alerts/email_policy.yaml
 # alert_policies.yaml
 
 alert_policies:
@@ -67,7 +67,9 @@ alert_policies:
 
 Then, use the `dagster-cloud` CLI to set the alert policies for the deployment:
 
-<SetAlertsCLI />
+```bash file=/dagster_cloud/alerts/cli_commands.yaml startafter=start_set_alerts endbefore=end_set_alerts
+dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
+```
 
 Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-cloud/managing-deployments/alerts/managing-alerts-cli) guide for more information.
 
@@ -84,8 +86,12 @@ Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-cloud/mana
     href="/dagster-cloud/managing-deployments/alerts"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing code locations"
-    href="/dagster-cloud/managing-deployments/code-locations"
+    title="Managing alerts in Dagster Cloud"
+    href="/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts using the dagster-cloud CLI"
+    href="/dagster-cloud/managing-deployments/alerts/managing-alerts-cli"
   ></ArticleListItem>
   <ArticleListItem
     title="Deployment settings"
