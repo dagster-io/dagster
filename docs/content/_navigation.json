@@ -590,8 +590,16 @@
                 "title": "Alerts",
                 "children": [
                   {
-                    "title": "Overview & setup",
+                    "title": "Overview",
                     "path": "/dagster-cloud/managing-deployments/alerts"
+                  },
+                  {
+                    "title": "Managing alerts in the UI",
+                    "path": "/dagster-cloud/managing-deployments/alerts/manging-alerts-in-ui"
+                  },
+                  {
+                    "title": "Managing alerts with the CLI",
+                    "path": "/dagster-cloud/managing-deployments/alerts/manging-alerts-cli"
                   },
                   {
                     "title": "Email",
