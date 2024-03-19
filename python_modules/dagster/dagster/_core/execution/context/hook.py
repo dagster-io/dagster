@@ -214,9 +214,9 @@ class HookContext:
                         step_output_handle.mapping_key: metadata
                     }
                 else:
-                    results[step_output_handle.output_name][
-                        step_output_handle.mapping_key
-                    ] = metadata
+                    results[step_output_handle.output_name][step_output_handle.mapping_key] = (
+                        metadata
+                    )
             else:
                 results[step_output_handle.output_name] = metadata
 
