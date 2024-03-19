@@ -1,84 +1,271 @@
 ---
-title: Getting Help | Dagster
+title: Getting help | Dagster
 description: Have questions about how to use Dagster? Hit a bug? Have a feature request? This page includes tips on what to do.
 ---
 
-# Getting Help
+# Getting help
 
-Have questions about how to use Dagster? Hit a bug? Have a feature request? The Dagster Labs team and the Dagster community make a best-effort attempt to respond, on a few different platforms.
-
----
-
-## Searching for answers
-
-Search engines like Google generally do a good job at surfacing relevant Dagster docs, Github Discussions and Github Issues, so we recommend starting there.
-
-Unfortunately, ChatGPT is not currently a great resource for answering questions about Dagster, because the corpus it was trained on doesn’t include Dagster’s latest APIs.
-
-However, one can interact with a fine-tuned Language Learning Model (LLM) trained on the latest Dagster docs, Github Discussions and Github Issues right here within our docs pages! Simply click the **Ask AI** button on any docs page to open a chat window to it.
-
-Our LLM is also available in the [#ask-ai](https://dagster.slack.com/archives/C066HKS7EG1) channel of the Dagster Slack.
+Have questions about how to use Dagster? Hit a bug? Have a feature request? The Dagster Labs team and the Dagster community make a best-effort attempt to respond on a few different platforms.
 
 ---
 
-## Bugs and feature requests
+## Available resources
 
-We use [Github Issues](https://github.com/dagster-io/dagster/issues) to track all bugs and feature requests from the community, and we welcome issues submitted by users.
+Where you go to get support can vary depending on what you want to accomplish. Refer to the following table for details about the resources available to you and when they should be used.
 
-If you find a Github issue that seems like it’s related to the issue you’re experiencing, but you're not sure, don’t be shy about posting on that Github issue to ask. We can redirect it to a different issue if necessary.
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "35%",
+        }}
+      >
+        I want to...
+      </th>
+      <th>You should use...</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>Generally search for an answer on the internet</strong>
+      </td>
+      <td>
+        <strong>A search engine</strong>. Search engines like Google generally
+        do a good job at surfacing relevant Dagster docs, Github Discussions,
+        and Github Issues, so we recommend starting there.
+        <br />
+        <br />
+        Unfortunately, ChatGPT is not currently a great resource for answering questions
+        about Dagster because its training data doesn’t include Dagster’s latest
+        APIs.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Use AI to self-serve</strong>
+      </td>
+      <td>
+        <strong>Dagster's trained Language Learning Model (LLM).</strong>{" "}
+        Accessible in the Dagster Slack's{" "}
+        <a href="https://dagster.slack.com/archives/C066HKS7EG1">#ask-ai</a>{" "}
+        channel or by clicking the <strong>Ask AI</strong> button on the docs
+        site.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>File a bug or feature request</strong>
+      </td>
+      <td>
+        <strong>
+          <a href="https://github.com/dagster-io/dagster/issues">
+            GitHub Issues
+          </a>
+        </strong>
+        . We use GitHub Issues to track all community requests, whether they're
+        created by Dagster team members or community members.
+        <br />
+        <br />
+        If you find an issue that seems related to your situation but you're unsure,
+        don't be shy! We can redirect it to a different issue if necessary. Check
+        out the <strong>Tips</strong> section for tips on <a href="#code-snippets">
+          including code snippets
+        </a> and <a href="#bugs">filing bugs</a>.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          Ask a question that may be helpful to others, or make a question
+          visible to the Dagster team
+        </strong>
+      </td>
+      <td>
+        <a href="https://github.com/dagster-io/dagster/discussions">
+          GitHub Discussions
+        </a>
+        . This is the main Q&A site for Dagster. We recommend posting most
+        questions here as they'll show up in search engines and can then benefit
+        others. Check out the <a href="#tips">Tips section</a> for tips on
+        including code snippets and how to ask questions that get answered.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          Participate in real-time discussion with other Dagster users
+        </strong>
+      </td>
+      <td>
+        <a href="https://dagster.io/slack">Dagster community Slack</a>. We
+        strongly encourage you to join Dagster's Slack, as it's the main
+        real-time gathering place for the community. Check out the{" "}
+        <a href="#tips">Tips section</a> for tips on including code snippets and
+        how to ask questions that get answered.
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-### Tips for filing issues
+---
 
-- For bugs, include the minimum-sized working code snippet that reproduces your issue.
-- If your Github issue includes a code snippet, you can add syntax highlighting by specifying the language at the top of the block:
+## Tips
 
-      ```python
+### Code snippets
+
+#### Use Markdown to create code blocks
+
+If you want to include a code snippet, it helps to use Markdown to format the content as code. For example:
+
+      ```   # backticks create a code block
       from dagster import ...
       ...
       ```
 
----
+This formatting will work on GitHub issues or discussions and Slack messages.
 
-## Questions
+#### Add syntax highlighting
 
-If you're trying to find out the best way to use Dagster for your use case, there are a couple places to get help.
+On GitHub - whether in issues or discussions - you can add syntax highlighting to code snippets to improve readability. This is done by specifying the language at the top of the Markdown code block:
 
-### Github Discussions: the preferred place to ask questions
+      ```python    ## specifies language
+      from dagster import ...
+      ...
+      ```
 
-[Github Discussions](https://github.com/dagster-io/dagster/discussions) is the main Q & A site for Dagster. For questions whose answers might be useful to others (which is most questions), Github Discussions is the best place to ask them, because they show up when others Google the same questions.
+### Bugs
 
-**Tip:** if your Github discussion includes a code snippet, add syntax highlighting by specifying the language at the top of the block:
+When filing a [GitHub issue](https://github.com/dagster-io/dagster/issues) for a bug:
 
-    ```python
-    from dagster import ...
+- **DO** include the minimum-sized working code snippet that reproduces the issue
+- **DO** include the steps you took to create the issue, if the issue occurred in the Dagster UI
+- **DO** include the Dagster version being used, if applicable
+- **DON'T** include any sensitive information
 
-    ...
-    ```
+### Ask questions that get answers
 
-### Dagster Slack: the real-time gathering place for the community
+When posting questions in [GitHub Discussions](https://github.com/dagster-io/dagster/discussions) or [Slack](https://dagster.io/slack), we recommend:
 
-We strongly encourage you to join [Dagster's Slack](https://dagster.io/slack), as it's the main real-time gathering place for the community. However, if you want a question or issue to be seen by the Dagster team, the best place to post it is in Github.
+- Being clear, specific, and as brief as possible
+- Not including lots of irrelevant details
 
-Check out the #faq-read-me-before-posting channel for more info.
+Generally, the less time and effort it takes for someone to digest your question, the more likely it will get answered. Check out the following table for some examples of well-phrased questions and those that could use some improvement.
 
-### Asking digestible questions
-
-The less time and effort it takes for someone to digest your question, the more likely it will get answered. The easiest questions to answer include enough information to be clear and specific, but don't require the reader to understand details that aren't relevant.
-
-Below is an example of a well-phrased question. It's brief enough to be quickly digestible, but specific enough to be complete:
-
-> Is it possible to set up Dagster to automatically update an entire downstream table every time that a specific partition of an upstream table is updated? We have a table that's partitioned by customer, and we have a specific analysis that we want to do on a specific customer.
-
-Below is another example of a well-phrased question. It's the same as the question above, but also includes background context. As long as the background context doesn't obscure the core question, it's really helpful to include, because it allows the reader to understand the question more deeply and make broader suggestions:
-
-> Is it possible to set up Dagster to automatically update an entire downstream table every time that a specific partition of an upstream table is updated? We have a table that's partitioned by customer, and we have a specific analysis that we want to do on a specific customer.
-
-> The background here is that that we've set up Fivetran to pulls in our per-customer Salesforce tables into one big Snowflake table. We have about 500 customers, and they get pulled in usually daily, but it depends on the customer. For about 20 of these customers, we have custom logic, implemented in SQL with dbt, that performs analyses that are specific to those customers. We want those analyses to run automatically when customer data is updated, so that our sales representatives can discover red flags when they check their Looker dashboards.
-
-Below is an example of a question that doesn't provide enough detail for the reader to answer it:
-
-> How do I use tables with specific upstream partitions?
-
-Below is an example a question that's difficult to digest. It requires the reader to understand an entire data pipeline to be able to answer the specific question:
-
-> We've set up Fivetran to pulls in our per-customer Salesforce tables into one big Snowflake table. We have about 500 customers, and they get pulled in usually daily, but it depends on the customer. For about 20 of these customers, we have custom logic, implemented in SQL with dbt, that performs analyses that are specific to those customers. We want those analyses to run automatically when customer data is updated, so that our sales representatives can discover red flags when they check their Looker dashboards. How can I get this working with Dagster?
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "50%",
+        }}
+      >
+        Question
+      </th>
+      <th>Reasoning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <i>
+          <strong>
+            Is it possible to set up Dagster to automatically update an entire
+            downstream table every time that a specific partition of an upstream
+            table is updated?
+          </strong>{" "}
+          We have a table that's partitioned by customer, and we have a specific
+          analysis that we want to do on a specific customer.
+        </i>
+      </td>
+      <td>
+        ✅ <strong>Good question!</strong>
+        <br />
+        <br />
+        <strong>Why?</strong> This question is brief enough to be quickly digested,
+        but specific enough to be complete
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <i>
+          <strong>
+            Is it possible to set up Dagster to automatically update an entire
+            downstream table every time that a specific partition of an upstream
+            table is updated?
+          </strong>{" "}
+          We have a table that's partitioned by customer, and we have a specific
+          analysis that we want to do on a specific customer.
+          <br />
+          <br />
+          The background here is that that we've set up Fivetran to pulls in our
+          per-customer Salesforce tables into one big Snowflake table. We have about
+          500 customers, and they get pulled in usually daily, but it depends on
+          the customer. For about 20 of these customers, we have custom logic, implemented
+          in SQL with dbt, that performs analyses that are specific to those customers.
+          We want those analyses to run automatically when customer data is updated,
+          so that our sales representatives can discover red flags when they check
+          their Looker dashboards.
+        </i>
+      </td>
+      <td>
+        ✅ <strong>Good question!</strong>
+        <br />
+        <br />
+        <strong>Why?</strong> This version of the first question provides additional
+        background information, but doesn't bury the core question. This can be helpful
+        because it allows readers to more deeply understand the situation and provide
+        broader suggestions.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <i>
+          <strong>
+            How do I use tables with specific upstream partitions?
+          </strong>
+        </i>
+      </td>
+      <td>
+        ❌ <strong>Needs improvement</strong>
+        <br />
+        <br />
+        <strong>Why?</strong> This question needs more detail to allow the reader
+        to provide appropriate suggestions
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <i>
+          We've set up Fivetran to pulls in our per-customer Salesforce tables
+          into one big Snowflake table. We have about 500 customers, and they
+          get pulled in usually daily, but it depends on the customer. For about
+          20 of these customers, we have custom logic, implemented in SQL with
+          dbt, that performs analyses that are specific to those customers. We
+          want those analyses to run automatically when customer data is
+          updated, so that our sales representatives can discover red flags when
+          they check their Looker dashboards.{" "}
+          <strong>How can I get this working with Dagster?</strong>
+        </i>
+      </td>
+      <td>
+        ❌ <strong>Needs improvement</strong>
+        <br />
+        <br />
+        <strong>Why?</strong> This question requires understanding an entire data
+        pipeline to answer the core question
+      </td>
+    </tr>
+  </tbody>
+</table>
