@@ -3,10 +3,10 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewJobsRoot} from './OverviewJobsRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
-import {OverviewSchedulesRoot} from './OverviewSchedules';
-import {OverviewSensorsRoot} from './OverviewSensors';
-import {AutomaterializationRoot} from '../assets/auto-materialization/GlobalAutomaterializationContent';
-import {InstanceBackfills} from '../instance/InstanceBackfills';
+import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
+import {OverviewSensorsRoot} from './OverviewSensorsRoot';
+import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
+import {InstanceBackfillsRoot} from '../instance/InstanceBackfillsRoot';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const OverviewRoot = () => {
@@ -31,7 +31,7 @@ export const OverviewRoot = () => {
         <BackfillPage />
       </Route>
       <Route path="/overview/backfills" exact>
-        <InstanceBackfills />
+        <InstanceBackfillsRoot />
       </Route>
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
