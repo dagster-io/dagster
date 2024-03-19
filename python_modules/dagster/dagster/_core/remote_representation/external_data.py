@@ -1239,7 +1239,9 @@ class ExternalAssetNode(
         auto_observe_interval_minutes: Optional[float] = None,
         owners: Optional[Sequence[str]] = None,
     ):
-        metadata = normalize_metadata(check.opt_mapping_param(metadata, "metadata", key_type=str))
+        metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
+        )
 
         # backcompat logic for execution type specified via metadata
         if SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE in metadata:
