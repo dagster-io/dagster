@@ -1,6 +1,6 @@
 import {Box, Colors, IconWrapper, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 interface SideNavItemInterface {
   key: string;
@@ -57,22 +57,24 @@ export const SideNavItem = (props: Props) => {
 
   return (
     <Tooltip canShow={!!tooltip} content={tooltip} placement="right" display="block">
-      <StyledSideNavButton disabled={disabled} onClick={item.onClick}>
+      <StyledSideNavButton $active={active} disabled={disabled} onClick={item.onClick}>
         {content}
       </StyledSideNavButton>
     </Tooltip>
   );
 };
 
-const StyledSideNavLink = styled(Link)<{$active: boolean}>`
+const sharedSideNavItemStyle = css<{$active: boolean}>`
   background-color: ${({$active}) => ($active ? Colors.backgroundBlue() : 'transparent')};
   border-radius: 8px;
   color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
   display: block;
+  font-size: 14px;
   line-height: 20px;
   text-decoration: none;
   transition: 100ms background-color linear;
   user-select: none;
+  width: 100%;
 
   :focus {
     outline: none;
@@ -95,31 +97,10 @@ const StyledSideNavLink = styled(Link)<{$active: boolean}>`
   }
 `;
 
-const StyledSideNavButton = styled(UnstyledButton)`
-  background-color: transparent;
-  border-radius: 8px;
-  color: ${Colors.textDefault()};
-  display: block;
-  font-size: 14px;
-  line-height: 20px;
-  text-decoration: none;
-  transition: 100ms background-color linear;
-  user-select: none;
-  width: 100%;
+const StyledSideNavLink = styled(Link)<{$active: boolean}>`
+  ${sharedSideNavItemStyle}
+`;
 
-  :focus {
-    outline: none;
-    background-color: ${Colors.backgroundLight()};
-  }
-
-  :hover,
-  :active {
-    background-color: ${Colors.backgroundLightHover()};
-    color: ${Colors.textDefault()};
-    text-decoration: none;
-  }
-
-  ${IconWrapper} {
-    background-color: ${Colors.textDefault()};
-  }
+const StyledSideNavButton = styled(UnstyledButton)<{$active: boolean}>`
+  ${sharedSideNavItemStyle}
 `;
