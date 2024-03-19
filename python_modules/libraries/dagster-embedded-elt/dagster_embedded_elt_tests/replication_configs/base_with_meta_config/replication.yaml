@@ -21,10 +21,19 @@ streams:
         deps:
           - foo_one
           - foo_two
+        group: group_2
+        freshness_policy:
+          maximum_lag_minutes: 0
+          cron_schedule: "5 4 * * *"
+          cron_schedule_timezone: UTC
   public."Transactions":
     mode: incremental # overwrite default mode
     primary_key: id
     update_key: last_updated_at
+    meta:
+      dagster:
+        description: Example Description!
+        auto_materialize_policy: true
 
   public.all_users:
     sql: |
