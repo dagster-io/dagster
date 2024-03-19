@@ -588,7 +588,32 @@
               },
               {
                 "title": "Alerts",
-                "path": "/dagster-cloud/managing-deployments/setting-up-alerts"
+                "children": [
+                  {
+                    "title": "Overview",
+                    "path": "/dagster-cloud/managing-deployments/alerts"
+                  },
+                  {
+                    "title": "Managing alerts in the UI",
+                    "path": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui"
+                  },
+                  {
+                    "title": "Managing alerts with the CLI",
+                    "path": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli"
+                  },
+                  {
+                    "title": "Email",
+                    "path": "/dagster-cloud/managing-deployments/alerts/email"
+                  },
+                  {
+                    "title": "Microsoft Teams",
+                    "path": "/dagster-cloud/managing-deployments/alerts/microsoft-teams"
+                  },
+                  {
+                    "title": "Slack",
+                    "path": "/dagster-cloud/managing-deployments/alerts/slack"
+                  }
+                ]
               },
               {
                 "title": "Environment variables & secrets",
