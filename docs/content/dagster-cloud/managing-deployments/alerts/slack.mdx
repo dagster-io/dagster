@@ -1,5 +1,9 @@
 ---
 title: "Slack & Dagster Cloud | Dagster Docs"
+description: "Create alerts that send messages to Slack channels for Dagster Cloud events."
+
+platform_type: "cloud"
+feature: "alerting"
 ---
 
 # Slack & Dagster Cloud
@@ -11,6 +15,8 @@ Dagster Cloud supports [sending alerts](/dagster-cloud/managing-deployments/aler
 ---
 
 ## Prerequisites
+
+To follow the steps in this guide, you'll need:
 
 - **Permissions in Slack** that allow you to add apps to your Slack workspace
 - **Organization, Admin, or Editor permissions in Dagster Cloud**, which are required to create and manage alerts
@@ -26,22 +32,22 @@ Dagster Cloud supports [sending alerts](/dagster-cloud/managing-deployments/aler
 
 ---
 
-## Step 2: Invite the Dagster Cloud bot to channels
+## Step 2: Invite the Dagster Cloud bot to Slack channels
 
-After the app is installed, invite the `@Dagster Cloud` bot user to the channel where notifications should be sent.
+After the app is installed in your Slack workspace, invite the `@Dagster Cloud` bot user to the channel where notifications should be sent.
 
 ---
 
 ## Step 3: Create an alert policy in Dagster Cloud
 
-Creating an alert policy can be done using the Dagster Cloud UI or in code.
+Creating an alert policy can be done using the Dagster Cloud UI or the `dagster-cloud` CLI and a YAML file.
 
 <TabGroup>
 <TabItem name="In the UI">
 
 ### In the UI
 
-1. Create and configure an alert policy. Refer to the [alert policy documentation](/dagster-cloud/managing-deployments/alerts#creating-alert-policies) for more info.
+1. Create and configure an alert policy. Refer to the [Managing alerts in Dagster Cloud guide](/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui) for more info.
 
 2. In the **Notification Service** section of the **Create alert policy** window, select the **Slack** option.
 
@@ -52,26 +58,18 @@ Creating an alert policy can be done using the Dagster Cloud UI or in code.
 4. Click **Save policy**.
 
 </TabItem>
-<TabItem name="In code">
+<TabItem name="dagster-cloud CLI">
 
-## In code
+### dagster-cloud CLI
 
-In this example, we'll configure a Slack notification to trigger whenever a run of a job succeeds or fails. This job, named `sales_job`, has a `team` tag of `sales`:
+To define a Slack alert policy in code, use the following keys to configure the alert:
 
-```python
-@op
-def sales_computation():
-    ...
+- `notification_service.slack.slack_workspace_name` - The name of the Slack workspace connected to Dagster Cloud
+- `notification_service.slack.slack_channel_name` - The name of the Slack channel the `@Dagster Cloud` user is a member of
 
+```yaml file=/dagster_cloud/alerts/slack_policy.yaml
+# alert_policies.yaml
 
-@job(tags={"team": "sales"})
-def sales_job():
-    sales_computation()
-```
-
-In the alert policies YAML file, we'll define a policy that listens for jobs with a `team` tag of `sales` to succeed or fail. When this occurs, a notification will be sent to the `sales-notification` channel in the `hooli` workspace:
-
-```yaml
 alert_policies:
   - name: "slack-alert-policy"
     description: "An alert policy to send a Slack notification to sales on job failure or success."
@@ -86,6 +84,14 @@ alert_policies:
         slack_workspace_name: "hooli"
         slack_channel_name: "sales-notifications"
 ```
+
+Then, use the `dagster-cloud` CLI to set the alert policies for the deployment:
+
+```bash file=/dagster_cloud/alerts/cli_commands.yaml startafter=start_set_alerts endbefore=end_set_alerts
+dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
+```
+
+Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-cloud/managing-deployments/alerts/managing-alerts-cli) guide for more information.
 
 </TabItem>
 </TabGroup>
@@ -108,8 +114,12 @@ Once the app is removed, refresh the **Alerts** page in Dagster Cloud and the **
     href="/dagster-cloud/managing-deployments/alerts"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing code locations"
-    href="/dagster-cloud/managing-deployments/code-locations"
+    title="Managing alerts in Dagster Cloud"
+    href="/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts using the dagster-cloud CLI"
+    href="/dagster-cloud/managing-deployments/alerts/managing-alerts-cli"
   ></ArticleListItem>
   <ArticleListItem
     title="Deployment settings"
