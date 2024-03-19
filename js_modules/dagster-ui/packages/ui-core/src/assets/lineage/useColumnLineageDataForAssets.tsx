@@ -1,5 +1,5 @@
 import {gql, useApolloClient} from '@apollo/client';
-import React, {useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 
 import {
   AssetColumnLineageQuery,
@@ -81,18 +81,19 @@ const getColumnLineage = (
 
 export function useColumnLineageDataForAssets(assetKeys: AssetKeyInput[]) {
   const [loaded, setLoaded] = useState<AssetColumnLineages>({});
-  const missing = assetKeys.filter((a) => !loaded[toGraphId(a)]);
-  const missingJSON = JSON.stringify(missing);
   const client = useApolloClient();
   const fetching = useRef(false);
+  const missing = useMemo(
+    () => assetKeys.filter((a) => !loaded[toGraphId(a)]),
+    [assetKeys, loaded],
+  );
 
   React.useEffect(() => {
-    const missingAssetKeys = JSON.parse(missingJSON);
     const fetch = async () => {
       fetching.current = true;
       const {data} = await client.query<AssetColumnLineageQuery, AssetColumnLineageQueryVariables>({
         query: ASSET_COLUMN_LINEAGE_QUERY,
-        variables: {assetKeys: missingAssetKeys},
+        variables: {assetKeys: missing},
       });
       fetching.current = false;
 
@@ -103,10 +104,10 @@ export function useColumnLineageDataForAssets(assetKeys: AssetKeyInput[]) {
         ),
       }));
     };
-    if (!fetching.current && missingAssetKeys.length) {
+    if (!fetching.current && missing.length) {
       void fetch();
     }
-  }, [client, missingJSON]);
+  }, [client, missing]);
 
   return loaded;
 }

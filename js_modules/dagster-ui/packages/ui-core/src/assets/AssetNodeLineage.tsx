@@ -52,9 +52,11 @@ export const AssetNodeLineage = ({
 
   const currentDepth = Math.max(1, Math.min(maxDepth, requestedDepth));
 
-  const columnLineageData = useColumnLineageDataForAssets(
-    Object.values(assetGraphData.nodes).map(asAssetKeyInput),
+  const assetGraphKeys = useMemo(
+    () => Object.values(assetGraphData.nodes).map(asAssetKeyInput),
+    [assetGraphData],
   );
+  const columnLineageData = useColumnLineageDataForAssets(assetGraphKeys);
   const columnLineage = columnLineageData[toGraphId(assetKey)];
   const [column, setColumn] = useQueryPersistedState<string | null>({
     queryKey: 'column',
