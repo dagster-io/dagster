@@ -122,10 +122,12 @@ class StepInputSource(ABC):
         raise NotImplementedError()
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromSourceAsset(
+@whitelist_for_serdes(
+    storage_name="FromSourceAsset", storage_field_names={"node_handle": "solid_handle"}
+)
+class FromLoadableAsset(
     NamedTuple(
-        "_FromSourceAsset",
+        "_FromLoadableAsset",
         [
             ("node_handle", NodeHandle),
             ("input_name", str),
