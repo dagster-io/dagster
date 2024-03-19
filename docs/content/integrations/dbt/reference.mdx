@@ -223,6 +223,7 @@ In Dagster, each asset definition has attributes. Dagster automatically generate
 - [Customizing group names](#customizing-group-names)
 - [Customizing descriptions](#customizing-descriptions)
 - [Customizing metadata](#customizing-metadata)
+- [Customizing tags](#customizing-tags)
 - [Customizing auto-materialize policies](#customizing-auto-materialize-policies)
 - [Customizing freshness policies](#customizing-freshness-policies)
 
@@ -381,6 +382,46 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         return {
             "dbt_metadata": MetadataValue.json(dbt_resource_props.get("meta", {}))
         }
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
+)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+### Customizing tags
+
+<Note>
+In Dagster, tags are key-value pairs. However, in dbt, tags are strings. To bridge this divide, the dbt tag string is used as the Dagster tag key, and the Dagster tag value is set to special sentinel value `"__dagster_no_value"`.
+
+Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored by default. </Note>
+
+For dbt models, seeds, and snapshots, the default Dagster tags will be the dbt node's configured tags.
+
+Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored.
+
+To override the Dagster tags for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_tags"/>. The following converts dbt tags of the form "foo=bar" to key/value pairs:
+
+```python startafter=start_custom_tags_dagster_dbt_translator endbefore=end_custom_tags_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetExecutionContext
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from typing import Any, Mapping
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+        dbt_tags = dbt_resource_props.get("tags", [])
+        dagster_tags = {}
+        for tag in dbt_tags:
+            key, _, value = tag.partition("=")
+
+            dagster_tags[key] = value if value else "__dagster_no_value"
+
+        return dagster_tags
 
 @dbt_assets(
     manifest=manifest_path,

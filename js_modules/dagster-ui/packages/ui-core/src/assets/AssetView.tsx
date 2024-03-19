@@ -366,7 +366,7 @@ function getQueryForVisibleAssets(
     return {query: `+"${token}"+`, requestedDepth: 1};
   }
   if (view === 'lineage') {
-    const defaultDepth = lineageScope === 'neighbors' ? 2 : 5;
+    const defaultDepth = 1;
     const requestedDepth = Number(lineageDepth) || defaultDepth;
     const depthStr = '+'.repeat(requestedDepth);
 

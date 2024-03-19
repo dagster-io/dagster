@@ -13,6 +13,8 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from dagster._core.definitions.utils import is_valid_definition_tag_key
+from dagster._core.storage.tags import TAG_NO_VALUE
 
 from .asset_utils import (
     default_asset_key_fn,
@@ -217,6 +219,48 @@ class DagsterDbtTranslator:
                         return {"custom": "metadata"}
         """
         return default_metadata_from_dbt_resource_props(dbt_resource_props)
+
+    @classmethod
+    @public
+    def get_tags(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster tags for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        dbt tags are strings, but Dagster tags are key-value pairs. To bridge this divide, the dbt
+        tag string is used as the Dagster tag key, and the Dagster tag value is set to special
+        sentinel value `"__dagster_no_value"`.
+
+        Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain
+        unsupported characters) will be ignored.
+
+        This method can be overridden to provide custom tags for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Mapping[str, str]: A dictionary representing the Dagster tags for the dbt resource.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    @classmethod
+                    def get_tags(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+                        return {"custom": "tag"}
+        """
+        tags = dbt_resource_props.get("tags", [])
+        return {tag: TAG_NO_VALUE for tag in tags if is_valid_definition_tag_key(tag)}
 
     @classmethod
     @public

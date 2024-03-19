@@ -5,12 +5,7 @@ import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './l
 import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
-import {
-  AssetGraphLayout,
-  AssetLayoutDirection,
-  LayoutAssetGraphOptions,
-  layoutAssetGraph,
-} from '../asset-graph/layout';
+import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -186,14 +181,13 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
 export function useAssetLayout(
   _graphData: GraphData,
   expandedGroups: string[],
-  direction: AssetLayoutDirection,
+  opts: LayoutAssetGraphOptions,
 ) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
   const graphData = useMemo(() => ({..._graphData, expandedGroups}), [expandedGroups, _graphData]);
 
-  const opts = useMemo(() => ({direction}), [direction]);
   const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;

@@ -35,8 +35,59 @@ export type AssetGraphLayout = {
 };
 const MARGIN = 100;
 
+export type LayoutAssetGraphConfig = dagre.GraphLabel & {
+  direction: AssetLayoutDirection;
+  /** Pass `auto` to use getAssetNodeDimensions, or a value to give nodes a fixed height */
+  nodeHeight: number | 'auto';
+  /** Our asset groups have "title bars" - use these numbers to adjust the bounding boxes.
+   * Note that these adjustments are applied post-dagre layout. For padding > nodesep, you
+   * may need to set "clusterpaddingtop", "clusterpaddingbottom" so Dagre lays out the boxes
+   * with more spacing.
+   */
+  groupPaddingTop: number;
+  groupPaddingBottom: number;
+  groupRendering: 'if-varied' | 'always';
+
+  /** Supported in Dagre, just not documented. Additional spacing between group nodes */
+  clusterpaddingtop?: number;
+  clusterpaddingbottom?: number;
+};
+
 export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
+  overrides?: Partial<LayoutAssetGraphConfig>;
+};
+
+export const Config = {
+  horizontal: {
+    ranker: 'tight-tree',
+    direction: 'horizontal',
+    marginx: MARGIN,
+    marginy: MARGIN,
+    ranksep: 60,
+    rankdir: 'LR',
+    edgesep: 90,
+    nodesep: -10,
+    nodeHeight: 'auto',
+    groupPaddingTop: 65,
+    groupPaddingBottom: -15,
+    groupRendering: 'if-varied',
+    clusterpaddingtop: 100,
+  },
+  vertical: {
+    ranker: 'tight-tree',
+    direction: 'horizontal',
+    marginx: MARGIN,
+    marginy: MARGIN,
+    ranksep: 20,
+    rankdir: 'TB',
+    nodesep: 40,
+    edgesep: 10,
+    nodeHeight: 'auto',
+    groupPaddingTop: 40,
+    groupPaddingBottom: -20,
+    groupRendering: 'if-varied',
+  },
 };
 
 export const layoutAssetGraph = (
@@ -44,30 +95,9 @@ export const layoutAssetGraph = (
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
+  const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
 
-  const ranker = 'tight-tree';
-
-  g.setGraph(
-    opts.direction === 'horizontal'
-      ? {
-          rankdir: 'LR',
-          marginx: MARGIN,
-          marginy: MARGIN,
-          nodesep: -10,
-          edgesep: 90,
-          ranksep: 60,
-          ranker,
-        }
-      : {
-          rankdir: 'TB',
-          marginx: MARGIN,
-          marginy: MARGIN,
-          nodesep: 40,
-          edgesep: 10,
-          ranksep: 20,
-          ranker,
-        },
-  );
+  g.setGraph(config);
   g.setDefaultEdgeLabel(() => ({}));
 
   // const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
@@ -92,13 +122,17 @@ export const layoutAssetGraph = (
   }
 
   // Add all the group boxes to the graph
-  const groupsPresent = Object.keys(groups).length > 1;
+  const groupsPresent =
+    config.groupRendering === 'if-varied' ? Object.keys(groups).length > 1 : true;
+
   if (groupsPresent) {
     Object.keys(groups).forEach((groupId) => {
       if (expandedGroups.includes(groupId)) {
-        g.setNode(groupId, {}); // sized based on it's children
+        // sized based on it's children, but "border" tells Dagre we want cluster-level
+        // spacing between the node and others. Necessary because our groups have title bars.
+        g.setNode(groupId, {borderType: 'borderRight'});
       } else {
-        g.setNode(groupId, {width: 320, height: 110});
+        g.setNode(groupId, {width: ASSET_NODE_WIDTH, height: 110});
       }
     });
   }
@@ -106,7 +140,12 @@ export const layoutAssetGraph = (
   // Add all the nodes inside expanded groups to the graph
   renderedNodes.forEach((node) => {
     if (!groupsPresent || expandedGroups.includes(groupIdForNode(node))) {
-      g.setNode(node.id, getAssetNodeDimensions(node.definition));
+      const label =
+        config.nodeHeight === 'auto'
+          ? getAssetNodeDimensions(node.definition)
+          : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
+
+      g.setNode(node.id, label);
       if (groupsPresent && node.definition.groupName) {
         g.setParent(node.id, groupIdForNode(node));
       }
@@ -205,10 +244,11 @@ export const layoutAssetGraph = (
     }
     for (const group of Object.values(groups)) {
       if (group.expanded) {
-        group.bounds =
-          opts.direction === 'horizontal'
-            ? padBounds(group.bounds, {x: 15, top: 65, bottom: -15})
-            : padBounds(group.bounds, {x: 15, top: 40, bottom: -20});
+        group.bounds = padBounds(group.bounds, {
+          x: 15,
+          top: config.groupPaddingTop,
+          bottom: config.groupPaddingBottom,
+        });
       }
     }
   }
@@ -276,6 +316,7 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
   return {x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
 };
 
+export const ASSET_NODE_WIDTH = 320;
 export const ASSET_NODE_NAME_MAX_LENGTH = 38;
 
 export const getAssetNodeDimensions = (def: {
@@ -289,7 +330,7 @@ export const getAssetNodeDimensions = (def: {
   computeKind: string | null;
   changedReasons?: ChangeReason[];
 }) => {
-  const width = 320;
+  const width = ASSET_NODE_WIDTH;
 
   let height = 100; // top tags area + name + description
 
