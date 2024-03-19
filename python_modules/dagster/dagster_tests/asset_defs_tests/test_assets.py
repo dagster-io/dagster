@@ -1863,7 +1863,10 @@ def test_multi_asset_nodes_out_names():
         pass
 
     assert len(users.op.output_defs) == 2
-    assert {out_def.name for out_def in users.op.output_defs} == {"sales_users", "marketing_users"}
+    assert {out_def.name for out_def in users.op.output_defs} == {
+        "sales__users",
+        "marketing__users",
+    }
 
 
 def test_asset_spec_deps():

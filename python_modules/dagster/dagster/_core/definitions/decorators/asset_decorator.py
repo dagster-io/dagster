@@ -660,8 +660,7 @@ def multi_asset(
         elif specs:
             output_tuples_by_asset_key = {}
             for asset_spec in specs:
-                # output names are asset keys joined with _
-                output_name = "_".join(asset_spec.key.path)
+                output_name = asset_spec.key.to_python_identifier()
                 output_tuples_by_asset_key[asset_spec.key] = (
                     output_name,
                     Out(
