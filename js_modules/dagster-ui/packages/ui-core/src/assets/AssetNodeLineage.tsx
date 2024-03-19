@@ -5,17 +5,24 @@ import {
   Colors,
   Icon,
   JoinedButtons,
+  MenuItem,
+  Suggest,
   TextInput,
 } from '@dagster-io/ui-components';
-import {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {AssetColumnLineageGraph} from './AssetColumnLineageGraph';
 import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {asAssetKeyInput} from './asInput';
+import {useColumnLineageDataForAssets} from './lineage/useColumnLineageDataForAssets';
 import {AssetLineageScope, AssetViewParams} from './types';
-import {GraphData} from '../asset-graph/Utils';
+import {GraphData, toGraphId} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {ClearButton} from '../ui/ClearButton';
 
 export const AssetNodeLineage = ({
   params,
@@ -45,6 +52,18 @@ export const AssetNodeLineage = ({
 
   const currentDepth = Math.max(1, Math.min(maxDepth, requestedDepth));
 
+  const assetGraphKeys = useMemo(
+    () => Object.values(assetGraphData.nodes).map(asAssetKeyInput),
+    [assetGraphData],
+  );
+  const columnLineageData = useColumnLineageDataForAssets(assetGraphKeys);
+  const columnLineage = columnLineageData[toGraphId(assetKey)];
+  const [column, setColumn] = useQueryPersistedState<string | null>({
+    queryKey: 'column',
+    decode: (qs) => qs.column || null,
+    encode: (column) => ({column: column || undefined}),
+  });
+
   return (
     <Box
       style={{width: '100%', flex: 1, minHeight: 0, position: 'relative'}}
@@ -69,6 +88,43 @@ export const AssetNodeLineage = ({
           onChange={(depth) => setParams({...params, lineageDepth: depth})}
           max={maxDepth}
         />
+        {columnLineage || column ? (
+          <>
+            Column
+            <Suggest
+              resetOnQuery={false}
+              resetOnClose={false}
+              resetOnSelect={false}
+              inputProps={{
+                placeholder: 'Select a column…',
+                rightElement: column ? (
+                  <ClearButton
+                    onClick={() => setColumn(null)}
+                    style={{marginTop: 5, marginRight: 4}}
+                  >
+                    <Icon name="cancel" />
+                  </ClearButton>
+                ) : undefined,
+              }}
+              selectedItem={column}
+              items={Object.keys(columnLineage || {})}
+              noResults="No matching columns"
+              onItemSelect={setColumn}
+              inputValueRenderer={(item) => item}
+              itemPredicate={(query, item) =>
+                item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+              }
+              itemRenderer={(item, itemProps) => (
+                <MenuItem
+                  active={itemProps.modifiers.active}
+                  onClick={(e) => itemProps.handleClick(e)}
+                  text={item}
+                  key={item}
+                />
+              )}
+            />
+          </>
+        ) : undefined}
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
@@ -86,7 +142,20 @@ export const AssetNodeLineage = ({
           Not all upstream/downstream assets shown. Increase the depth to show more.
         </DepthHidesAssetsNotice>
       )}
-      <AssetNodeLineageGraph assetKey={assetKey} assetGraphData={assetGraphData} params={params} />
+      {column ? (
+        <AssetColumnLineageGraph
+          assetKey={assetKey}
+          assetGraphData={assetGraphData}
+          columnLineageData={columnLineageData}
+          focusedColumn={column}
+        />
+      ) : (
+        <AssetNodeLineageGraph
+          assetKey={assetKey}
+          assetGraphData={assetGraphData}
+          params={params}
+        />
+      )}
     </Box>
   );
 };

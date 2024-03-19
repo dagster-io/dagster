@@ -15,6 +15,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {LiveDataForNode, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
+import {isCanonicalColumnLineageEntry} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -156,18 +157,20 @@ export const LatestMaterializationMetadata = ({
                 </td>
               </tr>
             ) : null}
-            {latestEvent.metadataEntries.map((entry) => (
-              <tr key={`metadata-${entry.label}`}>
-                <td>{entry.label}</td>
-                <td>
-                  <MetadataEntry
-                    entry={entry}
-                    expandSmallValues={true}
-                    repoLocation={repoAddress?.location}
-                  />
-                </td>
-              </tr>
-            ))}
+            {latestEvent.metadataEntries
+              .filter((entry) => !isCanonicalColumnLineageEntry(entry))
+              .map((entry) => (
+                <tr key={`metadata-${entry.label}`}>
+                  <td>{entry.label}</td>
+                  <td>
+                    <MetadataEntry
+                      entry={entry}
+                      expandSmallValues={true}
+                      repoLocation={repoAddress?.location}
+                    />
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </MetadataTable>
       ) : (

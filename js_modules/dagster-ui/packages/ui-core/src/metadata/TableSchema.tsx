@@ -11,12 +11,20 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import {useState} from 'react';
+import {createContext, useContext, useState} from 'react';
 
 import {TableSchemaFragment} from './types/TableSchema.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
-import {MaterializationEvent, TableSchemaMetadataEntry} from '../graphql/types';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {
+  AssetKeyInput,
+  JsonMetadataEntry,
+  MaterializationEvent,
+  TableSchemaMetadataEntry,
+} from '../graphql/types';
+import {Description} from '../pipelines/Description';
+import {AnchorButton} from '../ui/AnchorButton';
 
 type ITableSchema = TableSchemaFragment;
 
@@ -28,16 +36,26 @@ interface ITableSchemaProps {
   itemHorizontalPadding?: Spacing;
 }
 
-export const isCanonicalTableSchemaEntry = (
+export const isCanonicalColumnSchemaEntry = (
   m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
 ): m is TableSchemaMetadataEntry =>
   m.__typename === 'TableSchemaMetadataEntry' && m.label === 'dagster/column_schema';
+
+export const isCanonicalColumnLineageEntry = (
+  m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
+): m is JsonMetadataEntry => m.__typename === 'JsonMetadataEntry' && m.label === 'lineage';
+
+export const TableSchemaLineageContext = createContext<{assetKey: AssetKeyInput | null}>({
+  assetKey: null,
+});
 
 export const TableSchema = ({
   schema,
   schemaLoadTimestamp,
   itemHorizontalPadding,
 }: ITableSchemaProps) => {
+  const {assetKey} = useContext(TableSchemaLineageContext);
+
   const multiColumnConstraints = schema.constraints?.other || [];
   const [filter, setFilter] = useState('');
   const rows = schema.columns.filter(
@@ -76,6 +94,7 @@ export const TableSchema = ({
             <td>Column name</td>
             <td style={{width: 200}}>Type</td>
             <td>Description</td>
+            {assetKey ? <td style={{width: 56}} /> : undefined}
           </tr>
         </thead>
         <tbody>
@@ -85,14 +104,29 @@ export const TableSchema = ({
                 <Mono>{column.name}</Mono>
               </td>
               <td>
-                <TypeTag type={column.type} icon={iconForType(column.type)} />
+                <TypeTag type={column.type} />
                 {!column.constraints.nullable && NonNullableTag}
                 {column.constraints.unique && UniqueTag}
                 {column.constraints.other.map((constraint, i) => (
                   <ArbitraryConstraintTag key={i} constraint={constraint} />
                 ))}
               </td>
-              <td>{column.description}</td>
+              <td>
+                <Description description={column.description} />
+              </td>
+              {assetKey ? (
+                <td style={{padding: '4px 12px'}}>
+                  <Tooltip content="View column lineage">
+                    <AnchorButton
+                      icon={<Icon name="column_lineage" />}
+                      to={assetDetailsPathForKey(assetKey, {
+                        view: 'lineage',
+                        column: column.name,
+                      })}
+                    />
+                  </Tooltip>
+                </td>
+              ) : undefined}
             </tr>
           ))}
           {rows.length === 0 && (
@@ -108,7 +142,7 @@ export const TableSchema = ({
   );
 };
 
-const iconForType = (type: string): IconName | null => {
+export const iconForColumnType = (type: string): IconName | null => {
   const lower = type.toLowerCase();
   if (lower.includes('bool')) {
     return 'datatype_bool';
@@ -128,11 +162,13 @@ const iconForType = (type: string): IconName | null => {
   return null;
 };
 
-const TypeTag = ({type = '', icon}: {type: string; icon: IconName | null}) => {
+export const TypeTag = ({type = ''}: {type: string}) => {
   if (type.trim().replace(/\?/g, '').length === 0) {
     // Do not render type '' or '?' or any other empty value.
     return <span />;
   }
+
+  const icon = iconForColumnType(type);
 
   return (
     <Tag intent="none">
