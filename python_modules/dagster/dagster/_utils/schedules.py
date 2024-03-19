@@ -901,3 +901,17 @@ def schedule_execution_time_iterator(
             for i, next_date in enumerate(next_dates):
                 if next_date == earliest_next_date:
                     next_dates[i] = next(iterators[i])
+
+
+def get_latest_completed_cron_tick(
+    freshness_cron: Optional[str], current_time: datetime.datetime, timezone: Optional[str]
+) -> Optional[datetime.datetime]:
+    if not freshness_cron:
+        return None
+
+    cron_iter = reverse_cron_string_iterator(
+        end_timestamp=current_time.timestamp(),
+        cron_string=freshness_cron,
+        execution_timezone=timezone,
+    )
+    return pendulum.instance(next(cron_iter))
