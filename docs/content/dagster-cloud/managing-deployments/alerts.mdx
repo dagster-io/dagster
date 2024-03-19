@@ -43,15 +43,27 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         <strong>Asset alert</strong>
       </td>
       <td>
-        Triggers on asset materialization failure or success, as well as asset
-        check error, warn, passed, or failure to execute.
+        Triggers on:
+        <ul>
+          <li>
+            <strong>Asset materialization</strong> - Failure or success
+          </li>
+          <li>
+            <strong>Asset check</strong> - Error, warn, passed, or failure to
+            execute
+          </li>
+          <li>
+            <strong>Asset freshness</strong> - Overdue
+          </li>
+        </ul>
+        An asset group or asset key can be provided, which limits notifications
+        to fire only if the asset group or asset key matches the materialized
+        asset. In the case of checks, notifications will only be sent if the
+        asset group/key to which the check is attached matches.
         <br />
         <br />
-        An asset group or asset key can be provided, which limits notifications to
-        fire only if the asset group or asset key matches the materialized asset.
-        In the case of checks, notifications will only be sent if the asset group/key
-        to which the check is attached matches. <strong>Note:</strong> Asset based
-        alert policies are still experimental and may be subject to change.
+        <strong>Note:</strong> Asset based alert policies are still experimental
+        and may be subject to change.
       </td>
     </tr>
     <tr>
@@ -106,120 +118,40 @@ Dagster Cloud can send notifications via:
 
 ---
 
-## Managing alert policies in Dagster Cloud
+## Managing alert policies
 
-<Note>
-  <a href="/dagster-cloud/account/managing-users">
-    <strong>Organization Admin</strong>, <strong>Admin</strong>, or{" "}
-    <strong>Editor</strong>
-  </a>{" "}
-  permissions are required to manage alerts in Dagster Cloud.
-</Note>
+Managing alert policies can be accomplished by using:
 
-- [Creating alert policies](#creating-alert-policies)
-- [Editing alert policies](#editing-alert-policies)
-- [Enabling and disabling alert policies](#enabling-and-disabling-alert-policies)
-- [Deleting alert policies](#deleting-alert-policies)
-
-### Creating alert policies
-
-1. Sign in to your Dagster Cloud account.
-
-2. In the top navigation, click **Deployment**.
-
-3. Click the **Alerts** tab.
-
-4. Click **+ Create alert policy**.
-
-5. In the **Create alert policy** window, select an [alert type](#alert-policy-types) and enter a name and description for the alert.
-
-6. **If creating an asset or run alert**, fill in the following:
-
-   <details>
-     <summary>
-       <strong>Asset alert policies</strong>
-     </summary>
-     <ul>
-       <li>
-         <strong>Target</strong> - Select the assets that the alert targets:
-         <ul>
-           <li>
-             <strong>All assets</strong> - All assets in the deployment
-           </li>
-           <li>
-             <strong>Group</strong> - All assets in a specific asset group in
-             the deployment
-           </li>
-           <li>
-             <strong>Asset key</strong> - A specific asset key in the deployment
-           </li>
-         </ul>
-       </li>
-       <li>
-         <strong>Events</strong> - Select the event(s) that should trigger the
-         alert. For example: asset materialization failure, asset check passed.
-       </li>
-     </ul>
-   </details>
-
-   <details>
-     <summary>
-       <strong>Run alert policies</strong>
-     </summary>
-     <ul>
-       <li>
-         <strong>Tags</strong> - Add tag(s) for the alert policy. Jobs with
-         these tags will trigger the alert. For example:{" "}
-         <code>level:critical</code> or <code>team:sales</code>
-       </li>
-       <li>
-         <strong>Events</strong> - Select whether the alert should trigger on
-         job success, failure, or both
-       </li>
-     </ul>
-   </details>
-
-7. In the **Notification service** section, select how the alert will be delivered. Refer to the [Supported notification services](#supported-notification-services) section for information about setting up these services.
-
-   **Note**: If creating an asset alert, an additional **Email asset owners (experimental)** option will be available.
-
-8. When finished, click **Save policy**.
-
-### Editing alert policies
-
-To edit an existing alert policy, click the **Edit** button next to the policy.
-
-### Enabling and disabling alert policies
-
-To enable or disable an alert, use the toggle on the left side of the alert policy.
-
-### Deleting alert policies
-
-To delete an alert policy, click the **Delete** button next to the policy. When prompted, confirm the deletion.
+- [The Dagster Cloud UI](/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui)
+- [The `dagster-cloud` command-line interface (CLI)](/dagster-cloud/managing-deployments/alerts/managing-alerts-cli)
 
 ---
 
-## Managing alert policies with the dagster-cloud CLI
+## Related
 
-When creating an alert policy using the CLI, only certain `event_types` can be specified together. You can specify multiple job run-based event types together (`JOB_SUCCESS`, `JOB_FAILURE`), or a tick-based event type (`TICK_FAILURE`), but attempting to mix these will result in an error.
-
-With the [`dagster-cloud` CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli), you can:
-
-- [Set a full deployment's policies](#setting-a-full-deployments-policies)
-- [View a full deployment's policies](#viewing-a-full-deployments-policies)
-
-### Setting a full deployment's policies
-
-A list of alert policies can be defined in a single YAML file. After declaring your policies, set them for the deployment using the following command:
-
-```bash
-dagster-cloud deployment alert-policies sync -a <ALERT_POLICIES_PATH>
-```
-
-### Viewing a full deployment's policies
-
-List the policies currently configured on the deployment by running:
-
-```bash
-dagster-cloud deployment alert-policies list
-```
+<ArticleList>
+  <ArticleListItem
+    title="Managing alerts in the Dagster UI"
+    href="/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts using the dagster-cloud CLI"
+    href="/dagster-cloud/managing-deployments/alerts/managing-alerts-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing code locations"
+    href="/dagster-cloud/managing-deployments/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deployment settings"
+    href="/dagster-cloud/managing-deployments/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-cloud CLI"
+    href="/dagster-cloud/managing-deployments/dagster-cloud-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster_cloud.yaml"
+    href="/dagster-cloud/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+</ArticleList>
