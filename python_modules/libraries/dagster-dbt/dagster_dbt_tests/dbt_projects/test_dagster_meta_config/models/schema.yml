@@ -14,6 +14,11 @@ sources:
 models:
   - name: customers
     description: This table has basic information about a customer, as well as some derived facts based on a customer's orders
+    config:
+      tags:
+        - foo
+        - bar-baz
+        - invalid_tag_key=fdjskl
     meta:
       dagster:
         has_self_dependency: True
