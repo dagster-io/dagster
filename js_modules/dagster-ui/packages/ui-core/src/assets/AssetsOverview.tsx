@@ -264,6 +264,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
     timezone: [timezone],
   } = useContext(TimeContext);
   const recentlyVisitedAssets = fetchRecentlyVisitedAssetsFromLocalStorage();
+  const viewerFirstName = viewerName?.split(' ')[0];
 
   if (assetsQuery.loading) {
     return (
@@ -280,7 +281,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
   }
 
   return (
-    <>
+    <Box flex={{direction: 'column'}} style={{height: '100%'}}>
       <AssetPageHeader
         assetKey={{path: currentPath}}
         right={<ReloadAllButton label="Reload definitions" />}
@@ -291,7 +292,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
             <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
               <Heading>
                 {getGreeting(timezone)}
-                {viewerName ? `, ${viewerName}` : ''}
+                {viewerFirstName ? `, ${viewerFirstName}` : ''}
               </Heading>
               <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
                 <Link to="/assets">View all</Link>
@@ -388,7 +389,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
           )}
         </Box>
       </Box>
-    </>
+    </Box>
   );
 };
 

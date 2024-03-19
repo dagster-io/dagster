@@ -222,11 +222,11 @@ def direct_invocation_result(
         # try-except handles "vanilla" asset and op invocation (generators and async handled in
         # _type_check_output_wrapper)
 
-        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)  # type: ignore (pyright bug)
+        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)  # type: ignore # (pyright bug)
 
         result = invoke_compute_fn(
             fn=compute_fn.decorated_fn,
-            context=bound_context,  # type: ignore (pyright bug)
+            context=bound_context,  # type: ignore # (pyright bug)
             kwargs=input_dict,
             context_arg_provided=compute_fn.has_context_arg(),
             config_arg_cls=(
@@ -234,9 +234,9 @@ def direct_invocation_result(
             ),
             resource_args=resource_arg_mapping,
         )
-        return _type_check_output_wrapper(op_def, result, bound_context)  # type: ignore (pyright bug)
+        return _type_check_output_wrapper(op_def, result, bound_context)  # type: ignore # (pyright bug)
     except Exception:
-        bound_context.unbind()  # type: ignore (pyright bug)
+        bound_context.unbind()  # type: ignore # (pyright bug)
         raise
 
 

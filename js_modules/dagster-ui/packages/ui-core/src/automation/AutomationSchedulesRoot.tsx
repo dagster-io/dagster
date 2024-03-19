@@ -1,17 +1,17 @@
 import {Box, Heading, PageHeader} from '@dagster-io/ui-components';
 
-import {OverviewSchedules} from './OverviewSchedules';
-import {OverviewTabs} from './OverviewTabs';
+import {AutomationTabs} from './AutomationTabs';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {OverviewSchedules} from '../overview/OverviewSchedules';
 
-export const OverviewSchedulesRoot = () => {
+export const AutomationSchedulesRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Overview | Schedules');
+  useDocumentTitle('Automation | Schedules');
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="schedules" />} />
+      <PageHeader title={<Heading>Automation</Heading>} tabs={<AutomationTabs tab="schedules" />} />
       <OverviewSchedules />
     </Box>
   );
