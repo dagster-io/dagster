@@ -16,10 +16,7 @@ import {OverviewSensorTable} from './OverviewSensorsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
-import {
-  OverviewSensorsQuery,
-  OverviewSensorsQueryVariables,
-} from './types/OverviewSensorsRoot.types';
+import {OverviewSensorsQuery, OverviewSensorsQueryVariables} from './types/OverviewSensors.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';

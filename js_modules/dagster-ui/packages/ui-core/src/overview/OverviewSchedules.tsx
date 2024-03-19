@@ -19,7 +19,7 @@ import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragme
 import {
   OverviewSchedulesQuery,
   OverviewSchedulesQueryVariables,
-} from './types/OverviewSchedulesRoot.types';
+} from './types/OverviewSchedules.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
