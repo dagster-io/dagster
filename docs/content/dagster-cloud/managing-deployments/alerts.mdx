@@ -49,24 +49,18 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         Triggers on:
         <ul>
           <li>
-            <strong>Asset materialization</strong> - Failure or success
+            <strong>Asset materializations</strong> - Failure or success
           </li>
           <li>
-            <strong>Asset check</strong> - Error, warn, passed, or failure to
+            <strong>Asset checks</strong> - Error, warn, passed, or failure to
             execute
           </li>
           <li>
             <strong>Asset freshness</strong> - Overdue
           </li>
         </ul>
-        An asset group or asset key can be provided, which limits notifications
-        to fire only if the asset group or asset key matches the materialized
-        asset. In the case of checks, notifications will only be sent if the
-        asset group/key to which the check is attached matches.
-        <br />
-        <br />
-        <strong>Note:</strong> Asset based alert policies are still experimental
-        and may be subject to change.
+        Alerts can be scoped to asset groups or specific asset keys. Asset check
+        alerts are sent for any checks on those assets.
       </td>
     </tr>
     <tr>
