@@ -118,6 +118,8 @@ if TYPE_CHECKING:
 MIN_ASSET_ROWS = 25
 DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
 
+# Limit logs to 1GB, has to be less than INT_MAX
+MAX_SERIALIZED_EVENT_LENGTH = 1024*1024*1024
 
 def get_max_event_records_limit() -> int:
     max_value = os.getenv("MAX_LIMIT_GET_EVENT_RECORDS")
