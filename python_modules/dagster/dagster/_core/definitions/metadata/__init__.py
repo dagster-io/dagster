@@ -433,7 +433,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
                 )
             return TimestampMetadataValue(value.timestamp())
         else:
-            check.failed("Expected either a float or a datetime")
+            check.failed(f"Expected either a float or a datetime, but received a {type(value)}")
 
     @public
     @staticmethod
