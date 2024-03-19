@@ -8,13 +8,15 @@ import time
 import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Union
 
 import sling
 from dagster import (
+    AssetExecutionContext,
     ConfigurableResource,
     EnvVar,
     MaterializeResult,
+    OpExecutionContext,
     PermissiveConfig,
     get_dagster_logger,
 )
@@ -23,7 +25,10 @@ from dagster._utils.env import environ
 from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
 
-from dagster_embedded_elt.sling.asset_decorator import get_streams_from_replication
+from dagster_embedded_elt.sling.asset_decorator import (
+    METADATA_KEY_TRANSLATOR,
+    get_streams_from_replication,
+)
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
@@ -360,14 +365,14 @@ class SlingResource(ConfigurableResource):
         self,
         *,
         replication_config: SlingReplicationParam,
-        dagster_sling_translator: DagsterSlingTranslator,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         debug: bool = False,
     ) -> Generator[MaterializeResult, None, None]:
         """Runs a Sling replication from the given replication config.
 
         Args:
             replication_config: The Sling replication config to use for the replication.
-            dagster_sling_translator: The translator to use for the replication.
+            context: Asset or Op execution context.
             debug: Whether to run the replication in debug mode.
 
         Returns:
@@ -375,6 +380,13 @@ class SlingResource(ConfigurableResource):
         """
         replication_config = validate_replication(replication_config)
         stream_definition = get_streams_from_replication(replication_config)
+
+        # retrieve translator from context
+        metadata_by_key = context.assets_def.metadata_by_key
+        first_asset_metadata = next(iter(metadata_by_key.values()))
+        dagster_sling_translator = first_asset_metadata.get(
+            METADATA_KEY_TRANSLATOR, DagsterSlingTranslator()
+        )
 
         with self._setup_config():
             uid = uuid.uuid4()

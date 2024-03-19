@@ -12,6 +12,8 @@ from dagster._utils.security import non_secure_md5_hash_str
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
+METADATA_KEY_TRANSLATOR = "dagster_sling/translator"
+
 
 def get_streams_from_replication(
     replication_config: Mapping[str, Any],
@@ -73,7 +75,7 @@ def sling_assets(
             def my_assets(context, sling: SlingResource):
                 for lines in sling.replicate(
                     replication_config=config_path,
-                    dagster_sling_translator=DagsterSlingTranslator(),
+                    context=context,
                 ):
                     context.log.info(lines)
     """
@@ -88,7 +90,10 @@ def sling_assets(
                 key=dagster_sling_translator.get_asset_key(stream),
                 deps=dagster_sling_translator.get_deps_asset_key(stream),
                 description=dagster_sling_translator.get_description(stream),
-                metadata=dagster_sling_translator.get_metadata(stream),
+                metadata={  # type: ignore
+                    **dagster_sling_translator.get_metadata(stream),
+                    METADATA_KEY_TRANSLATOR: dagster_sling_translator,
+                },
                 group_name=dagster_sling_translator.get_group_name(stream),
                 freshness_policy=dagster_sling_translator.get_freshness_policy(stream),
                 auto_materialize_policy=dagster_sling_translator.get_auto_materialize_policy(

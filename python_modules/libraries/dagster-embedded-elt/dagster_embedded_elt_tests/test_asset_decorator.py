@@ -3,6 +3,7 @@ import sqlite3
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     FreshnessPolicy,
     JsonMetadataValue,
@@ -64,10 +65,9 @@ def test_runs_base_sling_config(
     sqlite_connection: sqlite3.Connection,
 ):
     @sling_assets(replication_config=csv_to_sqlite_replication_config)
-    def my_sling_assets(sling: SlingResource):
+    def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
         for row in sling.replicate(
-            replication_config=csv_to_sqlite_replication_config,
-            dagster_sling_translator=DagsterSlingTranslator(),
+            replication_config=csv_to_sqlite_replication_config, context=context
         ):
             logging.info(row)
 
@@ -105,11 +105,11 @@ def test_with_custom_name(replication_config: SlingReplicationParam):
 
 
 def test_base_with_meta_config_translator():
-    @sling_assets(
-        replication_config=file_relative_path(
-            __file__, "replication_configs/base_with_meta_config/replication.yaml"
-        )
+    replication_config = file_relative_path(
+        __file__, "replication_configs/base_with_meta_config/replication.yaml"
     )
+
+    @sling_assets(replication_config=replication_config)
     def my_sling_assets(): ...
 
     assert my_sling_assets.keys == {
@@ -134,7 +134,10 @@ def test_base_with_meta_config_translator():
     }
 
     assert my_sling_assets.metadata_by_key == {
-        AssetKey(["target", "public", "accounts"]): {"stream_config": JsonMetadataValue(data=None)},
+        AssetKey(["target", "public", "accounts"]): {
+            "stream_config": JsonMetadataValue(data=None),
+            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
+        },
         AssetKey(["target", "departments"]): {
             "stream_config": JsonMetadataValue(
                 data={
@@ -152,7 +155,8 @@ def test_base_with_meta_config_translator():
                         }
                     },
                 }
-            )
+            ),
+            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
         },
         AssetKey(["target", "public", "transactions"]): {
             "stream_config": JsonMetadataValue(
@@ -167,7 +171,8 @@ def test_base_with_meta_config_translator():
                         }
                     },
                 }
-            )
+            ),
+            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
         },
         AssetKey(["target", "public", "all_users"]): {
             "stream_config": JsonMetadataValue(
@@ -175,7 +180,8 @@ def test_base_with_meta_config_translator():
                     "sql": 'select all_user_id, name \nfrom public."all_Users"\n',
                     "object": "public.all_users",
                 }
-            )
+            ),
+            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
         },
     }
 
