@@ -595,11 +595,11 @@
                   },
                   {
                     "title": "Managing alerts in the UI",
-                    "path": "/dagster-cloud/managing-deployments/alerts/manging-alerts-in-ui"
+                    "path": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui"
                   },
                   {
                     "title": "Managing alerts with the CLI",
-                    "path": "/dagster-cloud/managing-deployments/alerts/manging-alerts-cli"
+                    "path": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli"
                   },
                   {
                     "title": "Email",
