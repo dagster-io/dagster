@@ -43,6 +43,7 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.tags import TAG_NO_VALUE
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from pydantic import ValidationError
@@ -711,6 +712,7 @@ def test_deserialize_old_all_asset_selection():
 
 def test_from_string_tag():
     assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
+    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", TAG_NO_VALUE)
 
 
 def test_tag():
@@ -736,10 +738,18 @@ def test_tag_string():
             AssetSpec("asset2", tags={"foo": "fooval2"}),
             AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
             AssetSpec("asset4", tags={"bar": "barval"}),
+            AssetSpec("asset5", tags={"baz": TAG_NO_VALUE}),
+            AssetSpec("asset6", tags={"baz": TAG_NO_VALUE, "bar": "barval"}),
         ]
     )
     def assets(): ...
 
     assert AssetSelection.tag_string("foo=fooval").resolve([assets]) == {
-        AssetKey(k) for k in ["asset1", "asset3"]
+        AssetKey("asset1"),
+        AssetKey("asset3"),
+    }
+    assert AssetSelection.tag_string("foo").resolve([assets]) == set()
+    assert AssetSelection.tag_string("baz").resolve([assets]) == {
+        AssetKey("asset5"),
+        AssetKey("asset6"),
     }
