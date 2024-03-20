@@ -13,7 +13,7 @@ name: Automate stale issues
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/10 * * * *' # run every 10 minutes as it also removes labels.
+    - cron: '*/15 * * * *' # run every 15 minutes as it also removes labels.
 
 permissions:
   contents: read
