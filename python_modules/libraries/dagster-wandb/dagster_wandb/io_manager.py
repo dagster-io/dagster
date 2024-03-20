@@ -151,7 +151,7 @@ class ArtifactsIOManager(IOManager):
             self._clean_local_storage_path()
 
     def _upload_artifact(self, context: OutputContext, obj):
-        if not context.has_partition_key and context.has_asset_partitions:
+        if not context.has_partition_key and context.has_partitions:
             raise WandbArtifactsIOManagerError(
                 "Sorry, but the Weights & Biases (W&B) IO Manager can't handle processing several"
                 " partitions at the same time within a single run. Please process each partition"
@@ -371,14 +371,14 @@ class ArtifactsIOManager(IOManager):
 
             partitions_configuration = parameters.get("partitions", {})
 
-            if not context.has_asset_partitions and len(partitions_configuration) > 0:
+            if not context.has_partitions and len(partitions_configuration) > 0:
                 raise WandbArtifactsIOManagerError(
                     "You've included a 'partitions' value in the 'wandb_artifact_configuration'"
                     " settings but it's not within a partitioned execution. Please only use"
                     " 'partitions' within a partitioned context."
                 )
 
-            if context.has_asset_partitions:
+            if context.has_partitions:
                 # Note: this is currently impossible to unit test with current Dagster APIs but was
                 # tested thoroughly manually
                 name = parameters.get("get")
@@ -397,7 +397,7 @@ class ArtifactsIOManager(IOManager):
 
                 partitions = [
                     (key, f"{artifact_name}.{ str(key).replace('|', '-')}")
-                    for key in context.asset_partition_keys
+                    for key in context.partition_keys
                 ]
 
                 output = {}

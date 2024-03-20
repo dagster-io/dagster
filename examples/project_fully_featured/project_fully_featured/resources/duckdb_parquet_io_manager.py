@@ -27,7 +27,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
             con = self._connect_duckdb()
 
             path = self._get_path(context)
-            if context.has_asset_partitions:
+            if context.has_partitions:
                 to_scan = os.path.join(os.path.dirname(path), "*.pq", "*.parquet")
             else:
                 to_scan = path
@@ -39,11 +39,11 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
 
     def load_input(self, context):
         check.invariant(
-            not context.has_asset_partitions
-            or context.asset_partition_key_range
+            not context.has_partitions
+            or context.partition_key_range
             == PartitionKeyRange(
-                context.asset_partitions_def.get_first_partition_key(),
-                context.asset_partitions_def.get_last_partition_key(),
+                context.partitions_def.get_first_partition_key(),
+                context.partitions_def.get_last_partition_key(),
             ),
             "Loading a subselection of partitions is not yet supported",
         )

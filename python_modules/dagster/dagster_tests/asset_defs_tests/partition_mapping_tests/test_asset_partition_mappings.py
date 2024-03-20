@@ -100,9 +100,9 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
             assert context.asset_partition_key == "2"
 
         def load_input(self, context):
-            start, end = context.asset_partition_key_range
+            start, end = context.partition_key_range
             assert start, end == ("1", "2")
-            assert context.asset_partitions_def == upstream_partitions_def
+            assert context.partitions_def == upstream_partitions_def
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context: AssetExecutionContext):
@@ -159,11 +159,11 @@ def test_from_graph():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert context.asset_partition_key == "a"
-            assert context.has_asset_partitions
+            assert context.has_partitions
 
         def load_input(self, context):
             assert context.asset_partition_key == "a"
-            assert context.has_asset_partitions
+            assert context.has_partitions
 
     assert materialize(
         assets=[
@@ -191,13 +191,13 @@ def test_non_partitioned_depends_on_last_partition():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
+                assert context.has_partitions
                 assert context.asset_partition_key == "b"
             else:
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
 
         def load_input(self, context):
-            assert context.has_asset_partitions
+            assert context.has_partitions
             assert context.asset_partition_key == "d"
 
     result = materialize(
@@ -231,14 +231,14 @@ def test_non_partitioned_depends_on_specific_partitions():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
+                assert context.has_partitions
                 assert context.asset_partition_key == "b"
             else:
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
 
         def load_input(self, context):
-            assert context.has_asset_partitions
-            assert set(context.asset_partition_keys) == {"a", "b"}
+            assert context.has_partitions
+            assert set(context.partition_keys) == {"a", "b"}
 
     result = materialize(
         [upstream, downstream_a_b],
@@ -299,14 +299,14 @@ def test_non_partitioned_depends_on_all_partitions():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
+                assert context.has_partitions
                 assert context.asset_partition_key == "b"
             else:
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
 
         def load_input(self, context):
-            assert context.has_asset_partitions
-            assert context.asset_partition_key_range == PartitionKeyRange("a", "d")
+            assert context.has_partitions
+            assert context.partition_key_range == PartitionKeyRange("a", "d")
 
     result = materialize(
         assets=[upstream, downstream],
@@ -350,12 +350,12 @@ def test_partition_keys_in_range():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
-                assert context.asset_partition_keys == ["2022-09-11"]
+                assert context.has_partitions
+                assert context.partition_keys == ["2022-09-11"]
 
         def load_input(self, context):
-            assert context.has_asset_partitions
-            assert context.asset_partition_keys == daily_partition_keys_for_week_2022_09_11
+            assert context.has_partitions
+            assert context.partition_keys == daily_partition_keys_for_week_2022_09_11
 
     assert materialize(
         assets=[upstream],
@@ -399,7 +399,7 @@ def test_dependency_resolution_partition_mapping():
         def load_input(self, context):
             assert context.asset_key.path == ["staging", "upstream"]
             assert context.partition_key == "2020-01-02"
-            assert context.asset_partition_keys == ["2020-01-01", "2020-01-02"]
+            assert context.partition_keys == ["2020-01-01", "2020-01-02"]
 
     materialize(
         [upstream, downstream], resources={"io_manager": MyIOManager()}, partition_key="2020-01-02"
@@ -480,12 +480,12 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
-                assert context.asset_partition_keys == ["a"]
+                assert context.has_partitions
+                assert context.partition_keys == ["a"]
 
         def load_input(self, context):
-            assert context.has_asset_partitions
-            assert context.asset_partition_keys == ["a"]
+            assert context.has_partitions
+            assert context.partition_keys == ["a"]
 
     materialize(
         [upstream],
@@ -537,7 +537,7 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
             pass
 
         def load_input(self, context):
-            assert set(context.asset_partition_keys) == a_multipartition_keys
+            assert set(context.partition_keys) == a_multipartition_keys
 
     for pk in a_multipartition_keys:
         materialize(

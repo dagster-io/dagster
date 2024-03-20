@@ -73,7 +73,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
-        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+        if table_slice.partition_dimensions and len(context.partition_keys) == 0:
             return pd.DataFrame()
         result = connection.query(
             query=BigQueryClient.get_select_statement(table_slice),

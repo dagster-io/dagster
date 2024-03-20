@@ -61,8 +61,8 @@ class PartitionedParquetIOManager(ConfigurableIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]):
         key = context.asset_key.path[-1]
 
-        if context.has_asset_partitions:
-            start, end = context.asset_partitions_time_window
+        if context.has_partitions:
+            start, end = context.partitions_time_window
             dt_format = "%Y%m%d%H%M%S"
             partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
             return os.path.join(self._base_path, key, f"{partition_str}.pq")
