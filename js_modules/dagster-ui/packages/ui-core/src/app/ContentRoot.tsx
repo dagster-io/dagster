@@ -3,7 +3,6 @@ import {Suspense, lazy, memo, useEffect, useRef} from 'react';
 import {Route, Switch, useLocation} from 'react-router-dom';
 
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
-import AssetsOverview from '../assets/AssetsOverview';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
@@ -37,11 +36,6 @@ export const ContentRoot = memo(() => {
           <Route path="/asset-groups(/?.*)">
             <Suspense fallback={<div />}>
               <AssetsGroupsGlobalGraphRoot />
-            </Suspense>
-          </Route>
-          <Route path="/assets-overview" exact>
-            <Suspense fallback={<div />}>
-              <AssetsOverview />
             </Suspense>
           </Route>
           <Route path="/assets(/?.*)">
