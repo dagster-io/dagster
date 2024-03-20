@@ -22,10 +22,10 @@ def materialize_expect_metadata(assets_def: AssetsDefinition):
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key != downstream_asset.key:
-                assert context.metadata["fruit"] == "apple"
+                assert context.definition_metadata["fruit"] == "apple"
 
         def load_input(self, context):
-            assert context.upstream_output.metadata["fruit"] == "apple"
+            assert context.upstream_output.definition_metadata["fruit"] == "apple"
 
     assert materialize(
         assets=[assets_def, downstream_asset],

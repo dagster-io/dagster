@@ -119,7 +119,7 @@ export const AssetGlobalLineageLink = () => (
 
 export const AssetGlobalLineageButton = () => (
   <AnchorButton intent="primary" icon={<Icon name="schema" />} to="/asset-groups">
-    View global asset lineage
+    View lineage
   </AnchorButton>
 );
 

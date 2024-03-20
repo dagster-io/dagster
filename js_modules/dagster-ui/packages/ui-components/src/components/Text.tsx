@@ -20,7 +20,7 @@ export const Title = styled(Text)`
 
 export const Heading = styled(Text)`
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 24px;
   -webkit-font-smoothing: antialiased;
 `;
