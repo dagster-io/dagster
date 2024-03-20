@@ -256,12 +256,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 self._selected_asset_check_keys = selected_asset_check_keys
 
         self._check_specs_by_output_name = {
-            name: spec
-            for name, spec in (check_specs_by_output_name or {}).items()
-            if spec.key in self._selected_asset_check_keys
+            name: spec for name, spec in (check_specs_by_output_name or {}).items()
         }
         self._check_specs_by_key = {
-            spec.key: spec for spec in self._check_specs_by_output_name.values()
+            spec.key: spec
+            for spec in self._check_specs_by_output_name.values()
+            if spec.key in self._selected_asset_check_keys
         }
 
         self._can_subset = can_subset
@@ -934,8 +934,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._keys_by_input_name
 
     @property
-    def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+    def node_check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+        """AssetCheckSpec for each output on the underlying NodeDefinition."""
         return self._check_specs_by_output_name
+
+    @property
+    def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+        return {
+            name: spec
+            for name, spec in self._check_specs_by_output_name.items()
+            if spec.key in self._selected_asset_check_keys
+        }
 
     def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
         return self._check_specs_by_key[asset_check_key]

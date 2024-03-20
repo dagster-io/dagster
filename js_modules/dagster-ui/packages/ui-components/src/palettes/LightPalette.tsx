@@ -127,4 +127,7 @@ export const LightPalette = {
   [ColorName.DataVizVioletAlt]: DataVizColors.Violet300,
   [ColorName.DataVizYellow]: DataVizColors.Yellow200,
   [ColorName.DataVizYellowAlt]: DataVizColors.Yellow300,
+
+  //Gradients
+  [ColorName.BlueGradient]: `linear-gradient(${CoreColors.Gray10}, ${TranslucentColors.Blue10} 100%)`,
 };

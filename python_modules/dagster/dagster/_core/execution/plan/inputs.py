@@ -180,7 +180,7 @@ class FromLoadableAsset(
                 ),
                 name=input_asset_key.path[-1],
                 step_key="none",
-                metadata=asset_layer.get(input_asset_key).metadata,
+                definition_metadata=asset_layer.get(input_asset_key).metadata,
                 resource_config=resource_config,
                 log_manager=step_context.log,
             ),

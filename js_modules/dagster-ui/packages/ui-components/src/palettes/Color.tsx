@@ -117,4 +117,5 @@ export {
   colorDataVizYellow as dataVizYellow,
   colorDataVizYellowAlt as dataVizYellowAlt,
   replaceAlpha,
+  colorBlueGradient as blueGradient,
 } from '../theme/color';

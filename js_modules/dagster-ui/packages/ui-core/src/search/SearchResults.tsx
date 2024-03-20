@@ -46,6 +46,8 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'account_circle';
     case AssetFilterSearchResultType.AssetGroup:
       return 'asset_group';
+    case AssetFilterSearchResultType.ComputeKind:
+      return 'tag';
     default:
       return 'source';
   }
@@ -249,8 +251,8 @@ const MatchingFiltersHeader = styled.li`
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
   background-color: ${({isHighlight}) =>
-    isHighlight ? Colors.backgroundLight() : Colors.backgroundDefault()};
-  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentLime() : 'transparent')} 4px 0 0
+    isHighlight ? Colors.backgroundLightHover() : Colors.backgroundDefault()};
+  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentBlue() : 'transparent')} 4px 0 0
     inset;
   color: ${Colors.textLight()};
   display: flex;
@@ -260,7 +262,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${Colors.backgroundLight()};
+    background-color: ${Colors.backgroundLighter()};
   }
 `;
 
