@@ -1,8 +1,6 @@
 import {
-  Colors,
   ExternalAnchorButton,
   Icon,
-  IconWrapper,
   Menu,
   MenuDivider,
   MenuExternalLink,
@@ -12,9 +10,9 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
-import styled from 'styled-components';
 
 import {ShortcutHandler} from './ShortcutHandler';
+import {TopNavButton} from './TopNavButton';
 import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -102,33 +100,13 @@ export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}
             </Menu>
           }
         >
-          <Tooltip content="Help">
-            <HelpButton>
-              <Icon name="chat_support" size={20} />
-            </HelpButton>
+          <Tooltip content="Help" placement="bottom" canShow={!isOpen}>
+            <TopNavButton>
+              <Icon name="help_circle" size={20} />
+            </TopNavButton>
           </Tooltip>
         </Popover>
       </ProductTour>
     </ShortcutHandler>
   );
 };
-
-const HelpButton = styled.button`
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-
-  :focus {
-    outline: none;
-  }
-
-  ${IconWrapper} {
-    background-color: ${Colors.navTextSelected()};
-    transition: background-color 100ms linear;
-  }
-
-  :focus ${IconWrapper}, :hover ${IconWrapper} {
-    background-color: ${Colors.navTextHover()};
-  }
-`;

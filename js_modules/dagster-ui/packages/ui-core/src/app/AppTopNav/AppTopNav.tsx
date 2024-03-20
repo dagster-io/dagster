@@ -10,18 +10,18 @@ import {
   useRepositoryLocationReload,
 } from '../../nav/useRepositoryLocationReload';
 import {SearchDialog} from '../../search/SearchDialog';
+import {useFeatureFlags} from '../Flags';
 import {LayoutContext} from '../LayoutProvider';
 import {ShortcutHandler} from '../ShortcutHandler';
 import {WebSocketStatus} from '../WebSocketProvider';
 
 interface Props {
   children?: React.ReactNode;
-  searchPlaceholder: string;
   showStatusWarningIcon?: boolean;
   allowGlobalReload?: boolean;
 }
 
-export const AppTopNav = ({children, searchPlaceholder, allowGlobalReload = false}: Props) => {
+export const AppTopNav = ({children, allowGlobalReload = false}: Props) => {
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'workspace',
     reloadFn: reloadFnForWorkspace,
@@ -33,7 +33,7 @@ export const AppTopNav = ({children, searchPlaceholder, allowGlobalReload = fals
         <AppTopNavLogo />
         <AppTopNavRightOfLogo />
       </Box>
-      <Box flex={{direction: 'row', alignItems: 'center'}}>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} margin={{right: 20}}>
         {allowGlobalReload ? (
           <ShortcutHandler
             onShortcut={() => {
@@ -48,7 +48,7 @@ export const AppTopNav = ({children, searchPlaceholder, allowGlobalReload = fals
             <div style={{width: '0px', height: '30px'}} />
           </ShortcutHandler>
         ) : null}
-        <SearchDialog searchPlaceholder={searchPlaceholder} />
+        <SearchDialog />
         {children}
       </Box>
     </AppTopNavContainer>
@@ -57,6 +57,7 @@ export const AppTopNav = ({children, searchPlaceholder, allowGlobalReload = fals
 
 export const AppTopNavLogo = () => {
   const {nav} = React.useContext(LayoutContext);
+  const {flagSettingsPage} = useFeatureFlags();
   const navButton = React.useRef<null | HTMLButtonElement>(null);
 
   const onToggle = React.useCallback(() => {
@@ -75,7 +76,7 @@ export const AppTopNavLogo = () => {
 
   return (
     <LogoContainer>
-      {nav.canOpen ? (
+      {!flagSettingsPage && nav.canOpen ? (
         <ShortcutHandler
           onShortcut={() => onToggle()}
           shortcutLabel="."
