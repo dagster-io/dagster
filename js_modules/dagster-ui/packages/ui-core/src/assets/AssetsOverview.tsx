@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {Box, Colors, Heading, Icon, Page, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, MiddleTruncate, Page, Spinner} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useContext} from 'react';
 import {Link, useParams} from 'react-router-dom';
@@ -186,7 +186,10 @@ function getGreeting(timezone: string) {
 const CountForAssetType = ({children, assetsCount}: AssetOverviewCategoryProps) => {
   return (
     <GridItem>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{overflow: 'hidden'}}>
+      <Box
+        flex={{direction: 'row', alignItems: 'center', gap: 4}}
+        style={{overflow: 'hidden', color: Colors.textLighter()}}
+      >
         {children}
       </Box>
       <span
@@ -357,12 +360,12 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     >
                       {assetGroupCount.groupMetadata.groupName}
                     </Link>
-                    <span style={{...TextOverflowStyle, ...{color: Colors.textLighter()}}}>
-                      {repoAddressAsHumanString({
+                    <MiddleTruncate
+                      text={repoAddressAsHumanString({
                         name: assetGroupCount.groupMetadata.repositoryName,
                         location: assetGroupCount.groupMetadata.repositoryLocationName,
                       })}
-                    </span>
+                    />
                   </CountForAssetType>
                 ))}
               </GridStyle>
@@ -415,14 +418,14 @@ const GridStyle = styled.div`
   padding: 16px 12px;
 
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 `;
 
 const GridItem = styled.div`
   padding: 6px 12px;
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
+  justify-content: space-between;
 `;
