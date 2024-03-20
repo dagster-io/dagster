@@ -19,7 +19,7 @@ import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
 import {useUnscopedPermissions} from '../app/Permissions';
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetKeyInput} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
@@ -30,7 +30,7 @@ type Asset = AssetTableFragment;
 interface Props {
   view: AssetViewType;
   assets: Asset[];
-  refreshState: QueryRefreshState;
+  refreshState: RefreshState;
   actionBarComponents: React.ReactNode;
   belowActionBarComponents: React.ReactNode;
   prefixPath: string[];

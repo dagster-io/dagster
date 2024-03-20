@@ -29,9 +29,11 @@ import {
   healthRefreshHintFromLiveData,
   usePartitionHealthData,
 } from '../assets/usePartitionHealthData';
+import {useRecentAssetEvents} from '../assets/useRecentAssetEvents';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {TableSchemaAssetContext} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
@@ -55,6 +57,17 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
+
+  const recentEvents = useRecentAssetEvents(
+    asset?.assetKey,
+    {},
+    {assetHasDefinedPartitions: !!asset?.partitionDefinition},
+  );
+
+  const latestEvent = recentEvents.materializations
+    ? recentEvents.materializations[recentEvents.materializations.length - 1]
+    : undefined;
+
   if (!asset) {
     return (
       <>
@@ -99,6 +112,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
       <AssetSidebarActivitySummary
         asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
+        recentEvents={recentEvents}
         isSourceAsset={definition.isSource}
         stepKey={stepKeyForAsset(definition)}
         liveData={liveData}
@@ -159,7 +173,14 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
       {assetMetadata.length > 0 && (
         <SidebarSection title="Metadata">
-          <AssetMetadataTable assetMetadata={assetMetadata} repoLocation={repoAddress?.location} />
+          <TableSchemaAssetContext.Provider
+            value={{assetKey, materializationMetadataEntries: latestEvent?.metadataEntries}}
+          >
+            <AssetMetadataTable
+              assetMetadata={assetMetadata}
+              repoLocation={repoAddress?.location}
+            />
+          </TableSchemaAssetContext.Provider>
         </SidebarSection>
       )}
 

@@ -73,7 +73,7 @@ def asset(
     ins: Optional[Mapping[str, AssetIn]] = ...,
     deps: Optional[Iterable[CoercibleToAssetDep]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
-    tags: Optional[Mapping[str, Optional[Mapping[str, str]]]] = ...,
+    tags: Optional[Mapping[str, str]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
@@ -115,7 +115,7 @@ def asset(
     ins: Optional[Mapping[str, AssetIn]] = None,
     deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
-    tags: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
@@ -577,7 +577,7 @@ def multi_asset(
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         can_subset (bool): If this asset's computation can emit a subset of the asset
-            keys based on the context.selected_assets argument. Defaults to False.
+            keys based on the context.selected_asset_keys argument. Defaults to False.
         resource_defs (Optional[Mapping[str, object]]):
             (Experimental) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
@@ -660,8 +660,7 @@ def multi_asset(
         elif specs:
             output_tuples_by_asset_key = {}
             for asset_spec in specs:
-                # output names are asset keys joined with _
-                output_name = "_".join(asset_spec.key.path)
+                output_name = asset_spec.key.to_python_identifier()
                 output_tuples_by_asset_key[asset_spec.key] = (
                     output_name,
                     Out(

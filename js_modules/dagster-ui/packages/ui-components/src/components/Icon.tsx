@@ -42,6 +42,7 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import code_location from '../icon-svgs/code_location.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
+import column_lineage from '../icon-svgs/column_lineage.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
@@ -284,6 +285,7 @@ export const Icons = {
   console: console_icon,
   content_copy,
   collapse_arrows,
+  column_lineage,
   corporate_fare,
   delete: deleteSVG,
   done,

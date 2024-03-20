@@ -30,6 +30,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -82,6 +83,10 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
+    def description(self) -> Optional[str]: ...
+
+    @property
+    @abstractmethod
     def group_name(self) -> str: ...
 
     @property
@@ -99,6 +104,18 @@ class BaseAssetNode(ABC):
     @property
     @abstractmethod
     def is_executable(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def metadata(self) -> ArbitraryMetadataMapping: ...
+
+    @property
+    @abstractmethod
+    def tags(self) -> Mapping[str, str]: ...
+
+    @property
+    @abstractmethod
+    def owners(self) -> Sequence[str]: ...
 
     @property
     @abstractmethod

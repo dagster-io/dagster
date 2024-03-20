@@ -49,7 +49,7 @@ from .op_definition import NodeDefinition, OpDefinition
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-    from .source_asset import SourceAsset
+    from .assets import AssetsDefinition
 
 
 def define_resource_dictionary_cls(
@@ -171,7 +171,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
             resource_defs=creation_data.resource_defs,
             node_ignored=False,
             direct_inputs=creation_data.direct_inputs,
-            input_source_assets={},
+            input_assets={},
             asset_layer=creation_data.asset_layer,
         ),
     }
@@ -190,7 +190,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.resource_defs,
                 asset_layer=creation_data.asset_layer,
-                node_input_source_assets=creation_data.graph_def.node_input_source_assets,
+                input_assets=creation_data.graph_def.input_assets,
             ),
             description="Configure runtime parameters for ops or assets.",
         )
@@ -215,7 +215,7 @@ def get_inputs_field(
     resource_defs: Mapping[str, ResourceDefinition],
     node_ignored: bool,
     asset_layer: AssetLayer,
-    input_source_assets: Mapping[str, "SourceAsset"],
+    input_assets: Mapping[str, "AssetsDefinition"],
     direct_inputs: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Field]:
     direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
@@ -234,7 +234,7 @@ def get_inputs_field(
             input_field = None
         elif name in direct_inputs and not has_upstream:
             input_field = None
-        elif name in input_source_assets and not has_upstream:
+        elif name in input_assets and not has_upstream:
             input_field = None
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(node, name, inp)
@@ -372,7 +372,7 @@ def construct_leaf_node_config(
     resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
     asset_layer: AssetLayer,
-    input_source_assets: Mapping[str, "SourceAsset"],
+    input_assets: Mapping[str, "AssetsDefinition"],
 ) -> Optional[Field]:
     return node_config_field(
         {
@@ -383,7 +383,7 @@ def construct_leaf_node_config(
                 resource_defs,
                 ignored,
                 asset_layer,
-                input_source_assets,
+                input_assets,
             ),
             "outputs": get_outputs_field(node, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
@@ -399,7 +399,7 @@ def define_node_field(
     resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
     asset_layer: AssetLayer,
-    input_source_assets: Mapping[str, "SourceAsset"],
+    input_assets: Mapping[str, "AssetsDefinition"],
 ) -> Optional[Field]:
     # All nodes regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
@@ -422,7 +422,7 @@ def define_node_field(
             resource_defs,
             ignored,
             asset_layer,
-            input_source_assets,
+            input_assets,
         )
 
     graph_def = node.definition
@@ -439,7 +439,7 @@ def define_node_field(
             resource_defs,
             ignored,
             asset_layer,
-            input_source_assets,
+            input_assets,
         )
         # This case omits an 'ops' key, thus if a graph is `configured` or has a field
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) nodes.
@@ -452,7 +452,7 @@ def define_node_field(
                 resource_defs,
                 ignored,
                 asset_layer,
-                input_source_assets,
+                input_assets,
             ),
             "outputs": get_outputs_field(node, resource_defs),
             "ops": Field(
@@ -463,7 +463,7 @@ def define_node_field(
                     parent_handle=handle,
                     resource_defs=resource_defs,
                     asset_layer=asset_layer,
-                    node_input_source_assets=graph_def.node_input_source_assets,
+                    input_assets=graph_def.input_assets,
                 )
             ),
         }
@@ -477,7 +477,7 @@ def define_node_shape(
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
     asset_layer: AssetLayer,
-    node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]],
+    input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]],
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
     """Examples of what this method is used to generate the schema for:
@@ -509,7 +509,7 @@ def define_node_shape(
             resource_defs,
             ignored=False,
             asset_layer=asset_layer,
-            input_source_assets=node_input_source_assets.get(node.name, {}),
+            input_assets=input_assets.get(node.name, {}),
         )
 
         if node_field:
@@ -523,7 +523,7 @@ def define_node_shape(
             resource_defs,
             ignored=True,
             asset_layer=asset_layer,
-            input_source_assets=node_input_source_assets.get(node.name, {}),
+            input_assets=input_assets.get(node.name, {}),
         )
         if node_field:
             fields[node.name] = node_field

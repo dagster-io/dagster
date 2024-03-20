@@ -85,6 +85,7 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
@@ -1180,16 +1181,16 @@ def get_run_config_schema_for_job(
 
 
 def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
-    """For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
-    AssetLayer that includes those SourceAssets.
+    """For non-asset jobs that have some inputs that are fed from assets, constructs an
+    AssetLayer that includes these assets as loadables.
     """
     from dagster._core.definitions.asset_graph import (
         AssetGraph,
     )
 
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
-    source_assets_list = []
-    source_asset_keys_set = set()
+    all_input_assets: List[AssetsDefinition] = []
+    input_asset_keys: Set[AssetKey] = set()
 
     # each entry is a graph definition and its handle relative to the job root
     stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
@@ -1197,26 +1198,26 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     while stack:
         graph_def, parent_node_handle = stack.pop()
 
-        for node_name, input_source_assets in graph_def.node_input_source_assets.items():
+        for node_name, input_assets in graph_def.input_assets.items():
             node_handle = NodeHandle(node_name, parent_node_handle)
-            for input_name, source_asset in input_source_assets.items():
-                if source_asset.key not in source_asset_keys_set:
-                    source_asset_keys_set.add(source_asset.key)
-                    source_assets_list.append(source_asset)
+            for input_name, assets_def in input_assets.items():
+                if assets_def.key not in input_asset_keys:
+                    input_asset_keys.add(assets_def.key)
+                    all_input_assets.append(assets_def)
 
                 input_handle = NodeInputHandle(node_handle, input_name)
-                asset_keys_by_node_input_handle[input_handle] = source_asset.key
+                asset_keys_by_node_input_handle[input_handle] = assets_def.key
                 for resolved_input_handle in graph_def.node_dict[
                     node_name
                 ].definition.resolve_input_to_destinations(input_handle):
-                    asset_keys_by_node_input_handle[resolved_input_handle] = source_asset.key
+                    asset_keys_by_node_input_handle[resolved_input_handle] = assets_def.key
 
         for node_name, node in graph_def.node_dict.items():
             if isinstance(node.definition, GraphDefinition):
                 stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
 
     return AssetLayer(
-        asset_graph=AssetGraph.from_assets(source_assets_list),
+        asset_graph=AssetGraph.from_assets(all_input_assets),
         assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_info_by_node_output_handle={},

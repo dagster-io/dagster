@@ -2598,7 +2598,7 @@ __metadata:
     codemirror: "npm:^5.65.2"
     color: "npm:^3.0.0"
     cronstrue: "npm:^1.84.0"
-    dagre: "npm:^0.8.5"
+    dagre: "dagster-io/dagre#0.8.5"
     date-fns: "npm:^2.28.0"
     dayjs: "npm:^1.11.7"
     deepmerge: "npm:^4.2.2"
@@ -11528,13 +11528,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dagre@npm:^0.8.5":
+"dagre@dagster-io/dagre#0.8.5":
   version: 0.8.5
-  resolution: "dagre@npm:0.8.5"
+  resolution: "dagre@https://github.com/dagster-io/dagre.git#commit=c2a1821cc7f8a220e819461b82b6ddbf48189100"
   dependencies:
     graphlib: "npm:^2.1.8"
     lodash: "npm:^4.17.15"
-  checksum: f39899e29e9090581d67177ef6e2dd3ca5d7f764fbf3de81758d879bba66fee6fd8802d41d0c5d3d9a0563b334e99e1454a8d6ab4ce17e8e4f50836a3a403fdd
+  checksum: 6a94d8d9b1c3132b406b5921fd2bbd1a207c78fc1048216787fec68fad1d96f649cb084d1ae576f5456532a4275f22a113d140265f05937db60e5918a25adac5
   languageName: node
   linkType: hard
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental_param, public
+from dagster._annotations import deprecated, experimental, experimental_param, public
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -19,6 +19,7 @@ from dagster._core.selector.subset_selector import (
     fetch_sources,
     parse_clause,
 )
+from dagster._core.storage.tags import TAG_NO_VALUE
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_check_spec import AssetCheckKey
@@ -86,7 +87,7 @@ class AssetSelection(ABC, BaseModel, frozen=True):
     @experimental_param(param="include_sources")
     @staticmethod
     def all(include_sources: bool = False) -> "AllSelection":
-        """Returns a selection that includes all assets and asset checks.
+        """Returns a selection that includes all assets and their asset checks.
 
         Args:
             include_sources (bool): If True, then include all source assets.
@@ -170,6 +171,41 @@ class AssetSelection(ABC, BaseModel, frozen=True):
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
         return GroupsAssetSelection(selected_groups=group_strs, include_sources=include_sources)
+
+    @public
+    @staticmethod
+    @experimental
+    def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
+        """Returns a selection that includes materializable assets that have the provided tag, and
+        all the asset checks that target them.
+
+
+        Args:
+            include_sources (bool): If True, then include source assets matching the group in the
+                selection.
+        """
+        return TagAssetSelection(key=key, value=value, include_sources=include_sources)
+
+    @staticmethod
+    def tag_string(string: str, include_sources: bool = False) -> "AssetSelection":
+        """Returns a selection that includes materializable assets that have the provided tag, and
+        all the asset checks that target them.
+
+
+        Args:
+            include_sources (bool): If True, then include source assets matching the group in the
+                selection.
+        """
+        split_by_equals_segments = string.split("=")
+        if len(split_by_equals_segments) == 1:
+            return TagAssetSelection(
+                key=string, value=TAG_NO_VALUE, include_sources=include_sources
+            )
+        elif len(split_by_equals_segments) == 2:
+            key, value = split_by_equals_segments
+            return TagAssetSelection(key=key, value=value, include_sources=include_sources)
+        else:
+            check.failed(f"Invalid tag selection string: {string}. Must have no more than one '='.")
 
     @public
     @staticmethod
@@ -388,6 +424,10 @@ class AssetSelection(ABC, BaseModel, frozen=True):
             else:
                 selection = key_selection
             return selection
+
+        elif string.startswith("tag:"):
+            tag_str = string[len("tag:") :]
+            return cls.tag_string(tag_str)
 
         check.failed(f"Invalid selection string: {string}")
 
@@ -777,6 +817,27 @@ class GroupsAssetSelection(AssetSelection, frozen=True):
             return f"group:{self.selected_groups[0]}"
         else:
             return f"group:({' or '.join(self.selected_groups)})"
+
+
+@whitelist_for_serdes
+class TagAssetSelection(AssetSelection, frozen=True):
+    key: str
+    value: str
+    include_sources: bool
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        base_set = (
+            asset_graph.all_asset_keys
+            if self.include_sources
+            else asset_graph.materializable_asset_keys
+        )
+
+        return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
+
+    def __str__(self) -> str:
+        return f"tag:{self.key}={self.value}"
 
 
 @whitelist_for_serdes

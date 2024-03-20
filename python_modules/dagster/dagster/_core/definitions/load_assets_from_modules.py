@@ -1,5 +1,4 @@
 import inspect
-import os
 import pkgutil
 from importlib import import_module
 from types import ModuleType
@@ -340,10 +339,11 @@ def load_assets_from_package_name(
 
 def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
     yield package_module
-    package_path = package_module.__file__
-    if package_path:
-        for _, modname, is_pkg in pkgutil.walk_packages([os.path.dirname(package_path)]):
-            submodule = import_module(f"{package_module.__name__}.{modname}")
+    if package_module.__file__:
+        for _, modname, is_pkg in pkgutil.walk_packages(
+            package_module.__path__, prefix=package_module.__name__ + "."
+        ):
+            submodule = import_module(modname)
             if is_pkg:
                 yield from find_modules_in_package(submodule)
             else:

@@ -6,7 +6,7 @@ import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
-import {InstanceBackfills} from '../instance/InstanceBackfills';
+import {InstanceBackfillsRoot} from '../instance/InstanceBackfillsRoot';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const OverviewRoot = () => {
@@ -31,7 +31,7 @@ export const OverviewRoot = () => {
         <BackfillPage />
       </Route>
       <Route path="/overview/backfills" exact>
-        <InstanceBackfills />
+        <InstanceBackfillsRoot />
       </Route>
       <Route path="/overview/resources">
         <OverviewResourcesRoot />

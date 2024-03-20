@@ -36,6 +36,7 @@ import {SimpleStakeholderAssetStatus} from './SimpleStakeholderAssetStatus';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {AssetChecksStatusSummary} from './asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {buildConsolidatedColumnSchema} from './buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPathToString';
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
@@ -55,7 +56,7 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {TableSchema, isCanonicalTableSchemaEntry} from '../metadata/TableSchema';
+import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
@@ -102,35 +103,11 @@ export const AssetNodeOverview = ({
     return <AssetNodeOverviewLoading />;
   }
 
-  const materializationTableSchema = materialization?.metadataEntries.find(
-    isCanonicalTableSchemaEntry,
-  );
-  const materializationTableSchemaLoadTimestamp = materialization
-    ? Number(materialization.timestamp)
-    : undefined;
-  const definitionTableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
-  const definitionTableSchemaLoadTimestamp = assetNodeLoadTimestamp;
-
-  let tableSchema = materializationTableSchema ?? definitionTableSchema;
-  const tableSchemaLoadTimestamp =
-    materializationTableSchemaLoadTimestamp ?? definitionTableSchemaLoadTimestamp;
-
-  // Merge the descriptions from the definition table schema with the materialization table schema
-  if (materializationTableSchema && definitionTableSchema) {
-    const definitionTableSchemaColumnDescriptionsByName = Object.fromEntries(
-      definitionTableSchema.schema.columns.map((column) => [column.name, column.description]),
-    );
-    const mergedColumns = materializationTableSchema.schema.columns.map((column) => {
-      const description =
-        definitionTableSchemaColumnDescriptionsByName[column.name] || column.description;
-      return {...column, description};
-    });
-
-    tableSchema = {
-      ...materializationTableSchema,
-      schema: {...materializationTableSchema.schema, columns: mergedColumns},
-    };
-  }
+  const {tableSchema, tableSchemaLoadTimestamp} = buildConsolidatedColumnSchema({
+    materialization,
+    definition: assetNode,
+    definitionLoadTimestamp: assetNodeLoadTimestamp,
+  });
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'row'}}>
@@ -411,10 +388,17 @@ export const AssetNodeOverview = ({
           </LargeCollapsibleSection>
           {tableSchema && (
             <LargeCollapsibleSection header="Columns" icon="view_column">
-              <TableSchema
-                schema={tableSchema.schema}
-                schemaLoadTimestamp={tableSchemaLoadTimestamp}
-              />
+              <TableSchemaAssetContext.Provider
+                value={{
+                  assetKey: assetNode.assetKey,
+                  materializationMetadataEntries: materialization?.metadataEntries,
+                }}
+              >
+                <TableSchema
+                  schema={tableSchema.schema}
+                  schemaLoadTimestamp={tableSchemaLoadTimestamp}
+                />
+              </TableSchemaAssetContext.Provider>
             </LargeCollapsibleSection>
           )}
           <LargeCollapsibleSection header="Metadata" icon="view_list">

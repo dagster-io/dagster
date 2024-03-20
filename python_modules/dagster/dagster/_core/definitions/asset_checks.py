@@ -28,6 +28,7 @@ class AssetChecksDefinition(AssetsDefinition):
         keys_by_input_name: Mapping[str, AssetKey],
         node_def: OpDefinition,
         check_specs_by_output_name: Mapping[str, AssetCheckSpec],
+        can_subset: bool,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
         """Create an AssetChecksDefinition."""
@@ -39,7 +40,7 @@ class AssetChecksDefinition(AssetsDefinition):
             partition_mappings=None,
             asset_deps=None,
             selected_asset_keys=None,
-            can_subset=False,
+            can_subset=can_subset,
             resource_defs=resource_defs,
             group_names_by_key=None,
             metadata_by_key=None,

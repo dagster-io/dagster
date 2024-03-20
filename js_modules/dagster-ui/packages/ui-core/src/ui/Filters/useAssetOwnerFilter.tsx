@@ -49,12 +49,14 @@ export function useAssetOwnersForAssets(
     () =>
       Array.from(
         new Set(
-          assets.flatMap(
-            (a) =>
-              a.definition?.owners.flatMap((o) =>
-                o.__typename === 'TeamAssetOwner' ? o.team : o.email,
-              ),
-          ),
+          assets
+            .flatMap(
+              (a) =>
+                a.definition?.owners.flatMap((o) =>
+                  o.__typename === 'TeamAssetOwner' ? o.team : o.email,
+                ),
+            )
+            .filter((o) => o),
         ),
       ) as string[],
     [assets],

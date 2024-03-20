@@ -79,13 +79,7 @@ def sling_assets(
     """
     replication_config = validate_replication(replication_config)
     streams = get_streams_from_replication(replication_config)
-
-    group_name = dagster_sling_translator.get_group_name(replication_config)
     code_version = non_secure_md5_hash_str(str(replication_config).encode())
-    freshness_policy = dagster_sling_translator.get_freshness_policy(replication_config)
-    auto_materialize_policy = dagster_sling_translator.get_auto_materialize_policy(
-        replication_config
-    )
 
     specs: list[AssetSpec] = []
     for stream in streams:
@@ -93,10 +87,14 @@ def sling_assets(
             AssetSpec(
                 key=dagster_sling_translator.get_asset_key(stream),
                 deps=dagster_sling_translator.get_deps_asset_key(stream),
-                group_name=group_name,
+                description=dagster_sling_translator.get_description(stream),
+                metadata=dagster_sling_translator.get_metadata(stream),
+                group_name=dagster_sling_translator.get_group_name(stream),
+                freshness_policy=dagster_sling_translator.get_freshness_policy(stream),
+                auto_materialize_policy=dagster_sling_translator.get_auto_materialize_policy(
+                    stream
+                ),
                 code_version=code_version,
-                freshness_policy=freshness_policy,
-                auto_materialize_policy=auto_materialize_policy,
             )
         )
 

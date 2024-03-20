@@ -147,6 +147,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check as asset_check,
+    multi_asset_check as multi_asset_check,
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
@@ -559,6 +560,7 @@ from dagster._core.storage.partition_status_cache import (
 from dagster._core.storage.tags import (
     MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG,
     MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG,
+    TAG_NO_VALUE as TAG_NO_VALUE,
 )
 from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
 from dagster._core.types.config_schema import (

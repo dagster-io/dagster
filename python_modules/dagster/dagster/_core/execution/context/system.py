@@ -563,11 +563,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._step_exception: Optional[BaseException] = None
 
         self._step_output_capture: Optional[Dict[StepOutputHandle, Any]] = None
+        self._step_output_metadata_capture: Optional[Dict[StepOutputHandle, Any]] = None
         # Enable step output capture if there are any hooks which will receive them.
         # Expect in the future that hooks may control whether or not they get outputs,
         # but for now presence of any will cause output capture.
         if self.job_def.get_all_hooks_for_handle(self.node_handle):
             self._step_output_capture = {}
+            self._step_output_metadata_capture = {}
 
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
@@ -891,6 +893,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_output_capture
 
     @property
+    def step_output_metadata_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+        return self._step_output_metadata_capture
+
+    @property
     def previous_attempt_count(self) -> int:
         return self.get_known_state().get_retry_state().get_attempt_count(self._step.key)
 
@@ -967,7 +973,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         for output_key in output_keys:
             if output_key not in self.job_def.asset_layer.asset_deps:
                 continue
-            dep_keys = self.job_def.asset_layer.upstream_assets_for_asset(output_key)
+            dep_keys = self.job_def.asset_layer.get(output_key).parent_keys
             for key in dep_keys:
                 if key not in all_dep_keys and key not in output_keys:
                     all_dep_keys.append(key)

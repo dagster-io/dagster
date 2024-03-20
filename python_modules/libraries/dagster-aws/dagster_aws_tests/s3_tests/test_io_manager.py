@@ -226,3 +226,25 @@ def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
             "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
         ),
     }
+
+    # re-execution does not cause issues, overwrites the buckets
+    result2 = inty_job.execute_in_process(partition_key="apple")
+
+    objects = list(mock_s3_bucket.objects.all())
+    assert len(objects) == 8
+    assert {(o.bucket_name, o.key) for o in objects} == {
+        ("test-bucket", "dagster/source1/bar"),
+        ("test-bucket", "dagster/source1/foo"),
+        ("test-bucket", "dagster/asset1"),
+        ("test-bucket", "dagster/asset2"),
+        ("test-bucket", "dagster/asset3"),
+        ("test-bucket", "dagster/partitioned/apple"),
+        (
+            "test-bucket",
+            "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
+        ),
+        (
+            "test-bucket",
+            "/".join(["dagster", "storage", result2.run_id, "graph_asset.first_op", "result"]),
+        ),
+    }

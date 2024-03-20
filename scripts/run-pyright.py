@@ -340,12 +340,18 @@ def update_pinned_requirements(env: str) -> None:
         text=True,
         check=True,
     ).stdout
-    is_internal = not os.path.exists("python_modules/dagster")
-    oss_root_ref = "${DAGSTER_GIT_REPO_DIR}/" if is_internal else ""
-    resolved_oss_root = os.environ["DAGSTER_GIT_REPO_DIR"].rstrip("/")
-    resolved_internal_root = os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"].rstrip("/")
-    dep_list = re.sub(f"-e file://{resolved_oss_root}/(.+)", f"-e {oss_root_ref}\\1", raw_dep_list)
-    dep_list = re.sub(f"-e file://{resolved_internal_root}/(.+)", "-e \\1", dep_list)
+
+    if os.path.exists("python_modules/dagster"):  # in oss
+        resolved_oss_root = os.getcwd()
+        dep_list = re.sub(f"-e file://{resolved_oss_root}/(.+)", "-e \\1", raw_dep_list)
+    else:  # in internal
+        resolved_oss_root = os.environ["DAGSTER_GIT_REPO_DIR"].rstrip("/")
+        resolved_internal_root = os.getcwd()
+        dep_list = re.sub(
+            f"-e file://{resolved_oss_root}/(.+)", "-e ${DAGSTER_GIT_REPO_DIR}/\\1", raw_dep_list
+        )
+        dep_list = re.sub(f"-e file://{resolved_internal_root}/(.+)", "-e \\1", dep_list)
+
     with open(get_env_path(env, "requirements-pinned.txt"), "w") as f:
         f.write(dep_list)
 

@@ -240,7 +240,47 @@ def select_unique_ids_from_manifest(
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
-    manifest = Manifest.from_dict(manifest_json)
+    # NOTE: this was faster than calling `Manifest.from_dict`, so we are keeping this.
+    class _DictShim(dict):
+        """Shim to enable hydrating a dictionary into a dot-accessible object. We need this because
+        dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries.
+
+        See https://stackoverflow.com/a/23689767.
+        """
+
+        def __getattr__(self, item):
+            ret = super().get(item)
+            # allow recursive access e.g. foo.bar.baz
+            return _DictShim(ret) if isinstance(ret, dict) else ret
+
+    manifest = Manifest(
+        nodes={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["nodes"].items()  # type: ignore
+        },
+        sources={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["sources"].items()  # type: ignore
+        },
+        metrics={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+        },
+        exposures={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+        },
+        **(  # type: ignore
+            {
+                "semantic_models": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json.get("semantic_models", {}).items()
+                }
+            }
+            if manifest_json.get("semantic_models")
+            else {}
+        ),
+    )
     child_map = manifest_json["child_map"]
 
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))

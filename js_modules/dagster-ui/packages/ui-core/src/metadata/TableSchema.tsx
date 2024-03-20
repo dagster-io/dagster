@@ -11,12 +11,19 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import {useState} from 'react';
+import {createContext, useContext, useState} from 'react';
 
 import {TableSchemaFragment} from './types/TableSchema.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
-import {MaterializationEvent, TableSchemaMetadataEntry} from '../graphql/types';
+import {AssetFeatureContext} from '../assets/AssetFeatureContext';
+import {
+  AssetKeyInput,
+  JsonMetadataEntry,
+  MaterializationEvent,
+  TableSchemaMetadataEntry,
+} from '../graphql/types';
+import {Description} from '../pipelines/Description';
 
 type ITableSchema = TableSchemaFragment;
 
@@ -28,16 +35,33 @@ interface ITableSchemaProps {
   itemHorizontalPadding?: Spacing;
 }
 
-export const isCanonicalTableSchemaEntry = (
-  m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
+type MetadataEntryLabelOnly = Pick<
+  MaterializationEvent['metadataEntries'][0],
+  '__typename' | 'label'
+>;
+
+export const isCanonicalColumnSchemaEntry = (
+  m: MetadataEntryLabelOnly,
 ): m is TableSchemaMetadataEntry =>
   m.__typename === 'TableSchemaMetadataEntry' && m.label === 'dagster/column_schema';
+
+export const isCanonicalColumnLineageEntry = (m: MetadataEntryLabelOnly): m is JsonMetadataEntry =>
+  m.__typename === 'JsonMetadataEntry' && m.label === 'lineage';
+
+export const TableSchemaAssetContext = createContext<{
+  assetKey: AssetKeyInput | undefined;
+  materializationMetadataEntries: MetadataEntryLabelOnly[] | undefined;
+}>({
+  assetKey: undefined,
+  materializationMetadataEntries: undefined,
+});
 
 export const TableSchema = ({
   schema,
   schemaLoadTimestamp,
   itemHorizontalPadding,
 }: ITableSchemaProps) => {
+  const {AssetColumnLinksCell} = useContext(AssetFeatureContext);
   const multiColumnConstraints = schema.constraints?.other || [];
   const [filter, setFilter] = useState('');
   const rows = schema.columns.filter(
@@ -76,6 +100,7 @@ export const TableSchema = ({
             <td>Column name</td>
             <td style={{width: 200}}>Type</td>
             <td>Description</td>
+            <AssetColumnLinksCell column={null} />
           </tr>
         </thead>
         <tbody>
@@ -85,14 +110,17 @@ export const TableSchema = ({
                 <Mono>{column.name}</Mono>
               </td>
               <td>
-                <TypeTag type={column.type} icon={iconForType(column.type)} />
+                <TypeTag type={column.type} />
                 {!column.constraints.nullable && NonNullableTag}
                 {column.constraints.unique && UniqueTag}
                 {column.constraints.other.map((constraint, i) => (
                   <ArbitraryConstraintTag key={i} constraint={constraint} />
                 ))}
               </td>
-              <td>{column.description}</td>
+              <td>
+                <Description description={column.description} />
+              </td>
+              <AssetColumnLinksCell column={column.name} />
             </tr>
           ))}
           {rows.length === 0 && (
@@ -108,7 +136,7 @@ export const TableSchema = ({
   );
 };
 
-const iconForType = (type: string): IconName | null => {
+export const iconForColumnType = (type: string): IconName | null => {
   const lower = type.toLowerCase();
   if (lower.includes('bool')) {
     return 'datatype_bool';
@@ -128,11 +156,13 @@ const iconForType = (type: string): IconName | null => {
   return null;
 };
 
-const TypeTag = ({type = '', icon}: {type: string; icon: IconName | null}) => {
+export const TypeTag = ({type = ''}: {type: string}) => {
   if (type.trim().replace(/\?/g, '').length === 0) {
     // Do not render type '' or '?' or any other empty value.
     return <span />;
   }
+
+  const icon = iconForColumnType(type);
 
   return (
     <Tag intent="none">
