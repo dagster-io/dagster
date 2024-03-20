@@ -770,7 +770,9 @@ def get_output_context(
         node_handle=node_handle, output_name=step_output.name
     )
     if asset_info is not None:
-        definition_metadata = job_def.asset_layer.get(asset_info.key).metadata or output_def.metadata
+        definition_metadata = (
+            job_def.asset_layer.get(asset_info.key).metadata or output_def.metadata
+        )
     else:
         definition_metadata = output_def.metadata
 
