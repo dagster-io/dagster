@@ -138,10 +138,10 @@ const QueuedRunCriteriaDialogContent = ({run}: {run: RunTableRunFragment}) => {
           <tr>
             <td>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <div>Root concurrency keys</div>
+                <div>Initial concurrency keys</div>
                 <Tooltip
                   placement="bottom"
-                  content="Op/asset concurrency limits are set on all of the initial steps in this run. This run will not start until there are available slots for at least one step"
+                  content="Op/asset concurrency limits are set on all of the initial steps in this run. This run will not start until there are available slots for at least one step."
                 >
                   <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
