@@ -417,6 +417,7 @@ class Definitions:
 
     def __init__(
         self,
+        name: str = SINGLETON_REPOSITORY_NAME,
         assets: Optional[
             Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
         ] = None,
@@ -431,7 +432,7 @@ class Definitions:
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
     ):
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
-            name=SINGLETON_REPOSITORY_NAME,
+            name=name,
             assets=assets,
             schedules=schedules,
             sensors=sensors,
