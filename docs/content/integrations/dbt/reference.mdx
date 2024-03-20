@@ -570,6 +570,22 @@ snapshots:
     - "{{ dagster.log_column_level_metadata() }}"
 ```
 
+Column dependencies can be removed from materialization metadata by disabling the collection of parent relation metadata. This can be done by setting the `enable_parent_relation_metadata_collection` argument to `False` in the `dagster.log_column_level_metadata()` macro:
+
+```yaml
+models:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=false) }}"
+
+seeds:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=false) }}"
+
+snapshots:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=false) }}"
+```
+
 ---
 
 ## Defining dependencies
