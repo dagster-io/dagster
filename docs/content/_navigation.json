@@ -610,6 +610,10 @@
                     "path": "/dagster-cloud/managing-deployments/alerts/microsoft-teams"
                   },
                   {
+                    "title": "PagerDuty",
+                    "path": "/dagster-cloud/managing-deployments/alerts/pagerduty"
+                  },
+                  {
                     "title": "Slack",
                     "path": "/dagster-cloud/managing-deployments/alerts/slack"
                   }
