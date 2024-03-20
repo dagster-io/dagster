@@ -38,6 +38,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
@@ -129,6 +130,30 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
 
     # the asset dependency structure should stay the same
     assert subbed.asset_deps == abc_.asset_deps
+
+
+def test_subset_with_checks():
+    @multi_asset(
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
+        check_specs=[AssetCheckSpec("check1", asset="a"), AssetCheckSpec("check2", asset="b")],
+        can_subset=True,
+    )
+    def abc_(context, in1, in2, in3): ...
+
+    a, b, c = AssetKey("a"), AssetKey("b"), AssetKey("c")
+    check1, check2 = AssetCheckKey(a, "check1"), AssetCheckKey(b, "check2")
+
+    subbed = abc_.subset_for({a, b, c}, selected_asset_check_keys={check1, check2})
+    assert subbed.check_specs_by_output_name == abc_.check_specs_by_output_name
+    assert subbed.node_check_specs_by_output_name == abc_.node_check_specs_by_output_name
+
+    subbed = abc_.subset_for({a, b}, selected_asset_check_keys={check1})
+    assert len(subbed.check_specs_by_output_name) == 1
+    assert len(subbed.node_check_specs_by_output_name) == 2
+
+    subbed_again = subbed.subset_for({a, b}, selected_asset_check_keys=set())
+    assert len(subbed_again.check_specs_by_output_name) == 0
+    assert len(subbed_again.node_check_specs_by_output_name) == 2
 
 
 def test_retain_group():
