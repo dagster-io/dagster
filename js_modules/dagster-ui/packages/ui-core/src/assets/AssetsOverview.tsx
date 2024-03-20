@@ -185,15 +185,19 @@ function getGreeting(timezone: string) {
 
 const CountForAssetType = ({children, assetsCount}: AssetOverviewCategoryProps) => {
   return (
-    <ColumnContainer>
-      <Box
-        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-        style={assetsCount !== 0 ? {width: '70%'} : {width: '100%'}}
-      >
+    <GridItem>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{overflow: 'hidden'}}>
         {children}
       </Box>
-      {assetsCount !== 0 && <AssetCount>{assetsCount} assets</AssetCount>}
-    </ColumnContainer>
+      <span
+        style={{
+          ...TextOverflowStyle,
+          ...{color: Colors.textLight(), fontSize: '14px', textAlign: 'right'},
+        }}
+      >
+        {assetsCount} assets
+      </span>
+    </GridItem>
   );
 };
 
@@ -205,18 +209,6 @@ const SectionHeader = ({sectionName}: {sectionName: string}) => {
       border="top-and-bottom"
     >
       <SectionName>{sectionName}</SectionName>
-    </Box>
-  );
-};
-
-const SectionBody = ({children}: {children: React.ReactNode}) => {
-  return (
-    <Box
-      padding={{horizontal: 24, vertical: 16}}
-      flex={{wrap: 'wrap'}}
-      style={{rowGap: '14px', columnGap: '24px'}}
-    >
-      {children}
     </Box>
   );
 };
@@ -308,7 +300,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
           {recentlyVisitedAssets.length > 0 && (
             <>
               <SectionHeader sectionName="Recently visited" />
-              <SectionBody>
+              <GridStyle>
                 {recentlyVisitedAssets.map((assetKey, idx) => (
                   <CountForAssetType key={idx} assetsCount={0}>
                     <Icon name="asset" />
@@ -317,13 +309,13 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     </Link>
                   </CountForAssetType>
                 ))}
-              </SectionBody>
+              </GridStyle>
             </>
           )}
           {Object.keys(assetCountBySection.countsByOwner).length > 0 && (
             <>
               <SectionHeader sectionName="Owners" />
-              <SectionBody>
+              <GridStyle>
                 {assetCountBySection.countsByOwner.map(({owner, assetCount}) => (
                   <CountForAssetType key={owner} assetsCount={assetCount}>
                     <Link to={linkToAssetGraphOwner(owner)}>
@@ -331,13 +323,13 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     </Link>
                   </CountForAssetType>
                 ))}
-              </SectionBody>
+              </GridStyle>
             </>
           )}
           {Object.keys(assetCountBySection.countsByComputeKind).length > 0 && (
             <>
               <SectionHeader sectionName="Compute kinds" />
-              <SectionBody>
+              <GridStyle>
                 {assetCountBySection.countsByComputeKind.map(({computeKind, assetCount}) => (
                   <CountForAssetType key={computeKind} assetsCount={assetCount}>
                     <TagIcon label={computeKind} />
@@ -346,20 +338,23 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     </Link>
                   </CountForAssetType>
                 ))}
-              </SectionBody>
+              </GridStyle>
             </>
           )}
           {assetCountBySection.countPerAssetGroup.length > 0 && (
             <>
               <SectionHeader sectionName="Asset groups" />
-              <SectionBody>
+              <GridStyle>
                 {assetCountBySection.countPerAssetGroup.map((assetGroupCount) => (
                   <CountForAssetType
                     key={JSON.stringify(assetGroupCount.groupMetadata)}
                     assetsCount={assetGroupCount.assetCount}
                   >
                     <Icon name="asset_group" />
-                    <Link to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}>
+                    <Link
+                      to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}
+                      style={TextOverflowStyle}
+                    >
                       {assetGroupCount.groupMetadata.groupName}
                     </Link>
                     <span style={{...TextOverflowStyle, ...{color: Colors.textLighter()}}}>
@@ -370,13 +365,13 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     </span>
                   </CountForAssetType>
                 ))}
-              </SectionBody>
+              </GridStyle>
             </>
           )}
           {assetCountBySection.countPerCodeLocation.length > 0 && (
             <>
               <SectionHeader sectionName="Code locations" />
-              <SectionBody>
+              <GridStyle>
                 {assetCountBySection.countPerCodeLocation.map((countPerCodeLocation) => (
                   <CountForAssetType
                     key={repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
@@ -391,7 +386,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     </Link>
                   </CountForAssetType>
                 ))}
-              </SectionBody>
+              </GridStyle>
             </>
           )}
         </Box>
@@ -410,33 +405,24 @@ const SectionName = styled.span`
   font-size: 12px;
 `;
 
-const AssetCount = styled.span`
-  color: ${Colors.textLight()};
-  font-size: 14px;
-
-  width: 30%;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: right;
-`;
-
 const TextOverflowStyle: React.CSSProperties = {
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  width: '100%',
 };
 
-const ColumnContainer = styled.div`
-  width: calc(33% - 16px);
-  @media (max-width: 800px) {
-    width: calc(100% - 16px);
-  }
+const GridStyle = styled.div`
+  padding: 16px 12px;
 
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const GridItem = styled.div`
+  padding: 6px 12px;
+  display: grid;
+  grid-template-columns: auto auto;
 `;
