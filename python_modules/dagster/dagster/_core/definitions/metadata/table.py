@@ -292,44 +292,20 @@ class TableColumnDep(
 
 
 @whitelist_for_serdes
-class TableColumnSpec(
-    NamedTuple(
-        "_TableColumnSpec",
-        [
-            ("column_name", PublicAttr[str]),
-            ("table_column_deps", PublicAttr[Sequence[TableColumnDep]]),
-        ],
-    )
-):
-    """Represents the core attributes of a column for the current tabular asset."""
-
-    def __new__(
-        cls,
-        column_name: str,
-        table_column_deps: Sequence[TableColumnDep],
-    ):
-        return super(TableColumnSpec, cls).__new__(
-            cls,
-            column_name=check.str_param(column_name, "column_name"),
-            table_column_deps=check.list_param(
-                table_column_deps, "table_column_deps", TableColumnDep
-            ),
-        )
-
-
-@whitelist_for_serdes
-class TableSpec(
+class TableColumnLineage(
     NamedTuple(
         "_TableSpec",
         [
-            ("column_specs", PublicAttr[Sequence[TableColumnSpec]]),
+            ("deps_by_column", PublicAttr[Mapping[str, Sequence[TableColumnDep]]]),
         ],
     )
 ):
-    """Represents the core attributes of a tabular asset."""
+    """Represents the lineage of column outputs to column inputs for a tabular asset."""
 
-    def __new__(cls, column_specs: Sequence[TableColumnSpec]):
-        return super(TableSpec, cls).__new__(
+    def __new__(cls, deps_by_column: Mapping[str, Sequence[TableColumnDep]]):
+        return super(TableColumnLineage, cls).__new__(
             cls,
-            column_specs=check.list_param(column_specs, "column_specs", TableColumnSpec),
+            deps_by_column=check.mapping_param(
+                deps_by_column, "deps_by_column", key_type=str, value_type=list
+            ),
         )

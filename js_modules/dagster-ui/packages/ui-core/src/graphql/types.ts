@@ -5142,10 +5142,15 @@ export type TableColumnDep = {
   columnName: Scalars['String']['output'];
 };
 
-export type TableColumnSpec = {
-  __typename: 'TableColumnSpec';
+export type TableColumnLineage = {
+  __typename: 'TableColumnLineage';
+  entries: Array<TableColumnLineageEntry>;
+};
+
+export type TableColumnLineageEntry = {
+  __typename: 'TableColumnLineageEntry';
+  columnDeps: Array<TableColumnDep>;
   columnName: Scalars['String']['output'];
-  tableColumnDeps: Array<TableColumnDep>;
 };
 
 export type TableConstraints = {
@@ -5171,11 +5176,6 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
   description: Maybe<Scalars['String']['output']>;
   label: Scalars['String']['output'];
   schema: TableSchema;
-};
-
-export type TableSpec = {
-  __typename: 'TableSpec';
-  columnSpecs: TableColumnSpec;
 };
 
 export type Target = {
@@ -14181,18 +14181,28 @@ export const buildTableColumnDep = (
   };
 };
 
-export const buildTableColumnSpec = (
-  overrides?: Partial<TableColumnSpec>,
+export const buildTableColumnLineage = (
+  overrides?: Partial<TableColumnLineage>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'TableColumnSpec'} & TableColumnSpec => {
+): {__typename: 'TableColumnLineage'} & TableColumnLineage => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('TableColumnSpec');
+  relationshipsToOmit.add('TableColumnLineage');
   return {
-    __typename: 'TableColumnSpec',
-    columnName:
-      overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'quam',
-    tableColumnDeps:
-      overrides && overrides.hasOwnProperty('tableColumnDeps') ? overrides.tableColumnDeps! : [],
+    __typename: 'TableColumnLineage',
+    entries: overrides && overrides.hasOwnProperty('entries') ? overrides.entries! : [],
+  };
+};
+
+export const buildTableColumnLineageEntry = (
+  overrides?: Partial<TableColumnLineageEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnLineageEntry'} & TableColumnLineageEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnLineageEntry');
+  return {
+    __typename: 'TableColumnLineageEntry',
+    columnDeps: overrides && overrides.hasOwnProperty('columnDeps') ? overrides.columnDeps! : [],
+    columnName: overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'aut',
   };
 };
 
@@ -14263,23 +14273,6 @@ export const buildTableSchemaMetadataEntry = (
         : relationshipsToOmit.has('TableSchema')
         ? ({} as TableSchema)
         : buildTableSchema({}, relationshipsToOmit),
-  };
-};
-
-export const buildTableSpec = (
-  overrides?: Partial<TableSpec>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'TableSpec'} & TableSpec => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('TableSpec');
-  return {
-    __typename: 'TableSpec',
-    columnSpecs:
-      overrides && overrides.hasOwnProperty('columnSpecs')
-        ? overrides.columnSpecs!
-        : relationshipsToOmit.has('TableColumnSpec')
-        ? ({} as TableColumnSpec)
-        : buildTableColumnSpec({}, relationshipsToOmit),
   };
 };
 

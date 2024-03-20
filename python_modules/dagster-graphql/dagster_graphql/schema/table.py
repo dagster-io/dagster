@@ -1,4 +1,5 @@
 import graphene
+from dagster._core.definitions.metadata.table import TableColumnLineage
 
 from .asset_key import GrapheneAssetKey
 from .util import non_null_list
@@ -54,19 +55,33 @@ class GrapheneTableColumnDep(graphene.ObjectType):
         name = "TableColumnDep"
 
 
-class GrapheneTableColumnSpec(graphene.ObjectType):
+class GrapheneTableColumnLineageEntry(graphene.ObjectType):
     columnName = graphene.NonNull(graphene.String)
-    tableColumnDeps = non_null_list(GrapheneTableColumnDep)
+    columnDeps = non_null_list(GrapheneTableColumnDep)
 
     class Meta:
-        name = "TableColumnSpec"
+        name = "TableColumnLineageEntry"
 
 
-class GrapheneTableSpec(graphene.ObjectType):
-    columnSpecs = graphene.NonNull(GrapheneTableColumnSpec)
+class GrapheneTableColumnLineage(graphene.ObjectType):
+    entries = non_null_list(GrapheneTableColumnLineageEntry)
 
     class Meta:
-        name = "TableSpec"
+        name = "TableColumnLineage"
+
+    def __init__(self, column_lineage: TableColumnLineage):
+        super().__init__(
+            entries=[
+                GrapheneTableColumnLineageEntry(
+                    column_name,
+                    [
+                        GrapheneTableColumnDep(column_dep.asset_key, column_dep.column_name)
+                        for column_dep in column_deps
+                    ],
+                )
+                for column_name, column_deps in column_lineage.deps_by_column.items()
+            ]
+        )
 
 
 types = [
@@ -76,6 +91,6 @@ types = [
     GrapheneTableColumnConstraints,
     GrapheneTableConstraints,
     GrapheneTableColumnDep,
-    GrapheneTableColumnSpec,
-    GrapheneTableSpec,
+    GrapheneTableColumnLineageEntry,
+    GrapheneTableColumnLineage,
 ]

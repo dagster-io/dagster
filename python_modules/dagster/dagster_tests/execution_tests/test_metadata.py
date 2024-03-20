@@ -28,19 +28,18 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
+    TableColumnLineageMetadataValue,
     TableMetadataValue,
-    TableSpecMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.metadata.table import (
     TableColumn,
     TableColumnConstraints,
     TableColumnDep,
-    TableColumnSpec,
+    TableColumnLineage,
     TableConstraints,
     TableRecord,
     TableSchema,
-    TableSpec,
 )
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.snap.node import build_node_defs_snapshot
@@ -68,16 +67,13 @@ def test_metadata_asset_materialization():
                 "path": MetadataValue.path(Path("/a/b.csv")),
                 "python": MetadataValue.python_artifact(MetadataValue),
                 "timestamp": MetadataValue.timestamp(2000.5),
-                "table_spec": MetadataValue.table_spec(
-                    TableSpec(
-                        column_specs=[
-                            TableColumnSpec(
-                                column_name="foo",
-                                table_column_deps=[
-                                    TableColumnDep(asset_key=AssetKey("bar"), column_name="baz")
-                                ],
-                            )
-                        ]
+                "column_lineage": MetadataValue.column_lineage(
+                    TableColumnLineage(
+                        {
+                            "foo": [
+                                TableColumnDep(asset_key=AssetKey("bar"), column_name="baz"),
+                            ]
+                        }
                     )
                 ),
             },
@@ -106,7 +102,7 @@ def test_metadata_asset_materialization():
     assert entry_map["path"] == PathMetadataValue
     assert entry_map["python"] == PythonArtifactMetadataValue
     assert entry_map["timestamp"] == TimestampMetadataValue
-    assert entry_map["table_spec"] == TableSpecMetadataValue
+    assert entry_map["column_lineage"] == TableColumnLineageMetadataValue
 
 
 def test_metadata_asset_observation():
@@ -393,18 +389,13 @@ def test_table_serialization():
     assert deserialize_value(serialized, TableMetadataValue) == table_metadata
 
 
-def test_metadata_value_table_spec() -> None:
-    expected_table_spec = TableSpec(
-        column_specs=[
-            TableColumnSpec(
-                column_name="foo",
-                table_column_deps=[TableColumnDep(asset_key=AssetKey("bar"), column_name="baz")],
-            )
-        ]
+def test_metadata_value_column_lineage() -> None:
+    expected_column_lineage = TableColumnLineage(
+        {"foo": [TableColumnDep(asset_key=AssetKey("bar"), column_name="baz")]}
     )
-    table_spec_metadata_value = MetadataValue.table_spec(expected_table_spec)
+    column_lineage_metadata_value = MetadataValue.column_lineage(expected_column_lineage)
 
-    assert table_spec_metadata_value.value == expected_table_spec
+    assert column_lineage_metadata_value.value == expected_column_lineage
 
 
 def test_bool_metadata_value():

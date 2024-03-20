@@ -3115,13 +3115,13 @@ type TableColumnDep {
   columnName: String!
 }
 
-type TableColumnSpec {
+type TableColumnLineageEntry {
   columnName: String!
-  tableColumnDeps: [TableColumnDep!]!
+  columnDeps: [TableColumnDep!]!
 }
 
-type TableSpec {
-  columnSpecs: TableColumnSpec!
+type TableColumnLineage {
+  entries: [TableColumnLineageEntry!]!
 }
 
 type PipelineTag {

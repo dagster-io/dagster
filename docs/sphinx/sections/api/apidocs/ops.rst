@@ -97,11 +97,11 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 
 .. autoclass:: PythonArtifactMetadataValue
 
+.. autoclass:: TableColumnLineageMetadataValue
+
 .. autoclass:: TableMetadataValue
 
 .. autoclass:: TableSchemaMetadataValue
-
-.. autoclass:: TableSpecMetadataValue
 
 .. autoclass:: TextMetadataValue
 

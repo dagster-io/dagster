@@ -41,11 +41,10 @@ from dagster._utils.warnings import (
 from .table import (  # re-exported
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
-    TableColumnSpec as TableColumnSpec,
+    TableColumnLineage,
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
-    TableSpec,
 )
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
@@ -131,8 +130,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
-    elif isinstance(raw_value, TableSpec):
-        return MetadataValue.table_spec(raw_value)
+    elif isinstance(raw_value, TableColumnLineage):
+        return MetadataValue.column_lineage(raw_value)
     elif raw_value is None:
         return MetadataValue.null()
 
@@ -579,17 +578,17 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def table_spec(
-        spec: TableSpec,
-    ) -> "TableSpecMetadataValue":
-        """Static constructor for a metadata value wrapping a table spec as
-        :py:class:`TableSpecMetadataValue`. Can be used as the value type
+    def column_lineage(
+        lineage: TableColumnLineage,
+    ) -> "TableColumnLineageMetadataValue":
+        """Static constructor for a metadata value wrapping a column lineage as
+        :py:class:`TableColumnLineageMetadataValue`. Can be used as the value type
         for the `metadata` parameter for supported events.
 
         Args:
-            spec (TableSpec): The table spec for a metadata entry.
+            lineage (TableColumnLineage): The column lineage for a metadata entry.
         """
-        return TableSpecMetadataValue(spec)
+        return TableColumnLineageMetadataValue(lineage)
 
     @public
     @staticmethod
@@ -1069,26 +1068,29 @@ class TableSchemaMetadataValue(
 
 
 @whitelist_for_serdes
-class TableSpecMetadataValue(
-    NamedTuple("_TableSpecMetadataValue", [("table_spec", PublicAttr[TableSpec])]),
-    MetadataValue[TableSpec],
+class TableColumnLineageMetadataValue(
+    NamedTuple(
+        "_TableColumnLineageMetadataValue", [("column_lineage", PublicAttr[TableColumnLineage])]
+    ),
+    MetadataValue[TableColumnLineage],
 ):
-    """Representation of the specification of arbitrary tabular data.
+    """Representation of the lineage of column inputs to column outputs of arbitrary tabular data.
 
     Args:
-        table_spec (TableSchema): The dictionary containing the schema representation.
+        column_lineage (TableColumnLineage): The lineage of column inputs to column outputs
+            for the table.
     """
 
-    def __new__(cls, table_spec: TableSpec):
-        return super(TableSpecMetadataValue, cls).__new__(
-            cls, check.inst_param(table_spec, "table_spec", TableSpec)
+    def __new__(cls, column_lineage: TableColumnLineage):
+        return super(TableColumnLineageMetadataValue, cls).__new__(
+            cls, check.inst_param(column_lineage, "column_lineage", TableColumnLineage)
         )
 
     @public
     @property
-    def value(self) -> TableSpec:
+    def value(self) -> TableColumnLineage:
         """TableSpec: The wrapped :py:class:`TableSpec`."""
-        return self.table_spec
+        return self.column_lineage
 
 
 @whitelist_for_serdes(storage_name="NullMetadataEntryData")
@@ -1299,11 +1301,12 @@ class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
 
     Args:
         column_schema (Optional[TableSchema]): The schema of the columns in the table.
-        table_spec (Optional[TableSpec]): The specifications of the table.
+        column_lineage (Optional[TableColumnLineage]): The lineage of column inputs to column
+            outputs for the table.
     """
 
     column_schema: Optional[TableSchema] = None
-    table_spec: Optional[TableSpec] = None
+    column_lineage: Optional[TableColumnLineage] = None
 
     @classmethod
     def namespace(cls) -> str:
