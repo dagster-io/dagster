@@ -17,12 +17,14 @@ from dagster import (
     ExecuteInProcessResult,
     IOManager,
     MetadataValue,
+    ObserveResult,
     ResourceParam,
     SourceAsset,
     asset,
     asset_check,
     define_asset_job,
     multi_asset_check,
+    observable_source_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import (
@@ -775,3 +777,24 @@ def test_multi_asset_check_subset():
         )
         == 1
     )
+
+
+def test_target_materialization_observable_source_asset():
+    @observable_source_asset
+    def asset1():
+        return ObserveResult()
+
+    @asset_check(asset=asset1)
+    def check1():
+        return AssetCheckResult(passed=True)
+
+    result = execute_assets_and_checks(assets=[asset1], asset_checks=[check1])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+
+    assert check_eval.target_materialization_data is None
