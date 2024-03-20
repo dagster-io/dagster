@@ -10,11 +10,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
-import {OverviewJobsTable} from './OverviewJobsTable';
-import {OverviewTabs} from './OverviewTabs';
-import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/OverviewJobsRoot.types';
-import {visibleRepoKeys} from './visibleRepoKeys';
+import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/JobsPageContent.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -22,6 +18,10 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
+import {OverviewJobsTable} from '../overview/OverviewJobsTable';
+import {OverviewTabs} from '../overview/OverviewTabs';
+import {sortRepoBuckets} from '../overview/sortRepoBuckets';
+import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
