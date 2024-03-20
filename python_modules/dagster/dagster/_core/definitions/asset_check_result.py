@@ -137,7 +137,12 @@ class AssetCheckResult(
             resolved_check_name = next(iter(check_names_with_specs))
 
         input_asset_info = step_context.get_input_asset_version_info(resolved_asset_key)
-        if input_asset_info is not None:
+        from dagster._core.events import DagsterEventType
+
+        if (
+            input_asset_info is not None
+            and input_asset_info.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ):
             target_materialization_data = AssetCheckEvaluationTargetMaterializationData(
                 run_id=input_asset_info.run_id,
                 storage_id=input_asset_info.storage_id,
