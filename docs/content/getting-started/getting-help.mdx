@@ -69,15 +69,15 @@ Where you go to get support can vary depending on what you want to accomplish. R
             GitHub Issues
           </a>
         </strong>
-        . We use GitHub Issues to track all community requests, whether they're
-        created by Dagster team members or community members.
+        . We use GitHub Issues to track all community requests, whether they're created
+        by Dagster team members or community members.
         <br />
         <br />
-        If you find an issue that seems related to your situation but you're unsure,
-        don't be shy! We can redirect it to a different issue if necessary. Check
-        out the <strong>Tips</strong> section for tips on <a href="#code-snippets">
-          including code snippets
-        </a> and <a href="#bugs">filing bugs</a>.
+        If you find an issue that seems related to your situation but you're
+        unsure, don't be shy! We can redirect it to a different issue if
+        necessary. Check out the <strong>Tips</strong> section for tips on{" "}
+        <a href="#code-snippets">including code snippets</a> and{" "}
+        <a href="#bugs">filing bugs</a>.
       </td>
     </tr>
     <tr>
@@ -91,10 +91,10 @@ Where you go to get support can vary depending on what you want to accomplish. R
         <a href="https://github.com/dagster-io/dagster/discussions">
           GitHub Discussions
         </a>
-        . This is the main Q&A site for Dagster. We recommend posting most
-        questions here as they'll show up in search engines and can then benefit
-        others. Check out the <a href="#tips">Tips section</a> for tips on
-        including code snippets and how to ask questions that get answered.
+        . This is the main Q&A site for Dagster. We recommend posting most questions
+        here as they'll show up in search engines and can then benefit others. Check
+        out the <a href="#tips">Tips section</a> for tips on including code snippets
+        and how to ask questions that get answered.
       </td>
     </tr>
     <tr>
@@ -122,25 +122,23 @@ Where you go to get support can vary depending on what you want to accomplish. R
 
 #### Use Markdown to create code blocks
 
-If you want to include a code snippet, it helps to use Markdown to format the content as code. For example:
+When posting in GitHub or Slack, including a code snippet can help others understand your question. Using Markdown to format the content as code improves readability. For example:
 
       ```   # backticks create a code block
       from dagster import ...
       ...
       ```
 
-This formatting will work on GitHub issues or discussions and Slack messages.
-
 #### Add syntax highlighting
 
-On GitHub - whether in issues or discussions - you can add syntax highlighting to code snippets to improve readability. This is done by specifying the language at the top of the Markdown code block:
+On GitHub - whether in issues or discussions - you can add syntax highlighting to code snippets to further improve readability. This is done by specifying the language at the top of the Markdown code block:
 
       ```python    ## specifies language
       from dagster import ...
       ...
       ```
 
-### Bugs
+### Bug reports
 
 When filing a [GitHub issue](https://github.com/dagster-io/dagster/issues) for a bug:
 
@@ -156,116 +154,44 @@ When posting questions in [GitHub Discussions](https://github.com/dagster-io/dag
 - Being clear, specific, and as brief as possible
 - Not including lots of irrelevant details
 
-Generally, the less time and effort it takes for someone to digest your question, the more likely it will get answered. Check out the following table for some examples of well-phrased questions and those that could use some improvement.
+Generally, the less time and effort it takes for someone to digest your question, the more likely it will get answered. Check out the following sections for examples of well-phrased questions and those that could use some improvement.
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
+**Question 1**
+
+> **Is it possible to set up Dagster to automatically update an entire downstream table every time that a specific partition of an upstream table is updated?** We have a table that's partitioned by customer, and we have a specific analysis that we want to do on a specific customer.
+
+✅ **Good question!**
+
+This question is brief enough to be quickly digested, but specific enough to be complete.
+
+---
+
+**Question 2**
+
+> **Is it possible to set up Dagster to automatically update an entire downstream table every time that a specific partition of an upstream table is updated?** We have a table that's partitioned by customer, and we have a specific analysis that we want to do on a specific customer.
 >
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "50%",
-        }}
-      >
-        Question
-      </th>
-      <th>Reasoning</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <i>
-          <strong>
-            Is it possible to set up Dagster to automatically update an entire
-            downstream table every time that a specific partition of an upstream
-            table is updated?
-          </strong>{" "}
-          We have a table that's partitioned by customer, and we have a specific
-          analysis that we want to do on a specific customer.
-        </i>
-      </td>
-      <td>
-        ✅ <strong>Good question!</strong>
-        <br />
-        <br />
-        <strong>Why?</strong> This question is brief enough to be quickly digested,
-        but specific enough to be complete
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <i>
-          <strong>
-            Is it possible to set up Dagster to automatically update an entire
-            downstream table every time that a specific partition of an upstream
-            table is updated?
-          </strong>{" "}
-          We have a table that's partitioned by customer, and we have a specific
-          analysis that we want to do on a specific customer.
-          <br />
-          <br />
-          The background here is that that we've set up Fivetran to pulls in our
-          per-customer Salesforce tables into one big Snowflake table. We have about
-          500 customers, and they get pulled in usually daily, but it depends on
-          the customer. For about 20 of these customers, we have custom logic, implemented
-          in SQL with dbt, that performs analyses that are specific to those customers.
-          We want those analyses to run automatically when customer data is updated,
-          so that our sales representatives can discover red flags when they check
-          their Looker dashboards.
-        </i>
-      </td>
-      <td>
-        ✅ <strong>Good question!</strong>
-        <br />
-        <br />
-        <strong>Why?</strong> This version of the first question provides additional
-        background information, but doesn't bury the core question. This can be helpful
-        because it allows readers to more deeply understand the situation and provide
-        broader suggestions.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <i>
-          <strong>
-            How do I use tables with specific upstream partitions?
-          </strong>
-        </i>
-      </td>
-      <td>
-        ❌ <strong>Needs improvement</strong>
-        <br />
-        <br />
-        <strong>Why?</strong> This question needs more detail to allow the reader
-        to provide appropriate suggestions
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <i>
-          We've set up Fivetran to pulls in our per-customer Salesforce tables
-          into one big Snowflake table. We have about 500 customers, and they
-          get pulled in usually daily, but it depends on the customer. For about
-          20 of these customers, we have custom logic, implemented in SQL with
-          dbt, that performs analyses that are specific to those customers. We
-          want those analyses to run automatically when customer data is
-          updated, so that our sales representatives can discover red flags when
-          they check their Looker dashboards.{" "}
-          <strong>How can I get this working with Dagster?</strong>
-        </i>
-      </td>
-      <td>
-        ❌ <strong>Needs improvement</strong>
-        <br />
-        <br />
-        <strong>Why?</strong> This question requires understanding an entire data
-        pipeline to answer the core question
-      </td>
-    </tr>
-  </tbody>
-</table>
+> The background here is that that we've set up Fivetran to pulls in our per-customer Salesforce tables into one big Snowflake table. We have about 500 customers, and they get pulled in usually daily, but it depends on the customer. For about 20 of these customers, we have custom logic, implemented in SQL with dbt, that performs analyses that are specific to those customers. We want those analyses to run automatically when customer data is updated, so that our sales representatives can discover red flags when they check their Looker dashboards.
+
+✅ **Good question!**
+
+This version of the first question provides additional background information, but doesn't bury the core question. This can be helpful because it allows readers to more deeply understand the situation and provide broader suggestions.
+
+---
+
+**Question 3**
+
+> **How do I use tables with specific upstream partitions?**
+
+❌ **Needs improvement**
+
+This question needs more detail to allow the reader to provide appropriate suggestions.
+
+---
+
+**Question 4**
+
+> We've set up Fivetran to pulls in our per-customer Salesforce tables into one big Snowflake table. We have about 500 customers, and they get pulled in usually daily, but it depends on the customer. For about 20 of these customers, we have custom logic, implemented in SQL with dbt, that performs analyses that are specific to those customers. We want those analyses to run automatically when customer data is updated, so that our sales representatives can discover red flags when they check their Looker dashboards. **How can I get this working with Dagster?**
+
+❌ **Needs improvement**
+
+This question requires understanding an entire data pipeline to answer the core question.
