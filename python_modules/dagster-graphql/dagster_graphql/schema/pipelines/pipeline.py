@@ -379,6 +379,8 @@ class GrapheneRun(graphene.ObjectType):
     hasTerminatePermission = graphene.NonNull(graphene.Boolean)
     hasDeletePermission = graphene.NonNull(graphene.Boolean)
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
+    rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
+    hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
@@ -600,6 +602,24 @@ class GrapheneRun(graphene.ObjectType):
 
         active_run_ids = instance.event_log_storage.get_concurrency_run_ids()
         return self.runId in active_run_ids
+
+    def resolve_hasUnconstrainedRootNodes(self, graphene_info: ResolveInfo):
+        if not self.dagster_run.run_op_concurrency:
+            return True
+
+        if self.dagster_run.run_op_concurrency.has_unconstrained_root_nodes:
+            return True
+
+        return False
+
+    def resolve_rootConcurrencyKeys(self, graphene_info: ResolveInfo):
+        if not self.dagster_run.run_op_concurrency:
+            return None
+
+        root_concurrency_keys = []
+        for concurrency_key, count in self.dagster_run.run_op_concurrency.root_key_counts.items():
+            root_concurrency_keys.extend([concurrency_key] * count)
+        return root_concurrency_keys
 
 
 class GrapheneIPipelineSnapshotMixin:
