@@ -308,19 +308,24 @@ interface SearchBoxProps {
 }
 
 export const SearchBox = styled.div<SearchBoxProps>`
-  border-radius: 12px;
-  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
-
+  border-radius: 8px;
   align-items: center;
-  border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${Colors.keylineDefault()}` : 'none'};
+  border: ${({hasQueryString}) =>
+    hasQueryString ? `1px solid ${Colors.borderHover()}` : `1px solid ${Colors.borderDefault()}`};
   display: flex;
   padding: 12px 20px 12px 12px;
+  transition: all 100ms linear;
+  background: ${Colors.backgroundDefaultHover()};
+
+  :hover {
+    border: 1px solid ${Colors.borderHover()};
+    background: ${Colors.backgroundDefault()};
+  }
 `;
 
 export const SearchInput = styled.input`
   border: none;
-  color: ${Colors.textLight()};
+  color: ${Colors.textDefault()};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
@@ -329,7 +334,7 @@ export const SearchInput = styled.input`
   background-color: transparent;
 
   &::placeholder {
-    color: ${Colors.textLighter()};
+    color: ${Colors.textDisabled()};
   }
 `;
 
