@@ -141,9 +141,11 @@ def get_polars_metadata(
     Returns:
         Dict[str, MetadataValue]: metadata about df
     """
-    assert context.metadata is not None
+    assert context.definition_metadata is not None
 
-    schema_metadata = get_metadata_schema(df, descriptions=context.metadata.get("descriptions"))
+    schema_metadata = get_metadata_schema(
+        df, descriptions=context.definition_metadata.get("descriptions")
+    )
 
     metadata = {}
 
@@ -152,8 +154,8 @@ def get_polars_metadata(
             context=context,
             df=df,
             schema=schema_metadata,
-            n_rows=context.metadata.get("n_rows", 5),
-            fraction=context.metadata.get("fraction"),
+            n_rows=context.definition_metadata.get("n_rows", 5),
+            fraction=context.definition_metadata.get("fraction"),
         )
 
         df_stats = df.describe()

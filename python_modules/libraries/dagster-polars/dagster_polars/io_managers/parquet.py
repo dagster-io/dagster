@@ -154,7 +154,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
-        context_metadata = context.metadata or {}
+        context_metadata = context.definition_metadata or {}
 
         if metadata is not None:
             context.log.warning(
@@ -190,7 +190,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
-        context_metadata = context.metadata or {}
+        context_metadata = context.definition_metadata or {}
         compression = context_metadata.get("compression", "zstd")
         compression_level = context_metadata.get("compression_level")
         statistics = context_metadata.get("statistics", False)

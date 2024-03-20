@@ -335,10 +335,10 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             context.upstream_output is not None
             and context.upstream_output.asset_info is not None
             and context.upstream_output.asset_info.partitions_def is not None
-            and context.upstream_output.metadata is not None
+            and context.upstream_output.definition_metadata is not None
             and partition_key is not None
         ):
-            partition_by = context.upstream_output.metadata.get("partition_by")
+            partition_by = context.upstream_output.definition_metadata.get("partition_by")
 
             # we can only support automatically filtering by 1 column
             # otherwise we would have been dealing with a multi-partition key

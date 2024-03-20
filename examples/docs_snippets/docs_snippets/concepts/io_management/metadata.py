@@ -39,9 +39,9 @@ def op_2(_input_dataframe):
 # io_manager_start_marker
 class MyIOManager(ConfigurableIOManager):
     def handle_output(self, context: OutputContext, obj):
-        if context.metadata:
-            table_name = context.metadata["table"]
-            schema = context.metadata["schema"]
+        if context.definition_metadata:
+            table_name = context.definition_metadata["table"]
+            schema = context.definition_metadata["schema"]
             write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
         else:
             raise Exception(
@@ -49,9 +49,9 @@ class MyIOManager(ConfigurableIOManager):
             )
 
     def load_input(self, context: InputContext):
-        if context.upstream_output and context.upstream_output.metadata:
-            table_name = context.upstream_output.metadata["table"]
-            schema = context.upstream_output.metadata["schema"]
+        if context.upstream_output and context.upstream_output.definition_metadata:
+            table_name = context.upstream_output.definition_metadata["table"]
+            schema = context.upstream_output.definition_metadata["schema"]
             return read_dataframe_from_table(name=table_name, schema=schema)
         else:
             raise Exception("Upstream output doesn't have schema and metadata set")
