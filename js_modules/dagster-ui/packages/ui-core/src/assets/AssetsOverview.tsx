@@ -160,11 +160,6 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
   };
 }
 
-interface AssetOverviewCategoryProps {
-  children: React.ReactNode;
-  assetsCount: number;
-}
-
 function getGreeting(timezone: string) {
   const hour = Number(
     new Date().toLocaleTimeString('en-US', {
@@ -183,18 +178,6 @@ function getGreeting(timezone: string) {
     return 'Good evening';
   }
 }
-
-const CountForAssetType = ({children, assetsCount}: AssetOverviewCategoryProps) => {
-  return (
-    <Box
-      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-      style={{width: 'calc(33% - 16px)'}}
-    >
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>{children}</Box>
-      {assetsCount !== 0 && <AssetCount>{assetsCount} assets</AssetCount>}
-    </Box>
-  );
-};
 
 const SectionHeader = ({sectionName}: {sectionName: string}) => {
   return (
