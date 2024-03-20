@@ -1,11 +1,11 @@
-import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {SearchBox, SearchInput} from './SearchDialog';
+import {SearchBoxProps} from './SearchDialog';
 import {SearchResults} from './SearchResults';
 import {SearchResult, SearchResultType, isAssetFilterSearchResultType} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
@@ -164,9 +164,9 @@ export const AssetSearch = () => {
 
   return (
     <SearchInputWrapper>
-      <SearchBox hasQueryString={!!queryString.length}>
+      <AssetSearchBox hasQueryString={!!queryString.length}>
         <Icon name="search" color={Colors.accentGray()} size={20} />
-        <SearchInput
+        <AssetSearchInput
           data-search-input="1"
           autoFocus
           spellCheck={false}
@@ -177,7 +177,7 @@ export const AssetSearch = () => {
           value={queryString}
         />
         {loading ? <Spinner purpose="body-text" /> : null}
-      </SearchBox>
+      </AssetSearchBox>
       <SearchResultsWrapper>
         <SearchResults
           highlight={highlight}
@@ -190,6 +190,37 @@ export const AssetSearch = () => {
     </SearchInputWrapper>
   );
 };
+
+const AssetSearchBox = styled.div<SearchBoxProps>`
+  border-radius: 8px;
+  align-items: center;
+  border: ${({hasQueryString}) =>
+    hasQueryString ? `1px solid ${Colors.borderHover()}` : `1px solid ${Colors.borderDefault()}`};
+  display: flex;
+  padding: 12px 20px 12px 12px;
+  transition: all 100ms linear;
+  background: ${Colors.backgroundDefaultHover()};
+
+  :hover {
+    border: 1px solid ${Colors.borderHover()};
+    background: ${Colors.backgroundDefault()};
+  }
+`;
+
+const AssetSearchInput = styled.input`
+  border: none;
+  color: ${Colors.textDefault()};
+  font-family: ${FontFamily.default};
+  font-size: 18px;
+  margin-left: 4px;
+  outline: none;
+  width: 100%;
+  background-color: transparent;
+
+  &::placeholder {
+    color: ${Colors.textDisabled()};
+  }
+`;
 
 const SearchInputWrapper = styled.div`
   position: relative;

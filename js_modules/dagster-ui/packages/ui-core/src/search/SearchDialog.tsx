@@ -290,7 +290,7 @@ const SearchTrigger = styled.button`
 
 const Container = styled.div`
   background-color: ${Colors.backgroundDefault()};
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
   max-height: 60vh;
   left: calc(50% - 300px);
@@ -310,16 +310,15 @@ interface SearchBoxProps {
 export const SearchBox = styled.div<SearchBoxProps>`
   border-radius: 8px;
   align-items: center;
-  border: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${Colors.borderHover()}` : `1px solid ${Colors.borderDefault()}`};
+  box-shadow: inset 0 0 0 1px
+    ${({hasQueryString}) => (hasQueryString ? Colors.borderHover() : Colors.borderDefault())};
   display: flex;
   padding: 12px 20px 12px 12px;
   transition: all 100ms linear;
-  background: ${Colors.backgroundDefaultHover()};
+  background: ${Colors.backgroundDefault()};
 
   :hover {
-    border: 1px solid ${Colors.borderHover()};
-    background: ${Colors.backgroundDefault()};
+    box-shadow: inset 0 0 0 1px ${Colors.borderHover()};
   }
 `;
 
