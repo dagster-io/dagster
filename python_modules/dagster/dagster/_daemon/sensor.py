@@ -541,6 +541,7 @@ def _submit_run_request(
         job_name=target_data.job_name,
         op_selection=target_data.op_selection,
         asset_selection=run_request.asset_selection,
+        asset_check_selection=run_request.asset_check_keys,
     )
     external_job = code_location.get_external_job(job_subset_selector)
     run = _get_or_create_sensor_run(
@@ -1021,6 +1022,8 @@ def _create_sensor_run(
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
-        asset_check_selection=None,
+        asset_check_selection=(
+            frozenset(run_request.asset_check_keys) if run_request.asset_check_keys else None
+        ),
         asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
     )
