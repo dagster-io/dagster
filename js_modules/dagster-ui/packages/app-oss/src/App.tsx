@@ -2,7 +2,7 @@ import {App} from '@dagster-io/ui-core/app/App';
 import {createAppCache} from '@dagster-io/ui-core/app/AppCache';
 import {errorLink, setupErrorToasts} from '@dagster-io/ui-core/app/AppError';
 import {AppProvider} from '@dagster-io/ui-core/app/AppProvider';
-import {AppTopNav} from '@dagster-io/ui-core/app/AppTopNav';
+import {AppTopNav} from '@dagster-io/ui-core/app/AppTopNav/AppTopNav';
 import {ContentRoot} from '@dagster-io/ui-core/app/ContentRoot';
 import {HelpMenu} from '@dagster-io/ui-core/app/HelpMenu';
 import {UserSettingsButton} from '@dagster-io/ui-core/app/UserSettingsButton';

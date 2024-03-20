@@ -1,156 +1,27 @@
 import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link, NavLink, useHistory} from 'react-router-dom';
+import {Link, NavLink} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useFeatureFlags} from './Flags';
-import {LayoutContext} from './LayoutProvider';
-import {ShortcutHandler} from './ShortcutHandler';
-import {WebSocketStatus} from './WebSocketProvider';
-import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
-import {VersionNumber} from '../nav/VersionNumber';
+import {AppTopNavRightOfLogo} from './AppTopNavRightOfLogo.oss';
+import {VersionNumber} from '../../nav/VersionNumber';
 import {
   reloadFnForWorkspace,
   useRepositoryLocationReload,
-} from '../nav/useRepositoryLocationReload';
-import {SearchDialog} from '../search/SearchDialog';
+} from '../../nav/useRepositoryLocationReload';
+import {SearchDialog} from '../../search/SearchDialog';
+import {LayoutContext} from '../LayoutProvider';
+import {ShortcutHandler} from '../ShortcutHandler';
+import {WebSocketStatus} from '../WebSocketProvider';
 
-type AppNavLinkType = {
-  title: string;
-  element: React.ReactNode;
-};
 interface Props {
   children?: React.ReactNode;
   searchPlaceholder: string;
-  rightOfSearchBar?: React.ReactNode;
   showStatusWarningIcon?: boolean;
-  getNavLinks?: (navItems: AppNavLinkType[]) => React.ReactNode;
   allowGlobalReload?: boolean;
 }
 
-export const AppTopNav = ({
-  children,
-  rightOfSearchBar,
-  searchPlaceholder,
-  getNavLinks,
-  allowGlobalReload = false,
-}: Props) => {
-  const history = useHistory();
-  const {flagSettingsPage, flagUseNewOverviewPage} = useFeatureFlags();
-
-  const navLinks = () => {
-    return [
-      {
-        title: 'overview',
-        element: (
-          <ShortcutHandler
-            key="overview"
-            onShortcut={() => history.push('/overview')}
-            shortcutLabel="⌥1"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit1'}
-          >
-            <TopNavLink to="/overview" data-cy="AppTopNav_StatusLink">
-              Overview
-            </TopNavLink>
-          </ShortcutHandler>
-        ),
-      },
-      {
-        title: 'runs',
-        element: (
-          <ShortcutHandler
-            key="runs"
-            onShortcut={() => history.push('/runs')}
-            shortcutLabel="⌥2"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit2'}
-          >
-            <TopNavLink to="/runs" data-cy="AppTopNav_RunsLink">
-              Runs
-            </TopNavLink>
-          </ShortcutHandler>
-        ),
-      },
-      {
-        title: 'assets',
-        element: (
-          <ShortcutHandler
-            key="assets"
-            onShortcut={() => history.push('/assets')}
-            shortcutLabel="⌥3"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
-          >
-            <TopNavLink
-              to={flagUseNewOverviewPage ? '/assets-overview' : '/assets'}
-              data-cy="AppTopNav_AssetsLink"
-              isActive={(_, location) => {
-                const {pathname} = location;
-                return pathname.startsWith('/assets') || pathname.startsWith('/asset-groups');
-              }}
-              exact={false}
-            >
-              Assets
-            </TopNavLink>
-          </ShortcutHandler>
-        ),
-      },
-      flagSettingsPage
-        ? {
-            title: 'settings',
-            element: (
-              <ShortcutHandler
-                key="settings"
-                onShortcut={() => history.push('/settings')}
-                shortcutLabel="⌥4"
-                shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
-              >
-                <TopNavLink
-                  to="/settings"
-                  data-cy="AppTopNav_SettingsLink"
-                  isActive={(_, location) => {
-                    const {pathname} = location;
-                    return pathname.startsWith('/settings') || pathname.startsWith('/locations');
-                  }}
-                >
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                    Settings
-                    <DeploymentStatusIcon />
-                  </Box>
-                </TopNavLink>
-              </ShortcutHandler>
-            ),
-          }
-        : {
-            title: 'deployment',
-            element: (
-              <ShortcutHandler
-                key="deployment"
-                onShortcut={() => history.push('/locations')}
-                shortcutLabel="⌥4"
-                shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
-              >
-                <TopNavLink
-                  to="/locations"
-                  data-cy="AppTopNav_StatusLink"
-                  isActive={(_, location) => {
-                    const {pathname} = location;
-                    return (
-                      pathname.startsWith('/locations') ||
-                      pathname.startsWith('/health') ||
-                      pathname.startsWith('/config')
-                    );
-                  }}
-                >
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                    Deployment
-                    <DeploymentStatusIcon />
-                  </Box>
-                </TopNavLink>
-              </ShortcutHandler>
-            ),
-          },
-    ];
-  };
-
+export const AppTopNav = ({children, searchPlaceholder, allowGlobalReload = false}: Props) => {
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'workspace',
     reloadFn: reloadFnForWorkspace,
@@ -160,10 +31,7 @@ export const AppTopNav = ({
     <AppTopNavContainer>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
         <AppTopNavLogo />
-        <Box margin={{left: 8}} flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-          {getNavLinks ? getNavLinks(navLinks()) : navLinks().map((link) => link.element)}
-        </Box>
-        {rightOfSearchBar}
+        <AppTopNavRightOfLogo />
       </Box>
       <Box flex={{direction: 'row', alignItems: 'center'}}>
         {allowGlobalReload ? (
