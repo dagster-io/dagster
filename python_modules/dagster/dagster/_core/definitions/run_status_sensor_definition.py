@@ -776,6 +776,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     # the job has a repository (not manually executed)
                     dagster_run.external_job_origin
                     and
+                    # the job belongs to the current code location
+                    # TODO - need to find a way to get the current code location for the sensor so that we ensure that the jobs
+                    # are in the same code location. Right now comparing repo name doesn't work since most repos have the same name
+                    dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                    == context
+                    and
                     # the job belongs to the current repository
                     dagster_run.external_job_origin.external_repository_origin.repository_name
                     == context.repository_name
