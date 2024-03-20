@@ -1,4 +1,4 @@
-{% macro log_column_level_metadata() %}
+{% macro log_column_level_metadata(enable_parent_relation_metadata_collection=true) %}
     -- This macro should only be run in the context of a `dagster-dbt` invocation.
     {%- set is_dagster_dbt_cli = env_var('DAGSTER_DBT_CLI', '') == 'true' -%}
 
@@ -44,19 +44,27 @@
         --         }
         --     }
         -- }
-        {%- set structured_log = {'relation_name': this.render(), 'columns': column_schema, 'parents': {}} -%}
+        --
+        -- If `enable_parent_relation_metadata_collection` is set to `false`, the structured log
+        -- will only contain the current node's column metadata.
+        {%- set structured_log = {'relation_name': this.render(), 'columns': column_schema} -%}
 
-        {%- for parent_relation in parent_relations -%}
-            {%- set parent_relation_columns = adapter.get_columns_in_relation(parent_relation) -%}
-            {%- set parent_relation_column_schema = {} -%}
-            {%- for column in parent_relation_columns -%}
-                {%- set serializable_column = {column.name: {'data_type': column.data_type}} -%}
-                {%- set _ = parent_relation_column_schema.update(serializable_column) -%}
+        {%- if enable_parent_relation_metadata_collection -%}
+            {%- set _ = structured_log.update({'parents': {}}) -%}
+
+            {%- for parent_relation in parent_relations -%}
+                {%- set parent_relation_columns = adapter.get_columns_in_relation(parent_relation) -%}
+                {%- set parent_relation_column_schema = {} -%}
+
+                {%- for column in parent_relation_columns -%}
+                    {%- set serializable_column = {column.name: {'data_type': column.data_type}} -%}
+                    {%- set _ = parent_relation_column_schema.update(serializable_column) -%}
+                {%- endfor -%}
+
+                {%- set structured_parent_relation_metadata = {parent_relation.render(): {'columns': parent_relation_column_schema}} -%}
+                {%- set _ = structured_log['parents'].update(structured_parent_relation_metadata) -%}
             {%- endfor -%}
-
-            {%- set structured_parent_relation_metadata = {parent_relation.render(): {'columns': parent_relation_column_schema}} -%}
-            {%- set _ = structured_log['parents'].update(structured_parent_relation_metadata) -%}
-        {%- endfor -%}
+        {%- endif -%}
 
         {%- do log(tojson(structured_log), info=true) -%}
     {%- endif -%}
