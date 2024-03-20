@@ -87,7 +87,7 @@ class AssetSelection(ABC, BaseModel, frozen=True):
     @experimental_param(param="include_sources")
     @staticmethod
     def all(include_sources: bool = False) -> "AllSelection":
-        """Returns a selection that includes all assets and asset checks.
+        """Returns a selection that includes all assets and their asset checks.
 
         Args:
             include_sources (bool): If True, then include all source assets.
