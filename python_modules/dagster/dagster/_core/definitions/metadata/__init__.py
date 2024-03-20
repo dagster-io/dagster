@@ -2,7 +2,6 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -24,6 +23,7 @@ from typing_extensions import Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, experimental, public
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
@@ -41,20 +41,18 @@ from dagster._utils.warnings import (
 from .table import (  # re-exported
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
+    TableColumnLineage,
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
 )
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.events import AssetKey
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 
 RawMetadataValue = Union[
     "MetadataValue",
     TableSchema,
-    "AssetKey",
+    AssetKey,
     os.PathLike,
     Dict[Any, Any],
     float,
@@ -109,9 +107,11 @@ def normalize_metadata(
     return normalized_metadata
 
 
-def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]":
-    from dagster._core.definitions.events import AssetKey
+def has_corresponding_metadata_value_class(obj: Any) -> bool:
+    return isinstance(obj, (str, float, bool, int, list, dict, os.PathLike, AssetKey, TableSchema))
 
+
+def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]":
     if isinstance(raw_value, MetadataValue):
         return raw_value
     elif isinstance(raw_value, str):
@@ -130,6 +130,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
+    elif isinstance(raw_value, TableColumnLineage):
+        return MetadataValue.column_lineage(raw_value)
     elif raw_value is None:
         return MetadataValue.null()
 
@@ -573,6 +575,20 @@ class MetadataValue(ABC, Generic[T_Packable]):
             schema (TableSchema): The table schema for a metadata entry.
         """
         return TableSchemaMetadataValue(schema)
+
+    @public
+    @staticmethod
+    def column_lineage(
+        lineage: TableColumnLineage,
+    ) -> "TableColumnLineageMetadataValue":
+        """Static constructor for a metadata value wrapping a column lineage as
+        :py:class:`TableColumnLineageMetadataValue`. Can be used as the value type
+        for the `metadata` parameter for supported events.
+
+        Args:
+            lineage (TableColumnLineage): The column lineage for a metadata entry.
+        """
+        return TableColumnLineageMetadataValue(lineage)
 
     @public
     @staticmethod
@@ -1051,6 +1067,32 @@ class TableSchemaMetadataValue(
         return self.schema
 
 
+@whitelist_for_serdes
+class TableColumnLineageMetadataValue(
+    NamedTuple(
+        "_TableColumnLineageMetadataValue", [("column_lineage", PublicAttr[TableColumnLineage])]
+    ),
+    MetadataValue[TableColumnLineage],
+):
+    """Representation of the lineage of column inputs to column outputs of arbitrary tabular data.
+
+    Args:
+        column_lineage (TableColumnLineage): The lineage of column inputs to column outputs
+            for the table.
+    """
+
+    def __new__(cls, column_lineage: TableColumnLineage):
+        return super(TableColumnLineageMetadataValue, cls).__new__(
+            cls, check.inst_param(column_lineage, "column_lineage", TableColumnLineage)
+        )
+
+    @public
+    @property
+    def value(self) -> TableColumnLineage:
+        """TableSpec: The wrapped :py:class:`TableSpec`."""
+        return self.column_lineage
+
+
 @whitelist_for_serdes(storage_name="NullMetadataEntryData")
 class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None]):
     """Representation of null."""
@@ -1259,9 +1301,12 @@ class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
 
     Args:
         column_schema (Optional[TableSchema]): The schema of the columns in the table.
+        column_lineage (Optional[TableColumnLineage]): The lineage of column inputs to column
+            outputs for the table.
     """
 
     column_schema: Optional[TableSchema] = None
+    column_lineage: Optional[TableColumnLineage] = None
 
     @classmethod
     def namespace(cls) -> str:

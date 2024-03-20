@@ -3110,6 +3110,20 @@ type TableConstraints {
   other: [String!]!
 }
 
+type TableColumnDep {
+  assetKey: AssetKey!
+  columnName: String!
+}
+
+type TableColumnLineageEntry {
+  columnName: String!
+  columnDeps: [TableColumnDep!]!
+}
+
+type TableColumnLineage {
+  entries: [TableColumnLineageEntry!]!
+}
+
 type PipelineTag {
   key: String!
   value: String!

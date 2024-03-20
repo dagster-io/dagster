@@ -62,6 +62,7 @@ from .metadata import (
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
+    TableColumnLineageMetadataValue as TableColumnLineageMetadataValue,
     TableConstraints as TableConstraints,
     TableMetadataValue as TableMetadataValue,
     TableRecord as TableRecord,

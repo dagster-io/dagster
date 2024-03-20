@@ -5136,6 +5136,23 @@ export type TableColumnConstraints = {
   unique: Scalars['Boolean']['output'];
 };
 
+export type TableColumnDep = {
+  __typename: 'TableColumnDep';
+  assetKey: AssetKey;
+  columnName: Scalars['String']['output'];
+};
+
+export type TableColumnLineage = {
+  __typename: 'TableColumnLineage';
+  entries: Array<TableColumnLineageEntry>;
+};
+
+export type TableColumnLineageEntry = {
+  __typename: 'TableColumnLineageEntry';
+  columnDeps: Array<TableColumnDep>;
+  columnName: Scalars['String']['output'];
+};
+
 export type TableConstraints = {
   __typename: 'TableConstraints';
   other: Array<Scalars['String']['output']>;
@@ -14142,6 +14159,50 @@ export const buildTableColumnConstraints = (
     nullable: overrides && overrides.hasOwnProperty('nullable') ? overrides.nullable! : true,
     other: overrides && overrides.hasOwnProperty('other') ? overrides.other! : [],
     unique: overrides && overrides.hasOwnProperty('unique') ? overrides.unique! : false,
+  };
+};
+
+export const buildTableColumnDep = (
+  overrides?: Partial<TableColumnDep>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnDep'} & TableColumnDep => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnDep');
+  return {
+    __typename: 'TableColumnDep',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    columnName:
+      overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'vitae',
+  };
+};
+
+export const buildTableColumnLineage = (
+  overrides?: Partial<TableColumnLineage>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnLineage'} & TableColumnLineage => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnLineage');
+  return {
+    __typename: 'TableColumnLineage',
+    entries: overrides && overrides.hasOwnProperty('entries') ? overrides.entries! : [],
+  };
+};
+
+export const buildTableColumnLineageEntry = (
+  overrides?: Partial<TableColumnLineageEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnLineageEntry'} & TableColumnLineageEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnLineageEntry');
+  return {
+    __typename: 'TableColumnLineageEntry',
+    columnDeps: overrides && overrides.hasOwnProperty('columnDeps') ? overrides.columnDeps! : [],
+    columnName: overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'aut',
   };
 };
 
