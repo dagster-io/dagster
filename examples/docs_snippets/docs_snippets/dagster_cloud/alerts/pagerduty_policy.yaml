@@ -10,4 +10,4 @@ alert_policies:
       - "AGENT_UNAVAILABLE"
     notification_service:
       pagerduty:
-        integration_key: TODO: USE ENVVAR?
+        integration_key: "<pagerduty_integration_key>"
