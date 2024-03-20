@@ -56,11 +56,7 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {
-  TableSchema,
-  TableSchemaLineageContext,
-  isCanonicalColumnLineageEntry,
-} from '../metadata/TableSchema';
+import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
@@ -112,8 +108,6 @@ export const AssetNodeOverview = ({
     definition: assetNode,
     definitionLoadTimestamp: assetNodeLoadTimestamp,
   });
-
-  const columnSchema = materialization?.metadataEntries.find(isCanonicalColumnLineageEntry);
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'row'}}>
@@ -394,14 +388,17 @@ export const AssetNodeOverview = ({
           </LargeCollapsibleSection>
           {tableSchema && (
             <LargeCollapsibleSection header="Columns" icon="view_column">
-              <TableSchemaLineageContext.Provider
-                value={{assetKey: columnSchema ? assetNode.assetKey : null}}
+              <TableSchemaAssetContext.Provider
+                value={{
+                  assetKey: assetNode.assetKey,
+                  materializationMetadataEntries: materialization?.metadataEntries,
+                }}
               >
                 <TableSchema
                   schema={tableSchema.schema}
                   schemaLoadTimestamp={tableSchemaLoadTimestamp}
                 />
-              </TableSchemaLineageContext.Provider>
+              </TableSchemaAssetContext.Provider>
             </LargeCollapsibleSection>
           )}
           <LargeCollapsibleSection header="Metadata" icon="view_list">
