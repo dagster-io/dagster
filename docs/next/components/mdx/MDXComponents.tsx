@@ -24,6 +24,7 @@ import EnvVarsBenefits from './includes/EnvVarsBenefits.mdx';
 import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
 import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
+import ApplicableCloudPlan from './includes/dagster-cloud/ApplicableCloudPlan.mdx';
 import ApplicableDagsterProduct from './includes/dagster-cloud/ApplicableDagsterProduct.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
@@ -807,6 +808,7 @@ export default {
   RawComputeLogs,
   AddGitlabVariable,
   AddGitubRepositorySecret,
+  ApplicableCloudPlan,
   ApplicableDagsterProduct,
   GenerateAgentToken,
   ScimSupportedFeatures,
