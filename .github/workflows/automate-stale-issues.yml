@@ -1,0 +1,54 @@
+# Stale issue and pull-request automation
+#
+# Actions:
+#  - https://github.com/step-security/harden-runner
+#  - https://github.com/actions/stale
+#
+# The following automations will occur:
+#  - Stale label is added to issues and pull requests after 90 days of inactivity
+#  - Close stale issues and pull requests after 7 days of inactivity (97 days total inactivity)
+#  - Remove stale label and restart timer if an update/comment occurs
+
+name: Automate stale issues
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *' # run every 10 minutes as it also removes labels.
+
+permissions:
+  contents: read
+
+jobs:
+  stale:
+    permissions:
+      issues: write # for actions/stale to close stale issues
+      pull-requests: write # for actions/stale to close stale PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/stale@28ca1036281a5e5922ead5184a1bbf96e5fc984e # v9.0.0
+        id: stale
+        with:
+          stale-issue-message: >
+            This issue has been automatically marked as stale because it has not had any
+            activity for 90 days. It will be closed if no further activity occurs. Thank
+            you for your contributions.
+          days-before-issue-stale: 90
+          days-before-issue-close: 7
+          # exempt-issue-labels: "type: idea"
+          stale-issue-label: stale
+          stale-pr-message: >
+            This PR has been automatically marked as stale because it has not had any
+            recent activity from the author for 30 days. It will be closed if no further
+            activity occurs. If the PR was closed and you want it re-opened, please let
+            us know and we'll re-open the PR.
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          # exempt-pr-labels: tech-debt
+          stale-pr-label: stale
+          operations-per-run: 100
+
