@@ -22,6 +22,7 @@ import {TagIcon} from '../graph/OpTags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetSearch} from '../search/AssetSearch';
+import {AnchorButton} from '../ui/AnchorButton';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
@@ -287,15 +288,23 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
         right={<ReloadAllButton label="Reload definitions" />}
       />
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'auto'}}>
-        <Box padding={64} flex={{justifyContent: 'center', alignItems: 'center'}}>
+        <Box
+          padding={64}
+          flex={{justifyContent: 'center', alignItems: 'center'}}
+          style={{
+            background: Colors.blueGradient(),
+          }}
+        >
           <Box style={{width: '60%', minWidth: '600px'}} flex={{direction: 'column', gap: 16}}>
             <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
               <Heading>
                 {getGreeting(timezone)}
                 {viewerFirstName ? `, ${viewerFirstName}` : ''}
               </Heading>
-              <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
-                <Link to="/assets">View all</Link>
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                <AnchorButton intent="primary" outlined to="/assets">
+                  View all assets
+                </AnchorButton>
                 <AssetGlobalLineageButton />
               </Box>
             </Box>
