@@ -1,17 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  Heading,
-  NonIdealState,
-  PageHeader,
-  Spinner,
-  TextInput,
-} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
 import {OverviewJobsTable} from './OverviewJobsTable';
-import {OverviewTabs} from './OverviewTabs';
+import {OverviewPageHeader} from './OverviewPageHeader';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/OverviewJobsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
@@ -132,10 +124,7 @@ export const OverviewJobsRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="jobs" refreshState={refreshState} />}
-      />
+      <OverviewPageHeader tab="jobs" refreshState={refreshState} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
