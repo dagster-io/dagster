@@ -1,28 +1,15 @@
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Colors,
-  Icon,
-  JoinedButtons,
-  MenuItem,
-  Suggest,
-  TextInput,
-} from '@dagster-io/ui-components';
-import React, {useEffect, useMemo, useState} from 'react';
+import {Box, Button, ButtonGroup, Colors, Icon} from '@dagster-io/ui-components';
+import React, {useContext, useMemo} from 'react';
 import styled from 'styled-components';
 
-import {AssetColumnLineageGraph} from './AssetColumnLineageGraph';
+import {AssetFeatureContext} from './AssetFeatureContext';
 import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {asAssetKeyInput} from './asInput';
-import {useColumnLineageDataForAssets} from './lineage/useColumnLineageDataForAssets';
+import {LineageDepthControl} from './LineageDepthControl';
 import {AssetLineageScope, AssetViewParams} from './types';
-import {GraphData, toGraphId} from '../asset-graph/Utils';
+import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {ClearButton} from '../ui/ClearButton';
 
 export const AssetNodeLineage = ({
   params,
@@ -39,6 +26,9 @@ export const AssetNodeLineage = ({
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
 }) => {
+  // Note: Default needs to be here and not in the context declaration to avoid circular imports
+  const {LineageOptions, LineageGraph = AssetNodeLineageGraph} = useContext(AssetFeatureContext);
+
   const maxDistances = useMemo(
     () => calculateGraphDistances(graphQueryItems, assetKey),
     [graphQueryItems, assetKey],
@@ -51,18 +41,6 @@ export const AssetNodeLineage = ({
       : Math.max(maxDistances.upstream, maxDistances.downstream);
 
   const currentDepth = Math.max(1, Math.min(maxDepth, requestedDepth));
-
-  const assetGraphKeys = useMemo(
-    () => Object.values(assetGraphData.nodes).map(asAssetKeyInput),
-    [assetGraphData],
-  );
-  const columnLineageData = useColumnLineageDataForAssets(assetGraphKeys);
-  const columnLineage = columnLineageData[toGraphId(assetKey)];
-  const [column, setColumn] = useQueryPersistedState<string | null>({
-    queryKey: 'column',
-    decode: (qs) => qs.column || null,
-    encode: (column) => ({column: column || undefined}),
-  });
 
   return (
     <Box
@@ -88,43 +66,11 @@ export const AssetNodeLineage = ({
           onChange={(depth) => setParams({...params, lineageDepth: depth})}
           max={maxDepth}
         />
-        {columnLineage || column ? (
-          <>
-            Column
-            <Suggest
-              resetOnQuery={false}
-              resetOnClose={false}
-              resetOnSelect={false}
-              inputProps={{
-                placeholder: 'Select a column…',
-                rightElement: column ? (
-                  <ClearButton
-                    onClick={() => setColumn(null)}
-                    style={{marginTop: 5, marginRight: 4}}
-                  >
-                    <Icon name="cancel" />
-                  </ClearButton>
-                ) : undefined,
-              }}
-              selectedItem={column}
-              items={Object.keys(columnLineage || {})}
-              noResults="No matching columns"
-              onItemSelect={setColumn}
-              inputValueRenderer={(item) => item}
-              itemPredicate={(query, item) =>
-                item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
-              }
-              itemRenderer={(item, itemProps) => (
-                <MenuItem
-                  active={itemProps.modifiers.active}
-                  onClick={(e) => itemProps.handleClick(e)}
-                  text={item}
-                  key={item}
-                />
-              )}
-            />
-          </>
-        ) : undefined}
+
+        {LineageOptions && (
+          <LineageOptions assetKey={assetKey} params={params} setParams={setParams} />
+        )}
+
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
@@ -142,20 +88,7 @@ export const AssetNodeLineage = ({
           Not all upstream/downstream assets shown. Increase the depth to show more.
         </DepthHidesAssetsNotice>
       )}
-      {column ? (
-        <AssetColumnLineageGraph
-          assetKey={assetKey}
-          assetGraphData={assetGraphData}
-          columnLineageData={columnLineageData}
-          focusedColumn={column}
-        />
-      ) : (
-        <AssetNodeLineageGraph
-          assetKey={assetKey}
-          assetGraphData={assetGraphData}
-          params={params}
-        />
-      )}
+      <LineageGraph params={params} assetKey={assetKey} assetGraphData={assetGraphData} />
     </Box>
   );
 };
@@ -173,68 +106,3 @@ const DepthHidesAssetsNotice = styled.div`
   top: 70px;
   z-index: 2;
 `;
-
-const LineageDepthControl = ({
-  value,
-  max,
-  onChange,
-}: {
-  value: number;
-  max: number;
-  onChange: (v: number) => void;
-}) => {
-  const [text, setText] = useState(`${value}`);
-  useEffect(() => {
-    setText(`${value}`);
-  }, [value]);
-
-  // We maintain the value in a separate piece of state so the user can clear it
-  // or briefly have an invalid value, and also so that the graph doesn't re-render
-  // on each keystroke which could be expensive.
-  const commitText = () => {
-    const next = Number(text) ? Math.min(max, Number(text)) : value;
-    onChange(next);
-  };
-
-  return (
-    <Box flex={{gap: 8, alignItems: 'center'}}>
-      Graph depth
-      <JoinedButtons>
-        <Button
-          disabled={value <= 1}
-          onClick={() => onChange(value - 1)}
-          icon={<Icon name="dash" />}
-        />
-        <TextInput
-          min={1}
-          max={max}
-          disabled={max <= 1}
-          inputMode="numeric"
-          style={{
-            width: 40,
-            marginLeft: -1,
-            textAlign: 'center',
-            height: 32,
-            padding: 6,
-            borderRadius: 0,
-            boxShadow: 'none',
-            border: `1px solid ${Colors.borderDefault()}`,
-          }}
-          key={value}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === 'Return' ? commitText() : undefined)}
-          onBlur={() => commitText()}
-        />
-        <Button
-          disabled={value >= max}
-          onClick={() => onChange(value + 1)}
-          icon={<Icon name="add" />}
-        />
-        <Button disabled={value >= max} onClick={() => onChange(max)}>
-          All
-        </Button>
-      </JoinedButtons>
-    </Box>
-  );
-};

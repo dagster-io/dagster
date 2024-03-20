@@ -44,11 +44,13 @@ export type AssetColumnLineages = {[graphId: string]: AssetColumnLineageLocal | 
  */
 const getColumnLineage = (
   asset: AssetColumnLineageQuery['assetNodes'][0],
-): AssetColumnLineageLocal | undefined => {
+): AssetColumnLineageLocal => {
   const materialization = asset.assetMaterializations[0];
   const lineageMetadata = materialization?.metadataEntries.find(isCanonicalColumnLineageEntry);
   if (!lineageMetadata) {
-    return undefined;
+    // Note: We return empty rather than undefined / null so the hook does not try to fetch
+    // this again as if it were still missing
+    return {};
   }
 
   const {tableSchema} = buildConsolidatedColumnSchema({

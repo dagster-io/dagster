@@ -20,15 +20,17 @@ import {AssetKeyInput} from '../graphql/types';
 
 const LINEAGE_GRAPH_OPTIONS: LayoutAssetGraphOptions = {direction: 'horizontal'};
 
+export type AssetNodeLineageGraphProps = {
+  assetKey: AssetKeyInput;
+  assetGraphData: GraphData;
+  params: AssetViewParams;
+};
+
 export const AssetNodeLineageGraph = ({
   assetKey,
   assetGraphData,
   params,
-}: {
-  assetKey: AssetKeyInput;
-  assetGraphData: GraphData;
-  params: AssetViewParams;
-}) => {
+}: AssetNodeLineageGraphProps) => {
   const assetGraphId = toGraphId(assetKey);
 
   const {allGroups, groupedAssets} = useMemo(() => {

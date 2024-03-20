@@ -10,10 +10,12 @@ from ..step_builder import CommandStepBuilder
 from ..utils import (
     BuildkiteStep,
     CommandStep,
+    GroupStep,
     is_feature_branch,
     is_release_branch,
     safe_getenv,
     skip_if_no_non_docs_markdown_changes,
+    skip_if_no_pyright_requirements_txt_changes,
     skip_if_no_python_changes,
     skip_if_no_yaml_changes,
 )
@@ -102,17 +104,34 @@ def build_check_changelog_steps() -> List[CommandStep]:
     ]
 
 
-def build_repo_wide_pyright_steps() -> List[CommandStep]:
+def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
     return [
-        CommandStepBuilder(":pyright: pyright")
-        .run(
-            "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-            "pip install uv -e python_modules/dagster[pyright] -e python_modules/dagster-pipes",
-            "make pyright",
+        GroupStep(
+            group=":pyright: pyright",
+            key="pyright",
+            steps=[
+                CommandStepBuilder(":pyright: make pyright")
+                .run(
+                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
+                    "pip install -U uv",
+                    "make install_pyright",
+                    "make pyright",
+                )
+                .on_test_image(AvailablePythonVersion.get_default())
+                .with_skip(skip_if_no_python_changes(overrides=["pyright"]))
+                .build(),
+                CommandStepBuilder(":pyright: make rebuild_pyright_pins")
+                .run(
+                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
+                    "pip install -U uv",
+                    "make install_pyright",
+                    "make rebuild_pyright_pins",
+                )
+                .on_test_image(AvailablePythonVersion.get_default())
+                .with_skip(skip_if_no_pyright_requirements_txt_changes())
+                .build(),
+            ],
         )
-        .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_python_changes(overrides=["pyright"]))
-        .build(),
     ]
 
 

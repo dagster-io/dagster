@@ -147,6 +147,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check as asset_check,
+    multi_asset_check as multi_asset_check,
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
