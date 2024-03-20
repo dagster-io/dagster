@@ -890,6 +890,7 @@ class DagsterApiServer(DagsterApiServicer):
             return serialize_value(
                 get_external_sensor_execution(
                     self._get_repo_for_origin(args.repository_origin),
+                    args.repository_origin.code_location_origin,
                     args.instance_ref,
                     args.sensor_name,
                     args.last_tick_completion_time,
