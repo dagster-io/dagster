@@ -136,6 +136,7 @@ class SensorEvaluationContext:
         resources (Optional[Dict[str, Any]]): A dict of resource keys to resource
             definitions to be made available during sensor execution.
         last_sensor_start_time (float): The last time that the sensor was started (UTC).
+        code_location_origin (Optional[CodeLocationOrigin]): The code location that the sensor is in.
 
     Example:
         .. code-block:: python
