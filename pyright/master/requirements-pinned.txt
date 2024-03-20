@@ -35,6 +35,7 @@ asn1crypto==1.5.1
 -e examples/assets_pandas_pyspark
 asttokens==2.4.1
 async-lru==2.0.4
+async-timeout==4.0.3
 attrs==23.2.0
 autodocsumm==0.2.12
 autoflake==2.3.0
@@ -195,6 +196,7 @@ duckdb==0.10.0
 ecdsa==0.18.0
 email-validator==1.3.1
 entrypoints==0.4
+exceptiongroup==1.2.0
 execnet==2.0.2
 executing==2.0.1
 expandvars==0.12.0
@@ -507,6 +509,8 @@ sphinxcontrib-serializinghtml==1.1.10
 sqlalchemy==1.4.52
 sqlalchemy-jsonfield==1.0.2
 sqlalchemy-utils==0.41.1
+sqlglot==22.3.1
+sqlglotrs==0.1.2
 sqlparse==0.4.4
 sshpubkeys==3.3.1
 sshtunnel==0.4.0

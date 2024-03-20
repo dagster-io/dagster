@@ -54,11 +54,14 @@ def disable_openblas_threading_affinity_fixture() -> None:
     os.environ["GOTOBLAS_MAIN_FREE"] = "1"
 
 
-def _create_dbt_invocation(project_dir: Path) -> DbtCliInvocation:
+def _create_dbt_invocation(project_dir: Path, build_project: bool = False) -> DbtCliInvocation:
     dbt = DbtCliResource(project_dir=os.fspath(project_dir), global_config_flags=["--quiet"])
 
     dbt.cli(["deps"]).wait()
     dbt_invocation = dbt.cli(["compile"]).wait()
+
+    if build_project:
+        dbt.cli(["build"], raise_on_error=False).wait()
 
     return dbt_invocation
 
@@ -83,15 +86,10 @@ def test_jaffle_shop_manifest_fixture(
 @pytest.fixture(name="test_asset_checks_manifest", scope="session")
 def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
     # Prepopulate duckdb with jaffle shop data to support testing individual asset checks.
-    (
-        DbtCliResource(
-            project_dir=os.fspath(test_asset_checks_path), global_config_flags=["--quiet"]
-        )
-        .cli(["build"], raise_on_error=False)
-        .wait()
-    )
-
-    return _create_dbt_invocation(test_asset_checks_path).get_artifact("manifest.json")
+    return _create_dbt_invocation(
+        test_asset_checks_path,
+        build_project=True,
+    ).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
@@ -138,4 +136,8 @@ def test_meta_config_manifest_fixture() -> Dict[str, Any]:
 
 @pytest.fixture(name="test_metadata_manifest", scope="session")
 def test_metadata_manifest_fixture() -> Dict[str, Any]:
-    return _create_dbt_invocation(test_metadata_path).get_artifact("manifest.json")
+    # Prepopulate duckdb with jaffle shop data to support testing individual column metadata.
+    return _create_dbt_invocation(
+        test_metadata_path,
+        build_project=True,
+    ).get_artifact("manifest.json")
