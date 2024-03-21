@@ -81,6 +81,7 @@ def _get_job_execution_data_from_run_request(
         repository_name=repo_handle.repository_name,
         job_name=job_name,
         asset_selection=run_request.asset_selection,
+        asset_check_selection=run_request.asset_check_keys,
         op_selection=None,
     )
 
