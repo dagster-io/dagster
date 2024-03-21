@@ -17,6 +17,7 @@ from dagster import (
     AssetSelection,
     AutoMaterializePolicy,
     CodeLocationSelector,
+    DagsterInstance,
     DagsterRunStatus,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -31,13 +32,17 @@ from dagster import (
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
+    asset_check,
     define_asset_job,
+    load_asset_checks_from_current_module,
     load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
     repository,
     run_failure_sensor,
 )
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
@@ -56,7 +61,6 @@ from dagster._core.definitions.sensor_definition import (
     SkipReason,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation import (
     ExternalInstigatorOrigin,
@@ -111,7 +115,17 @@ def c(a):
     return a + 2
 
 
+@asset_check(asset="a")
+def check_a():
+    return AssetCheckResult(passed=True)
+
+
 asset_job = define_asset_job("abc", selection=AssetSelection.keys("c", "b").upstream())
+
+asset_and_check_job = define_asset_job(
+    "asset_and_check_job",
+    selection=AssetSelection.assets(a),
+)
 
 
 @op
@@ -442,6 +456,11 @@ def run_request_asset_selection_sensor(_context):
     yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
 
 
+@sensor(job=asset_and_check_job)
+def run_request_check_only_sensor(_context):
+    yield RunRequest(asset_check_keys=[AssetCheckKey(AssetKey("a"), "check_a")])
+
+
 @sensor(job=asset_job)
 def run_request_stale_asset_sensor(_context):
     yield RunRequest(run_key=None, stale_assets_only=True)
@@ -747,6 +766,7 @@ def the_repo():
         the_other_job,
         config_job,
         foo_job,
+        asset_and_check_job,
         large_sensor,
         many_request_sensor,
         simple_sensor,
@@ -780,6 +800,7 @@ def the_repo():
         cross_repo_job_sensor,
         instance_sensor,
         load_assets_from_current_module(),
+        load_asset_checks_from_current_module(),
         run_request_asset_selection_sensor,
         run_request_stale_asset_sensor,
         weekly_asset_job,
@@ -804,6 +825,7 @@ def the_repo():
         error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
         multipartitions_with_static_time_dimensions_run_requests_sensor,
         auto_materialize_sensor,
+        run_request_check_only_sensor,
     ]
 
 
@@ -1836,6 +1858,53 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
             )
         }
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
+
+
+def test_run_request_check_selection_only_sensor(
+    executor, instance: DagsterInstance, workspace_context, external_repo
+) -> None:
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum_freeze_time(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("run_request_check_only_sensor")
+        external_origin_id = external_sensor.get_external_origin_id()
+        instance.start_sensor(external_sensor)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, executor)
+
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.asset_check_selection == {AssetCheckKey(AssetKey("a"), "check_a")}
+        assert run.asset_selection is None
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id],
+        )
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key  # type: ignore[attr-defined]
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
+        assert planned_asset_keys == set()
+        planned_check_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_check_key  # type: ignore[attr-defined]
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
+            )
+        }
+        assert planned_check_keys == {AssetCheckKey(AssetKey("a"), "check_a")}
 
 
 def test_run_request_stale_asset_selection_sensor_never_materialized(
