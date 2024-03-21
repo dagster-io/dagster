@@ -46,25 +46,11 @@ export const useAssetTagFilter = ({
 
 const _NO_VALUE_SENTINEL = '__dagster_no_value';
 
-<<<<<<< HEAD
 const memoizedDefinitionTag = memoize(
   (tag: DefinitionTag) => {
     return tag;
   },
   (tag) => JSON.stringify(tag),
-=======
-const randomNumber = Math.random();
-const memoizedDefinitionTag = memoize(
-  ({key, value}: DefinitionTag) => {
-    return {
-      __typename: 'DefinitionTag' as const,
-      key,
-      value,
-    };
-  },
-  // Use a sequence unlikely to appear in the key/value to uniquely memoize them
-  ({key, value}) => `${key}\n!!\n$$${randomNumber}$$\n!n\n${value}`,
->>>>>>> 9c6e60500ffc99c42192d271856ff0b209bd290e
 );
 
 export function useAssetTagsForAssets(
