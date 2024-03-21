@@ -20,6 +20,7 @@ from dagster._core.selector.subset_selector import (
     parse_clause,
 )
 from dagster._core.storage.tags import TAG_NO_VALUE
+from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_check_spec import AssetCheckKey
@@ -42,7 +43,7 @@ CoercibleToAssetSelection: TypeAlias = Union[
 ]
 
 
-class AssetSelection(ABC, BaseModel, frozen=True):
+class AssetSelection(ABC, DagsterModel):
     """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a code location.
 
     You can use the "|", "&", and "-" operators to create unions, intersections, and differences of selections, respectively.
@@ -485,7 +486,7 @@ class AssetSelection(ABC, BaseModel, frozen=True):
 
 
 @whitelist_for_serdes
-class AllSelection(AssetSelection, frozen=True):
+class AllSelection(AssetSelection):
     include_sources: Optional[bool] = None
 
     def resolve_inner(
@@ -505,7 +506,7 @@ class AllSelection(AssetSelection, frozen=True):
 
 
 @whitelist_for_serdes
-class AllAssetCheckSelection(AssetSelection, frozen=True):
+class AllAssetCheckSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
@@ -524,7 +525,7 @@ class AllAssetCheckSelection(AssetSelection, frozen=True):
 
 
 @whitelist_for_serdes
-class AssetChecksForAssetKeysSelection(AssetSelection, frozen=True):
+class AssetChecksForAssetKeysSelection(AssetSelection):
     selected_asset_keys: Sequence[AssetKey]
 
     def resolve_inner(
@@ -546,7 +547,7 @@ class AssetChecksForAssetKeysSelection(AssetSelection, frozen=True):
 
 
 @whitelist_for_serdes
-class AssetCheckKeysSelection(AssetSelection, frozen=True):
+class AssetCheckKeysSelection(AssetSelection):
     selected_asset_check_keys: Sequence[AssetCheckKey]
 
     def resolve_inner(
@@ -574,11 +575,7 @@ class AssetCheckKeysSelection(AssetSelection, frozen=True):
 
 
 @whitelist_for_serdes
-class AndAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class AndAssetSelection(AssetSelection):
     operands: Sequence[AssetSelection]
 
     def resolve_inner(
@@ -618,11 +615,7 @@ class AndAssetSelection(
 
 
 @whitelist_for_serdes
-class OrAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class OrAssetSelection(AssetSelection):
     operands: Sequence[AssetSelection]
 
     def resolve_inner(
@@ -662,11 +655,7 @@ class OrAssetSelection(
 
 
 @whitelist_for_serdes
-class SubtractAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class SubtractAssetSelection(AssetSelection):
     left: AssetSelection
     right: AssetSelection
 
@@ -698,11 +687,7 @@ class SubtractAssetSelection(
 
 
 @whitelist_for_serdes
-class SinksAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class SinksAssetSelection(AssetSelection):
     child: AssetSelection
 
     def resolve_inner(
@@ -716,11 +701,7 @@ class SinksAssetSelection(
 
 
 @whitelist_for_serdes
-class RequiredNeighborsAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class RequiredNeighborsAssetSelection(AssetSelection):
     child: AssetSelection
 
     def resolve_inner(
@@ -737,11 +718,7 @@ class RequiredNeighborsAssetSelection(
 
 
 @whitelist_for_serdes
-class RootsAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class RootsAssetSelection(AssetSelection):
     child: AssetSelection
 
     def resolve_inner(
@@ -755,11 +732,7 @@ class RootsAssetSelection(
 
 
 @whitelist_for_serdes
-class DownstreamAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class DownstreamAssetSelection(AssetSelection):
     child: AssetSelection
     depth: Optional[int]
     include_self: bool
@@ -790,7 +763,7 @@ class DownstreamAssetSelection(
 
 
 @whitelist_for_serdes
-class GroupsAssetSelection(AssetSelection, frozen=True):
+class GroupsAssetSelection(AssetSelection):
     selected_groups: Sequence[str]
     include_sources: bool
 
@@ -820,7 +793,7 @@ class GroupsAssetSelection(AssetSelection, frozen=True):
 
 
 @whitelist_for_serdes
-class TagAssetSelection(AssetSelection, frozen=True):
+class TagAssetSelection(AssetSelection):
     key: str
     value: str
     include_sources: bool
@@ -841,7 +814,7 @@ class TagAssetSelection(AssetSelection, frozen=True):
 
 
 @whitelist_for_serdes
-class KeysAssetSelection(AssetSelection, frozen=True):
+class KeysAssetSelection(AssetSelection):
     selected_keys: Sequence[AssetKey]
 
     def resolve_inner(
@@ -891,7 +864,7 @@ class KeysAssetSelection(AssetSelection, frozen=True):
 
 
 @whitelist_for_serdes
-class KeyPrefixesAssetSelection(AssetSelection, frozen=True):
+class KeyPrefixesAssetSelection(AssetSelection):
     selected_key_prefixes: Sequence[Sequence[str]]
     include_sources: bool
 
@@ -946,11 +919,7 @@ def _fetch_all_upstream(
 
 
 @whitelist_for_serdes
-class UpstreamAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class UpstreamAssetSelection(AssetSelection):
     child: AssetSelection
     depth: Optional[int]
     include_self: bool
@@ -982,11 +951,7 @@ class UpstreamAssetSelection(
 
 
 @whitelist_for_serdes
-class ParentSourcesAssetSelection(
-    AssetSelection,
-    frozen=True,
-    arbitrary_types_allowed=True,
-):
+class ParentSourcesAssetSelection(AssetSelection):
     child: AssetSelection
 
     def resolve_inner(
