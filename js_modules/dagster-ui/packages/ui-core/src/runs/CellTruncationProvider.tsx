@@ -95,6 +95,7 @@ export class CellTruncationProvider extends React.Component<
                 canOutsideClickClose
                 isOpen={this.state.showDialog}
                 onClose={() => this.setState({showDialog: false})}
+                style={{width: 'auto', maxWidth: '80vw'}}
               >
                 <div>{this.dialogContents()}</div>
                 <DialogFooter topBorder>
