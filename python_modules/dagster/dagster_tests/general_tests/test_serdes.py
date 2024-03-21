@@ -8,6 +8,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, 
 import pydantic
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
+from dagster._core.utils import StrictModel
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
@@ -823,6 +824,11 @@ def test_objects():
         name: str
 
     @_whitelist_for_serdes(test_env)
+    class SomeStrictModel(StrictModel):
+        id: int
+        name: str
+
+    @_whitelist_for_serdes(test_env)
     @pydantic.dataclasses.dataclass
     class DataclassObj:
         s: str
@@ -830,8 +836,16 @@ def test_objects():
         d: InnerDataclass
         nt: SomeNT
         m: SomeModel
+        st: SomeStrictModel
 
-    o = DataclassObj("woo", 4, InnerDataclass(1.2), SomeNT([1, 2, 3]), SomeModel(id=4, name="zuck"))
+    o = DataclassObj(
+        "woo",
+        4,
+        InnerDataclass(1.2),
+        SomeNT([1, 2, 3]),
+        SomeModel(id=4, name="zuck"),
+        SomeStrictModel(id=4, name="zuck"),
+    )
     ser_o = serialize_value(o, whitelist_map=test_env)
     assert deserialize_value(ser_o, whitelist_map=test_env) == o
 
