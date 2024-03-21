@@ -22,7 +22,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
+import {AssetGroupSelector, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PageLoadTrace} from '../performance';
@@ -119,7 +119,7 @@ type FilterType = {
   groups: AssetGroupSelector[];
   computeKindTags: string[];
   changedInBranch: ChangeReason[];
-  owners: AssetOwner[];
+  owners: string[];
   tags: DefinitionTag[];
 };
 
