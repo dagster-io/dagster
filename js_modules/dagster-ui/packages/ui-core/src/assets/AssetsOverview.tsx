@@ -352,7 +352,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     link={linkToAssetGraphOwner(owner)}
                   >
                     <span style={TextOverflowStyle}>
-                      <UserDisplay email={owner} />
+                      <UserDisplay email={owner} isFilter />
                     </span>
                   </CountForAssetType>
                 ))}
