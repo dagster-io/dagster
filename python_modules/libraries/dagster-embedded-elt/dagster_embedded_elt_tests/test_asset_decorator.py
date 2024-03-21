@@ -60,7 +60,6 @@ def test_disabled_asset():
 
 def test_runs_base_sling_config(
     csv_to_sqlite_replication_config: SlingReplicationParam,
-    path_to_test_csv: str,
     path_to_temp_sqlite_db: str,
     sqlite_connection: sqlite3.Connection,
 ):

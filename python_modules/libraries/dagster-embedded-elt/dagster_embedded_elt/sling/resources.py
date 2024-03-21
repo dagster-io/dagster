@@ -20,7 +20,7 @@ from dagster import (
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, deprecated_param, experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._utils.env import environ
 from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
@@ -361,17 +361,6 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
-    @public
-    @deprecated_param(
-        param="dagster_sling_translator",
-        breaking_version="2.0",
-        additional_warn_text="Param is only required in `sling_assets` decorator.",
-    )
-    @deprecated_param(
-        param="replication_config",
-        breaking_version="2.0",
-        additional_warn_text="Param is only required in `sling_assets` decorator.",
-    )
     def replicate(
         self,
         *,
@@ -390,17 +379,17 @@ class SlingResource(ConfigurableResource):
         Returns:
             Optional[Generator[MaterializeResult, None, None]]: A generator of MaterializeResult
         """
-        # retrieve decorator params from context
-        metadata_by_key = context.assets_def.metadata_by_key
-        first_asset_metadata = next(iter(metadata_by_key.values()))
+        # attempt to retrieve params from asset context if not passed as a parameter
+        if not (replication_config or dagster_sling_translator):
+            metadata_by_key = context.assets_def.metadata_by_key
+            first_asset_metadata = next(iter(metadata_by_key.values()))
+            dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
+            replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
 
-        dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
-        if dagster_sling_translator is None:
-            raise Exception(
-                f"`DagsterSlingTranslator` must be defined on metadata at {METADATA_KEY_TRANSLATOR}"
-            )
+        # if translator has not been defined on metadata _or_ through param, then use the default constructor
+        if not dagster_sling_translator:
+            dagster_sling_translator = DagsterSlingTranslator()
 
-        replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
         if replication_config is None:
             raise Exception(
                 f"`ReplicationConfig` must be defined on metadata at {METADATA_KEY_REPLICATION_CONFIG}"
