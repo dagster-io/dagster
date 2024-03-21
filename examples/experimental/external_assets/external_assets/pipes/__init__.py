@@ -1,4 +1,5 @@
 from dagster import (
+    AssetCheckExecutionContext,
     AssetExecutionContext,
     AssetKey,
     DailyPartitionsDefinition,
@@ -42,9 +43,11 @@ def telem_post_processing(context: AssetExecutionContext, k8s_pipes_client: Pipe
 
 
 @asset_check(asset="telem_post_processing")
-def telem_post_processing_check(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+def telem_post_processing_check(
+    context: AssetCheckExecutionContext, k8s_pipes_client: PipesK8sClient
+):
     return k8s_pipes_client.run(
-        context=context,
+        context=context.op_execution_context,
         namespace="default",
         image="pipes-check:latest",
         env={"DAGSTER_PIPES_IS_DAGSTER_PIPED_PROCESS": encode_env_var(True)},

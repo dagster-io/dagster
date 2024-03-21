@@ -1,6 +1,6 @@
 from dagster import (
+    AssetCheckExecutionContext,
     AssetCheckResult,
-    AssetExecutionContext,
     AssetKey,
     Definitions,
     ExecuteInProcessResult,
@@ -40,7 +40,7 @@ def pass_check():
 
 
 @asset_check(asset="my_asset")
-def fail_check_if_tagged(context: AssetExecutionContext):
+def fail_check_if_tagged(context: AssetCheckExecutionContext):
     return AssetCheckResult(
         passed="fail_check" not in context.run.tags.keys(), check_name="fail_check_if_tagged"
     )
@@ -109,7 +109,7 @@ def my_asset_with_managed_input(upstream_asset):
 
 
 @asset_check(asset="my_asset_with_managed_input")
-def fail_check_if_tagged_2(context: AssetExecutionContext, my_asset_with_managed_input):
+def fail_check_if_tagged_2(context: AssetCheckExecutionContext, my_asset_with_managed_input):
     assert my_asset_with_managed_input == "bar"
     return AssetCheckResult(
         passed="fail_check" not in context.run.tags.keys(), check_name="fail_check_if_tagged_2"
