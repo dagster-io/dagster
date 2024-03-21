@@ -44,6 +44,7 @@ import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import './blueprint.css';
+import {PerformancePageNavigationListener} from '../performance';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -218,6 +219,7 @@ export const AppProvider = (props: AppProviderProps) => {
             <PermissionsProvider>
               <BrowserRouter basename={basePath || ''}>
                 <CompatRouter>
+                  <PerformancePageNavigationListener />
                   <TimeProvider>
                     <WorkspaceProvider>
                       <DeploymentStatusProvider include={statusPolling}>
