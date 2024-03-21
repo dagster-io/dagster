@@ -39,7 +39,14 @@ def test_params() -> None:
         assets=[my_partitioned_asset], freshness_cron="0 0 * * *"
     )
     assert len(result) == 1
-    assert next(iter(result[0].check_keys)).asset_key == my_partitioned_asset.key
+    check = result[0]
+    assert next(iter(check.check_keys)).asset_key == my_partitioned_asset.key
+    assert next(iter(check.check_specs)).metadata == {
+        "dagster/time_window_partitioned_freshness_params": {
+            "dagster/freshness_cron": "0 0 * * *",
+            "dagster/freshness_cron_timezone": "UTC",
+        }
+    }
 
     result = build_freshness_checks_for_time_window_partitioned_assets(
         assets=[my_partitioned_asset.key], freshness_cron="0 0 * * *", freshness_cron_timezone="UTC"
