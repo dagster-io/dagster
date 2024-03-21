@@ -25,7 +25,6 @@ from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluatio
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
     MetadataValue,
-    TableColumnLineageMetadataValue,
 )
 from dagster._core.events import (
     DagsterEventType,
@@ -36,8 +35,6 @@ from dagster._core.events import (
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.outputs import StepOutputData
-
-from dagster_graphql.schema.metadata import GrapheneTableColumnLineageMetadataEntry
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -167,11 +164,6 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                     constraints=value.schema.constraints,
                     columns=value.schema.columns,
                 ),
-            )
-        elif isinstance(value, TableColumnLineageMetadataValue):
-            yield GrapheneTableColumnLineageMetadataEntry(
-                label=key,
-                lineage=value.column_lineage,
             )
         elif isinstance(value, TimestampMetadataValue):
             yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
