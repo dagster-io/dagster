@@ -213,6 +213,9 @@ from dagster._core.definitions.external_asset import (
 from dagster._core.definitions.freshness_checks.non_partitioned import (
     build_freshness_checks_for_non_partitioned_assets as build_freshness_checks_for_non_partitioned_assets,
 )
+from dagster._core.definitions.freshness_checks.sensor import (
+    build_sensor_for_freshness_checks as build_sensor_for_freshness_checks,
+)
 from dagster._core.definitions.freshness_checks.time_window_partitioned import (
     build_freshness_checks_for_time_window_partitioned_assets as build_freshness_checks_for_time_window_partitioned_assets,
 )

@@ -27,7 +27,25 @@ def test_params() -> None:
         assets=[my_asset], maximum_lag_minutes=10
     )
     assert len(result) == 1
-    assert next(iter(result[0].check_keys)).asset_key == my_asset.key
+    check = result[0]
+    assert next(iter(check.check_keys)).asset_key == my_asset.key
+    assert next(iter(check.check_specs)).metadata == {
+        "dagster/non_partitioned_freshness_params": {
+            "dagster/maximum_lag_minutes": 10,
+        }
+    }
+
+    result = build_freshness_checks_for_non_partitioned_assets(
+        assets=[my_asset], freshness_cron="0 0 * * *", maximum_lag_minutes=10
+    )
+    check = result[0]
+    assert next(iter(check.check_specs)).metadata == {
+        "dagster/non_partitioned_freshness_params": {
+            "dagster/maximum_lag_minutes": 10,
+            "dagster/freshness_cron": "0 0 * * *",
+            "dagster/freshness_cron_timezone": "UTC",
+        }
+    }
 
     result = build_freshness_checks_for_non_partitioned_assets(
         assets=[my_asset.key], maximum_lag_minutes=10
