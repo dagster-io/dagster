@@ -19,19 +19,32 @@ type State = {
   searching: boolean;
   secondaryResults: Fuse.FuseResult<SearchResult>[];
   highlight: number;
+  showResults: boolean;
 };
 
 type Action =
+  | {type: 'show-results'}
+  | {type: 'hide-results'}
   | {type: 'highlight'; highlight: number}
   | {type: 'change-query'; queryString: string}
   | {type: 'complete-secondary'; queryString: string; results: Fuse.FuseResult<SearchResult>[]};
 
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
+    case 'show-results':
+      return {...state, showResults: true};
+    case 'hide-results':
+      return {...state, showResults: false};
     case 'highlight':
       return {...state, highlight: action.highlight};
     case 'change-query':
-      return {...state, queryString: action.queryString, searching: true, highlight: 0};
+      return {
+        ...state,
+        queryString: action.queryString,
+        searching: true,
+        highlight: 0,
+        showResults: true,
+      };
     case 'complete-secondary':
       // If the received results match the current querystring, use them. Otherwise discard.
       const secondaryResults =
@@ -47,6 +60,7 @@ const initialState: State = {
   searching: false,
   secondaryResults: [],
   highlight: 0,
+  showResults: false,
 };
 
 const DEBOUNCE_MSEC = 100;
@@ -72,7 +86,7 @@ export const AssetSearch = () => {
   });
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {queryString, secondaryResults, highlight} = state;
+  const {queryString, secondaryResults, highlight, showResults} = state;
 
   const {assetResults, assetFilterResults} = groupSearchResults(secondaryResults);
 
@@ -84,6 +98,24 @@ export const AssetSearch = () => {
 
   const isFirstSearch = React.useRef(true);
   const firstSearchTrace = React.useRef<null | Trace>(null);
+
+  const showSearchResults = React.useCallback(() => {
+    dispatch({type: 'show-results'});
+  }, []);
+
+  const searchRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    function handleClickOutsideSearch(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        dispatch({type: 'hide-results'});
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutsideSearch);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideSearch);
+    };
+  }, [searchRef]);
 
   React.useEffect(() => {
     initialize();
@@ -132,6 +164,11 @@ export const AssetSearch = () => {
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const {key} = e;
+
+    if (key === 'Escape') {
+      dispatch({type: 'hide-results'});
+      return;
+    }
 
     if (!numRenderedResults) {
       return;
@@ -183,31 +220,36 @@ export const AssetSearch = () => {
   };
 
   return (
-    <SearchInputWrapper>
-      <AssetSearchBox $hasQueryString={!!queryString.length}>
-        <Icon name="search" color={Colors.accentGray()} size={20} />
-        <SearchInput
-          data-search-input="1"
-          autoFocus
-          spellCheck={false}
-          onChange={onChange}
-          onKeyDown={onKeyDown}
-          placeholder="Search assets"
-          type="text"
-          value={queryString}
-        />
-        {rightElement()}
-      </AssetSearchBox>
-      <SearchResultsWrapper>
-        <AssetSearchResults
-          highlight={highlight}
-          queryString={queryString}
-          results={renderedAssetResults}
-          filterResults={renderedFilterResults}
-          onClickResult={onClickResult}
-        />
-      </SearchResultsWrapper>
-    </SearchInputWrapper>
+    <div ref={searchRef}>
+      <SearchInputWrapper>
+        <AssetSearchBox $showingResults={!!queryString.length && showResults}>
+          <Icon name="search" color={Colors.accentGray()} size={20} />
+          <SearchInput
+            data-search-input="1"
+            autoFocus
+            spellCheck={false}
+            onChange={onChange}
+            onKeyDown={onKeyDown}
+            placeholder="Search assets"
+            type="text"
+            value={queryString}
+            onClick={showSearchResults}
+          />
+          {rightElement()}
+        </AssetSearchBox>
+        {showResults && (
+          <SearchResultsWrapper>
+            <AssetSearchResults
+              highlight={highlight}
+              queryString={queryString}
+              results={renderedAssetResults}
+              filterResults={renderedFilterResults}
+              onClickResult={onClickResult}
+            />
+          </SearchResultsWrapper>
+        )}
+      </SearchInputWrapper>
+    </div>
   );
 };
 
@@ -250,24 +292,24 @@ const AssetSearchResults = (props: Props) => {
 };
 
 interface AssetSearchBoxProps {
-  readonly $hasQueryString: boolean;
+  readonly $showingResults: boolean;
 }
 
 const AssetSearchBox = styled.div<AssetSearchBoxProps>`
   background: ${Colors.backgroundDefault()};
-  border-radius: ${({$hasQueryString}) => ($hasQueryString ? '8px 8px 0 0' : '8px')};
+  border-radius: ${({$showingResults}) => ($showingResults ? '8px 8px 0 0' : '8px')};
   border: none;
   align-items: center;
-  box-shadow: ${({$hasQueryString}) =>
-      $hasQueryString ? Colors.keylineDefault() : Colors.borderDefault()}
+  box-shadow: ${({$showingResults}) =>
+      $showingResults ? Colors.keylineDefault() : Colors.borderDefault()}
     inset 0px 0px 0px 1px;
   display: flex;
   padding: 12px 16px 12px 12px;
   transition: all 100ms linear;
 
   :hover {
-    box-shadow: ${({$hasQueryString}) =>
-        $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
+    box-shadow: ${({$showingResults}) =>
+        $showingResults ? Colors.keylineDefault() : Colors.borderHover()}
       inset 0px 0px 0px 1px;
   }
 `;
