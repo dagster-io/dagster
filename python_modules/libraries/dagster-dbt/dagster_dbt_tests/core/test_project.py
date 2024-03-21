@@ -1,7 +1,9 @@
 import pytest
+from dagster import AssetExecutionContext, Definitions
 from dagster._core.test_utils import environ
 from dagster._utils.test import copy_directory
 from dagster_dbt import dbt_assets
+from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dbt_project import DbtProject, prepare_for_deployment
 from dagster_dbt.errors import DagsterDbtManifestNotFoundError
 
@@ -19,6 +21,15 @@ def test_deployed() -> None:
 
         prepare_for_deployment(my_project)
         assert my_project.manifest_path.exists()
+
+        @dbt_assets(manifest=my_project.manifest_path)
+        def my_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
+
+        defs = Definitions(
+            assets=[my_assets],
+            resources={"dbt": DbtCliResource(my_project)},
+        )
+        assert defs.get_all_job_defs()
 
 
 def test_local_dev() -> None:
