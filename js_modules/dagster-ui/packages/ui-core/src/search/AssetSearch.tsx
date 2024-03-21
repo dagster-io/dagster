@@ -103,15 +103,6 @@ export const AssetSearch = () => {
     dispatch({type: 'show-results'});
   }, []);
 
-  const hideSearchResults = React.useCallback(() => {
-    dispatch({type: 'hide-results'});
-  }, []);
-
-  const shortcutFilter = React.useCallback((e: KeyboardEvent) => {
-    const {key} = e;
-    return key === 'Escape';
-  }, []);
-
   const searchRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
     function handleClickOutsideSearch(event: MouseEvent) {
