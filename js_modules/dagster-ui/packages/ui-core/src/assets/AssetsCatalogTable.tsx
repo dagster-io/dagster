@@ -29,7 +29,11 @@ import {PageLoadTrace} from '../performance';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
-import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
+import {
+  doesAssetTagFilterMatch,
+  useAssetTagFilter,
+  useAssetTagsForAssets,
+} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {
   useAssetKindTagsForAssets,
@@ -188,13 +192,10 @@ export const AssetsCatalogTable = ({
         }
         if (filters.tags?.length) {
           if (
-            !filters.tags.every(
-              (filterTag) =>
-                a.definition?.tags.find(
-                  (assetTag) =>
-                    assetTag.key === filterTag.key && assetTag.value === filterTag.value,
-                ),
-            )
+            !doesAssetTagFilterMatch({
+              filterTags: filters.tags,
+              assetTags: a.definition?.tags ?? [],
+            })
           ) {
             return false;
           }

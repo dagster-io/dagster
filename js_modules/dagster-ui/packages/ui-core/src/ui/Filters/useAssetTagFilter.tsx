@@ -74,3 +74,29 @@ export function useAssetTagsForAssets(
     [assets],
   );
 }
+
+export function doesAssetTagFilterMatch({
+  filterTags,
+  assetTags,
+}: {
+  filterTags: DefinitionTag[];
+  assetTags: DefinitionTag[];
+}) {
+  return doesFilterArrayMatchValueArray(filterTags, assetTags);
+}
+
+export function doesFilterArrayMatchValueArray<T, V>(
+  filterArray: T[],
+  valueArray: V[],
+  isMatch: (value1: T, value2: V) => boolean = (val1, val2) =>
+    JSON.stringify(val1) === JSON.stringify(val2),
+) {
+  if (filterArray.length && !valueArray.length) {
+    return false;
+  }
+  return !filterArray.some(
+    (filterTag) =>
+      // If no asset tags match this filter tag return true
+      !valueArray.find((value) => !isMatch(filterTag, value)),
+  );
+}
