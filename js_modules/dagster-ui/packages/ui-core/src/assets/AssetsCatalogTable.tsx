@@ -191,6 +191,16 @@ export const AssetsCatalogTable = ({
             return false;
           }
         }
+        if (filters.tags?.length) {
+          if (
+            !doesAssetTagFilterMatch({
+              filterTags: filters.tags,
+              assetTags: a.definition?.tags ?? [],
+            })
+          ) {
+            return false;
+          }
+        }
         return true;
       }),
     [filters, pathMatches],
