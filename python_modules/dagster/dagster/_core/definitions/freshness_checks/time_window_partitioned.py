@@ -15,6 +15,7 @@ from ..assets import AssetsDefinition, SourceAsset
 from ..events import CoercibleToAssetKey
 from ..time_window_partitions import TimeWindowPartitionsDefinition
 from .utils import (
+    DEFAULT_FRESHNESS_CRON_TIMEZONE,
     DEFAULT_FRESHNESS_SEVERITY,
     asset_to_keys_iterable,
     ensure_no_duplicate_assets,
@@ -27,6 +28,7 @@ def build_freshness_checks_for_time_window_partitioned_assets(
     *,
     assets: Sequence[Union[SourceAsset, CoercibleToAssetKey, AssetsDefinition]],
     freshness_cron: str,
+    freshness_cron_timezone: str = DEFAULT_FRESHNESS_CRON_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
 ) -> Sequence[AssetChecksDefinition]:
     """For each provided time-window partitioned asset, constructs a freshness check definition.
@@ -46,6 +48,8 @@ def build_freshness_checks_for_time_window_partitioned_assets(
             constructed `AssetChecksDefinition`.
         freshness_cron (str): The check will pass if the partition time window most recently
             completed by the time of the last cron tick has been observed/materialized.
+        freshness_cron_timezone (Optional[str]): The timezone to use for the cron schedule. If not
+            provided, defaults to "UTC".
 
     Returns:
         Sequence[AssetChecksDefinition]: A list of `AssetChecksDefinition` objects, each
@@ -53,16 +57,20 @@ def build_freshness_checks_for_time_window_partitioned_assets(
     """
     ensure_no_duplicate_assets(assets)
     freshness_cron = check.str_param(freshness_cron, "freshness_cron")
+
     check.invariant(
         is_valid_cron_string(freshness_cron),
         "freshness_cron must be a valid cron string.",
     )
     severity = check.inst_param(severity, "severity", AssetCheckSeverity)
+    freshness_cron_timezone = check.str_param(freshness_cron_timezone, "freshness_cron_timezone")
 
     return [
         check
         for asset in assets
-        for check in _build_freshness_checks_for_asset(asset, freshness_cron, severity)
+        for check in _build_freshness_checks_for_asset(
+            asset, freshness_cron, severity, freshness_cron_timezone
+        )
     ]
 
 
@@ -70,6 +78,7 @@ def _build_freshness_checks_for_asset(
     asset: Union[SourceAsset, CoercibleToAssetKey, AssetsDefinition],
     freshness_cron: str,
     severity: AssetCheckSeverity,
+    freshness_cron_timezone: str,
 ) -> Sequence[AssetChecksDefinition]:
     checks = []
     for asset_key in asset_to_keys_iterable(asset):
@@ -92,7 +101,7 @@ def _build_freshness_checks_for_asset(
             )
             latest_cron_tick_time = check.not_none(
                 get_latest_completed_cron_tick(
-                    freshness_cron, current_time, partitions_def.timezone
+                    freshness_cron, current_time, freshness_cron_timezone
                 ),
                 "expected there to be a previous tick of the provided cron",
             )

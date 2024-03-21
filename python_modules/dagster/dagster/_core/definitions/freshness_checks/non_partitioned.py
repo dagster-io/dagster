@@ -17,6 +17,7 @@ from ..assets import AssetsDefinition, SourceAsset
 from ..decorators.asset_check_decorator import asset_check
 from ..events import CoercibleToAssetKey
 from .utils import (
+    DEFAULT_FRESHNESS_CRON_TIMEZONE,
     DEFAULT_FRESHNESS_SEVERITY,
     asset_to_keys_iterable,
     ensure_no_duplicate_assets,
@@ -30,6 +31,7 @@ def build_freshness_checks_for_non_partitioned_assets(
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
     maximum_lag_minutes: int,
     freshness_cron: Optional[str] = None,
+    freshness_cron_timezone: str = DEFAULT_FRESHNESS_CRON_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
 ) -> Sequence[AssetChecksDefinition]:
     """For each provided asset, constructs a freshness check definition.
@@ -59,6 +61,8 @@ def build_freshness_checks_for_non_partitioned_assets(
             (cron provided).
         freshness_cron (Optional[str]): The check will pass if the asset was updated within
             maximum_lag_minutes of the most recent tick of this cron.
+        freshness_cron_timezone (Optional[str]): The timezone to use for the cron schedule. If not
+            provided, the timezone will be UTC.
 
     Returns:
         Sequence[AssetChecksDefinition]: A list of `AssetChecksDefinition` objects, each
@@ -71,6 +75,7 @@ def build_freshness_checks_for_non_partitioned_assets(
         "freshness_cron",
         "Expect a valid cron string.",
     )
+    freshness_cron_timezone = check.str_param(freshness_cron_timezone, "freshness_cron_timezone")
     maximum_lag_minutes = check.int_param(maximum_lag_minutes, "maximum_lag_minutes")
     severity = check.inst_param(severity, "severity", AssetCheckSeverity)
 
@@ -82,6 +87,7 @@ def build_freshness_checks_for_non_partitioned_assets(
             freshness_cron=freshness_cron,
             maximum_lag_minutes=maximum_lag_minutes,
             severity=severity,
+            freshness_cron_timezone=freshness_cron_timezone,
         )
     ]
 
@@ -91,6 +97,7 @@ def _build_freshness_check_for_assets(
     freshness_cron: Optional[str],
     maximum_lag_minutes: int,
     severity: AssetCheckSeverity,
+    freshness_cron_timezone: str,
 ) -> Sequence[AssetChecksDefinition]:
     checks = []
     for asset_key in asset_to_keys_iterable(asset):
@@ -108,7 +115,9 @@ def _build_freshness_check_for_assets(
 
             current_time = pendulum.now("UTC")
             current_timestamp = check.float_param(current_time.timestamp(), "current_time")
-            latest_cron_tick = get_latest_completed_cron_tick(freshness_cron, current_time, None)
+            latest_cron_tick = get_latest_completed_cron_tick(
+                freshness_cron, current_time, freshness_cron_timezone
+            )
             lower_search_bound = pendulum.instance(latest_cron_tick or current_time).subtract(
                 minutes=maximum_lag_minutes
             )
