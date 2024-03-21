@@ -25,6 +25,7 @@ export type AssetColumnLineageQuery = {
       | {__typename: 'PathMetadataEntry'; label: string}
       | {__typename: 'PipelineRunMetadataEntry'; label: string}
       | {__typename: 'PythonArtifactMetadataEntry'; label: string}
+      | {__typename: 'TableColumnLineageMetadataEntry'; label: string}
       | {__typename: 'TableMetadataEntry'; label: string}
       | {
           __typename: 'TableSchemaMetadataEntry';
@@ -52,13 +53,26 @@ export type AssetColumnLineageQuery = {
         | {__typename: 'FloatMetadataEntry'; label: string}
         | {__typename: 'IntMetadataEntry'; label: string}
         | {__typename: 'JobMetadataEntry'; label: string}
-        | {__typename: 'JsonMetadataEntry'; jsonString: string; label: string}
+        | {__typename: 'JsonMetadataEntry'; label: string}
         | {__typename: 'MarkdownMetadataEntry'; label: string}
         | {__typename: 'NotebookMetadataEntry'; label: string}
         | {__typename: 'NullMetadataEntry'; label: string}
         | {__typename: 'PathMetadataEntry'; label: string}
         | {__typename: 'PipelineRunMetadataEntry'; label: string}
         | {__typename: 'PythonArtifactMetadataEntry'; label: string}
+        | {
+            __typename: 'TableColumnLineageMetadataEntry';
+            label: string;
+            lineage: Array<{
+              __typename: 'TableColumnLineageEntry';
+              columnName: string;
+              columnDeps: Array<{
+                __typename: 'TableColumnDep';
+                columnName: string;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }>;
+            }>;
+          }
         | {__typename: 'TableMetadataEntry'; label: string}
         | {
             __typename: 'TableSchemaMetadataEntry';

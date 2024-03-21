@@ -171,6 +171,20 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
           description: string | null;
         }
       | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
+      | {
           __typename: 'TableMetadataEntry';
           label: string;
           description: string | null;
@@ -318,6 +332,20 @@ export type RunDagsterRunEventFragment_EngineEvent = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -474,6 +502,20 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
           description: string | null;
         }
       | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
+      | {
           __typename: 'TableMetadataEntry';
           label: string;
           description: string | null;
@@ -612,6 +654,20 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
           description: string | null;
         }
       | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
+      | {
           __typename: 'TableMetadataEntry';
           label: string;
           description: string | null;
@@ -742,6 +798,20 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -867,6 +937,20 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -1055,6 +1139,20 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -1224,6 +1322,20 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -1376,6 +1488,20 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -1511,6 +1637,20 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
           description: string | null;
         }
       | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
+      | {
           __typename: 'TableMetadataEntry';
           label: string;
           description: string | null;
@@ -1638,6 +1778,20 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1769,6 +1923,20 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1911,6 +2079,20 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -2039,6 +2221,20 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -2259,6 +2455,20 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
           description: string | null;
         }
       | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
+      | {
           __typename: 'TableMetadataEntry';
           label: string;
           description: string | null;
@@ -2390,6 +2600,20 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -2518,6 +2742,20 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';

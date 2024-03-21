@@ -46,6 +46,6 @@ export function buildConsolidatedColumnSchema({
       schema: {...materializationTableSchema.schema, columns: mergedColumns},
     };
   }
-  console.log(tableSchema);
+
   return {tableSchema, tableSchemaLoadTimestamp};
 }
