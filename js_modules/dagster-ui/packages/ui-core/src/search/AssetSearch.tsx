@@ -222,7 +222,7 @@ export const AssetSearch = () => {
   return (
     <div ref={searchRef}>
       <SearchInputWrapper>
-        <AssetSearchBox $hasQueryString={!!queryString.length}>
+        <AssetSearchBox $showingResults={!!queryString.length && showResults}>
           <Icon name="search" color={Colors.accentGray()} size={20} />
           <SearchInput
             data-search-input="1"
@@ -233,6 +233,7 @@ export const AssetSearch = () => {
             placeholder="Search assets"
             type="text"
             value={queryString}
+            onClick={showSearchResults}
           />
           {rightElement()}
         </AssetSearchBox>
@@ -291,24 +292,24 @@ const AssetSearchResults = (props: Props) => {
 };
 
 interface AssetSearchBoxProps {
-  readonly $hasQueryString: boolean;
+  readonly $showingResults: boolean;
 }
 
 const AssetSearchBox = styled.div<AssetSearchBoxProps>`
   background: ${Colors.backgroundDefault()};
-  border-radius: ${({$hasQueryString}) => ($hasQueryString ? '8px 8px 0 0' : '8px')};
+  border-radius: ${({$showingResults}) => ($showingResults ? '8px 8px 0 0' : '8px')};
   border: none;
   align-items: center;
-  box-shadow: ${({$hasQueryString}) =>
-      $hasQueryString ? Colors.keylineDefault() : Colors.borderDefault()}
+  box-shadow: ${({$showingResults}) =>
+      $showingResults ? Colors.keylineDefault() : Colors.borderDefault()}
     inset 0px 0px 0px 1px;
   display: flex;
   padding: 12px 16px 12px 12px;
   transition: all 100ms linear;
 
   :hover {
-    box-shadow: ${({$hasQueryString}) =>
-        $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
+    box-shadow: ${({$showingResults}) =>
+        $showingResults ? Colors.keylineDefault() : Colors.borderHover()}
       inset 0px 0px 0px 1px;
   }
 `;
