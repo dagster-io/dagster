@@ -13,10 +13,11 @@ from dagster import (
     AssetSelection,
     ExecuteInProcessResult,
     materialize,
+    build_asset_context,
 )
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resources_v2 import DbtCliResource, get_subset_selection_for_context
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from ..dbt_projects import test_asset_checks_path
@@ -443,3 +444,31 @@ def test_select_model_with_tests(
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
     assert len(result.get_asset_check_evaluations()) == 2
+
+
+def _get_subset_selection(assets_def: AssetsDefinition, manifest: Dict[str, Any]):
+    context = build_asset_context().bind(
+        assets_def.op, None, assets_def, None, {"dbt": DbtCliResource}
+    )
+    return get_subset_selection_for_context(
+        context,
+        manifest,
+        "my_select_str",
+        "my_exclude_str",
+        dagster_dbt_translator_with_checks,
+    )
+
+
+def test_get_subset_selection_for_context(test_asset_checks_manifest: Dict[str, Any]):
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
+
+    asset_keys = sorted(my_dbt_assets.keys)
+
+    assert _get_subset_selection(my_dbt_assets, test_asset_checks_manifest) == (
+        ["--select", "my_select_str", "--exclude", "my_exclude_str"],
+        None,
+    )

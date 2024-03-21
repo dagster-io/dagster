@@ -17,6 +17,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Union,
     cast,
 )
@@ -1219,14 +1220,9 @@ def get_subset_selection_for_context(
 
             If the current execution context is not performing a subsetted execution,
             return CLI arguments composed of the inputed selection and exclusion arguments.
-        Optional[str]: A value for the DBT_INDIRECT_SELECTION environment variable
-
-                    if dagster_dbt_translator.settings.enable_asset_checks:
-                if (
-                    assets_def.node_check_specs_by_output_name
-                    != assets_def.check_specs_by_output_name
-                ):
-                    env["DBT_INDIRECT_SELECTION"] = "empty"
+        Optional[str]: A value for the DBT_INDIRECT_SELECTION environment variable. If None, then
+            the environment variable is not set and will either use dbt's default (eager) or the
+            user's setting.
     """
     default_dbt_selection = []
     if select:
@@ -1243,16 +1239,18 @@ def get_subset_selection_for_context(
         assets_def.check_specs_by_output_name != assets_def.node_check_specs_by_output_name
     )
 
-    # It's nice to use the default dbt selection arguments when not subsetting for readability.
-    # However with asset checks, we make a tradeoff between readability and functionality for the user.
-    # This is because we use an explicit selection of each individual dbt resource we execute to ensure
-    # we control which models *and tests* run. By using explicit selection, we allow the user to
-    # also subset the execution of dbt tests.
+    # It's nice to use the default dbt selection arguments when not subsetting for readability. We
+    # also use dbt indirect selection to avoid hitting cli arg length limits.
+    # https://github.com/dagster-io/dagster/issues/16997#issuecomment-1832443279
+    # A biproduct is that we'll run singular dbt tests (not currently modeled as asset checks) in
+    # cases when we can use indirection selection, an not when we need to turn it off.
     if not (is_asset_subset or is_checks_subset):
         logger.info(
             "A dbt subsetted execution is not being performed. Using the default dbt selection"
             f" arguments `{default_dbt_selection}`."
         )
+        # default eager indirect selection. This means we'll also run any singular tests (which
+        # aren't modeled as asset checks currently).
         return default_dbt_selection, None
 
     selected_dbt_non_test_resources = []
@@ -1275,15 +1273,34 @@ def get_subset_selection_for_context(
 
         selected_dbt_tests.append(fqn_selector)
 
-    if is_asset_subset:
+    # if all asset checks for the subsetted assets are selected, then we can just select the
+    # assets and use indirect selection for the tests. We verify that
+    # 1. all the selected checks are for selected assets
+    # 2. no checks for selected assets are excluded
+    # This also means we'll run any singular tests.
+    selected_checks_target_selected_assets = all(
+        check_key.asset_key in context.selected_asset_keys
+        for check_key in context.selected_asset_check_keys
+    )
+    all_check_keys = {
+        check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
+    }
+    all_checks_included_for_selected_assets = all(
+        check_key.asset_key not in context.selected_asset_check_keys
+        for check_key in (all_check_keys - context.selected_asset_check_keys)
+    )
+
+    if selected_checks_target_selected_assets and all_checks_included_for_selected_assets:
         selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
-        indirect_selection = "empty"
+        indirect_selection = None
         logger.info(
             "A dbt subsetted execution is being performed. Overriding default dbt selection"
             f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`. "
-            "Because asset checks are subsetted, setting DBT_INDIRECT_SELECTION=empty"
         )
-
+    # otherwise we select all assets and tests explicitly, and turn off indirect selection. This risks
+    # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
+    # (all checks disabled, only one check and no assets) it's not a concern.
+    # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
     else:
         check.invariant(is_checks_subset)
         selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
