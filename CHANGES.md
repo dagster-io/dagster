@@ -8,7 +8,7 @@
 - Introduced `TimestampMetadataValue`. Timestamp metadata values are represented internally as seconds since the Unix epoch. They can be constructed using `MetadataValue.timestamp`. In the UI, they’re rendered in the local timezone, like other timestamps in the UI.
 - `AssetSelection.checks` can now accept `AssetCheckKeys` as well as `AssetChecksDefinition`.
 - [community-contribution] Metadata attached to an output at runtime (via either `add_output_metadata` or by passing to `Output`) is now available on `HookContext` under the `op_output_metadata` property. Thanks [@JYoussouf](https://github.com/JYoussouf)!
-- [experimental] `@asset`, `AssetSpec`, and `AssetOut` now accept a `tags` property. Tags are key-value pairs meant to be used for organizing asset definitions.  If `"__dagster_no_value"` is set as the value, only the key will be rendered in the UI. `AssetSelection.tag` allows selecting assets that have a particular tag.
+- [experimental] `@asset`, `AssetSpec`, and `AssetOut` now accept a `tags` property. Tags are key-value pairs meant to be used for organizing asset definitions. If `"__dagster_no_value"` is set as the value, only the key will be rendered in the UI. `AssetSelection.tag` allows selecting assets that have a particular tag.
 - [experimental] Asset tags can be used in asset CLI selections, e.g. `dagster asset materialize --select tag:department=marketing`
 - [experimental][dagster-dbt] Tags can now be configured on dbt assets, using `DagsterDbtTranslator.get_tags`. By default, we take the dbt tags configured on your dbt models, seeds, and snapshots.
 - Added `get_gcs_keys` sensor helper function to `dagster-gcp`.
