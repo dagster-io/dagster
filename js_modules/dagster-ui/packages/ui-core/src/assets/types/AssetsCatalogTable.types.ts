@@ -30,6 +30,7 @@ export type AssetCatalogTableQuery = {
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
             >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -74,6 +75,7 @@ export type AssetCatalogGroupTableQuery = {
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -100,6 +102,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   repository: {
     __typename: 'Repository';
     id: string;

@@ -23,6 +23,10 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
         team
       }
     }
+    tags {
+      key
+      value
+    }
     repository {
       id
       name
