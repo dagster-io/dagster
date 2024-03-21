@@ -3,6 +3,7 @@ from typing import Optional, Sequence, Union
 import pendulum
 
 from dagster import _check as check
+from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -26,6 +27,7 @@ from .utils import (
 )
 
 
+@experimental
 def build_freshness_checks_for_non_partitioned_assets(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
