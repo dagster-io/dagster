@@ -38,7 +38,7 @@ def execute_assets_and_checks(
 
 
 def test_asset_check_decorator():
-    @asset_check(asset="asset1", description="desc")
+    @asset_check(asset="asset1", description="desc", metadata={"foo": "bar"})
     def check1():
         return AssetCheckResult(passed=True)
 
@@ -46,6 +46,7 @@ def test_asset_check_decorator():
     assert spec.name == "check1"
     assert spec.description == "desc"
     assert spec.asset_key == AssetKey("asset1")
+    assert spec.metadata == {"foo": "bar"}
 
 
 def test_asset_check_decorator_name():

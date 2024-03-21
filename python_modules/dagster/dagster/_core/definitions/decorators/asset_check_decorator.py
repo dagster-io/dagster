@@ -101,6 +101,7 @@ def asset_check(
     compute_kind: Optional[str] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    metadata: Optional[Mapping[str, Any]] = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -135,6 +136,7 @@ def asset_check(
         compute_kind (Optional[str]): A string to represent the kind of computation that executes
             the check, e.g. "dbt" or "spark".
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the check.
+        metadata (Optional[Mapping[str, Any]]): A dictionary of static metadata for the check.
 
 
     Produces an :py:class:`AssetChecksDefinition` object.
@@ -197,6 +199,7 @@ def asset_check(
             asset=asset_key,
             additional_deps=additional_ins_and_deps,
             blocking=blocking,
+            metadata=metadata,
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
