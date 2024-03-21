@@ -3,6 +3,7 @@ from typing import Sequence, Union, cast
 import pendulum
 
 from dagster import _check as check
+from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.metadata import TimestampMetadataValue
@@ -24,6 +25,7 @@ from .utils import (
 )
 
 
+@experimental
 def build_freshness_checks_for_time_window_partitioned_assets(
     *,
     assets: Sequence[Union[SourceAsset, CoercibleToAssetKey, AssetsDefinition]],
