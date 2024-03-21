@@ -159,6 +159,7 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
               <Caption>{assetFilterPrefixString(item.type)}:&nbsp;</Caption>
             )}
             {labelComponents.map((component) => component)}
+            {item.repoPath && <Caption>&nbsp;in {item.repoPath}</Caption>}
           </StyledTag>
           <div style={{marginLeft: '8px'}}>
             <Description isHighlight={isHighlight}>
