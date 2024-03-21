@@ -11,7 +11,7 @@
 - [experimental] `@asset`, `AssetSpec`, and `AssetOut` now accept a `tags` property. Tags are key-value pairs meant to be used for organizing asset definitions. If `"__dagster_no_value"` is set as the value, only the key will be rendered in the UI. `AssetSelection.tag` allows selecting assets that have a particular tag.
 - [experimental] Asset tags can be used in asset CLI selections, e.g. `dagster asset materialize --select tag:department=marketing`
 - [experimental][dagster-dbt] Tags can now be configured on dbt assets, using `DagsterDbtTranslator.get_tags`. By default, we take the dbt tags configured on your dbt models, seeds, and snapshots.
-- Added `get_gcs_keys` sensor helper function to `dagster-gcp`.
+- [dagster-gcp] Added get_gcs_keys sensor helper function.
 
 ### Bugfixes
 
@@ -26,10 +26,10 @@
 
 ### Dagster Cloud
 
-- [experimental] The metadata key for specifying column schema that will be rendered prominently on the new Overview tab of the asset details page has been changed from `"columns"` to `"dagster/column_schema"`. Materializations using the old metadata key will no longer result in the Columns section of the tab being filled out.
-- [ui] Fixed an Insights bug where loading a view filtered to a specific code location would not preserve that filter on pageload.
 - Fixed an issue in Dagster Cloud Serverless runs where multiple runs simultaneously materializing the same asset would sometimes raise a “Key not found” exception.
 - Fixed an issue when using [agent replicas](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#running-multiple-agents-in-the-same-environment) where one replica would sporadically remove a code server created by another replica due to a race condition, leading to a “code server not found” or “Deployment not found” exception.
+- [experimental] The metadata key for specifying column schema that will be rendered prominently on the new Overview tab of the asset details page has been changed from `"columns"` to `"dagster/column_schema"`. Materializations using the old metadata key will no longer result in the Columns section of the tab being filled out.
+- [ui] Fixed an Insights bug where loading a view filtered to a specific code location would not preserve that filter on pageload.
 
 ## 1.6.11 (core) / 0.22.11 (libraries)
 
