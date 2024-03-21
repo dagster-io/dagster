@@ -163,6 +163,8 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
 interface AssetOverviewCategoryProps {
   children: React.ReactNode;
   assetsCount: number;
+  link: string;
+  showCount?: boolean;
 }
 
 function getGreeting(timezone: string) {
@@ -184,24 +186,36 @@ function getGreeting(timezone: string) {
   }
 }
 
-const CountForAssetType = ({children, assetsCount}: AssetOverviewCategoryProps) => {
+function assetCountString(count: number) {
+  return count === 1 ? '1 asset' : `${count} assets`;
+}
+
+const CountForAssetType = ({
+  children,
+  assetsCount,
+  link,
+  showCount = true,
+}: AssetOverviewCategoryProps) => {
   return (
-    <GridItem>
-      <Box
-        flex={{direction: 'row', alignItems: 'center', gap: 4}}
-        style={{overflow: 'hidden', color: Colors.textLighter()}}
-      >
-        {children}
-      </Box>
-      <span
-        style={{
-          ...TextOverflowStyle,
-          ...{color: Colors.textLight(), fontSize: '14px', textAlign: 'right'},
-        }}
-      >
-        {assetsCount} assets
-      </span>
-    </GridItem>
+    <Link to={link} style={{textDecoration: 'none'}}>
+      <GridItem>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{overflow: 'hidden'}}>
+          {children}
+        </Box>
+        <span
+          style={{
+            ...TextOverflowStyle,
+            ...{
+              color: Colors.textLight(),
+              fontSize: '14px',
+              textAlign: 'right',
+            },
+          }}
+        >
+          {showCount && assetCountString(assetsCount)}
+        </span>
+      </GridItem>
+    </Link>
   );
 };
 
@@ -314,11 +328,14 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
               <SectionHeader sectionName="Recently visited" />
               <GridStyle>
                 {recentlyVisitedAssets.map((assetKey, idx) => (
-                  <CountForAssetType key={idx} assetsCount={0}>
+                  <CountForAssetType
+                    key={idx}
+                    assetsCount={0}
+                    link={`/assets/${assetKey.path.join('/')}`}
+                    showCount={false}
+                  >
                     <Icon name="asset" />
-                    <Link to={`/assets/${assetKey.path.join('/')}`} style={TextOverflowStyle}>
-                      {displayNameForAssetKey(assetKey)}
-                    </Link>
+                    <span style={TextOverflowStyle}>{displayNameForAssetKey(assetKey)}</span>
                   </CountForAssetType>
                 ))}
               </GridStyle>
@@ -329,10 +346,14 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
               <SectionHeader sectionName="Owners" />
               <GridStyle>
                 {assetCountBySection.countsByOwner.map(({owner, assetCount}) => (
-                  <CountForAssetType key={owner} assetsCount={assetCount}>
-                    <Link to={linkToAssetGraphOwner(owner)}>
+                  <CountForAssetType
+                    key={owner}
+                    assetsCount={assetCount}
+                    link={linkToAssetGraphOwner(owner)}
+                  >
+                    <span style={TextOverflowStyle}>
                       <UserDisplay email={owner} />
-                    </Link>
+                    </span>
                   </CountForAssetType>
                 ))}
               </GridStyle>
@@ -343,11 +364,13 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
               <SectionHeader sectionName="Compute kinds" />
               <GridStyle>
                 {assetCountBySection.countsByComputeKind.map(({computeKind, assetCount}) => (
-                  <CountForAssetType key={computeKind} assetsCount={assetCount}>
+                  <CountForAssetType
+                    key={computeKind}
+                    assetsCount={assetCount}
+                    link={linkToAssetGraphComputeKind(computeKind)}
+                  >
                     <TagIcon label={computeKind} />
-                    <Link to={linkToAssetGraphComputeKind(computeKind)} style={TextOverflowStyle}>
-                      {computeKind}
-                    </Link>
+                    <span style={TextOverflowStyle}>{computeKind}</span>
                   </CountForAssetType>
                 ))}
               </GridStyle>
@@ -361,14 +384,10 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                   <CountForAssetType
                     key={JSON.stringify(assetGroupCount.groupMetadata)}
                     assetsCount={assetGroupCount.assetCount}
+                    link={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}
                   >
                     <Icon name="asset_group" />
-                    <Link
-                      to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}
-                      style={TextOverflowStyle}
-                    >
-                      {assetGroupCount.groupMetadata.groupName}
-                    </Link>
+                    <span style={TextOverflowStyle}>{assetGroupCount.groupMetadata.groupName}</span>
                     <MiddleTruncate
                       text={repoAddressAsHumanString({
                         name: assetGroupCount.groupMetadata.repositoryName,
@@ -388,14 +407,12 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                   <CountForAssetType
                     key={repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
                     assetsCount={countPerCodeLocation.assetCount}
+                    link={linkToCodeLocation(countPerCodeLocation.repoAddress)}
                   >
                     <Icon name="folder" />
-                    <Link
-                      to={linkToCodeLocation(countPerCodeLocation.repoAddress)}
-                      style={TextOverflowStyle}
-                    >
+                    <span style={TextOverflowStyle}>
                       {repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
-                    </Link>
+                    </span>
                   </CountForAssetType>
                 ))}
               </GridStyle>
@@ -425,7 +442,6 @@ const TextOverflowStyle: React.CSSProperties = {
 
 const GridStyle = styled.div`
   padding: 16px 12px;
-
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   @media (max-width: 768px) {
@@ -437,4 +453,23 @@ const GridItem = styled.div`
   padding: 6px 12px;
   display: flex;
   justify-content: space-between;
+  background: transparent;
+  transition:
+    color 0.3s,
+    background 0.3s;
+  border-radius: 6px;
+  text-decoration: none;
+  color: ${Colors.textLight()};
+  & > span {
+    color: ${Colors.textLight()};
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  :hover {
+    background: ${Colors.backgroundLightHover()};
+    color: ${Colors.textDefault()};
+    & > span {
+      opacity: 1;
+    }
+  }
 `;
