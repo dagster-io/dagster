@@ -1,4 +1,4 @@
-import {memoize} from 'lodash';
+import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 
 import {useStaticSetFilter} from './useStaticSetFilter';
