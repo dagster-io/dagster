@@ -20,17 +20,17 @@ import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePath} from '../workspace/workspacePath';
 
-const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
+export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
 };
 
-const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
+export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
   })}`;
 };
 
-const linkToAssetTableWithOwnerFilter = (owner: string) => {
+export const linkToAssetTableWithOwnerFilter = (owner: string) => {
   return `/assets?${qs.stringify({
     owners: JSON.stringify([owner]),
   })}`;
