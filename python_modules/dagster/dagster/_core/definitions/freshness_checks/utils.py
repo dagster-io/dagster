@@ -11,6 +11,7 @@ from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
 
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
+DEFAULT_FRESHNESS_CRON_TIMEZONE = "UTC"
 
 
 def ensure_no_duplicate_assets(
