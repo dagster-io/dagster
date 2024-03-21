@@ -20,6 +20,7 @@ const ScheduledRunListRoot = lazy(() => import('../runs/ScheduledRunListRoot'));
 const SnapshotRoot = lazy(() => import('../snapshots/SnapshotRoot'));
 const GuessJobLocationRoot = lazy(() => import('../workspace/GuessJobLocationRoot'));
 const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
+const JobsRoot = lazy(() => import('../jobs/JobsRoot'));
 
 export const ContentRoot = memo(() => {
   const {pathname} = useLocation();
@@ -98,6 +99,11 @@ export const ContentRoot = memo(() => {
           <Route path="/overview">
             <Suspense fallback={<div />}>
               <OverviewRoot />
+            </Suspense>
+          </Route>
+          <Route path="/jobs">
+            <Suspense fallback={<div />}>
+              <JobsRoot />
             </Suspense>
           </Route>
           <Route path="/automation">

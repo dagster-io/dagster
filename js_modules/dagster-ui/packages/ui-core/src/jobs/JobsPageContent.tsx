@@ -2,24 +2,24 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
-  Heading,
   NonIdealState,
-  PageHeader,
   Spinner,
+  SpinnerWithText,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
 import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/JobsPageContent.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {OverviewJobsTable} from '../overview/OverviewJobsTable';
-import {OverviewTabs} from '../overview/OverviewTabs';
 import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
@@ -28,10 +28,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-export const OverviewJobsRoot = () => {
-  useTrackPageView();
-  useDocumentTitle('Overview | Jobs');
-
+export const JobsPageContent = () => {
   const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -131,35 +128,34 @@ export const OverviewJobsRoot = () => {
   const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
 
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="jobs" refreshState={refreshState} />}
-      />
+    <>
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 0}}
       >
-        {repoCount > 1 ? <RepoFilterButton /> : null}
-        <TextInput
-          icon="search"
-          value={searchValue}
-          rightElement={
-            showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
-          }
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by job name…"
-          style={{width: '340px'}}
-        />
+        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+          {repoCount > 1 ? <RepoFilterButton /> : null}
+          <TextInput
+            icon="search"
+            value={searchValue}
+            rightElement={
+              showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+            }
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Filter by job name…"
+            style={{width: '340px'}}
+          />
+        </Box>
+        <QueryRefreshCountdown refreshState={refreshState} />
       </Box>
       {loading && !repoCount ? (
         <Box padding={64}>
-          <Spinner purpose="page" />
+          <SpinnerWithText label="Loading jobs…" />
         </Box>
       ) : (
         content()
       )}
-    </Box>
+    </>
   );
 };
 
