@@ -124,8 +124,6 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {filters, setFilters} = props;
 
-  console.log({filters});
-
   const {setComputeKindTags, setGroupFilters, setChangedInBranch, setOwners, setAssetTags} =
     React.useMemo(() => {
       function makeSetter<T extends keyof Filters>(field: T) {

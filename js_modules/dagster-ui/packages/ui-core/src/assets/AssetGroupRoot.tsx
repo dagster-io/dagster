@@ -25,6 +25,7 @@ import {
   explorerPathFromString,
   explorerPathToString,
 } from '../pipelines/PipelinePathUtils';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -127,6 +128,16 @@ export const AssetGroupRoot = ({
           return false;
         }
         return true;
+      }
+      if (filters.owners?.length) {
+        if (!doesFilterArrayMatchValueArray(filters.owners, node?.owners ?? [])) {
+          return true;
+        }
+      }
+      if (filters.tags?.length) {
+        if (!doesFilterArrayMatchValueArray(filters.tags, node?.tags ?? [])) {
+          return true;
+        }
       }
 
       return false;

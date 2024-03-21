@@ -191,16 +191,6 @@ export const AssetsCatalogTable = ({
             return false;
           }
         }
-        if (filters.tags?.length) {
-          if (
-            !doesAssetTagFilterMatch({
-              filterTags: filters.tags,
-              assetTags: a.definition?.tags ?? [],
-            })
-          ) {
-            return false;
-          }
-        }
         return true;
       }),
     [filters, pathMatches],
@@ -224,55 +214,24 @@ export const AssetsCatalogTable = ({
     }
   }, [loaded, trace]);
 
-  const setVisibleAssetGroups = React.useCallback(
-    (groups: AssetGroupSelector[]) => {
-      setFilters((existingFilters) => ({
-        ...existingFilters,
-        groups,
-      }));
-    },
-    [setFilters],
-  );
-
-  const setVisibleComputeKindTags = React.useCallback(
-    (computeKindTags: string[]) => {
-      setFilters((existingFilters) => ({
-        ...existingFilters,
-        computeKindTags,
-      }));
-    },
-    [setFilters],
-  );
-
-  const setOwners = React.useCallback(
-    (owners: AssetOwner[]) => {
-      setFilters((existingFilters) => ({
-        ...existingFilters,
-        owners,
-      }));
-    },
-    [setFilters],
-  );
-
-  const setTags = React.useCallback(
-    (tags: DefinitionTag[]) => {
-      setFilters((existingFilters) => ({
-        ...existingFilters,
-        tags,
-      }));
-    },
-    [setFilters],
-  );
-
-  const setVisibleChangedInBranch = React.useCallback(
-    (changeReasons: ChangeReason[]) => {
-      setFilters((existingFilters) => ({
-        ...existingFilters,
-        changedInBranch: changeReasons,
-      }));
-    },
-    [setFilters],
-  );
+  const {setComputeKindTags, setGroupFilters, setChangedInBranch, setOwners, setAssetTags} =
+    React.useMemo(() => {
+      function makeSetter<T extends keyof FilterType>(field: T) {
+        return (value: FilterType[T]) => {
+          setFilters?.((filters) => ({
+            ...filters,
+            [field]: value,
+          }));
+        };
+      }
+      return {
+        setComputeKindTags: makeSetter('computeKindTags'),
+        setGroupFilters: makeSetter('groups'),
+        setChangedInBranch: makeSetter('changedInBranch'),
+        setOwners: makeSetter('owners'),
+        setAssetTags: makeSetter('tags'),
+      };
+    }, [setFilters]);
 
   const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
   const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
@@ -281,16 +240,16 @@ export const AssetsCatalogTable = ({
   const groupsFilter = useAssetGroupFilter({
     assetGroups: allAssetGroupOptions,
     visibleAssetGroups: filters.groups,
-    setGroupFilters: setVisibleAssetGroups,
+    setGroupFilters,
   });
   const changedInBranchFilter = useChangedFilter({
     changedInBranch: filters.changedInBranch,
-    setChangedInBranch: setVisibleChangedInBranch,
+    setChangedInBranch,
   });
   const computeKindFilter = useComputeKindTagFilter({
     allComputeKindTags,
     computeKindTags: filters.computeKindTags,
-    setComputeKindTags: setVisibleComputeKindTags,
+    setComputeKindTags,
   });
   const ownersFilter = useAssetOwnerFilter({
     allAssetOwners,
@@ -300,7 +259,7 @@ export const AssetsCatalogTable = ({
   const tagsFilter = useAssetTagFilter({
     allAssetTags: useAssetTagsForAssets(pathMatches),
     tags: filters.tags,
-    setTags,
+    setTags: setAssetTags,
   });
   const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter, tagsFilter];
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
