@@ -31,7 +31,6 @@ import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {
   doesAssetTagFilterMatch,
-  doesFilterArrayMatchValueArray,
   useAssetTagFilter,
   useAssetTagsForAssets,
 } from '../ui/Filters/useAssetTagFilter';
@@ -183,7 +182,11 @@ export const AssetsCatalogTable = ({
         }
 
         if (filters.owners?.length) {
-          if (!doesFilterArrayMatchValueArray(filters.owners, a?.definition?.owners ?? [])) {
+          const owners =
+            a.definition?.owners.map((o) =>
+              o.__typename === 'TeamAssetOwner' ? o.team : o.email,
+            ) || [];
+          if (filters.owners.some((owner) => !owners.includes(owner))) {
             return false;
           }
         }
