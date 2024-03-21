@@ -120,7 +120,7 @@ export function useStaticSetFilter<TValue>({
               value,
             }));
         }
-        if (allowMultipleSelections) {
+        if (allowMultipleSelections && results.length) {
           return [
             {
               label: (

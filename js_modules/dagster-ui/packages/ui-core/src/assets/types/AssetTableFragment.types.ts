@@ -18,6 +18,7 @@ export type AssetTableDefinitionFragment = {
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -46,6 +47,7 @@ export type AssetTableFragment = {
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     repository: {
       __typename: 'Repository';
       id: string;
