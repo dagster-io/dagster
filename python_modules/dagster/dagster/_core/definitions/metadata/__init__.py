@@ -1221,12 +1221,10 @@ class MetadataEntry(
         return self.entry_data
 
 
-T_NamespacedMetadataEntries = TypeVar(
-    "T_NamespacedMetadataEntries", bound="NamespacedMetadataEntries"
-)
+T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
 
 
-class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
+class NamespacedMetadataSet(ABC, BaseModel, frozen=True):
     """Extend this class to define a set of metadata fields in the same namespace.
 
     Supports splatting to a dictionary that can be placed inside a metadata argument along with
@@ -1234,7 +1232,7 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
 
     .. code-block:: python
 
-        my_metadata: NamespacedMetadataEntries = ...
+        my_metadata: NamespacedMetadataSet = ...
         return MaterializeResult(metadata={**my_metadata, ...})
     """
 
@@ -1265,8 +1263,8 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
 
     @classmethod
     def extract(
-        cls: Type[T_NamespacedMetadataEntries], metadata: Mapping[str, Any]
-    ) -> T_NamespacedMetadataEntries:
+        cls: Type[T_NamespacedMetadataSet], metadata: Mapping[str, Any]
+    ) -> T_NamespacedMetadataSet:
         """Extracts entries from the provided metadata dictionary into an instance of this class.
 
         Ignores any entries in the metadata dictionary whose keys don't correspond to fields on this
@@ -1296,7 +1294,7 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
         return cls(**kwargs)
 
 
-class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
+class TableMetadataSet(NamespacedMetadataSet, frozen=True):
     """Metadata entries that apply to definitions, observations, or materializations of assets that
     are tables.
 

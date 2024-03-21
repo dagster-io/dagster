@@ -45,7 +45,7 @@ from dagster import (
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.metadata import (
-    TableMetadataEntries,
+    TableMetadataSet,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dagster._utils.warnings import disable_dagster_warnings
@@ -489,9 +489,7 @@ class DbtCliEventMessage:
         # 4. Render the lineage as metadata.
         with disable_dagster_warnings():
             return dict(
-                TableMetadataEntries(
-                    column_lineage=TableColumnLineage(deps_by_column=deps_by_column)
-                )
+                TableMetadataSet(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
             )
 
 
