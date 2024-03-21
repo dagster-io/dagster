@@ -216,9 +216,7 @@ class OpenAIResource(ConfigurableResource):
 
     @public
     @contextmanager
-    def get_client(
-        self, context: Union[AssetExecutionContext, OpExecutionContext]
-    ) -> Generator[Client, None, None]:
+    def get_client(self, context: AssetExecutionContext) -> Generator[Client, None, None]:
         """Yields an ``openai.Client`` for interacting with the OpenAI API.
 
         By default, in an asset context, the client comes with wrapped endpoints

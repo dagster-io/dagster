@@ -451,6 +451,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.execution.build_resources import build_resources as build_resources
 from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext as AssetCheckExecutionContext,
     AssetExecutionContext as AssetExecutionContext,
     OpExecutionContext as OpExecutionContext,
 )

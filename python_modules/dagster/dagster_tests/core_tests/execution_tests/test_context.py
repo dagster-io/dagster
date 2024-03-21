@@ -1,6 +1,7 @@
 import dagster._check as check
 import pytest
 from dagster import (
+    AssetCheckExecutionContext,
     AssetCheckResult,
     AssetExecutionContext,
     AssetOut,
@@ -18,6 +19,7 @@ from dagster import (
     multi_asset,
     op,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
@@ -320,15 +322,25 @@ def test_context_provided_to_asset_check():
 
     @asset_check(asset=to_check)
     def no_annotation(context):
-        assert isinstance(context, AssetExecutionContext)
+        assert isinstance(context, AssetCheckExecutionContext)
+        assert context.check_specs == [
+            AssetCheckSpec(
+                "no_annotation",
+                asset=to_check.key,
+            )
+        ]
 
     execute_assets_and_checks(assets=[to_check], asset_checks=[no_annotation])
 
     @asset_check(asset=to_check)
     def asset_annotation(context: AssetExecutionContext):
-        assert isinstance(context, AssetExecutionContext)
+        pass
 
-    execute_assets_and_checks(assets=[to_check], asset_checks=[asset_annotation])
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot annotate @asset_check `context` parameter with type AssetExecutionContext",
+    ):
+        execute_assets_and_checks(assets=[to_check], asset_checks=[asset_annotation])
 
     @asset_check(asset=to_check)
     def op_annotation(context: OpExecutionContext):

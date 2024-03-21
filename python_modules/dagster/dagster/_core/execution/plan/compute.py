@@ -36,6 +36,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext,
     AssetExecutionContext,
     OpExecutionContext,
 )
@@ -156,7 +157,7 @@ def _yield_compute_results(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext],
+    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
 ) -> Iterator[OpOutputUnion]:
     user_event_generator = compute_fn(compute_context, inputs)
 
@@ -191,19 +192,19 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if compute_context.has_events():
-            yield from compute_context.consume_events()
+        if compute_context.op_execution_context.has_events():
+            yield from compute_context.op_execution_context.consume_events()
         yield _validate_event(event, step_context)
 
-    if compute_context.has_events():
-        yield from compute_context.consume_events()
+    if compute_context.op_execution_context.has_events():
+        yield from compute_context.op_execution_context.consume_events()
 
 
 def execute_core_compute(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext],
+    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
 ) -> Iterator[OpOutputUnion]:
     """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.
