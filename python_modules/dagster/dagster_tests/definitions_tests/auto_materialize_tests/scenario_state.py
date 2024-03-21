@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Iterable, NamedTuple, Optional, Sequence, Union, cast
@@ -95,13 +94,8 @@ def _get_code_location_origin_from_repository(repository: RepositoryDefinition, 
     )
 
 
-class AssetSpecWithPartitionsDef(
-    namedtuple(
-        "AssetSpecWithPartitionsDef",
-        AssetSpec._fields + ("partitions_def",),
-        defaults=(None,) * (1 + len(AssetSpec._fields)),
-    )
-): ...
+class AssetSpecWithPartitionsDef(AssetSpec):
+    partitions_def: PartitionsDefinition
 
 
 class MultiAssetSpec(NamedTuple):
