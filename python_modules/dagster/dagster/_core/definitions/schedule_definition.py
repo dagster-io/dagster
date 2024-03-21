@@ -605,10 +605,9 @@ class ScheduleDefinition(IHasInternalInit):
 
         self._description = check.opt_str_param(description, "description")
 
-        self._environment_vars = check.opt_mapping_param(
+        self._environment_vars = check.opt_nullable_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
-        self._environment_vars = self._environment_vars or None
 
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
 
