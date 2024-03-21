@@ -29,6 +29,7 @@ from dagster._serdes.serdes import (
     deserialize_value,
     whitelist_for_serdes,
 )
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .partition import PartitionsDefinition, SerializedPartitionsSubset
 
@@ -215,7 +216,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         from .asset_condition.asset_condition import AssetConditionSnapshot, RuleCondition
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
-        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
 
         return AssetConditionSnapshot(
             class_name=RuleCondition.__name__,
