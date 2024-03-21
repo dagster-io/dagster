@@ -5,6 +5,8 @@ from typing import Any, Mapping, Union, cast
 import dagster._check as check
 import orjson
 
+from .errors import DagsterDbtManifestNotFoundError
+
 DbtManifestParam = Union[Mapping[str, Any], str, Path]
 
 
@@ -18,6 +20,9 @@ def read_manifest_path(manifest_path: Path) -> Mapping[str, Any]:
     If we fix the fact that the manifest is held in memory instead of garbage collected, we
     can delete this cache.
     """
+    if not manifest_path.exists():
+        raise DagsterDbtManifestNotFoundError(f"{manifest_path} does not exist.")
+
     return cast(Mapping[str, Any], orjson.loads(manifest_path.read_bytes()))
 
 

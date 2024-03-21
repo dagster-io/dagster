@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from dagster_dbt.cli.app import app
+from dagster_dbt.errors import DagsterDbtManifestNotFoundError
 from typer.testing import CliRunner
 
 from ..dbt_projects import test_jaffle_shop_path
@@ -178,7 +179,7 @@ def test_project_scaffold_command_with_runtime_manifest_without_env_var(
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(DagsterDbtManifestNotFoundError):
         monkeypatch.delenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", raising=False)
         importlib.import_module(f"{project_name}.{project_name}.definitions")
 
