@@ -44,7 +44,13 @@ from dagster._core.errors import DagsterInvariantViolationError, HookExecutionEr
 from dagster._core.execution.context.system import IPlanContext, IStepContext, StepExecutionContext
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.inputs import StepInputData
-from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
+from dagster._core.execution.plan.objects import (
+    StepFailureData,
+    StepRetryData,
+    StepSkippedData,
+    StepStartData,
+    StepSuccessData,
+)
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.captured_log_manager import CapturedLogContext
@@ -71,6 +77,7 @@ EventSpecificData = Union[
     StepOutputData,
     StepFailureData,
     StepSuccessData,
+    StepSkippedData,
     "StepMaterializationData",
     "StepExpectationResultData",
     StepInputData,
@@ -886,10 +893,12 @@ class DagsterEvent(
         step_failure_data: "StepFailureData",
         message=None,
     ) -> "DagsterEvent":
+        event_specific_data = step_failure_data._replace(asset_keys=step_context.asset_keys)
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
-            event_specific_data=step_failure_data,
+            event_specific_data=event_specific_data,
             message=(message or f'Execution of step "{step_context.step.key}" failed.'),
         )
 
@@ -944,6 +953,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_START,
             step_context=step_context,
             message=f'Started execution of step "{step_context.step.key}".',
+            event_specific_data=StepStartData(asset_keys=step_context.asset_keys),
         )
 
     @staticmethod
@@ -976,6 +986,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_SKIPPED,
             step_context=step_context,
             message=f'Skipped execution of step "{step_context.step.key}".',
+            event_specific_data=StepSkippedData(asset_keys=step_context.asset_keys),
         )
 
     @staticmethod

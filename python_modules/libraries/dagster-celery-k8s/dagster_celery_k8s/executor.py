@@ -198,6 +198,8 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
 
     job_origin = plan_context.reconstructable_job.get_python_origin()
 
+    step_context = plan_context.for_step(step)
+
     execute_step_args = ExecuteStepArgs(
         job_origin=job_origin,
         run_id=plan_context.dagster_run.run_id,
@@ -225,6 +227,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         load_incluster_config=plan_context.executor.load_incluster_config,
         job_wait_timeout=plan_context.executor.job_wait_timeout,
         kubeconfig_file=plan_context.executor.kubeconfig_file,
+        asset_keys=step_context.asset_keys,
     )
 
     return task_signature.apply_async(
@@ -234,7 +237,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     )
 
 
-def construct_step_failure_event_and_handle(dagster_run, step_key, err, instance):
+def construct_step_failure_event_and_handle(dagster_run, step_key, err, instance, asset_keys):
     step_failure_event = DagsterEvent(
         event_type_value=DagsterEventType.STEP_FAILURE.value,
         job_name=dagster_run.job_name,
@@ -242,6 +245,7 @@ def construct_step_failure_event_and_handle(dagster_run, step_key, err, instance
         event_specific_data=StepFailureData(
             error=serializable_error_info_from_exc_info(sys.exc_info()),
             user_failure_data=UserFailureData(label="K8sError"),
+            asset_keys=asset_keys,
         ),
     )
     event_record = EventLogEntry(
@@ -269,6 +273,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_wait_timeout,
         user_defined_k8s_config_dict=None,
         kubeconfig_file=None,
+        asset_keys=None,
     ):
         """Run step execution in a K8s job pod."""
         execute_step_args = unpack_value(
@@ -457,7 +462,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             )
         except (DagsterK8sError, DagsterK8sTimeoutError) as err:
             step_failure_event = construct_step_failure_event_and_handle(
-                dagster_run, step_key, err, instance=instance
+                dagster_run, step_key, err, instance=instance, asset_keys=asset_keys
             )
             events.append(step_failure_event)
         except DagsterK8sJobStatusException:

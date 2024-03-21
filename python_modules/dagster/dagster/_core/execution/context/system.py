@@ -213,6 +213,18 @@ class IStepContext(IPlanContext):
     def node_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
+    @property
+    def asset_keys(self) -> Set[AssetKey]:
+        result = set()
+        for output in self.step.step_output_dict.values():
+            if not output.properties:
+                continue
+            asset_key = output.properties.asset_key
+            if asset_key:
+                result.add(asset_key)
+
+        return result
+
 
 class PlanOrchestrationContext(IPlanContext):
     """Context for the orchestration of a run.
