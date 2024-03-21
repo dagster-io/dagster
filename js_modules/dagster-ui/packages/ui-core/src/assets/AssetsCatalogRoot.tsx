@@ -50,7 +50,6 @@ export const AssetsCatalogRoot = ({
   const trace = usePageLoadTrace(
     currentPath && currentPath.length === 0 ? 'AssetsCatalogRoot' : 'AssetCatalogAssetView',
   );
-  const {currentDeploymentName} = React.useContext(CloudOSSContext);
 
   React.useEffect(() => {
     // If the asset exists, add it to the recently visited list
