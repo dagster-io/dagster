@@ -222,7 +222,7 @@ export const AssetsCatalogTable = ({
 
   const setVisibleAssetGroups = React.useCallback(
     (groups: AssetGroupSelector[]) => {
-      setFilters((existingFilters: typeof filters) => ({
+      setFilters((existingFilters) => ({
         ...existingFilters,
         groups,
       }));
@@ -232,7 +232,7 @@ export const AssetsCatalogTable = ({
 
   const setVisibleComputeKindTags = React.useCallback(
     (computeKindTags: string[]) => {
-      setFilters((existingFilters: typeof filters) => ({
+      setFilters((existingFilters) => ({
         ...existingFilters,
         computeKindTags,
       }));
@@ -242,7 +242,7 @@ export const AssetsCatalogTable = ({
 
   const setOwners = React.useCallback(
     (owners: string[]) => {
-      setFilters((existingFilters: typeof filters) => ({
+      setFilters((existingFilters) => ({
         ...existingFilters,
         owners,
       }));
@@ -252,7 +252,7 @@ export const AssetsCatalogTable = ({
 
   const setTags = React.useCallback(
     (tags: DefinitionTag[]) => {
-      setFilters((existingFilters: typeof filters) => ({
+      setFilters((existingFilters) => ({
         ...existingFilters,
         tags,
       }));
@@ -262,7 +262,7 @@ export const AssetsCatalogTable = ({
 
   const setVisibleChangedInBranch = React.useCallback(
     (changeReasons: ChangeReason[]) => {
-      setFilters((existingFilters: typeof filters) => ({
+      setFilters((existingFilters) => ({
         ...existingFilters,
         changedInBranch: changeReasons,
       }));
