@@ -26,6 +26,7 @@ from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
 
 from dagster_embedded_elt.sling.asset_decorator import (
+    METADATA_KEY_REPLICATION_CONFIG,
     METADATA_KEY_TRANSLATOR,
     get_streams_from_replication,
 )
@@ -366,11 +367,16 @@ class SlingResource(ConfigurableResource):
         breaking_version="2.0",
         additional_warn_text="Param is only required in `sling_assets` decorator.",
     )
+    @deprecated_param(
+        param="replication_config",
+        breaking_version="2.0",
+        additional_warn_text="Param is only required in `sling_assets` decorator.",
+    )
     def replicate(
         self,
         *,
-        replication_config: SlingReplicationParam,
         context: Union[OpExecutionContext, AssetExecutionContext],
+        replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
     ) -> Generator[MaterializeResult, None, None]:
@@ -384,20 +390,24 @@ class SlingResource(ConfigurableResource):
         Returns:
             Optional[Generator[MaterializeResult, None, None]]: A generator of MaterializeResult
         """
-        replication_config = validate_replication(replication_config)
-        stream_definition = get_streams_from_replication(replication_config)
-
-        # retrieve translator from context
+        # retrieve decorator params from context
         metadata_by_key = context.assets_def.metadata_by_key
         first_asset_metadata = next(iter(metadata_by_key.values()))
-        dagster_sling_translator = first_asset_metadata.get(
-            METADATA_KEY_TRANSLATOR, DagsterSlingTranslator()
-        )
 
+        dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
         if dagster_sling_translator is None:
             raise Exception(
                 f"`DagsterSlingTranslator` must be defined on metadata at {METADATA_KEY_TRANSLATOR}"
             )
+
+        replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
+        if replication_config is None:
+            raise Exception(
+                f"`ReplicationConfig` must be defined on metadata at {METADATA_KEY_REPLICATION_CONFIG}"
+            )
+
+        replication_config = validate_replication(replication_config)
+        stream_definition = get_streams_from_replication(replication_config)
 
         with self._setup_config():
             uid = uuid.uuid4()

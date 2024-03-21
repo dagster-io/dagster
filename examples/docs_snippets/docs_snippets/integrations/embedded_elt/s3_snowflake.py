@@ -50,9 +50,7 @@ replication_config = {
     dagster_sling_translator=DagsterSlingTranslator(),
 )
 def my_assets(context, sling: SlingResource):
-    yield from sling.replicate(
-        replication_config=replication_config,
-    )
+    yield from sling.replicate(context=context)
 
 
 # end_storage_config

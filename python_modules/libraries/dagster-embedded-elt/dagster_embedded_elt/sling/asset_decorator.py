@@ -13,6 +13,7 @@ from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTran
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 METADATA_KEY_TRANSLATOR = "dagster_sling/translator"
+METADATA_KEY_REPLICATION_CONFIG = "dagster_sling/replication_config"
 
 
 def get_streams_from_replication(
@@ -73,10 +74,7 @@ def sling_assets(
             config_path = "/path/to/replication.yaml"
             @sling_assets(replication_config=config_path)
             def my_assets(context, sling: SlingResource):
-                for lines in sling.replicate(
-                    replication_config=config_path,
-                    context=context,
-                ):
+                for lines in sling.replicate(context=context):
                     context.log.info(lines)
     """
     replication_config = validate_replication(replication_config)
@@ -93,6 +91,7 @@ def sling_assets(
                 metadata={  # type: ignore
                     **dagster_sling_translator.get_metadata(stream),
                     METADATA_KEY_TRANSLATOR: dagster_sling_translator,
+                    METADATA_KEY_REPLICATION_CONFIG: replication_config,
                 },
                 group_name=dagster_sling_translator.get_group_name(stream),
                 freshness_policy=dagster_sling_translator.get_freshness_policy(stream),
