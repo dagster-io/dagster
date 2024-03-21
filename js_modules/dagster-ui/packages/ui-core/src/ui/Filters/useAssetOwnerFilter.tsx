@@ -67,7 +67,6 @@ const memoizedOwner = memoize(
   (owner: AssetOwner) => {
     return owner;
   },
-  // Use a sequence unlikely to appear in the key/value to uniquely memoize them
   (owner) => JSON.stringify(owner),
 );
 
