@@ -162,7 +162,7 @@ def validate_definition_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapp
 
         if not is_valid_definition_tag_value(value):
             raise DagsterInvalidDefinitionError(
-                f"Invalid tag value: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
+                f"Invalid tag value: {value}. Allowed characters: alpha-numeric, '_', '-', '.'. "
                 "Must have <= 63 characters."
             )
 
