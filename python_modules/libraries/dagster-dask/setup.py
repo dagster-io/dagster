@@ -36,7 +36,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         "bokeh",
-        f"dagster{pin}",
+        "dagster==1.6.12",
         "dask[dataframe]>=1.2.2",
         "distributed>=1.28.1",
     ],
