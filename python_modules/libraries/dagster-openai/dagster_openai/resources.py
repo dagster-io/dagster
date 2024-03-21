@@ -51,7 +51,9 @@ def _add_to_asset_metadata(
 
 @public
 @experimental
-def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[str], func):
+def with_usage_metadata(
+    context: Union[AssetExecutionContext, OpExecutionContext], output_name: Optional[str], func
+):
     """This wrapper can be used on any endpoint of the
     `openai library <https://github.com/openai/openai-python>`
     to log the OpenAI API usage metadata in the asset metadata.
@@ -216,7 +218,9 @@ class OpenAIResource(ConfigurableResource):
 
     @public
     @contextmanager
-    def get_client(self, context: AssetExecutionContext) -> Generator[Client, None, None]:
+    def get_client(
+        self, context: Union[AssetExecutionContext, OpExecutionContext]
+    ) -> Generator[Client, None, None]:
         """Yields an ``openai.Client`` for interacting with the OpenAI API.
 
         By default, in an asset context, the client comes with wrapped endpoints

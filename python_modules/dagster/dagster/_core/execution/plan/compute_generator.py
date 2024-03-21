@@ -266,7 +266,7 @@ def validate_and_coerce_op_result_to_iterator(
             "returning an AssetMaterialization "
             "or an ExpectationResult from "
             f"{context.op_def.node_type_str} you must yield them "
-            "directly, or log them using the ExecutionContexts.log_event method to avoid "
+            "directly, or log them using the context.log_event method to avoid "
             "ambiguity with an implied result from returning a "
             "value. Check out the docs on logging events here: "
             "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"

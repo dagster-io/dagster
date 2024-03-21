@@ -1,4 +1,4 @@
-from abc import ABC, ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, ABCMeta, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
 from inspect import (
@@ -68,11 +68,6 @@ class AbstractComputeMetaclass(ABCMeta):
     pass
 
 
-class _HasOpExecutionContext(ABC):
-    @abstractproperty
-    def op_execution_context(self) -> "OpExecutionContext": ...
-
-
 class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
@@ -138,9 +133,7 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
         return super().__instancecheck__(instance)
 
 
-class OpExecutionContext(
-    AbstractComputeExecutionContext, _HasOpExecutionContext, metaclass=OpExecutionContextMetaClass
-):
+class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
@@ -1797,7 +1790,7 @@ class AssetExecutionContext(OpExecutionContext):
         self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
 
 
-class AssetCheckExecutionContext(_HasOpExecutionContext):
+class AssetCheckExecutionContext:
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
@@ -1931,7 +1924,7 @@ def enter_execution_context(
     asset         AssetCheckExecutionContext   Error - not an asset check
     asset         OpExecutionContext           OpExecutionContext
     asset         None                         AssetExecutionContext
-    op            AssetExecutionContext        Error - we cannot init an AssetExecutioext w/o an AssetsDefinition
+    op            AssetExecutionContext        Error - we cannot init an AssetExecutionContextext w/o an AssetsDefinition
     op            AssetCheckExecutionContext   Error - not an asset check
     op            OpExecutionContext           OpExecutionContext
     op            None                         OpExecutionContext
@@ -1939,6 +1932,13 @@ def enter_execution_context(
     asset_check   AssetExecutionContext        Error - not an asset
     asset_check   OpExecutionContext           OpExecutionContext
     asset_check   None                         AssetCheckExecutionContext
+
+    For ops in graph-backed assets
+    step type     annotation                   result
+    op            AssetExecutionContext        AssetExecutionContext
+    op            AssetCheckExecutionContext   Error - not an asset check
+    op            OpExecutionContext           OpExecutionContext
+    op            None                         OpExecutionContext
 
     """
     is_sda_step = step_context.is_sda_step
