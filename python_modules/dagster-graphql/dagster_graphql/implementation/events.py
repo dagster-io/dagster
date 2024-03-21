@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluatio
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
     MetadataValue,
+    TableColumnLineageMetadataValue,
 )
 from dagster._core.events import (
     DagsterEventType,
@@ -54,6 +55,8 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
+        GrapheneTableColumnLineageEntry,
+        GrapheneTableColumnLineageMetadataEntry,
         GrapheneTableMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
         GrapheneTextMetadataEntry,
@@ -164,6 +167,16 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                     constraints=value.schema.constraints,
                     columns=value.schema.columns,
                 ),
+            )
+        elif isinstance(value, TableColumnLineageMetadataValue):
+            yield GrapheneTableColumnLineageMetadataEntry(
+                label=key,
+                lineage=[
+                    GrapheneTableColumnLineageEntry(
+                        column_name=column_name, column_deps=column_deps
+                    )
+                    for column_name, column_deps in value.column_lineage.deps_by_column.items()
+                ],
             )
         elif isinstance(value, TimestampMetadataValue):
             yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)

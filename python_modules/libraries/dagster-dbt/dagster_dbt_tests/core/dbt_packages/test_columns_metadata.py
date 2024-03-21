@@ -8,12 +8,15 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetSelection,
-    JsonMetadataValue,
     TableColumn,
     TableSchema,
     materialize,
 )
 from dagster._core.definitions.metadata import TableMetadataEntries
+from dagster._core.definitions.metadata.table import (
+    TableColumnDep,
+    TableColumnLineage,
+)
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dbt.version import __version__ as dbt_version
@@ -79,7 +82,7 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     version.parse(dbt_version) < version.parse("1.6.0"),
     reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
 )
-def test_no_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
+def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(
@@ -98,7 +101,7 @@ def test_no_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
 
     assert result.success
     assert all(
-        not event.materialization.metadata.get("dagster/column_lineage")
+        not TableMetadataEntries.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
 
@@ -124,7 +127,7 @@ def test_no_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
         "--select select_star_customers",
     ],
 )
-def test_lineage(
+def test_column_lineage(
     test_metadata_manifest: Dict[str, Any], asset_key_selection: Optional[AssetKey]
 ) -> None:
     @dbt_assets(manifest=test_metadata_manifest)
@@ -138,251 +141,157 @@ def test_lineage(
     )
     assert result.success
 
-    lineage_metadata_by_asset_key = {
-        event.materialization.asset_key: event.materialization.metadata.get("dagster/lineage")
+    column_lineage_by_asset_key = {
+        event.materialization.asset_key: TableMetadataEntries.extract(
+            event.materialization.metadata
+        ).column_lineage
         for event in result.get_asset_materialization_events()
     }
-    expected_lineage_metadata_by_asset_key = {
-        AssetKey(["raw_payments"]): None,
+    expected_column_lineage_by_asset_key = {
         AssetKey(["raw_customers"]): None,
+        AssetKey(["raw_payments"]): None,
         AssetKey(["raw_orders"]): None,
-        AssetKey(["stg_customers"]): JsonMetadataValue(
-            data={
-                "customer_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_customers"]),
-                        "upstream_column_name": "id",
-                    }
-                ],
-                "first_name": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_customers"]),
-                        "upstream_column_name": "first_name",
-                    }
-                ],
-                "last_name": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_customers"]),
-                        "upstream_column_name": "last_name",
-                    }
-                ],
-            }
-        ),
-        AssetKey(["stg_orders"]): JsonMetadataValue(
-            data={
-                "order_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_orders"]),
-                        "upstream_column_name": "id",
-                    }
-                ],
-                "customer_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_orders"]),
-                        "upstream_column_name": "user_id",
-                    }
-                ],
-                "order_date": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_orders"]),
-                        "upstream_column_name": "order_date",
-                    }
-                ],
-                "status": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_orders"]),
-                        "upstream_column_name": "status",
-                    }
-                ],
-            }
-        ),
-        AssetKey(["stg_payments"]): JsonMetadataValue(
-            data={
+        AssetKey(["stg_payments"]): TableColumnLineage(
+            deps_by_column={
                 "payment_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_payments"]),
-                        "upstream_column_name": "id",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="id")
                 ],
                 "order_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_payments"]),
-                        "upstream_column_name": "order_id",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="order_id")
                 ],
                 "payment_method": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_payments"]),
-                        "upstream_column_name": "payment_method",
-                    }
+                    TableColumnDep(
+                        asset_key=AssetKey(["raw_payments"]), column_name="payment_method"
+                    )
                 ],
                 "amount": [
-                    {
-                        "upstream_asset_key": AssetKey(["raw_payments"]),
-                        "upstream_column_name": "amount",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="amount")
                 ],
             }
         ),
-        AssetKey(["orders"]): JsonMetadataValue(
-            data={
-                "order_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_orders"]),
-                        "upstream_column_name": "order_id",
-                    }
-                ],
+        AssetKey(["stg_customers"]): TableColumnLineage(
+            deps_by_column={
                 "customer_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_orders"]),
-                        "upstream_column_name": "customer_id",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="id")
+                ],
+                "first_name": [
+                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="first_name")
+                ],
+                "last_name": [
+                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="last_name")
+                ],
+            }
+        ),
+        AssetKey(["stg_orders"]): TableColumnLineage(
+            deps_by_column={
+                "order_id": [TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="id")],
+                "customer_id": [
+                    TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="user_id")
                 ],
                 "order_date": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_orders"]),
-                        "upstream_column_name": "order_date",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="order_date")
                 ],
                 "status": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_orders"]),
-                        "upstream_column_name": "status",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="status")
+                ],
+            }
+        ),
+        AssetKey(["orders"]): TableColumnLineage(
+            deps_by_column={
+                "order_id": [
+                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_id")
+                ],
+                "customer_id": [
+                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="customer_id")
+                ],
+                "order_date": [
+                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
+                ],
+                "status": [
+                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="status")
                 ],
                 "credit_card_amount": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_payments"]),
-                        "upstream_column_name": "amount",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
                 ],
                 "coupon_amount": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_payments"]),
-                        "upstream_column_name": "amount",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
                 ],
                 "bank_transfer_amount": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_payments"]),
-                        "upstream_column_name": "amount",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
                 ],
                 "gift_card_amount": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_payments"]),
-                        "upstream_column_name": "amount",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
                 ],
                 "amount": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_payments"]),
-                        "upstream_column_name": "amount",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
                 ],
             }
         ),
-        AssetKey(["customers"]): JsonMetadataValue(
-            data={
+        AssetKey(["customers"]): TableColumnLineage(
+            deps_by_column={
                 "customer_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_customers"]),
-                        "upstream_column_name": "customer_id",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="customer_id")
                 ],
                 "first_name": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_customers"]),
-                        "upstream_column_name": "first_name",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="first_name")
                 ],
                 "last_name": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_customers"]),
-                        "upstream_column_name": "last_name",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="last_name")
                 ],
                 "first_order": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_orders"]),
-                        "upstream_column_name": "order_date",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
                 ],
                 "most_recent_order": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_orders"]),
-                        "upstream_column_name": "order_date",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
                 ],
                 "number_of_orders": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_orders"]),
-                        "upstream_column_name": "order_id",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_id")
                 ],
                 "customer_lifetime_value": [
-                    {
-                        "upstream_asset_key": AssetKey(["stg_payments"]),
-                        "upstream_column_name": "amount",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
                 ],
             }
         ),
-        AssetKey(["select_star_customers"]): JsonMetadataValue(
-            data={
+        AssetKey(["select_star_customers"]): TableColumnLineage(
+            deps_by_column={
                 "customer_id": [
-                    {
-                        "upstream_asset_key": AssetKey(["customers"]),
-                        "upstream_column_name": "customer_id",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="customer_id")
                 ],
                 "first_name": [
-                    {
-                        "upstream_asset_key": AssetKey(["customers"]),
-                        "upstream_column_name": "first_name",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_name")
                 ],
                 "last_name": [
-                    {
-                        "upstream_asset_key": AssetKey(["customers"]),
-                        "upstream_column_name": "last_name",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="last_name")
                 ],
                 "first_order": [
-                    {
-                        "upstream_asset_key": AssetKey(["customers"]),
-                        "upstream_column_name": "first_order",
-                    }
+                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_order")
                 ],
                 "most_recent_order": [
-                    {
-                        "upstream_asset_key": AssetKey(["customers"]),
-                        "upstream_column_name": "most_recent_order",
-                    }
+                    TableColumnDep(
+                        asset_key=AssetKey(["customers"]), column_name="most_recent_order"
+                    )
                 ],
                 "number_of_orders": [
-                    {
-                        "upstream_asset_key": AssetKey(["customers"]),
-                        "upstream_column_name": "number_of_orders",
-                    }
+                    TableColumnDep(
+                        asset_key=AssetKey(["customers"]), column_name="number_of_orders"
+                    )
                 ],
                 "customer_lifetime_value": [
-                    {
-                        "upstream_asset_key": AssetKey(["customers"]),
-                        "upstream_column_name": "customer_lifetime_value",
-                    }
+                    TableColumnDep(
+                        asset_key=AssetKey(["customers"]), column_name="customer_lifetime_value"
+                    )
                 ],
             }
         ),
     }
     if asset_key_selection:
-        expected_lineage_metadata_by_asset_key = {
-            asset_key: lineage_metadata
-            for asset_key, lineage_metadata in expected_lineage_metadata_by_asset_key.items()
+        expected_column_lineage_by_asset_key = {
+            asset_key: deps_by_column
+            for asset_key, deps_by_column in expected_column_lineage_by_asset_key.items()
             if asset_key == asset_key_selection
         }
 
-    assert lineage_metadata_by_asset_key == expected_lineage_metadata_by_asset_key
+    assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key
 
 
 @pytest.mark.parametrize(
