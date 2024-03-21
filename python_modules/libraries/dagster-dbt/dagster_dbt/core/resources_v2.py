@@ -86,6 +86,7 @@ from ..dbt_manifest import (
     DbtManifestParam,
     validate_manifest,
 )
+from ..dbt_project import DbtProject
 from ..errors import DagsterDbtCliRuntimeError
 from ..utils import (
     ASSET_RESOURCE_TYPES,
@@ -914,6 +915,28 @@ class DbtCliResource(ConfigurableResource):
         default=DBT_EXECUTABLE,
         description="The path to the dbt executable.",
     )
+
+    def __init__(
+        self,
+        project_dir: Union[str, DbtProject],
+        global_config_flags: Optional[List[str]] = None,
+        profiles_dir: Optional[str] = None,
+        profile: Optional[str] = None,
+        target: Optional[str] = None,
+        dbt_executable: str = DBT_EXECUTABLE,
+    ):
+        if isinstance(project_dir, DbtProject):
+            project_dir = os.fspath(project_dir.project_dir)
+
+        # static typing doesn't understand whats going on here, thinks these fields dont exist
+        super().__init__(
+            project_dir=project_dir,  # type: ignore
+            global_config_flags=global_config_flags or [],  # type: ignore
+            profiles_dir=profiles_dir,  # type: ignore
+            profile=profile,  # type: ignore
+            target=target,  # type: ignore
+            dbt_executable=dbt_executable,  # type: ignore
+        )
 
     @classmethod
     def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
