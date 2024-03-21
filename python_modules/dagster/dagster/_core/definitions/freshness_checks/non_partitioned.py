@@ -34,7 +34,7 @@ def build_freshness_checks_for_non_partitioned_assets(
     freshness_cron_timezone: str = DEFAULT_FRESHNESS_CRON_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
 ) -> Sequence[AssetChecksDefinition]:
-    """For each provided asset, constructs a freshness check definition.
+    r"""For each provided asset, constructs a freshness check definition.
 
     Only accepts assets that have no partitions definition. For time window partitioned assets, see
     `build_freshness_checks_for_time_window_partitioned_assets`. Providing partitioned assets to
@@ -48,7 +48,7 @@ def build_freshness_checks_for_non_partitioned_assets(
     Let's say an asset kicks off materializing at 12:00 PM and takes 10 minutes to complete.
     Allowing for operational constraints and delays, the asset should always be materialized by
     12:30 PM. 12:00 PM provides the lower boundary, since the asset kicks off no earlier than this
-    time. Then, we set freshness_cron to "30 12 * * *", which means the asset is expected by
+    time. Then, we set freshness_cron to "30 12 \* \* \*", which means the asset is expected by
     12:30 PM, and maximum_lag_minutes to 30, which means the asset can be materialized no earlier
     than 12:00 PM.
 
