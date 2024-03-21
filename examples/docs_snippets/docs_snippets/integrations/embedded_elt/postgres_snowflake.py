@@ -48,9 +48,11 @@ replication_config = {
 }
 
 
-@sling_assets(replication_config=replication_config)
+@sling_assets(
+    replication_config=replication_config,
+    dagster_sling_translator=DagsterSlingTranslator(),
+)
 def my_assets(context, sling: SlingResource):
     yield from sling.replicate(
         replication_config=replication_config,
-        dagster_sling_translator=DagsterSlingTranslator(),
     )

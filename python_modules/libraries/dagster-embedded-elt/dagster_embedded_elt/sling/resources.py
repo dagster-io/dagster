@@ -20,7 +20,7 @@ from dagster import (
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, deprecated_param, experimental, public
 from dagster._utils.env import environ
 from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
@@ -361,11 +361,17 @@ class SlingResource(ConfigurableResource):
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
     @public
+    @deprecated_param(
+        param="dagster_sling_translator",
+        breaking_version="2.0",
+        additional_warn_text="Param is only required in `sling_assets` decorator.",
+    )
     def replicate(
         self,
         *,
         replication_config: SlingReplicationParam,
         context: Union[OpExecutionContext, AssetExecutionContext],
+        dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
     ) -> Generator[MaterializeResult, None, None]:
         """Runs a Sling replication from the given replication config.
@@ -387,6 +393,11 @@ class SlingResource(ConfigurableResource):
         dagster_sling_translator = first_asset_metadata.get(
             METADATA_KEY_TRANSLATOR, DagsterSlingTranslator()
         )
+
+        if dagster_sling_translator is None:
+            raise Exception(
+                f"`DagsterSlingTranslator` must be defined on metadata at {METADATA_KEY_TRANSLATOR}"
+            )
 
         with self._setup_config():
             uid = uuid.uuid4()

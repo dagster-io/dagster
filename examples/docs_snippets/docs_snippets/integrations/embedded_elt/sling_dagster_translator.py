@@ -1,4 +1,3 @@
-from dagster_embedded_elt import sling
 from dagster_embedded_elt.sling import (
     DagsterSlingTranslator,
     SlingResource,
@@ -11,11 +10,14 @@ replication_config = file_relative_path(__file__, "../sling_replication.yaml")
 sling_resource = SlingResource(connections=[...])  # Add connections here
 
 
-@sling_assets(replication_config=replication_config)
+@sling_assets(
+    replication_config=replication_config,
+    dagster_sling_translator=DagsterSlingTranslator(),
+)
 def my_assets(context, sling: SlingResource):
     yield from sling.replicate(
+        context=context,
         replication_config=replication_config,
-        dagster_sling_translator=DagsterSlingTranslator(),
     )
     for row in sling.stream_raw_logs():
         context.log.info(row)
