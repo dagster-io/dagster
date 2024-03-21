@@ -17,6 +17,8 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
+    Tuple,
     Union,
     cast,
 )
@@ -27,18 +29,18 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetExecutionContext,
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
+    JsonMetadataValue,
     OpExecutionContext,
     Output,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
-from dagster._core.definitions.metadata import TableMetadataEntries
-from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
@@ -376,7 +378,8 @@ class DbtCliEventMessage:
         column_names = cast(exp.Query, optimized_node_ast).named_selects
 
         # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
-        deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
+        # TODO: this should be refactored as a Python object that renders the JSON metadata.
+        lineage_metadata: Dict[str, List[Tuple[AssetKey, str]]] = {}
         for column_name in column_names:
             dbt_parent_resource_props_by_alias: Dict[str, Dict[str, Any]] = {
                 parent_dbt_resource_props["alias"]: parent_dbt_resource_props
@@ -386,7 +389,7 @@ class DbtCliEventMessage:
                 )
             }
 
-            column_deps: Sequence[TableColumnDep] = []
+            parent_columns: Set[Tuple[AssetKey, str]] = set()
             for sqlglot_lineage_node in lineage(
                 column=column_name, sql=optimized_node_ast, schema=sqlglot_mapping_schema
             ).walk():
@@ -395,16 +398,26 @@ class DbtCliEventMessage:
                     parent_resource_props = dbt_parent_resource_props_by_alias[column.table]
                     parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
 
-                    column_deps.append(
-                        TableColumnDep(asset_key=parent_asset_key, column_name=column.name)
-                    )
+                    parent_columns.add((parent_asset_key, column.name))
 
-            deps_by_column[column_name] = column_deps
+            lineage_metadata[column_name] = list(parent_columns)
 
-        # 4. Render the lineage as metadata.
-        return dict(
-            TableMetadataEntries(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
-        )
+        # 4. Render the lineage as a JSON blob.
+        # TODO: this should just call a method on a Python object that renders the JSON metadata.
+        return {
+            "dagster/lineage": JsonMetadataValue(
+                {
+                    column_name: [
+                        {
+                            "upstream_asset_key": parent_asset_key,
+                            "upstream_column_name": parent_column_name,
+                        }
+                        for parent_asset_key, parent_column_name in parent_columns
+                    ]
+                    for column_name, parent_columns in lineage_metadata.items()
+                }
+            )
+        }
 
 
 @dataclass
