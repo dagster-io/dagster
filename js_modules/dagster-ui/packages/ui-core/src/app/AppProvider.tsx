@@ -40,6 +40,7 @@ import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
+import {PerformancePageNavigationListener} from '../performance';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -218,6 +219,7 @@ export const AppProvider = (props: AppProviderProps) => {
             <PermissionsProvider>
               <BrowserRouter basename={basePath || ''}>
                 <CompatRouter>
+                  <PerformancePageNavigationListener />
                   <TimeProvider>
                     <WorkspaceProvider>
                       <DeploymentStatusProvider include={statusPolling}>

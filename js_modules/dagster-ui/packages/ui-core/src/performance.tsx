@@ -1,4 +1,6 @@
-import {useMemo} from 'react';
+import {Fragment, useLayoutEffect, useMemo, useRef} from 'react';
+
+import {usePageContext} from './app/analytics';
 
 type TraceData = {
   name: string;
@@ -69,14 +71,12 @@ export function registerTraceListener(listener: (trace: TraceData) => void) {
 
 const instrumentation = new PointToPointInstrumentation();
 
+let lastPageTransition = 0;
 let counter = 0;
 export function usePageLoadTrace(name: string) {
   return useMemo(() => {
     const trace = createTrace(name);
-    // Set startTimestamp to 0 to indicate this trace started when the page first started loading
-    // in the future this will be changed to be the timestamp of the last transition to capture
-    // transition page loads
-    trace.startTrace(0);
+    trace.startTrace(lastPageTransition);
     return {
       endTrace: () => trace.endTrace(),
     };
@@ -94,3 +94,27 @@ export function createTrace(name: string): Trace {
 }
 
 export type PageLoadTrace = ReturnType<typeof usePageLoadTrace>;
+
+const PAGEVIEW_DELAY = 300;
+
+export function PerformancePageNavigationListener() {
+  const {path, specificPath} = usePageContext();
+  const didPageViewBefore = useRef(false);
+
+  useLayoutEffect(() => {
+    // Wait briefly to allow redirects.
+    const time = performance.now();
+    const timer = setTimeout(() => {
+      if (didPageViewBefore.current) {
+        lastPageTransition = time;
+      }
+      didPageViewBefore.current = true;
+    }, PAGEVIEW_DELAY);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [path, specificPath]);
+
+  return <Fragment />;
+}
