@@ -19,8 +19,8 @@ import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {
   AssetKeyInput,
-  JsonMetadataEntry,
   MaterializationEvent,
+  TableColumnLineageMetadataEntry,
   TableSchemaMetadataEntry,
 } from '../graphql/types';
 import {Description} from '../pipelines/Description';
@@ -45,8 +45,10 @@ export const isCanonicalColumnSchemaEntry = (
 ): m is TableSchemaMetadataEntry =>
   m.__typename === 'TableSchemaMetadataEntry' && m.label === 'dagster/column_schema';
 
-export const isCanonicalColumnLineageEntry = (m: MetadataEntryLabelOnly): m is JsonMetadataEntry =>
-  m.__typename === 'JsonMetadataEntry' && m.label === 'lineage';
+export const isCanonicalColumnLineageEntry = (
+  m: MetadataEntryLabelOnly,
+): m is TableColumnLineageMetadataEntry =>
+  m.__typename === 'TableColumnLineageMetadataEntry' && m.label === 'dagster/column_lineage';
 
 export const TableSchemaAssetContext = createContext<{
   assetKey: AssetKeyInput | undefined;

@@ -2566,6 +2566,12 @@ interface MetadataEntry {
   description: String
 }
 
+type TableColumnLineageMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  lineage: [TableColumnLineageEntry!]!
+}
+
 type TableSchemaMetadataEntry implements MetadataEntry {
   label: String!
   description: String
@@ -3105,6 +3111,16 @@ type TableColumnConstraints {
 
 type TableConstraints {
   other: [String!]!
+}
+
+type TableColumnDep {
+  assetKey: AssetKey!
+  columnName: String!
+}
+
+type TableColumnLineageEntry {
+  columnName: String!
+  columnDeps: [TableColumnDep!]!
 }
 
 type PipelineTag {

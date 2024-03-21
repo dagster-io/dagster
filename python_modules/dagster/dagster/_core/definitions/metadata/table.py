@@ -2,6 +2,7 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
@@ -259,3 +260,52 @@ class TableColumnConstraints(
 
 
 _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
+
+
+# ###########################
+# ##### TABLE COLUMN LINEAGE
+# ###########################
+
+
+@whitelist_for_serdes
+class TableColumnDep(
+    NamedTuple(
+        "_TableColumnDep",
+        [
+            ("asset_key", PublicAttr[AssetKey]),
+            ("column_name", PublicAttr[str]),
+        ],
+    )
+):
+    """Object representing an identifier for a column in an asset."""
+
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        column_name: str,
+    ):
+        return super(TableColumnDep, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            column_name=check.str_param(column_name, "column_name"),
+        )
+
+
+@whitelist_for_serdes
+class TableColumnLineage(
+    NamedTuple(
+        "_TableSpec",
+        [
+            ("deps_by_column", PublicAttr[Mapping[str, Sequence[TableColumnDep]]]),
+        ],
+    )
+):
+    """Represents the lineage of column outputs to column inputs for a tabular asset."""
+
+    def __new__(cls, deps_by_column: Mapping[str, Sequence[TableColumnDep]]):
+        return super(TableColumnLineage, cls).__new__(
+            cls,
+            deps_by_column=check.mapping_param(
+                deps_by_column, "deps_by_column", key_type=str, value_type=list
+            ),
+        )

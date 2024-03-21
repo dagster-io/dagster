@@ -10,15 +10,6 @@ import {AssetKeyInput} from '../../graphql/types';
 import {isCanonicalColumnLineageEntry} from '../../metadata/TableSchema';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 
-export type AssetColumnLineageServer = {
-  [column: string]: {
-    // Note: This is [["key_part_1", "key_part_2"]] but the outer array
-    // only contains one item, it's a serialization odditiy.
-    upstream_asset_key: string[][];
-    upstream_column_name: string;
-  }[];
-};
-
 export type AssetColumnLineageLocalColumn = {
   name: string;
   type: string | null;
@@ -59,23 +50,19 @@ const getColumnLineage = (
     definitionLoadTimestamp: undefined,
   });
 
-  const lineageParsed: AssetColumnLineageServer = JSON.parse(lineageMetadata.jsonString);
   const schemaParsed = tableSchema?.schema
     ? Object.fromEntries(tableSchema.schema.columns.map((col) => [col.name, col]))
     : {};
 
   return Object.fromEntries(
-    Object.entries(lineageParsed).map(([column, m]) => [
-      column,
+    lineageMetadata.lineage.map(({columnName, columnDeps}) => [
+      columnName,
       {
-        name: column,
+        name: columnName,
         asOf: materialization?.timestamp,
-        type: schemaParsed[column]?.type || null,
-        description: schemaParsed[column]?.description || null,
-        upstream: m.map((u) => ({
-          assetKey: {path: u.upstream_asset_key[0]!},
-          columnName: u.upstream_column_name,
-        })),
+        type: schemaParsed[columnName]?.type || null,
+        description: schemaParsed[columnName]?.description || null,
+        upstream: columnDeps,
       },
     ]),
   );
@@ -150,8 +137,16 @@ const ASSET_COLUMN_LINEAGE_QUERY = gql`
               }
             }
           }
-          ... on JsonMetadataEntry {
-            jsonString
+          ... on TableColumnLineageMetadataEntry {
+            lineage {
+              columnName
+              columnDeps {
+                assetKey {
+                  path
+                }
+                columnName
+              }
+            }
           }
         }
       }

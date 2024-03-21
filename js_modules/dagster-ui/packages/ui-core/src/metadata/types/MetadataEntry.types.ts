@@ -89,6 +89,21 @@ export type MetadataEntryFragment_PythonArtifactMetadataEntry = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_TableColumnLineageMetadataEntry = {
+  __typename: 'TableColumnLineageMetadataEntry';
+  label: string;
+  description: string | null;
+  lineage: Array<{
+    __typename: 'TableColumnLineageEntry';
+    columnName: string;
+    columnDeps: Array<{
+      __typename: 'TableColumnDep';
+      columnName: string;
+      assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    }>;
+  }>;
+};
+
 export type MetadataEntryFragment_TableMetadataEntry = {
   __typename: 'TableMetadataEntry';
   label: string;
@@ -171,6 +186,7 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_PathMetadataEntry
   | MetadataEntryFragment_PipelineRunMetadataEntry
   | MetadataEntryFragment_PythonArtifactMetadataEntry
+  | MetadataEntryFragment_TableColumnLineageMetadataEntry
   | MetadataEntryFragment_TableMetadataEntry
   | MetadataEntryFragment_TableSchemaMetadataEntry
   | MetadataEntryFragment_TextMetadataEntry
