@@ -2,6 +2,7 @@ import logging
 import sqlite3
 
 import pytest
+import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -16,6 +17,7 @@ from dagster_embedded_elt.sling import (
 )
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+from path import Path
 
 
 @pytest.mark.parametrize(
@@ -102,11 +104,12 @@ def test_with_custom_name(replication_config: SlingReplicationParam):
 
 
 def test_base_with_meta_config_translator():
-    replication_config = file_relative_path(
+    replication_config_path = file_relative_path(
         __file__, "replication_configs/base_with_meta_config/replication.yaml"
     )
+    replication_config = yaml.safe_load(Path(replication_config_path).read_bytes())
 
-    @sling_assets(replication_config=replication_config)
+    @sling_assets(replication_config=replication_config_path)
     def my_sling_assets(): ...
 
     assert my_sling_assets.keys == {
@@ -133,50 +136,10 @@ def test_base_with_meta_config_translator():
     assert my_sling_assets.metadata_by_key == {
         AssetKey(["target", "public", "accounts"]): {
             "stream_config": JsonMetadataValue(data=None),
-            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
-            "dagster_sling/replication_config": {
-                "source": "MY_SOURCE",
-                "target": "MY_TARGET",
-                "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
-                "streams": {
-                    "public.accounts": None,
-                    "public.users": {
-                        "disabled": True,
-                        "meta": {"dagster": {"asset_key": "public.foo_users"}},
-                    },
-                    "public.finance_departments_old": {
-                        "object": "departments",
-                        "source_options": {"empty_as_null": False},
-                        "meta": {
-                            "dagster": {
-                                "deps": ["foo_one", "foo_two"],
-                                "group": "group_2",
-                                "freshness_policy": {
-                                    "maximum_lag_minutes": 0,
-                                    "cron_schedule": "5 4 * * *",
-                                    "cron_schedule_timezone": "UTC",
-                                },
-                            }
-                        },
-                    },
-                    'public."Transactions"': {
-                        "mode": "incremental",
-                        "primary_key": "id",
-                        "update_key": "last_updated_at",
-                        "meta": {
-                            "dagster": {
-                                "description": "Example Description!",
-                                "auto_materialize_policy": True,
-                            }
-                        },
-                    },
-                    "public.all_users": {
-                        "sql": 'select all_user_id, name \nfrom public."all_Users"\n',
-                        "object": "public.all_users",
-                    },
-                },
-                "env": {"SLING_LOADED_AT_COLUMN": True, "SLING_STREAM_URL_COLUMN": True},
-            },
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
         },
         AssetKey(["target", "departments"]): {
             "stream_config": JsonMetadataValue(
@@ -196,50 +159,10 @@ def test_base_with_meta_config_translator():
                     },
                 }
             ),
-            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
-            "dagster_sling/replication_config": {
-                "source": "MY_SOURCE",
-                "target": "MY_TARGET",
-                "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
-                "streams": {
-                    "public.accounts": None,
-                    "public.users": {
-                        "disabled": True,
-                        "meta": {"dagster": {"asset_key": "public.foo_users"}},
-                    },
-                    "public.finance_departments_old": {
-                        "object": "departments",
-                        "source_options": {"empty_as_null": False},
-                        "meta": {
-                            "dagster": {
-                                "deps": ["foo_one", "foo_two"],
-                                "group": "group_2",
-                                "freshness_policy": {
-                                    "maximum_lag_minutes": 0,
-                                    "cron_schedule": "5 4 * * *",
-                                    "cron_schedule_timezone": "UTC",
-                                },
-                            }
-                        },
-                    },
-                    'public."Transactions"': {
-                        "mode": "incremental",
-                        "primary_key": "id",
-                        "update_key": "last_updated_at",
-                        "meta": {
-                            "dagster": {
-                                "description": "Example Description!",
-                                "auto_materialize_policy": True,
-                            }
-                        },
-                    },
-                    "public.all_users": {
-                        "sql": 'select all_user_id, name \nfrom public."all_Users"\n',
-                        "object": "public.all_users",
-                    },
-                },
-                "env": {"SLING_LOADED_AT_COLUMN": True, "SLING_STREAM_URL_COLUMN": True},
-            },
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "transactions"]): {
             "stream_config": JsonMetadataValue(
@@ -255,50 +178,10 @@ def test_base_with_meta_config_translator():
                     },
                 }
             ),
-            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
-            "dagster_sling/replication_config": {
-                "source": "MY_SOURCE",
-                "target": "MY_TARGET",
-                "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
-                "streams": {
-                    "public.accounts": None,
-                    "public.users": {
-                        "disabled": True,
-                        "meta": {"dagster": {"asset_key": "public.foo_users"}},
-                    },
-                    "public.finance_departments_old": {
-                        "object": "departments",
-                        "source_options": {"empty_as_null": False},
-                        "meta": {
-                            "dagster": {
-                                "deps": ["foo_one", "foo_two"],
-                                "group": "group_2",
-                                "freshness_policy": {
-                                    "maximum_lag_minutes": 0,
-                                    "cron_schedule": "5 4 * * *",
-                                    "cron_schedule_timezone": "UTC",
-                                },
-                            }
-                        },
-                    },
-                    'public."Transactions"': {
-                        "mode": "incremental",
-                        "primary_key": "id",
-                        "update_key": "last_updated_at",
-                        "meta": {
-                            "dagster": {
-                                "description": "Example Description!",
-                                "auto_materialize_policy": True,
-                            }
-                        },
-                    },
-                    "public.all_users": {
-                        "sql": 'select all_user_id, name \nfrom public."all_Users"\n',
-                        "object": "public.all_users",
-                    },
-                },
-                "env": {"SLING_LOADED_AT_COLUMN": True, "SLING_STREAM_URL_COLUMN": True},
-            },
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "all_users"]): {
             "stream_config": JsonMetadataValue(
@@ -307,50 +190,10 @@ def test_base_with_meta_config_translator():
                     "object": "public.all_users",
                 }
             ),
-            "dagster_sling/translator": DagsterSlingTranslator(target_prefix="target"),
-            "dagster_sling/replication_config": {
-                "source": "MY_SOURCE",
-                "target": "MY_TARGET",
-                "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
-                "streams": {
-                    "public.accounts": None,
-                    "public.users": {
-                        "disabled": True,
-                        "meta": {"dagster": {"asset_key": "public.foo_users"}},
-                    },
-                    "public.finance_departments_old": {
-                        "object": "departments",
-                        "source_options": {"empty_as_null": False},
-                        "meta": {
-                            "dagster": {
-                                "deps": ["foo_one", "foo_two"],
-                                "group": "group_2",
-                                "freshness_policy": {
-                                    "maximum_lag_minutes": 0,
-                                    "cron_schedule": "5 4 * * *",
-                                    "cron_schedule_timezone": "UTC",
-                                },
-                            }
-                        },
-                    },
-                    'public."Transactions"': {
-                        "mode": "incremental",
-                        "primary_key": "id",
-                        "update_key": "last_updated_at",
-                        "meta": {
-                            "dagster": {
-                                "description": "Example Description!",
-                                "auto_materialize_policy": True,
-                            }
-                        },
-                    },
-                    "public.all_users": {
-                        "sql": 'select all_user_id, name \nfrom public."all_Users"\n',
-                        "object": "public.all_users",
-                    },
-                },
-                "env": {"SLING_LOADED_AT_COLUMN": True, "SLING_STREAM_URL_COLUMN": True},
-            },
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
         },
     }
 

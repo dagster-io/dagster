@@ -387,15 +387,9 @@ class SlingResource(ConfigurableResource):
             replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
 
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
-        if not dagster_sling_translator:
-            dagster_sling_translator = DagsterSlingTranslator()
+        dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
 
-        if replication_config is None:
-            raise Exception(
-                f"`ReplicationConfig` must be defined on metadata at {METADATA_KEY_REPLICATION_CONFIG}"
-            )
-
-        replication_config = validate_replication(replication_config)
+        replication_config = validate_replication(replication_config or {})
         stream_definition = get_streams_from_replication(replication_config)
 
         with self._setup_config():
