@@ -199,10 +199,7 @@ const CountForAssetType = ({
   return (
     <Link to={link} style={{textDecoration: 'none'}}>
       <GridItem>
-        <Box
-          flex={{direction: 'row', alignItems: 'center', gap: 4}}
-          style={{overflow: 'hidden', color: Colors.textLighter()}}
-        >
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{overflow: 'hidden'}}>
           {children}
         </Box>
         <span
@@ -441,12 +438,10 @@ const TextOverflowStyle: React.CSSProperties = {
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  color: Colors.textDefault(),
 };
 
 const GridStyle = styled.div`
   padding: 16px 12px;
-
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   @media (max-width: 768px) {
@@ -459,16 +454,19 @@ const GridItem = styled.div`
   display: flex;
   justify-content: space-between;
   background: transparent;
-  transition: background 0.3s;
+  transition:
+    color 0.3s,
+    background 0.3s;
   border-radius: 6px;
   text-decoration: none;
   color: ${Colors.textLight()};
   & > span {
+    color: ${Colors.textLight()};
     opacity: 0;
-    transition: opacity 0.3s; // Smooth transition for opacity change
+    transition: opacity 0.3s;
   }
   :hover {
-    background: ${Colors.backgroundLight()};
+    background: ${Colors.backgroundLightHover()};
     color: ${Colors.textDefault()};
     & > span {
       opacity: 1;
