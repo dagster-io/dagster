@@ -4,9 +4,11 @@ import React, {useContext} from 'react';
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {FeatureFlag, featureEnabled} from '../app/Flags';
-import {AssetGroupSelector, ChangeReason} from '../graphql/types';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
+import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {
@@ -25,6 +27,12 @@ type OptionalFilters =
       setComputeKindTags?: null;
       changedInBranch?: null;
       setChangedInBranch?: null;
+      allAssetTags?: null;
+      assetTags?: null;
+      setAssetTags?: null;
+      allOwners?: null;
+      owners?: null;
+      setOwners: null;
     }
   | {
       assetGroups?: AssetGroupSelector[];
@@ -34,6 +42,10 @@ type OptionalFilters =
       setComputeKindTags?: (s: string[]) => void;
       changedInBranch?: ChangeReason[];
       setChangedInBranch?: (s: ChangeReason[]) => void;
+      assetTags?: DefinitionTag[];
+      setAssetTags?: (s: DefinitionTag[]) => void;
+      owners?: AssetOwner[];
+      setOwners?: (owners: AssetOwner[]) => void;
     };
 
 type Props = {
@@ -55,7 +67,13 @@ export function useAssetGraphExplorerFilters({
   clearExplorerPath,
   changedInBranch,
   setChangedInBranch,
+  assetTags,
+  setAssetTags,
+  owners,
+  setOwners,
 }: Props) {
+  const allAssetTags = useAssetTagsForAssets(nodes);
+
   const {allRepos} = useContext(WorkspaceContext);
 
   const reposFilter = useCodeLocationFilter();
@@ -70,12 +88,26 @@ export function useAssetGraphExplorerFilters({
     computeKindTags,
     setComputeKindTags,
   });
+
+  const tagsFilter = useAssetTagFilter({
+    allAssetTags,
+    tags: assetTags,
+    setTags: setAssetTags,
+  });
+
+  const allAssetOwners = useAssetOwnersForAssets(nodes);
+  const ownerFilter = useAssetOwnerFilter({
+    allAssetOwners,
+    owners,
+    setOwners,
+  });
+
   const filters: FilterObject[] = [];
 
   if (allRepos.length > 1 && isGlobalGraph) {
     filters.push(reposFilter);
   }
-  if (assetGroups && setGroupFilters) {
+  if (assetGroups) {
     filters.push(groupsFilter);
   }
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
@@ -88,6 +120,12 @@ export function useAssetGraphExplorerFilters({
   }
   if (setComputeKindTags) {
     filters.push(kindTagsFilter);
+  }
+  if (setAssetTags) {
+    filters.push(tagsFilter);
+  }
+  if (setOwners) {
+    filters.push(ownerFilter);
   }
   const {button, activeFiltersJsx} = useFilters({filters});
   if (!filters.length) {

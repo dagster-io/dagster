@@ -16,7 +16,7 @@ import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {AssetGroupSelector, ChangeReason} from '../graphql/types';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -92,14 +92,20 @@ export const AssetGroupRoot = ({
   const [filters, setFilters] = useQueryPersistedState<{
     computeKindTags?: string[];
     changedInBranch?: ChangeReason[];
+    tags?: DefinitionTag[];
+    owners?: AssetOwner[];
   }>({
-    encode: ({computeKindTags, changedInBranch}) => ({
+    encode: ({computeKindTags, changedInBranch, tags, owners}) => ({
       computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
       changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+      tags: tags?.length ? JSON.stringify(tags) : undefined,
+      owners: owners?.length ? JSON.stringify(owners) : undefined,
     }),
     decode: (qs) => ({
       computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
       changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
+      tags: qs.tags ? JSON.parse(qs.tags) : [],
+      owners: qs.owners ? JSON.parse(qs.owners) : [],
     }),
   });
 

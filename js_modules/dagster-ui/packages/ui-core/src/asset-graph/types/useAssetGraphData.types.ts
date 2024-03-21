@@ -25,6 +25,10 @@ export type AssetGraphQuery = {
     isPartitioned: boolean;
     isObservable: boolean;
     isSource: boolean;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -53,6 +57,10 @@ export type AssetNodeForGraphQueryFragment = {
   isPartitioned: boolean;
   isObservable: boolean;
   isSource: boolean;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   repository: {
     __typename: 'Repository';
     id: string;

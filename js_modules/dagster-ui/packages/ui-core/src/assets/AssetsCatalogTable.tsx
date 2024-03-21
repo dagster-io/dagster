@@ -22,7 +22,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {AssetGroupSelector, ChangeReason, DefinitionTag} from '../graphql/types';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PageLoadTrace} from '../performance';
@@ -30,7 +30,7 @@ import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {
-  doesAssetTagFilterMatch,
+  doesFilterArrayMatchValueArray,
   useAssetTagFilter,
   useAssetTagsForAssets,
 } from '../ui/Filters/useAssetTagFilter';
@@ -118,7 +118,7 @@ type FilterType = {
   groups: AssetGroupSelector[];
   computeKindTags: string[];
   changedInBranch: ChangeReason[];
-  owners: string[];
+  owners: AssetOwner[];
   tags: DefinitionTag[];
 };
 
@@ -182,21 +182,12 @@ export const AssetsCatalogTable = ({
         }
 
         if (filters.owners?.length) {
-          const owners =
-            a.definition?.owners.map((o) =>
-              o.__typename === 'TeamAssetOwner' ? o.team : o.email,
-            ) || [];
-          if (filters.owners.some((owner) => !owners.includes(owner))) {
+          if (!doesFilterArrayMatchValueArray(filters.owners, a?.definition?.owners ?? [])) {
             return false;
           }
         }
         if (filters.tags?.length) {
-          if (
-            !doesAssetTagFilterMatch({
-              filterTags: filters.tags,
-              assetTags: a.definition?.tags ?? [],
-            })
-          ) {
+          if (!doesFilterArrayMatchValueArray(filters.tags, a.definition?.tags ?? [])) {
             return false;
           }
         }
@@ -244,7 +235,7 @@ export const AssetsCatalogTable = ({
   );
 
   const setOwners = React.useCallback(
-    (owners: string[]) => {
+    (owners: AssetOwner[]) => {
       setFilters((existingFilters) => ({
         ...existingFilters,
         owners,
