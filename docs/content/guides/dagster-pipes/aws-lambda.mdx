@@ -113,17 +113,16 @@ Next, you'll add `dagster-pipes` to the function.
 
 In this step, you'll add the code you want to execute to the function. Create another file in the AWS UI - or use the default `lambda_function.py` file created by the function - and paste in the following code:
 
-```python
+```python file=/guides/dagster/dagster_pipes/lambda/lambda_function.py
 from dagster_pipes import PipesMappingParamsLoader, open_dagster_pipes
 
 
 def lambda_handler(event, _context):
-
     with open_dagster_pipes(
         params_loader=PipesMappingParamsLoader(event),
     ) as pipes:
         # Get some_parameter_value from the event payload
-        some_parameter_value = event['some_parameter_value']
+        some_parameter_value = event["some_parameter_value"]
 
         # Stream log message back to Dagster
         pipes.log.info(f"Using some_parameter value: {some_parameter_value}")
@@ -226,15 +225,7 @@ defs = Definitions(
 )
 ```
 
-<Note>
-
-You can specify different configured boto3 clients, or handle the switch by swapping underlying AWS env vars between deploymenets.
-
-Check out more details of how to smoothly transition bteween different environments in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) and [Testing against production with Dagster Cloud Branch Deployments](https://docs.dagster.io/guides/dagster/branch_deployments).
-
-</Note>
-
----
+Sometimes, you may want to transition data pipelines between development and production environments without minimal code changes. To do so, you can use the [Resources](/concepts/resources) system to vary the Pipes clients based on different deployments. For example, you can specify different configured boto3 clients. Or, you may handle the switch by swapping underlying AWS environment variables between deployments. For more info, check out detailed guides in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) and [Testing against production with Dagster Cloud Branch Deployments](/guides/dagster/branch_deployments).
 
 ## Step 3: Invoke the AWS Lambda function from the Dagster UI
 
