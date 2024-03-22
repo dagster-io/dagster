@@ -1,14 +1,19 @@
 import hashlib
 import os
+from typing import Dict
 
 import pytest
 from dagster import (
+    AssetCheckKey,
+    AssetCheckSpec,
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AssetSpec,
     DagsterEventType,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    DataVersionsByPartition,
     Definitions,
     DependencyDefinition,
     Field,
@@ -16,10 +21,13 @@ from dagster import (
     GraphOut,
     HourlyPartitionsDefinition,
     In,
+    InputContext,
     IOManager,
     Nothing,
+    ObserveResult,
     Out,
     Output,
+    OutputContext,
     ResourceDefinition,
     StaticPartitionsDefinition,
     build_reconstructable_job,
@@ -28,6 +36,7 @@ from dagster import (
     io_manager,
     materialize_to_memory,
     multi_asset,
+    multi_observable_source_asset,
     observable_source_asset,
     op,
     resource,
@@ -35,10 +44,12 @@ from dagster import (
 )
 from dagster._config import StringSource
 from dagster._core.definitions import AssetIn, SourceAsset, asset
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
@@ -2013,6 +2024,93 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     }
 
 
+def test_get_base_asset_jobs_multiple_partitions_defs_and_asset_checks_and_observables():
+    with disable_dagster_warnings():
+        partitions_1 = StaticPartitionsDefinition(["2020-01-01", "2020-01-02"])
+
+        @asset(
+            partitions_def=partitions_1,
+            check_specs=[AssetCheckSpec(name="p1_check1", asset="p1_asset")],
+        )
+        def p1_asset():
+            return 1
+
+        @asset_check(asset="p1_asset")
+        def p1_check2():
+            return AssetCheckResult(passed=True)
+
+        @observable_source_asset(partitions_def=partitions_1)
+        def p1_observable():
+            return DataVersionsByPartition({"2020-01-01": "alpha"})
+
+        @asset_check(asset=p1_observable.key)
+        def p1_observable_check():
+            return AssetCheckResult(passed=True)
+
+        partitions_2 = StaticPartitionsDefinition(["2020-01-01", "2020-01-03"])
+
+        @asset(
+            partitions_def=partitions_2,
+            check_specs=[AssetCheckSpec(name="p2_check1", asset="p2_asset")],
+        )
+        def p2_asset():
+            return 1
+
+        @asset_check(asset="p2_asset")
+        def p2_check2():
+            return AssetCheckResult(passed=True)
+
+        @multi_observable_source_asset(
+            partitions_def=partitions_2,
+            specs=[AssetSpec("p2_observable")],
+            check_specs=[AssetCheckSpec(name="p2_observable_check1", asset="p2_observable")],
+        )
+        def p2_observable():
+            yield ObserveResult(asset_key="p2_observable")
+            yield AssetCheckResult(passed=True)
+
+        @asset_check(asset="p2_observable")
+        def p2_observable_check2():
+            return AssetCheckResult(passed=True)
+
+        @asset_check(asset="external_asset")
+        def orphan_check():
+            return AssetCheckResult(passed=True)
+
+    defs = Definitions(
+        assets=[p1_asset, p2_asset, p1_observable, p2_observable],
+        asset_checks=[
+            p1_check2,
+            p2_check2,
+            orphan_check,
+            p1_observable_check,
+            p2_observable_check2,
+        ],
+    )
+    p1_key = AssetKey("p1_asset")
+    p1_observable_key = AssetKey("p1_observable")
+    p2_key = AssetKey("p2_asset")
+    p2_observable_key = AssetKey("p2_observable")
+    external_key = AssetKey("external_asset")
+
+    p1_job_def = defs.get_implicit_job_def_for_assets([p1_key])
+    assert p1_job_def.asset_layer.asset_graph.asset_check_keys == {
+        AssetCheckKey(p1_key, "p1_check1"),
+        AssetCheckKey(p1_key, "p1_check2"),
+        AssetCheckKey(p1_observable_key, "p1_observable_check"),
+        AssetCheckKey(external_key, "orphan_check"),
+    }
+
+    p2_job_def = defs.get_implicit_job_def_for_assets([p2_key])
+    assert p2_job_def.asset_layer.asset_graph.asset_check_keys == {
+        AssetCheckKey(p2_key, "p2_check1"),
+        AssetCheckKey(p2_key, "p2_check2"),
+        AssetCheckKey(p2_observable_key, "p2_observable_check1"),
+        AssetCheckKey(p2_observable_key, "p2_observable_check2"),
+        AssetCheckKey(external_key, "orphan_check"),
+    }
+
+
 def test_coerce_resource_asset_job() -> None:
     executed = {}
 
@@ -2912,3 +3010,36 @@ def test_mixed_asset_job():
         assert len(result.asset_observations_for_node("foo")) == 1
         assert len(result.asset_materializations_for_node("bar")) == 1
         assert len(result.asset_observations_for_node("bar")) == 0
+
+
+def test_partial_dependency_on_upstream_multi_asset():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.values: Dict[AssetKey, int] = {}
+
+        def handle_output(self, context: OutputContext, obj: object):
+            self.values[context.asset_key] = obj
+
+        def load_input(self, context: InputContext) -> object:
+            return self.values[context.asset_key]
+
+    @multi_asset(
+        outs={
+            "foo": AssetOut(),
+            "bar": AssetOut(),
+        }
+    )
+    def foo_bar():
+        yield Output(1, "foo")
+        yield Output(1, "bar")
+
+    @asset
+    def baz(foo):
+        return foo + 1
+
+    # populate storage with foo/bar values
+    resources = {"io_manager": MyIOManager()}
+    create_test_asset_job([foo_bar]).execute_in_process(resources=resources)
+
+    job_def = create_test_asset_job([baz, foo_bar], selection=[baz])
+    assert job_def.execute_in_process(resources=resources).success

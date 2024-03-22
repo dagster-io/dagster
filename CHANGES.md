@@ -1,5 +1,12 @@
 # Changelog
 
+# 1.6.13 (core) / 0.22.13 (libraries)
+
+### Bugfixes
+
+- Fixed a bug where an asset with a dependency on a subset of the keys of a parent multi-asset could sometimes crash asset job construction.
+- Fixed a bug where a Definitions object containing assets having integrated asset checks and multiple partitions definitions could not be loaded.
+
 # 1.6.12 (core) / 0.22.12 (libraries)
 
 ### New

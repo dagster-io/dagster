@@ -268,6 +268,11 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]: ...
 
     @cached_property
+    def orphan_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        """Asset check keys that target an asset with no corresponding executable definition in the graph."""
+        return {k for k in self.asset_check_keys if k.asset_key not in self.executable_asset_keys}
+
+    @cached_property
     def all_partitions_defs(self) -> Sequence[PartitionsDefinition]:
         return sorted(
             set(node.partitions_def for node in self.asset_nodes if node.partitions_def), key=repr

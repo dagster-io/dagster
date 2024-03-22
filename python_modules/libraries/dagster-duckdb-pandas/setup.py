@@ -35,8 +35,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.6.12",
-        "dagster-duckdb==0.22.12",
+        "dagster==1.6.13",
+        "dagster-duckdb==0.22.13",
         # Pinned pending duckdb removal of broken pandas import. Pin can be
         # removed as soon as it produces a working build.
         "pandas<2.1",

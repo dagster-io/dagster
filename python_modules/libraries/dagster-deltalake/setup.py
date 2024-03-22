@@ -36,7 +36,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         "deltalake>=0.15",
-        "dagster==1.6.12",
+        "dagster==1.6.13",
     ],
     extras_require={
         "pandas": ["pandas"],
