@@ -350,21 +350,6 @@ def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict
     assert result.success
 
 
-def test_dbt_cli_adapter_metadata(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
-) -> None:
-    @dbt_assets(manifest=test_jaffle_shop_manifest)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        # For `dbt-duckdb`, the `rows_affected` metadata is only emitted for seed files.
-        for event in dbt.cli(["seed"], context=context).stream():
-            assert event.metadata.get("rows_affected")
-
-            yield event
-
-    result = materialize([my_dbt_assets], resources={"dbt": dbt})
-    assert result.success
-
-
 def test_dbt_cli_asset_selection(
     test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
 ) -> None:
