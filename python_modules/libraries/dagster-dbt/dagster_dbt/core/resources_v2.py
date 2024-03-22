@@ -436,7 +436,7 @@ class DbtCliInvocation:
     @classmethod
     def run(
         cls,
-        args: List[str],
+        args: Sequence[str],
         env: Dict[str, str],
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
@@ -954,7 +954,7 @@ class DbtCliResource(ConfigurableResource):
     @public
     def cli(
         self,
-        args: List[str],
+        args: Sequence[str],
         *,
         raise_on_error: bool = True,
         manifest: Optional[DbtManifestParam] = None,
@@ -965,7 +965,7 @@ class DbtCliResource(ConfigurableResource):
         """Create a subprocess to execute a dbt CLI command.
 
         Args:
-            args (List[str]): The dbt CLI command to execute.
+            args (Sequence[str]): The dbt CLI command to execute.
             raise_on_error (bool): Whether to raise an exception if the dbt CLI command fails.
             manifest (Optional[Union[Mapping[str, Any], str, Path]]): The dbt manifest blob. If an
                 execution context from within `@dbt_assets` is provided to the context argument,
