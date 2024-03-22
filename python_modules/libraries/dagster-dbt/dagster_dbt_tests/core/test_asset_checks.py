@@ -12,8 +12,8 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     ExecuteInProcessResult,
-    materialize,
     build_asset_context,
+    materialize,
 )
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest

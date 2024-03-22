@@ -39,6 +39,7 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.metadata import TableMetadataEntries
 from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
@@ -126,6 +127,24 @@ class DbtCliEventMessage:
             ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
         )
 
+    def _yield_observation_events_for_test(
+        self,
+        dagster_dbt_translator: DagsterDbtTranslator,
+        validated_manifest: Mapping[str, Any],
+        upstream_unique_ids: List[str],
+        metadata: Mapping[str, Any],
+    ) -> Iterator[AssetObservation]:
+        for upstream_unique_id in upstream_unique_ids:
+            upstream_resource_props: Dict[str, Any] = validated_manifest["nodes"].get(
+                upstream_unique_id
+            ) or validated_manifest["sources"].get(upstream_unique_id)
+            upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
+
+            yield AssetObservation(
+                asset_key=upstream_asset_key,
+                metadata=metadata,
+            )
+
     @public
     def to_default_asset_events(
         self,
@@ -156,7 +175,6 @@ class DbtCliEventMessage:
                 In a Dagster op definition, the following are yielded:
                 - AssetMaterialization for dbt test results that are not enabled as asset checks.
                 - AssetObservation for dbt test results.
-
         """
         if not self.is_result_event(self.raw_event):
             return
@@ -244,40 +262,58 @@ class DbtCliEventMessage:
             is_generic_test = bool(attached_node_unique_id)
 
             if has_asset_def and is_asset_check and is_generic_test:
-                is_test_successful = node_status == TestStatus.Pass
-                severity = (
-                    AssetCheckSeverity.WARN
-                    if node_status == TestStatus.Warn
-                    else AssetCheckSeverity.ERROR
-                )
-
                 attached_node_resource_props: Dict[str, Any] = manifest["nodes"].get(
                     attached_node_unique_id
                 ) or manifest["sources"].get(attached_node_unique_id)
                 attached_node_asset_key = dagster_dbt_translator.get_asset_key(
                     attached_node_resource_props
                 )
+                check_name = event_node_info["node_name"]
 
-                yield AssetCheckResult(
-                    passed=is_test_successful,
-                    asset_key=attached_node_asset_key,
-                    check_name=event_node_info["node_name"],
-                    metadata=metadata,
-                    severity=severity,
-                )
-            else:
-                for upstream_unique_id in upstream_unique_ids:
-                    upstream_resource_props: Dict[str, Any] = manifest["nodes"].get(
-                        upstream_unique_id
-                    ) or manifest["sources"].get(upstream_unique_id)
-                    upstream_asset_key = dagster_dbt_translator.get_asset_key(
-                        upstream_resource_props
+                if (
+                    context
+                    and AssetCheckKey(asset_key=attached_node_asset_key, name=check_name)
+                    in context.selected_asset_check_keys
+                ):
+                    is_test_successful = node_status == TestStatus.Pass
+                    severity = (
+                        AssetCheckSeverity.WARN
+                        if node_status == TestStatus.Warn
+                        else AssetCheckSeverity.ERROR
                     )
 
-                    yield AssetObservation(
-                        asset_key=upstream_asset_key,
+                    yield AssetCheckResult(
+                        passed=is_test_successful,
+                        asset_key=attached_node_asset_key,
+                        check_name=check_name,
+                        metadata=metadata,
+                        severity=severity,
+                    )
+
+                # dbt's default indirect selection (eager) will select relationship tests
+                # on unselected assets, if they're compared with a selected asset.
+                # This doesn't match Dagster's default check selection which is to only
+                # select checks on selected assets. When we use eager, we may receive
+                # unexpected test results so we log those as observations as if
+                # asset checks were disabled.
+                else:
+                    logger.info(
+                        f"dbt test '{check_name}' will be logged as an AssetObservation instead of "
+                        "an AssetCheckResult because the asset check was not selected."
+                    )
+                    yield from self._yield_observation_events_for_test(
+                        dagster_dbt_translator=dagster_dbt_translator,
+                        validated_manifest=manifest,
+                        upstream_unique_ids=upstream_unique_ids,
                         metadata=metadata,
                     )
+            else:
+                yield from self._yield_observation_events_for_test(
+                    dagster_dbt_translator=dagster_dbt_translator,
+                    validated_manifest=manifest,
+                    upstream_unique_ids=upstream_unique_ids,
+                    metadata=metadata,
+                )
 
     def _build_column_lineage_metadata(
         self,
