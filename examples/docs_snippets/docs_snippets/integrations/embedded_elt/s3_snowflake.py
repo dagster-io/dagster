@@ -2,7 +2,6 @@
 # pyright: reportOptionalMemberAccess=none
 
 from dagster_embedded_elt.sling import (
-    DagsterSlingTranslator,
     SlingConnectionResource,
     SlingResource,
     sling_assets,
@@ -45,10 +44,7 @@ replication_config = {
 }
 
 
-@sling_assets(
-    replication_config=replication_config,
-    dagster_sling_translator=DagsterSlingTranslator(),
-)
+@sling_assets(replication_config=replication_config)
 def my_assets(context, sling: SlingResource):
     yield from sling.replicate(context=context)
 
