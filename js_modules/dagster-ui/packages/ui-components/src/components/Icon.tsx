@@ -82,6 +82,7 @@ import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
 import gitlab from '../icon-svgs/gitlab.svg';
+import globe from '../icon-svgs/globe.svg';
 import graduation_cap from '../icon-svgs/graduation_cap.svg';
 import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
@@ -246,6 +247,7 @@ export const Icons = {
   github_pr_closed,
   github_pr_merged,
   gitlab,
+  globe,
   graduation_cap,
   youtube,
   arrow_indent,

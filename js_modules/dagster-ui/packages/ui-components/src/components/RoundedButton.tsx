@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
 
 export const RoundedButton = styled.button`
   background-color: ${Colors.navButton()};
@@ -20,21 +19,5 @@ export const RoundedButton = styled.button`
   &:focus,
   &:active {
     outline: none;
-  }
-
-  ${IconWrapper} {
-    background: ${Colors.navText()};
-  }
-
-  &:hover {
-    background-color: ${Colors.navButtonHover()};
-
-    ${IconWrapper} {
-      background: ${Colors.navTextSelected()};
-    }
-  }
-
-  ${IconWrapper} {
-    transition: linear 100ms background;
   }
 `;

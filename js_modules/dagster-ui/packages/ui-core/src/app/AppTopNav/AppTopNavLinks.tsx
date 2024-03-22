@@ -22,7 +22,7 @@ export const AppTopNavLinks = ({links}: {links: AppNavLinkType[]}) => {
 export const navLinks = (history: ReturnType<typeof useHistory>) => {
   return [
     {
-      title: 'overview',
+      title: 'overview' as const,
       element: (
         <ShortcutHandler
           key="overview"
@@ -37,7 +37,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
       ),
     },
     {
-      title: 'runs',
+      title: 'runs' as const,
       element: (
         <ShortcutHandler
           key="runs"
@@ -52,7 +52,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
       ),
     },
     {
-      title: 'assets',
+      title: 'assets' as const,
       element: (
         <ShortcutHandler
           key="assets"
@@ -76,7 +76,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
     },
     featureEnabled(FeatureFlag.flagSettingsPage)
       ? {
-          title: 'settings',
+          title: 'settings' as const,
           element: (
             <ShortcutHandler
               key="settings"
@@ -101,7 +101,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
           ),
         }
       : {
-          title: 'deployment',
+          title: 'deployment' as const,
           element: (
             <ShortcutHandler
               key="deployment"
