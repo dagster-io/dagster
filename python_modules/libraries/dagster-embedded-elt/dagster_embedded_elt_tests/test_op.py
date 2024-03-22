@@ -28,5 +28,6 @@ def test_base_sling_config_op(
     def my_sling_op_yield_events_job():
         my_sling_op_yield_events()
 
-    result = my_sling_op_yield_events_job.execute_in_process(resources={"sling": sling_resource})
-    assert result.success
+    res = my_sling_op_yield_events_job.execute_in_process(resources={"sling": sling_resource})
+    assert res.success
+    assert len(res.get_job_success_event()) == 1

@@ -74,8 +74,7 @@ def sling_assets(
             config_path = "/path/to/replication.yaml"
             @sling_assets(replication_config=config_path)
             def my_assets(context, sling: SlingResource):
-                for lines in sling.replicate(context=context):
-                    context.log.info(lines)
+                yield from sling.replicate(context=context)
     """
     replication_config = validate_replication(replication_config)
     streams = get_streams_from_replication(replication_config)

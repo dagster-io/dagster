@@ -81,6 +81,8 @@ def test_runs_base_sling_config(
     res = materialize([my_sling_assets], resources={"sling": sling_resource})
 
     assert res.success
+    assert len(res.get_asset_materialization_events()) == 1
+
     counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == 3
 

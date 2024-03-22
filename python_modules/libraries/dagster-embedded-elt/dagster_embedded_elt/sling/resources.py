@@ -432,8 +432,6 @@ class SlingResource(ConfigurableResource):
                 yield MaterializeResult(
                     asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
                 )
-            # elif isinstance(context, OpExecutionContext):
-            #     yield Output(value=None, output_name=str(output_name), metadata={"elapsed_time": end_time - start_time})
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
         """Returns a generator of raw logs from the Sling CLI."""
