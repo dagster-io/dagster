@@ -42,7 +42,7 @@ def search_index(context: AssetExecutionContext, openai: OpenAIResource, source_
 
 @asset(compute_kind="OpenAI")
 def completion(context: AssetExecutionContext, openai: OpenAIResource, search_index):
-    question = "What can I use Dagster for?"
+    question = "What is Dagster?"
     search_index = FAISS.deserialize_from_bytes(search_index, OpenAIEmbeddings())
     with openai.get_client(context) as client:
         chain = load_qa_with_sources_chain(OpenAI(client=client.completions, temperature=0))

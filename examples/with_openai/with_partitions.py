@@ -62,7 +62,7 @@ def search_index(context: AssetExecutionContext, openai: OpenAIResource, source_
 
 @asset(compute_kind="OpenAI")
 def completion(context: AssetExecutionContext, openai: OpenAIResource):
-    question = "What can I use Dagster for?"
+    question = "How can I use dbt with Dagster?"
     with open(SEARCH_INDEX_FILE, "rb") as f:
         serialized_search_index = pickle.load(f)
     search_index = FAISS.deserialize_from_bytes(serialized_search_index, OpenAIEmbeddings())
