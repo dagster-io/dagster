@@ -1,7 +1,7 @@
-import {Box, Heading, PageHeader} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 
+import {OverviewPageHeader} from './OverviewPageHeader';
 import {OverviewSchedules} from './OverviewSchedules';
-import {OverviewTabs} from './OverviewTabs';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
@@ -11,7 +11,7 @@ export const OverviewSchedulesRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="schedules" />} />
+      <OverviewPageHeader tab="schedules" />
       <OverviewSchedules />
     </Box>
   );

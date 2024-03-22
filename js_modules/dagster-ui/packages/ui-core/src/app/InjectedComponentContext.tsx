@@ -11,8 +11,10 @@ type AComponentOrNull<Props> =
 
 export const InjectedComponentContext = React.createContext<{
   AppTopNavRightOfLogo: AComponentOrNull<React.ComponentProps<typeof AppTopNavRightOfLogo>>;
+  OverviewPageAlerts?: AComponentOrNull<Record<string, never>>;
 }>({
   AppTopNavRightOfLogo: null,
+  OverviewPageAlerts: null,
 });
 
 export function componentStub(component: keyof React.ContextType<typeof InjectedComponentContext>) {
