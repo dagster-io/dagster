@@ -34,5 +34,7 @@ def test_base_sling_config_op(
     res = my_sling_op_yield_events_job.execute_in_process(resources={"sling": sling_resource})
     assert res.success
 
+    assert len(res.get_asset_materialization_events()) == 1
+
     counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == 3

@@ -13,11 +13,11 @@ from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, U
 import sling
 from dagster import (
     AssetExecutionContext,
+    AssetMaterialization,
     ConfigurableResource,
     EnvVar,
     MaterializeResult,
     OpExecutionContext,
-    Output,
     PermissiveConfig,
     get_dagster_logger,
 )
@@ -369,7 +369,7 @@ class SlingResource(ConfigurableResource):
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-    ) -> Generator[Union[MaterializeResult, Output], None, None]:
+    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
         """Runs a Sling replication from the given replication config.
 
         Args:
@@ -379,7 +379,7 @@ class SlingResource(ConfigurableResource):
             debug: Whether to run the replication in debug mode.
 
         Returns:
-            Optional[Generator[MaterializeResult, None, None]]: A generator of MaterializeResult
+            Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
         """
         # attempt to retrieve params from asset context if not passed as a parameter
         if not (replication_config or dagster_sling_translator):
@@ -432,6 +432,10 @@ class SlingResource(ConfigurableResource):
             output_name = dagster_sling_translator.get_asset_key(stream)
             if has_asset_def:
                 yield MaterializeResult(
+                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+                )
+            else:
+                yield AssetMaterialization(
                     asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
                 )
 
