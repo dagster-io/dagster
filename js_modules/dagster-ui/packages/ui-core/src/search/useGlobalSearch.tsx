@@ -15,6 +15,7 @@ import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {Tag, buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -27,6 +28,12 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
 export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
+  })}`;
+};
+
+export const linkToAssetTableWithTagFilter = (tag: Tag) => {
+  return `/assets?${qs.stringify({
+    tags: JSON.stringify([tag]),
   })}`;
 };
 
@@ -205,6 +212,14 @@ const secondaryDataToSearchResults = (
       }),
     );
 
+    const tagResults: SearchResult[] = countsBySection.countPerTag.map(({tag, assetCount}) => ({
+      label: buildTagString(tag),
+      description: '',
+      type: AssetFilterSearchResultType.Tag,
+      href: linkToAssetTableWithTagFilter(tag),
+      numResults: assetCount,
+    }));
+
     const codeLocationResults: SearchResult[] = countsBySection.countPerCodeLocation.map(
       (codeLocationAssetCount) => ({
         label: buildRepoPathForHuman(
@@ -244,6 +259,7 @@ const secondaryDataToSearchResults = (
     return [
       ...assets,
       ...computeKindResults,
+      ...tagResults,
       ...codeLocationResults,
       ...ownerResults,
       ...groupResults,
@@ -270,7 +286,7 @@ type IndexBuffer = {
 // version the cache in indexedDB. When the data in the cache must be invalidated, this version
 // should be bumped to prevent fetching stale data.
 export const SEARCH_PRIMARY_DATA_VERSION = 1;
-export const SEARCH_SECONDARY_DATA_VERSION = 1;
+export const SEARCH_SECONDARY_DATA_VERSION = 2;
 
 /**
  * Perform global search populated by two lazy queries, to be initialized upon some
@@ -498,6 +514,10 @@ export const SEARCH_SECONDARY_QUERY = gql`
               ... on UserAssetOwner {
                 email
               }
+            }
+            tags {
+              key
+              value
             }
             repository {
               id

@@ -4,6 +4,7 @@ import {useMemo} from 'react';
 import {useStaticSetFilter} from './useStaticSetFilter';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];
 
@@ -30,10 +31,11 @@ export const useAssetTagFilter = ({
     ),
     menuWidth: '300px',
     renderLabel: ({value}) => {
-      if (value.value === _NO_VALUE_SENTINEL) {
-        return <TruncatedTextWithFullTextOnHover text={value.key} />;
-      }
-      return <TruncatedTextWithFullTextOnHover text={`${value.key}: ${value.value}`} />;
+      return (
+        <TruncatedTextWithFullTextOnHover
+          text={buildTagString({key: value.key, value: value.value})}
+        />
+      );
     },
     getStringValue: ({value, key}) => `${value}: ${key}`,
     state: memoizedState ?? emptyArray,
@@ -43,8 +45,6 @@ export const useAssetTagFilter = ({
     matchType: 'all-of',
   });
 };
-
-const _NO_VALUE_SENTINEL = '__dagster_no_value';
 
 const memoizedDefinitionTag = memoize(
   (tag: DefinitionTag) => {
