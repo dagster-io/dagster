@@ -6,7 +6,8 @@ import type {AppTopNavRightOfLogo} from './AppTopNav/AppTopNavRightOfLogo.oss';
 type AComponentOrNull<Props> =
   | ((props: Props) => React.ReactNode)
   | React.MemoExoticComponent<(props: Props) => React.ReactNode>
-  | null;
+  | null
+  | undefined;
 
 export const InjectedComponentContext = React.createContext<{
   AppTopNavRightOfLogo: AComponentOrNull<React.ComponentProps<typeof AppTopNavRightOfLogo>>;
