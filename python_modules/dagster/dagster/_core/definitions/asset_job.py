@@ -69,7 +69,7 @@ def get_base_asset_jobs(
 ) -> Sequence[JobDefinition]:
     if len(asset_graph.all_partitions_defs) == 0:
         return [
-            build_assets_job(
+            build_asset_job(
                 name=ASSET_BASE_JOB_PREFIX,
                 asset_graph=asset_graph,
                 executor_def=executor_def,
@@ -83,13 +83,14 @@ def get_base_asset_jobs(
                 *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
                 *asset_graph.unpartitioned_asset_keys,
             }
-            # For now, to preserve behavior keep all asset checks in all base jobs. When checks
-            # support partitions, they should only go in the corresponding partitioned job.
-            selection = (
-                AssetSelection.keys(*executable_asset_keys) | AssetSelection.all_asset_checks()
+            # For now, to preserve behavior keep all orphaned asset checks (where the target check
+            # has no corresponding executable definition) in all base jobs. When checks support
+            # partitions, they should only go in the corresponding partitioned job.
+            selection = AssetSelection.keys(*executable_asset_keys) | AssetSelection.checks(
+                *asset_graph.orphan_asset_check_keys
             )
             jobs.append(
-                build_assets_job(
+                build_asset_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
                     get_asset_graph_for_job(asset_graph, selection),
                     resource_defs=resource_defs,
@@ -100,7 +101,7 @@ def get_base_asset_jobs(
         return jobs
 
 
-def build_assets_job(
+def build_asset_job(
     name: str,
     asset_graph: AssetGraph,
     resource_defs: Optional[Mapping[str, object]] = None,
@@ -275,7 +276,9 @@ def get_asset_graph_for_job(
         *(k for ad in executable_assets_defs for k in ad.node_keys_by_input_name.values()),
         *(k for ad in executable_assets_defs for k in ad.node_keys_by_output_name.values()),
     } - selected_keys
-    other_assets_defs, _ = _subset_assets_defs(excluded_assets_defs, other_keys, None)
+    other_assets_defs, _ = _subset_assets_defs(
+        excluded_assets_defs, other_keys, None, allow_extraneous_asset_keys=True
+    )
     unexecutable_assets_defs = [
         unexecutable_ad
         for ad in other_assets_defs
@@ -289,6 +292,7 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
     selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+    allow_extraneous_asset_keys: bool = False,
 ) -> Tuple[
     Sequence["AssetsDefinition"],
     Sequence["AssetsDefinition"],
@@ -330,6 +334,10 @@ def _subset_assets_defs(
                     selected_asset_check_keys=(asset.check_keys - subset_asset.check_keys),
                 )
             )
+        # If the AssetsDefinition is not subsettable, include the whole definition without
+        # subsetting, even though some keys are not present in our selection.
+        elif allow_extraneous_asset_keys:
+            included_assets.add(asset)
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "

@@ -4,6 +4,7 @@ import {useMemo} from 'react';
 import {useStaticSetFilter} from './useStaticSetFilter';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];
 
@@ -30,10 +31,11 @@ export const useAssetTagFilter = ({
     ),
     menuWidth: '300px',
     renderLabel: ({value}) => {
-      if (value.value === _NO_VALUE_SENTINEL) {
-        return <TruncatedTextWithFullTextOnHover text={value.key} />;
-      }
-      return <TruncatedTextWithFullTextOnHover text={`${value.key}: ${value.value}`} />;
+      return (
+        <TruncatedTextWithFullTextOnHover
+          text={buildTagString({key: value.key, value: value.value})}
+        />
+      );
     },
     getStringValue: ({value, key}) => `${value}: ${key}`,
     state: memoizedState ?? emptyArray,
@@ -44,19 +46,11 @@ export const useAssetTagFilter = ({
   });
 };
 
-const _NO_VALUE_SENTINEL = '__dagster_no_value';
-
-const randomNumber = Math.random();
 const memoizedDefinitionTag = memoize(
-  ({key, value}: DefinitionTag) => {
-    return {
-      __typename: 'DefinitionTag' as const,
-      key,
-      value,
-    };
+  (tag: DefinitionTag) => {
+    return tag;
   },
-  // Use a sequence unlikely to appear in the key/value to uniquely memoize them
-  ({key, value}) => `${key}\n!!\n$$${randomNumber}$$\n!n\n${value}`,
+  (tag) => JSON.stringify(tag),
 );
 
 export function useAssetTagsForAssets(
@@ -73,16 +67,6 @@ export function useAssetTagsForAssets(
       ).map((jsonTag) => memoizedDefinitionTag(JSON.parse(jsonTag))),
     [assets],
   );
-}
-
-export function doesAssetTagFilterMatch({
-  filterTags,
-  assetTags,
-}: {
-  filterTags: DefinitionTag[];
-  assetTags: DefinitionTag[];
-}) {
-  return doesFilterArrayMatchValueArray(filterTags, assetTags);
 }
 
 export function doesFilterArrayMatchValueArray<T, V>(

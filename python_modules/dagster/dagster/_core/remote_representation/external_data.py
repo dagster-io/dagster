@@ -47,6 +47,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
@@ -55,7 +56,6 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.assets import (
     AssetsDefinition,
 )
-from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
@@ -94,6 +94,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
@@ -1188,7 +1189,7 @@ class ExternalAssetNode(
             ("output_description", Optional[str]),
             ("metadata", Mapping[str, MetadataValue]),
             ("tags", Optional[Mapping[str, str]]),
-            ("group_name", Optional[str]),
+            ("group_name", str),
             ("freshness_policy", Optional[FreshnessPolicy]),
             ("is_source", bool),
             ("is_observable", bool),
@@ -1310,7 +1311,9 @@ class ExternalAssetNode(
             output_description=check.opt_str_param(output_description, "output_description"),
             metadata=metadata,
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
-            group_name=check.opt_str_param(group_name, "group_name"),
+            # Newer code always passes a string group name when constructing these, but we assign
+            # the default here for backcompat.
+            group_name=check.opt_str_param(group_name, "group_name") or DEFAULT_GROUP_NAME,
             freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
             ),
@@ -1629,10 +1632,6 @@ def external_asset_nodes_from_defs(
             output_name = None
             required_top_level_resources = []
 
-        # This is in place to preserve an implicit behavior in the Dagster UI where stub
-        # dependencies were rendered as if they weren't part of the default asset group.
-        group_name = None if asset_node.assets_def.is_auto_created_stub else asset_node.group_name
-
         # Partition mappings are only exposed on the ExternalAssetNode if at least one asset is
         # partitioned and the partition mapping is one of the builtin types.
         partition_mappings: Dict[AssetKey, Optional[PartitionMapping]] = {}
@@ -1671,7 +1670,7 @@ def external_asset_nodes_from_defs(
                 output_name=output_name,
                 metadata=asset_node.metadata,
                 tags=asset_node.tags,
-                group_name=group_name,
+                group_name=asset_node.group_name,
                 freshness_policy=asset_node.freshness_policy,
                 is_source=asset_node.is_external,
                 is_observable=asset_node.is_observable,

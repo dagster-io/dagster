@@ -6,8 +6,8 @@ import {useHistory, useParams} from 'react-router-dom';
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {writeAssetVisitToLocalStorage} from './RecentlyVisitedAssetsStorage';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetKey} from './types';
 import {
   AssetsCatalogRootQuery,
   AssetsCatalogRootQueryVariables,
@@ -18,7 +18,11 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {usePageLoadTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
-export const AssetsCatalogRoot = () => {
+export const AssetsCatalogRoot = ({
+  writeAssetVisit,
+}: {
+  writeAssetVisit?: (assetKey: AssetKey) => void;
+}) => {
   useTrackPageView();
 
   const params = useParams();
@@ -52,11 +56,12 @@ export const AssetsCatalogRoot = () => {
       currentPath &&
       currentPath.length &&
       queryResult.loading === false &&
-      queryResult.data?.assetOrError.__typename === 'Asset'
+      queryResult.data?.assetOrError.__typename === 'Asset' &&
+      writeAssetVisit
     ) {
-      writeAssetVisitToLocalStorage({path: currentPath});
+      writeAssetVisit({path: currentPath});
     }
-  }, [currentPath, queryResult]);
+  }, [currentPath, queryResult, writeAssetVisit]);
 
   if (queryResult.loading) {
     return (

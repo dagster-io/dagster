@@ -202,6 +202,22 @@ export const ASSET_GRAPH_QUERY = gql`
     groupName
     isExecutable
     changedReasons
+    tags {
+      key
+      value
+    }
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
+    tags {
+      key
+      value
+    }
     hasMaterializePermission
     repository {
       id

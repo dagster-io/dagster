@@ -18,6 +18,7 @@ export enum AssetFilterSearchResultType {
   // Add types with corresponding strings to distinguish
   // between SearchResultType.AssetGroup
   ComputeKind = 'AssetFilterSearchResultType.ComputeKind',
+  Tag = 'AssetFilterSearchResultType.Tag',
   CodeLocation = 'AssetFilterSearchResultType.CodeLocation',
   Owner = 'AssetFilterSearchResultType.Owner',
   AssetGroup = 'AssetFilterSearchResultType.AssetGroup',
@@ -30,7 +31,8 @@ export function isAssetFilterSearchResultType(
     type === AssetFilterSearchResultType.AssetGroup ||
     type === AssetFilterSearchResultType.CodeLocation ||
     type === AssetFilterSearchResultType.ComputeKind ||
-    type === AssetFilterSearchResultType.Owner
+    type === AssetFilterSearchResultType.Owner ||
+    type === AssetFilterSearchResultType.Tag
   );
 }
 
@@ -41,6 +43,7 @@ export type SearchResult = {
   type: SearchResultType | AssetFilterSearchResultType;
   tags?: string;
   numResults?: number;
+  repoPath?: string;
 };
 
 export type ReadyResponse = {type: 'ready'};
