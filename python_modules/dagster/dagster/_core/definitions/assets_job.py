@@ -83,10 +83,11 @@ def get_base_asset_jobs(
                 *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
                 *asset_graph.unpartitioned_asset_keys,
             }
-            # For now, to preserve behavior keep all asset checks in all base jobs. When checks
-            # support partitions, they should only go in the corresponding partitioned job.
-            selection = (
-                AssetSelection.keys(*executable_asset_keys) | AssetSelection.all_asset_checks()
+            # For now, to preserve behavior keep all orphaned asset checks (where the target check
+            # has no corresponding executable definition) in all base jobs. When checks support
+            # partitions, they should only go in the corresponding partitioned job.
+            selection = AssetSelection.keys(*executable_asset_keys) | AssetSelection.checks(
+                *asset_graph.orphan_asset_check_keys
             )
             jobs.append(
                 build_assets_job(
