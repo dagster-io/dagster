@@ -1,8 +1,10 @@
 import {Box} from '@dagster-io/ui-components';
+import {useContext} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {TopNavLink} from './AppTopNav';
 import {DeploymentStatusIcon} from '../../nav/DeploymentStatusIcon';
+import {CloudOSSContext} from '../CloudOSSContext';
 import {FeatureFlag, featureEnabled} from '../Flags';
 import {ShortcutHandler} from '../ShortcutHandler';
 
@@ -19,7 +21,8 @@ export const AppTopNavLinks = ({links}: {links: AppNavLinkType[]}) => {
   );
 };
 
-export const navLinks = (history: ReturnType<typeof useHistory>) => {
+export const useNavLinks = (history: ReturnType<typeof useHistory>) => {
+  const {getAssetsTopNavLink} = useContext(CloudOSSContext);
   return [
     {
       title: 'overview' as const,
