@@ -1,3 +1,3 @@
-import {componentStub} from '../CloudComponentContext';
+import {componentStub} from '../InjectedComponentContext';
 
 export const AppTopNavRightOfLogo = componentStub('AppTopNavRightOfLogo');
