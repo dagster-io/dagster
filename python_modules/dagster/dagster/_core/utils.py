@@ -23,7 +23,6 @@ from typing import (
 from weakref import WeakSet
 
 import toposort as toposort_
-from pydantic import BaseModel
 from typing_extensions import Final
 
 import dagster._check as check
@@ -197,12 +196,3 @@ class InheritContextThreadPoolExecutor(FuturesAwareThreadPoolExecutor):
 def is_valid_email(email: str) -> bool:
     regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
     return bool(re.fullmatch(regex, email))
-
-
-class StrictModel(BaseModel):
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-
-    class Config:
-        extra = "forbid"
-        frozen = True

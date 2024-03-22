@@ -8,7 +8,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, 
 import pydantic
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
-from dagster._core.utils import StrictModel
+from dagster._model import DagsterModel
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
@@ -824,7 +824,7 @@ def test_objects():
         name: str
 
     @_whitelist_for_serdes(test_env)
-    class SomeStrictModel(StrictModel):
+    class SomeDagsterModel(DagsterModel):
         id: int
         name: str
 
@@ -836,7 +836,7 @@ def test_objects():
         d: InnerDataclass
         nt: SomeNT
         m: SomeModel
-        st: SomeStrictModel
+        st: SomeDagsterModel
 
     o = DataclassObj(
         "woo",
@@ -844,7 +844,7 @@ def test_objects():
         InnerDataclass(1.2),
         SomeNT([1, 2, 3]),
         SomeModel(id=4, name="zuck"),
-        SomeStrictModel(id=4, name="zuck"),
+        SomeDagsterModel(id=4, name="zuck"),
     )
     ser_o = serialize_value(o, whitelist_map=test_env)
     assert deserialize_value(ser_o, whitelist_map=test_env) == o

@@ -1,10 +1,10 @@
 import pytest
-from dagster._core.utils import StrictModel
+from dagster._model import DagsterModel
 from pydantic import ValidationError
 
 
 def test_override_constructor_in_subclass():
-    class MyClass(StrictModel):
+    class MyClass(DagsterModel):
         foo: str
         bar: int
 
@@ -15,7 +15,7 @@ def test_override_constructor_in_subclass():
 
 
 def test_override_constructor_in_subclass_different_arg_names():
-    class MyClass(StrictModel):
+    class MyClass(DagsterModel):
         foo: str
         bar: int
 
@@ -26,7 +26,7 @@ def test_override_constructor_in_subclass_different_arg_names():
 
 
 def test_override_constructor_in_subclass_wrong_type():
-    class MyClass(StrictModel):
+    class MyClass(DagsterModel):
         foo: str
         bar: int
 
