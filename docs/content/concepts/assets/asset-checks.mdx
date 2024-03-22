@@ -13,20 +13,25 @@ When viewing an asset in Dagster’s UI, you can see all of its checks, and whet
 
 ## Benefits
 
-Using asset checks provides the following benefits:
+Using asset checks helps you:
 
-TODO
+- Ensure that data produced by your pipeline is timely and high quality
+- Catch problems in the source data that your pipeline depends on
+- Communicate what the data produced by your pipeline is expected to look like (aka act as a data contract)
 
 ---
 
-## Uses
+## How it works
 
-With asset checks, you can:
+Asset checks are [defined in code](/concepts/assets/asset-checks/define-execute-asset-checks) alongside the asset(s) they target. You can use Python to define them, or if using dbt, load your [dbt tests into Dagster as asset checks](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks-). Refer to the [Defining and executing asset checks](/concepts/assets/asset-checks/define-execute-asset-checks) guide for more info.
 
-- Guard against inaccurate and stale data by [checking for quality and freshness](/concepts/assets/asset-checks/define-execute-asset-checks)
-- [Execute checks](/concepts/assets/asset-checks/define-execute-asset-checks#executing-checks) using the Dagster UI or schedules/sensors that run jobs with assets and checks
-- Use severity levels and metadata [to include actionable details about check results in the UI](/concepts/assets/asset-checks/define-execute-asset-checks#using-asset-check-results)
-- [Create alerts based on asset check results](/dagster-cloud/managing-deployments/alerts) (Dagster Cloud only)
+Using schedules and sensors, you can automate the execution of jobs that include asset checks and the assets that they target. Checks can also be executed on a one-off basis using the Dagster UI. Refer to the [Executing checks](/concepts/assets/asset-checks/define-execute-asset-checks#executing-checks) section of the [Defining and executing asset checks](/concepts/assets/asset-checks/define-execute-asset-checks) guide for more info.
+
+With asset checks, you can also:
+
+- Block downstream execution based on check results
+- Use severity levels and metadata [to communicate actionable details about check results in the UI](/concepts/assets/asset-checks/define-execute-asset-checks#using-asset-check-results)
+- **Dagster Cloud only**: [Create alerts based on asset check results](/dagster-cloud/managing-deployments/alerts)
 
 ---
 
