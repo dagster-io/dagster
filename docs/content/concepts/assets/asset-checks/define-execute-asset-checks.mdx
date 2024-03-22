@@ -15,13 +15,14 @@ In this guide, we'll show you a few approaches to defining asset checks, how to 
 
 ## Defining asset checks
 
-There are a few methods you can use to define an asset check:
+There are a few ways you can define an asset check:
 
-- **Define separate functions for assets and checks** - In this approach, asset materialization and asset checks are executed in their own separate ops. If using the <PyObject object="multiprocess_executor" />, this allows you to launch runs that will use separate processes to materialize the asset and execute its check.
-- **Define assets and checks in the same function** - In this approach, checks execute in the same op that materializes the asset.
-- **Define an asset check factory** - Useful for defining multiple, similar asset checks at once
+- **Separately from the assets the checks target** - In this approach, asset materialization and asset checks are executed in their own separate ops. If using the <PyObject object="multiprocess_executor" />, this allows you to launch runs that will use separate processes to materialize the asset and execute its check.
+- **Together with assets** - In this approach, checks execute in the same op that materializes the asset.
+- **Using an asset check factory** - This approach allows you to define multiple, similar asset checks at once
+- **Loading dbt tests into Dagster** - This approach allows you to model your dbt tests as asset checks
 
-### Using separate functions
+### Defining checks separately from assets
 
 In this example, we'll demonstrate how to define separate functions for an asset and the corresponding check.
 
@@ -62,7 +63,7 @@ The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graph
 2. Executes the `orders_id_has_no_nulls` check, and
 3. You're using the <PyObject object="multiprocess_executor" />
 
-### Using a single function
+### Defining checks and assets together
 
 Sometimes, it makes sense for a single function to materialize an asset **and** execute a check on it.
 
@@ -158,15 +159,21 @@ defs = Definitions(
 )
 ```
 
+### Loading dbt tests as asset checks
+
+Using the <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />, you can model your existing dbt tests as asset checks. Refer to the [dbt integration reference](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks-) for more information.
+
 ---
 
 ## Using asset check results
+
+In this section, we'll show you how to augment your code to customize how check results display in the Dagster UI.
 
 ### Setting severity
 
 Using <PyObject object="AssetCheckSeverity" />, you can define a severity on check results. The default severity is `ERROR`.
 
-The severity determines how the check result will display in the Dagster UI. For example, if a check fails with `ERROR` severity, the asset will appear red in the lineage graph.
+The severity determines how the check result will display in the UI. For example, if a check fails with `ERROR` severity, the asset will appear red in the lineage graph in the UI.
 
 ```python file=/concepts/assets/asset_checks/severity.py
 from dagster import (
