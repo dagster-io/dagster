@@ -9,7 +9,9 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TimestampMetadataValue,
 )
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext,
+)
 from dagster._utils.schedules import get_latest_completed_cron_tick, is_valid_cron_string
 
 from ..asset_check_result import AssetCheckResult
@@ -120,7 +122,7 @@ def _build_freshness_check_for_assets(
             name="freshness_check",
             metadata={NON_PARTITIONED_FRESHNESS_PARAMS_METADATA_KEY: params_metadata},
         )
-        def the_check(context: AssetExecutionContext) -> AssetCheckResult:
+        def the_check(context: AssetCheckExecutionContext) -> AssetCheckResult:
             check.invariant(
                 context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def is None,
                 "Expected non-partitioned asset",
