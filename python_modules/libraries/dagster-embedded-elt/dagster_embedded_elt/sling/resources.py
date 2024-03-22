@@ -426,9 +426,11 @@ class SlingResource(ConfigurableResource):
 
         end_time = time.time()
 
+        has_asset_def: bool = bool(context and context.has_assets_def)
+
         for stream in stream_definition:
             output_name = dagster_sling_translator.get_asset_key(stream)
-            if isinstance(context, AssetExecutionContext):
+            if has_asset_def:
                 yield MaterializeResult(
                     asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
                 )
