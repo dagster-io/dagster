@@ -8,9 +8,9 @@ export const CloudComponentContext = React.createContext<{
   AppTopNavRightOfLogo,
 });
 
-export const componentStub = (component: keyof React.ContextType<typeof CloudComponentContext>) => {
+export function componentStub(component: keyof React.ContextType<typeof CloudComponentContext>) {
   return () => {
     const {[component]: Component} = useContext(CloudComponentContext);
     return <Component />;
   };
-};
+}
