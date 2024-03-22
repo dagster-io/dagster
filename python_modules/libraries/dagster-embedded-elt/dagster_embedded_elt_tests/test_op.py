@@ -1,5 +1,3 @@
-import logging
-
 from dagster import OpExecutionContext, job, op
 from dagster_embedded_elt.sling import SlingReplicationParam
 from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
@@ -22,10 +20,9 @@ def test_base_sling_config_op(
 
     @op(out={})
     def my_sling_op_yield_events(context: OpExecutionContext, sling: SlingResource):
-        for row in sling.replicate(
+        yield from sling.replicate(
             context=context, replication_config=csv_to_sqlite_replication_config
-        ):
-            logging.info(row)
+        )
 
     @job
     def my_sling_op_yield_events_job():

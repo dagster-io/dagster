@@ -1,6 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Mapping, Union, cast
+from typing import Any, Mapping, Optional, Union, cast
 
 import dagster._check as check
 import yaml
@@ -18,7 +18,8 @@ def read_replication_path(replication_path: Path) -> Mapping[str, Any]:
     return cast(Mapping[str, Any], yaml.safe_load(replication_path.read_bytes()))
 
 
-def validate_replication(replication: SlingReplicationParam) -> Mapping[str, Any]:
+def validate_replication(replication: Optional[SlingReplicationParam]) -> Mapping[str, Any]:
+    replication = replication or {}
     check.inst_param(replication, "manifest", (Path, str, dict))
 
     if isinstance(replication, str):

@@ -17,6 +17,7 @@ from dagster import (
     EnvVar,
     MaterializeResult,
     OpExecutionContext,
+    Output,
     PermissiveConfig,
     get_dagster_logger,
 )
@@ -368,12 +369,13 @@ class SlingResource(ConfigurableResource):
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-    ) -> Generator[MaterializeResult, None, None]:
+    ) -> Generator[Union[MaterializeResult, Output], None, None]:
         """Runs a Sling replication from the given replication config.
 
         Args:
-            replication_config: The Sling replication config to use for the replication.
             context: Asset or Op execution context.
+            replication_config: The Sling replication config to use for the replication.
+            dagster_sling_translator: The translator to use for the replication.
             debug: Whether to run the replication in debug mode.
 
         Returns:
@@ -389,7 +391,7 @@ class SlingResource(ConfigurableResource):
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
         dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
 
-        replication_config = validate_replication(replication_config or {})
+        replication_config = validate_replication(replication_config)
         stream_definition = get_streams_from_replication(replication_config)
 
         with self._setup_config():
@@ -426,9 +428,12 @@ class SlingResource(ConfigurableResource):
 
         for stream in stream_definition:
             output_name = dagster_sling_translator.get_asset_key(stream)
-            yield MaterializeResult(
-                asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
-            )
+            if isinstance(context, AssetExecutionContext):
+                yield MaterializeResult(
+                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+                )
+            # elif isinstance(context, OpExecutionContext):
+            #     yield Output(value=None, output_name=str(output_name), metadata={"elapsed_time": end_time - start_time})
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
         """Returns a generator of raw logs from the Sling CLI."""

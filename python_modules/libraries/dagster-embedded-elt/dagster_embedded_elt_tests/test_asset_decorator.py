@@ -1,5 +1,5 @@
-import logging
 import sqlite3
+from pathlib import Path
 
 import pytest
 import yaml
@@ -17,7 +17,6 @@ from dagster_embedded_elt.sling import (
 )
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
-from path import Path
 
 
 @pytest.mark.parametrize(
@@ -67,8 +66,7 @@ def test_runs_base_sling_config(
 ):
     @sling_assets(replication_config=csv_to_sqlite_replication_config)
     def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
-        for row in sling.replicate(context=context):
-            logging.info(row)
+        yield from sling.replicate(context=context)
 
     sling_resource = SlingResource(
         connections=[
@@ -81,6 +79,7 @@ def test_runs_base_sling_config(
         ]
     )
     res = materialize([my_sling_assets], resources={"sling": sling_resource})
+
     assert res.success
     counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == 3
