@@ -1,6 +1,6 @@
 from dagster import ConfigurableResource, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from datadog import DogStatsd, initialize, statsd, api
+from datadog import DogStatsd, api, initialize, statsd
 from pydantic import Field
 
 
@@ -32,7 +32,7 @@ class DatadogClient:
             "timing",
         ]:
             setattr(self, method, getattr(statsd, method))
-        
+
         self.api = api
 
 
