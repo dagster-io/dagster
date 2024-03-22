@@ -20,6 +20,7 @@ def assert_datadog_client_class(
     Event,
     Metric,
     ServiceCheck,
+    Metadata,
 ) -> None:
     datadog_client.event("Man down!", "This server needs assistance.")
     event.assert_called_with("Man down!", "This server needs assistance.")
@@ -75,6 +76,9 @@ def assert_datadog_client_class(
         check="app.ok", host_name="127.0.0.1", status=0, tags=["test:ExampleServiceCheck"]
     )
 
+    datadog_client.api.Metadata.get(metric_name="my_metric")
+    Metadata.get.assert_called_with(metric_name="my_metric")
+
     @datadog_client.timed("run_fn")
     def run_fn() -> None:
         pass
@@ -83,6 +87,7 @@ def assert_datadog_client_class(
     timed.assert_called_with("run_fn")
 
 
+@mock.patch("datadog.api.Metadata")
 @mock.patch("datadog.api.ServiceCheck")
 @mock.patch("datadog.api.Metric")
 @mock.patch("datadog.api.Event")
@@ -110,6 +115,7 @@ def test_datadog_resource(
     Event,
     Metric,
     ServiceCheck,
+    Metadata,
 ) -> None:
     executed = {}
 
@@ -131,6 +137,7 @@ def test_datadog_resource(
             Event,
             Metric,
             ServiceCheck,
+            Metadata,
         )
         executed["yes"] = True
         return True
@@ -144,6 +151,7 @@ def test_datadog_resource(
     assert executed["yes"]
 
 
+@mock.patch("datadog.api.Metadata")
 @mock.patch("datadog.api.ServiceCheck")
 @mock.patch("datadog.api.Metric")
 @mock.patch("datadog.api.Event")
@@ -171,6 +179,7 @@ def test_datadog_pythonic_resource_standalone_op(
     Event,
     Metric,
     ServiceCheck,
+    Metadata,
 ) -> None:
     executed = {}
 
@@ -193,6 +202,7 @@ def test_datadog_pythonic_resource_standalone_op(
             Event,
             Metric,
             ServiceCheck,
+            Metadata,
         )
         executed["yes"] = True
         return True
@@ -203,6 +213,7 @@ def test_datadog_pythonic_resource_standalone_op(
     assert executed["yes"]
 
 
+@mock.patch("datadog.api.Metadata")
 @mock.patch("datadog.api.ServiceCheck")
 @mock.patch("datadog.api.Metric")
 @mock.patch("datadog.api.Event")
@@ -230,6 +241,7 @@ def test_datadog_pythonic_resource_factory_op_in_job(
     Event,
     Metric,
     ServiceCheck,
+    Metadata,
 ) -> None:
     executed = {}
 
@@ -254,6 +266,7 @@ def test_datadog_pythonic_resource_factory_op_in_job(
             Event,
             Metric,
             ServiceCheck,
+            Metadata,
         )
         executed["yes"] = True
         return True
