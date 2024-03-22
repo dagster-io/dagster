@@ -1,5 +1,6 @@
 import hashlib
 import os
+from typing import Dict
 
 import pytest
 from dagster import (
@@ -16,10 +17,12 @@ from dagster import (
     GraphOut,
     HourlyPartitionsDefinition,
     In,
+    InputContext,
     IOManager,
     Nothing,
     Out,
     Output,
+    OutputContext,
     ResourceDefinition,
     StaticPartitionsDefinition,
     build_reconstructable_job,
@@ -2912,3 +2915,36 @@ def test_mixed_asset_job():
         assert len(result.asset_observations_for_node("foo")) == 1
         assert len(result.asset_materializations_for_node("bar")) == 1
         assert len(result.asset_observations_for_node("bar")) == 0
+
+
+def test_partial_dependency_on_upstream_multi_asset():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.values: Dict[AssetKey, int] = {}
+
+        def handle_output(self, context: OutputContext, obj: object):
+            self.values[context.asset_key] = obj
+
+        def load_input(self, context: InputContext) -> object:
+            return self.values[context.asset_key]
+
+    @multi_asset(
+        outs={
+            "foo": AssetOut(),
+            "bar": AssetOut(),
+        }
+    )
+    def foo_bar():
+        yield Output(1, "foo")
+        yield Output(1, "bar")
+
+    @asset
+    def baz(foo):
+        return foo + 1
+
+    # populate storage with foo/bar values
+    resources = {"io_manager": MyIOManager()}
+    create_test_asset_job([foo_bar]).execute_in_process(resources=resources)
+
+    job_def = create_test_asset_job([baz, foo_bar], selection=[baz])
+    assert job_def.execute_in_process(resources=resources).success

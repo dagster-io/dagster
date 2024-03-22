@@ -275,7 +275,9 @@ def get_asset_graph_for_job(
         *(k for ad in executable_assets_defs for k in ad.node_keys_by_input_name.values()),
         *(k for ad in executable_assets_defs for k in ad.node_keys_by_output_name.values()),
     } - selected_keys
-    other_assets_defs, _ = _subset_assets_defs(excluded_assets_defs, other_keys, None)
+    other_assets_defs, _ = _subset_assets_defs(
+        excluded_assets_defs, other_keys, None, allow_extraneous_asset_keys=True
+    )
     unexecutable_assets_defs = [
         unexecutable_ad
         for ad in other_assets_defs
@@ -289,6 +291,7 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
     selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+    allow_extraneous_asset_keys: bool = False,
 ) -> Tuple[
     Sequence["AssetsDefinition"],
     Sequence["AssetsDefinition"],
@@ -330,6 +333,10 @@ def _subset_assets_defs(
                     selected_asset_check_keys=(asset.check_keys - subset_asset.check_keys),
                 )
             )
+        # If the AssetsDefinition is not subsettable, include the whole definition without
+        # subsetting, even though some keys are not present in our selection.
+        elif allow_extraneous_asset_keys:
+            included_assets.add(asset)
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "
