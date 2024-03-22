@@ -72,6 +72,7 @@ class DbtProject(DagsterModel):
     project_dir: Path
     target_dir: Path
     manifest_path: Path
+    state_dir: Optional[Path]
     packaged_project_dir: Optional[Path]
     manifest_preparer: Optional[DbtManifestPreparer]
 
@@ -80,6 +81,7 @@ class DbtProject(DagsterModel):
         project_dir: Union[Path, str],
         *,
         target_dir: Union[Path, str] = "target",
+        state_dir: Optional[Union[Path, str]] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         manifest_preparer: Optional[DbtManifestPreparer] = DagsterDbtManifestPreparer(),
     ):
@@ -91,6 +93,8 @@ class DbtProject(DagsterModel):
             target_dir (Union[str, Path]):
                 The folder in the project directory to output artifacts.
                 Default: "target"
+            state_dir (Optional[Union[str, Path]]):
+                The folder in the project directory to reference artifacts from another run.
             manifest_preparer (Optional[DbtManifestPreparer]):
                 A object for ensuring that manifest.json is in the right state at
                 the right times.
@@ -118,11 +122,18 @@ class DbtProject(DagsterModel):
             project_dir=project_dir,
             target_dir=target_dir,
             manifest_path=manifest_path,
+            state_dir=current_project_dir.joinpath(state_dir) if state_dir else None,
             packaged_project_dir=packaged_project_dir,
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
             manifest_preparer.on_load(self)
+
+    def get_state_dir_if_populated(self) -> Optional[Path]:
+        if self.state_dir and self.state_dir.joinpath("manifest.json").exists():
+            return self.state_dir
+
+        return None
 
 
 def prepare_for_deployment(project: DbtProject):
