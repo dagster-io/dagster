@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link, NavLink} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AppTopNavRightOfLogo} from './AppTopNavRightOfLogo.oss';
+import {AppTopNavRightOfLogo} from './AppTopNavRightOfLogo';
 import {VersionNumber} from '../../nav/VersionNumber';
 import {
   reloadFnForWorkspace,
