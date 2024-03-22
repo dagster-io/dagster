@@ -48,6 +48,8 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'asset_group';
     case AssetFilterSearchResultType.ComputeKind:
       return 'tag';
+    case AssetFilterSearchResultType.Tag:
+      return 'tag';
     default:
       return 'source';
   }
@@ -59,6 +61,8 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Code location';
     case AssetFilterSearchResultType.ComputeKind:
       return 'Compute kind';
+    case AssetFilterSearchResultType.Tag:
+      return 'Tag';
     case AssetFilterSearchResultType.Owner:
       return 'Owner';
     case AssetFilterSearchResultType.AssetGroup:

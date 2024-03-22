@@ -1,5 +1,6 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
+import {Tag, buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
@@ -12,6 +13,11 @@ type CountByOwner = {
 
 type CountByComputeKind = {
   computeKind: string;
+  assetCount: number;
+};
+
+type CountPerTag = {
+  tag: Tag;
   assetCount: number;
 };
 
@@ -28,6 +34,7 @@ type CountPerCodeLocation = {
 type AssetCountsResult = {
   countsByOwner: CountByOwner[];
   countsByComputeKind: CountByComputeKind[];
+  countPerTag: CountPerTag[];
   countPerAssetGroup: CountPerGroupName[];
   countPerCodeLocation: CountPerCodeLocation[];
 };
@@ -41,7 +48,7 @@ export type GroupMetadata = {
 type AssetDefinitionMetadata = {
   definition: Pick<
     AssetTableDefinitionFragment,
-    'owners' | 'computeKind' | 'groupName' | 'repository'
+    'owners' | 'computeKind' | 'groupName' | 'repository' | 'tags'
   > | null;
 };
 
@@ -50,6 +57,7 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
   const assetCountByComputeKind: Record<string, number> = {};
   const assetCountByGroup: Record<string, number> = {};
   const assetCountByCodeLocation: Record<string, number> = {};
+  const assetCountByTag: Record<string, number> = {};
 
   assets
     .filter((asset) => asset.definition)
@@ -64,6 +72,11 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
       if (computeKind) {
         assetCountByComputeKind[computeKind] = (assetCountByComputeKind[computeKind] || 0) + 1;
       }
+
+      assetDefinition.tags.forEach((tag) => {
+        const stringifiedTag = JSON.stringify({key: tag.key, value: tag.value});
+        assetCountByTag[stringifiedTag] = (assetCountByTag[stringifiedTag] || 0) + 1;
+      });
 
       const groupName = assetDefinition.groupName;
       const locationName = assetDefinition.repository.location.name;
@@ -98,6 +111,24 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
     .sort(({computeKind: computeKindA}, {computeKind: computeKindB}) =>
       COMMON_COLLATOR.compare(computeKindA, computeKindB),
     );
+  const countPerTag = Object.entries(assetCountByTag)
+    .map(([tagIdentifier, count]) => ({
+      assetCount: count,
+      tag: JSON.parse(tagIdentifier),
+    }))
+    .sort(({tag: TagA}, {tag: TagB}) =>
+      COMMON_COLLATOR.compare(
+        buildTagString({
+          key: TagA.key,
+          value: TagA.value,
+        }),
+        buildTagString({
+          key: TagB.key,
+          value: TagB.value,
+        }),
+      ),
+    );
+
   const countPerAssetGroup = Object.entries(assetCountByGroup)
     .map(([groupIdentifier, count]) => ({
       assetCount: count,
@@ -131,6 +162,7 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
   return {
     countsByOwner,
     countsByComputeKind,
+    countPerTag,
     countPerAssetGroup,
     countPerCodeLocation,
   };
