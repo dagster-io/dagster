@@ -61,7 +61,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
           shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
         >
           <TopNavLink
-            to={featureEnabled(FeatureFlag.flagUseNewOverviewPage) ? '/assets-overview' : '/assets'}
+            to="/assets"
             data-cy="AppTopNav_AssetsLink"
             isActive={(_, location) => {
               const {pathname} = location;

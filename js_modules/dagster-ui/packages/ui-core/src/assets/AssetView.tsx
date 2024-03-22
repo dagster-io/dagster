@@ -1,4 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
+import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
 import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation} from 'react-router-dom';
@@ -58,9 +60,10 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 interface Props {
   assetKey: AssetKey;
   trace?: PageLoadTrace;
+  headerBreadcrumbs: BreadcrumbProps[];
 }
 
-export const AssetView = ({assetKey, trace}: Props) => {
+export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
   const {flagUseNewOverviewPage, flagUseNewAutomationPage} = useFeatureFlags();
@@ -287,6 +290,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
     >
       <AssetPageHeader
         assetKey={assetKey}
+        headerBreadcrumbs={headerBreadcrumbs}
         tags={
           <AssetViewPageHeaderTags
             definition={definition}

@@ -42,7 +42,7 @@ export const ContentRoot = memo(() => {
           <Route path="/assets(/?.*)">
             <Suspense fallback={<div />}>
               <AssetFeatureProvider>
-                <AssetsCatalogRoot />
+                <AssetsCatalogRoot headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]} />
               </AssetFeatureProvider>
             </Suspense>
           </Route>
