@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type RepoAssetTableFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
+  groupName: string;
   changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
   isSource: boolean;

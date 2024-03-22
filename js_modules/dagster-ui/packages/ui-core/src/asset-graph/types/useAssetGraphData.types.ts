@@ -12,7 +12,7 @@ export type AssetGraphQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    groupName: string | null;
+    groupName: string;
     isExecutable: boolean;
     changedReasons: Array<Types.ChangeReason>;
     hasMaterializePermission: boolean;
@@ -44,7 +44,7 @@ export type AssetGraphQuery = {
 export type AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
+  groupName: string;
   isExecutable: boolean;
   changedReasons: Array<Types.ChangeReason>;
   hasMaterializePermission: boolean;

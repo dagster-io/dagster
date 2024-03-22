@@ -661,7 +661,7 @@ type AssetNode {
   freshnessPolicy: FreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
-  groupName: String
+  groupName: String!
   owners: [AssetOwner!]!
   id: ID!
   isExecutable: Boolean!

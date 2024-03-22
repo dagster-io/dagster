@@ -431,7 +431,7 @@ export type AssetNode = {
   freshnessInfo: Maybe<AssetFreshnessInfo>;
   freshnessPolicy: Maybe<FreshnessPolicy>;
   graphName: Maybe<Scalars['String']['output']>;
-  groupName: Maybe<Scalars['String']['output']>;
+  groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];

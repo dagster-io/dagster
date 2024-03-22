@@ -26,7 +26,7 @@ export type WorkspaceAssetsQuery = {
         assetNodes: Array<{
           __typename: 'AssetNode';
           id: string;
-          groupName: string | null;
+          groupName: string;
           changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
           isSource: boolean;

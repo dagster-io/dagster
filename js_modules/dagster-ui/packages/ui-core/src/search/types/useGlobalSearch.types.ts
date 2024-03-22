@@ -75,7 +75,7 @@ export type SearchSecondaryQuery = {
             __typename: 'AssetNode';
             id: string;
             computeKind: string | null;
-            groupName: string | null;
+            groupName: string;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
