@@ -27,11 +27,8 @@ export const OverviewPageHeader = ({
           <OverviewTabs tab={tab} queryData={queryData} refreshState={refreshState} />
           {isSensorAMP && showGlobalAMPToSensorAMPBanner && isBannerHidden !== '1' ? (
             <Alert
-              title={
-                "The 'Auto-materialize' tab has been removed due to opting into automation sensors."
-              }
-              description="You can find your automation sensors under the
-              'Sensors' tab"
+              title="Looking for the Auto-materialize tab?"
+              description="You can find your auto-materialize sensors on the Sensors tab."
               onClose={() => {
                 setIsBannerHidden('1');
               }}
