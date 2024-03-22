@@ -17,6 +17,7 @@ def assert_datadog_client_class(
     service_check,
     timed,
     timing,
+    Event,
 ) -> None:
     datadog_client.event("Man down!", "This server needs assistance.")
     event.assert_called_with("Man down!", "This server needs assistance.")
@@ -48,6 +49,20 @@ def assert_datadog_client_class(
     datadog_client.timing("query.response.time", 1234)
     timing.assert_called_with("query.response.time", 1234)
 
+    datadog_client.api.Event.create(
+        title="Something happened!", text="Event text", tags=["version:1", "application:web"]
+    )
+    Event.create.assert_called_with(
+        title="Something happened!", text="Event text", tags=["version:1", "application:web"]
+    )
+
+    datadog_client.api.Event.query(
+        start=1313769783, end=1419436870, priority="normal", tags=["application:web"]
+    )
+    Event.query.assert_called_with(
+        start=1313769783, end=1419436870, priority="normal", tags=["application:web"]
+    )
+
     @datadog_client.timed("run_fn")
     def run_fn() -> None:
         pass
@@ -56,6 +71,7 @@ def assert_datadog_client_class(
     timed.assert_called_with("run_fn")
 
 
+@mock.patch("datadog.api.Event")
 @mock.patch("datadog.statsd.timing")
 @mock.patch("datadog.statsd.timed")
 @mock.patch("datadog.statsd.service_check")
@@ -77,6 +93,7 @@ def test_datadog_resource(
     service_check,
     timed,
     timing,
+    Event,
 ) -> None:
     executed = {}
 
@@ -95,6 +112,7 @@ def test_datadog_resource(
             service_check,
             timed,
             timing,
+            Event,
         )
         executed["yes"] = True
         return True
@@ -108,6 +126,7 @@ def test_datadog_resource(
     assert executed["yes"]
 
 
+@mock.patch("datadog.api.Event")
 @mock.patch("datadog.statsd.timing")
 @mock.patch("datadog.statsd.timed")
 @mock.patch("datadog.statsd.service_check")
@@ -129,6 +148,7 @@ def test_datadog_pythonic_resource_standalone_op(
     service_check,
     timed,
     timing,
+    Event,
 ) -> None:
     executed = {}
 
@@ -148,6 +168,7 @@ def test_datadog_pythonic_resource_standalone_op(
             service_check,
             timed,
             timing,
+            Event,
         )
         executed["yes"] = True
         return True
@@ -158,6 +179,7 @@ def test_datadog_pythonic_resource_standalone_op(
     assert executed["yes"]
 
 
+@mock.patch("datadog.api.Event")
 @mock.patch("datadog.statsd.timing")
 @mock.patch("datadog.statsd.timed")
 @mock.patch("datadog.statsd.service_check")
@@ -179,6 +201,7 @@ def test_datadog_pythonic_resource_factory_op_in_job(
     service_check,
     timed,
     timing,
+    Event,
 ) -> None:
     executed = {}
 
@@ -200,6 +223,7 @@ def test_datadog_pythonic_resource_factory_op_in_job(
             service_check,
             timed,
             timing,
+            Event,
         )
         executed["yes"] = True
         return True
