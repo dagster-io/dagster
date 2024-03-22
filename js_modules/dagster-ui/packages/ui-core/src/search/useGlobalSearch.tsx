@@ -225,6 +225,10 @@ const secondaryDataToSearchResults = (
         type: AssetFilterSearchResultType.AssetGroup,
         href: linkToAssetTableWithGroupFilter(groupAssetCount.groupMetadata),
         numResults: groupAssetCount.assetCount,
+        repoPath: buildRepoPathForHuman(
+          groupAssetCount.groupMetadata.repositoryName,
+          groupAssetCount.groupMetadata.repositoryLocationName,
+        ),
       }),
     );
 

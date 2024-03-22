@@ -151,14 +151,17 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
             $interactive={false}
             $textColor={Colors.textDefault()}
           >
-            <Icon
-              name={iconForType(item.type)}
-              color={isHighlight ? Colors.textDefault() : Colors.textLight()}
-            />
-            {isAssetFilterSearchResultType(item.type) && (
-              <Caption>{assetFilterPrefixString(item.type)}:&nbsp;</Caption>
-            )}
-            {labelComponents.map((component) => component)}
+            <Box flex={{gap: 4}}>
+              <Icon
+                name={iconForType(item.type)}
+                color={isHighlight ? Colors.textDefault() : Colors.textLight()}
+              />
+              {isAssetFilterSearchResultType(item.type) && (
+                <Caption>{assetFilterPrefixString(item.type)}:</Caption>
+              )}
+              <div>{labelComponents.map((component) => component)}</div>
+              {item.repoPath && <Caption>in {item.repoPath}</Caption>}
+            </Box>
           </StyledTag>
           <div style={{marginLeft: '8px'}}>
             <Description isHighlight={isHighlight}>

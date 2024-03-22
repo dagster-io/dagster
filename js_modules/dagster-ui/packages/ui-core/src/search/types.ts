@@ -41,6 +41,7 @@ export type SearchResult = {
   type: SearchResultType | AssetFilterSearchResultType;
   tags?: string;
   numResults?: number;
+  repoPath?: string;
 };
 
 export type ReadyResponse = {type: 'ready'};
