@@ -350,6 +350,12 @@ def test_context_provided_to_asset_check():
 
     execute_assets_and_checks(assets=[to_check], asset_checks=[op_annotation])
 
+    @asset_check(asset=to_check)
+    def check_annotation(context: AssetCheckExecutionContext):
+        assert not isinstance(context, AssetCheckExecutionContext)
+
+    execute_assets_and_checks(assets=[to_check], asset_checks=[op_annotation])
+
 
 def test_context_provided_to_blocking_asset_check():
     instance = DagsterInstance.ephemeral()
@@ -399,7 +405,7 @@ def test_context_provided_to_blocking_asset_check():
 def test_error_on_invalid_context_annotation():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="must be annotated with AssetExecutionContext, OpExecutionContext, or left blank",
+        match="must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank",
     ):
 
         @op
@@ -408,7 +414,7 @@ def test_error_on_invalid_context_annotation():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="must be annotated with AssetExecutionContext, OpExecutionContext, or left blank",
+        match="must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank",
     ):
 
         @asset

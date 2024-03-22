@@ -1798,14 +1798,14 @@ class AssetCheckExecutionContext:
         self._step_execution_context = self._op_execution_context._step_execution_context  # noqa: SLF001
 
     @staticmethod
-    def get() -> "AssetExecutionContext":
+    def get() -> "AssetCheckExecutionContext":
         ctx = _current_execution_context.get()
         if ctx is None:
             raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
-        if isinstance(ctx, AssetCheckExecutionContext):
+        if not isinstance(ctx, AssetCheckExecutionContext):
             raise DagsterInvariantViolationError(
-                "Can't use AssetExecutionContext.get() in the context of an "
-                "AssetCheckExecutionContext. Use AssetCheckExecutionContext.get() instead."
+                "Can't use AssetCheckExecutionContext.get() in the context of an "
+                "AssetCheckExecutionContext or OpExecutionContext. Use AssetCheckExecutionContext.get() instead."
             )
         return ctx
 
@@ -1943,7 +1943,9 @@ def enter_execution_context(
     """
     is_sda_step = step_context.is_sda_step
     is_op_in_graph_asset = step_context.is_in_graph_asset
-    is_asset_check = step_context.is_asset_check_step
+    asset_check_only_step = (
+        step_context.is_asset_check_step and not is_sda_step and not is_op_in_graph_asset
+    )
     context_annotation = EmptyAnnotation
     compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
     compute_fn = (
@@ -1955,7 +1957,7 @@ def enter_execution_context(
         context_param = compute_fn.get_context_arg()
         context_annotation = context_param.annotation
 
-    if context_annotation is AssetCheckExecutionContext and not is_asset_check:
+    if context_annotation is AssetCheckExecutionContext and not asset_check_only_step:
         if is_sda_step:
             raise DagsterInvalidDefinitionError(
                 "Cannot annotate @asset `context` parameter with type AssetCheckExecutionContext. "
@@ -1968,15 +1970,16 @@ def enter_execution_context(
                 "a graph-backed-asset) or left blank."
             )
 
-    # It would be nice to do this check at definition time, rather than at run time, but we don't
-    # know if the op is part of an op job or a graph-backed asset until we have the step execution context
-    if context_annotation is AssetExecutionContext and not is_sda_step and not is_op_in_graph_asset:
-        if is_asset_check:
+    if context_annotation is AssetExecutionContext:
+        if asset_check_only_step:
             raise DagsterInvalidDefinitionError(
                 "Cannot annotate @asset_check `context` parameter with type AssetExecutionContext. "
                 "`context` must be annotated with AssetCheckExecutionContext, OpExecutionContext, or left blank."
             )
-        else:
+
+        # It would be nice to do this check at definition time, rather than at run time, but we don't
+        # know if the op is part of an op job or a graph-backed asset until we have the step execution context
+        if not is_sda_step and not is_op_in_graph_asset:
             # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
             # cannot be annotated with AssetExecutionContext
             raise DagsterInvalidDefinitionError(
@@ -1986,7 +1989,7 @@ def enter_execution_context(
             )
 
     # default to AssetCheckExecutionContext in @asset_checks
-    if is_asset_check and not is_op_in_graph_asset and context_annotation is not OpExecutionContext:
+    if asset_check_only_step and context_annotation is not OpExecutionContext:
         asset_ctx = AssetCheckExecutionContext(
             op_execution_context=OpExecutionContext(step_context)
         )
@@ -2001,13 +2004,16 @@ def enter_execution_context(
             # * AssetExecutionContext for sda steps not in graph-backed assets, and asset_checks
             # * OpExecutionContext for non sda steps
             # * OpExecutionContext for ops in graph-backed assets
-            if is_asset_check:
+            if asset_check_only_step:
                 yield asset_ctx
             elif is_op_in_graph_asset or not is_sda_step:
                 yield asset_ctx.op_execution_context
             else:
                 yield asset_ctx
-        elif context_annotation is AssetExecutionContext:
+        elif (
+            context_annotation is AssetExecutionContext
+            or context_annotation is AssetCheckExecutionContext
+        ):
             yield asset_ctx
         else:
             yield asset_ctx.op_execution_context
