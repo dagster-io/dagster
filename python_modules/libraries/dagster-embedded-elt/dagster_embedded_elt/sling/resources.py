@@ -8,13 +8,16 @@ import time
 import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Union
 
 import sling
 from dagster import (
+    AssetExecutionContext,
+    AssetMaterialization,
     ConfigurableResource,
     EnvVar,
     MaterializeResult,
+    OpExecutionContext,
     PermissiveConfig,
     get_dagster_logger,
 )
@@ -23,7 +26,11 @@ from dagster._utils.env import environ
 from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
 
-from dagster_embedded_elt.sling.asset_decorator import get_streams_from_replication
+from dagster_embedded_elt.sling.asset_decorator import (
+    METADATA_KEY_REPLICATION_CONFIG,
+    METADATA_KEY_TRANSLATOR,
+    get_streams_from_replication,
+)
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
@@ -355,24 +362,35 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
-    @public
     def replicate(
         self,
         *,
-        replication_config: SlingReplicationParam,
-        dagster_sling_translator: DagsterSlingTranslator,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        replication_config: Optional[SlingReplicationParam] = None,
+        dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-    ) -> Generator[MaterializeResult, None, None]:
+    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
         """Runs a Sling replication from the given replication config.
 
         Args:
+            context: Asset or Op execution context.
             replication_config: The Sling replication config to use for the replication.
             dagster_sling_translator: The translator to use for the replication.
             debug: Whether to run the replication in debug mode.
 
         Returns:
-            Optional[Generator[MaterializeResult, None, None]]: A generator of MaterializeResult
+            Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
         """
+        # attempt to retrieve params from asset context if not passed as a parameter
+        if not (replication_config or dagster_sling_translator):
+            metadata_by_key = context.assets_def.metadata_by_key
+            first_asset_metadata = next(iter(metadata_by_key.values()))
+            dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
+            replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
+
+        # if translator has not been defined on metadata _or_ through param, then use the default constructor
+        dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
+
         replication_config = validate_replication(replication_config)
         stream_definition = get_streams_from_replication(replication_config)
 
@@ -408,11 +426,18 @@ class SlingResource(ConfigurableResource):
 
         end_time = time.time()
 
+        has_asset_def: bool = bool(context and context.has_assets_def)
+
         for stream in stream_definition:
             output_name = dagster_sling_translator.get_asset_key(stream)
-            yield MaterializeResult(
-                asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
-            )
+            if has_asset_def:
+                yield MaterializeResult(
+                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+                )
+            else:
+                yield AssetMaterialization(
+                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+                )
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
         """Returns a generator of raw logs from the Sling CLI."""

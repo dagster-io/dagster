@@ -122,9 +122,7 @@ Now you can define a Sling asset using the <PyObject module="dagster_embedded_el
 Each stream will render two assets, one for the source stream and one for the target destination. You may override how assets are named by passing in a custom <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" /> object.
 
 ```python file=/integrations/embedded_elt/sling_dagster_translator.py
-from dagster_embedded_elt import sling
 from dagster_embedded_elt.sling import (
-    DagsterSlingTranslator,
     SlingResource,
     sling_assets,
 )
@@ -137,10 +135,7 @@ sling_resource = SlingResource(connections=[...])  # Add connections here
 
 @sling_assets(replication_config=replication_config)
 def my_assets(context, sling: SlingResource):
-    yield from sling.replicate(
-        replication_config=replication_config,
-        dagster_sling_translator=DagsterSlingTranslator(),
-    )
+    yield from sling.replicate(context=context)
     for row in sling.stream_raw_logs():
         context.log.info(row)
 
@@ -167,7 +162,6 @@ This is an example of how to setup a Sling sync between two databases such as Po
 
 ```python file=/integrations/embedded_elt/postgres_snowflake.py
 from dagster_embedded_elt.sling import (
-    DagsterSlingTranslator,
     SlingConnectionResource,
     SlingResource,
     sling_assets,
@@ -215,10 +209,7 @@ replication_config = {
 
 @sling_assets(replication_config=replication_config)
 def my_assets(context, sling: SlingResource):
-    yield from sling.replicate(
-        replication_config=replication_config,
-        dagster_sling_translator=DagsterSlingTranslator(),
-    )
+    yield from sling.replicate(context=context)
 ```
 
 ## Example 2: File to Database
@@ -251,10 +242,7 @@ replication_config = {
 
 @sling_assets(replication_config=replication_config)
 def my_assets(context, sling: SlingResource):
-    yield from sling.replicate(
-        replication_config=replication_config,
-        dagster_sling_translator=DagsterSlingTranslator(),
-    )
+    yield from sling.replicate(context=context)
 ```
 
 ---
