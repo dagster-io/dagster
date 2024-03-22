@@ -177,6 +177,7 @@ export type AssetCheckEvaluation = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -430,7 +431,7 @@ export type AssetNode = {
   freshnessInfo: Maybe<AssetFreshnessInfo>;
   freshnessPolicy: Maybe<FreshnessPolicy>;
   graphName: Maybe<Scalars['String']['output']>;
-  groupName: Maybe<Scalars['String']['output']>;
+  groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
@@ -455,6 +456,7 @@ export type AssetNode = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -1043,6 +1045,7 @@ export type DagsterType = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -1135,6 +1138,7 @@ export type DisplayableEvent = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -1209,6 +1213,7 @@ export type EngineEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -1448,6 +1453,7 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -1547,6 +1553,7 @@ export type ExpectationResult = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -1573,6 +1580,7 @@ export type FailureMetadata = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -1678,6 +1686,7 @@ export type HandledOutputEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -1747,6 +1756,7 @@ export type IPipelineSnapshot = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -1816,6 +1826,7 @@ export type InputDefinition = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -2037,6 +2048,7 @@ export type Job = IPipelineSnapshot &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -2225,6 +2237,7 @@ export type ListDagsterType = DagsterType &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -2268,6 +2281,7 @@ export type LoadedInputEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -2433,6 +2447,7 @@ export type MaterializationEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -2809,6 +2824,7 @@ export type NullableDagsterType = DagsterType &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -2858,6 +2874,7 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -2897,6 +2914,7 @@ export type ObservationEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -2937,6 +2955,7 @@ export type OutputDefinition = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -3256,6 +3275,7 @@ export type Pipeline = IPipelineSnapshot &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -3481,6 +3501,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -3909,6 +3930,7 @@ export type RegularDagsterType = DagsterType & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -4127,6 +4149,7 @@ export type ResourceInitFailureEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -4164,6 +4187,7 @@ export type ResourceInitStartedEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -4201,6 +4225,7 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -4255,6 +4280,7 @@ export type Run = PipelineRun & {
   hasDeletePermission: Scalars['Boolean']['output'];
   hasReExecutePermission: Scalars['Boolean']['output'];
   hasTerminatePermission: Scalars['Boolean']['output'];
+  hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobName: Scalars['String']['output'];
   mode: Scalars['String']['output'];
@@ -4265,6 +4291,7 @@ export type Run = PipelineRun & {
   pipelineSnapshotId: Maybe<Scalars['String']['output']>;
   repositoryOrigin: Maybe<RepositoryOrigin>;
   resolvedOpSelection: Maybe<Array<Scalars['String']['output']>>;
+  rootConcurrencyKeys: Maybe<Array<Scalars['String']['output']>>;
   rootRunId: Maybe<Scalars['String']['output']>;
   runConfig: Scalars['RunConfigData']['output'];
   runConfigYaml: Scalars['String']['output'];
@@ -4463,6 +4490,7 @@ export type RunOrError = PythonError | Run | RunNotFoundError;
 
 export type RunQueueConfig = {
   __typename: 'RunQueueConfig';
+  isOpConcurrencyAware: Maybe<Scalars['Boolean']['output']>;
   maxConcurrentRuns: Scalars['Int']['output'];
   tagConcurrencyLimitsYaml: Maybe<Scalars['String']['output']>;
 };
@@ -4914,6 +4942,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -5018,6 +5047,7 @@ export type StepWorkerStartedEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -5055,6 +5085,7 @@ export type StepWorkerStartingEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
@@ -5131,6 +5162,25 @@ export type TableColumnConstraints = {
   nullable: Scalars['Boolean']['output'];
   other: Array<Scalars['String']['output']>;
   unique: Scalars['Boolean']['output'];
+};
+
+export type TableColumnDep = {
+  __typename: 'TableColumnDep';
+  assetKey: AssetKey;
+  columnName: Scalars['String']['output'];
+};
+
+export type TableColumnLineageEntry = {
+  __typename: 'TableColumnLineageEntry';
+  columnDeps: Array<TableColumnDep>;
+  columnName: Scalars['String']['output'];
+};
+
+export type TableColumnLineageMetadataEntry = MetadataEntry & {
+  __typename: 'TableColumnLineageMetadataEntry';
+  description: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  lineage: Array<TableColumnLineageEntry>;
 };
 
 export type TableConstraints = {
@@ -5279,6 +5329,7 @@ export type TypeCheck = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -5317,6 +5368,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
@@ -12516,6 +12568,10 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('hasTerminatePermission')
         ? overrides.hasTerminatePermission!
         : true,
+    hasUnconstrainedRootNodes:
+      overrides && overrides.hasOwnProperty('hasUnconstrainedRootNodes')
+        ? overrides.hasUnconstrainedRootNodes!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -12552,6 +12608,10 @@ export const buildRun = (
     resolvedOpSelection:
       overrides && overrides.hasOwnProperty('resolvedOpSelection')
         ? overrides.resolvedOpSelection!
+        : [],
+    rootConcurrencyKeys:
+      overrides && overrides.hasOwnProperty('rootConcurrencyKeys')
+        ? overrides.rootConcurrencyKeys!
         : [],
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'fugit',
     runConfig: overrides && overrides.hasOwnProperty('runConfig') ? overrides.runConfig! : 'quas',
@@ -12893,6 +12953,10 @@ export const buildRunQueueConfig = (
   relationshipsToOmit.add('RunQueueConfig');
   return {
     __typename: 'RunQueueConfig',
+    isOpConcurrencyAware:
+      overrides && overrides.hasOwnProperty('isOpConcurrencyAware')
+        ? overrides.isOpConcurrencyAware!
+        : false,
     maxConcurrentRuns:
       overrides && overrides.hasOwnProperty('maxConcurrentRuns')
         ? overrides.maxConcurrentRuns!
@@ -14127,6 +14191,53 @@ export const buildTableColumnConstraints = (
     nullable: overrides && overrides.hasOwnProperty('nullable') ? overrides.nullable! : true,
     other: overrides && overrides.hasOwnProperty('other') ? overrides.other! : [],
     unique: overrides && overrides.hasOwnProperty('unique') ? overrides.unique! : false,
+  };
+};
+
+export const buildTableColumnDep = (
+  overrides?: Partial<TableColumnDep>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnDep'} & TableColumnDep => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnDep');
+  return {
+    __typename: 'TableColumnDep',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    columnName:
+      overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'vitae',
+  };
+};
+
+export const buildTableColumnLineageEntry = (
+  overrides?: Partial<TableColumnLineageEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnLineageEntry'} & TableColumnLineageEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnLineageEntry');
+  return {
+    __typename: 'TableColumnLineageEntry',
+    columnDeps: overrides && overrides.hasOwnProperty('columnDeps') ? overrides.columnDeps! : [],
+    columnName: overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'aut',
+  };
+};
+
+export const buildTableColumnLineageMetadataEntry = (
+  overrides?: Partial<TableColumnLineageMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnLineageMetadataEntry'} & TableColumnLineageMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnLineageMetadataEntry');
+  return {
+    __typename: 'TableColumnLineageMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'vero',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'iusto',
+    lineage: overrides && overrides.hasOwnProperty('lineage') ? overrides.lineage! : [],
   };
 };
 

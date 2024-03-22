@@ -541,6 +541,7 @@ class InProcessCodeLocation(CodeLocation):
     ) -> "SensorExecutionData":
         result = get_external_sensor_execution(
             self._get_repo_def(repository_handle.repository_name),
+            self.origin,
             instance.get_ref(),
             name,
             last_tick_completion_time,

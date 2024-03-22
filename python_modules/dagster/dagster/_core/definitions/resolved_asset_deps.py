@@ -54,28 +54,45 @@ def resolve_similar_asset_names(
     target_asset_key_split = ("/".join(target_asset_key.path)).split("/")
 
     for asset_key in asset_keys:
+        *target_asset_key_prefix, target_asset_key_name = target_asset_key.path
+        *asset_key_prefix, asset_key_name = asset_key.path
+
         try:
             from rapidfuzz import fuzz
 
-            # Whether the asset key or upstream key has the same prefix and a similar
-            # name
-            # e.g. [snowflake, elementl, key] and [snowflake, elementl, ey]
-            is_same_prefix_similar_name = (
-                asset_key.path[:-1] == target_asset_key.path[:-1]
-                and fuzz.ratio(asset_key.path[-1], target_asset_key.path[-1]) > 80
+            is_similar_name = bool(
+                fuzz.ratio(asset_key_name, target_asset_key_name, score_cutoff=80)
             )
-
-            # Whether the asset key or upstream key has a similar prefix and the same
-            # name
-            # e.g. [snowflake, elementl, key] and [nowflake, elementl, key]
-            is_similar_prefix_same_name = (
-                asset_key.path[-1] == target_asset_key.path[-1]
-                and fuzz.ratio(" ".join(asset_key.path[:-1]), " ".join(target_asset_key.path[:-1]))
-                > 80
+            is_similar_prefix = bool(
+                fuzz.ratio(
+                    " ".join(asset_key_prefix),
+                    " ".join(target_asset_key_prefix),
+                    score_cutoff=80,
+                )
             )
         except ImportError:
-            is_same_prefix_similar_name = False
-            is_similar_prefix_same_name = False
+            from difflib import get_close_matches
+
+            is_similar_name = bool(
+                get_close_matches(asset_key_name, [target_asset_key_name], cutoff=0.8)
+            )
+            is_similar_prefix = bool(
+                get_close_matches(
+                    " ".join(asset_key_prefix), [" ".join(target_asset_key_prefix)], cutoff=0.8
+                )
+            )
+
+        # Whether the asset key or upstream key has the same prefix and a similar
+        # name
+        # e.g. [snowflake, elementl, key] and [snowflake, elementl, ey]
+        is_same_prefix_similar_name = (
+            asset_key_prefix == target_asset_key_prefix and is_similar_name
+        )
+
+        # Whether the asset key or upstream key has a similar prefix and the same
+        # name
+        # e.g. [snowflake, elementl, key] and [nowflake, elementl, key]
+        is_similar_prefix_same_name = asset_key_name == target_asset_key_name and is_similar_prefix
 
         # Whether the asset key or upstream key has one more prefix component than
         # the other, and the same name

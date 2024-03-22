@@ -10,7 +10,7 @@ pyright:
 	python scripts/run-pyright.py --all
 
 install_pyright:
-	pip install -e 'python_modules/dagster[pyright]'
+	pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
 
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild

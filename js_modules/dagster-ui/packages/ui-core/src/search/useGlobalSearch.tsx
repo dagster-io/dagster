@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import qs from 'qs';
 import {useCallback, useEffect, useRef} from 'react';
 
+import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
 import {
@@ -13,29 +14,30 @@ import {
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {
-  GroupMetadata,
-  buildAssetCountBySection,
-  linkToCodeLocation,
-} from '../assets/AssetsOverview';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 import {workspacePath} from '../workspace/workspacePath';
 
-const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
+export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
 };
 
-const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
+export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
   })}`;
 };
 
-const linkToAssetTableWithOwnerFilter = (owner: string) => {
+export const linkToAssetTableWithOwnerFilter = (owner: string) => {
   return `/assets?${qs.stringify({
     owners: JSON.stringify([owner]),
   })}`;
+};
+
+export const linkToCodeLocation = (repoAddress: RepoAddress) => {
+  return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
 };
 
 const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {

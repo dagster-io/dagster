@@ -287,7 +287,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     graphName = graphene.String()
-    groupName = graphene.String()
+    groupName = graphene.NonNull(graphene.String)
     owners = non_null_list(GrapheneAssetOwner)
     id = graphene.NonNull(graphene.ID)
     isExecutable = graphene.NonNull(graphene.Boolean)

@@ -80,6 +80,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
+    from dagster._core.events import DagsterEventType
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
     from dagster._core.instance import DagsterInstance
@@ -492,9 +493,12 @@ class PlanExecutionContext(IPlanContext):
 
 @dataclass
 class InputAssetVersionInfo:
-    # This is the storage id of the last materialization of any partition of an asset. Thus it is
-    # computed the same way for both partitioned and non-partitioned assets.
+    # This is the storage id of the last materialization/observation of any partition of an asset.
+    # Thus it is computed the same way for both partitioned and non-partitioned assets.
     storage_id: int
+
+    # This is the event type of the event referenced by storage_id
+    event_type: "DagsterEventType"
 
     # If the input asset is partitioned, this is a hash of the sorted data versions of each dependency
     # partition. If the input asset is not partitioned, this is the data version of the asset. It
@@ -1019,7 +1023,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             else:
                 data_version = extract_data_version_from_entry(event.event_log_entry)
             self._input_asset_version_info[key] = InputAssetVersionInfo(
-                storage_id, data_version, event.run_id, event.timestamp
+                storage_id,
+                check.not_none(event.event_log_entry.dagster_event).event_type,
+                data_version,
+                event.run_id,
+                event.timestamp,
             )
 
     def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:

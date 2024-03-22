@@ -72,6 +72,20 @@ export type SidebarAssetFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -815,6 +829,20 @@ export type SidebarAssetFragment = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -2069,6 +2097,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -3321,6 +3363,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -4562,6 +4618,20 @@ export type SidebarAssetFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -5822,6 +5892,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7072,6 +7156,20 @@ export type SidebarAssetFragment = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -8326,6 +8424,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -9567,6 +9679,20 @@ export type SidebarAssetFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -10827,6 +10953,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -12077,6 +12217,20 @@ export type SidebarAssetFragment = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -13331,6 +13485,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -14572,6 +14740,20 @@ export type SidebarAssetFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -15828,6 +16010,20 @@ export type SidebarAssetQuery = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -16580,6 +16776,20 @@ export type SidebarAssetQuery = {
                           name: string;
                           label: string;
                           description: string | null;
+                        }
+                      | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
                         }
                       | {
                           __typename: 'TableMetadataEntry';
@@ -17840,6 +18050,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -19098,6 +19322,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -20345,6 +20583,20 @@ export type SidebarAssetQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -21610,6 +21862,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -22866,6 +23132,20 @@ export type SidebarAssetQuery = {
                           name: string;
                           label: string;
                           description: string | null;
+                        }
+                      | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
                         }
                       | {
                           __typename: 'TableMetadataEntry';
@@ -24126,6 +24406,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -25373,6 +25667,20 @@ export type SidebarAssetQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -26638,6 +26946,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -27894,6 +28216,20 @@ export type SidebarAssetQuery = {
                           name: string;
                           label: string;
                           description: string | null;
+                        }
+                      | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
                         }
                       | {
                           __typename: 'TableMetadataEntry';
@@ -29154,6 +29490,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -30401,6 +30751,20 @@ export type SidebarAssetQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';

@@ -160,3 +160,4 @@ export const colorDataVizViolet = () => getColor(ColorName.DataVizViolet);
 export const colorDataVizVioletAlt = () => getColor(ColorName.DataVizVioletAlt);
 export const colorDataVizYellow = () => getColor(ColorName.DataVizYellow);
 export const colorDataVizYellowAlt = () => getColor(ColorName.DataVizYellowAlt);
+export const colorBlueGradient = () => getColor(ColorName.BlueGradient);

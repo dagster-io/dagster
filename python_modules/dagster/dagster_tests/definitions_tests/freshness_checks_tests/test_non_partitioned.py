@@ -27,7 +27,25 @@ def test_params() -> None:
         assets=[my_asset], maximum_lag_minutes=10
     )
     assert len(result) == 1
-    assert next(iter(result[0].check_keys)).asset_key == my_asset.key
+    check = result[0]
+    assert next(iter(check.check_keys)).asset_key == my_asset.key
+    assert next(iter(check.check_specs)).metadata == {
+        "dagster/non_partitioned_freshness_params": {
+            "dagster/maximum_lag_minutes": 10,
+        }
+    }
+
+    result = build_freshness_checks_for_non_partitioned_assets(
+        assets=[my_asset], freshness_cron="0 0 * * *", maximum_lag_minutes=10
+    )
+    check = result[0]
+    assert next(iter(check.check_specs)).metadata == {
+        "dagster/non_partitioned_freshness_params": {
+            "dagster/maximum_lag_minutes": 10,
+            "dagster/freshness_cron": "0 0 * * *",
+            "dagster/freshness_cron_timezone": "UTC",
+        }
+    }
 
     result = build_freshness_checks_for_non_partitioned_assets(
         assets=[my_asset.key], maximum_lag_minutes=10
@@ -45,6 +63,7 @@ def test_params() -> None:
     result = build_freshness_checks_for_non_partitioned_assets(
         assets=[my_asset, src_asset], maximum_lag_minutes=10
     )
+
     assert len(result) == 2
     assert next(iter(result[0].check_keys)).asset_key == my_asset.key
 
@@ -52,6 +71,15 @@ def test_params() -> None:
         build_freshness_checks_for_non_partitioned_assets(
             assets=[my_asset, my_asset], maximum_lag_minutes=10
         )
+
+    result = build_freshness_checks_for_non_partitioned_assets(
+        assets=[my_asset],
+        maximum_lag_minutes=10,
+        freshness_cron="0 0 * * *",
+        freshness_cron_timezone="UTC",
+    )
+    assert len(result) == 1
+    assert next(iter(result[0].check_keys)).asset_key == my_asset.key
 
 
 @pytest.mark.parametrize(
@@ -93,12 +121,14 @@ def test_check_result_cron_non_partitioned(
 
     start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
     freshness_cron = "0 0 * * *"  # Every day at midnight.
+    freshness_cron_timezone = "UTC"
     maximum_lag_minutes = 10
 
     freshness_checks = build_freshness_checks_for_non_partitioned_assets(
         assets=[my_asset],
         freshness_cron=freshness_cron,
         maximum_lag_minutes=maximum_lag_minutes,
+        freshness_cron_timezone=freshness_cron_timezone,
     )
 
     freeze_datetime = start_time

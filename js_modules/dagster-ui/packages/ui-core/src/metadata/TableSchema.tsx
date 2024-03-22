@@ -16,15 +16,14 @@ import {createContext, useContext, useState} from 'react';
 import {TableSchemaFragment} from './types/TableSchema.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {
   AssetKeyInput,
-  JsonMetadataEntry,
   MaterializationEvent,
+  TableColumnLineageMetadataEntry,
   TableSchemaMetadataEntry,
 } from '../graphql/types';
 import {Description} from '../pipelines/Description';
-import {AnchorButton} from '../ui/AnchorButton';
 
 type ITableSchema = TableSchemaFragment;
 
@@ -36,17 +35,27 @@ interface ITableSchemaProps {
   itemHorizontalPadding?: Spacing;
 }
 
+type MetadataEntryLabelOnly = Pick<
+  MaterializationEvent['metadataEntries'][0],
+  '__typename' | 'label'
+>;
+
 export const isCanonicalColumnSchemaEntry = (
-  m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
+  m: MetadataEntryLabelOnly,
 ): m is TableSchemaMetadataEntry =>
   m.__typename === 'TableSchemaMetadataEntry' && m.label === 'dagster/column_schema';
 
 export const isCanonicalColumnLineageEntry = (
-  m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
-): m is JsonMetadataEntry => m.__typename === 'JsonMetadataEntry' && m.label === 'lineage';
+  m: MetadataEntryLabelOnly,
+): m is TableColumnLineageMetadataEntry =>
+  m.__typename === 'TableColumnLineageMetadataEntry' && m.label === 'dagster/column_lineage';
 
-export const TableSchemaLineageContext = createContext<{assetKey: AssetKeyInput | null}>({
-  assetKey: null,
+export const TableSchemaAssetContext = createContext<{
+  assetKey: AssetKeyInput | undefined;
+  materializationMetadataEntries: MetadataEntryLabelOnly[] | undefined;
+}>({
+  assetKey: undefined,
+  materializationMetadataEntries: undefined,
 });
 
 export const TableSchema = ({
@@ -54,8 +63,7 @@ export const TableSchema = ({
   schemaLoadTimestamp,
   itemHorizontalPadding,
 }: ITableSchemaProps) => {
-  const {assetKey} = useContext(TableSchemaLineageContext);
-
+  const {AssetColumnLinksCell} = useContext(AssetFeatureContext);
   const multiColumnConstraints = schema.constraints?.other || [];
   const [filter, setFilter] = useState('');
   const rows = schema.columns.filter(
@@ -94,7 +102,7 @@ export const TableSchema = ({
             <td>Column name</td>
             <td style={{width: 200}}>Type</td>
             <td>Description</td>
-            {assetKey ? <td style={{width: 56}} /> : undefined}
+            <AssetColumnLinksCell column={null} />
           </tr>
         </thead>
         <tbody>
@@ -114,19 +122,7 @@ export const TableSchema = ({
               <td>
                 <Description description={column.description} />
               </td>
-              {assetKey ? (
-                <td style={{padding: '4px 12px'}}>
-                  <Tooltip content="View column lineage">
-                    <AnchorButton
-                      icon={<Icon name="column_lineage" />}
-                      to={assetDetailsPathForKey(assetKey, {
-                        view: 'lineage',
-                        column: column.name,
-                      })}
-                    />
-                  </Tooltip>
-                </td>
-              ) : undefined}
+              <AssetColumnLinksCell column={column.name} />
             </tr>
           ))}
           {rows.length === 0 && (

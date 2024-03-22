@@ -94,7 +94,7 @@ class AssetValueLoader:
         """
         asset_key = AssetKey.from_coercible(asset_key)
         resource_config = resource_config or {}
-        output_metadata = {}
+        output_definition_metadata = {}
 
         if asset_key in self._assets_defs_by_key:
             assets_def = self._assets_defs_by_key[asset_key]
@@ -106,7 +106,7 @@ class AssetValueLoader:
             io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
             io_manager_def = resource_defs[io_manager_key]
             name = assets_def.get_output_name_for_asset_key(asset_key)
-            output_metadata = assets_def.metadata_by_key[asset_key]
+            output_definition_metadata = assets_def.metadata_by_key[asset_key]
             op_def = assets_def.get_op_def_for_asset_key(asset_key)
             asset_partitions_def = assets_def.partitions_def
         else:
@@ -135,7 +135,7 @@ class AssetValueLoader:
             dagster_type=resolve_dagster_type(python_type),
             upstream_output=build_output_context(
                 name=name,
-                metadata=output_metadata,
+                definition_metadata=output_definition_metadata,
                 asset_key=asset_key,
                 op_def=op_def,
                 resource_config=resource_config,

@@ -1082,6 +1082,133 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             )
 
 
+def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
+    freeze_datetime = pendulum.now()
+
+    # we have no good api for compositing load targets so forced to use a workspace file
+    workspace_load_target = WorkspaceFileTarget(
+        [file_relative_path(__file__, "code_location_scoped_test_workspace.yaml")]
+    )
+
+    # the name of the location by default is the fully-qualified module name
+    code_location_with_sensor_name = "dagster_tests.daemon_sensor_tests.locations_for_code_location_scoped_sensor_test.code_location_with_sensor"
+    code_location_with_dupe_job_name = "dagster_tests.daemon_sensor_tests.locations_for_code_location_scoped_sensor_test.code_location_with_duplicate_job_name"
+
+    with instance_with_multiple_code_locations(
+        workspace_load_target=workspace_load_target
+    ) as location_infos:
+        assert len(location_infos) == 2
+
+        code_location_w_sensor_info = location_infos[code_location_with_sensor_name]
+        code_location_w_dupe_job_info = location_infos[code_location_with_dupe_job_name]
+
+        sensor_repo = code_location_w_sensor_info.get_single_repository()
+        dupe_job_repo = code_location_w_dupe_job_info.get_single_repository()
+
+        # verify assumption that the instances are the same
+        assert code_location_w_sensor_info.instance == code_location_w_dupe_job_info.instance
+        instance = code_location_w_sensor_info.instance
+
+        # verify assumption that the contexts are the same
+        assert code_location_w_sensor_info.context == code_location_w_dupe_job_info.context
+        workspace_context = code_location_w_sensor_info.context
+
+        # This remainder is largely copied from test_cross_repo_run_status_sensor
+        with pendulum_freeze_time(freeze_datetime):
+            success_sensor = sensor_repo.get_external_sensor("success_sensor")
+            instance.start_sensor(success_sensor)
+
+            evaluate_sensors(workspace_context, executor)
+
+            ticks = [
+                *instance.get_ticks(
+                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                )
+            ]
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                success_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum_freeze_time(freeze_datetime):
+            external_success_job = sensor_repo.get_full_external_job("success_job")
+
+            # this unfortunate API (create_run_for_job) requires the importation
+            # of the in-memory job object even though it is dealing mostly with
+            # "external" objects
+            from .locations_for_xlocation_sensor_test.job_defs import success_job
+
+            dagster_run = instance.create_run_for_job(
+                success_job,
+                external_job_origin=external_success_job.get_external_origin(),
+                job_code_origin=external_success_job.get_python_origin(),
+            )
+
+            instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
+            wait_for_all_runs_to_finish(instance)
+            dagster_run = next(iter(instance.get_runs()))
+            assert dagster_run.status == DagsterRunStatus.SUCCESS
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum_freeze_time(freeze_datetime):
+            evaluate_sensors(workspace_context, executor)
+
+            ticks = [
+                *instance.get_ticks(
+                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                )
+            ]
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                success_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+        with pendulum_freeze_time(freeze_datetime):
+            external_success_job = dupe_job_repo.get_full_external_job("success_job")
+
+            # this unfortunate API (create_run_for_job) requires the importation
+            # of the in-memory job object even though it is dealing mostly with
+            # "external" objects
+            from .locations_for_xlocation_sensor_test.job_defs import success_job
+
+            dagster_run = instance.create_run_for_job(
+                success_job,
+                external_job_origin=external_success_job.get_external_origin(),
+                job_code_origin=external_success_job.get_python_origin(),
+            )
+
+            instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
+            wait_for_all_runs_to_finish(instance)
+            dagster_run = next(iter(instance.get_runs()))
+            assert dagster_run.status == DagsterRunStatus.SUCCESS
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum_freeze_time(freeze_datetime):
+            evaluate_sensors(workspace_context, executor)
+
+            ticks = [
+                *instance.get_ticks(
+                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                )
+            ]
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                success_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+
 def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (

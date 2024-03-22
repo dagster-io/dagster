@@ -114,12 +114,15 @@ export const MetadataEntry = ({
       );
 
     case 'JsonMetadataEntry':
-      return expandSmallValues && entry.jsonString.length < 1000 ? (
-        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(entry.jsonString)}</div>
+    case 'TableColumnLineageMetadataEntry':
+      const jsonString =
+        entry.__typename === 'JsonMetadataEntry' ? entry.jsonString : JSON.stringify(entry.lineage);
+      return expandSmallValues && jsonString.length < 1000 ? (
+        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(jsonString)}</div>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
-          copyContent={() => entry.jsonString}
+          copyContent={() => jsonString}
           content={() => (
             <Box
               background={Colors.backgroundLight()}
@@ -128,7 +131,7 @@ export const MetadataEntry = ({
               border="bottom"
               style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace, overflow: 'auto'}}
             >
-              {tryPrettyPrintJSON(entry.jsonString)}
+              {tryPrettyPrintJSON(jsonString)}
             </Box>
           )}
         >
@@ -310,6 +313,17 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       repositoryName
       locationName
     }
+    ... on TableColumnLineageMetadataEntry {
+      lineage {
+        columnName
+        columnDeps {
+          assetKey {
+            path
+          }
+          columnName
+        }
+      }
+    }
     ... on TableMetadataEntry {
       table {
         records
@@ -490,7 +504,7 @@ export const MetadataEntryLink = styled(Link)`
   }
 `;
 
-const StructuredContentTable = styled.table`
+export const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;

@@ -152,8 +152,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 # when using AllPartitionMappings and native DeltaLake partitioning
                 elif (
                     context.upstream_output is not None
-                    and context.upstream_output.metadata is not None
-                    and context.upstream_output.metadata.get("partition_by") is not None
+                    and context.upstream_output.definition_metadata is not None
+                    and context.upstream_output.definition_metadata.get("partition_by") is not None
                     and type_annotation in SINGLE_LOADING_TYPES
                     and context.upstream_output.asset_info is not None
                     and context.upstream_output.asset_info.partitions_def is not None
@@ -190,7 +190,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
-        context_metadata = context.metadata or {}
+        context_metadata = context.definition_metadata or {}
         streaming = context_metadata.get("streaming", False)
         return self.write_df_to_path(context, df.collect(streaming=streaming), path, metadata)
 
@@ -201,7 +201,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         path: "UPath",
         metadata: Optional[StorageMetadata] = None,  # why is metadata passed
     ):
-        context_metadata = context.metadata or {}
+        context_metadata = context.definition_metadata or {}
         delta_write_options = context_metadata.get(
             "delta_write_options"
         )  # This needs to be gone and just only key value on the metadata
@@ -299,14 +299,17 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if isinstance(context, InputContext):
             if (
                 context.upstream_output is not None
-                and context.upstream_output.metadata is not None
-                and context.upstream_output.metadata.get("partition_by") is not None
+                and context.upstream_output.definition_metadata is not None
+                and context.upstream_output.definition_metadata.get("partition_by") is not None
             ):
                 # upstream asset has "partition_by" metadata set, so partitioning for it is handled by DeltaLake itself
                 return path
 
         if isinstance(context, OutputContext):
-            if context.metadata is not None and context.metadata.get("partition_by") is not None:
+            if (
+                context.definition_metadata is not None
+                and context.definition_metadata.get("partition_by") is not None
+            ):
                 # this asset has "partition_by" metadata set, so partitioning for it is handled by DeltaLake itself
                 return path
 
@@ -315,7 +318,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     def get_metadata(
         self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
     ) -> Dict[str, MetadataValue]:
-        context_metadata = context.metadata or {}
+        context_metadata = context.definition_metadata or {}
 
         metadata = super().get_metadata(context, obj)
 

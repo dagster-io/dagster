@@ -17,6 +17,7 @@ asn1crypto==1.5.1
 astroid==3.1.0
 asttokens==2.4.1
 async-lru==2.0.4
+async-timeout==4.0.3
 attrs==23.2.0
 babel==2.14.0
 backoff==2.2.1
@@ -256,6 +257,8 @@ snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
 soupsieve==2.5
 sqlalchemy==1.4.52
+sqlglot==22.3.1
+sqlglotrs==0.1.2
 sqlparse==0.4.4
 stack-data==0.6.3
 starlette==0.37.2

@@ -33,7 +33,7 @@ export const Structured = (props: StructuredProps) => {
   const {node, metadata, style, highlighted} = props;
   const [expanded, setExpanded] = useState(false);
 
-  const {title, body, dialogStyle} = useMemo(() => {
+  const {title, body} = useMemo(() => {
     if (node.__typename === 'ExecutionStepFailureEvent') {
       return {
         title: 'Error',
@@ -73,7 +73,6 @@ export const Structured = (props: StructuredProps) => {
           <LogsRowStructuredContent node={node} metadata={metadata} />
         </StructuredContent>
       ),
-      dialogStyle: {width: '80vw', minWidth: '600px', maxWidth: '1000px'},
     };
   }, [metadata, node]);
 
@@ -86,7 +85,7 @@ export const Structured = (props: StructuredProps) => {
         canEscapeKeyClose
         canOutsideClickClose
         onClose={() => setExpanded(false)}
-        style={dialogStyle}
+        style={{width: 'auto', maxWidth: '80vw'}}
       >
         <DialogBody>{body}</DialogBody>
         <DialogFooter topBorder>

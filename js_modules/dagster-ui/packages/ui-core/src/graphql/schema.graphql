@@ -661,7 +661,7 @@ type AssetNode {
   freshnessPolicy: FreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
-  groupName: String
+  groupName: String!
   owners: [AssetOwner!]!
   id: ID!
   isExecutable: Boolean!
@@ -1419,6 +1419,8 @@ type Run implements PipelineRun {
   hasTerminatePermission: Boolean!
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
+  rootConcurrencyKeys: [String!]
+  hasUnconstrainedRootNodes: Boolean!
 }
 
 type AssetCheckhandle {
@@ -2385,6 +2387,7 @@ type Instance {
 type RunQueueConfig {
   maxConcurrentRuns: Int!
   tagConcurrencyLimitsYaml: String
+  isOpConcurrencyAware: Boolean
 }
 
 type ConcurrencyKeyInfo {
@@ -2564,6 +2567,12 @@ type SensorData {
 interface MetadataEntry {
   label: String!
   description: String
+}
+
+type TableColumnLineageMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  lineage: [TableColumnLineageEntry!]!
 }
 
 type TableSchemaMetadataEntry implements MetadataEntry {
@@ -3105,6 +3114,16 @@ type TableColumnConstraints {
 
 type TableConstraints {
   other: [String!]!
+}
+
+type TableColumnDep {
+  assetKey: AssetKey!
+  columnName: String!
+}
+
+type TableColumnLineageEntry {
+  columnName: String!
+  columnDeps: [TableColumnDep!]!
 }
 
 type PipelineTag {

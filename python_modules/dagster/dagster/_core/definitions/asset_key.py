@@ -27,35 +27,19 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     .. code-block:: python
 
-        from dagster import op
+        from dagster import AssetKey
 
-        @op
-        def emit_metadata(context, df):
-            yield AssetMaterialization(
-                asset_key=AssetKey('flat_asset_key'),
-                metadata={"text_metadata": "Text-based metadata for this event"},
-            )
-
-        @op
-        def structured_asset_key(context, df):
-            yield AssetMaterialization(
-                asset_key=AssetKey(['parent', 'child', 'grandchild']),
-                metadata={"text_metadata": "Text-based metadata for this event"},
-            )
-
-        @op
-        def structured_asset_key_2(context, df):
-            yield AssetMaterialization(
-                asset_key=AssetKey(('parent', 'child', 'grandchild')),
-                metadata={"text_metadata": "Text-based metadata for this event"},
-            )
+        AssetKey("asset1")
+        AssetKey(["asset1"]) # same as the above
+        AssetKey(["prefix", "asset1"])
+        AssetKey(["prefix", "subprefix", "asset1"])
 
     Args:
-        path (Sequence[str]): String, list of strings, or tuple of strings.  A list of strings
-            represent the hierarchical structure of the asset_key.
+        path (Union[str, Sequence[str]]): String, list of strings, or tuple of strings.  A list of
+            strings represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Sequence[str]):
+    def __new__(cls, path: Union[str, Sequence[str]]):
         if isinstance(path, str):
             path = [path]
         else:

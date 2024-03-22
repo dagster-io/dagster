@@ -22,13 +22,18 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {AssetGroupSelector, ChangeReason} from '../graphql/types';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PageLoadTrace} from '../performance';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
+import {
+  doesFilterArrayMatchValueArray,
+  useAssetTagFilter,
+  useAssetTagsForAssets,
+} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {
   useAssetKindTagsForAssets,
@@ -109,6 +114,14 @@ interface AssetCatalogTableProps {
   trace?: PageLoadTrace;
 }
 
+type FilterType = {
+  groups: AssetGroupSelector[];
+  computeKindTags: string[];
+  changedInBranch: ChangeReason[];
+  owners: AssetOwner[];
+  tags: DefinitionTag[];
+};
+
 export const AssetsCatalogTable = ({
   prefixPath,
   setPrefixPath,
@@ -118,23 +131,20 @@ export const AssetsCatalogTable = ({
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
 
-  const [filters, setFilters] = useQueryPersistedState<{
-    groups: AssetGroupSelector[];
-    computeKindTags: string[];
-    changedInBranch: ChangeReason[];
-    owners: string[];
-  }>({
-    encode: ({groups, computeKindTags, changedInBranch, owners}) => ({
+  const [filters, setFilters] = useQueryPersistedState<FilterType>({
+    encode: ({groups, computeKindTags, changedInBranch, owners, tags}) => ({
       groups: groups?.length ? JSON.stringify(groups) : undefined,
       computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
       changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
       owners: owners?.length ? JSON.stringify(owners) : undefined,
+      tags: tags?.length ? JSON.stringify(tags) : undefined,
     }),
     decode: (qs) => ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
       computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
       changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
       owners: qs.owners ? JSON.parse(qs.owners) : [],
+      tags: qs.tags ? JSON.parse(qs.tags) : [],
     }),
   });
 
@@ -172,11 +182,12 @@ export const AssetsCatalogTable = ({
         }
 
         if (filters.owners?.length) {
-          const owners =
-            a.definition?.owners.map((o) =>
-              o.__typename === 'TeamAssetOwner' ? o.team : o.email,
-            ) || [];
-          if (filters.owners.some((owner) => !owners.includes(owner))) {
+          if (!doesFilterArrayMatchValueArray(filters.owners, a?.definition?.owners ?? [])) {
+            return false;
+          }
+        }
+        if (filters.tags?.length) {
+          if (!doesFilterArrayMatchValueArray(filters.tags, a.definition?.tags ?? [])) {
             return false;
           }
         }
@@ -203,45 +214,24 @@ export const AssetsCatalogTable = ({
     }
   }, [loaded, trace]);
 
-  const setVisibleAssetGroups = React.useCallback(
-    (groups: AssetGroupSelector[]) => {
-      setFilters((existingFilters: typeof filters) => ({
-        ...existingFilters,
-        groups,
-      }));
-    },
-    [setFilters],
-  );
-
-  const setVisibleComputeKindTags = React.useCallback(
-    (computeKindTags: string[]) => {
-      setFilters((existingFilters: typeof filters) => ({
-        ...existingFilters,
-        computeKindTags,
-      }));
-    },
-    [setFilters],
-  );
-
-  const setOwners = React.useCallback(
-    (owners: string[]) => {
-      setFilters((existingFilters: typeof filters) => ({
-        ...existingFilters,
-        owners,
-      }));
-    },
-    [setFilters],
-  );
-
-  const setVisibleChangedInBranch = React.useCallback(
-    (changeReasons: ChangeReason[]) => {
-      setFilters((existingFilters: typeof filters) => ({
-        ...existingFilters,
-        changedInBranch: changeReasons,
-      }));
-    },
-    [setFilters],
-  );
+  const {setComputeKindTags, setGroupFilters, setChangedInBranch, setOwners, setAssetTags} =
+    React.useMemo(() => {
+      function makeSetter<T extends keyof FilterType>(field: T) {
+        return (value: FilterType[T]) => {
+          setFilters?.((filters) => ({
+            ...filters,
+            [field]: value,
+          }));
+        };
+      }
+      return {
+        setComputeKindTags: makeSetter('computeKindTags'),
+        setGroupFilters: makeSetter('groups'),
+        setChangedInBranch: makeSetter('changedInBranch'),
+        setOwners: makeSetter('owners'),
+        setAssetTags: makeSetter('tags'),
+      };
+    }, [setFilters]);
 
   const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
   const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
@@ -250,23 +240,28 @@ export const AssetsCatalogTable = ({
   const groupsFilter = useAssetGroupFilter({
     assetGroups: allAssetGroupOptions,
     visibleAssetGroups: filters.groups,
-    setGroupFilters: setVisibleAssetGroups,
+    setGroupFilters,
   });
   const changedInBranchFilter = useChangedFilter({
     changedInBranch: filters.changedInBranch,
-    setChangedInBranch: setVisibleChangedInBranch,
+    setChangedInBranch,
   });
   const computeKindFilter = useComputeKindTagFilter({
     allComputeKindTags,
     computeKindTags: filters.computeKindTags,
-    setComputeKindTags: setVisibleComputeKindTags,
+    setComputeKindTags,
   });
   const ownersFilter = useAssetOwnerFilter({
     allAssetOwners,
     owners: filters.owners,
     setOwners,
   });
-  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter];
+  const tagsFilter = useAssetTagFilter({
+    allAssetTags: useAssetTagsForAssets(pathMatches),
+    tags: filters.tags,
+    setTags: setAssetTags,
+  });
+  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter, tagsFilter];
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
   if (isBranchDeployment) {
     uiFilters.push(changedInBranchFilter);

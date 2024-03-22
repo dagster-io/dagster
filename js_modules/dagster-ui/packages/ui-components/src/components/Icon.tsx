@@ -54,6 +54,7 @@ import datatype_number from '../icon-svgs/datatype_number.svg';
 import datatype_string from '../icon-svgs/datatype_string.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
+import dollar_sign from '../icon-svgs/dollar_sign.svg';
 import done from '../icon-svgs/done.svg';
 import dot from '../icon-svgs/dot.svg';
 import dot_filled from '../icon-svgs/dot_filled.svg';
@@ -288,6 +289,7 @@ export const Icons = {
   column_lineage,
   corporate_fare,
   delete: deleteSVG,
+  dollar_sign,
   done,
   dot,
   dot_filled,

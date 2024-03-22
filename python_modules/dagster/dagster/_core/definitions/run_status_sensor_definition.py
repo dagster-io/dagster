@@ -769,12 +769,22 @@ class RunStatusSensorDefinition(SensorDefinition):
                 if monitor_all_code_locations:
                     job_match = True
 
+                code_location_name = (
+                    context.code_location_origin.location_name
+                    if context.code_location_origin
+                    else None
+                )
+
                 # check if the run is in the current repository and (if provided) one of jobs specified in monitored_jobs
                 if (
                     not job_match
                     and
                     # the job has a repository (not manually executed)
                     dagster_run.external_job_origin
+                    and
+                    # the job belongs to the current code location
+                    dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                    == code_location_name
                     and
                     # the job belongs to the current repository
                     dagster_run.external_job_origin.external_repository_origin.repository_name

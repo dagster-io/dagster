@@ -340,7 +340,6 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       value
     }
     owners {
-      __typename
       ... on TeamAssetOwner {
         team
       }

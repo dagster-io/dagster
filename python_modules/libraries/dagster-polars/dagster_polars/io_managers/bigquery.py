@@ -67,9 +67,9 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
 
         assert obj is not None
         assert isinstance(connection, bigquery.Client)
-        assert context.metadata is not None
+        assert context.definition_metadata is not None
         job_config = bigquery.LoadJobConfig(
-            write_disposition=context.metadata.get("write_disposition")
+            write_disposition=context.definition_metadata.get("write_disposition")
         )
 
         # FIXME: load_table_from_dataframe writes the dataframe to a temporary parquet file
