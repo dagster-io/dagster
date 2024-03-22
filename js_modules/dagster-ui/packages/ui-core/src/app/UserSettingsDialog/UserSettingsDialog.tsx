@@ -75,7 +75,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
     <>
       <DialogBody>
         <Box padding={{bottom: 8}} flex={{direction: 'column', gap: 4}}>
-          <UserPreferences onChange={setAreaPreferencesChanged} />
+          <UserPreferences onChangeRequiresReload={setAreaPreferencesChanged} />
         </Box>
         <Box padding={{top: 16}} border="top">
           <Box padding={{bottom: 8}}>
