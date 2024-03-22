@@ -1,5 +1,4 @@
 from dagster import (
-    AssetCheckExecutionContext,
     AssetCheckResult,
     AssetKey,
     Definitions,
