@@ -28,7 +28,7 @@ from .utils import (
 
 
 @experimental
-def build_freshness_checks_for_non_partitioned_assets(
+def build_last_update_freshness_checks(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
     maximum_lag_minutes: int,
@@ -38,14 +38,11 @@ def build_freshness_checks_for_non_partitioned_assets(
 ) -> Sequence[AssetChecksDefinition]:
     r"""For each provided asset, constructs a freshness check definition.
 
-    Only accepts assets that have no partitions definition. For time window partitioned assets, see
-    `build_freshness_checks_for_time_window_partitioned_assets`. Providing partitioned assets to
-    this function will result in a runtime error.
-
-    An asset is considered fresh if it has been materialized or observed within a certain time
-    window. The freshness_cron and maximum_lag_minutes parameters are used to define this time
-    window. Freshness_cron defines the time at which the asset should have been materialized, and
-    maximum_lag_minutes provides a tolerance for the range at which the asset can arrive.
+    An asset is considered fresh by these checks if it has been materialized or observed within a
+    certain time window. The freshness_cron and maximum_lag_minutes parameters are used to define
+    this time window. Freshness_cron defines the time at which the asset should have been
+    materialized, and maximum_lag_minutes provides a tolerance for the range at which the asset can
+    arrive.
 
     Let's say an asset kicks off materializing at 12:00 PM and takes 10 minutes to complete.
     Allowing for operational constraints and delays, the asset should always be materialized by
@@ -110,11 +107,6 @@ def _build_freshness_check_for_assets(
             name="freshness_check",
         )
         def the_check(context: AssetExecutionContext) -> AssetCheckResult:
-            check.invariant(
-                context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def is None,
-                "Expected non-partitioned asset",
-            )
-
             current_time = pendulum.now("UTC")
             current_timestamp = check.float_param(current_time.timestamp(), "current_time")
             latest_cron_tick = get_latest_completed_cron_tick(

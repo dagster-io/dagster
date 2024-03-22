@@ -5,13 +5,11 @@ import pytest
 from dagster import (
     asset,
 )
-from dagster._check import CheckError
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.freshness_checks.non_partitioned import (
-    build_freshness_checks_for_non_partitioned_assets,
+from dagster._core.definitions.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
 )
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.instance import DagsterInstance
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 
@@ -23,26 +21,20 @@ def test_params() -> None:
     def my_asset():
         pass
 
-    result = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_asset], maximum_lag_minutes=10
-    )
+    result = build_last_update_freshness_checks(assets=[my_asset], maximum_lag_minutes=10)
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == my_asset.key
 
-    result = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_asset.key], maximum_lag_minutes=10
-    )
+    result = build_last_update_freshness_checks(assets=[my_asset.key], maximum_lag_minutes=10)
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == my_asset.key
 
     src_asset = SourceAsset("source_asset")
-    result = build_freshness_checks_for_non_partitioned_assets(
-        assets=[src_asset], maximum_lag_minutes=10
-    )
+    result = build_last_update_freshness_checks(assets=[src_asset], maximum_lag_minutes=10)
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == src_asset.key
 
-    result = build_freshness_checks_for_non_partitioned_assets(
+    result = build_last_update_freshness_checks(
         assets=[my_asset, src_asset], maximum_lag_minutes=10
     )
 
@@ -50,11 +42,9 @@ def test_params() -> None:
     assert next(iter(result[0].check_keys)).asset_key == my_asset.key
 
     with pytest.raises(Exception, match="Found duplicate assets"):
-        build_freshness_checks_for_non_partitioned_assets(
-            assets=[my_asset, my_asset], maximum_lag_minutes=10
-        )
+        build_last_update_freshness_checks(assets=[my_asset, my_asset], maximum_lag_minutes=10)
 
-    result = build_freshness_checks_for_non_partitioned_assets(
+    result = build_last_update_freshness_checks(
         assets=[my_asset],
         maximum_lag_minutes=10,
         freshness_cron="0 0 * * *",
@@ -84,7 +74,7 @@ def test_different_event_types(
     with pendulum_freeze_time(start_time.subtract(minutes=maximum_lag_minutes - 1)):
         add_new_event(instance, my_asset.key, is_materialization=use_materialization)
     with pendulum_freeze_time(start_time):
-        freshness_checks = build_freshness_checks_for_non_partitioned_assets(
+        freshness_checks = build_last_update_freshness_checks(
             assets=[my_asset],
             maximum_lag_minutes=maximum_lag_minutes,
         )
@@ -106,7 +96,7 @@ def test_check_result_cron_non_partitioned(
     freshness_cron_timezone = "UTC"
     maximum_lag_minutes = 10
 
-    freshness_checks = build_freshness_checks_for_non_partitioned_assets(
+    freshness_checks = build_last_update_freshness_checks(
         assets=[my_asset],
         freshness_cron=freshness_cron,
         maximum_lag_minutes=maximum_lag_minutes,
@@ -172,7 +162,7 @@ def test_check_result_lag_only(
     start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
     maximum_lag_minutes = 10
 
-    freshness_checks = build_freshness_checks_for_non_partitioned_assets(
+    freshness_checks = build_last_update_freshness_checks(
         assets=[my_asset],
         maximum_lag_minutes=maximum_lag_minutes,
     )
@@ -201,23 +191,4 @@ def test_check_result_lag_only(
         add_new_event(instance, my_asset.key)
     # Now we expect the check to pass.
     with pendulum_freeze_time(freeze_datetime):
-        assert_check_result(my_asset, instance, freshness_checks, AssetCheckSeverity.WARN, True)
-
-
-def test_invalid_runtime_asset(
-    pendulum_aware_report_dagster_event: None,
-    instance: DagsterInstance,
-) -> None:
-    """Test that a runtime error is raised when an asset is partitioned."""
-
-    @asset(partitions_def=DailyPartitionsDefinition(start_date=pendulum.datetime(2021, 1, 1)))
-    def my_asset():
-        pass
-
-    freshness_checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_asset],
-        maximum_lag_minutes=10,
-    )
-
-    with pytest.raises(CheckError, match="Expected non-partitioned asset"):
         assert_check_result(my_asset, instance, freshness_checks, AssetCheckSeverity.WARN, True)

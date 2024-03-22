@@ -26,7 +26,7 @@ from .utils import (
 
 
 @experimental
-def build_freshness_checks_for_time_window_partitioned_assets(
+def build_last_time_partitioned_checks(
     *,
     assets: Sequence[Union[SourceAsset, CoercibleToAssetKey, AssetsDefinition]],
     freshness_cron: str,
