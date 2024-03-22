@@ -55,7 +55,7 @@ from sqlglot import (
 )
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
-from typing_extensions import Literal
+from typing_extensions import Final, Literal
 
 from ..asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
@@ -84,6 +84,8 @@ DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = 2
+
+DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 
 
 def _get_dbt_target_path() -> Path:
@@ -133,6 +135,7 @@ class DbtCliEventMessage:
         validated_manifest: Mapping[str, Any],
         upstream_unique_ids: List[str],
         metadata: Mapping[str, Any],
+        description: Optional[str] = None,
     ) -> Iterator[AssetObservation]:
         for upstream_unique_id in upstream_unique_ids:
             upstream_resource_props: Dict[str, Any] = validated_manifest["nodes"].get(
@@ -143,6 +146,7 @@ class DbtCliEventMessage:
             yield AssetObservation(
                 asset_key=upstream_asset_key,
                 metadata=metadata,
+                description=description,
             )
 
     @public
@@ -257,11 +261,14 @@ class DbtCliEventMessage:
                 "status": node_status,
             }
 
-            is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
             attached_node_unique_id = test_resource_props.get("attached_node")
             is_generic_test = bool(attached_node_unique_id)
 
-            if has_asset_def and is_asset_check and is_generic_test:
+            if (
+                dagster_dbt_translator.settings.enable_asset_checks
+                and has_asset_def
+                and is_generic_test  # singular tests aren't ingested as asset checks yet
+            ):
                 attached_node_resource_props: Dict[str, Any] = manifest["nodes"].get(
                     attached_node_unique_id
                 ) or manifest["sources"].get(attached_node_unique_id)
@@ -297,16 +304,19 @@ class DbtCliEventMessage:
                 # unexpected test results so we log those as observations as if
                 # asset checks were disabled.
                 else:
-                    logger.info(
-                        f"dbt test '{check_name}' will be logged as an AssetObservation instead of "
-                        "an AssetCheckResult because the asset check was not selected."
+                    message = (
+                        f"dbt test `{check_name}` logged as an AssetObservation instead "
+                        "of an AssetCheckResult because the asset check was not selected."
                     )
+                    logger.info(message)
                     yield from self._yield_observation_events_for_test(
                         dagster_dbt_translator=dagster_dbt_translator,
                         validated_manifest=manifest,
                         upstream_unique_ids=upstream_unique_ids,
                         metadata=metadata,
+                        description=message,
                     )
+            # if asset checks are disabled, or if this is a singular test
             else:
                 yield from self._yield_observation_events_for_test(
                     dagster_dbt_translator=dagster_dbt_translator,
@@ -1267,10 +1277,11 @@ def get_subset_selection_for_context(
         check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
     }
     all_checks_included_for_selected_assets = all(
-        check_key.asset_key not in context.selected_asset_check_keys
+        check_key.asset_key not in context.selected_asset_keys
         for check_key in (all_check_keys - context.selected_asset_check_keys)
     )
 
+    # note that this will always be true if checks are disabled
     if selected_checks_target_selected_assets and all_checks_included_for_selected_assets:
         selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
         indirect_selection = None
@@ -1283,9 +1294,9 @@ def get_subset_selection_for_context(
     # (all checks disabled, only one check and no assets) it's not a concern.
     # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
     else:
-        check.invariant(is_checks_subset)
+        check.invariant(dagster_dbt_translator.settings.enable_asset_checks)
         selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
-        indirect_selection = "empty"
+        indirect_selection = DBT_EMPTY_INDIRECT_SELECTION
         logger.info(
             "A dbt subsetted execution is being performed. Overriding default dbt selection"
             f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`. "
