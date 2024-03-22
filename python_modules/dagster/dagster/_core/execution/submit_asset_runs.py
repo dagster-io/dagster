@@ -3,7 +3,7 @@ import time
 from typing import Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
-from dagster._core.definitions.assets_job import is_base_asset_job_name
+from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
