@@ -1,7 +1,7 @@
 import tempfile
 import time
 from contextlib import contextmanager
-from typing import Any, Callable, Mapping, Union
+from typing import Any, Callable, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -20,10 +20,9 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     observe runs.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(SqlitePollingEventLogStorage, self).__init__(*args, **kwargs)
-        self._watcher = SqlPollingEventWatcher(self)
-        self._disposed = False
+        self._watcher: Optional[SqlPollingEventWatcher] = None
 
     @classmethod
     def from_config_value(
@@ -32,25 +31,33 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
         return cls(inst_data=inst_data, **config_value)
 
     def watch(
-        self, run_id: str, cursor: Union[str, int], callback: Callable[[EventLogEntry], None]
+        self,
+        run_id: str,
+        cursor: Optional[str],
+        callback: Callable[[EventLogEntry, str], None],
     ):
         check.str_param(run_id, "run_id")
         check.opt_str_param(cursor, "cursor")
         check.callable_param(callback, "callback")
+        if self._watcher is None:
+            self._watcher = SqlPollingEventWatcher(self)
+
         self._watcher.watch_run(run_id, cursor, callback)
 
-    def end_watch(self, run_id: str, handler: Callable[[EventLogEntry], None]):
+    def end_watch(
+        self,
+        run_id: str,
+        handler: Callable[[EventLogEntry, str], None],
+    ):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
-        self._watcher.unwatch_run(run_id, handler)
+        if self._watcher:
+            self._watcher.unwatch_run(run_id, handler)
 
-    def __del__(self):
-        self.dispose()
-
-    def dispose(self):
-        if not self._disposed:
-            self._disposed = True
+    def dispose(self) -> None:
+        if self._watcher:
             self._watcher.close()
+            self._watcher = None
 
 
 RUN_ID = "foo"

@@ -85,14 +85,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             should_autocreate_tables, "should_autocreate_tables"
         )
 
-        self._disposed = False
-
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
-
-        self._event_watcher = SqlPollingEventWatcher(self)
+        self._event_watcher: Optional[SqlPollingEventWatcher] = None
 
         self._secondary_index_cache = {}
 
@@ -322,6 +319,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     ) -> None:
         if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
             check.failed("Cannot call `watch` with an offset cursor")
+        if self._event_watcher is None:
+            self._event_watcher = SqlPollingEventWatcher(self)
 
         self._event_watcher.watch_run(run_id, cursor, callback)
 
@@ -335,16 +334,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             return deserialize_value(cursor_res.scalar(), EventLogEntry)  # type: ignore
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
-        self._event_watcher.unwatch_run(run_id, handler)
-
-    def __del__(self) -> None:
-        # Keep the inherent limitations of __del__ in Python in mind!
-        self.dispose()
+        if self._event_watcher:
+            self._event_watcher.unwatch_run(run_id, handler)
 
     def dispose(self) -> None:
-        if not self._disposed:
-            self._disposed = True
+        if self._event_watcher:
             self._event_watcher.close()
+            self._event_watcher = None
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)
