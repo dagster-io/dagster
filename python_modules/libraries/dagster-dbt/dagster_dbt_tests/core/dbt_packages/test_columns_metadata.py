@@ -215,19 +215,31 @@ def test_column_lineage(
                     TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="status")
                 ],
                 "credit_card_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "coupon_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "bank_transfer_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "gift_card_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
                 ],
             }
         ),
