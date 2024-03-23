@@ -393,6 +393,7 @@ class CachingStaleStatusResolver:
             self._asset_graph = None
             self._asset_graph_load_fn = asset_graph
 
+    # add a comment
     def get_status(self, key: "AssetKey", partition_key: Optional[str] = None) -> StaleStatus:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
