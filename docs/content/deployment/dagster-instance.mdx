@@ -69,7 +69,7 @@ Here's a breakdown of the files and directories that are generated:
     </tr>
     <tr>
       <td>storage/</td>
-      <td>A directory a list of subdirectories, one for each run.</td>
+      <td>A directory or a list of subdirectories, one for each run.</td>
     </tr>
     <tr>
       <td>storage/[run_id]/compute_logs</td>
@@ -482,19 +482,20 @@ The <PyObject module="dagster._core.run_coordinator" object="QueuedRunCoordinato
 
 This run coordinator supports both limiting the overall number of concurrent runs and specific limits based on run tags. For example, to avoid throttling, you can specify a concurrency limit for runs that interact with a specific cloud service.
 
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_queued endbefore=end_marker_run_coordinator_queued
-# There are a few ways to configure the QueuedRunCoordinator:
+There are a few ways you can configure this run coordinator:
 
-# this first option has concurrency limits set to default values
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
+- **Enabling default limits**:
 
-# this second option manually specifies limits:
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
+  ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_queued_default endbefore=end_marker_run_coordinator_queued_default
+  run_coordinator:
+    module: dagster.core.run_coordinator
+    class: QueuedRunCoordinator
+  ```
+
+- **Manually specifying limits** by using the `run_queue` key. When the `run_queue` key is used, the `QueuedRunCoordinator` is enabled and will apply the limits you specify:
+
+  ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_queued_manual_limits endbefore=end_marker_run_coordinator_queued_manual_limits
+  run_queue:
     max_concurrent_runs: 25
     tag_concurrency_limits:
       - key: "database"
@@ -502,12 +503,14 @@ run_coordinator:
         limit: 4
       - key: "dagster/backfill"
         limit: 10
+  ```
 
-# as always, some or all of these values can be obtained from environment variables:
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
+  Refer to the [Limiting concurrency in data pipelines guide](/guides/limiting-concurrency-in-data-pipelines) for more info.
+
+- **Using environment variables** to provide values:
+
+  ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_queued_env_vars endbefore=end_marker_run_coordinator_queued_env_vars
+  run_queue:
     max_concurrent_runs:
       env: DAGSTER_OVERALL_CONCURRENCY_LIMIT
     tag_concurrency_limits:
@@ -518,15 +521,18 @@ run_coordinator:
       - key: "dagster/backfill"
         limit:
           env: DAGSTER_BACKFILL_CONCURRENCY_LIMIT
+  ```
 
-# for higher dequeue throughput, threading can be enabled:
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
-    dequeue_use_threads: true
-    dequeue_num_workers: 8
-```
+- **Enabling threading** for higher dequeue throughput:
+
+  ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_queued_threading endbefore=end_marker_run_coordinator_queued_threading
+  run_coordinator:
+    module: dagster.core.run_coordinator
+    class: QueuedRunCoordinator
+    config:
+      dequeue_use_threads: true
+      dequeue_num_workers: 8
+  ```
 
 ---
 
