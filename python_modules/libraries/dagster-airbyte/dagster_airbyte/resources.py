@@ -369,6 +369,10 @@ class AirbyteResource(BaseAirbyteResource):
         return get_dagster_logger()
 
     @property
+    def log(self) -> logging.Logger:
+        return self._log
+
+    @property
     def api_base_url(self) -> str:
         return (
             ("https://" if self.use_https else "http://")
