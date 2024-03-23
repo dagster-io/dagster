@@ -25,6 +25,8 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 .. autofunction:: define_asset_job
 
+.. autoclass:: UnresolvedAssetJobDefinition
+
 .. autoclass:: AssetSelection
 
 .. autoclass:: FreshnessPolicy

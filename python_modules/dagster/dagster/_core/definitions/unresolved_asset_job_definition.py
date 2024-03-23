@@ -48,6 +48,16 @@ class UnresolvedAssetJobDefinition(
         ],
     )
 ):
+    """Represents a job that targets an unresolved AssetSelection.
+
+    An unresolved job can't be executed directly, because it doesn't hold direct references to the
+    AssetsDefinition objects that it needs to execute.
+
+    An unresolved jobs is meant to be placed inside a Definitions object, alongside the selected
+    assets. Within the Definitions object, the job is resolved, so anyone targeting the Definitions
+    object can execute it.
+    """
+
     def __new__(
         cls,
         name: str,
