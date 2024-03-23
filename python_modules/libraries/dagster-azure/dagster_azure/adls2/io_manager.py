@@ -1,6 +1,6 @@
 import pickle
 from contextlib import contextmanager
-from typing import Any, Iterator, Union
+from typing import Any, Iterator, Optional, Union
 
 from dagster import (
     InputContext,
@@ -32,6 +32,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         blob_client: Any,
         lease_client_constructor: Any,
         prefix: str = "dagster",
+        extension: Optional[str] = None,
     ):
         self.adls2_client = adls2_client
         self.file_system_client = self.adls2_client.get_file_system_client(file_system)
@@ -39,6 +40,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         self.blob_client = blob_client
         self.blob_container_client = self.blob_client.get_container_client(file_system)
         self.prefix = check.str_param(prefix, "prefix")
+        self.extension = check.opt_str_param(extension, "extension", "")
 
         self.lease_client_constructor = lease_client_constructor
         self.lease_duration = _LEASE_DURATION
@@ -74,11 +76,12 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return True
 
     def _uri_for_path(self, path: UPath, protocol: str = "abfss://") -> str:
-        return "{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}".format(
+        return "{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}{extension}".format(
             protocol=protocol,
             filesystem=self.file_system_client.file_system_name,
             account=self.file_system_client.account_name,
             key=path.as_posix(),
+            extension=self.extension,
         )
 
     @contextmanager
@@ -182,6 +185,9 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
     adls2_prefix: str = Field(
         default="dagster", description="ADLS Gen2 file system prefix to write to."
     )
+    adls2_extension: Optional[str] = Field(
+        description="The extension to use as suffix for the pickled objects."
+    )
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -196,6 +202,7 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
             self.adls2.blob_client,
             self.adls2.lease_client_constructor,
             self.adls2_prefix,
+            self.adls2_extension,
         )
 
     def load_input(self, context: "InputContext") -> Any:
@@ -294,5 +301,6 @@ def adls2_pickle_io_manager(init_context):
         blob_client,
         lease_client,
         init_context.resource_config.get("adls2_prefix"),
+        init_context.resource_config.get("adls2_extension"),
     )
     return pickled_io_manager

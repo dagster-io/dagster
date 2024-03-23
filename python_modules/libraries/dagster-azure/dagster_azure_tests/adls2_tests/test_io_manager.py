@@ -26,8 +26,9 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.events import DagsterEventType
+from dagster._core.events import DagsterEventType, HandledOutputData
 from dagster._core.execution.api import create_execution_plan, execute_plan
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
@@ -59,6 +60,14 @@ def get_step_output(step_events, step_key, output_name="result"):
         ):
             return step_event
     return None
+
+
+def get_io_manager_handled_output_paths(result: ExecuteInProcessResult):
+    return [
+        event.event_specific_data.metadata["path"].path
+        for event in result.all_events
+        if isinstance(event.event_specific_data, HandledOutputData)
+    ]
 
 
 def define_inty_job(adls_io_resource=adls2_resource):
@@ -329,4 +338,24 @@ def test_with_fake_adls2_resource():
     }
 
     result = job.execute_in_process(run_config=run_config)
+    assert result.success
+
+
+def test_with_fake_adls2_resource_uses_extension():
+    extension = ".pkl"
+    job = define_inty_job(adls_io_resource=fake_adls2_resource)
+
+    run_config = {
+        "resources": {
+            "io_manager": {
+                "config": {"adls2_file_system": "fake_file_system", "adls2_extension": extension}
+            },
+            "adls2": {"config": {"account_name": "my_account"}},
+        }
+    }
+
+    result = job.execute_in_process(run_config=run_config)
+    output_paths = get_io_manager_handled_output_paths(result)
+
+    assert all([path.endswith(extension) for path in output_paths])
     assert result.success
