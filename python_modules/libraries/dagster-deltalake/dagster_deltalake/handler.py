@@ -187,7 +187,7 @@ def partition_dimensions_to_dnf(
                 )
                 parts.append(filter_)
             elif field.type.type == "string":
-                parts.append(_value_dnf(partition_dimension, field.type.type, str_values))
+                parts.append(_value_dnf(partition_dimension, field.type.type, str_values=True))
             else:
                 raise ValueError(f"Unsupported partition type {field.type.type}")
         else:
