@@ -79,7 +79,7 @@ cron_scenarios = [
             auto_materialize_policy=AutoMaterializePolicy(
                 rules={AutoMaterializeRule.skip_on_parent_missing()}
             )
-        ),
+        ).with_current_time("2023-11-11T11:11"),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs()
         # rule added after the first tick, should capture that this asset was not materialized
