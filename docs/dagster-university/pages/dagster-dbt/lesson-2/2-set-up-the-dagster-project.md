@@ -10,7 +10,7 @@ After downloading the Dagster University project, you’ll need to make a few ch
 
 First, you’ll add a few additional dependencies to the project: 
 
-- `dagster-dbt` - Dagster’s integration library for dbt. This will also install `dbt-core` and `dagster` as dependencies.
+- `dagster-dbt` - Dagster’s integration library for dbt. This will also install `dbt-core` as a dependency.
 - `dbt-duckdb` - A library for using dbt with DuckDB, which we’ll use to store the dbt models we create
 
 Locate the `setup.py` file in the root of the Dagster University project. Open the file and replace it with the following:
