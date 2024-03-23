@@ -262,6 +262,7 @@ class AirbyteConnection:
         destination: AirbyteDestination,
         stream_config: Mapping[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
+        enable_streams: Optional[bool] = None,
         destination_namespace: Optional[
             Union[AirbyteDestinationNamespace, str]
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
@@ -277,6 +278,7 @@ class AirbyteConnection:
         self.destination_namespace = check.opt_inst_param(
             destination_namespace, "destination_namespace", (str, AirbyteDestinationNamespace)
         )
+        self.enable_streams = check.opt_bool_param(enable_streams, "enable_streams")
         self.prefix = check.opt_str_param(prefix, "prefix")
 
     def must_be_recreated(self, other: Optional["AirbyteConnection"]) -> bool:
