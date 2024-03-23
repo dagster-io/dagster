@@ -379,21 +379,25 @@ class DbtCliEventMessage:
         # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
         for column_name in column_names:
-            dbt_parent_resource_props_by_alias: Dict[str, Dict[str, Any]] = {
-                parent_dbt_resource_props["alias"]: parent_dbt_resource_props
-                for parent_dbt_resource_props in map(
-                    lambda parent_unique_id: manifest["nodes"][parent_unique_id],
-                    dbt_resource_props["depends_on"]["nodes"],
-                )
-            }
+            dbt_parent_resource_props_by_identifier: Dict[str, Dict[str, Any]] = {}
+            for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
+                is_resource_type_source = parent_unique_id.startswith("source")
+                if is_resource_type_source:
+                    parent_dbt_resource_props = manifest["sources"][parent_unique_id]
+                    identifier = parent_dbt_resource_props["name"]
+                else:
+                    parent_dbt_resource_props = manifest["nodes"][parent_unique_id]
+                    identifier = parent_dbt_resource_props["alias"]
+
+                dbt_parent_resource_props_by_identifier[identifier] = parent_dbt_resource_props
 
             column_deps: Sequence[TableColumnDep] = []
             for sqlglot_lineage_node in lineage(
                 column=column_name, sql=optimized_node_ast, schema=sqlglot_mapping_schema
             ).walk():
                 column = sqlglot_lineage_node.expression.find(exp.Column)
-                if column and column.table in dbt_parent_resource_props_by_alias:
-                    parent_resource_props = dbt_parent_resource_props_by_alias[column.table]
+                if column and column.table in dbt_parent_resource_props_by_identifier:
+                    parent_resource_props = dbt_parent_resource_props_by_identifier[column.table]
                     parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
 
                     column_deps.append(
