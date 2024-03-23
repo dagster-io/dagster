@@ -2,6 +2,7 @@
 from dagster import (
     AssetExecutionContext,
     DailyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
