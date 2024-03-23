@@ -6,6 +6,7 @@ from typing import (
     AbstractSet,
     Dict,
     Iterable,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -35,6 +36,7 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._serdes.serdes import (
@@ -434,26 +436,47 @@ class AutoMaterializeAssetPartitionsFilter(
         context: AssetConditionEvaluationContext,
         asset_partitions: Iterable[AssetKeyPartitionKey],
     ) -> Iterable[AssetKeyPartitionKey]:
+        from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
+
         if self.latest_run_required_tags is None:
             return asset_partitions
 
         will_update_asset_partitions: Set[AssetKeyPartitionKey] = set()
+        storage_ids_to_fetch_by_key: Dict[AssetKey, List[int]] = defaultdict(list)
 
-        asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for asset_partition in asset_partitions:
             if context.will_update_asset_partition(asset_partition):
                 will_update_asset_partitions.add(asset_partition)
             else:
-                record = context.instance_queryer.get_latest_materialization_or_observation_record(
-                    asset_partition
-                )
-
-                if record is None:
-                    raise RuntimeError(
-                        f"No materialization record found for asset partition {asset_partition}"
+                latest_storage_id = (
+                    context.instance_queryer.get_latest_materialization_or_observation_storage_id(
+                        asset_partition=asset_partition
                     )
+                )
+                if latest_storage_id is not None:
+                    storage_ids_to_fetch_by_key[asset_partition.asset_key].append(latest_storage_id)
 
-                asset_partitions_by_latest_run_id[record.run_id].add(asset_partition)
+        asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
+
+        step = get_max_event_records_limit()
+        for asset_key, storage_ids_to_fetch in storage_ids_to_fetch_by_key.items():
+            for i in range(0, len(storage_ids_to_fetch), step):
+                storage_ids = storage_ids_to_fetch[i : i + step]
+                fetch_records = (
+                    context.instance_queryer.instance.fetch_observations
+                    if context.asset_graph.get(asset_key).is_observable
+                    else context.instance_queryer.instance.fetch_materializations
+                )
+                for record in fetch_records(
+                    records_filter=AssetRecordsFilter(
+                        asset_key=asset_key,
+                        storage_ids=storage_ids,
+                    ),
+                    limit=step,
+                ).records:
+                    asset_partitions_by_latest_run_id[record.run_id].add(
+                        AssetKeyPartitionKey(asset_key, record.partition_key)
+                    )
 
         if len(asset_partitions_by_latest_run_id) > 0:
             run_ids_with_required_tags = context.instance_queryer.instance.get_run_ids(
