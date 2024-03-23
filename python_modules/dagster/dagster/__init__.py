@@ -186,6 +186,10 @@ from dagster._core.definitions.dependency import (
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
 )
+from dagster._core.definitions.evaluate_auto_materialize_policies import (
+    AutoMaterializeEvaluationResult as AutoMaterializeEvaluationResult,
+    evaluate_auto_materialize_policies as evaluate_auto_materialize_policies,
+)
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
