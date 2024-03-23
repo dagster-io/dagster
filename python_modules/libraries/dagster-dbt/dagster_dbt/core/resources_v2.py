@@ -40,7 +40,6 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.metadata import TableMetadataEntries
 from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
@@ -63,6 +62,7 @@ from ..asset_utils import (
     DAGSTER_DBT_SELECT_METADATA_KEY,
     dagster_name_fn,
     default_metadata_from_dbt_resource_props,
+    get_asset_check_key_for_test,
     get_manifest_and_translator_from_dbt_assets,
 )
 from ..dagster_dbt_translator import (
@@ -255,49 +255,21 @@ class DbtCliEventMessage:
                     },
                 )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
-            # dbt 1.5 may have duplicate upstreams, filter with a set
-            upstream_unique_ids: AbstractSet[str] = set(manifest["parent_map"][unique_id])
             test_resource_props = manifest["nodes"][unique_id]
+            upstream_unique_ids: AbstractSet[str] = set(test_resource_props["depends_on"]["nodes"])
             metadata = {
                 **default_metadata,
                 "status": node_status,
             }
+            asset_check_key = get_asset_check_key_for_test(
+                manifest, dagster_dbt_translator, test_unique_id=unique_id
+            )
 
-            attached_node_unique_id = test_resource_props.get("attached_node")
-            is_generic_test = bool(attached_node_unique_id)
-
-            if (
-                dagster_dbt_translator.settings.enable_asset_checks
-                and has_asset_def
-                and is_generic_test  # singular tests aren't ingested as asset checks yet
+            # If the test was not selected as an asset check, yield an `AssetObservation`.
+            if not (
+                context and asset_check_key and asset_check_key in context.selected_asset_check_keys
             ):
-                attached_node_resource_props: Dict[str, Any] = manifest["nodes"].get(
-                    attached_node_unique_id
-                ) or manifest["sources"].get(attached_node_unique_id)
-                attached_node_asset_key = dagster_dbt_translator.get_asset_key(
-                    attached_node_resource_props
-                )
-                check_name = event_node_info["node_name"]
-
-                if (
-                    context
-                    and AssetCheckKey(asset_key=attached_node_asset_key, name=check_name)
-                    in context.selected_asset_check_keys
-                ):
-                    is_test_successful = node_status == TestStatus.Pass
-                    severity = (
-                        AssetCheckSeverity.WARN
-                        if node_status == TestStatus.Warn
-                        else AssetCheckSeverity.ERROR
-                    )
-
-                    yield AssetCheckResult(
-                        passed=is_test_successful,
-                        asset_key=attached_node_asset_key,
-                        check_name=check_name,
-                        metadata=metadata,
-                        severity=severity,
-                    )
+                message = None
 
                 # dbt's default indirect selection (eager) will select relationship tests
                 # on unselected assets, if they're compared with a selected asset.
@@ -305,28 +277,50 @@ class DbtCliEventMessage:
                 # select checks on selected assets. When we use eager, we may receive
                 # unexpected test results so we log those as observations as if
                 # asset checks were disabled.
-                else:
+                if dagster_dbt_translator.settings.enable_asset_checks:
+                    # If the test did not have an asset key associated with it, it was a singular
+                    # test with multiple dependencies without a configured asset key.
+                    test_name = test_resource_props["name"]
+                    additional_message = (
+                        (
+                            f"`{test_name}` is a singular test with multiple dependencies."
+                            " Configure an asset key in the test's dbt meta to load it as an"
+                            " asset check.\n\n"
+                        )
+                        if not asset_check_key
+                        else ""
+                    )
+
                     message = (
-                        "Logging an `AssetObservation` instead of an `AssetCheckResult` "
-                        f"for dbt test {check_name}. This test included in Dagster's asset check "
-                        "selection, so likely ran due to dbt indirect selection."
+                        "Logging an `AssetObservation` instead of an `AssetCheckResult`"
+                        f" for dbt test `{test_name}`.\n\n"
+                        f"{additional_message}"
+                        "This test was included in Dagster's asset check"
+                        " selection, and was likely executed due to dbt indirect selection."
                     )
                     logger.warn(message)
-                    yield from self._yield_observation_events_for_test(
-                        dagster_dbt_translator=dagster_dbt_translator,
-                        validated_manifest=manifest,
-                        upstream_unique_ids=upstream_unique_ids,
-                        metadata=metadata,
-                        description=message,
-                    )
-            # if asset checks are disabled, or if this is a singular test
-            else:
+
                 yield from self._yield_observation_events_for_test(
                     dagster_dbt_translator=dagster_dbt_translator,
                     validated_manifest=manifest,
                     upstream_unique_ids=upstream_unique_ids,
                     metadata=metadata,
+                    description=message,
                 )
+                return
+
+            # The test is an asset check, so yield an `AssetCheckResult`.
+            yield AssetCheckResult(
+                passed=node_status == TestStatus.Pass,
+                asset_key=asset_check_key.asset_key,
+                check_name=asset_check_key.name,
+                metadata=metadata,
+                severity=(
+                    AssetCheckSeverity.WARN
+                    if node_status == TestStatus.Warn
+                    else AssetCheckSeverity.ERROR
+                ),
+            )
 
     def _build_column_lineage_metadata(
         self,
