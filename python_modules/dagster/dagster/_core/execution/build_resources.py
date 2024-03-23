@@ -3,6 +3,7 @@ from typing import Any, Dict, Generator, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster._config import process_config
+from dagster._config.pythonic_config import attach_resource_id_to_key_mapping
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     Resources,
@@ -115,15 +116,28 @@ def build_resources(
 def wrap_resources_for_execution(
     resources: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, ResourceDefinition]:
-    return (
+
+    # Generate a mapping from each top-level resource instance ID to its resource key so that the mapping can be
+    # provided to each resource instance.
+    #
+    # This is necessary for pythonic resources when resolving nested resources.
+    resource_key_mapping = get_resource_key_mapping(resources)
+    resources_with_key_mapping = (
         {
-            resource_key: wrap_resource_for_execution(resource)
-            for resource_key, resource in resources.items()
+            k: attach_resource_id_to_key_mapping(v, resource_key_mapping)
+            for k, v in resources.items()
         }
         if resources
         else {}
     )
 
+    return {
+        resource_key: wrap_resource_for_execution(resource)
+        for resource_key, resource in resources_with_key_mapping.items()
+    }
+
+def get_resource_key_mapping(resources: Optional[Mapping[str, Any]] = None) -> Dict[int, str]:
+    return {id(v): k for k, v in resources.items()} if resources else {}
 
 def wrap_resource_for_execution(resource: Any) -> ResourceDefinition:
     from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
