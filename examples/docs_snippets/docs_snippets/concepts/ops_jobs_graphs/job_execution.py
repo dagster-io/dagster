@@ -57,19 +57,22 @@ execution:
 
 
 # start_mp_cfg
+from dagster import job, RunConfig
+
+
 @job(
-    config={
-        "execution": {
+    config=RunConfig(
+        execution={
             "config": {
                 "multiprocess": {
                     "start_method": {
                         "forkserver": {},
                     },
                     "max_concurrent": 4,
-                },
+                }
             }
         }
-    }
+    ),
 )
 def forkserver_job():
     multi_three(add_two(return_one()))
@@ -79,12 +82,15 @@ def forkserver_job():
 
 
 # start_tag_concurrency
+from dagster import job, RunConfig
+
+
 @job(
-    config={
-        "execution": {
+    config=RunConfig(
+        execution={
             "config": {
                 "multiprocess": {
-                    "max_concurrent": 4,
+                    "max_concurrent": 0,
                     "tag_concurrency_limits": [
                         {
                             "key": "database",
@@ -92,10 +98,10 @@ def forkserver_job():
                             "limit": 2,
                         }
                     ],
-                },
+                }
             }
         }
-    }
+    ),
 )
 def tag_concurrency_job(): ...
 
