@@ -28,6 +28,9 @@ def resolve_stale_or_missing_assets(
     resolver = CachingStaleStatusResolver(context.instance, asset_graph)
     stale_or_unknown_keys: List[AssetKey] = []
     for asset_key in asset_selection:
-        if resolver.get_status(asset_key) in [StaleStatus.STALE, StaleStatus.MISSING]:
+        if resolver.get_status(asset_key, run_request.partition_key) in [
+            StaleStatus.STALE,
+            StaleStatus.MISSING,
+        ]:
             stale_or_unknown_keys.append(asset_key)
     return stale_or_unknown_keys
