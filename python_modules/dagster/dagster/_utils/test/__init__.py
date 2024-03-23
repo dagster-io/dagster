@@ -195,6 +195,7 @@ def wrap_op_in_graph_and_execute(
     do_input_mapping: bool = True,
     do_output_mapping: bool = True,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+    instance: Optional[DagsterInstance] = None,
 ) -> ExecuteInProcessResult:
     """Execute a single op in an ephemeral, in-process job.
 
@@ -232,6 +233,7 @@ def wrap_op_in_graph_and_execute(
             input_values=input_values,
             raise_on_error=raise_on_error,
             run_config=run_config,
+            instance=instance,
         )
     )
 
