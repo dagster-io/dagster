@@ -413,7 +413,12 @@ class UPathIOManager(MemoizableIOManager):
                     None if not backcompat_paths else next(iter(backcompat_paths.values()))
                 )
 
-                return self._load_single_input(path, context, backcompat_path)
+                return self._load_partition_from_path(
+                    context=context,
+                    partition_key=asset_partition_keys[0],
+                    path=path,
+                    backcompat_path=backcompat_path,
+                )
             else:  # we are dealing with multiple partitions of an asset
                 type_annotation = context.dagster_type.typing_type
                 if type_annotation != Any and not is_dict_type(type_annotation):
