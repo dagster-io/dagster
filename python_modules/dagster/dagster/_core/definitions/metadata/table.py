@@ -303,9 +303,19 @@ class TableColumnLineage(
     """Represents the lineage of column outputs to column inputs for a tabular asset."""
 
     def __new__(cls, deps_by_column: Mapping[str, Sequence[TableColumnDep]]):
-        return super(TableColumnLineage, cls).__new__(
-            cls,
-            deps_by_column=check.mapping_param(
-                deps_by_column, "deps_by_column", key_type=str, value_type=list
-            ),
+        deps_by_column = check.mapping_param(
+            deps_by_column, "deps_by_column", key_type=str, value_type=list
         )
+
+        sorted_deps_by_column = {}
+        for column, deps in deps_by_column.items():
+            sorted_deps_by_column[column] = sorted(
+                deps, key=lambda dep: (dep.asset_key, dep.column_name)
+            )
+
+            check.invariant(
+                len(deps) == len(set((dep.asset_key, dep.column_name) for dep in deps)),
+                "The deps for column `{column}` must be unique by asset key and column name.",
+            )
+
+        return super(TableColumnLineage, cls).__new__(cls, deps_by_column=sorted_deps_by_column)
