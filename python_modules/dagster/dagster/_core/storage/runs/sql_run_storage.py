@@ -930,7 +930,11 @@ class SqlRunStorage(RunStorage):
                 RunsTable.update()
                 .where(RunsTable.c.run_id == run.run_id)
                 .values(
-                    run_body=serialize_value(run.with_job_origin(job_origin)),
+                    run_body=serialize_value(
+                        run.with_job_origin(job_origin).with_tags(
+                            {**run.tags, REPOSITORY_LABEL_TAG: new_label}
+                        )
+                    ),
                 )
             )
             conn.execute(
