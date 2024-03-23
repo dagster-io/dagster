@@ -31,6 +31,8 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
@@ -1260,3 +1262,29 @@ def test_static_partitions_definition_dup_keys_backcompat():
     assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
         partition_keys=["a", "b"]
     )
+
+
+# 1.6.13 added a custom field serializer to KnownExecutionState.step_output_versions and deleted the
+# class `StepOutputVersionData`, but we still serialize to `StepOutputVersionData` for backcompat.
+def test_known_execution_state_step_output_version_serialization() -> None:
+    known_state = KnownExecutionState(
+        previous_retry_attempts=None,
+        dynamic_mappings=None,
+        step_output_versions={StepOutputHandle("foo", "bar"): "1"},
+    )
+
+    serialized = serialize_value(known_state)
+    assert json.loads(serialized)["step_output_versions"] == [
+        {
+            "__class__": "StepOutputVersionData",
+            "step_output_handle": {
+                "__class__": "StepOutputHandle",
+                "step_key": "foo",
+                "output_name": "bar",
+                "mapping_key": None,
+            },
+            "version": "1",
+        }
+    ]
+
+    assert deserialize_value(serialized, KnownExecutionState) == known_state
