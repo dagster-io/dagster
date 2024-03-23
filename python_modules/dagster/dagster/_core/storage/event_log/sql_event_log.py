@@ -118,6 +118,8 @@ if TYPE_CHECKING:
 MIN_ASSET_ROWS = 25
 DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
 
+# Limit logs to 1GB, has to be less than INT_MAX
+MAX_SERIALIZED_EVENT_LENGTH = 1024*1024*1024
 
 def get_max_event_records_limit() -> int:
     max_value = os.getenv("MAX_LIMIT_GET_EVENT_RECORDS")
@@ -203,10 +205,14 @@ class SqlEventLogStorage(EventLogStorage):
             if event.dagster_event.partition:
                 partition = event.dagster_event.partition
 
+        serialized_event = serialize_value(event)
+        if len(serialized_event) > MAX_SERIALIZED_EVENT_LENGTH:
+            serialized_event = serialized_event[:MAX_SERIALIZED_EVENT_LENGTH-3] + "..."
+
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(
             run_id=event.run_id,
-            event=serialize_value(event),
+            event=serialized_event,
             dagster_event_type=dagster_event_type,
             timestamp=self._event_insert_timestamp(event),
             step_key=step_key,
