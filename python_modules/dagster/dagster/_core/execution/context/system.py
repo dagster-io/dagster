@@ -31,7 +31,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.dependency import OpNode
-from dagster._core.definitions.events import AssetKey, AssetLineageInfo
+from dagster._core.definitions.events import AssetKey, AssetLineageInfo, AssetMaterialization
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
@@ -578,6 +578,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
+        self._upstream_asset_materialization_events: Dict[
+            AssetKey, Optional[AssetMaterialization]
+        ] = {}
+
         self._input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
         self._is_external_input_asset_version_info_loaded = False
         self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
@@ -961,16 +965,27 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._input_asset_version_info
 
     @property
+    def upstream_asset_materialization_events(
+        self,
+    ) -> Dict[AssetKey, Optional[AssetMaterialization]]:
+        return self._upstream_asset_materialization_events
+
+    @property
     def is_external_input_asset_version_info_loaded(self) -> bool:
         return self._is_external_input_asset_version_info_loaded
 
     def get_input_asset_version_info(self, key: AssetKey) -> Optional["InputAssetVersionInfo"]:
         if key not in self._input_asset_version_info:
-            self._fetch_input_asset_version_info(key)
+            self._fetch_input_asset_materialization_and_version_info(key)
         return self._input_asset_version_info[key]
 
     # "external" refers to records for inputs generated outside of this step
-    def fetch_external_input_asset_version_info(self) -> None:
+    def fetch_external_input_asset_materialization_and_version_info(self) -> None:
+        """Fetches the latest observation or materialization for each upstream dependency
+        in order to determine the version info. As a side effect we create a dictionary
+        of the materialization events so that the AssetContext can access the latest materialization
+        event.
+        """
         output_keys = self.get_output_asset_keys()
 
         all_dep_keys: List[AssetKey] = []
@@ -984,10 +999,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_version_info = {}
         for key in all_dep_keys:
-            self._fetch_input_asset_version_info(key)
+            self._fetch_input_asset_materialization_and_version_info(key)
         self._is_external_input_asset_version_info_loaded = True
 
-    def _fetch_input_asset_version_info(self, key: AssetKey) -> None:
+    def _fetch_input_asset_materialization_and_version_info(self, key: AssetKey) -> None:
         from dagster._core.definitions.data_version import (
             extract_data_version_from_entry,
         )
@@ -995,6 +1010,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         event = self._get_input_asset_event(key)
         if event is None:
             self._input_asset_version_info[key] = None
+            self._upstream_asset_materialization_events[key] = None
         else:
             storage_id = event.storage_id
             # Input name will be none if this is an internal dep
@@ -1022,6 +1038,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     data_version = extract_data_version_from_entry(event.event_log_entry)
             else:
                 data_version = extract_data_version_from_entry(event.event_log_entry)
+                # the AssetMaterialization fetched above is only accurate if the asset it not partitioned
+                # if the asset is partitioned, then the latest AssetMaterialization may be for a partition
+                # that is irrelevant to the current execution
+                self._upstream_asset_materialization_events[key] = (
+                    event.asset_materialization if event.asset_materialization else None
+                )
             self._input_asset_version_info[key] = InputAssetVersionInfo(
                 storage_id,
                 check.not_none(event.event_log_entry.dagster_event).event_type,

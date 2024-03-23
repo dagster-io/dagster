@@ -8,6 +8,7 @@ from dagster import (
     DagsterInstance,
     Definitions,
     GraphDefinition,
+    MaterializeResult,
     OpExecutionContext,
     Output,
     asset,
@@ -441,3 +442,33 @@ def test_get_context():
         assert context == AssetExecutionContext.get()
 
     assert materialize([a]).success
+
+
+def test_upstream_metadata():
+    # with output metadata
+    @asset
+    def upstream(context: AssetExecutionContext):
+        context.add_output_metadata({"foo": "bar"})
+
+    @asset
+    def downstream(context: AssetExecutionContext, upstream):
+        mat = context.latest_materialization_for_upstream_asset("upstream")
+        assert mat is not None
+        assert mat.metadata["foo"].value == "bar"
+
+    materialize([upstream, downstream])
+
+
+def test_upstream_metadata_materialize_result():
+    # with asset materialization
+    @asset
+    def upstream():
+        return MaterializeResult(metadata={"foo": "bar"})
+
+    @asset
+    def downstream(context: AssetExecutionContext, upstream):
+        mat = context.latest_materialization_for_upstream_asset("upstream")
+        assert mat is not None
+        assert mat.metadata["foo"].value == "bar"
+
+    materialize([upstream, downstream])
