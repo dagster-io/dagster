@@ -282,6 +282,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         task = self._get_databricks_task(run_id, step_key)
         databricks_run_id = self.databricks_runner.submit_run(self.run_config, task)
 
+        run_url = self.databricks_runner.get_run_url(databricks_run_id)
+        if run_url is not None:
+            step_context.log.info(f"Run URL: {run_url}")
+
         if self.permissions:
             self._grant_permissions(log, databricks_run_id)
 
@@ -470,7 +474,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
     def _format_permissions(
         self, input_permissions: Mapping[str, Sequence[Mapping[str, str]]]
-    ) -> Sequence[Mapping[str, str]]:
+    ) -> Sequence["jobs.JobAccessControlRequest"]:
+
         access_control_list = []
         for permission, accessors in input_permissions.items():
             access_control_list.extend(
