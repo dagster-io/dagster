@@ -410,6 +410,7 @@ class AirbyteConnectionMetadata(
         "_AirbyteConnectionMetadata",
         [
             ("name", str),
+            ("namespace", str),
             ("stream_prefix", str),
             ("has_basic_normalization", bool),
             ("stream_data", List[Mapping[str, Any]]),
@@ -432,6 +433,7 @@ class AirbyteConnectionMetadata(
         return cls(
             name=contents["name"],
             stream_prefix=contents.get("prefix", ""),
+            namespace=contents.get("namespaceFormat", ""),
             has_basic_normalization=any(
                 is_basic_normalization_operation(op.get("operatorConfiguration", {}))
                 for op in operations.get("operations", [])
@@ -449,6 +451,7 @@ class AirbyteConnectionMetadata(
         return cls(
             name=contents["resource_name"],
             stream_prefix=config_contents.get("prefix", ""),
+            namespace=config_contents.get("namespace_format", ""),
             has_basic_normalization=any(
                 is_basic_normalization_operation(op.get("operator_configuration", {}))
                 for op in config_contents.get("operations", [])

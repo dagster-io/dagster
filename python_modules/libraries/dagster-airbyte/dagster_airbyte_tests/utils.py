@@ -432,6 +432,8 @@ def get_instance_connections_json():
                 "connectionId": "87b7fe85-a22c-420e-8d74-b30e7ede77df",
                 "name": "GitHub <> snowflake-ben",
                 "prefix": "dagster_",
+                "namespaceDefinition": "source",
+                "namespaceFormat": "${SOURCE_NAMESPACE}",
                 "sourceId": "4b8fc3cc-efce-41d7-8654-05c3fc03485e",
                 "destinationId": "028fc82d-3a27-4fef-94a6-a22fbd45bac4",
                 "operationIds": ["f39dbcd0-a6dc-4319-9ae4-28937997b48a"],
@@ -692,6 +694,7 @@ def get_instance_operations_json():
             {
                 "workspaceId": "b49ed3cd-7bb4-4f11-b8ba-95b4a5f7bc75",
                 "operationId": "f39dbcd0-a6dc-4319-9ae4-28937997b48a",
+                "namespace_format": "${SOURCE_NAMESPACE}",
                 "name": "Normalization",
                 "operatorConfiguration": {
                     "operatorType": "normalization",
