@@ -16,7 +16,7 @@ except ImportError:
     raise
 
 
-def _create_url(storage_account, subdomain):
+def _create_url(storage_account: str, subdomain: str) -> str:
     return f"https://{storage_account}.{subdomain}.core.windows.net/"
 
 

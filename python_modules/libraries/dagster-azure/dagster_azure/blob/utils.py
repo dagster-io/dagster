@@ -16,11 +16,11 @@ except ImportError:
     raise
 
 
-def _create_url(storage_account, subdomain):
+def _create_url(storage_account: str, subdomain: str) -> str:
     return f"https://{storage_account}.{subdomain}.core.windows.net/"
 
 
-def create_blob_client(storage_account, credential) -> BlobServiceClient:
+def create_blob_client(storage_account: str, credential) -> BlobServiceClient:
     """Create a Blob Storage client."""
     account_url = _create_url(storage_account, "blob")
     if hasattr(credential, "account_key"):
