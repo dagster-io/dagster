@@ -221,6 +221,7 @@ def build_airbyte_assets(
     destination_tables: Sequence[str],
     asset_key_prefix: Optional[Sequence[str]] = None,
     group_name: Optional[str] = None,
+    io_manager_key: Optional[str] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     upstream_assets: Optional[Set[AssetKey]] = None,
@@ -247,6 +248,7 @@ def build_airbyte_assets(
         freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
         stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
             This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
+        io_manager_key (Optional[str]): The resource key of the IO manager used for the assets
     """
     if upstream_assets is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
@@ -270,6 +272,7 @@ def build_airbyte_assets(
                 else None
             ),
             freshness_policy=freshness_policy,
+            io_manager_key=io_manager_key,
         )
         for table in tables
     }
