@@ -42,7 +42,7 @@ setup(
         "requests",
     ],
     extras_require={
-        "redshift": ["psycopg2-binary"],
+        "redshift": ["psycopg2-binary", "redshift_connector"],
         "pyspark": ["dagster-pyspark"],
         "test": [
             "botocore!=1.32.1",

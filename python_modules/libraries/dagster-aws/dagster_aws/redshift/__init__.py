@@ -1,3 +1,4 @@
+from .io_manager import build_redshift_io_manager as build_redshift_io_manager
 from .resources import (
     FakeRedshiftClient as FakeRedshiftClient,
     FakeRedshiftClientResource as FakeRedshiftClientResource,
