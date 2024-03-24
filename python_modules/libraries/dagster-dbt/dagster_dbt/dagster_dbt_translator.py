@@ -14,7 +14,6 @@ from dagster._core.definitions.asset_key import (
     check_opt_coercible_to_asset_key_prefix_param,
 )
 from dagster._core.definitions.utils import is_valid_definition_tag_key
-from dagster._core.storage.tags import TAG_NO_VALUE
 
 from .asset_utils import (
     default_asset_key_fn,
@@ -250,7 +249,7 @@ class DagsterDbtTranslator:
                         return {"custom": "tag"}
         """
         tags = dbt_resource_props.get("tags", [])
-        return {tag: TAG_NO_VALUE for tag in tags if is_valid_definition_tag_key(tag)}
+        return {tag: "" for tag in tags if is_valid_definition_tag_key(tag)}
 
     @public
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:

@@ -17,7 +17,6 @@ from dagster._core.selector.subset_selector import (
     fetch_sources,
     parse_clause,
 )
-from dagster._core.storage.tags import TAG_NO_VALUE
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -197,9 +196,7 @@ class AssetSelection(ABC, DagsterModel):
         """
         split_by_equals_segments = string.split("=")
         if len(split_by_equals_segments) == 1:
-            return TagAssetSelection(
-                key=string, value=TAG_NO_VALUE, include_sources=include_sources
-            )
+            return TagAssetSelection(key=string, value="", include_sources=include_sources)
         elif len(split_by_equals_segments) == 2:
             key, value = split_by_equals_segments
             return TagAssetSelection(key=key, value=value, include_sources=include_sources)
