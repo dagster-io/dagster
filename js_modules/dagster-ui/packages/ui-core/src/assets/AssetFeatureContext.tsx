@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {AssetTabConfig, AssetTabConfigInput, buildAssetTabs} from './AssetTabs';
+import {AssetTabConfig, AssetTabConfigInput, useAssetTabs} from './AssetTabs';
 import {AssetChecksBanner} from './asset-checks/AssetChecksBanner';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
@@ -45,7 +45,7 @@ const renderFeatureView = () => <span />;
 export const AssetFeatureProvider = ({children}: {children: React.ReactNode}) => {
   const value = React.useMemo(() => {
     return {
-      useTabBuilder: buildAssetTabs,
+      useTabBuilder: useAssetTabs,
       renderFeatureView,
       AssetChecksBanner,
       AssetColumnLinksCell: () => undefined,
