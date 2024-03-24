@@ -660,6 +660,9 @@ def test_add_asset_event_tags_table(hostname, conn_string):
     @op
     def yields_materialization_w_tags():
         yield AssetMaterialization(asset_key=AssetKey(["a"]))
+        yield AssetMaterialization(
+            asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar", "dagster/boo": "yar"}
+        )
         yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
         yield Output(1)
 
@@ -690,54 +693,39 @@ def test_add_asset_event_tags_table(hostname, conn_string):
 
             asset_job.execute_in_process(instance=instance)
 
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "bar"},
-                        )
-                    )
-                )
-                == 1
-            )
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "baz"},
-                        )
-                    )
-                )
-                == 0
-            )
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "bar", "other": "otherr"},
-                        )
-                    )
-                )
-                == 0
-            )
-
-            with pytest.raises(
-                DagsterInvalidInvocationError, match="Cannot filter events on tags with a limit"
-            ):
-                instance.get_event_records(
-                    EventRecordsFilter(
+            def get_event_records_for_a(tags, limit=None, ascending=False):
+                return instance.get_event_records(
+                    limit=limit,
+                    ascending=ascending,
+                    event_records_filter=EventRecordsFilter(
                         event_type=DagsterEventType.ASSET_MATERIALIZATION,
                         asset_key=AssetKey("a"),
-                        tags={"dagster/foo": "bar", "other": "otherr"},
+                        tags=tags,
                     ),
-                    limit=5,
                 )
+
+            assert len(get_event_records_for_a({"dagster/foo": "bar"})) == 2
+            assert len(get_event_records_for_a({"dagster/boo": "yar"})) == 1
+            assert len(get_event_records_for_a({"dagster/foo": "bar", "dagster/boo": "yar"})) == 1
+            assert len(get_event_records_for_a({"dagster/foo": "baz"})) == 0
+            assert len(get_event_records_for_a({"dagster/foo": "bar", "other": "otherr"})) == 0
+            assert len(get_event_records_for_a({"dagster/foo": "bar"}, 1)) == 1
+            assert len(get_event_records_for_a({"dagster/boo": "yar"}, 1)) == 1
+            assert (
+                len(get_event_records_for_a({"dagster/foo": "bar", "dagster/boo": "yar"}, 1)) == 1
+            )
+            assert len(get_event_records_for_a({"dagster/foo": "baz"}, 1)) == 0
+            assert len(get_event_records_for_a({"dagster/foo": "bar", "other": "otherr"}, 1)) == 0
+
+            assert get_event_records_for_a({"dagster/foo": "bar"}, 1, False)[
+                0
+            ].asset_materialization.tags == {"dagster/foo": "bar"}
+            assert get_event_records_for_a({"dagster/foo": "bar"}, 1, True)[
+                0
+            ].asset_materialization.tags == {
+                "dagster/foo": "bar",
+                "dagster/boo": "yar",
+            }
 
             with pytest.raises(
                 DagsterInvalidInvocationError, match="In order to search for asset event tags"
