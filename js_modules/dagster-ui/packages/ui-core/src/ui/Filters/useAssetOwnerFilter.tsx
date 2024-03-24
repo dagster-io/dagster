@@ -14,10 +14,31 @@ export const useAssetOwnerFilter = ({
   setOwners,
 }: {
   allAssetOwners: AssetOwner[];
-  owners?: null | AssetOwner[];
+  owners?: null | AssetOwner[] | string[];
   setOwners?: null | ((s: AssetOwner[]) => void);
 }) => {
-  const memoizedState = useMemo(() => owners?.map(memoizedOwner), [owners]);
+  const memoizedState = useMemo(() => {
+    return owners
+      ?.map((owner) => {
+        if (typeof owner !== 'string') {
+          return memoizedOwner(owner);
+        }
+        const typedOwner = allAssetOwners.find((typedOwner) => {
+          if ('team' in typedOwner) {
+            return typedOwner.team === owner;
+          } else if ('email' in typedOwner) {
+            return typedOwner.email === owner;
+          } else {
+            assertUnreachable(typedOwner);
+          }
+        });
+        if (!typedOwner) {
+          return null;
+        }
+        return memoizedOwner(typedOwner);
+      })
+      .filter((o) => o);
+  }, [allAssetOwners, owners]);
   const {UserDisplay} = useLaunchPadHooks();
   return useStaticSetFilter<AssetOwner>({
     name: 'Owner',
@@ -47,20 +68,18 @@ export function useAssetOwnersForAssets(
     } | null;
   }[],
 ): AssetOwner[] {
-  return useMemo(
-    () =>
-      Array.from(
-        new Set(
-          assets
-            .flatMap((a) => a.definition?.owners)
-            .filter((o) => o)
-            // Convert to JSON for deduping by Set
-            .map((owner) => JSON.stringify(owner)),
-        ),
-        // Convert back to AssetOwner
-      ).map((ownerJSON) => memoizedOwner(JSON.parse(ownerJSON))),
-    [assets],
-  );
+  return useMemo(() => {
+    return Array.from(
+      new Set(
+        assets
+          .flatMap((a) => a.definition?.owners)
+          .filter((o) => o)
+          // Convert to JSON for deduping by Set
+          .map((owner) => JSON.stringify(owner)),
+      ),
+      // Convert back to AssetOwner
+    ).map((ownerJSON) => memoizedOwner(JSON.parse(ownerJSON)));
+  }, [assets]);
 }
 
 const memoizedOwner = memoize(
