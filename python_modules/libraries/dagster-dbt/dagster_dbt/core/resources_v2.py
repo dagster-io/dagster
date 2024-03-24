@@ -590,8 +590,9 @@ class DbtCliInvocation:
             try:
                 raw_event: Dict[str, Any] = orjson.loads(log)
                 unique_id: Optional[str] = raw_event["data"].get("node_info", {}).get("unique_id")
+                is_result_event = DbtCliEventMessage.is_result_event(raw_event)
                 event_history_metadata: Dict[str, Any] = {}
-                if unique_id and DbtCliEventMessage.is_result_event(raw_event):
+                if unique_id and is_result_event:
                     event_history_metadata = copy.deepcopy(
                         event_history_metadata_by_unique_id.get(unique_id, {})
                     )
@@ -602,7 +603,7 @@ class DbtCliInvocation:
 
                 # Parse the error message from the event, if it exists.
                 is_error_message = event.log_level == "error"
-                if is_error_message:
+                if is_error_message and not is_result_event:
                     self._error_messages.append(str(event))
 
                 # Attempt to parse the column level metadata from the event message.
@@ -696,9 +697,13 @@ class DbtCliInvocation:
         if not self._error_messages:
             return ""
 
-        error_description = "\n".join(self._error_messages)
-
-        return f"\n\nErrors parsed from dbt logs:\n{error_description}"
+        return "\n\n".join(
+            [
+                "",
+                "Errors parsed from dbt logs:",
+                *self._error_messages,
+            ]
+        )
 
     def _raise_on_error(self) -> None:
         """Ensure that the dbt CLI process has completed. If the process has not successfully
@@ -717,10 +722,11 @@ class DbtCliInvocation:
 
             raise DagsterDbtCliRuntimeError(
                 description=(
-                    f"The dbt CLI process with command `{self.dbt_command}` failed with exit code"
-                    f" {self.process.returncode}. Check the stdout in the Dagster compute logs for"
-                    f" the full information about the error{extra_description}."
-                    f"{self._format_error_messages()}"
+                    f"The dbt CLI process with command\n\n"
+                    f"`{self.dbt_command}`\n\n"
+                    f"failed with exit code `{self.process.returncode}`."
+                    " Check the stdout in the Dagster compute logs for the full information about"
+                    f" the error{extra_description}.{self._format_error_messages()}"
                 ),
             )
 
