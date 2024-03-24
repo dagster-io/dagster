@@ -1,0 +1,546 @@
+---
+title: "Dagster Cloud dagster_cloud.yaml file reference | Dagster Docs"
+---
+
+# dagster_cloud.yaml reference
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        <strong>File name</strong>
+      </td>
+      <td>
+        <code>dagster_cloud.yaml</code>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        <strong>Description</strong>
+      </td>
+      <td>
+        Used to describe Dagster Cloud{" "}
+        <a href="/dagster-cloud/developing-testing/code-locations">
+          code locations
+        </a>
+        . For Hybrid deployments, this file also contains configuration options
+        for <a href="/dagster-cloud/deployment/agents">agents</a>, including{" "}
+        <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
+          environment variables and secrets
+        </a>
+        .
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        <strong>Location</strong>
+      </td>
+      <td>
+        <code>/dagster_cloud.yaml</code>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        <strong>Used in</strong>
+      </td>
+      <td>
+        <a href="/dagster-cloud">Dagster Cloud</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+```yaml
+locations:
+  location_one_name:
+    build:
+      directory: ./foo_src
+      registry: dagster-io/foo
+    code_source:
+      ## one of the following:
+      python_file: repository.py
+      package_name: bar
+      module_name: bar
+
+    working_directory:
+    executable_path:
+
+    attribute: bar_repo
+
+    git:
+      commit_hash:
+      url:
+
+    container_context:
+      k8s:
+      docker:
+      ecs:
+
+  location_two_name: ...
+```
+
+---
+
+## Properties
+
+The top-level property in `dagster_cloud.yaml` is `locations`. `locations` contains a series of keys that map to the code location(s) in the Dagster project. For example:
+
+```yaml
+locations:
+  location_one:
+    # properties
+
+  location_two:
+    # properties
+```
+
+Each location can have any of the properties listed below.
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "10%",
+        }}
+      >
+        Property
+      </th>
+      <th
+        style={{
+          width: "10%",
+        }}
+      >
+        Type
+      </th>
+      <th
+        style={{
+          width: "10%",
+        }}
+      >
+        Required
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>attribute</strong>
+      </td>
+      <td>string</td>
+      <td>No</td>
+      <td>
+        Specifies either a repository or a function that returns a repository.
+        Can be used when the code contains multiple repositories but only one
+        should be included.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>build</strong>
+      </td>
+      <td>object</td>
+      <td>Yes*</td>
+      <td>
+        <strong>
+          Required for{" "}
+          <a href="/dagster-cloud/deployment/hybrid">Hybrid deployments</a>
+        </strong>
+        . Configuration that maps source directories to images that are uploaded
+        to the specified registries.
+        <br></br>
+        <br></br>
+        Contains the following properties:
+        <table
+          className="table"
+          style={{
+            width: "100%",
+            fontSize: "14px",
+          }}
+        >
+          <thead>
+            <tr>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Property
+              </th>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Type
+              </th>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Required
+              </th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>directory</strong>
+              </td>
+              <td>string</td>
+              <td>No</td>
+              <td>
+                The path to the build directory relative to the{" "}
+                <code>dagster_cloud.yaml</code>'s folder. Defaults to the
+                current directory.
+                <br></br>
+                <br></br>
+                Requirements vary depending on deployment type:
+                <ul>
+                  <li>
+                    <strong>Hybrid deployments</strong> - Directory must contain
+                    a <code>Dockerfile</code>
+                  </li>
+                  <li>
+                    <strong>Serverless deployments</strong> - Directory must
+                    contain a <code>setup.py</code> or{" "}
+                    <code>requirements.txt</code> file
+                  </li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>registry</strong>
+              </td>
+              <td>string</td>
+              <td>Yes*</td>
+              <td>
+                <strong>Required for Hybrid deployments.</strong> The Docker
+                registry to push the built Docker image to.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>code_source</strong>
+      </td>
+      <td>object</td>
+      <td>No</td>
+      <td>
+        Specifies the Python entry point for the code location, specifically how
+        to load{" "}
+        <a href="/concepts/repositories-workspaces/repositories">
+          Dagster repositories
+        </a>{" "}
+        in the code location.
+        <br></br>
+        <br></br>
+        <code>code_source</code> should contain at least one of the following parameters:
+        <table
+          className="table"
+          style={{
+            width: "100%",
+            fontSize: "14px",
+          }}
+        >
+          <thead>
+            <tr>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Property
+              </th>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Type
+              </th>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Required
+              </th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>package_name</strong>
+              </td>
+              <td>string</td>
+              <td>No</td>
+              <td>
+                A Python package containing the target Dagster repository or
+                repositories.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>python_file</strong>
+              </td>
+              <td>string</td>
+              <td>No</td>
+              <td>
+                A Python file containing the target Dagster repository or
+                repositories.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>module_name</strong>
+              </td>
+              <td>string</td>
+              <td>No</td>
+              <td>
+                A Python module containing the target Dagster repository or
+                repositories.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>container_context</strong>
+      </td>
+      <td>object</td>
+      <td>No</td>
+      <td>
+        <strong>Applicable to Hybrid deployments</strong>. Configuration options
+        for the agent used by the code location. Refer to the agent
+        configuration references for more info and example configuration:
+        <ul>
+          <li>
+            <a href="/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference">
+              Amazon ECS
+            </a>
+          </li>
+          <li>
+            <a href="/dagster-cloud/deployment/agents/docker/configuration-reference">
+              Docker
+            </a>
+          </li>
+          <li>
+            <a href="/dagster-cloud/deployment/agents/kubernetes/configuration-reference">
+              Kubernetes
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>executable_path</strong>
+      </td>
+      <td>string</td>
+      <td>No</td>
+      <td>
+        Path to the executable to use for the Python environment to load the
+        repository. Defaults to the installed dagster command-line entry point.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>git</strong>
+      </td>
+      <td>object</td>
+      <td>No</td>
+      <td>
+        <table
+          className="table"
+          style={{
+            width: "100%",
+            fontSize: "14px",
+          }}
+        >
+          <thead>
+            <tr>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Property
+              </th>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Type
+              </th>
+              <th
+                style={{
+                  width: "10%",
+                }}
+              >
+                Required
+              </th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>commit_hash</strong>
+              </td>
+              <td>string</td>
+              <td>No</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>url</strong>
+              </td>
+              <td>string</td>
+              <td>No</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>working_directory</strong>
+      </td>
+      <td>string</td>
+      <td>No</td>
+      <td>
+        Working directory to use for importing Python modules when loading the
+        repository.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Examples
+
+### Multiple code locations
+
+<TabGroup>
+  <TabItem name="Serverless">
+Todo
+
+```yaml
+locations:
+  foo: ## location name
+    build:
+      directory: ./foo_src
+    code_source:
+      python_file: repository.py
+  bar: ## location name
+    build:
+      directory: ./bar_src
+    code_source:
+      package_name: bar
+```
+
+</TabItem>
+<TabItem name="Hybrid">
+
+For Hybrid deployments, `dagster_cloud.yaml` should include registry information for where images should be uploaded. Build directories must include a `Dockerfile`.
+
+This example demonstrates how to configure multiple code locations for a Hybrid deployment. There are two locations, named `foo` and `bar`:
+
+- The Dockerfiles are located at `/foo_src/Dockerfile` and `/bar_src/Dockerfile`
+- Images are pushed to the `dagster-io/foo` and `dagster-io/bar` registries
+
+```yaml
+# Example dagster_cloud.yaml, for a Hybrid deployment
+locations:
+  foo: ## location name
+    build:
+      directory: ./foo_src
+      registry: dagster-io/foo
+    code_source:
+      python_file: repository.py
+  bar: ## location name
+    build:
+      directory: ./bar_src
+      registry: dagster-io/bar
+    code_source:
+      package_name: bar
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Troubleshooting
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "30%",
+        }}
+      >
+        Error
+      </th>
+      <th>Description and resolution</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>No dagster_cloud.yaml file found.</td>
+      <td>
+        Dagster Cloud couldn't find a <code>dagster_cloud.yaml</code> file in
+        the Dagster project's root directory. To resolve, add a correctly
+        configured file to the project root.
+      </td>
+    </tr>
+  </tbody>
+</table>
