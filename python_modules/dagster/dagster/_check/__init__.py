@@ -967,6 +967,21 @@ def two_dim_mapping_param(
 
 
 # ########################
+# ##### NARROW
+# ########################
+
+
+def narrow(
+    obj: object,
+    ttype: Union[Type[T], Tuple[Type[T], ...]],
+    additional_message: Optional[str] = None,
+) -> T:
+    if not isinstance(obj, ttype):
+        raise _type_mismatch_error(obj, ttype, additional_message)
+    return obj
+
+
+# ########################
 # ##### NOT NONE
 # ########################
 
