@@ -62,13 +62,13 @@ interface Props {
 
 export const AssetView = ({assetKey, trace}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
-  const {tabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
+  const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
   const {flagUseNewOverviewPage, flagUseNewAutomationPage} = useFeatureFlags();
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
-  const tabList = useMemo(() => tabBuilder({definition, params}), [definition, params, tabBuilder]);
+  const tabList = useTabBuilder({definition, params});
 
   const defaultTab = flagUseNewOverviewPage
     ? 'overview'

@@ -25,14 +25,14 @@ type AssetFeatureContextType = {
     assetGraphData: GraphData;
   }>;
 
-  tabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
+  useTabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
   renderFeatureView: (input: AssetViewFeatureInput) => React.ReactNode;
   AssetChecksBanner: React.ComponentType<{onClose: () => void}>;
   AssetColumnLinksCell: (input: {column: string | null}) => React.ReactNode;
 };
 
 export const AssetFeatureContext = React.createContext<AssetFeatureContextType>({
-  tabBuilder: () => [],
+  useTabBuilder: () => [],
   renderFeatureView: () => <span />,
   AssetChecksBanner: () => <span />,
   AssetColumnLinksCell: () => undefined,
@@ -45,7 +45,7 @@ const renderFeatureView = () => <span />;
 export const AssetFeatureProvider = ({children}: {children: React.ReactNode}) => {
   const value = React.useMemo(() => {
     return {
-      tabBuilder: buildAssetTabs,
+      useTabBuilder: buildAssetTabs,
       renderFeatureView,
       AssetChecksBanner,
       AssetColumnLinksCell: () => undefined,
