@@ -17,13 +17,14 @@
         {%- set parent_relations = [] -%}
 
         {%- for ref_args in model.refs -%}
-            {%- set ref_relation = ref(ref_args['name'], package=ref_args.get('package'), version=ref_args.get('version'))-%}
+            {%- set ref_relation = ref(ref_args['name'], package=ref_args.get('package'), version=ref_args.get('version')) -%}
             {%- set _ = parent_relations.append(ref_relation) -%}
         {%- endfor -%}
 
         {%- for source_args in model.sources -%}
-            {%- set source_relation = source(source_args[0], sources_args[1])-%}
-            {%- set _ = parent_relations.append(ref_relation) -%}
+            {%- set source_name, table_name = source_args -%}
+            {%- set source_relation = source(source_name, table_name) -%}
+            {%- set _ = parent_relations.append(source_relation) -%}
         {%- endfor -%}
 
         -- Return a structured log of
