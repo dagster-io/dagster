@@ -64,6 +64,7 @@ import {Description} from '../pipelines/Description';
 import {PipelineTag} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {buildTagString} from '../ui/tagAsString';
 
 export const AssetNodeOverview = ({
   assetNode,
@@ -231,9 +232,7 @@ export const AssetNodeOverview = ({
         {assetNode.tags && assetNode.tags.length > 0 && (
           <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
             {assetNode.tags.map((tag, idx) => (
-              <Tag key={idx}>
-                {tag.key}={tag.value}
-              </Tag>
+              <Tag key={idx}>{buildTagString({key: tag.key, value: tag.value})}</Tag>
             ))}
           </Box>
         )}

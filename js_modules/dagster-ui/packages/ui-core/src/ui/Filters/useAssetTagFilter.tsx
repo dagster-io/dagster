@@ -37,7 +37,7 @@ export const useAssetTagFilter = ({
         />
       );
     },
-    getStringValue: ({value, key}) => `${value}: ${key}`,
+    getStringValue: ({value, key}) => `${key}: ${value}`,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setTags?.(Array.from(values));
@@ -81,6 +81,6 @@ export function doesFilterArrayMatchValueArray<T, V>(
   return !filterArray.some(
     (filterTag) =>
       // If no asset tags match this filter tag return true
-      !valueArray.find((value) => !isMatch(filterTag, value)),
+      !valueArray.find((value) => isMatch(filterTag, value)),
   );
 }
