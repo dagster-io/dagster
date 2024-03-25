@@ -383,7 +383,7 @@ For more examples of partitions, check out the following in our [Hacker News exa
 
 Asset functions can write data out to files, but they can also delegate the writing operation to an [I/O manager](/concepts/io-management/io-managers). Dagster's [built-in I/O managers](/concepts/io-management/io-managers#built-in-io-managers) support handling partitioned assets, but you can also [write your own I/O manager](/concepts/io-management/io-managers#handling-partitioned-assets) if you want additional customization.
 
-For example, this example demonstrates how to define an asset that relies on an I/O manager to store its output:
+For example, the following demonstrates how to define an asset that relies on an I/O manager to store its output:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset_uses_io_manager.py
 import pandas as pd
