@@ -939,6 +939,10 @@
             "path": "/guides/dagster/enriching-with-software-defined-assets"
           },
           {
+            "title": "Checking data freshness",
+            "path": "/guides/assets/checking-for-data-freshness"
+          },
+          {
             "title": "Software-defined assets with Pandas & PySpark",
             "path": "/guides/dagster/software-defined-assets"
           },
