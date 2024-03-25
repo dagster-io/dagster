@@ -280,8 +280,8 @@ class UPathIOManager(MemoizableIOManager):
             Any: The object loaded from the partition.
         """
         allow_missing_partitions = (
-            context.metadata.get("allow_missing_partitions", False)
-            if context.metadata is not None
+            context.definition_metadata.get("allow_missing_partitions", False)
+            if context.definition_metadata is not None
             else False
         )
 
@@ -356,8 +356,8 @@ class UPathIOManager(MemoizableIOManager):
 
                 # need to handle missing partitions here because exceptions don't get propagated from async calls
                 allow_missing_partitions = (
-                    context.metadata.get("allow_missing_partitions", False)
-                    if context.metadata is not None
+                    context.definition_metadata.get("allow_missing_partitions", False)
+                    if context.definition_metadata is not None
                     else False
                 )
 
