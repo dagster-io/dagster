@@ -240,6 +240,7 @@ def build_schedule_from_dbt_selection(
     cron_schedule: str,
     dbt_select: str = "fqn:*",
     dbt_exclude: Optional[str] = None,
+    schedule_name: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     config: Optional[RunConfig] = None,
     execution_timezone: Optional[str] = None,
@@ -255,6 +256,7 @@ def build_schedule_from_dbt_selection(
         cron_schedule (str): The cron schedule to define the schedule.
         dbt_select (str): A dbt selection string to specify a set of dbt resources.
         dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+        schedule_name (Optional[str]): The name of the dbt schedule to create.
         tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         config (Optional[RunConfig]): The config that parameterizes the execution of this schedule.
@@ -279,9 +281,11 @@ def build_schedule_from_dbt_selection(
                 job_name="all_dbt_assets",
                 cron_schedule="0 0 * * *",
                 dbt_select="fqn:*",
+                schedule_name="daily_dbt_assets_schedule",
             )
     """
     return ScheduleDefinition(
+        name=schedule_name,
         cron_schedule=cron_schedule,
         job=define_asset_job(
             name=job_name,
