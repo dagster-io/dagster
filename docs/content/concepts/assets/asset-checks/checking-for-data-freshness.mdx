@@ -28,7 +28,7 @@ How freshness checks are implemented depends on the type of asset they target:
 
 - **For source assets**, which are assets whose data feeds a Dagster pipeline, freshness checks utilize the time the asset was last updated to determine freshness. In this guide, we'll demonstrate how to use [observable source assets](/concepts/assets/asset-observations#observable-source-assets) and a [schedule](/concepts/partitions-schedules-sensors/schedules) to achieve this.
 
-- **For materializable assets**, which are assets materialized by Dagster, Dagster can infer the asset's last update time using the asset's latest materialization timestamp. In this guide, we'll TODO
+- **For materializable assets**, which are assets materialized by Dagster, Dagster can infer the asset's last update time using the asset's latest materialization timestamp. In this guide, we'll demonstrate how to use <PyObject object="asset" decorator />-decorated assets and a [sensor](/concepts/partitions-schedules-sensors/sensors) to achieve this.
 
 For materializable assets, freshness checks can also help you communicate SLAs for their data freshness. For example, downstream consumers of the assets can look at the checks that are defined on those assets to determine when and how often they’re expected to be updated.
 
