@@ -39,7 +39,7 @@ Type annotations are not required. By default an eager `pl.DataFrame` will be lo
     @asset(io_manager_key="polars_parquet_io_manager")
     def downstream(upstream) -> pl.LazyFrame:
         assert isinstance(upstream, pl.DataFrame)
-		return upstream.lazy()  # LazyFrame will be sinked
+        return upstream.lazy()  # LazyFrame will be sinked
 
 Lazy `pl.LazyFrame` can be scanned by annotating the input with `pl.LazyFrame`, and returning a `pl.LazyFrame` will sink it:
 
@@ -48,7 +48,7 @@ Lazy `pl.LazyFrame` can be scanned by annotating the input with `pl.LazyFrame`, 
     @asset(io_manager_key="polars_parquet_io_manager")
     def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
         assert isinstance(upstream, pl.LazyFrame)
-		return upstream
+        return upstream
 
 The same logic applies to partitioned assets:
 
