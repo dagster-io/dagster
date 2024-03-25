@@ -156,7 +156,10 @@ export const AssetsCatalogTable = ({
     .trim();
 
   const {assets, query, error} = useAllAssets(groupSelector);
-  const pathMatches = useAssetSearch(searchPath, assets || emptyArray);
+  const pathMatches = useAssetSearch(
+    searchPath,
+    assets ?? (emptyArray as NonNullable<typeof assets>),
+  );
 
   const filtered = React.useMemo(
     () =>
