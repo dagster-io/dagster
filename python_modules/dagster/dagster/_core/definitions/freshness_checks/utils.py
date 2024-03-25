@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Sequence, Union
+from typing import Iterator, Optional, Sequence, Union, cast
 
 from dagster import _check as check
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
@@ -8,7 +8,6 @@ from dagster._core.instance import DagsterInstance
 from ..asset_check_spec import AssetCheckSeverity
 from ..asset_checks import AssetChecksDefinition
 from ..assets import AssetsDefinition, SourceAsset
-from ..data_time import DATA_TIME_METADATA_KEY
 from ..events import AssetKey, CoercibleToAssetKey
 
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
@@ -16,6 +15,7 @@ DEFAULT_FRESHNESS_CRON_TIMEZONE = "UTC"
 MAXIMUM_LAG_METADATA_KEY = "dagster/maximum_lag_minutes"
 FRESHNESS_CRON_METADATA_KEY = "dagster/freshness_cron"
 FRESHNESS_CRON_TIMEZONE_METADATA_KEY = "dagster/freshness_cron_timezone"
+LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 
 
 def ensure_no_duplicate_assets(
@@ -121,7 +121,13 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
         return asset_record.timestamp
     else:
         metadata = check.not_none(asset_record.asset_observation).metadata
-        return check.float_param(metadata[DATA_TIME_METADATA_KEY].value, "data_time")
+        value = metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY].value
+        check.invariant(
+            isinstance(value, float),
+            f"Unexpected metadata value type for '{LAST_UPDATED_TIMESTAMP_METADATA_KEY}': "
+            f"{type(metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY])}",
+        )
+        return cast(float, value)
 
 
 def get_last_updated_timestamp(record: Optional[EventLogRecord]) -> Optional[float]:
