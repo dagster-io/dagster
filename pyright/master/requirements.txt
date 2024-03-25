@@ -128,6 +128,6 @@ dbt-core<1.6
 -e examples/tutorial_notebook_assets
 -e examples/with_airflow
 -e examples/with_great_expectations
--r examples/with_openai/requirements.txt
+-e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
