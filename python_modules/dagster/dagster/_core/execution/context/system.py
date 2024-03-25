@@ -35,6 +35,7 @@ from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -650,7 +651,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
-    def get_output_context(self, step_output_handle: StepOutputHandle) -> OutputContext:
+    def get_output_context(
+        self,
+        step_output_handle: StepOutputHandle,
+        output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    ) -> OutputContext:
         return get_output_context(
             self.execution_plan,
             self.job_def,
@@ -661,6 +666,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resources=None,
             version=self.execution_plan.get_version_for_step_output_handle(step_output_handle),
+            output_metadata=output_metadata,
         )
 
     def for_input_manager(
