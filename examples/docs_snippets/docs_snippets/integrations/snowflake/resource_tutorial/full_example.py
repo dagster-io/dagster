@@ -1,48 +1,89 @@
 import pandas as pd
 from dagster_snowflake import SnowflakeResource
+from snowflake.connector.pandas_tools import write_pandas
+from dagster import Definitions, EnvVar, MaterializeResult, asset
 
-from dagster import Definitions, EnvVar, SourceAsset, asset
+# start_config
+from dagster_snowflake import SnowflakeResource
+from dagster import EnvVar
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+snowflake = SnowflakeResource(
+    account=EnvVar("SNOWFLAKE_ACCOUNT"),  # required
+    user=EnvVar("SNOWFLAKE_USER"),  # required
+    password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
+    warehouse="PLANTS",
+    schema="IRIS",
+    role="WRITER",
+)
+
+# end_config
+
+# start_asset
+
+import pandas as pd
+from dagster_snowflake import SnowflakeResource
+from snowflake.connector.pandas_tools import write_pandas
+from dagster import MaterializeResult, asset
 
 
 @asset
-def iris_dataset(snowflake: SnowflakeResource) -> None:
+def iris_dataset(snowflake: SnowflakeResource):
     iris_df = pd.read_csv(
         "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
             "species",
         ],
     )
 
     with snowflake.get_connection() as conn:
-        conn.cursor.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
-
-
-@asset(deps=[iris_dataset])
-def iris_setosa(snowflake: SnowflakeResource) -> None:
-    with snowflake.get_connection() as conn:
-        conn.cursor.execute(
-            "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
-            " species = 'Iris-setosa'"
+        table_name = "iris_dataset"
+        database = "flowers"
+        schema = "iris"
+        success, number_chunks, rows_inserted, output = write_pandas(  # type: ignore
+            conn,
+            iris_df,
+            table_name=table_name,
+            database=database,
+            schema=schema,
+            auto_create_table=True,
+            overwrite=True,
+            quote_identifiers=False,
         )
 
+    return MaterializeResult(
+        metadata={"rows_inserted": rows_inserted},
+    )
+
+
+# end_asset
+
+# start_downstream
+from dagster_snowflake import SnowflakeResource
+from dagster import asset
+
+
+@asset(deps=["iris_dataset"])
+def iris_setosa(snowflake: SnowflakeResource) -> None:
+    query = f"""
+        create or replace table iris.iris_setosa as (
+            SELECT * 
+            FROM iris.iris_dataset
+            WHERE species = 'Iris-setosa'
+        );
+    """
+
+    with snowflake.get_connection() as conn:
+        conn.cursor.execute(query)
+
+
+# end_downstream
+
+# start_definitions
+from dagster import Definitions
 
 defs = Definitions(
-    assets=[iris_dataset, iris_harvest_data, iris_setosa],
-    resources={
-        "snowflake": SnowflakeResource(
-            account="abc1234.us-east-1",
-            user=EnvVar("SNOWFLAKE_USER"),
-            password=EnvVar("SNOWFLAKE_PASSWORD"),
-            database="FLOWERS",
-            role="writer",
-            warehouse="PLANTS",
-            schema="IRIS",
-        )
-    },
+    assets=[iris_dataset, iris_setosa], resources={"snowflake": snowflake}
 )
+
+# end_definitions

@@ -12,6 +12,7 @@ By the end of the tutorial, you will:
 - Configure a Snowflake resource
 - Use the Snowflake resource to execute a SQL query that creates a table
 - Load Snowflake tables in downstream assets
+- Add the assets and Snowflake resource to a `Definitions` object
 
 **Prefer to use an I/O manager?** Unlike resources, an [I/O manager](/concepts/io-management/io-managers) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster. Refer to the [Snowlake I/O manager guide](/integrations/snowflake/using-snowflake-with-dagster-io-managers) for more info.
 
@@ -21,10 +22,10 @@ By the end of the tutorial, you will:
 
 To complete this tutorial, you'll need:
 
-- **To install the `dagster-snowflake` and `dagster-snowflake-pandas` libraries**:
+- **To install the following libraries**:
 
   ```shell
-  pip install dagster-snowflake dagster-snowflake-pandas
+  pip install dagster dagster-snowflake pandas
   ```
 
 - **To gather the following information**, which is required to use the Snowflake resource:
@@ -54,36 +55,27 @@ To complete this tutorial, you'll need:
 
 ## Step 1: Configure the Snowflake resource
 
-To use the <PyObject object="SnowflakeResource" module="dagster_snowflake" />, you'll need to add it to your <PyObject object="Definitions" /> object. Additionally, the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> requires some configuration:
+To connect to Snowflake, we'll use the `dagster-snowflake` <PyObject object="SnowflakeResource" module="dagster_snowflake" />. The <PyObject object="SnowflakeResource" module="dagster_snowflake" /> requires some configuration:
 
 - **The `account` and `user` values are required.**
 - **One method of authentication is required**, either by using a password or a private key.
 - **Optional**: Using the `warehouse`, `schema`, and `role` attributes, you can specify where data should be stored and a `role` for the resource to use.
 
-```python file=/integrations/snowflake/resource_tutorial/configuration.py startafter=start_example endbefore=end_example
+```python file=/integrations/snowflake/resource_tutorial/full_example.py startafter=start_config endbefore=end_config
 from dagster_snowflake import SnowflakeResource
+from dagster import EnvVar
 
-from dagster import Definitions, EnvVar
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "snowflake": SnowflakeResource(
-            account="abc1234.us-east-1",  # required
-            user=EnvVar("SNOWFLAKE_USER"),  # required
-            password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
-            database="FLOWERS",  # required
-            role="writer",  # optional, defaults to the default role for the account
-            warehouse="PLANTS",  # optional, defaults to default warehouse for the account
-            schema="IRIS",  # optional, defaults to PUBLIC
-        )
-    },
+snowflake = SnowflakeResource(
+    account=EnvVar("SNOWFLAKE_ACCOUNT"),  # required
+    user=EnvVar("SNOWFLAKE_USER"),  # required
+    password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
+    warehouse="PLANTS",
+    schema="IRIS",
+    role="WRITER",
 )
 ```
 
-With this configuration, if you materialized an asset called `iris_dataset`, the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> would use the role `WRITER` and store the data in the `FLOWERS.IRIS.IRIS_DATASET` table using the `PLANTS` warehouse.
-
-Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake" object="SnowflakeResource" /> to the `snowflake` key.
+With this configuration, if you materialized an asset named `iris_dataset`, <PyObject object="SnowflakeResource" module="dagster_snowflake" /> would use the role `WRITER` and store the data in the `FLOWERS.IRIS.IRIS_DATASET` table using the `PLANTS` warehouse.
 
 For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake" object="SnowflakeResource" /> API documentation.
 
@@ -98,31 +90,44 @@ For more info about each of the configuration values, refer to the <PyObject mod
 
 Using the Snowflake resource, you can create Snowflake tables using the Snowflake Python API:
 
-```python file=/integrations/snowflake/resource_tutorial/create_table.py
+```python file=/integrations/snowflake/resource_tutorial/full_example.py startafter=start_asset endbefore=end_asset
 import pandas as pd
 from dagster_snowflake import SnowflakeResource
-
-from dagster import asset
+from snowflake.connector.pandas_tools import write_pandas
+from dagster import MaterializeResult, asset
 
 
 @asset
-def iris_dataset(snowflake: SnowflakeResource) -> None:
+def iris_dataset(snowflake: SnowflakeResource):
     iris_df = pd.read_csv(
         "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
             "species",
         ],
     )
 
     with snowflake.get_connection() as conn:
-        conn.cursor.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
+        table_name = "iris_dataset"
+        database = "flowers"
+        schema = "iris"
+        success, number_chunks, rows_inserted, output = write_pandas(
+            conn,
+            iris_df,
+            table_name=table_name,
+            database=database,
+            schema=schema,
+            auto_create_table=True,
+            overwrite=True,
+            quote_identifiers=False,
+        )
+
+    return MaterializeResult(
+        metadata={"rows_inserted": rows_inserted},
+    )
 ```
 
-In this example, we've defined an asset that fetches the Iris dataset as a Pandas DataFrame and renames the columns. Then, using the Snowflake resource, the DataFrame is stored in Snowflake as the `IRIS.IRIS_DATASET` table.
+In this example, we've defined an asset that fetches the Iris dataset as a Pandas DataFrame. Then, using the Snowflake resource, the DataFrame is stored in Snowflake as the `FLOWERS.IRIS.IRIS_DATASET` table.
 
 </TabItem>
 <TabItem name="Make existing tables available in Dagster">
@@ -141,7 +146,7 @@ iris_harvest_data = SourceAsset(key="iris_harvest_data")
 
 In this example, we created a <PyObject object="SourceAsset" /> for a pre-existing table called `iris_harvest_data`.
 
-Since we supplied the database and the schema in the resource configuration in [Step 1](#step-1-configure-the-snowflake-resource), we only need to provide the table name. We did this by using the `key` parameter in our <PyObject object="SourceAsset" />. When the `iris_harvest_data` needs to be loaded in a downstream asset, the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table will be selected and provided to the asset.
+Since we supplied the database and the schema in the resource configuration in [Step 1](#step-1-configure-the-snowflake-resource), we only need to provide the table name. We did this by using the `key` parameter in our <PyObject object="SourceAsset" />. When the `iris_harvest_data` asset needs to be loaded in a downstream asset, the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table will be selected and provided to the asset.
 
 </TabItem>
 </TabGroup>
@@ -150,28 +155,44 @@ Since we supplied the database and the schema in the resource configuration in [
 
 ## Step 3: Define downstream assets
 
-Once you've created an asset that represents a table in Snowflake, you'll likely want to create additional assets that work with the data. For example:
+Once you've created an asset that represents a table in Snowflake, you may want to create additional assets that work with the data. In the following example, we've defined an asset that creates a second table, which contains only the data for the _Iris Setosa_ species:
 
-```python file=/integrations/snowflake/resource_tutorial/downstream.py startafter=start_example endbefore=end_example
-import pandas as pd
-from create_table import iris_dataset
+```python file=/integrations/snowflake/resource_tutorial/full_example.py startafter=start_downstream endbefore=end_downstream
 from dagster_snowflake import SnowflakeResource
-
 from dagster import asset
 
-# this example uses the iris_dataset asset from Step 2
 
-
-@asset(deps=[iris_dataset])
+@asset(deps=["iris_dataset"])
 def iris_setosa(snowflake: SnowflakeResource) -> None:
+    query = f"""
+        create or replace table iris.iris_setosa as (
+            SELECT *
+            FROM iris.iris_dataset
+            WHERE species = 'Iris-setosa'
+        );
+    """
+
     with snowflake.get_connection() as conn:
-        conn.cursor.execute(
-            "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
-            " species = 'Iris-setosa'"
-        )
+        conn.cursor.execute(query)
 ```
 
-In this asset, we've created a second table that only contains the data for the _Iris Setosa_ species. To do this, we defined a dependency on the `iris_dataset` asset using the `deps` parameter. Then, the SQL query will run and create the table of _Iris Setosa_ data.
+To accomplish this, we defined a dependency on the `iris_dataset` asset using the `deps` parameter. Then, the SQL query runs and creates the table of _Iris Setosa_ data.
+
+---
+
+## Step 4: Definitions object
+
+The last step is to add the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> and the assets to the project's <PyObject object="Definitions" /> object:
+
+```python file=/integrations/snowflake/resource_tutorial/full_example.py startafter=start_definitions endbefore=end_definitions
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[iris_dataset, iris_setosa], resources={"snowflake": snowflake}
+)
+```
+
+This makes the resource and assets available to Dagster tools like the UI and CLI.
 
 ---
 
@@ -179,54 +200,68 @@ In this asset, we've created a second table that only contains the data for the 
 
 When finished, your code should look like the following:
 
-```python file=/integrations/snowflake/resource_tutorial/full_example.py
+```python file=/integrations/snowflake/resource_tutorial/full_example.py lines=1-5,10-17,27-58,66-79,85-87
 import pandas as pd
 from dagster_snowflake import SnowflakeResource
+from snowflake.connector.pandas_tools import write_pandas
+from dagster import Definitions, EnvVar, MaterializeResult, asset
 
-from dagster import Definitions, EnvVar, SourceAsset, asset
-
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+snowflake = SnowflakeResource(
+    account=EnvVar("SNOWFLAKE_ACCOUNT"),  # required
+    user=EnvVar("SNOWFLAKE_USER"),  # required
+    password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
+    warehouse="PLANTS",
+    schema="IRIS",
+    role="WRITER",
+)
 
 
 @asset
-def iris_dataset(snowflake: SnowflakeResource) -> None:
+def iris_dataset(snowflake: SnowflakeResource):
     iris_df = pd.read_csv(
         "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
             "species",
         ],
     )
 
     with snowflake.get_connection() as conn:
-        conn.cursor.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
-
-
-@asset(deps=[iris_dataset])
-def iris_setosa(snowflake: SnowflakeResource) -> None:
-    with snowflake.get_connection() as conn:
-        conn.cursor.execute(
-            "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
-            " species = 'Iris-setosa'"
+        table_name = "iris_dataset"
+        database = "flowers"
+        schema = "iris"
+        success, number_chunks, rows_inserted, output = write_pandas(
+            conn,
+            iris_df,
+            table_name=table_name,
+            database=database,
+            schema=schema,
+            auto_create_table=True,
+            overwrite=True,
+            quote_identifiers=False,
         )
+
+    return MaterializeResult(
+        metadata={"rows_inserted": rows_inserted},
+    )
+
+
+@asset(deps=["iris_dataset"])
+def iris_setosa(snowflake: SnowflakeResource) -> None:
+    query = f"""
+        create or replace table iris.iris_setosa as (
+            SELECT *
+            FROM iris.iris_dataset
+            WHERE species = 'Iris-setosa'
+        );
+    """
+
+    with snowflake.get_connection() as conn:
+        conn.cursor.execute(query)
 
 
 defs = Definitions(
-    assets=[iris_dataset, iris_harvest_data, iris_setosa],
-    resources={
-        "snowflake": SnowflakeResource(
-            account="abc1234.us-east-1",
-            user=EnvVar("SNOWFLAKE_USER"),
-            password=EnvVar("SNOWFLAKE_PASSWORD"),
-            database="FLOWERS",
-            role="writer",
-            warehouse="PLANTS",
-            schema="IRIS",
-        )
-    },
+    assets=[iris_dataset, iris_setosa], resources={"snowflake": snowflake}
 )
 ```
 
@@ -236,7 +271,7 @@ defs = Definitions(
 
 <ArticleList>
   <ArticleListItem
-    title="Dagster + Snowflake using I/O managers"
+    title="Dagster & Snowflake using I/O managers"
     href="/integrations/snowflake/using-snowflake-with-dagster-io-managers"
   ></ArticleListItem>
   <ArticleListItem
