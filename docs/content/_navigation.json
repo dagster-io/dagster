@@ -102,6 +102,10 @@
               {
                 "title": "Defining & executing checks",
                 "path": "/concepts/assets/asset-checks/define-execute-asset-checks"
+              },
+              {
+                "title": "Checking data freshness",
+                "path": "/concepts/assets/asset-checks/checking-for-data-freshness"
               }
             ]
           },
@@ -943,10 +947,6 @@
           {
             "title": "Moving to Software-defined assets",
             "path": "/guides/dagster/enriching-with-software-defined-assets"
-          },
-          {
-            "title": "Checking data freshness",
-            "path": "/guides/assets/checking-for-data-freshness"
           },
           {
             "title": "Software-defined assets with Pandas & PySpark",
