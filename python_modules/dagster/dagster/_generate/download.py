@@ -36,6 +36,7 @@ AVAILABLE_EXAMPLES = [
     "project_analytics",
     "with_airflow",
     "with_great_expectations",
+    "with_openai",
     "with_pyspark",
     "with_pyspark_emr",
     "with_wandb",

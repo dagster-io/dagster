@@ -1,47 +1,25 @@
-# with_openai
+# Using Dagster with OpenAI & LangChain
 
-This is a [Dagster](https://dagster.io/) project scaffolded with [`dagster project scaffold`](https://docs.dagster.io/getting-started/create-new-project).
+This directory contains a pipeline leveraging Dagster, [OpenAI](https://openai.com/) and [LangChain](https://www.langchain.com/) to create a support bot. This pipeline is discussed in our [blog post](ADD BLOG POST URL) .
+
+For more information about using OpenAI with Dagster, visit our [OpenAI integration page](https://docs.dagster.io/integrations/openai).
 
 ## Getting started
 
-First, install your Dagster code location as a Python package. By using the --editable flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
+Bootstrap your own Dagster project with this example:
+
+```bash
+dagster project from-example --name my-dagster-project --example with_openai
+```
+
+To install this example and its Python dependencies, run:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-Then, start the Dagster UI web server:
+Once you've done this, you can run:
 
-```bash
+```
 dagster dev
 ```
-
-Open http://localhost:3000 with your browser to see the project.
-
-You can start writing assets in `with_openai/assets.py`. The assets are automatically loaded into the Dagster code location as you define them.
-
-## Development
-
-### Adding new Python dependencies
-
-You can specify new Python dependencies in `setup.py`.
-
-### Unit testing
-
-Tests are in the `with_openai_tests` directory and you can run tests using `pytest`:
-
-```bash
-pytest with_openai_tests
-```
-
-### Schedules and sensors
-
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) or [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) for your jobs, the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process must be running. This is done automatically when you run `dagster dev`.
-
-Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
-
-## Deploy on Dagster Cloud
-
-The easiest way to deploy your Dagster project is to use Dagster Cloud.
-
-Check out the [Dagster Cloud Documentation](https://docs.dagster.cloud) to learn more.
