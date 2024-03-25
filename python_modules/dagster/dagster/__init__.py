@@ -210,14 +210,14 @@ from dagster._core.definitions.external_asset import (
     external_asset_from_spec as external_asset_from_spec,
     external_assets_from_specs as external_assets_from_specs,
 )
-from dagster._core.definitions.freshness_checks.non_partitioned import (
-    build_freshness_checks_for_non_partitioned_assets as build_freshness_checks_for_non_partitioned_assets,
+from dagster._core.definitions.freshness_checks.last_update import (
+    build_last_update_freshness_checks as build_last_update_freshness_checks,
 )
 from dagster._core.definitions.freshness_checks.sensor import (
     build_sensor_for_freshness_checks as build_sensor_for_freshness_checks,
 )
-from dagster._core.definitions.freshness_checks.time_window_partitioned import (
-    build_freshness_checks_for_time_window_partitioned_assets as build_freshness_checks_for_time_window_partitioned_assets,
+from dagster._core.definitions.freshness_checks.time_partition import (
+    build_time_partition_freshness_checks as build_time_partition_freshness_checks,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy_sensor_definition import (
