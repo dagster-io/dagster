@@ -204,12 +204,14 @@ This makes the resource and assets available to Dagster tools like the UI and CL
 
 When finished, your code should look like the following:
 
-```python file=/integrations/snowflake/resource_tutorial/full_example.py lines=1-5,10-17,27-58,66-79,85-87
+```python file=/integrations/snowflake/resource_tutorial/full_example.py lines=1,4-16,27-58,67-80,86-88
 import pandas as pd
-
-# start_config
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
+
+from dagster import Definitions, EnvVar, MaterializeResult, asset
+
+snowflake = SnowflakeResource(
     account=EnvVar("SNOWFLAKE_ACCOUNT"),  # required
     user=EnvVar("SNOWFLAKE_USER"),  # required
     password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
@@ -217,7 +219,6 @@ from snowflake.connector.pandas_tools import write_pandas
     schema="IRIS",
     role="WRITER",
 )
-
 
 
 @asset
@@ -250,7 +251,6 @@ def iris_dataset(snowflake: SnowflakeResource):
     )
 
 
-
 @asset(deps=["iris_dataset"])
 def iris_setosa(snowflake: SnowflakeResource) -> None:
     query = """
@@ -267,6 +267,7 @@ def iris_setosa(snowflake: SnowflakeResource) -> None:
 
 defs = Definitions(
     assets=[iris_dataset, iris_setosa], resources={"snowflake": snowflake}
+)
 ```
 
 ---
