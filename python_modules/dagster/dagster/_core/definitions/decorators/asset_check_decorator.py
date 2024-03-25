@@ -14,7 +14,6 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
-from dagster._annotations import experimental
 from dagster._config import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -100,7 +99,6 @@ def _build_asset_check_input(
     )
 
 
-@experimental
 def asset_check(
     *,
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
@@ -264,7 +262,6 @@ MultiAssetCheckFunctionReturn: TypeAlias = Iterable[AssetCheckResult]
 MultiAssetCheckFunction: TypeAlias = Callable[..., MultiAssetCheckFunctionReturn]
 
 
-@experimental
 def multi_asset_check(
     *,
     name: Optional[str] = None,
