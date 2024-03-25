@@ -3,11 +3,12 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.events import (
+from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -51,6 +52,9 @@ class AssetCheckKey(NamedTuple):
     def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
         return self._replace(asset_key=self.asset_key.with_prefix(prefix))
 
+    def to_user_string(self) -> str:
+        return f"{self.asset_key.to_user_string()}:{self.name}"
+
 
 @experimental
 class AssetCheckSpec(
@@ -62,6 +66,7 @@ class AssetCheckSpec(
             ("description", PublicAttr[Optional[str]]),
             ("additional_deps", PublicAttr[Optional[Iterable["AssetDep"]]]),
             ("blocking", PublicAttr[bool]),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
         ],
     )
 ):
@@ -85,6 +90,7 @@ class AssetCheckSpec(
             depend on `asset` will wait for this check to complete before starting the downstream
             assets. If the check fails with severity `AssetCheckSeverity.ERROR`, then the downstream
             assets won't execute.
+        metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
     """
 
     def __new__(
@@ -95,6 +101,7 @@ class AssetCheckSpec(
         description: Optional[str] = None,
         additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         blocking: bool = False,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -118,6 +125,7 @@ class AssetCheckSpec(
             description=check.opt_str_param(description, "description"),
             additional_deps=additional_asset_deps,
             blocking=check.bool_param(blocking, "blocking"),
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
     def get_python_identifier(self) -> str:

@@ -395,11 +395,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         # the selection of primary/secondary dimension, will need to also update the
         # serialization of MultiPartitionsSubsets
 
-        time_dimensions = [
-            dim
-            for dim in self.partitions_defs
-            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
-        ]
+        time_dimensions = self._get_time_window_dims()
         if len(time_dimensions) == 1:
             primary_dimension, secondary_dimension = (
                 time_dimensions[0],
@@ -429,15 +425,30 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
     @property
     def time_window_dimension(self) -> PartitionDimensionDefinition:
-        time_window_dims = [
-            dim
-            for dim in self.partitions_defs
-            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
-        ]
+        time_window_dims = self._get_time_window_dims()
         check.invariant(
             len(time_window_dims) == 1, "Expected exactly one time window partitioned dimension"
         )
         return next(iter(time_window_dims))
+
+    def _get_time_window_dims(self) -> List[PartitionDimensionDefinition]:
+        return [
+            dim
+            for dim in self.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+
+    @property
+    def has_time_window_dimension(self) -> bool:
+        return bool(self._get_time_window_dims())
+
+    @property
+    def time_window_partitions_def(self) -> TimeWindowPartitionsDefinition:
+        check.invariant(self.has_time_window_dimension, "Must have time window dimension")
+        return cast(
+            TimeWindowPartitionsDefinition,
+            check.inst(self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition),
+        )
 
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         if not isinstance(partition_key, MultiPartitionKey):

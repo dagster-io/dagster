@@ -7,17 +7,17 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalJob,
     ExternalPartitionSet,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalPartitionExecutionParamData,
     ExternalPartitionSetExecutionParamData,
 )
-from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
-from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,

@@ -659,6 +659,11 @@ def test_user_deployment_include_config_in_launched_runs(template: HelmTemplate)
             "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
             "namespace": "default",
             "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            "run_k8s_config": {
+                "pod_spec_config": {
+                    "automount_service_account_token": True,
+                }
+            },
         }
     }
 
@@ -751,6 +756,11 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
                 "volumes": volumes,
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    }
+                },
             }
         }
     else:
@@ -807,6 +817,11 @@ def test_user_deployment_secrets_and_configmaps(
                 ],
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    }
+                },
             }
         }
     else:
@@ -854,6 +869,65 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
                 "labels": labels,
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    }
+                },
+            }
+        }
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_annotations(template: HelmTemplate, include_config_in_launched_runs: bool):
+    name = "foo"
+
+    annotations = {"my-annotation-key": "my-annotation-val"}
+
+    deployment = UserDeployment.construct(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        annotations=annotations,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "image_pull_policy": "Always",
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    },
+                    "pod_template_spec_metadata": {
+                        "annotations": annotations,
+                    },
+                },
             }
         }
     else:
@@ -902,6 +976,11 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
                 "resources": resources,
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    }
+                },
             }
         }
     else:
@@ -982,6 +1061,7 @@ def test_user_deployment_sidecar(template: HelmTemplate, include_config_in_launc
                     "pod_spec_config": {
                         "init_containers": init_containers,
                         "containers": sidecars,
+                        "automount_service_account_token": True,
                     },
                 },
             }
@@ -1025,6 +1105,11 @@ def test_subchart_image_pull_secrets(
                 "image_pull_secrets": image_pull_secrets,
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    }
+                },
             }
         }
     else:
@@ -1196,6 +1281,11 @@ def test_code_server_cli(template: HelmTemplate, user_deployment_configmap_templ
             "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
             "namespace": "default",
             "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            "run_k8s_config": {
+                "pod_spec_config": {
+                    "automount_service_account_token": True,
+                },
+            },
         }
     }
 
@@ -1231,6 +1321,11 @@ def test_env_container_context(template: HelmTemplate, user_deployment_configmap
             "namespace": "default",
             "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             "env": [{"name": "test_env", "value": "test_value"}],
+            "run_k8s_config": {
+                "pod_spec_config": {
+                    "automount_service_account_token": True,
+                }
+            },
         }
     }
 

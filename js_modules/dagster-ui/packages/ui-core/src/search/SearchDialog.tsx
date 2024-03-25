@@ -4,14 +4,16 @@ import {Box, Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components'
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
-import {useHistory, useLocation} from 'react-router-dom';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
+import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useTrackEvent} from '../app/analytics';
+import {Trace, createTrace} from '../performance';
 
 const MAX_DISPLAYED_RESULTS = 50;
 
@@ -71,9 +73,10 @@ const initialState: State = {
 const DEBOUNCE_MSEC = 100;
 
 export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
-  const location = useLocation();
   const history = useHistory();
-  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch();
+  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
+    includeAssetFilters: false,
+  });
   const trackEvent = useTrackEvent();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -83,11 +86,30 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
 
+  const isFirstSearch = React.useRef(true);
+  const firstSearchTrace = React.useRef<null | Trace>(null);
+
   const openSearch = React.useCallback(() => {
     trackEvent('searchOpen');
     initialize();
     dispatch({type: 'show-dialog'});
   }, [initialize, trackEvent]);
+
+  React.useEffect(() => {
+    if (!loading && primaryResults && secondaryResults) {
+      firstSearchTrace.current?.endTrace();
+    }
+  }, [loading, primaryResults, secondaryResults]);
+
+  React.useEffect(() => {
+    __updateSearchVisibility(shown);
+    if (!shown && firstSearchTrace.current) {
+      // When the dialog closes:
+      // Either the trace finished and we logged it, or it didn't and so we throw it away
+      // Either way we don't need the trace object anymore
+      firstSearchTrace.current = null;
+    }
+  }, [shown]);
 
   const searchAndHandlePrimary = React.useCallback(
     async (queryString: string) => {
@@ -106,10 +128,19 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   );
 
   const debouncedSearch = React.useMemo(() => {
-    return debounce(async (queryString: string) => {
+    const debouncedSearch = debounce(async (queryString: string) => {
       searchAndHandlePrimary(queryString);
       searchAndHandleSecondary(queryString);
     }, DEBOUNCE_MSEC);
+    return (queryString: string) => {
+      if (!firstSearchTrace.current && isFirstSearch.current) {
+        isFirstSearch.current = false;
+        const trace = createTrace('SearchDialog:FirstSearch');
+        firstSearchTrace.current = trace;
+        trace.startTrace();
+      }
+      return debouncedSearch(queryString);
+    };
   }, [searchAndHandlePrimary, searchAndHandleSecondary]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,10 +148,6 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
     dispatch({type: 'change-query', queryString: newValue});
     debouncedSearch(newValue);
   };
-
-  React.useEffect(() => {
-    dispatch({type: 'hide-dialog'});
-  }, [location.pathname]);
 
   const onClickResult = React.useCallback(
     (result: Fuse.FuseResult<SearchResult>) => {
@@ -184,7 +211,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   return (
     <>
       <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <SearchTrigger onClick={openSearch}>
+        <SearchTrigger onClick={openSearch} data-search-trigger="1">
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <Box flex={{alignItems: 'center', gap: 4}}>
               <div
@@ -211,9 +238,10 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
         transitionDuration={100}
       >
         <Container>
-          <SearchBox hasQueryString={!!queryString.length}>
+          <SearchBox $hasQueryString={!!queryString.length}>
             <Icon name="search" color={Colors.accentGray()} size={20} />
             <SearchInput
+              data-search-input="1"
               autoFocus
               spellCheck={false}
               onChange={onChange}
@@ -261,34 +289,44 @@ const SearchTrigger = styled.button`
 
 const Container = styled.div`
   background-color: ${Colors.backgroundDefault()};
-  border-radius: 4px;
-  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
+  border-radius: 8px;
+  box-shadow:
+    2px 2px 8px ${Colors.shadowDefault()},
+    ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
   max-height: 60vh;
   left: calc(50% - 300px);
   overflow: hidden;
   width: 600px;
   top: 20vh;
+`;
 
-  input {
-    background-color: transparent;
+export interface SearchBoxProps {
+  readonly $hasQueryString: boolean;
+}
+
+export const SearchBox = styled.div<SearchBoxProps>`
+  background: ${Colors.backgroundDefault()};
+  border-radius: ${({$hasQueryString}) => ($hasQueryString ? '8px 8px 0 0' : '8px')};
+  border: none;
+  align-items: center;
+  box-shadow: ${({$hasQueryString}) =>
+      $hasQueryString ? Colors.keylineDefault() : Colors.borderDefault()}
+    inset 0px 0px 0px 1px;
+  display: flex;
+  padding: 12px 20px 12px 12px;
+  transition: all 100ms linear;
+
+  :hover {
+    box-shadow: ${({$hasQueryString}) =>
+        $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
+      0 0 0 1px inset;
   }
 `;
 
-interface SearchBoxProps {
-  readonly hasQueryString: boolean;
-}
-
-const SearchBox = styled.div<SearchBoxProps>`
-  align-items: center;
-  border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${Colors.keylineDefault()}` : 'none'};
-  display: flex;
-  padding: 12px 20px 12px 12px;
-`;
-
-const SearchInput = styled.input`
+export const SearchInput = styled.input`
+  background-color: transparent;
   border: none;
-  color: ${Colors.textLight()};
+  color: ${Colors.textDefault()};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
@@ -296,7 +334,11 @@ const SearchInput = styled.input`
   width: 100%;
 
   &::placeholder {
-    color: ${Colors.textLighter()};
+    color: ${Colors.textDisabled()};
+  }
+
+  ::focus {
+    outline: none;
   }
 `;
 

@@ -6,7 +6,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
 from .asset_utils import is_non_asset_node
 from .dagster_dbt_translator import DagsterDbtTranslator
@@ -70,7 +70,9 @@ class DbtManifestAssetSelection(
             exclude=check.opt_str_param(exclude, "exclude", default=""),
         )
 
-    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool = False
+    ) -> AbstractSet[AssetKey]:
         dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
 
         keys = set()
@@ -87,7 +89,9 @@ class DbtManifestAssetSelection(
 
         return keys
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
+    def resolve_checks_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
         if not self.dagster_dbt_translator.settings.enable_asset_checks:
             return set()
 

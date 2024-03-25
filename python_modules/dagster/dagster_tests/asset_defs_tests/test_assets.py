@@ -27,6 +27,7 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    graph_multi_asset,
     io_manager,
     job,
     materialize,
@@ -37,8 +38,10 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -51,7 +54,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import create_test_asset_job, instance_for_test
 from dagster._core.types.dagster_type import Nothing
 
 
@@ -129,6 +132,30 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     assert subbed.asset_deps == abc_.asset_deps
 
 
+def test_subset_with_checks():
+    @multi_asset(
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
+        check_specs=[AssetCheckSpec("check1", asset="a"), AssetCheckSpec("check2", asset="b")],
+        can_subset=True,
+    )
+    def abc_(context, in1, in2, in3): ...
+
+    a, b, c = AssetKey("a"), AssetKey("b"), AssetKey("c")
+    check1, check2 = AssetCheckKey(a, "check1"), AssetCheckKey(b, "check2")
+
+    subbed = abc_.subset_for({a, b, c}, selected_asset_check_keys={check1, check2})
+    assert subbed.check_specs_by_output_name == abc_.check_specs_by_output_name
+    assert subbed.node_check_specs_by_output_name == abc_.node_check_specs_by_output_name
+
+    subbed = abc_.subset_for({a, b}, selected_asset_check_keys={check1})
+    assert len(subbed.check_specs_by_output_name) == 1
+    assert len(subbed.node_check_specs_by_output_name) == 2
+
+    subbed_again = subbed.subset_for({a, b}, selected_asset_check_keys=set())
+    assert len(subbed_again.check_specs_by_output_name) == 0
+    assert len(subbed_again.node_check_specs_by_output_name) == 2
+
+
 def test_retain_group():
     @asset(group_name="foo")
     def bar():
@@ -148,8 +175,7 @@ def test_with_replaced_description() -> None:
             "baz": AssetOut(description="baz"),
         }
     )
-    def abc():
-        ...
+    def abc(): ...
 
     assert abc.descriptions_by_key == {
         AssetKey("foo"): "foo",
@@ -173,6 +199,35 @@ def test_with_replaced_description() -> None:
         AssetKey("baz"): "baz",
     }
 
+    @op
+    def op1(): ...
+
+    @op
+    def op2(): ...
+
+    @graph_multi_asset(
+        outs={"foo": AssetOut(description="foo"), "bar": AssetOut(description="bar")}
+    )
+    def abc_graph():
+        return {"foo": op1(), "bar": op2()}
+
+    assert abc_graph.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+    }
+
+    replaced = abc_graph.with_attributes(descriptions_by_key={})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+    }
+
+    replaced = abc_graph.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar_prime",
+    }
+
 
 def test_with_replaced_metadata() -> None:
     @multi_asset(
@@ -182,8 +237,7 @@ def test_with_replaced_metadata() -> None:
             "baz": AssetOut(metadata={"baz": "baz"}),
         }
     )
-    def abc():
-        ...
+    def abc(): ...
 
     assert abc.metadata_by_key == {
         AssetKey("foo"): {"foo": "foo"},
@@ -455,8 +509,7 @@ def test_from_graph_internal_deps():
 
 def test_to_source_assets():
     @asset(metadata={"a": "b"}, io_manager_key="abc", description="blablabla")
-    def my_asset():
-        ...
+    def my_asset(): ...
 
     assert (
         my_asset.to_source_assets()
@@ -1246,14 +1299,10 @@ def test_graph_backed_asset_subset_context(
         out_2, out_3 = add_one(reused_output)
         return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
 
-    asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
-            [AssetsDefinition.from_graph(three, can_subset=True)],
-        )
-    )
+    job_def = create_test_asset_job([AssetsDefinition.from_graph(three, can_subset=True)])
 
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        result = job_def.execute_in_process(asset_selection=asset_selection, instance=instance)
         assert result.success
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
@@ -1508,8 +1557,7 @@ def test_self_dependency():
         del a
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
         def load_input(self, context):
             assert context.asset_key.path[-1] == "a"
@@ -1533,12 +1581,12 @@ def test_self_dependency():
 def test_context_assets_def():
     @asset
     def a(context):
-        assert context.assets_def == a
+        assert context.assets_def.keys == {a.key}
         return 1
 
     @asset
     def b(context, a):
-        assert context.assets_def == b
+        assert context.assets_def.keys == {b.key}
         return 2
 
     asset_job = define_asset_job("yay", [a, b]).resolve(
@@ -1840,7 +1888,10 @@ def test_multi_asset_nodes_out_names():
         pass
 
     assert len(users.op.output_defs) == 2
-    assert {out_def.name for out_def in users.op.output_defs} == {"sales_users", "marketing_users"}
+    assert {out_def.name for out_def in users.op.output_defs} == {
+        "sales__users",
+        "marketing__users",
+    }
 
 
 def test_asset_spec_deps():
@@ -1854,8 +1905,7 @@ def test_asset_spec_deps():
     table_c_no_dep = AssetSpec("table_C")
 
     @multi_asset(specs=[table_b, table_c])
-    def deps_in_specs():
-        ...
+    def deps_in_specs(): ...
 
     result = materialize([deps_in_specs, table_A])
     assert result.success
@@ -1867,12 +1917,10 @@ def test_asset_spec_deps():
     with pytest.raises(DagsterInvalidDefinitionError, match="Can not pass deps and specs"):
 
         @multi_asset(specs=[table_b_no_dep, table_c_no_dep], deps=["table_A"])
-        def no_deps_in_specs():
-            ...
+        def no_deps_in_specs(): ...
 
     @multi_asset(specs=[table_b, table_c])
-    def also_input(table_A):
-        ...
+    def also_input(table_A): ...
 
     result = materialize([also_input, table_A])
     assert result.success
@@ -1887,8 +1935,7 @@ def test_asset_spec_deps():
     ):
 
         @multi_asset(specs=[table_b, table_c])
-        def rogue_input(table_X):
-            ...
+        def rogue_input(table_X): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1896,8 +1943,7 @@ def test_asset_spec_deps():
     ):
 
         @multi_asset(specs=[table_b_no_dep, table_c_no_dep])
-        def no_spec_deps_but_input(table_A):
-            ...
+        def no_spec_deps_but_input(table_A): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1908,8 +1954,7 @@ def test_asset_spec_deps():
             specs=[table_b_no_dep, table_c_no_dep],
             deps=[table_A],
         )
-        def use_deps():
-            ...
+        def use_deps(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1920,8 +1965,7 @@ def test_asset_spec_deps():
             specs=[table_b_no_dep, table_c_no_dep],
             internal_asset_deps={"table_C": {AssetKey("table_B")}},
         )
-        def use_internal_deps():
-            ...
+        def use_internal_deps(): ...
 
 
 def test_asset_key_on_context():
@@ -2054,3 +2098,153 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
             return my_op()
 
         assert _specified_elsewhere  # appease linter
+
+
+def test_asset_owners():
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
+    def my_asset():
+        pass
+
+    owners = [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
+    assert my_asset.owners_by_key == {my_asset.key: owners}
+    assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
+
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
+    def my_asset_2():
+        pass
+
+    assert my_asset_2.owners_by_key == {my_asset_2.key: owners}
+
+    @asset(owners=[])
+    def asset_3():
+        pass
+
+    assert asset_3.owners_by_key == {}
+
+    @asset(owners=None)
+    def asset_4():
+        pass
+
+    assert asset_4.owners_by_key == {}
+
+
+def test_invalid_asset_owners():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["arbitrary string"])
+        def my_asset():
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["notanemail@com"])
+        def my_asset_2():
+            pass
+
+
+def test_multi_asset_owners():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(owners=["team:team1", "user@dagsterlabs.com"]),
+            "out2": AssetOut(owners=["user2@dagsterlabs.com"]),
+        }
+    )
+    def my_multi_asset():
+        pass
+
+    assert my_multi_asset.owners_by_key == {
+        AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
+    }
+
+
+def test_replace_asset_keys_for_asset_with_owners():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(owners=["user@dagsterlabs.com"]),
+            "out2": AssetOut(owners=["user@dagsterlabs.com"]),
+        }
+    )
+    def my_multi_asset():
+        pass
+
+    assert my_multi_asset.owners_by_key == {
+        AssetKey("out1"): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+    }
+
+    prefixed_asset = my_multi_asset.with_attributes(
+        output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
+    )
+    assert prefixed_asset.owners_by_key == {
+        AssetKey(["prefix", "out1"]): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+    }
+
+
+def test_asset_spec_with_code_versions():
+    @multi_asset(specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")])
+    def multi_asset_with_versions():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_versions.code_versions_by_key == {
+        AssetKey(["a"]): "1",
+        AssetKey(["b"]): "2",
+    }
+
+
+def test_asset_spec_with_metadata():
+    @multi_asset(
+        specs=[AssetSpec(key="a", metadata={"foo": "1"}), AssetSpec(key="b", metadata={"bar": "2"})]
+    )
+    def multi_asset_with_metadata():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_metadata.metadata_by_key == {
+        AssetKey(["a"]): {"foo": "1"},
+        AssetKey(["b"]): {"bar": "2"},
+    }
+
+
+def test_asset_with_tags():
+    @asset(tags={"a": "b"})
+    def asset1(): ...
+
+    assert asset1.tags_by_key[asset1.key] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @asset(tags={"a%": "b"})  # key has illegal character
+        def asset2(): ...
+
+
+def test_asset_spec_with_tags():
+    @multi_asset(specs=[AssetSpec("asset1", tags={"a": "b"})])
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])  # key has illegal character
+        def assets(): ...
+
+
+def test_asset_out_with_tags():
+    @multi_asset(outs={"asset1": AssetOut(tags={"a": "b"})})
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
+        def assets(): ...

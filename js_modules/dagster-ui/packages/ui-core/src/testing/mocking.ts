@@ -1,11 +1,11 @@
-import {DocumentNode} from '@apollo/client';
+import {DocumentNode, OperationVariables} from '@apollo/client';
 import {MockedResponse} from '@apollo/client/testing';
 import deepmerge from 'deepmerge';
 import {GraphQLError} from 'graphql';
 
 export function buildQueryMock<
   TQuery extends {__typename: 'Query'},
-  TVariables extends Record<string, any>,
+  TVariables extends OperationVariables,
 >({
   query,
   variables,
@@ -14,7 +14,7 @@ export function buildQueryMock<
   ...rest
 }: Partial<Omit<MockedResponse, 'result'>> & {
   query: DocumentNode;
-  variables: TVariables;
+  variables?: TVariables;
   data?: Omit<TQuery, '__typename'>;
   errors?: ReadonlyArray<GraphQLError>;
 }): MockedResponse<TQuery> {

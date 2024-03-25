@@ -1,13 +1,14 @@
 import {Colors} from '@dagster-io/ui-components';
 import {Fragment, memo} from 'react';
 
-import {buildSVGPath} from './Utils';
-import {AssetLayoutEdge} from './layout';
+import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
+import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
 
 interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
   selected: string[] | null;
   highlighted: string[] | null;
+  direction: AssetLayoutDirection;
   strokeWidth?: number;
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
@@ -16,6 +17,7 @@ export const AssetEdges = ({
   edges,
   selected,
   highlighted,
+  direction,
   strokeWidth = 4,
   viewportRect,
 }: AssetEdgesProps) => {
@@ -35,6 +37,7 @@ export const AssetEdges = ({
         edges={intersectedEdges.length > 50 ? visibleToFromEdges : intersectedEdges}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
+        direction={direction}
       />
       <AssetEdgeSet
         color={Colors.lineageEdgeHighlighted()}
@@ -47,6 +50,7 @@ export const AssetEdges = ({
         )}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
+        direction={direction}
       />
     </Fragment>
   );
@@ -55,11 +59,12 @@ export const AssetEdges = ({
 interface AssetEdgeSetProps {
   edges: AssetLayoutEdge[];
   color: string;
+  direction: AssetLayoutDirection;
   strokeWidth: number;
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-const AssetEdgeSet = memo(({edges, color, strokeWidth}: AssetEdgeSetProps) => (
+const AssetEdgeSet = memo(({edges, color, strokeWidth, direction}: AssetEdgeSetProps) => (
   <>
     <defs>
       <marker
@@ -77,7 +82,11 @@ const AssetEdgeSet = memo(({edges, color, strokeWidth}: AssetEdgeSetProps) => (
     {edges.map((edge, idx) => (
       <path
         key={idx}
-        d={buildSVGPath({source: edge.from, target: edge.to})}
+        d={
+          direction === 'horizontal'
+            ? buildSVGPathHorizontal({source: edge.from, target: edge.to})
+            : buildSVGPathVertical({source: edge.from, target: edge.to})
+        }
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"

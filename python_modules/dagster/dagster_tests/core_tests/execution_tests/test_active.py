@@ -198,12 +198,13 @@ def test_active_concurrency():
             assert instance.event_log_storage.supports_global_concurrency_limits
 
             instance.event_log_storage.set_concurrency_slots("foo", 1)
+            run = instance.create_run_for_job(foo_job, run_id=run_id)
 
             with pytest.raises(
                 DagsterInvariantViolationError,
                 match="Execution finished without completing the execution plan",
             ):
-                with InstanceConcurrencyContext(instance, run_id) as instance_concurrency_context:
+                with InstanceConcurrencyContext(instance, run) as instance_concurrency_context:
                     with create_execution_plan(foo_job).start(
                         RetryMode.DISABLED,
                         instance_concurrency_context=instance_concurrency_context,

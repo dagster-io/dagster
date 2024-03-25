@@ -36,17 +36,17 @@ from dagster._core.execution.api import create_execution_plan, execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalJob,
     ExternalRepository,
     RepositoryHandle,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG

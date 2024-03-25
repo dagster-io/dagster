@@ -97,8 +97,7 @@ Once a sensor is added to a <PyObject object="Definitions" /> object with the jo
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_running_in_code endbefore=end_running_in_code
 @sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
-def my_running_sensor():
-    ...
+def my_running_sensor(): ...
 ```
 
 If you manually start or stop a sensor in the UI, that will override any default status that is set in code.
@@ -250,8 +249,7 @@ class UsersAPI(ConfigurableResource):
         return requests.get(self.url).json()
 
 @job
-def process_user():
-    ...
+def process_user(): ...
 
 @sensor(job=process_user)
 def process_new_users_sensor(

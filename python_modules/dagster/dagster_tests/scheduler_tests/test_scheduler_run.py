@@ -1,10 +1,9 @@
 import random
 import string
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
-from typing import TYPE_CHECKING, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, cast
 
 import pendulum
 import pytest
@@ -28,16 +27,16 @@ from dagster import (
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
     GrpcServerCodeLocation,
     GrpcServerCodeLocationOrigin,
 )
-from dagster._core.host_representation.external import ExternalRepository, ExternalSchedule
-from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository, ExternalSchedule
+from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -63,6 +62,7 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._scheduler.scheduler import (
+    ScheduleIterationTimes,
     launch_scheduled_runs,
     launch_scheduled_runs_for_schedule_iterator,
 )
@@ -119,14 +119,18 @@ def evaluate_schedules(
     debug_crash_flags: Optional[DebugCrashFlags] = None,
     timeout: int = FUTURES_TIMEOUT,
     submit_executor: Optional[ThreadPoolExecutor] = None,
+    iteration_times: Optional[Dict[str, ScheduleIterationTimes]] = None,
 ):
     logger = get_default_daemon_logger("SchedulerDaemon")
     futures = {}
+    iteration_times = iteration_times or {}
+
     list(
         launch_scheduled_runs(
             workspace_context,
             logger,
             end_datetime_utc,
+            iteration_times=iteration_times,
             threadpool_executor=executor,
             scheduler_run_futures=futures,
             max_tick_retries=max_tick_retries,
@@ -136,7 +140,9 @@ def evaluate_schedules(
         )
     )
 
-    wait_for_futures(futures, timeout=timeout)
+    iteration_times = {**iteration_times, **wait_for_futures(futures, timeout=timeout)}
+
+    return iteration_times
 
 
 @op(config_schema={"time": str})
@@ -817,14 +823,13 @@ def test_grpc_server_down(instance: DagsterInstance, executor: ThreadPoolExecuto
                     get_default_daemon_logger("SchedulerDaemon"),
                     external_schedule,
                     schedule_state,
-                    threading.Lock(),
                     pendulum.now("UTC"),
                     max_catchup_runs=0,
                     max_tick_retries=0,
                     tick_retention_settings={},
                     schedule_debug_crash_flags=None,
-                    log_verbose_checks=False,
                     submit_threadpool_executor=None,
+                    in_memory_last_iteration_timestamp=None,
                 )
             )
             assert instance.get_runs_count() == 0
@@ -1221,11 +1226,13 @@ def test_stale_request_context(
         blocking_executor = BlockingThreadPoolExecutor()
 
         futures = {}
+        iteration_times = {}
         list(
             launch_scheduled_runs(
                 workspace_context,
                 get_default_daemon_logger("SchedulerDaemon"),
                 pendulum.now("UTC"),
+                iteration_times=iteration_times,
                 threadpool_executor=executor,
                 scheduler_run_futures=futures,
                 submit_threadpool_executor=blocking_executor,
@@ -1392,7 +1399,17 @@ class TestSchedulerRun:
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            iteration_times = evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert len(iteration_times) == 1
+            assert (
+                iteration_times[external_schedule.selector_id].cron_schedule
+                == external_schedule.cron_schedule
+            )
+            assert (
+                iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                == freeze_datetime.timestamp() + 1
+            )
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1402,7 +1419,29 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum_freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            new_iteration_times = evaluate_schedules(
+                workspace_context,
+                executor,
+                pendulum.now("UTC"),
+                iteration_times=iteration_times,
+            )
+
+            assert len(new_iteration_times) == 1
+            assert (
+                new_iteration_times[external_schedule.selector_id].cron_schedule
+                == external_schedule.cron_schedule
+            )
+
+            # Next iteration is planned for between 1 and 2 hours from now due to random jitter
+
+            assert (
+                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                > freeze_datetime.timestamp()
+            )
+            assert (
+                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                < freeze_datetime.timestamp() + 3600 * 2
+            )
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -1428,7 +1467,13 @@ class TestSchedulerRun:
             )
 
             # Verify idempotence
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert new_iteration_times == evaluate_schedules(
+                workspace_context,
+                executor,
+                pendulum.now("UTC"),
+                iteration_times=new_iteration_times,
+            )
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -1440,7 +1485,12 @@ class TestSchedulerRun:
         # Verify advancing in time but not going past a tick doesn't add any new runs
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum_freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert new_iteration_times == evaluate_schedules(
+                workspace_context,
+                executor,
+                pendulum.now("UTC"),
+                iteration_times=new_iteration_times,
+            )
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -1453,7 +1503,24 @@ class TestSchedulerRun:
         with pendulum_freeze_time(freeze_datetime):
             # Traveling two more days in the future passes two ticks times, but only the most recent
             # will be created as a tick with a corresponding run.
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            new_iteration_times = evaluate_schedules(
+                workspace_context,
+                executor,
+                pendulum.now("UTC"),
+                iteration_times=new_iteration_times,
+            )
+            assert new_iteration_times
+
+            assert len(new_iteration_times) == 1
+            assert (
+                new_iteration_times[external_schedule.selector_id].cron_schedule
+                == external_schedule.cron_schedule
+            )
+            assert (
+                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                > freeze_datetime.timestamp() + 3600
+            )
+
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -1462,7 +1529,12 @@ class TestSchedulerRun:
             assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
 
             # Check idempotence again
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert new_iteration_times == evaluate_schedules(
+                workspace_context,
+                executor,
+                pendulum.now("UTC"),
+                iteration_times=new_iteration_times,
+            )
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -1815,7 +1887,23 @@ class TestSchedulerRun:
         with pendulum_freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
+        expected_schedule_time = freeze_datetime
+        freeze_datetime = freeze_datetime.add(seconds=2)
+
+        with pendulum_freeze_time(freeze_datetime):
+            iteration_times = evaluate_schedules(
+                workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1
+            )
+
+            assert len(iteration_times) == 1
+            assert (
+                iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                == expected_schedule_time.timestamp()
+            )
+            assert (
+                iteration_times[external_schedule.selector_id].last_iteration_timestamp
+                == expected_schedule_time.timestamp()
+            )
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1826,14 +1914,30 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                freeze_datetime,
+                expected_schedule_time,
                 TickStatus.FAILURE,
                 [],
                 f"Error occurred during the evaluation of schedule {schedule_name}",
                 expected_failure_count=1,
             )
 
-            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
+            new_iteration_times = evaluate_schedules(
+                workspace_context,
+                executor,
+                pendulum.now("UTC"),
+                max_tick_retries=1,
+                iteration_times=iteration_times,
+            )
+
+            assert len(new_iteration_times) == 1
+            assert (
+                new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
+                > freeze_datetime.timestamp()
+            )
+            assert (
+                new_iteration_times[external_schedule.selector_id].last_iteration_timestamp
+                == freeze_datetime.timestamp()
+            )
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -1844,13 +1948,14 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                freeze_datetime,
+                expected_schedule_time,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
                 expected_failure_count=1,
             )
 
         freeze_datetime = freeze_datetime.add(days=1)
+        expected_schedule_time = expected_schedule_time.add(days=1)
         with pendulum_freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
 
@@ -1863,7 +1968,7 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                freeze_datetime,
+                expected_schedule_time,
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
                 expected_failure_count=0,
@@ -2199,7 +2304,6 @@ class TestSchedulerRun:
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
         external_repo: ExternalRepository,
-        caplog: pytest.LogCaptureFixture,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2236,18 +2340,12 @@ class TestSchedulerRun:
 
             assert len(ticks) == 0
 
-            assert (
-                "Could not find repository invalid_repo_name in location test_location to run"
-                " schedule simple_schedule" in caplog.text
-            )
-
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_bad_load_schedule(
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
         external_repo: ExternalRepository,
-        caplog,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2281,15 +2379,12 @@ class TestSchedulerRun:
 
             assert len(ticks) == 0
 
-            assert "Could not find schedule invalid_schedule in repository the_repo." in caplog.text
-
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_load_code_location_not_in_workspace(
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
         external_repo: ExternalRepository,
-        caplog: pytest.LogCaptureFixture,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = to_timezone(
@@ -2336,11 +2431,6 @@ class TestSchedulerRun:
             )
 
             assert len(ticks) == 0
-
-            assert (
-                "Schedule simple_schedule was started from a location missing_location that can no"
-                " longer be found in the workspace" in caplog.text
-            )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_multiple_schedules_on_different_time_ranges(

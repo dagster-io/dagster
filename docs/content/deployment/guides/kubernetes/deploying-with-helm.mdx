@@ -227,12 +227,12 @@ kubectl config use-context dagster
 
 In this step, you'll build a Docker image containing your Dagster definitions and any dependencies needed to execute the business logic in your code. For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/user-code-example/Dockerfile) and the corresponding [user code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
 
-Here, we install all the Dagster-related dependencies in the Dockerfile and then copy the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to setup the gRPC server as a deployment.
+This example installs all of the Dagster-related dependencies in the Dockerfile and then copies the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to set up the gRPC server as a deployment.
 
 The example user code repository includes:
 
 - An `example_job` job that runs all ops in a single pod
-- A `pod_per_op_job` job that uses the [`k8s_job_executor`](/\_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_executor) to run each op in its own pod. **NOTE:** this job uses the [`s3_pickle_io_manager`](/\_apidocs/libraries/dagster-aws#dagster_aws.s3.s3\_pickle_io_manager), which requires [setting AWS credentials](/deployment/guides/aws#using-s3-for-io-management).
+- A `pod_per_op_job` job that uses the <PyObject object="k8s_job_executor" module="dagster_k8s" /> to run each op in its own pod. **NOTE:** this job uses the <PyObject object="s3_pickle_io_manager" module="dagster_aws.s3" />, which requires [setting AWS credentials](/deployment/guides/aws#using-s3-for-io-management).
 - A `pod_per_op_celery_job` that is only useful for [Celery deployments](/deployment/guides/kubernetes/deploying-with-helm-advanced).
 
 For projects with many dependencies, we recommend publishing your Python project as a package and installing it in your Dockerfile.

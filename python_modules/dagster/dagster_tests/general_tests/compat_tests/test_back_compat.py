@@ -31,8 +31,8 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
@@ -667,7 +667,7 @@ def test_external_job_origin_instigator_origin():
 
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
-    from dagster._core.host_representation.origin import (
+    from dagster._core.remote_representation.origin import (
         ExternalInstigatorOrigin,
         ExternalRepositoryOrigin,
         GrpcServerCodeLocationOrigin,
@@ -912,7 +912,7 @@ def test_repo_label_tag_migration():
 
 
 def test_add_bulk_actions_columns():
-    from dagster._core.host_representation.origin import (
+    from dagster._core.remote_representation.origin import (
         ExternalPartitionSetOrigin,
         ExternalRepositoryOrigin,
         GrpcServerCodeLocationOrigin,

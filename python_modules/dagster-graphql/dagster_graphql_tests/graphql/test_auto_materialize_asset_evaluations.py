@@ -18,7 +18,7 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
 
-AUTOMATION_POLICY_SENSORS_QUERY = """
+AUTO_MATERIALIZE_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
         ... on AssetNode {

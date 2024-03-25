@@ -869,3 +869,73 @@ def test_multiple_nested_optional_resources_complex() -> None:
     )
     assert executed["my_asset"] == "bar"
     executed.clear()
+
+
+def test_nested_resource_setup_teardown_inner() -> None:
+    log = []
+
+    class MyBoringOuterResource(ConfigurableResource):
+        more_interesting_inner_resource: ResourceDependency["SetupTeardownInnerResource"]
+
+    class SetupTeardownInnerResource(ConfigurableResource):
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("SetupTeardownInnerResource setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("SetupTeardownInnerResource teardown_after_execution")
+
+    @asset
+    def my_asset(outer: MyBoringOuterResource) -> str:
+        log.append("my_asset")
+        return "foo"
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "outer": MyBoringOuterResource(
+                more_interesting_inner_resource=SetupTeardownInnerResource()
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert log == [
+        "SetupTeardownInnerResource setup_for_execution",
+        "my_asset",
+        "SetupTeardownInnerResource teardown_after_execution",
+    ]
+
+
+def test_nested_resource_yield_inner() -> None:
+    log = []
+
+    class MyBoringOuterResource(ConfigurableResource):
+        more_interesting_inner_resource: ResourceDependency["SetupTeardownInnerResource"]
+
+    class SetupTeardownInnerResource(ConfigurableResource):
+        @contextlib.contextmanager
+        def yield_for_execution(self, context: InitResourceContext):
+            log.append("SetupTeardownInnerResource yield_for_execution")
+            yield self
+            log.append("SetupTeardownInnerResource yield_for_execution done")
+
+    @asset
+    def my_asset(outer: MyBoringOuterResource) -> str:
+        log.append("my_asset")
+        return "foo"
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "outer": MyBoringOuterResource(
+                more_interesting_inner_resource=SetupTeardownInnerResource()
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert log == [
+        "SetupTeardownInnerResource yield_for_execution",
+        "my_asset",
+        "SetupTeardownInnerResource yield_for_execution done",
+    ]

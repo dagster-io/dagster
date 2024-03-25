@@ -61,9 +61,12 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
   }
 
   return `${JSON.stringify(opts)}${JSON.stringify({
+    version: 2,
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
-    nodes: Object.keys(graphData.nodes).sort(),
+    nodes: Object.keys(graphData.nodes)
+      .sort()
+      .map((key) => graphData.nodes[key]),
     expandedGroups: graphData.expandedGroups,
   })}`;
 };
@@ -175,13 +178,16 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   };
 }
 
-export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) {
+export function useAssetLayout(
+  _graphData: GraphData,
+  expandedGroups: string[],
+  opts: LayoutAssetGraphOptions,
+) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
   const graphData = useMemo(() => ({..._graphData, expandedGroups}), [expandedGroups, _graphData]);
 
-  const opts = useMemo(() => ({horizontalDAGs: true}), []);
   const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;

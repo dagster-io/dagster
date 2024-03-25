@@ -197,6 +197,21 @@ def test_result_missing_check_name():
         materialize(assets=[asset1])
 
 
+def test_unexpected_result():
+    @asset
+    def my_asset():
+        yield AssetCheckResult(passed=True)
+
+    result = materialize(assets=[my_asset], raise_on_error=False)
+    assert not result.success
+    assert (
+        "Received unexpected AssetCheckResult. No AssetCheckSpecs were found for this step."
+        "You may need to set `check_specs` on the asset decorator, or you may be emitting an "
+        "AssetCheckResult that isn't in the subset passed in `context.selected_asset_check_keys`."
+        in result.get_step_failure_events()[0].step_failure_data.error.message
+    )
+
+
 def test_asset_check_fails_downstream_still_executes():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
     def asset1():
@@ -204,8 +219,7 @@ def test_asset_check_fails_downstream_still_executes():
         yield AssetCheckResult(passed=False)
 
     @asset(deps=[asset1])
-    def asset2():
-        ...
+    def asset2(): ...
 
     result = materialize(assets=[asset1, asset2])
     assert result.success
@@ -263,8 +277,7 @@ def test_duplicate_checks_same_asset():
                 AssetCheckSpec("check1", asset="asset1", description="desc2"),
             ]
         )
-        def asset1():
-            ...
+        def asset1(): ...
 
 
 def test_check_wrong_asset():
@@ -278,8 +291,7 @@ def test_check_wrong_asset():
                 AssetCheckSpec("check1", asset="other_asset", description="desc1"),
             ]
         )
-        def asset1():
-            ...
+        def asset1(): ...
 
 
 def test_multi_asset_with_check():
@@ -722,3 +734,137 @@ def test_can_subset_select_only_check() -> None:
 
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
+
+
+@op
+def create_asset():
+    return None
+
+
+@op
+def validate_asset(word):
+    return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
+
+
+@graph_multi_asset(
+    outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
+    check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
+    can_subset=True,
+)
+def my_asset():
+    asset_one = create_asset()
+    return {
+        "asset_one": asset_one,
+        "asset_one_check1": validate_asset(asset_one),
+        "asset_two": create_asset(),
+    }
+
+
+def test_graph_asset_all():
+    result = materialize(assets=[my_asset])
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 2
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+def test_graph_asset_subset_no_checks():
+    result = materialize(
+        assets=[my_asset], selection=AssetSelection.keys(AssetKey("asset_one")).without_checks()
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert not result.get_asset_check_evaluations()
+
+
+def test_graph_asset_subset_with_checks():
+    result = materialize(assets=[my_asset], selection=AssetSelection.keys(AssetKey("asset_one")))
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+@op
+def validate_asset_1(word):
+    return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
+
+
+@op
+def validate_asset_2(word):
+    return word
+
+
+@graph_multi_asset(
+    outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
+    check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
+    can_subset=True,
+)
+def nested_check_graph_asset():
+    asset_one = create_asset()
+    return {
+        "asset_one": asset_one,
+        "asset_one_check1": validate_asset_2(validate_asset_1(asset_one)),
+        "asset_two": create_asset(),
+    }
+
+
+def test_nested_graph_asset_all():
+    result = materialize(assets=[nested_check_graph_asset])
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 2
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+def test_nested_graph_asset_subset_no_checks():
+    result = materialize(
+        assets=[nested_check_graph_asset],
+        selection=AssetSelection.keys(AssetKey("asset_one")).without_checks(),
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert not result.get_asset_check_evaluations()
+
+
+def test_nested_graph_asset_subset_with_checks():
+    result = materialize(
+        assets=[nested_check_graph_asset], selection=AssetSelection.keys(AssetKey("asset_one"))
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+@op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
+def promote_asset():
+    return None
+
+
+@graph_multi_asset(
+    outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
+    check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
+    can_subset=True,
+)
+def validate_promote_graph_asset():
+    staging_asset = create_asset()
+    check_result = validate_asset(staging_asset)
+    promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
+    return {
+        "asset_one": promoted_asset,
+        "asset_one_check1": check_result,
+        "asset_two": create_asset(),
+    }
+
+
+def test_validate_promote_graph_asset_subset_checks_and_asset():
+    result = materialize(
+        assets=[validate_promote_graph_asset], selection=AssetSelection.keys(AssetKey("asset_one"))
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 1

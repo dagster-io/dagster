@@ -111,6 +111,7 @@ class BaseResourceMeta(BaseConfigMeta):
         for field in annotations:
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
+
                 if (
                     get_origin(annotations[field])
                     == LateBoundTypesForResourceTypeChecking.get_resource_rep_type()

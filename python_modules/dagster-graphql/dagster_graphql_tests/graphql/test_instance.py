@@ -9,7 +9,7 @@ query InstanceDetailSummaryQuery {
     instance {
         runQueuingSupported
         hasInfo
-        useAutomationPolicySensors
+        useAutoMaterializeSensors
     }
 }
 """
@@ -70,7 +70,7 @@ class TestInstanceSettings(BaseTestSuite):
             "instance": {
                 "runQueuingSupported": True,
                 "hasInfo": graphql_context.show_instance_config,
-                "useAutomationPolicySensors": graphql_context.instance.auto_materialize_use_automation_policy_sensors,
+                "useAutoMaterializeSensors": graphql_context.instance.auto_materialize_use_sensors,
             }
         }
 

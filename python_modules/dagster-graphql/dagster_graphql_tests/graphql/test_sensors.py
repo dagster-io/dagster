@@ -7,7 +7,7 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
@@ -154,6 +154,16 @@ query SensorQuery($sensorSelector: SensorSelector!) {
         assetSelectionString
         assetKeys {
           path
+        }
+        assets {
+          key {
+            path
+          }
+          definition {
+            assetKey {
+              path
+            }
+          }
         }
       }
     }
@@ -342,13 +352,14 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
 """
 
 REPOSITORY_SENSORS_QUERY = """
-query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
+query RepositorySensorsQuery($repositorySelector: RepositorySelector!, $sensorType: SensorType) {
     repositoryOrError(repositorySelector: $repositorySelector) {
         ... on Repository {
             id
-            sensors {
+            sensors(sensorType: $sensorType) {
                 id
                 name
+                sensorType
                 sensorState {
                     id
                     runs(limit: 1) {
@@ -365,6 +376,7 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
     }
 }
 """
+
 
 GET_TICKS_QUERY = """
 query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: Int!) {
@@ -1133,12 +1145,28 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 2
 
 
+def test_sensor_type_query(graphql_context: WorkspaceRequestContext):
+    instance = graphql_context.instance
+    if not instance.supports_batch_tick_queries:
+        pytest.skip("storage cannot batch fetch")
+
+    selector = infer_repository_selector(graphql_context)
+    result = execute_dagster_graphql(
+        graphql_context,
+        REPOSITORY_SENSORS_QUERY,
+        variables={"repositorySelector": selector, "sensorType": SensorType.AUTO_MATERIALIZE.value},
+    )
+    assert len(result.data["repositoryOrError"]["sensors"]) == 1
+    assert result.data["repositoryOrError"]["sensors"][0]["name"] == "my_auto_materialize_sensor"
+
+
 def test_repository_batching(graphql_context: WorkspaceRequestContext):
     instance = graphql_context.instance
     if not instance.supports_batch_tick_queries:
         pytest.skip("storage cannot batch fetch")
 
-    traced_counter.set(Counter())
+    counter = Counter()
+    traced_counter.set(counter)
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
         graphql_context,
@@ -1148,7 +1176,6 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     assert result.data
     assert "repositoryOrError" in result.data
     assert "sensors" in result.data["repositoryOrError"]
-    counter = traced_counter.get()
     counts = counter.counts()
     assert counts
     assert len(counts) == 3
@@ -1355,8 +1382,11 @@ def test_sensor_tick_logs(graphql_context: WorkspaceRequestContext):
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     tick = result.data["sensorOrError"]["sensorState"]["ticks"][0]
     log_messages = tick["logEvents"]["events"]
-    assert len(log_messages) == 1
+    assert len(log_messages) == 2
     assert log_messages[0]["message"] == "hello hello"
+    assert log_messages[1]["message"].startswith("goodbye goodbye")
+    assert "Traceback" in log_messages[1]["message"]
+    assert "Exception: hi hi" in log_messages[1]["message"]
 
 
 def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceRequestContext):
@@ -1401,7 +1431,7 @@ def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceReq
 
 
 def test_asset_selection(graphql_context):
-    sensor_name = "my_automation_policy_sensor"
+    sensor_name = "my_auto_materialize_sensor"
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     result = execute_dagster_graphql(
@@ -1416,4 +1446,10 @@ def test_asset_selection(graphql_context):
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
         {"path": ["fresh_diamond_bottom"]}
+    ]
+    assert result.data["sensorOrError"]["assetSelection"]["assets"] == [
+        {
+            "key": {"path": ["fresh_diamond_bottom"]},
+            "definition": {"assetKey": {"path": ["fresh_diamond_bottom"]}},
+        }
     ]

@@ -27,7 +27,7 @@ import {createGlobalStyle} from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {AppContext} from './AppContext';
-import {CustomAlertProvider} from './CustomAlertProvider';
+import {CustomAlertProvider, GlobalCustomAlertPortalStyle} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
@@ -40,6 +40,7 @@ import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
+import {PerformancePageNavigationListener} from '../performance';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -211,12 +212,14 @@ export const AppProvider = (props: AppProviderProps) => {
         <GlobalTooltipStyle />
         <GlobalPopoverStyle />
         <GlobalDialogStyle />
+        <GlobalCustomAlertPortalStyle />
         <GlobalSuggestStyle />
         <ApolloProvider client={apolloClient}>
           <AssetLiveDataProvider>
             <PermissionsProvider>
               <BrowserRouter basename={basePath || ''}>
                 <CompatRouter>
+                  <PerformancePageNavigationListener />
                   <TimeProvider>
                     <WorkspaceProvider>
                       <DeploymentStatusProvider include={statusPolling}>

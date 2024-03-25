@@ -19,8 +19,9 @@ import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
+import {ChangedReasonsTag} from './ChangedReasons';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
-import {StaleReasonsTags} from './Stale';
+import {StaleReasonsTag} from './Stale';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {
@@ -30,10 +31,11 @@ import {
   AssetPartitionStaleQuery,
   AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
+import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
-import {RunStatus, StaleStatus} from '../graphql/types';
+import {ChangeReason, RunStatus, StaleStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -180,6 +182,7 @@ export const AssetPartitionDetail = ({
   latestRunForPartition,
   staleCauses,
   staleStatus,
+  changedReasons,
 }: {
   assetKey: AssetKey;
   group: AssetEventGroup;
@@ -190,6 +193,7 @@ export const AssetPartitionDetail = ({
   stepKey?: string;
   staleCauses?: LiveDataForNode['staleCauses'];
   staleStatus?: LiveDataForNode['staleStatus'];
+  changedReasons?: ChangeReason[];
 }) => {
   const {latest, partition, all} = group;
 
@@ -216,10 +220,10 @@ export const AssetPartitionDetail = ({
 
   const observationsAboutLatest =
     latest?.__typename === 'MaterializationEvent'
-      ? group.all.filter(
+      ? (group.all.filter(
           (e) =>
             e.__typename === 'ObservationEvent' && Number(e.timestamp) > Number(latest.timestamp),
-        )
+        ) as AssetObservationFragment[])
       : [];
 
   return (
@@ -246,13 +250,12 @@ export const AssetPartitionDetail = ({
             ) : undefined}
             {hasStaleLoadingState ? (
               <Spinner purpose="body-text" />
-            ) : staleCauses && staleStatus ? (
-              <StaleReasonsTags
-                liveData={{staleCauses, staleStatus}}
-                assetKey={assetKey}
-                include="all"
-              />
-            ) : undefined}
+            ) : (
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                <StaleReasonsTag liveData={{staleCauses, staleStatus}} assetKey={assetKey} />
+                <ChangedReasonsTag changedReasons={changedReasons} assetKey={assetKey} />
+              </Box>
+            )}
           </div>
         ) : (
           <Heading color={Colors.textLight()}>No partition selected</Heading>
@@ -358,7 +361,11 @@ export const AssetPartitionDetail = ({
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Metadata</Subheading>
-        <AssetEventMetadataEntriesTable event={latest} observations={observationsAboutLatest} />
+        <AssetEventMetadataEntriesTable
+          event={latest}
+          observations={observationsAboutLatest}
+          showDescriptions
+        />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Source data</Subheading>

@@ -16,11 +16,17 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
+)
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -117,6 +123,7 @@ class RunRequest(
             ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
             ("stale_assets_only", PublicAttr[bool]),
             ("partition_key", PublicAttr[Optional[str]]),
+            ("asset_check_keys", PublicAttr[Optional[Sequence[AssetCheckKey]]]),
         ],
     )
 ):
@@ -135,8 +142,19 @@ class RunRequest(
             to the launched run.
         job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
             Required for sensors that target multiple jobs.
-        asset_selection (Optional[Sequence[AssetKey]]): A sequence of AssetKeys that should be
-            launched with this run.
+        asset_selection (Optional[Sequence[AssetKey]]): A subselection of assets that should be
+            launched with this run. If the sensor or schedule targets a job, then by default a
+            RunRequest returned from it will launch all of the assets in the job. If the sensor
+            targets an asset selection, then by default a RunRequest returned from it will launch
+            all the assets in the selection. This argument is used to specify that only a subset of
+            these assets should be launched, instead of all of them.
+        asset_check_keys (Optional[Sequence[AssetCheckKey]]): (Experimental) A subselection of asset checks that
+            should be launched with this run. This is currently only supported on sensors. If the
+            sensor targets a job, then by default a RunRequest returned from it will launch all of
+            the asset checks in the job. If the sensor targets an asset selection, then by default a
+            RunRequest returned from it will launch all the asset checks in the selection. This
+            argument is used to specify that only a subset of these asset checks should be launched,
+            instead of all of them.
         stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
@@ -152,6 +170,7 @@ class RunRequest(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         stale_assets_only: bool = False,
         partition_key: Optional[str] = None,
+        asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -168,6 +187,9 @@ class RunRequest(
             ),
             stale_assets_only=check.bool_param(stale_assets_only, "stale_assets_only"),
             partition_key=check.opt_str_param(partition_key, "partition_key"),
+            asset_check_keys=check.opt_nullable_sequence_param(
+                asset_check_keys, "asset_check_keys", of_type=AssetCheckKey
+            ),
         )
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
@@ -244,6 +266,18 @@ class RunRequest(
         # Backcompat run requests yielded via `run_request_for_partition` already have resolved
         # partitioning
         return self.tags.get(PARTITION_NAME_TAG) is not None if self.partition_key else True
+
+    @property
+    def partition_key_range(self) -> Optional[PartitionKeyRange]:
+        if (
+            ASSET_PARTITION_RANGE_START_TAG in self.tags
+            and ASSET_PARTITION_RANGE_END_TAG in self.tags
+        ):
+            return PartitionKeyRange(
+                self.tags[ASSET_PARTITION_RANGE_START_TAG], self.tags[ASSET_PARTITION_RANGE_END_TAG]
+            )
+        else:
+            return None
 
 
 def _check_valid_partition_key_after_dynamic_partitions_requests(

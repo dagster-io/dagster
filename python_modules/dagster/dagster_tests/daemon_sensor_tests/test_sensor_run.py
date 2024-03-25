@@ -1,6 +1,7 @@
 import logging
 import random
 import string
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
@@ -16,6 +17,7 @@ from dagster import (
     AssetSelection,
     AutoMaterializePolicy,
     CodeLocationSelector,
+    DagsterInstance,
     DagsterRunStatus,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -30,16 +32,20 @@ from dagster import (
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
+    asset_check,
     define_asset_job,
+    load_asset_checks_from_current_module,
     load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
     repository,
     run_failure_sensor,
 )
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
@@ -55,17 +61,16 @@ from dagster._core.definitions.sensor_definition import (
     SkipReason,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation import (
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
+from dagster._core.remote_representation import (
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
     ExternalSensor,
 )
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -83,6 +88,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.daemon import SpanMarker
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._seven.compat.pendulum import (
     _IS_PENDULUM_3,
@@ -109,7 +115,17 @@ def c(a):
     return a + 2
 
 
+@asset_check(asset="a")
+def check_a():
+    return AssetCheckResult(passed=True)
+
+
 asset_job = define_asset_job("abc", selection=AssetSelection.keys("c", "b").upstream())
+
+asset_and_check_job = define_asset_job(
+    "asset_and_check_job",
+    selection=AssetSelection.assets(a),
+)
 
 
 @op
@@ -440,6 +456,11 @@ def run_request_asset_selection_sensor(_context):
     yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
 
 
+@sensor(job=asset_and_check_job)
+def run_request_check_only_sensor(_context):
+    yield RunRequest(asset_check_keys=[AssetCheckKey(AssetKey("a"), "check_a")])
+
+
 @sensor(job=asset_job)
 def run_request_stale_asset_sensor(_context):
     yield RunRequest(run_key=None, stale_assets_only=True)
@@ -585,6 +606,12 @@ def logging_sensor(context):
     context.log.addHandler(handler)
     context.log.info("hello %s", "hello")
     context.log.info(handler.message)
+
+    try:
+        raise Exception("hi hi")
+    except Exception:
+        context.log.exception("goodbye goodbye")
+
     context.log.removeHandler(handler)
 
     return SkipReason()
@@ -726,8 +753,8 @@ def auto_materialize_asset():
     pass
 
 
-automation_policy_sensor = AutomationPolicySensorDefinition(
-    "my_automation_policy_sensor",
+auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    "my_auto_materialize_sensor",
     asset_selection=[auto_materialize_asset],
 )
 
@@ -739,6 +766,7 @@ def the_repo():
         the_other_job,
         config_job,
         foo_job,
+        asset_and_check_job,
         large_sensor,
         many_request_sensor,
         simple_sensor,
@@ -772,6 +800,7 @@ def the_repo():
         cross_repo_job_sensor,
         instance_sensor,
         load_assets_from_current_module(),
+        load_asset_checks_from_current_module(),
         run_request_asset_selection_sensor,
         run_request_stale_asset_sensor,
         weekly_asset_job,
@@ -795,7 +824,8 @@ def the_repo():
         success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
         error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
         multipartitions_with_static_time_dimensions_run_requests_sensor,
-        automation_policy_sensor,
+        auto_materialize_sensor,
+        run_request_check_only_sensor,
     ]
 
 
@@ -1023,14 +1053,14 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-def test_ignore_automation_policy_sensor(instance, workspace_context, external_repo, executor):
+def test_ignore_auto_materialize_sensor(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
 
     with pendulum_freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("my_automation_policy_sensor")
+        external_sensor = external_repo.get_external_sensor("my_auto_materialize_sensor")
         assert external_sensor
         instance.add_instigator_state(
             InstigatorState(
@@ -1038,7 +1068,7 @@ def test_ignore_automation_policy_sensor(instance, workspace_context, external_r
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
-                    sensor_type=SensorType.AUTOMATION_POLICY,
+                    sensor_type=SensorType.AUTO_MATERIALIZE,
                 ),
             )
         )
@@ -1159,7 +1189,6 @@ def test_sensors_keyed_on_selector_not_origin(
 
 
 def test_bad_load_sensor_repository(
-    caplog: pytest.LogCaptureFixture,
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
@@ -1198,13 +1227,8 @@ def test_bad_load_sensor_repository(
         ticks = instance.get_ticks(invalid_state.instigator_origin_id, invalid_state.selector_id)
         assert len(ticks) == 0
 
-        assert (
-            "Could not find repository invalid_repo_name in location test_location to run sensor"
-            " simple_sensor" in caplog.text
-        )
 
-
-def test_bad_load_sensor(caplog, executor, instance, workspace_context, external_repo):
+def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1234,8 +1258,6 @@ def test_bad_load_sensor(caplog, executor, instance, workspace_context, external
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(invalid_state.instigator_origin_id, invalid_state.selector_id)
         assert len(ticks) == 0
-
-        assert "Could not find sensor invalid_sensor in repository the_repo." in caplog.text
 
 
 def test_error_sensor(caplog, executor, instance, workspace_context, external_repo):
@@ -1557,6 +1579,25 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
         validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
 
 
+def test_sensor_spans(workspace_context):
+    loop = execute_sensor_iteration_loop(
+        workspace_context,
+        get_default_daemon_logger("dagster.daemon.SensorDaemon"),
+        shutdown_event=threading.Event(),
+    )
+
+    assert next(loop) == SpanMarker.START_SPAN
+
+    for _i in range(10):
+        next_span = next(loop)
+        assert (
+            next_span != SpanMarker.START_SPAN
+        ), "Started another span before finishing the previous one"
+
+        if next_span == SpanMarker.END_SPAN:
+            break
+
+
 @pytest.mark.skipif(_IS_PENDULUM_3, reason="pendulum.set_test_now not supported in pendulum 3")
 def test_custom_interval_sensor_with_offset(
     monkeypatch, executor, instance, workspace_context, external_repo
@@ -1817,6 +1858,53 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
             )
         }
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
+
+
+def test_run_request_check_selection_only_sensor(
+    executor, instance: DagsterInstance, workspace_context, external_repo
+) -> None:
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum_freeze_time(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("run_request_check_only_sensor")
+        external_origin_id = external_sensor.get_external_origin_id()
+        instance.start_sensor(external_sensor)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, executor)
+
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.asset_check_selection == {AssetCheckKey(AssetKey("a"), "check_a")}
+        assert run.asset_selection is None
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id],
+        )
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key  # type: ignore[attr-defined]
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
+        assert planned_asset_keys == set()
+        planned_check_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_check_key  # type: ignore[attr-defined]
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
+            )
+        }
+        assert planned_check_keys == {AssetCheckKey(AssetKey("a"), "check_a")}
 
 
 def test_run_request_stale_asset_selection_sensor_never_materialized(
@@ -2980,9 +3068,12 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     ]
     assert tick.status == TickStatus.SKIPPED
     records = get_instigation_log_records(instance, tick.log_key)
-    assert len(records) == 2
-    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
-    assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
+    assert len(records) == 3
+    assert records[0][LOG_RECORD_METADATA_ATTR]["orig_message"] == "hello hello"
+    assert records[1][LOG_RECORD_METADATA_ATTR]["orig_message"].endswith("hello hello")
+    assert records[2][LOG_RECORD_METADATA_ATTR]["orig_message"] == ("goodbye goodbye")
+    assert records[2]["exc_info"].startswith("Traceback")
+    assert "Exception: hi hi" in records[2]["exc_info"]
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 
@@ -3028,7 +3119,7 @@ def test_sensor_logging_on_tick_failure(
     records = get_instigation_log_records(instance, tick.log_key)
 
     assert len(records) == 1
-    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
+    assert records[0][LOG_RECORD_METADATA_ATTR]["orig_message"] == "hello hello"
 
     assert isinstance(instance.compute_log_manager, CapturedLogManager)
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)

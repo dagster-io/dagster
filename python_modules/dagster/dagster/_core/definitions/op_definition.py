@@ -30,6 +30,7 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -427,7 +428,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
                 if input_asset_key:
-                    io_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+                    io_manager_key = (
+                        asset_layer.get(input_asset_key).io_manager_key
+                        if asset_layer.has(input_asset_key)
+                        else DEFAULT_IO_MANAGER_KEY
+                    )
                     yield InputManagerRequirement(
                         key=io_manager_key,
                         node_description=node_description,
@@ -557,18 +562,23 @@ def _validate_context_type_hint(fn):
 
     from dagster._core.decorator_utils import get_function_params
     from dagster._core.definitions.decorators.op_decorator import is_context_provided
-    from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
+    from dagster._core.execution.context.compute import (
+        AssetCheckExecutionContext,
+        AssetExecutionContext,
+        OpExecutionContext,
+    )
 
     params = get_function_params(fn)
     if is_context_provided(params):
-        if (
-            params[0].annotation is not AssetExecutionContext
-            and params[0].annotation is not OpExecutionContext
-            and params[0].annotation is not EmptyAnnotation
-        ):
+        if params[0].annotation not in [
+            AssetExecutionContext,
+            OpExecutionContext,
+            EmptyAnnotation,
+            AssetCheckExecutionContext,
+        ]:
             raise DagsterInvalidDefinitionError(
                 f"Cannot annotate `context` parameter with type {params[0].annotation}. `context`"
-                " must be annotated with AssetExecutionContext, OpExecutionContext, or left blank."
+                " must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank."
             )
 
 

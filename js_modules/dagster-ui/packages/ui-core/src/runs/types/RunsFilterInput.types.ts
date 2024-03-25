@@ -13,7 +13,7 @@ export type RunTagKeysQuery = {
 };
 
 export type RunTagValuesQueryVariables = Types.Exact<{
-  tagKeys: Array<Types.Scalars['String']> | Types.Scalars['String'];
+  tagKeys: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
 }>;
 
 export type RunTagValuesQuery = {

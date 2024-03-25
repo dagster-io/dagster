@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Mapping, Sequence
 
 from dagster._core.errors import DagsterCodeLocationLoadError
-from dagster._core.host_representation.code_location import (
+from dagster._core.remote_representation.code_location import (
     CodeLocation,
 )
 from dagster._core.workspace.workspace import (

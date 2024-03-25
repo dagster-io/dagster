@@ -25,6 +25,7 @@ from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.dependency import (
     Node,
     NodeHandle,
@@ -64,7 +65,7 @@ from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 
-from .asset_layer import AssetLayer, build_asset_selection_job
+from .asset_layer import AssetLayer
 from .config import ConfigMapping
 from .dependency import (
     DependencyMapping,
@@ -84,11 +85,12 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
-    from dagster._core.host_representation.job_index import JobIndex
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+    from dagster._core.remote_representation.job_index import JobIndex
     from dagster._core.snap import JobSnapshot
 
     from .run_config_schema import RunConfigSchema
@@ -756,80 +758,43 @@ class JobDefinition(IHasInternalInit):
             return self._get_job_def_for_op_selection(op_selection)
         if asset_selection or asset_check_selection:
             return self._get_job_def_for_asset_selection(
-                asset_selection=asset_selection, asset_check_selection=asset_check_selection
+                AssetSelectionData(
+                    asset_selection=asset_selection,
+                    asset_check_selection=asset_check_selection,
+                    parent_job_def=self,
+                )
             )
         else:
             return self
 
     def _get_job_def_for_asset_selection(
-        self,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
-        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
-
-        nonexistent_assets = [
-            asset
-            for asset in asset_selection
-            if asset not in self.asset_layer.asset_keys
-            and asset not in self.asset_layer.source_assets_by_key
-        ]
-        nonexistent_asset_strings = [
-            asset_str
-            for asset_str in (asset.to_string() for asset in nonexistent_assets)
-            if asset_str
-        ]
-        if nonexistent_assets:
-            raise DagsterInvalidSubsetError(
-                "Assets provided in asset_selection argument "
-                f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
-            )
-
-        # Test that selected asset checks exist
-        all_check_keys = self.asset_layer.node_output_handles_by_asset_check_key.keys()
-
-        nonexistent_asset_checks = [
-            asset_check
-            for asset_check in asset_check_selection or set()
-            if asset_check not in all_check_keys
-        ]
-        nonexistent_asset_check_strings = [
-            str(asset_check) for asset_check in nonexistent_asset_checks
-        ]
-        if nonexistent_asset_checks:
-            raise DagsterInvalidSubsetError(
-                "Asset checks provided in asset_check_selection argument"
-                f" {', '.join(nonexistent_asset_check_strings)} do not exist in parent asset group"
-                " or job."
-            )
-
-        asset_selection_data = AssetSelectionData(
-            asset_selection=asset_selection,
-            asset_check_selection=asset_check_selection,
-            parent_job_def=self,
+        from dagster._core.definitions.asset_job import (
+            build_asset_job,
+            get_asset_graph_for_job,
         )
 
-        check.invariant(
-            self.asset_layer.assets_defs_by_key is not None,
-            "Asset layer must have _asset_defs argument defined",
-        )
+        # If a non-null check selection is provided, use that. Otherwise the selection will resolve
+        # to all checks matching a selected asset by default.
+        selection = AssetSelection.keys(*selection_data.asset_selection)
+        if selection_data.asset_check_selection is not None:
+            selection = selection.without_checks() | AssetSelection.checks(
+                *selection_data.asset_check_selection
+            )
 
-        new_job = build_asset_selection_job(
+        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+
+        return build_asset_job(
             name=self.name,
-            assets=set(self.asset_layer.assets_defs_by_key.values()),
-            source_assets=self.asset_layer.source_assets_by_key.values(),
+            asset_graph=job_asset_graph,
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
             description=self.description,
             tags=self.tags,
-            asset_selection=asset_selection,
-            asset_check_selection=asset_check_selection,
-            asset_selection_data=asset_selection_data,
             config=self.config_mapping or self.partitioned_config,
-            asset_checks=self.asset_layer.asset_checks_defs,
+            _asset_selection_data=selection_data,
         )
-        return new_job
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
         try:
@@ -954,7 +919,7 @@ class JobDefinition(IHasInternalInit):
         return self.get_job_index().job_snapshot
 
     def get_job_index(self) -> "JobIndex":
-        from dagster._core.host_representation import JobIndex
+        from dagster._core.remote_representation import JobIndex
         from dagster._core.snap import JobSnapshot
 
         return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
@@ -1216,13 +1181,16 @@ def get_run_config_schema_for_job(
 
 
 def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
-    """For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
-    AssetLayer that includes those SourceAssets.
+    """For non-asset jobs that have some inputs that are fed from assets, constructs an
+    AssetLayer that includes these assets as loadables.
     """
+    from dagster._core.definitions.asset_graph import (
+        AssetGraph,
+    )
+
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
-    source_assets_list = []
-    source_asset_keys_set = set()
-    io_manager_keys_by_asset_key: Mapping[AssetKey, str] = {}
+    all_input_assets: List[AssetsDefinition] = []
+    input_asset_keys: Set[AssetKey] = set()
 
     # each entry is a graph definition and its handle relative to the job root
     stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
@@ -1230,44 +1198,37 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     while stack:
         graph_def, parent_node_handle = stack.pop()
 
-        for node_name, input_source_assets in graph_def.node_input_source_assets.items():
+        for node_name, input_assets in graph_def.input_assets.items():
             node_handle = NodeHandle(node_name, parent_node_handle)
-            for input_name, source_asset in input_source_assets.items():
-                if source_asset.key not in source_asset_keys_set:
-                    source_asset_keys_set.add(source_asset.key)
-                    source_assets_list.append(source_asset)
+            for input_name, assets_def in input_assets.items():
+                if assets_def.key not in input_asset_keys:
+                    input_asset_keys.add(assets_def.key)
+                    all_input_assets.append(assets_def)
 
                 input_handle = NodeInputHandle(node_handle, input_name)
-                asset_keys_by_node_input_handle[input_handle] = source_asset.key
+                asset_keys_by_node_input_handle[input_handle] = assets_def.key
                 for resolved_input_handle in graph_def.node_dict[
                     node_name
                 ].definition.resolve_input_to_destinations(input_handle):
-                    asset_keys_by_node_input_handle[resolved_input_handle] = source_asset.key
-
-                if source_asset.io_manager_key:
-                    io_manager_keys_by_asset_key[source_asset.key] = source_asset.io_manager_key
+                    asset_keys_by_node_input_handle[resolved_input_handle] = assets_def.key
 
         for node_name, node in graph_def.node_dict.items():
             if isinstance(node.definition, GraphDefinition):
                 stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
 
     return AssetLayer(
+        asset_graph=AssetGraph.from_assets(all_input_assets),
         assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_info_by_node_output_handle={},
         asset_deps={},
         dependency_node_handles_by_asset_key={},
-        assets_defs_by_key={},
-        source_assets_by_key={
-            source_asset.key: source_asset for source_asset in source_assets_list
-        },
-        io_manager_keys_by_asset_key=io_manager_keys_by_asset_key,
         dep_asset_keys_by_node_output_handle={},
         partition_mappings_by_asset_dep={},
-        asset_checks_defs_by_node_handle={},
         node_output_handles_by_asset_check_key={},
         check_names_by_asset_key_by_node_handle={},
         check_key_by_node_output_handle={},
+        assets_defs_by_check_key={},
     )
 
 

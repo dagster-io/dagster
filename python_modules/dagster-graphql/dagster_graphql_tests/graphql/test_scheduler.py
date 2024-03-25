@@ -3,7 +3,7 @@ import sys
 
 import pendulum
 import pytest
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )

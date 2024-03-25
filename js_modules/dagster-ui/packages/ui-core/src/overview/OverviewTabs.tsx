@@ -2,7 +2,7 @@ import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {useAutomationPolicySensorFlag} from '../assets/AutomationPolicySensorFlag';
+import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {TabLink} from '../ui/TabLink';
 
@@ -16,7 +16,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
   const {refreshState, tab} = props;
 
   const automaterialize = useAutomaterializeDaemonStatus();
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>

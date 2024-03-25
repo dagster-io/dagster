@@ -37,8 +37,8 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalSchedule, ExternalSensor
-    from dagster._core.host_representation.origin import ExternalJobOrigin
+    from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
+    from dagster._core.remote_representation.origin import ExternalJobOrigin
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatus")
@@ -148,6 +148,36 @@ class DagsterRunStatsSnapshot(
         )
 
 
+@whitelist_for_serdes
+class RunOpConcurrency(
+    NamedTuple(
+        "_RunOpConcurrency",
+        [
+            ("root_key_counts", Mapping[str, int]),
+            ("has_unconstrained_root_nodes", bool),
+        ],
+    )
+):
+    """Utility class to help calculate the immediate impact of launching a run on the op concurrency
+    slots that will be available for other runs.
+    """
+
+    def __new__(
+        cls,
+        root_key_counts: Mapping[str, int],
+        has_unconstrained_root_nodes: bool,
+    ):
+        return super(RunOpConcurrency, cls).__new__(
+            cls,
+            root_key_counts=check.dict_param(
+                root_key_counts, "root_key_counts", key_type=str, value_type=int
+            ),
+            has_unconstrained_root_nodes=check.bool_param(
+                has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
+            ),
+        )
+
+
 class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # serdes log
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
@@ -251,6 +281,7 @@ class DagsterRun(
             ("external_job_origin", Optional["ExternalJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
+            ("run_op_concurrency", Optional[RunOpConcurrency]),
         ],
     )
 ):
@@ -277,6 +308,7 @@ class DagsterRun(
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
+        run_op_concurrency: Optional[RunOpConcurrency] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -302,7 +334,7 @@ class DagsterRun(
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
-        from dagster._core.host_representation.origin import ExternalJobOrigin
+        from dagster._core.remote_representation.origin import ExternalJobOrigin
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
@@ -344,13 +376,16 @@ class DagsterRun(
             has_repository_load_data=check.opt_bool_param(
                 has_repository_load_data, "has_repository_load_data", default=False
             ),
+            run_op_concurrency=check.opt_inst_param(
+                run_op_concurrency, "run_op_concurrency", RunOpConcurrency
+            ),
         )
 
     def with_status(self, status: DagsterRunStatus) -> Self:
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
-            from dagster._core.host_representation.origin import ExternalJobOrigin
+            from dagster._core.remote_representation.origin import ExternalJobOrigin
 
             check.inst(
                 self.external_job_origin,
@@ -361,7 +396,7 @@ class DagsterRun(
         return self._replace(status=status)
 
     def with_job_origin(self, origin: "ExternalJobOrigin") -> Self:
-        from dagster._core.host_representation.origin import ExternalJobOrigin
+        from dagster._core.remote_representation.origin import ExternalJobOrigin
 
         check.inst_param(origin, "origin", ExternalJobOrigin)
         return self._replace(external_job_origin=origin)
@@ -380,9 +415,9 @@ class DagsterRun(
         if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from the Dagster UI.
-            repository_tags[
-                REPOSITORY_LABEL_TAG
-            ] = self.external_job_origin.external_repository_origin.get_label()
+            repository_tags[REPOSITORY_LABEL_TAG] = (
+                self.external_job_origin.external_repository_origin.get_label()
+            )
 
         if not self.tags:
             return repository_tags

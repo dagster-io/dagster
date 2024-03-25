@@ -12,10 +12,9 @@ import remark from 'remark';
 import mdx from 'remark-mdx';
 import visit from 'unist-util-visit';
 
-import FeedbackModal from '../components/FeedbackModal';
 import {PagePagination} from '../components/PagePagination';
 import MDXComponents from '../components/mdx/MDXComponents';
-import {MDXData, UnversionedMDXRenderer} from '../components/mdx/MDXRenderer';
+import MDXRenderer, {MDXData} from '../components/mdx/MDXRenderer';
 import {getPaginatedChangeLog} from '../util/paginatedChangelog';
 
 const PAGINATION_VERSION_COUNT_PER_PAGE = 5;
@@ -35,16 +34,6 @@ type Props = {
 };
 
 export default function MdxPage(props: Props) {
-  const [isFeedbackOpen, setOpenFeedback] = React.useState<boolean>(false);
-
-  const closeFeedback = () => {
-    setOpenFeedback(false);
-  };
-
-  const toggleFeedback = () => {
-    setOpenFeedback(!isFeedbackOpen);
-  };
-
   const router = useRouter();
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
@@ -60,17 +49,8 @@ export default function MdxPage(props: Props) {
 
   return (
     <>
-      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
-      <UnversionedMDXRenderer
-        data={props.data}
-        toggleFeedback={toggleFeedback}
-        bottomContent={
-          <PagePagination
-            currentPageIndex={currentPageIndex}
-            totalPageCount={props.totalPageCount}
-          />
-        }
-      />
+      <MDXRenderer data={props.data} />
+      <PagePagination currentPageIndex={currentPageIndex} totalPageCount={props.totalPageCount} />
     </>
   );
 }

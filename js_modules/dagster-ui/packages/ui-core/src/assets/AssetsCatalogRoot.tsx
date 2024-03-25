@@ -1,11 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
+import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetKey} from './types';
 import {
   AssetsCatalogRootQuery,
   AssetsCatalogRootQueryVariables,
@@ -13,10 +15,14 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
-export const AssetsCatalogRoot = () => {
+export const AssetsCatalogRoot = ({
+  writeAssetVisit,
+}: {
+  writeAssetVisit?: (assetKey: AssetKey) => void;
+}) => {
   useTrackPageView();
 
   const params = useParams();
@@ -40,9 +46,22 @@ export const AssetsCatalogRoot = () => {
       : 'Assets',
   );
 
-  const trace = useStartTrace(
+  const trace = usePageLoadTrace(
     currentPath && currentPath.length === 0 ? 'AssetsCatalogRoot' : 'AssetCatalogAssetView',
   );
+
+  React.useEffect(() => {
+    // If the asset exists, add it to the recently visited list
+    if (
+      currentPath &&
+      currentPath.length &&
+      queryResult.loading === false &&
+      queryResult.data?.assetOrError.__typename === 'Asset' &&
+      writeAssetVisit
+    ) {
+      writeAssetVisit({path: currentPath});
+    }
+  }, [currentPath, queryResult, writeAssetVisit]);
 
   if (queryResult.loading) {
     return (
@@ -89,7 +108,7 @@ export const AssetsCatalogRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default AssetsCatalogRoot;
 
-const ASSETS_CATALOG_ROOT_QUERY = gql`
+export const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {

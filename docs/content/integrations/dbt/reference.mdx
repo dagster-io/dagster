@@ -179,8 +179,7 @@ In this example, we use the <PyObject module="dagster_dbt" object="build_schedul
 from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
 
 @dbt_assets(manifest=manifest)
-def my_dbt_assets():
-    ...
+def my_dbt_assets(): ...
 
 daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
     [my_dbt_assets],
@@ -199,8 +198,7 @@ from dagster import define_asset_job, ScheduleDefinition
 from dagster_dbt import build_dbt_asset_selection, dbt_assets
 
 @dbt_assets(manifest=manifest)
-def my_dbt_assets():
-    ...
+def my_dbt_assets(): ...
 
 # selects all models tagged with "daily", and all their downstream asset dependencies
 daily_selection = build_dbt_asset_selection(
@@ -225,6 +223,7 @@ In Dagster, each asset definition has attributes. Dagster automatically generate
 - [Customizing group names](#customizing-group-names)
 - [Customizing descriptions](#customizing-descriptions)
 - [Customizing metadata](#customizing-metadata)
+- [Customizing tags](#customizing-tags)
 - [Customizing auto-materialize policies](#customizing-auto-materialize-policies)
 - [Customizing freshness policies](#customizing-freshness-policies)
 
@@ -364,7 +363,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Customizing metadata
 
-For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's table schema.
+For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's declared column schema.
 
 To override the Dagster metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata, using <PyObject module="dagster" object="MetadataValue"/>:
 
@@ -383,6 +382,50 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         return {
             "dbt_metadata": MetadataValue.json(dbt_resource_props.get("meta", {}))
         }
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
+)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+### Customizing tags
+
+<Note>
+  In Dagster, tags are key-value pairs. However, in dbt, tags are strings. To
+  bridge this divide, the dbt tag string is used as the Dagster tag key, and the
+  Dagster tag value is set to special sentinel value{" "}
+  <code>"__dagster_no_value"</code>. Any dbt tags that don't match Dagster's
+  supported tag key format (e.g. they contain unsupported characters) will be
+  ignored by default.
+</Note>
+
+For dbt models, seeds, and snapshots, the default Dagster tags will be the dbt node's configured tags.
+
+Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored.
+
+To override the Dagster tags for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_tags"/>. The following converts dbt tags of the form `foo=bar` to key/value pairs:
+
+```python startafter=start_custom_tags_dagster_dbt_translator endbefore=end_custom_tags_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetExecutionContext
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from typing import Any, Mapping
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+        dbt_tags = dbt_resource_props.get("tags", [])
+        dagster_tags = {}
+        for tag in dbt_tags:
+            key, _, value = tag.partition("=")
+
+            dagster_tags[key] = value if value else "__dagster_no_value"
+
+        return dagster_tags
 
 @dbt_assets(
     manifest=manifest_path,
@@ -532,6 +575,64 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ---
 
+## Emit column-level metadata as materialization metadata <Experimental />
+
+<Note>
+  <strong>
+    Emitting column-level metadata as materialization metadata is currently an
+    experimental feature.{" "}
+  </strong>{" "}
+  To use this feature, you'll need to be on at least `dagster>=1.6.12` and
+  `dagster-dbt>=0.22.12`.
+</Note>
+
+Dagster allows you to emit column-level metadata, like column schema and column dependencies, as [materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata).
+
+With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
+
+To collect this metadata for your dbt project, specify the `dagster` dbt package in your `packages.yml` or `dependencies.yml`, and then run `dbt deps`.
+
+```yaml
+packages:
+  - git: "https://github.com/dagster-io/dagster.git"
+    subdirectory: "python_modules/libraries/dagster-dbt/dbt_packages/dagster"
+    revision: DAGSTER_VERSION # replace with the version of `dagster` you are using.
+```
+
+Then, enable the `dagster.log_column_level_metadata()` macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) for the dbt resources that should emit column schema metadata. For example, adding the following snippet in `dbt_project.yml` enables this macro for all dbt models, seeds, and snapshots:
+
+```yaml
+models:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata() }}"
+
+seeds:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata() }}"
+
+snapshots:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata() }}"
+```
+
+Column dependencies can be removed from materialization metadata by disabling the collection of parent relation metadata. This can be done by setting the `enable_parent_relation_metadata_collection` argument to `False` in the `dagster.log_column_level_metadata()` macro:
+
+```yaml
+models:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=false) }}"
+
+seeds:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=false) }}"
+
+snapshots:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=false) }}"
+```
+
+---
+
 ## Defining dependencies
 
 - [Upstream dependencies](#upstream-dependencies)
@@ -547,8 +648,7 @@ Dagster allows you to define existing assets as upstream dependencies of dbt mod
 from dagster import asset
 
 @asset
-def upstream():
-    ...
+def upstream(): ...
 ```
 
 In order to define this asset as an upstream dependency for a dbt model, you'll need to first declare it as a [data source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) in the `sources.yml` file. Here, you can explicitly provide your asset key to a source table:
@@ -601,8 +701,7 @@ from dagster import asset, AssetExecutionContext
 from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
 
 @dbt_assets(manifest=MANIFEST_PATH)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-    ...
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
 
 @asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
 def orders():
@@ -650,8 +749,7 @@ from dagster_dbt import get_asset_key_for_model
 from dagster import asset
 
 @asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
-def my_downstream_asset():
-    ...
+def my_downstream_asset(): ...
 ```
 
 In the downstream asset, you may want direct access to the contents of the dbt model. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.

@@ -31,9 +31,11 @@ const MetadataEntryTypes: MetadataEntryFragment['__typename'][] = [
   'PipelineRunMetadataEntry',
   'AssetMetadataEntry',
   'JobMetadataEntry',
+  'TableColumnLineageMetadataEntry',
   'TableMetadataEntry',
   'TableSchemaMetadataEntry',
   'NotebookMetadataEntry',
+  'TimestampMetadataEntry',
 ];
 
 const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
@@ -205,6 +207,25 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         locationName: 'my_location_name',
         repositoryName: null,
       };
+    case 'TableColumnLineageMetadataEntry':
+      return {
+        __typename: 'TableColumnLineageMetadataEntry',
+        description: 'This is the description',
+        label: 'my_table_column_lineage',
+        lineage: [
+          {
+            __typename: 'TableColumnLineageEntry',
+            columnName: 'column_a',
+            columnDeps: [
+              {
+                __typename: 'TableColumnDep',
+                assetKey: {path: ['asset_1'], __typename: 'AssetKey'},
+                columnName: 'column_a',
+              },
+            ],
+          },
+        ],
+      };
     case 'TableMetadataEntry':
       return {
         __typename: 'TableMetadataEntry',
@@ -229,6 +250,13 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_path',
         path: '/this/is/a/notebook-path',
+      };
+    case 'TimestampMetadataEntry':
+      return {
+        __typename: 'TimestampMetadataEntry',
+        description: 'This is the description',
+        label: 'my_timestamp',
+        timestamp: 1710187280.5,
       };
     default:
       return assertUnreachable(type);

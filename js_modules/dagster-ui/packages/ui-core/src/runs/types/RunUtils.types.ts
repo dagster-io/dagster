@@ -43,7 +43,7 @@ export type LaunchPipelineExecutionMutation = {
 };
 
 export type DeleteMutationVariables = Types.Exact<{
-  runId: Types.Scalars['String'];
+  runId: Types.Scalars['String']['input'];
 }>;
 
 export type DeleteMutation = {
@@ -65,7 +65,7 @@ export type DeleteMutation = {
 };
 
 export type TerminateMutationVariables = Types.Exact<{
-  runIds: Array<Types.Scalars['String']> | Types.Scalars['String'];
+  runIds: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
   terminatePolicy?: Types.InputMaybe<Types.TerminateRunPolicy>;
 }>;
 

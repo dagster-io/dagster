@@ -18,6 +18,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.definitions.version_strategy import ResourceVersionContext
 from dagster._core.errors import (
     DagsterExecutionLoadInputError,
@@ -105,8 +106,7 @@ class StepInputSource(ABC):
     @abstractmethod
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
-    ) -> Iterator[object]:
-        ...
+    ) -> Iterator[object]: ...
 
     def required_resource_keys(self, _job_def: JobDefinition) -> AbstractSet[str]:
         return set()
@@ -122,10 +122,12 @@ class StepInputSource(ABC):
         raise NotImplementedError()
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromSourceAsset(
+@whitelist_for_serdes(
+    storage_name="FromSourceAsset", storage_field_names={"node_handle": "solid_handle"}
+)
+class FromLoadableAsset(
     NamedTuple(
-        "_FromSourceAsset",
+        "_FromLoadableAsset",
         [
             ("node_handle", NodeHandle),
             ("input_name", str),
@@ -154,7 +156,7 @@ class FromSourceAsset(
         input_manager_key = (
             input_def.input_manager_key
             if input_def.input_manager_key
-            else asset_layer.io_manager_key_for_asset(input_asset_key)
+            else asset_layer.get(input_asset_key).io_manager_key
         )
 
         op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
@@ -174,11 +176,11 @@ class FromSourceAsset(
                 resources=resources,
                 asset_info=AssetOutputInfo(
                     key=input_asset_key,
-                    partitions_def=asset_layer.partitions_def_for_asset(input_asset_key),
+                    partitions_def=asset_layer.get(input_asset_key).partitions_def,
                 ),
                 name=input_asset_key.path[-1],
                 step_key="none",
-                metadata=asset_layer.metadata_for_asset(input_asset_key),
+                definition_metadata=asset_layer.get(input_asset_key).metadata,
                 resource_config=resource_config,
                 log_manager=step_context.log,
             ),
@@ -248,7 +250,11 @@ class FromSourceAsset(
         if input_def.input_manager_key is not None:
             input_manager_key = input_def.input_manager_key
         else:
-            input_manager_key = job_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+            input_manager_key = (
+                job_def.asset_layer.get(input_asset_key).io_manager_key
+                if job_def.asset_layer.has(input_asset_key)
+                else DEFAULT_IO_MANAGER_KEY
+            )
 
         if input_manager_key is None:
             check.failed(

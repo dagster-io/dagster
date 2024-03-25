@@ -38,7 +38,6 @@ from dagster._core.definitions import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,
@@ -50,7 +49,7 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalRepository,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
@@ -714,9 +713,7 @@ def test_unloadable_backfill_retry(
     partition_keys = partitions_a.get_partition_keys()
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace(
-                workspace_context.create_request_context()
-            ),
+            asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id="retry_backfill",
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
@@ -848,9 +845,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
 
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace(
-                workspace_context.create_request_context()
-            ),
+            asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id="backfill_with_multiple_assets_selected",
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
@@ -913,9 +908,7 @@ def test_pure_asset_backfill(
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace(
-                workspace_context.create_request_context()
-            ),
+            asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id="backfill_with_asset_selection",
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
@@ -1003,9 +996,7 @@ def test_asset_backfill_cancellation(
 
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace(
-                workspace_context.create_request_context()
-            ),
+            asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
@@ -1064,9 +1055,7 @@ def test_asset_backfill_submit_runs_in_chunks(
 
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace(
-                workspace_context.create_request_context()
-            ),
+            asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={},
             backfill_timestamp=pendulum.now().timestamp(),
@@ -1097,7 +1086,7 @@ def test_asset_backfill_mid_iteration_cancel(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
     asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
-    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+    asset_graph = workspace_context.create_request_context().asset_graph
 
     num_partitions = RUN_CHUNK_SIZE * 2
     target_partitions = daily_partitions_def.get_partition_keys()[0:num_partitions]
@@ -1166,7 +1155,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
     asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
-    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+    asset_graph = workspace_context.create_request_context().asset_graph
 
     backfill_id = "backfill_id"
     backfill = PartitionBackfill.from_asset_partitions(
@@ -1234,7 +1223,7 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     from dagster._core.execution.submit_asset_runs import _get_job_execution_data_from_run_request
 
     asset_selection = [AssetKey("asset_a"), AssetKey("asset_e")]
-    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+    asset_graph = workspace_context.create_request_context().asset_graph
 
     num_partitions = 1
     target_partitions = partitions_a.get_partition_keys()[0:num_partitions]
@@ -1342,7 +1331,7 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
     asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
-    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+    asset_graph = workspace_context.create_request_context().asset_graph
 
     target_partitions = ["2023-01-01"]
     backfill_id = "backfill_with_hanging_partitions"
@@ -1419,7 +1408,7 @@ def test_asset_backfill_with_single_run_backfill_policy(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
     partitions = ["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04", "2023-01-05"]
-    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+    asset_graph = workspace_context.create_request_context().asset_graph
 
     backfill_id = "asset_backfill_with_backfill_policy"
     backfill = PartitionBackfill.from_partitions_by_assets(
@@ -1461,7 +1450,7 @@ def test_asset_backfill_with_multi_run_backfill_policy(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
     partitions = ["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04"]
-    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+    asset_graph = workspace_context.create_request_context().asset_graph
 
     backfill_id = "asset_backfill_with_multi_run_backfill_policy"
     backfill = PartitionBackfill.from_asset_partitions(
@@ -1513,9 +1502,7 @@ def test_error_code_location(
 
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace(
-                workspace_context.create_request_context()
-            ),
+            asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={},
             backfill_timestamp=pendulum.now().timestamp(),
@@ -1552,8 +1539,8 @@ def test_raise_error_on_asset_backfill_partitions_defs_changes(
     asset_selection = [AssetKey("time_partitions_def_changes")]
     partition_keys = ["2023-01-01"]
     backfill_id = "dummy_backfill"
-    asset_graph = ExternalAssetGraph.from_workspace(
-        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    asset_graph = (
+        partitions_defs_changes_location_1_workspace_context.create_request_context().asset_graph
     )
 
     backfill = PartitionBackfill.from_asset_partitions(
@@ -1602,8 +1589,8 @@ def test_raise_error_on_partitions_defs_removed(
     asset_selection = [AssetKey("partitions_def_removed")]
     partition_keys = ["2023-01-01"]
     backfill_id = "dummy_backfill"
-    asset_graph = ExternalAssetGraph.from_workspace(
-        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    asset_graph = (
+        partitions_defs_changes_location_1_workspace_context.create_request_context().asset_graph
     )
 
     backfill = PartitionBackfill.from_asset_partitions(
@@ -1647,8 +1634,8 @@ def test_raise_error_on_target_static_partition_removed(
 ):
     asset_selection = [AssetKey("static_partition_removed")]
     partition_keys = ["a"]
-    asset_graph = ExternalAssetGraph.from_workspace(
-        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    asset_graph = (
+        partitions_defs_changes_location_1_workspace_context.create_request_context().asset_graph
     )
 
     backfill = PartitionBackfill.from_asset_partitions(
@@ -1708,8 +1695,8 @@ def test_partitions_def_changed_backfill_retry_envvar_set(
     asset_selection = [AssetKey("time_partitions_def_changes")]
     partition_keys = ["2023-01-01"]
     backfill_id = "dummy_backfill"
-    asset_graph = ExternalAssetGraph.from_workspace(
-        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    asset_graph = (
+        partitions_defs_changes_location_1_workspace_context.create_request_context().asset_graph
     )
 
     backfill = PartitionBackfill.from_asset_partitions(
@@ -1748,9 +1735,7 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
 
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace(
-                workspace_context.create_request_context()
-            ),
+            asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
@@ -1787,11 +1772,11 @@ def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
     base_job_name_changes_location_1_workspace_context,
     base_job_name_changes_location_2_workspace_context,
 ):
-    location_1_asset_graph = ExternalAssetGraph.from_workspace(
-        base_job_name_changes_location_1_workspace_context.create_request_context()
+    location_1_asset_graph = (
+        base_job_name_changes_location_1_workspace_context.create_request_context().asset_graph
     )
-    location_2_asset_graph = ExternalAssetGraph.from_workspace(
-        base_job_name_changes_location_2_workspace_context.create_request_context()
+    location_2_asset_graph = (
+        base_job_name_changes_location_2_workspace_context.create_request_context().asset_graph
     )
 
     backfill_id = "hourly_asset_backfill"
@@ -1811,14 +1796,15 @@ def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.REQUESTED
-
     with mock.patch(
-        "dagster._core.execution.asset_backfill.ExternalAssetGraph.from_workspace",
-        side_effect=[
-            location_2_asset_graph,
-            location_1_asset_graph,
-        ],  # On first fetch, return location 2 asset graph, then return location 1 asset graph for subsequent fetch
-    ):
+        "dagster._core.workspace.workspace.IWorkspace.asset_graph",
+        new_callable=mock.PropertyMock,
+    ) as asset_graph_mock:
+        asset_graph_mock.side_effect = [
+            location_2_asset_graph,  # On first fetch, return location 2 asset graph,
+            location_1_asset_graph,  # then return location 1 asset graph for subsequent fetch
+        ]
+
         assert all(
             not error
             for error in list(

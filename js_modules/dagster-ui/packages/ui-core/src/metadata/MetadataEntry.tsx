@@ -25,10 +25,23 @@ import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {TableMetadataEntry} from '../graphql/types';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
+  'dagster_dbt/select',
+  'dagster_dbt/exclude',
+  'dagster-dbt/select',
+  'dagster-dbt/exclude',
+  'dagster_dbt/manifest',
+  'dagster_dbt/dagster_dbt_translator',
+  'dagster_embedded_elt/dagster_sling_translator',
+  'dagster_embedded_elt/sling_replication_config',
+]);
 
 export const LogRowStructuredContentTable = ({
   rows,
@@ -70,10 +83,12 @@ export const MetadataEntries = ({
   }
   return (
     <LogRowStructuredContentTable
-      rows={entries.map((entry) => ({
-        label: entry.label,
-        item: <MetadataEntry entry={entry} expandSmallValues={expandSmallValues} />,
-      }))}
+      rows={entries
+        .filter((entry) => !HIDDEN_METADATA_ENTRY_LABELS.has(entry.label))
+        .map((entry) => ({
+          label: entry.label,
+          item: <MetadataEntry entry={entry} expandSmallValues={expandSmallValues} />,
+        }))}
     />
   );
 };
@@ -101,12 +116,15 @@ export const MetadataEntry = ({
       );
 
     case 'JsonMetadataEntry':
-      return expandSmallValues && entry.jsonString.length < 1000 ? (
-        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(entry.jsonString)}</div>
+    case 'TableColumnLineageMetadataEntry':
+      const jsonString =
+        entry.__typename === 'JsonMetadataEntry' ? entry.jsonString : JSON.stringify(entry.lineage);
+      return expandSmallValues && jsonString.length < 1000 ? (
+        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(jsonString)}</div>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
-          copyContent={() => entry.jsonString}
+          copyContent={() => jsonString}
           content={() => (
             <Box
               background={Colors.backgroundLight()}
@@ -115,7 +133,7 @@ export const MetadataEntry = ({
               border="bottom"
               style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace, overflow: 'auto'}}
             >
-              {tryPrettyPrintJSON(entry.jsonString)}
+              {tryPrettyPrintJSON(jsonString)}
             </Box>
           )}
         >
@@ -167,6 +185,8 @@ export const MetadataEntry = ({
       );
     case 'FloatMetadataEntry':
       return <>{entry.floatValue}</>;
+    case 'TimestampMetadataEntry':
+      return <TimestampDisplay timestamp={entry.timestamp} timeFormat={TIME_FORMAT} />;
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
     case 'BoolMetadataEntry':
@@ -208,6 +228,7 @@ export const MetadataEntry = ({
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
+          modalWidth={900}
           copyContent={() => JSON.stringify(entry.schema, null, 2)}
           content={() => (
             <Box
@@ -271,6 +292,9 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     ... on FloatMetadataEntry {
       floatValue
     }
+    ... on TimestampMetadataEntry {
+      timestamp
+    }
     ... on IntMetadataEntry {
       intValue
       intRepr
@@ -290,6 +314,17 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       jobName
       repositoryName
       locationName
+    }
+    ... on TableColumnLineageMetadataEntry {
+      lineage {
+        columnName
+        columnDeps {
+          assetKey {
+            path
+          }
+          columnName
+        }
+      }
     }
     ... on TableMetadataEntry {
       table {
@@ -350,6 +385,7 @@ const PythonArtifactLink = ({
 const MetadataEntryModalAction = (props: {
   children: React.ReactNode;
   label: string;
+  modalWidth?: number;
   content: () => React.ReactNode;
   copyContent: () => string;
 }) => {
@@ -359,7 +395,7 @@ const MetadataEntryModalAction = (props: {
       <MetadataEntryAction onClick={() => setOpen(true)}>{props.children}</MetadataEntryAction>
       <Dialog
         icon="info"
-        style={{width: 'auto', minWidth: 400, maxWidth: '80vw'}}
+        style={{width: props.modalWidth || 'auto', minWidth: 400, maxWidth: '80vw'}}
         title={props.label}
         onClose={() => setOpen(false)}
         isOpen={open}
@@ -470,7 +506,7 @@ export const MetadataEntryLink = styled(Link)`
   }
 `;
 
-const StructuredContentTable = styled.table`
+export const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;

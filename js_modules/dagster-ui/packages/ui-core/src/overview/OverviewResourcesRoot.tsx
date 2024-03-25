@@ -1,17 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  Heading,
-  NonIdealState,
-  PageHeader,
-  Spinner,
-  TextInput,
-} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
+import {OverviewPageHeader} from './OverviewPageHeader';
 import {OverviewResourcesTable} from './OverviewResourcesTable';
-import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {
   OverviewResourcesQuery,
@@ -137,10 +129,7 @@ export const OverviewResourcesRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="resources" refreshState={refreshState} />}
-      />
+      <OverviewPageHeader tab="resources" refreshState={refreshState} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}

@@ -8,8 +8,8 @@ import dagster._check as check
 from dagster._config import Field, IntSource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation import ExternalSchedule
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalSchedule
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

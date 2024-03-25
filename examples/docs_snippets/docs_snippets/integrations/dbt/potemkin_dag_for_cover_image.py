@@ -3,6 +3,7 @@
 We pull off some dark magic so that generating the screenshot doesn't involve a whole setup with
 Fivetran and a database.
 """
+
 from dagster import asset
 
 
@@ -10,12 +11,10 @@ class dagster_fivetran:
     @staticmethod
     def build_fivetran_assets(connector_id, table_names):
         @asset(compute_kind="fivetran")
-        def users():
-            ...
+        def users(): ...
 
         @asset(compute_kind="fivetran")
-        def orders():
-            ...
+        def orders(): ...
 
         return [users, orders]
 
@@ -64,8 +63,7 @@ def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     compute_kind="tensorflow",
     deps=[get_asset_key_for_model([dbt_project_assets], "daily_order_summary")],
 )
-def predicted_orders():
-    ...
+def predicted_orders(): ...
 
 
 # end

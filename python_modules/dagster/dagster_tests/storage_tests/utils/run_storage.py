@@ -3,6 +3,7 @@ import tempfile
 import time
 import unittest
 from datetime import datetime, timedelta
+from typing import Optional
 
 import pendulum
 import pytest
@@ -13,14 +14,14 @@ from dagster._core.errors import (
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance, InstanceType
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+from dagster._core.remote_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance, InstanceType
-from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.snap import create_job_snapshot_id
 from dagster._core.storage.dagster_run import (
@@ -40,6 +41,7 @@ from dagster._core.storage.tags import (
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -51,7 +53,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
 
-def _get_run_by_id(storage, run_id):
+def _get_run_by_id(storage, run_id) -> Optional[DagsterRun]:
     records = storage.get_run_records(RunsFilter(run_ids=[run_id]))
     if not records:
         return None
@@ -239,7 +241,7 @@ class TestRunStorage:
         assert len(runs_b) == 1
         assert runs_b[0].run_id == two
 
-    def test_add_run_tags(self, storage):
+    def test_add_run_tags(self, storage: RunStorage):
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
@@ -247,24 +249,28 @@ class TestRunStorage:
         storage.add_run(TestRunStorage.build_run(run_id=one, job_name="foo"))
         storage.add_run(TestRunStorage.build_run(run_id=two, job_name="bar"))
 
-        assert storage.get_run_tags() == []
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2"]) == []
 
         storage.add_run_tags(one, {"tag1": "val1", "tag2": "val2"})
         storage.add_run_tags(two, {"tag1": "val1"})
 
-        assert storage.get_run_tags() == [("tag1", {"val1"}), ("tag2", {"val2"})]
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2"]) == [
+            ("tag1", {"val1"}),
+            ("tag2", {"val2"}),
+        ]
 
         # Adding both existing tags and a new tag
         storage.add_run_tags(one, {"tag1": "val2", "tag3": "val3"})
 
         test_run = _get_run_by_id(storage, one)
+        assert test_run
 
         assert len(test_run.tags) == 3
         assert test_run.tags["tag1"] == "val2"
         assert test_run.tags["tag2"] == "val2"
         assert test_run.tags["tag3"] == "val3"
 
-        assert storage.get_run_tags() == [
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2", "tag3"]) == [
             ("tag1", {"val1", "val2"}),
             ("tag2", {"val2"}),
             ("tag3", {"val3"}),
@@ -274,13 +280,13 @@ class TestRunStorage:
         storage.add_run_tags(one, {"tag1": "val3"})
 
         test_run = _get_run_by_id(storage, one)
-
+        assert test_run
         assert len(test_run.tags) == 3
         assert test_run.tags["tag1"] == "val3"
         assert test_run.tags["tag2"] == "val2"
         assert test_run.tags["tag3"] == "val3"
 
-        assert storage.get_run_tags() == [
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2", "tag3"]) == [
             ("tag1", {"val1", "val3"}),
             ("tag2", {"val2"}),
             ("tag3", {"val3"}),
@@ -290,6 +296,7 @@ class TestRunStorage:
         storage.add_run_tags(one, {"tag4": "val4"})
 
         test_run = _get_run_by_id(storage, one)
+        assert test_run
 
         assert len(test_run.tags) == 4
         assert test_run.tags["tag1"] == "val3"
@@ -297,7 +304,7 @@ class TestRunStorage:
         assert test_run.tags["tag3"] == "val3"
         assert test_run.tags["tag4"] == "val4"
 
-        assert storage.get_run_tags() == [
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2", "tag3", "tag4"]) == [
             ("tag1", {"val1", "val3"}),
             ("tag2", {"val2"}),
             ("tag3", {"val3"}),
@@ -305,6 +312,7 @@ class TestRunStorage:
         ]
 
         test_run = _get_run_by_id(storage, one)
+        assert test_run
         assert len(test_run.tags) == 4
         assert test_run.tags["tag1"] == "val3"
         assert test_run.tags["tag2"] == "val2"
@@ -329,7 +337,7 @@ class TestRunStorage:
             "tag4": "val4",
         }
 
-    def test_get_run_tags(self, storage):
+    def test_get_run_tags(self, storage: RunStorage):
         one = make_new_run_id()
         two = make_new_run_id()
         storage.add_run(TestRunStorage.build_run(run_id=one, job_name="foo"))
@@ -360,16 +368,19 @@ class TestRunStorage:
         ]
 
         # test getting run tags with prefix
-        assert storage.get_run_tags(value_prefix="x_") == [
+        assert storage.get_run_tags(tag_keys=["x_1", "x_2"], value_prefix="x_") == [
             ("x_1", {"x_1"}),
             ("x_2", {"x_2"}),
         ]
 
         # test getting run tags with limit
-        assert storage.get_run_tags(limit=3) == [
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2"], limit=3) == [
             ("tag1", {"val1", "val3"}),
             ("tag2", {"val2"}),
         ]
+
+        # empty tag_keys implies nothing instead of everything
+        assert storage.get_run_tags(tag_keys=[]) == []
 
     def test_fetch_by_filter(self, storage):
         assert storage
@@ -525,7 +536,7 @@ class TestRunStorage:
         assert count == 4
         assert run_ids == [four, three, two, one]
 
-    def test_fetch_count_by_tag(self, storage):
+    def test_fetch_count_by_tag(self, storage: RunStorage):
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
@@ -558,7 +569,10 @@ class TestRunStorage:
         run_count = storage.get_runs_count()
         assert run_count == 3
 
-        assert storage.get_run_tags() == [("mytag", {"hello", "goodbye"}), ("mytag2", {"world"})]
+        assert storage.get_run_tags(tag_keys=["mytag", "mytag2"]) == [
+            ("mytag", {"hello", "goodbye"}),
+            ("mytag2", {"world"}),
+        ]
 
     def test_fetch_by_tags(self, storage):
         assert storage
@@ -703,6 +717,29 @@ class TestRunStorage:
         assert {
             run.run_id for run in storage.get_runs(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
         } == set()
+
+    def test_failure_event_updates_tags(self, storage):
+        assert storage
+        one = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.handle_run_event(
+            one,  # fail one after two has fails and three has succeeded
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                job_name="some_pipeline",
+                event_specific_data=JobFailureData(
+                    error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+                ),
+            ),
+        )
+
+        run = _get_run_by_id(storage, one)
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
 
     def test_fetch_records_by_update_timestamp(self, storage):
         assert storage
@@ -876,7 +913,7 @@ class TestRunStorage:
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
 
-    def test_delete_with_tags(self, storage):
+    def test_delete_with_tags(self, storage: RunStorage):
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete runs")
 
@@ -890,10 +927,10 @@ class TestRunStorage:
             )
         )
         assert len(storage.get_runs()) == 1
-        assert run_id in [key for key, value in storage.get_run_tags()]
+        assert run_id in [key for key, value in storage.get_run_tags(tag_keys=[run_id])]
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
-        assert run_id not in [key for key, value in storage.get_run_tags()]
+        assert run_id not in [key for key, value in storage.get_run_tags(tag_keys=[run_id])]
 
     def test_wipe_tags(self, storage: RunStorage):
         if not self.can_delete_runs():
@@ -905,11 +942,11 @@ class TestRunStorage:
         storage.add_run(run)
 
         assert _get_run_by_id(storage, run_id) == run
-        assert dict(storage.get_run_tags()) == {"foo": {"bar"}}
+        assert dict(storage.get_run_tags(tag_keys=["foo"])) == {"foo": {"bar"}}
 
         storage.wipe()
         assert list(storage.get_runs()) == []
-        assert dict(storage.get_run_tags()) == {}
+        assert dict(storage.get_run_tags(tag_keys=["foo"])) == {}
 
     def test_write_conflicting_run_id(self, storage: RunStorage):
         double_run_id = "double_run_id"
@@ -1235,6 +1272,8 @@ class TestRunStorage:
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
 
     def test_secondary_index(self, storage):
+        self._skip_in_memory(storage)
+
         if not isinstance(storage, SqlRunStorage):
             return
 

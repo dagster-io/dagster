@@ -21,7 +21,7 @@ def inprocess_execution_iterator(
     instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
 ) -> Iterator[DagsterEvent]:
     with InstanceConcurrencyContext(
-        job_context.instance, job_context.run_id
+        job_context.instance, job_context.dagster_run
     ) as instance_concurrency_context:
         yield from inner_plan_execution_iterator(
             job_context, execution_plan, instance_concurrency_context

@@ -4,8 +4,10 @@ from urllib.parse import urlparse
 import pytest
 import yaml
 from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster_mysql.event_log import MySQLEventLogStorage
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
     create_test_event_log_record,

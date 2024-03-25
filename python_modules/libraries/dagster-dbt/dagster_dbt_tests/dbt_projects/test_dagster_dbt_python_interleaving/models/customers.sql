@@ -2,7 +2,7 @@ with customers as (
 
     -- this is a fake table that won't exist, just select from stg_orders
     -- select * from {{ source('dagster', 'python_augmented_customers') }}
-    select * from jaffle_shop.main.stg_customers
+    select * from main.stg_customers
 
 ),
 

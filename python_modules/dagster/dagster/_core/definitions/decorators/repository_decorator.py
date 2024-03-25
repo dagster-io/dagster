@@ -24,7 +24,6 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from ..asset_checks import AssetChecksDefinition
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..job_definition import JobDefinition
@@ -93,14 +92,12 @@ class _Repository:
             Callable[[], Sequence[RepositoryListDefinition]],
             Callable[[], RepositoryDictSpec],
         ],
-    ) -> RepositoryDefinition:
-        ...
+    ) -> RepositoryDefinition: ...
 
     @overload
     def __call__(
         self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
-    ) -> PendingRepositoryDefinition:
-        ...
+    ) -> PendingRepositoryDefinition: ...
 
     def __call__(
         self,
@@ -138,7 +135,6 @@ class _Repository:
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,
-                        AssetChecksDefinition,
                     ),
                 ):
                     bad_defns.append((i, type(definition)))
@@ -209,7 +205,7 @@ class _Repository:
                 name=self.name,
                 description=self.description,
                 metadata=self.metadata,
-                repository_data=repository_data,
+                repository_data=check.not_none(repository_data),
             )
 
             update_wrapper(repository_def, fn)
@@ -221,15 +217,13 @@ def repository(
     definitions_fn: Union[
         Callable[[], Sequence[RepositoryListDefinition]], Callable[[], RepositoryDictSpec]
     ],
-) -> RepositoryDefinition:
-    ...
+) -> RepositoryDefinition: ...
 
 
 @overload
 def repository(
     definitions_fn: Callable[..., Sequence[PendingRepositoryListDefinition]],
-) -> PendingRepositoryDefinition:
-    ...
+) -> PendingRepositoryDefinition: ...
 
 
 @overload
@@ -242,8 +236,7 @@ def repository(
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
     _resource_key_mapping: Optional[Mapping[int, str]] = ...,
-) -> _Repository:
-    ...
+) -> _Repository: ...
 
 
 def repository(

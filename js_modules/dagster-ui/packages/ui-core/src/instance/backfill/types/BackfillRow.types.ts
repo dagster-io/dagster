@@ -3,7 +3,7 @@
 import * as Types from '../../../graphql/types';
 
 export type SingleBackfillCountsQueryVariables = Types.Exact<{
-  backfillId: Types.Scalars['String'];
+  backfillId: Types.Scalars['String']['input'];
 }>;
 
 export type SingleBackfillCountsQuery = {
@@ -23,7 +23,7 @@ export type SingleBackfillCountsQuery = {
 };
 
 export type SingleBackfillQueryVariables = Types.Exact<{
-  backfillId: Types.Scalars['String'];
+  backfillId: Types.Scalars['String']['input'];
 }>;
 
 export type SingleBackfillQuery = {

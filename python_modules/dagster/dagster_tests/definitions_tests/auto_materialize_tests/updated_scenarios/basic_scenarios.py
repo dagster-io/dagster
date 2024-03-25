@@ -1,15 +1,11 @@
-from dagster import AssetSpec, AutoMaterializeRule
+from dagster import AssetSpec, AutoMaterializePolicy, AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule import SkipOnRunInProgressRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
 
-from ..asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetDaemonScenarioState,
-    AssetRuleEvaluationSpec,
-)
 from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..scenario_specs import (
     diamond,
     one_asset,
     one_asset_depends_on_two,
@@ -17,11 +13,16 @@ from .asset_daemon_scenario_states import (
     two_assets_depend_on_one,
     two_assets_in_sequence,
 )
+from ..scenario_state import ScenarioSpec
+from .asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetRuleEvaluationSpec,
+)
 
 basic_scenarios = [
     AssetDaemonScenario(
         id="one_asset_never_materialized",
-        initial_state=one_asset.with_all_eager(),
+        initial_spec=one_asset.with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .assert_evaluation(
@@ -30,7 +31,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_already_launched",
-        initial_state=one_asset.with_all_eager(),
+        initial_spec=one_asset.with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .evaluate_tick()
@@ -38,7 +39,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_in_sequence_never_materialized",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_spec=two_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A", "B"]))
         .assert_evaluation(
@@ -60,7 +61,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_materialized_child_not",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_spec=two_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"]))
@@ -82,7 +83,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_materialized_launch_two_children",
-        initial_state=two_assets_depend_on_one.with_all_eager(),
+        initial_spec=two_assets_depend_on_one.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B", "C"]))
@@ -115,7 +116,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_materialized_with_source_asset_launch_child",
-        initial_state=AssetDaemonScenarioState(
+        initial_spec=ScenarioSpec(
             asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A", "source"])]
         ).with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]))
@@ -124,7 +125,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_rematerialized_after_tick",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_spec=two_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
         .evaluate_tick()
         .assert_requested_runs()
@@ -137,14 +138,14 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_rematerialized",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_spec=two_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B"]), run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"])),
     ),
     AssetDaemonScenario(
         id="one_parent_materialized_other_never_materialized",
-        initial_state=one_asset_depends_on_two.with_all_eager(),
+        initial_spec=one_asset_depends_on_two.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B", "C"]))
@@ -161,7 +162,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_parent_materialized_others_materialized_before",
-        initial_state=one_asset_depends_on_two.with_all_eager(),
+        initial_spec=one_asset_depends_on_two.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C"]))
         .evaluate_tick()
         .assert_requested_runs()
@@ -183,21 +184,21 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_never_materialized",
-        initial_state=diamond.with_all_eager(),
+        initial_spec=diamond.with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             run_request(["A", "B", "C", "D"])
         ),
     ),
     AssetDaemonScenario(
         id="diamond_only_root_materialized",
-        initial_state=diamond.with_all_eager(),
+        initial_spec=diamond.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B", "C", "D"])),
     ),
     AssetDaemonScenario(
         id="diamond_root_rematerialized",
-        initial_state=diamond.with_all_eager(),
+        initial_spec=diamond.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C", "D"]))
         .evaluate_tick()
         .assert_requested_runs()
@@ -243,7 +244,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_root_and_one_in_middle_rematerialized",
-        initial_state=diamond.with_all_eager(),
+        initial_spec=diamond.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C", "D"]))
         .evaluate_tick()
         .assert_requested_runs()
@@ -253,7 +254,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_root_and_sink_rematerialized",
-        initial_state=diamond.with_all_eager(),
+        initial_spec=diamond.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C", "D"]))
         .evaluate_tick()
         .assert_requested_runs()
@@ -263,14 +264,14 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parents_materialized_separate_runs",
-        initial_state=three_assets_in_sequence.with_all_eager(),
+        initial_spec=three_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]), run_request(["B"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["C"])),
     ),
     AssetDaemonScenario(
         id="parent_materialized_twice",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_spec=two_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]), run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"]))
@@ -279,7 +280,7 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_rematerialized_twice",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_spec=two_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
         .evaluate_tick()
         .assert_requested_runs()
@@ -289,5 +290,40 @@ basic_scenarios = [
         .with_not_started_runs()
         .evaluate_tick()
         .assert_requested_runs(),
+    ),
+    # Ensure that with a rule that skips on run in progress, we don't launch a new run
+    AssetDaemonScenario(
+        id="asset_in_progress-rule",
+        initial_spec=two_assets_in_sequence.with_asset_properties(
+            keys=["B"],
+            auto_materialize_policy=AutoMaterializePolicy.eager().with_rules(
+                SkipOnRunInProgressRule()
+            ),
+        ),
+        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"]))
+        .with_not_started_runs()
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_runs(run_request(["A"]))
+        .with_in_progress_run_for_asset("B")
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+    # Demonstrate the behavior that we will always launch a new run if there is no rule
+    AssetDaemonScenario(
+        id="asset_in_progress-no-rule",
+        initial_spec=two_assets_in_sequence.with_all_eager(),
+        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"]))
+        .with_not_started_runs()
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_runs(run_request(["A"]))
+        .with_in_progress_run_for_asset("B")
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"])),
     ),
 ]

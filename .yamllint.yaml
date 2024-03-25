@@ -1,7 +1,0 @@
----
-extends: default
-
-rules:
-  comments-indentation: disable
-  line-length:
-    max: 130

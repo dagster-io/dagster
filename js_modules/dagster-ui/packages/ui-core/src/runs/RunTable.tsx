@@ -126,6 +126,7 @@ export const RunTable = (props: RunTableProps) => {
           <tbody>
             {runs.map((run) => (
               <RunRow
+                hasCheckboxColumn={canTerminateOrDeleteAny}
                 canTerminateOrDelete={run.hasTerminatePermission || run.hasDeletePermission}
                 run={run}
                 key={run.id}
@@ -215,6 +216,8 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
       ...RunTagsFragment
     }
     ...RunTimeFragment
+    rootConcurrencyKeys
+    hasUnconstrainedRootNodes
   }
 
   ${RUN_TIME_FRAGMENT}

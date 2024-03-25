@@ -24,13 +24,14 @@ from dagster import (
     multi_asset,
 )
 from dagster._utils.warnings import (
-    disable_dagster_warnings,
     experimental_warning,
 )
 
 from .asset_utils import (
+    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
+    DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_SELECT_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
-    MANIFEST_METADATA_KEY,
     default_asset_check_fn,
     default_code_version_fn,
     get_deps,
@@ -40,8 +41,8 @@ from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, va
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
+    dagster_name_fn,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-    output_name_fn,
     select_unique_ids_from_manifest,
 )
 
@@ -321,21 +322,21 @@ def dbt_assets(
         dagster_dbt_translator=dagster_dbt_translator,
     )
 
-    if op_tags and "dagster-dbt/select" in op_tags:
+    if op_tags and DAGSTER_DBT_SELECT_METADATA_KEY in op_tags:
         raise DagsterInvalidDefinitionError(
-            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            f"To specify a dbt selection, use the 'select' argument, not '{DAGSTER_DBT_SELECT_METADATA_KEY}'"
             " with op_tags"
         )
 
-    if op_tags and "dagster-dbt/exclude" in op_tags:
+    if op_tags and DAGSTER_DBT_EXCLUDE_METADATA_KEY in op_tags:
         raise DagsterInvalidDefinitionError(
-            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            f"To specify a dbt exclusion, use the 'exclude' argument, not '{DAGSTER_DBT_EXCLUDE_METADATA_KEY}'"
             " with op_tags"
         )
 
     resolved_op_tags = {
-        **({"dagster-dbt/select": select} if select else {}),
-        **({"dagster-dbt/exclude": exclude} if exclude else {}),
+        **({DAGSTER_DBT_SELECT_METADATA_KEY: select} if select else {}),
+        **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude} if exclude else {}),
         **(op_tags if op_tags else {}),
     }
 
@@ -383,15 +384,19 @@ def get_dbt_multi_asset_args(
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs: Sequence[AssetCheckSpec] = []
 
-    dbt_unique_ids_by_asset_key: Dict[AssetKey, Set[str]] = {}
+    dbt_unique_id_and_resource_types_by_asset_key: Dict[AssetKey, Tuple[Set[str], Set[str]]] = {}
 
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(dbt_resource_props)
+        output_name = dagster_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
 
-        dbt_unique_ids_by_asset_key.setdefault(asset_key, set()).add(unique_id)
+        unique_ids_for_asset_key, resource_types_for_asset_key = (
+            dbt_unique_id_and_resource_types_by_asset_key.setdefault(asset_key, (set(), set()))
+        )
+        unique_ids_for_asset_key.add(unique_id)
+        resource_types_for_asset_key.add(dbt_resource_props["resource_type"])
 
         outs[output_name] = AssetOut(
             key=asset_key,
@@ -401,9 +406,10 @@ def get_dbt_multi_asset_args(
             is_required=False,
             metadata={  # type: ignore
                 **dagster_dbt_translator.get_metadata(dbt_resource_props),
-                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
+            tags=dagster_dbt_translator.get_tags(dbt_resource_props),
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
             code_version=default_code_version_fn(dbt_resource_props),
             freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
@@ -419,60 +425,70 @@ def get_dbt_multi_asset_args(
         ]
         for test_unique_id in test_unique_ids:
             check_spec = default_asset_check_fn(
-                manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
+                manifest, dbt_nodes, dagster_dbt_translator, asset_key, unique_id, test_unique_id
             )
             if check_spec:
                 check_specs.append(check_spec)
 
         # Translate parent unique ids to dependencies
-        with disable_dagster_warnings():
-            output_internal_deps = internal_asset_deps.setdefault(output_name, set())
-            for parent_unique_id in parent_unique_ids:
-                dbt_parent_resource_props = dbt_nodes[parent_unique_id]
-                parent_asset_key = dagster_dbt_translator.get_asset_key(dbt_parent_resource_props)
-                parent_partition_mapping = dagster_dbt_translator.get_partition_mapping(
-                    dbt_resource_props,
-                    dbt_parent_resource_props=dbt_parent_resource_props,
-                )
-
-                dbt_unique_ids_by_asset_key.setdefault(parent_asset_key, set()).add(
-                    parent_unique_id
-                )
-
-                if parent_partition_mapping:
-                    experimental_warning("DagsterDbtTranslator.get_partition_mapping")
-
-                # Add this parent as an internal dependency
-                output_internal_deps.add(parent_asset_key)
-
-                # Mark this parent as an input if it has no dependencies
-                if parent_unique_id not in dbt_unique_id_deps:
-                    deps.add(
-                        AssetDep(
-                            asset=parent_asset_key,
-                            partition_mapping=parent_partition_mapping,
-                        )
-                    )
-
-            self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
+        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
+        for parent_unique_id in parent_unique_ids:
+            dbt_parent_resource_props = dbt_nodes[parent_unique_id]
+            parent_asset_key = dagster_dbt_translator.get_asset_key(dbt_parent_resource_props)
+            parent_partition_mapping = dagster_dbt_translator.get_partition_mapping(
                 dbt_resource_props,
-                dbt_parent_resource_props=dbt_resource_props,
+                dbt_parent_resource_props=dbt_parent_resource_props,
             )
-            if self_partition_mapping and has_self_dependency(dbt_resource_props):
-                experimental_warning("+meta.dagster.has_self_dependency")
 
+            parent_unique_ids_for_asset_key, parent_resource_types_for_asset_key = (
+                dbt_unique_id_and_resource_types_by_asset_key.setdefault(
+                    parent_asset_key, (set(), set())
+                )
+            )
+            parent_unique_ids_for_asset_key.add(parent_unique_id)
+            parent_resource_types_for_asset_key.add(dbt_parent_resource_props["resource_type"])
+
+            if parent_partition_mapping:
+                experimental_warning("DagsterDbtTranslator.get_partition_mapping")
+
+            # Add this parent as an internal dependency
+            output_internal_deps.add(parent_asset_key)
+
+            # Mark this parent as an input if it has no dependencies
+            if parent_unique_id not in dbt_unique_id_deps:
                 deps.add(
                     AssetDep(
-                        asset=asset_key,
-                        partition_mapping=self_partition_mapping,
+                        asset=parent_asset_key,
+                        partition_mapping=parent_partition_mapping,
                     )
                 )
-                output_internal_deps.add(asset_key)
+
+        self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
+            dbt_resource_props,
+            dbt_parent_resource_props=dbt_resource_props,
+        )
+        if self_partition_mapping and has_self_dependency(dbt_resource_props):
+            experimental_warning("+meta.dagster.has_self_dependency")
+
+            deps.add(
+                AssetDep(
+                    asset=asset_key,
+                    partition_mapping=self_partition_mapping,
+                )
+            )
+            output_internal_deps.add(asset_key)
 
     dbt_unique_ids_by_duplicate_asset_key = {
         asset_key: sorted(unique_ids)
-        for asset_key, unique_ids in dbt_unique_ids_by_asset_key.items()
+        for asset_key, (
+            unique_ids,
+            resource_types,
+        ) in dbt_unique_id_and_resource_types_by_asset_key.items()
         if len(unique_ids) != 1
+        and not (
+            resource_types == set(["source"])
+            and dagster_dbt_translator.settings.enable_duplicate_source_asset_keys
+        )
     }
     if dbt_unique_ids_by_duplicate_asset_key:
         error_messages = []

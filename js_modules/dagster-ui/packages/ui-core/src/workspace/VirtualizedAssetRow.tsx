@@ -143,7 +143,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          {definition?.partitionDefinition ? (
+          {definition?.partitionDefinition && !definition?.isSource ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               <PartitionCountLabels partitionStats={liveData?.partitionStats} />
               <Caption>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Caption>

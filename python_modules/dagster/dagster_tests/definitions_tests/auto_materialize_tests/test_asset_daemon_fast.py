@@ -20,7 +20,7 @@ from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 # FAST auto materialize tests
 #############################
 #
-# Run the auto materialize scenarios, but use an InternalAssetGraph instead of External to speed things up.
+# Run the auto materialize scenarios, but use an AssetGraph instead of RemoteAssetGraph to speed things up.
 
 
 @pytest.mark.parametrize(

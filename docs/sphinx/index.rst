@@ -59,11 +59,13 @@
    sections/api/apidocs/libraries/dagster-mlflow
    sections/api/apidocs/libraries/dagster-msteams
    sections/api/apidocs/libraries/dagster-mysql
+   sections/api/apidocs/libraries/dagster-openai
    sections/api/apidocs/libraries/dagster-pagerduty
    sections/api/apidocs/libraries/dagster-pandas
    sections/api/apidocs/libraries/dagster-pandera
    sections/api/apidocs/libraries/dagster-papertrail
    sections/api/apidocs/libraries/dagster-pipes
+   sections/api/apidocs/libraries/dagster-polars
    sections/api/apidocs/libraries/dagster-postgres
    sections/api/apidocs/libraries/dagster-prometheus
    sections/api/apidocs/libraries/dagster-pyspark

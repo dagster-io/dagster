@@ -56,7 +56,7 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import (
+    from dagster._core.remote_representation.external import (
         ExternalJob,
         ExternalRepository,
         ExternalResource,
@@ -107,16 +107,14 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
 @overload
-def telemetry_wrapper(target_fn: T_Callable) -> T_Callable:
-    ...
+def telemetry_wrapper(target_fn: T_Callable) -> T_Callable: ...
 
 
 @overload
 def telemetry_wrapper(
     *,
     metadata: Optional[Mapping[str, str]],
-) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    ...
+) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
 def telemetry_wrapper(
@@ -463,7 +461,7 @@ def hash_name(name: str) -> str:
 
 
 def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
-    from dagster._core.host_representation.external_data import (
+    from dagster._core.remote_representation.external_data import (
         ExternalDynamicPartitionsDefinitionData,
         ExternalMultiPartitionsDefinitionData,
     )
@@ -597,7 +595,7 @@ def log_external_repo_stats(
     external_repo: "ExternalRepository",
     external_job: Optional["ExternalJob"] = None,
 ):
-    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
+    from dagster._core.remote_representation.external import ExternalJob, ExternalRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
@@ -780,11 +778,10 @@ def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext
 TELEMETRY_TEXT = """
   %(telemetry)s
 
-  As an open source project, we collect usage statistics to inform development priorities. For more
+  As an open-source project, we collect usage statistics to inform development priorities. For more
   information, read https://docs.dagster.io/getting-started/telemetry.
 
-  We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
-  any data that is processed within solids and pipelines.
+  We will not see or store any data that is processed by your code.
 
   To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file if necessary:
 

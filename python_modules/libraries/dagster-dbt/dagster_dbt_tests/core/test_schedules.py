@@ -1,15 +1,9 @@
-import json
-from pathlib import Path
-from typing import Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import pytest
 from dagster import DefaultScheduleStatus, RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
-
-manifest_path = Path(__file__).joinpath("..", "..", "sample_manifest.json").resolve()
-with open(manifest_path, "r") as f:
-    manifest = json.load(f)
 
 
 @pytest.mark.parametrize(
@@ -47,6 +41,7 @@ with open(manifest_path, "r") as f:
     ],
 )
 def test_dbt_build_schedule(
+    test_jaffle_shop_manifest: Dict[str, Any],
     job_name: str,
     cron_schedule: str,
     dbt_select: str,
@@ -56,9 +51,8 @@ def test_dbt_build_schedule(
     execution_timezone: Optional[str],
     default_status: DefaultScheduleStatus,
 ) -> None:
-    @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(): ...
 
     test_daily_schedule = build_schedule_from_dbt_selection(
         [my_dbt_assets],
