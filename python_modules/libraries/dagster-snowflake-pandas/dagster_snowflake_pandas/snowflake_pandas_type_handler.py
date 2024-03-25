@@ -121,11 +121,11 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             # forced the table name to be uppercase, so we mimic that behavior here for feature parity
             # in the future we could allow non-uppercase table names
             table_name=table_slice.table.upper(),
-            schema=table_slice.schema,
-            database=table_slice.database,
+            schema=table_slice.schema.upper(),
+            database=table_slice.database.upper(),
             auto_create_table=True,
             use_logical_type=True,
-            quote_identifiers=False,  # In the future we can set this to True to allow lowercase identifiers
+            quote_identifiers=True,
         )
 
         return {
