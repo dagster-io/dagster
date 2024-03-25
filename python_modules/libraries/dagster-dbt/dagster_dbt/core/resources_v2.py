@@ -10,6 +10,7 @@ from contextlib import suppress
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import (
+    AbstractSet,
     Any,
     Dict,
     Iterator,
@@ -133,7 +134,7 @@ class DbtCliEventMessage:
         self,
         dagster_dbt_translator: DagsterDbtTranslator,
         validated_manifest: Mapping[str, Any],
-        upstream_unique_ids: List[str],
+        upstream_unique_ids: AbstractSet[str],
         metadata: Mapping[str, Any],
         description: Optional[str] = None,
     ) -> Iterator[AssetObservation]:
@@ -254,7 +255,8 @@ class DbtCliEventMessage:
                     },
                 )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
-            upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
+            # dbt 1.5 may have duplicate upstreams, filter with a set
+            upstream_unique_ids: AbstractSet[str] = set(manifest["parent_map"][unique_id])
             test_resource_props = manifest["nodes"][unique_id]
             metadata = {
                 **default_metadata,
