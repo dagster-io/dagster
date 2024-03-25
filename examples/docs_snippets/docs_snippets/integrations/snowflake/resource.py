@@ -3,6 +3,7 @@
 
 # start
 from dagster_snowflake import SnowflakeResource
+
 from dagster import Definitions, EnvVar, asset
 
 # this example executes a query against the IRIS_DATASET table created in Step 2 of the
@@ -11,7 +12,7 @@ from dagster import Definitions, EnvVar, asset
 
 @asset
 def small_petals(snowflake: SnowflakeResource):
-    query = f"""
+    query = """
         create or replace table iris.small_petals as (
             SELECT * 
             FROM iris.iris_dataset

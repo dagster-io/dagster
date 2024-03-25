@@ -1,11 +1,10 @@
 import pandas as pd
-from dagster_snowflake import SnowflakeResource
-from snowflake.connector.pandas_tools import write_pandas
-from dagster import Definitions, EnvVar, MaterializeResult, asset
 
 # start_config
 from dagster_snowflake import SnowflakeResource
-from dagster import EnvVar
+from snowflake.connector.pandas_tools import write_pandas
+
+from dagster import Definitions, EnvVar, MaterializeResult, asset
 
 snowflake = SnowflakeResource(
     account=EnvVar("SNOWFLAKE_ACCOUNT"),  # required
@@ -23,6 +22,7 @@ snowflake = SnowflakeResource(
 import pandas as pd
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
+
 from dagster import MaterializeResult, asset
 
 
@@ -40,7 +40,7 @@ def iris_dataset(snowflake: SnowflakeResource):
         table_name = "iris_dataset"
         database = "flowers"
         schema = "iris"
-        success, number_chunks, rows_inserted, output = write_pandas(  # type: ignore
+        success, number_chunks, rows_inserted, output = write_pandas(
             conn,
             iris_df,
             table_name=table_name,
@@ -60,12 +60,13 @@ def iris_dataset(snowflake: SnowflakeResource):
 
 # start_downstream
 from dagster_snowflake import SnowflakeResource
+
 from dagster import asset
 
 
 @asset(deps=["iris_dataset"])
 def iris_setosa(snowflake: SnowflakeResource) -> None:
-    query = f"""
+    query = """
         create or replace table iris.iris_setosa as (
             SELECT * 
             FROM iris.iris_dataset
