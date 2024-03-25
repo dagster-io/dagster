@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, Mapping, Optional, Sequence
 
 import pendulum
@@ -5,9 +6,6 @@ from pydantic import BaseModel
 
 from dagster import _check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.run_request import RunRequest
 from dagster._serdes.serdes import (
     FieldSerializer,
     JsonSerializableValue,
@@ -24,16 +22,18 @@ from dagster._serdes.serdes import (
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import get_latest_completed_cron_tick
 
+from ..asset_check_spec import AssetCheckKey, AssetCheckSpec
 from ..asset_checks import AssetChecksDefinition
+from ..asset_selection import AssetSelection
 from ..decorators import sensor
+from ..run_request import RunRequest
 from ..sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
-from .non_partitioned import NON_PARTITIONED_FRESHNESS_PARAMS_METADATA_KEY
-from .time_window_partitioned import TIME_WINDOW_PARTITIONED_FRESHNESS_PARAMS_METADATA_KEY
 from .utils import (
-    DEFAULT_FRESHNESS_CRON_TIMEZONE,
-    FRESHNESS_CRON_METADATA_KEY,
-    FRESHNESS_CRON_TIMEZONE_METADATA_KEY,
-    MAXIMUM_LAG_METADATA_KEY,
+    DEADLINE_CRON_METADATA_KEY,
+    DEFAULT_FRESHNESS_TIMEZONE,
+    FRESHNESS_PARAMS_METADATA_KEY,
+    FRESHNESS_TIMEZONE_METADATA_KEY,
+    LOWER_BOUND_DELTA_METADATA_KEY,
     ensure_freshness_checks,
     ensure_no_duplicate_asset_checks,
 )
@@ -164,19 +164,19 @@ def should_run_again(
     if not prev_evaluation_timestamp:
         return True
 
-    timezone = get_freshness_cron_timezone(metadata) or DEFAULT_FRESHNESS_CRON_TIMEZONE
+    timezone = get_freshness_cron_timezone(metadata) or DEFAULT_FRESHNESS_TIMEZONE
     current_time = pendulum.from_timestamp(current_timestamp, tz=timezone)
     prev_evaluation_time = pendulum.from_timestamp(prev_evaluation_timestamp, tz=timezone)
 
-    freshness_cron = get_freshness_cron(metadata)
-    if freshness_cron:
+    deadline_cron = get_freshness_cron(metadata)
+    if deadline_cron:
         latest_completed_cron_tick = check.not_none(
-            get_latest_completed_cron_tick(freshness_cron, current_time, timezone)
+            get_latest_completed_cron_tick(deadline_cron, current_time, timezone)
         )
         return latest_completed_cron_tick > prev_evaluation_time
 
-    maximum_lag_minutes = check.not_none(get_maximum_lag_minutes(metadata))
-    return current_time > prev_evaluation_time.add(minutes=maximum_lag_minutes)
+    lower_bound_delta = check.not_none(get_lower_bound_delta(metadata))
+    return current_time > prev_evaluation_time + lower_bound_delta
 
 
 def get_metadata(check_spec: AssetCheckSpec) -> Mapping[str, Any]:
@@ -185,21 +185,14 @@ def get_metadata(check_spec: AssetCheckSpec) -> Mapping[str, Any]:
     check.assert_never(check_spec.metadata)
 
 
-def get_params_key(metadata: Mapping[str, Any]) -> str:
-    return (
-        TIME_WINDOW_PARTITIONED_FRESHNESS_PARAMS_METADATA_KEY
-        if TIME_WINDOW_PARTITIONED_FRESHNESS_PARAMS_METADATA_KEY in metadata
-        else NON_PARTITIONED_FRESHNESS_PARAMS_METADATA_KEY
-    )
-
-
 def get_freshness_cron(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[get_params_key(metadata)].get(FRESHNESS_CRON_METADATA_KEY)
+    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(DEADLINE_CRON_METADATA_KEY)
 
 
 def get_freshness_cron_timezone(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[get_params_key(metadata)].get(FRESHNESS_CRON_TIMEZONE_METADATA_KEY)
+    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(FRESHNESS_TIMEZONE_METADATA_KEY)
 
 
-def get_maximum_lag_minutes(metadata: Mapping[str, Any]) -> int:
-    return metadata[NON_PARTITIONED_FRESHNESS_PARAMS_METADATA_KEY].get(MAXIMUM_LAG_METADATA_KEY)
+def get_lower_bound_delta(metadata: Mapping[str, Any]) -> Optional[datetime.timedelta]:
+    float_delta: float = metadata[FRESHNESS_PARAMS_METADATA_KEY].get(LOWER_BOUND_DELTA_METADATA_KEY)
+    return datetime.timedelta(seconds=float_delta) if float_delta else None
