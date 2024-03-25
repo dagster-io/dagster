@@ -175,7 +175,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetKey,
         )
 
-        self._check_specs_by_output_name = check.opt_mapping_param(
+        check.opt_mapping_param(
             check_specs_by_output_name,
             "check_specs_by_output_name",
             key_type=str,
@@ -255,6 +255,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 # otherwise, use the selected checks
                 self._selected_asset_check_keys = selected_asset_check_keys
 
+        self._check_specs_by_output_name = {
+            name: spec for name, spec in (check_specs_by_output_name or {}).items()
+        }
         self._check_specs_by_key = {
             spec.key: spec
             for spec in self._check_specs_by_output_name.values()
@@ -1302,7 +1305,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             is_subset=self.is_subset,
             check_specs_by_output_name=check_specs_by_output_name
             if check_specs_by_output_name
-            else self._check_specs_by_output_name,
+            else self.check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys
             if selected_asset_check_keys
             else self._selected_asset_check_keys,
