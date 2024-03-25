@@ -21,7 +21,7 @@ from .partitions import docs_partitions_def
 from .utils import get_github_docs
 
 
-@asset(partitions_def=docs_partitions_def)
+@asset(compute_kind="GitHub", partitions_def=docs_partitions_def)
 def source_docs(context: AssetExecutionContext):
     return list(get_github_docs("dagster-io", "dagster", context.partition_key))
 

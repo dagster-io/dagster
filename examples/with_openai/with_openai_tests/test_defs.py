@@ -8,4 +8,3 @@ def test_defs():
     assert defs.get_assets_def("source_docs")
     assert defs.get_assets_def("search_index")
     assert defs.get_assets_def("completion")
-
