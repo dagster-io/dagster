@@ -1,4 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
+import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
@@ -20,8 +22,10 @@ import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsCatalogRoot = ({
   writeAssetVisit,
+  headerBreadcrumbs,
 }: {
   writeAssetVisit?: (assetKey: AssetKey) => void;
+  headerBreadcrumbs: BreadcrumbProps[];
 }) => {
   useTrackPageView();
 
@@ -66,7 +70,7 @@ export const AssetsCatalogRoot = ({
   if (queryResult.loading) {
     return (
       <Page>
-        <AssetPageHeader assetKey={{path: currentPath}} />
+        <AssetPageHeader assetKey={{path: currentPath}} headerBreadcrumbs={headerBreadcrumbs} />
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
@@ -85,6 +89,7 @@ export const AssetsCatalogRoot = ({
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <AssetPageHeader
           assetKey={{path: currentPath}}
+          headerBreadcrumbs={headerBreadcrumbs}
           right={
             <Box flex={{gap: 12, alignItems: 'center'}}>
               <AssetGlobalLineageLink />
@@ -101,7 +106,9 @@ export const AssetsCatalogRoot = ({
     );
   }
 
-  return <AssetView assetKey={{path: currentPath}} trace={trace} />;
+  return (
+    <AssetView assetKey={{path: currentPath}} trace={trace} headerBreadcrumbs={headerBreadcrumbs} />
+  );
 };
 
 // Imported via React.lazy, which requires a default export.

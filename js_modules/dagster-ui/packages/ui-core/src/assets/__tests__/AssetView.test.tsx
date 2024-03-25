@@ -74,7 +74,7 @@ describe('AssetView', () => {
       >
         <AssetLiveDataProvider>
           <MemoryRouter initialEntries={[path]}>
-            <AssetView assetKey={assetKey} />
+            <AssetView assetKey={assetKey} headerBreadcrumbs={[]} />
           </MemoryRouter>
         </AssetLiveDataProvider>
       </MockedProvider>
