@@ -3,12 +3,13 @@ import {Suspense, lazy, memo, useEffect, useRef} from 'react';
 import {Route, Switch, useLocation} from 'react-router-dom';
 
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
+import {AssetsOverview} from '../assets/AssetsOverview';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
 const AutomationRoot = lazy(() => import('../automation/AutomationRoot'));
 const FallthroughRoot = lazy(() => import('./FallthroughRoot'));
-const AssetsCatalogRoot = lazy(() => import('../assets/AssetsCatalogRoot'));
+// const AssetsCatalogRoot = lazy(() => import('../assets/AssetsCatalogRoot'));
 const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
@@ -42,7 +43,7 @@ export const ContentRoot = memo(() => {
           <Route path="/assets(/?.*)">
             <Suspense fallback={<div />}>
               <AssetFeatureProvider>
-                <AssetsCatalogRoot headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]} />
+                <AssetsOverview headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]} />
               </AssetFeatureProvider>
             </Suspense>
           </Route>
