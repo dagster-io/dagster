@@ -59,7 +59,7 @@ def _assert_scaffold_defs(project_name: str, dagster_project_dir: Path) -> None:
     schedules_py_path = dagster_project_dir.joinpath(project_name, "schedules.py")
     schedules_py_path.write_text(schedules_py_path.read_text().replace("# ", ""))
 
-    scaffold_defs_module = importlib.import_module(f"{project_name}.{project_name}.definitions")
+    scaffold_defs_module = importlib.import_module(f"{project_name}.{project_name}")
     defs: Definitions = getattr(scaffold_defs_module, "defs")
 
     materialize_dbt_models_job = defs.get_job_def("materialize_dbt_models")
