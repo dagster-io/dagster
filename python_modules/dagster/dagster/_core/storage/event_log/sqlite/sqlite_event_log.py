@@ -263,7 +263,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags(event, event_id)
+            self.store_asset_event_tags([event], [event_id])
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, None)

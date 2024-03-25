@@ -183,36 +183,46 @@ class SqlEventLogStorage(EventLogStorage):
     def has_table(self, table_name: str) -> bool:
         """This method checks if a table exists in the database."""
 
-    def prepare_insert_event(self, event):
+    def prepare_insert_event(self, event: EventLogEntry) -> Any:
         """Helper method for preparing the event log SQL insertion statement.  Abstracted away to
         have a single place for the logical table representation of the event, while having a way
         for SQL backends to implement different execution implementations for `store_event`. See
         the `dagster-postgres` implementation which overrides the generic SQL implementation of
         `store_event`.
         """
+        # https://stackoverflow.com/a/54386260/324449
+        return SqlEventLogStorageTable.insert().values(**self._event_to_row(event))
+
+    def prepare_insert_event_batch(self, events: Sequence[EventLogEntry]) -> Any:
+        # https://stackoverflow.com/a/54386260/324449
+        return SqlEventLogStorageTable.insert().values(
+            [self._event_to_row(event) for event in events]
+        )
+
+    def _event_to_row(self, event: EventLogEntry) -> Dict[str, Any]:
         dagster_event_type = None
         asset_key_str = None
         partition = None
         step_key = event.step_key
         if event.is_dagster_event:
-            dagster_event_type = event.dagster_event.event_type_value
-            step_key = event.dagster_event.step_key
-            if event.dagster_event.asset_key:
-                check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
-                asset_key_str = event.dagster_event.asset_key.to_string()
-            if event.dagster_event.partition:
-                partition = event.dagster_event.partition
+            dagster_event = event.get_dagster_event()
+            dagster_event_type = dagster_event.event_type_value
+            step_key = dagster_event.step_key
+            if dagster_event.asset_key:
+                check.inst_param(dagster_event.asset_key, "asset_key", AssetKey)
+                asset_key_str = dagster_event.asset_key.to_string()
+            if dagster_event.partition:
+                partition = dagster_event.partition
 
-        # https://stackoverflow.com/a/54386260/324449
-        return SqlEventLogStorageTable.insert().values(
-            run_id=event.run_id,
-            event=serialize_value(event),
-            dagster_event_type=dagster_event_type,
-            timestamp=self._event_insert_timestamp(event),
-            step_key=step_key,
-            asset_key=asset_key_str,
-            partition=partition,
-        )
+        return {
+            "run_id": event.run_id,
+            "event": serialize_value(event),
+            "dagster_event_type": dagster_event_type,
+            "timestamp": self._event_insert_timestamp(event),
+            "step_key": step_key,
+            "asset_key": asset_key_str,
+            "partition": partition,
+        }
 
     def has_asset_key_col(self, column_name: str) -> bool:
         with self.index_connection() as conn:
@@ -389,41 +399,40 @@ class SqlEventLogStorage(EventLogStorage):
                     ],
                 )
 
-    def store_asset_event_tags(self, event: EventLogEntry, event_id: int) -> None:
-        check.inst_param(event, "event", EventLogEntry)
-        check.int_param(event_id, "event_id")
+    def store_asset_event_tags(
+        self, events: Sequence[EventLogEntry], event_ids: Sequence[int]
+    ) -> None:
+        check.sequence_param(events, "events", EventLogEntry)
+        check.sequence_param(event_ids, "event_ids", int)
 
+        all_values = [
+            dict(
+                event_id=event_id,
+                asset_key=check.not_none(event.get_dagster_event().asset_key).to_string(),
+                key=key,
+                value=value,
+                event_timestamp=self._event_insert_timestamp(event),
+            )
+            for event_id, event in zip(event_ids, events)
+            for key, value in self._tags_for_asset_event(event).items()
+        ]
+
+        # Only execute if tags table exists. This is to support OSS users who have not yet run the
+        # migration to create the table. On read, we will throw an error if the table does not
+        # exist.
+        if len(all_values) > 0 and self.has_table(AssetEventTagsTable.name):
+            with self.index_connection() as conn:
+                conn.execute(AssetEventTagsTable.insert(), all_values)
+
+    def _tags_for_asset_event(self, event: EventLogEntry) -> Mapping[str, str]:
         if event.dagster_event and event.dagster_event.asset_key:
             if event.dagster_event.is_step_materialization:
-                tags = event.dagster_event.step_materialization_data.materialization.tags
-            elif event.dagster_event.is_asset_observation:
-                tags = event.dagster_event.asset_observation_data.asset_observation.tags
-            else:
-                tags = None
-
-            if not tags or not self.has_table(AssetEventTagsTable.name):
-                # If tags table does not exist, silently exit. This is to support OSS
-                # users who have not yet run the migration to create the table.
-                # On read, we will throw an error if the table does not exist.
-                return
-
-            check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
-            asset_key_str = event.dagster_event.asset_key.to_string()
-
-            with self.index_connection() as conn:
-                conn.execute(
-                    AssetEventTagsTable.insert(),
-                    [
-                        dict(
-                            event_id=event_id,
-                            asset_key=asset_key_str,
-                            key=key,
-                            value=value,
-                            event_timestamp=self._event_insert_timestamp(event),
-                        )
-                        for key, value in tags.items()
-                    ],
+                return (
+                    event.get_dagster_event().step_materialization_data.materialization.tags or {}
                 )
+            elif event.dagster_event.is_asset_observation:
+                return event.get_dagster_event().asset_observation_data.asset_observation.tags
+        return {}
 
     def store_event(self, event: EventLogEntry) -> None:
         """Store an event corresponding to a pipeline run.
@@ -453,7 +462,7 @@ class SqlEventLogStorage(EventLogStorage):
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags(event, event_id)
+            self.store_asset_event_tags([event], [event_id])
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)

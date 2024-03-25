@@ -7,7 +7,9 @@ from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.metadata import TimestampMetadataValue
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext,
+)
 from dagster._utils.schedules import get_latest_completed_cron_tick, is_valid_cron_string
 
 from ..asset_check_result import AssetCheckResult
@@ -102,7 +104,7 @@ def _build_freshness_checks_for_asset(
                 }
             },
         )
-        def the_check(context: AssetExecutionContext) -> AssetCheckResult:
+        def the_check(context: AssetCheckExecutionContext) -> AssetCheckResult:
             current_time = pendulum.now()
             current_timestamp = check.float_param(current_time.timestamp(), "current_time")
             partitions_def: TimeWindowPartitionsDefinition = cast(

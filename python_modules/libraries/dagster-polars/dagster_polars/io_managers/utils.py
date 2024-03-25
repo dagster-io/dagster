@@ -149,6 +149,8 @@ def get_polars_metadata(
 
     metadata = {}
 
+    metadata["dagster/column_schema"] = schema_metadata
+
     if isinstance(df, pl.DataFrame):
         table_metadata = get_table_metadata(
             context=context,
@@ -167,11 +169,9 @@ def get_polars_metadata(
             fraction=None,
         )
 
-        metadata["columns"] = table_metadata
+        metadata["table"] = table_metadata
         metadata["stats"] = stats_metadata
         metadata["row_count"] = MetadataValue.int(df.shape[0])
         metadata["estimated_size_mb"] = MetadataValue.float(df.estimated_size(unit="mb"))
-    else:
-        metadata["columns"] = schema_metadata
 
     return metadata
