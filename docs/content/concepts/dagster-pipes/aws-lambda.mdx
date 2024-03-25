@@ -8,7 +8,7 @@ description: "Learn to integrate Dagster Pipes with AWS Lambda to launch externa
 <Note>
   <strong>Heads up!</strong> This guide focuses on using an out-of-the-box
   Amazon Web Services (AWS) Lambda resource. For further customization, use the{" "}
-  <a href="/guides/dagster-pipes/dagster-pipes-details-and-customization">
+  <a href="/concepts/dagster-pipes/dagster-pipes-details-and-customization">
     <code>open_pipes_session</code> approach
   </a>{" "}
   instead.
@@ -64,10 +64,10 @@ For simplicity we're demonstrating this step using the UI, but you can also do t
 After the function is created, you'll be redirected to a page like the following:
 
 <Image
-alt="The Lambda function details page in the AWS UI"
-src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-function-details.png"
-width={1920}
-height={1153}
+  alt="The Lambda function details page in the AWS UI"
+  src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-function-details.png"
+  width={1920}
+  height={1153}
 />
 
 ### Step 1.2: Add a dagster-pipes file
@@ -86,10 +86,10 @@ Next, you'll add `dagster-pipes` to the function.
 1. In the **Code source** section of the page, add a new file. This can be accomplished with **File > New file** or by clicking the green **+** icon next to the open `lambda_function` tab:
 
    <Image
-   alt="Highlighted New file option in a menu of the Code source section on the Lambda function details page"
-   src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-create-new-file.png"
-   width={2386}
-   height={1196}
+     alt="Highlighted New file option in a menu of the Code source section on the Lambda function details page"
+     src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-create-new-file.png"
+     width={2386}
+     height={1196}
    />
 
 2. **In a new browser tab**, navigate to the following URL:
@@ -101,10 +101,10 @@ Next, you'll add `dagster-pipes` to the function.
 3. Copy the contents of `__init__.py` into the new file you created in AWS. **Note**: We recommend adding the source link and the date you copied the contents to the top of the file as comments:
 
    <Image
-   alt="The copied contents of the Dagster Pipes file into a file in the AWS UI"
-   src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-add-dagster-pipes.png"
-   width={2390}
-   height={1090}
+     alt="The copied contents of the Dagster Pipes file into a file in the AWS UI"
+     src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-add-dagster-pipes.png"
+     width={2390}
+     height={1090}
    />
 
 4. Save the file as `dagster_pipes.py`.
@@ -244,10 +244,10 @@ In this step, you’ll invoke the AWS Lambda function you defined in [Step 1](#s
    <!-- ![Event log for AWS Lambda run](/images/guides/dagster-pipes/aws-lambda/aws-lambda-dagster-ui.png) -->
 
    <Image
-   alt="Event log for AWS Lambda run"
-   src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-dagster-ui.png"
-   width={1501}
-   height={1416}
+     alt="Event log for AWS Lambda run"
+     src="/images/guides/dagster-pipes/aws-lambda/aws-lambda-dagster-ui.png"
+     width={1501}
+     height={1416}
    />
 
 ---
@@ -257,11 +257,11 @@ In this step, you’ll invoke the AWS Lambda function you defined in [Step 1](#s
 <ArticleList>
   <ArticleListItem
     title="Dagster Pipes"
-    href="/guides/dagster-pipes"
+    href="/concepts/dagster-pipes"
   ></ArticleListItem>
   <ArticleListItem
     title="Dagster Pipes details and customization"
-    href="/guides/dagster-pipes/dagster-pipes-details-and-customization"
+    href="/concepts/dagster-pipes/dagster-pipes-details-and-customization"
   ></ArticleListItem>
   <ArticleListItem
     title="dagster-aws API reference"
