@@ -1,7 +1,13 @@
 import os
 import pickle
 
-from dagster import AssetExecutionContext, Config, StaticPartitionsDefinition, asset
+from dagster import (
+    AssetExecutionContext,
+    Config,
+    StaticPartitionsDefinition,
+    asset,
+    define_asset_job,
+)
 from dagster_openai import OpenAIResource
 from filelock import FileLock
 from langchain.chains.qa_with_sources import stuff_prompt
@@ -72,3 +78,16 @@ def completion(context: AssetExecutionContext, openai: OpenAIResource, config: O
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
         context.log.info(chain.invoke({"summaries": summaries, "question": config.question}))
+
+
+search_index_job = define_asset_job(
+    "search_index_job",
+    selection="*search_index",
+    partitions_def=docs_partitions_def,
+)
+
+
+question_job = define_asset_job(
+    name="question_job",
+    selection="completion",
+)

@@ -6,26 +6,13 @@ from dagster import (
     EnvVar,
     RunRequest,
     SensorResult,
-    define_asset_job,
     load_assets_from_modules,
     sensor,
 )
 from dagster_openai import OpenAIResource
 
 from . import assets
-from .assets import docs_partitions_def
-
-search_index_job = define_asset_job(
-    "search_index_job",
-    selection="*search_index",
-    partitions_def=docs_partitions_def,
-)
-
-
-question_job = define_asset_job(
-    name="question_job",
-    selection="completion",
-)
+from .assets import question_job, search_index_job
 
 
 @sensor(job=question_job)
