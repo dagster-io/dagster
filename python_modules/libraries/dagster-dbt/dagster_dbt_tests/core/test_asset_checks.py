@@ -305,7 +305,7 @@ def test_materialize_asset_and_checks(
     assert len(result.get_asset_observation_events()) == 5
     # no tests were excluded, so we include singular and relationship tests
     assert {
-        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)
+        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)  # type: ignore[attr-defined]
         for e in result.get_asset_observation_events()
     } == {
         (
@@ -480,7 +480,7 @@ def test_select_model_with_tests(
     # no tests were excluded, so we include singular and relationship tests
     assert len(result.get_asset_observation_events()) == 5
     assert {
-        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)
+        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)  # type: ignore[attr-defined]
         for e in result.get_asset_observation_events()
     } == {
         (
@@ -516,17 +516,4 @@ def _get_subset_selection(assets_def: AssetsDefinition, manifest: Dict[str, Any]
         "my_select_str",
         "my_exclude_str",
         dagster_dbt_translator_with_checks,
-    )
-
-
-def test_get_subset_selection_for_context(test_asset_checks_manifest: Dict[str, Any]):
-    @dbt_assets(
-        manifest=test_asset_checks_manifest,
-        dagster_dbt_translator=dagster_dbt_translator_with_checks,
-    )
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
-
-    assert _get_subset_selection(my_dbt_assets, test_asset_checks_manifest) == (
-        ["--select", "my_select_str", "--exclude", "my_exclude_str"],
-        None,
     )

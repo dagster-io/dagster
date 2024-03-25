@@ -307,10 +307,11 @@ class DbtCliEventMessage:
                 # asset checks were disabled.
                 else:
                     message = (
-                        f"dbt test `{check_name}` logged as an AssetObservation instead "
-                        "of an AssetCheckResult because the asset check was not selected."
+                        "Logging an `AssetObservation` instead of an `AssetCheckResult` "
+                        f"for dbt test {check_name}. This test included in Dagster's asset check "
+                        "selection, so likely ran due to dbt indirect selection."
                     )
-                    logger.info(message)
+                    logger.warn(message)
                     yield from self._yield_observation_events_for_test(
                         dagster_dbt_translator=dagster_dbt_translator,
                         validated_manifest=manifest,
@@ -1152,7 +1153,14 @@ class DbtCliResource(ConfigurableResource):
                 dagster_dbt_translator=dagster_dbt_translator,
             )
 
+            # set dbt indirect selection if needed to execute specific dbt tests due to asset check
+            # selection
             if indirect_selection:
+                logger.info(
+                    "A subsetted execution for asset checks is being performed. Overriding default "
+                    f"`DBT_INDIRECT_SELECTION` {env.get('DBT_INDIRECT_SELECTION', 'eager')} with "
+                    f"`{indirect_selection}`."
+                )
                 env["DBT_INDIRECT_SELECTION"] = indirect_selection
         else:
             manifest = validate_manifest(manifest) if manifest else {}
@@ -1301,8 +1309,7 @@ def get_subset_selection_for_context(
         indirect_selection = DBT_EMPTY_INDIRECT_SELECTION
         logger.info(
             "A dbt subsetted execution is being performed. Overriding default dbt selection"
-            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`. "
-            "Because asset checks are subsetted, setting DBT_INDIRECT_SELECTION=empty"
+            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
         )
 
     # Take the union of all the selected resources.
