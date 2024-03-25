@@ -5,7 +5,7 @@ description: "Learn to integrate Dagster Pipes with Databricks to launch externa
 
 # Integrating Databricks with Dagster Pipes
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Databricks integration to launch Databricks jobs.
+In this guide, we’ll show you how to use [Dagster Pipes](/concepts/dagster-pipes) with Dagster’s Databricks integration to launch Databricks jobs.
 
 Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr` of the driver process) and events back to Dagster. This does not require a full Dagster environment on Databricks; instead:
 
@@ -132,7 +132,7 @@ Let's review what's happening in this code:
 
 ### Step 1.2: Define the Databricks Pipes client and definitions
 
-The [`dagster-databricks`](/\_apidocs/libraries/dagster-databricks) library provides a <PyObject module="dagster_databricks" object="PipesDatabricksClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with your Databricks workspace.
+The [`dagster-databricks`](/_apidocs/libraries/dagster-databricks) library provides a <PyObject module="dagster_databricks" object="PipesDatabricksClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with your Databricks workspace.
 
 Add the following to the bottom of `dagster_databricks_pipes.py` to define the resource and a <PyObject object="Definitions" /> object that binds it to the `databricks_asset`:
 
@@ -210,13 +210,13 @@ with open_dagster_pipes(
 
 Before we go any futher, let's review what this script does:
 
-- **Imports `PipesDbfsContextLoader`, `PipesDbfsMessageWriter`, and `open_dagster_pipes` from `dagster_pipes`.** The <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" /> are DBFS-specific implementations of the <PyObject object="PipesContextLoader" /> and <PyObject object="PipesMessageWriter" />. Refer to the [Dagster Pipes details and customization Guide](/guides/dagster-pipes/dagster-pipes-details-and-customization) for protocol details.
+- **Imports `PipesDbfsContextLoader`, `PipesDbfsMessageWriter`, and `open_dagster_pipes` from `dagster_pipes`.** The <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" /> are DBFS-specific implementations of the <PyObject object="PipesContextLoader" /> and <PyObject object="PipesMessageWriter" />. Refer to the [Dagster Pipes details and customization Guide](/concepts/dagster-pipes/dagster-pipes-details-and-customization) for protocol details.
 
   Both objects write temporary files on DBFS for communication between the orchestration and external process. The <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" /> match a corresponding `PipesDbfsContextInjector` and `PipesDbfsMessageReader` on the orchestration end, which are instantiated inside the <PyObject object="PipesDatabricksClient" module="dagster_databricks" />.
 
 - **Passes the context loader and message writer to the <PyObject object="open_dagster_pipes" module="dagster_pipes" /> context manager**, which yields an instance of <PyObject object="PipesContext" module="dagster_pipes" /> called `pipes`.
 
-  Inside the body of the context manager are various calls against `pipes` to retrieve an extra, log, and report an asset materialization. All of these calls will use the DBFS temporary file-based communications channels established by <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes guide](/guides/dagster-pipes).
+  Inside the body of the context manager are various calls against `pipes` to retrieve an extra, log, and report an asset materialization. All of these calls will use the DBFS temporary file-based communications channels established by <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes guide](/concepts/dagster-pipes).
 
 At this point you can execute the rest of your Databricks code as normal, invoking various <PyObject object="PipesContext" module="dagster_pipes" /> APIs as needed.
 
@@ -263,19 +263,19 @@ In this step, you’ll run the Databricks job you created in [Step 1.2](#step-12
 2. Navigate to [localhost:3000](http://localhost:3000/), where you should see the UI:
 
    <Image
-   alt="Databricks asset"
-   src="/images/guides/dagster-pipes/databricks/asset.png"
-   width={2554}
-   height={1335}
+     alt="Databricks asset"
+     src="/images/guides/dagster-pipes/databricks/asset.png"
+     width={2554}
+     height={1335}
    />
 
 3. Click **Materialize** near the top right corner of the page, then click **View** on the **Launched Run** popup. Wait for the run to complete, and the event log should look like this:
 
    <Image
-   alt="Event log for Databricks run"
-   src="/images/guides/dagster-pipes/databricks/run.png"
-   width={2554}
-   height={1335}
+     alt="Event log for Databricks run"
+     src="/images/guides/dagster-pipes/databricks/run.png"
+     width={2554}
+     height={1335}
    />
 
 ---

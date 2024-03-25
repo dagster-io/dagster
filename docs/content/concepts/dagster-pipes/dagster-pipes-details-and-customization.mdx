@@ -5,7 +5,7 @@ description: "Learn about Dagster Pipes APIs and how to compose them to create a
 
 # Dagster Pipes details and customization
 
-[Dagster Pipes](/guides/dagster-pipes) is a toolkit for integrating Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by Pipes client objects (e.g. <PyObject object="PipesSubprocessClient" />, <PyObject object="PipesDatabricksClient" module="dagster_databricks"/>), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster.
+[Dagster Pipes](/concepts/dagster-pipes) is a toolkit for integrating Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by Pipes client objects (e.g. <PyObject object="PipesSubprocessClient" />, <PyObject object="PipesDatabricksClient" module="dagster_databricks"/>), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster.
 
 This guide will cover the lower level Pipes APIs and how you can compose them to provide a custom solution for your data platform.
 
@@ -16,10 +16,10 @@ This guide will cover the lower level Pipes APIs and how you can compose them to
 <!-- ![Detailed overview of a Dagster Pipes session](/images/guides/dagster-pipes/pipes-overview.png) -->
 
 <Image
-alt="Detailed overview of a Dagster Pipes session"
-src="/images/guides/dagster-pipes/pipes-overview.png"
-width={1300}
-height={510}
+  alt="Detailed overview of a Dagster Pipes session"
+  src="/images/guides/dagster-pipes/pipes-overview.png"
+  width={1300}
+  height={510}
 />
 
 <table
@@ -177,7 +177,7 @@ A **Pipes session** is the time spanning:
 
 There are separate APIs for interacting with a Pipes session in the orchestration and external processes. The orchestration process API is defined in `dagster`. The external process API is defined by a Pipes integration library that is loaded by user code in the external process. This library knows how to interpret the bootstrap payload and spin up a context loader and message writer.
 
-At present the only official Dagster Pipes integration library is Python’s [`dagster-pipes`](/\_apidocs/libraries/dagster-pipes), available on [PyPI](https://pypi.org/project/dagster-pipes/). The library has no dependencies and fits in a [single file](https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/\__init\_\_.py), so it may also be trivially vendored.
+At present the only official Dagster Pipes integration library is Python’s [`dagster-pipes`](/_apidocs/libraries/dagster-pipes), available on [PyPI](https://pypi.org/project/dagster-pipes/). The library has no dependencies and fits in a [single file](https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py), so it may also be trivially vendored.
 
 ### Session lifecycle (orchestration process)
 
@@ -251,7 +251,7 @@ For <PyObject object="open_pipes_session" />, these three parts perform the foll
 
 ### Session lifecycle (external process)
 
-As noted above, currently the only existing Pipes integration library is Python’s [`dagster-pipes`](/\_apidocs/libraries/dagster-pipes). The below example therefore uses Python and `dagster-pipes`. In the future we will be releasing `dagster-pipes` equivalents for selected other languages. and the concepts illustrated here should map straightforwardly to these other integration libraries.
+As noted above, currently the only existing Pipes integration library is Python’s [`dagster-pipes`](/_apidocs/libraries/dagster-pipes). The below example therefore uses Python and `dagster-pipes`. In the future we will be releasing `dagster-pipes` equivalents for selected other languages. and the concepts illustrated here should map straightforwardly to these other integration libraries.
 
 A Pipes session is represented in the external process by a <PyObject object="PipesContext" module="dagster_pipes" /> object. A session created by the launching orchestration process can be connected to with <PyObject object="open_dagster_pipes" module="dagster_pipes" /> from `dagster-pipes`:
 
