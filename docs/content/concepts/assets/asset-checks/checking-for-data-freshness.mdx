@@ -125,7 +125,9 @@ TODO: ADD NOTE ABOUT MATERIALIZATIONS AND ACCURACY
 
 Setting custom freshness policies on a large number of source assets can be time-consuming. Dagster Cloud Pro users can take advantage of a time series anomaly detection model instead of applying policies on an asset-by-asset basis. Freshness checks that use this approach function the same way checks with hardcoded parameters do.
 
-This model uses its training on past data to determine if data is arriving later than expected. In the following example, we used `build_anomaly_detection_freshness_checks` to accomplish this:
+This model uses data from past materializations/observations to determine if data is arriving later than expected. **Note**: If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.
+
+In the following example, we used `build_anomaly_detection_freshness_checks` to accomplish this:
 
 ```python
 from dagster_cloud import build_anomaly_detection_freshness_checks
