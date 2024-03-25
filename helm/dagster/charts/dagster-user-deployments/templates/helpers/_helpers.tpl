@@ -130,7 +130,7 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if .schedulerName }}
     scheduler_name: {{ .schedulerName }}
     {{- end }}
-    namespace: {{ .values.jobNamespace | default $.Release.Namespace }}
+    namespace: {{ .Values.jobNamespace | default $.Release.Namespace }}
     service_account_name: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
     {{- if and (.env) (kindIs "slice" .env) }}
     env: {{- .env | toYaml | nindent 6 }}
