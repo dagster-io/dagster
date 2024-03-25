@@ -31,7 +31,7 @@ export default class MyDocument extends Document {
               />
             </>
           )}
-          <co-pilot copilot_id="dagster">
+          <co-pilot copilot_id="dagster" style={{fontFeatureSettings: 'normal'}}>
             <div
               slot="fab"
               className="bg-lavender text-gray-700 px-24 py-2 rounded-full flex flex-row items-center"
