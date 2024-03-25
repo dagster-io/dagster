@@ -3,7 +3,7 @@ import React, {useContext} from 'react';
 // import using type so that the actual file doesn't get bundled into Cloud if it's not imported directly by cloud.
 import type {AppTopNavRightOfLogo} from './AppTopNav/AppTopNavRightOfLogo.oss';
 import type {UserPreferences} from './UserSettingsDialog/UserPreferences.oss';
-import AssetsCatalogRoot from '../assets/AssetsCatalogRoot';
+import AssetsOverviewRoot from '../assets/AssetsOverviewRoot';
 
 type ComponentType = keyof React.JSX.IntrinsicElements | React.JSXElementConstructor<any>;
 type AComponentFromComponent<TComponent extends ComponentType> = AComponentWithProps<
@@ -18,7 +18,7 @@ type InjectedComponentContextType = {
   AppTopNavRightOfLogo: AComponentFromComponent<typeof AppTopNavRightOfLogo> | null;
   OverviewPageAlerts?: AComponentWithProps | null;
   UserPreferences?: AComponentFromComponent<typeof UserPreferences> | null;
-  AssetsOverview: AComponentFromComponent<typeof AssetsCatalogRoot> | null;
+  AssetsOverview: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
 };
 export const InjectedComponentContext = React.createContext<InjectedComponentContextType>({
   AppTopNavRightOfLogo: null,

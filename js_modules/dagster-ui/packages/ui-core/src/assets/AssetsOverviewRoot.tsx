@@ -11,16 +11,16 @@ import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
 import {
-  AssetsCatalogRootQuery,
-  AssetsCatalogRootQueryVariables,
-} from './types/AssetsCatalogRoot.types';
+  AssetsOverviewRootQuery,
+  AssetsOverviewRootQueryVariables,
+} from './types/AssetsOverviewRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {usePageLoadTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
-export const AssetsCatalogRoot = ({
+export const AssetsOverviewRoot = ({
   writeAssetVisit,
   headerBreadcrumbs,
 }: {
@@ -36,8 +36,8 @@ export const AssetsCatalogRoot = ({
     .filter((x: string) => x)
     .map(decodeURIComponent);
 
-  const queryResult = useQuery<AssetsCatalogRootQuery, AssetsCatalogRootQueryVariables>(
-    ASSETS_CATALOG_ROOT_QUERY,
+  const queryResult = useQuery<AssetsOverviewRootQuery, AssetsOverviewRootQueryVariables>(
+    ASSETS_OVERVIEW_ROOT_QUERY,
     {
       skip: currentPath.length === 0,
       variables: {assetKey: {path: currentPath}},
@@ -51,7 +51,7 @@ export const AssetsCatalogRoot = ({
   );
 
   const trace = usePageLoadTrace(
-    currentPath && currentPath.length === 0 ? 'AssetsCatalogRoot' : 'AssetCatalogAssetView',
+    currentPath && currentPath.length === 0 ? 'AssetsOverviewRoot' : 'AssetCatalogAssetView',
   );
 
   React.useEffect(() => {
@@ -113,10 +113,10 @@ export const AssetsCatalogRoot = ({
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
-export default AssetsCatalogRoot;
+export default AssetsOverviewRoot;
 
-export const ASSETS_CATALOG_ROOT_QUERY = gql`
-  query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
+export const ASSETS_OVERVIEW_ROOT_QUERY = gql`
+  query AssetsOverviewRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
