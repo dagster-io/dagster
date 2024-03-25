@@ -3,10 +3,10 @@
 import * as Types from '../../graphql/types';
 
 export type JobBackfillsQueryVariables = Types.Exact<{
-  partitionSetName: Types.Scalars['String'];
+  partitionSetName: Types.Scalars['String']['input'];
   repositorySelector: Types.RepositorySelector;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type JobBackfillsQuery = {

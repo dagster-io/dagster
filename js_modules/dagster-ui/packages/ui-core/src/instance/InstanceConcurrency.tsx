@@ -48,11 +48,17 @@ import {
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
 import {showSharedToaster} from '../app/DomUtils';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  QueryRefreshState,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses} from '../runs/RunStatuses';
 import {titleForRun} from '../runs/RunUtils';
@@ -61,10 +67,12 @@ import {TimeElapsed} from '../runs/TimeElapsed';
 const DEFAULT_MIN_VALUE = 1;
 const DEFAULT_MAX_VALUE = 1000;
 
-const InstanceConcurrencyPage = React.memo(() => {
+export const InstanceConcurrencyPageContent = React.memo(() => {
   useTrackPageView();
   useDocumentTitle('Concurrency');
-  const {pageTitle} = React.useContext(InstancePageContext);
+  const [selectedKey, setSelectedKey] = useQueryPersistedState<string | undefined>({
+    queryKey: 'key',
+  });
   const queryResult = useQuery<
     InstanceConcurrencyLimitsQuery,
     InstanceConcurrencyLimitsQueryVariables
@@ -76,15 +84,12 @@ const InstanceConcurrencyPage = React.memo(() => {
   const {data} = queryResult;
 
   return (
-    <Page>
-      <PageHeader
-        title={<Heading>{pageTitle}</Heading>}
-        tabs={<InstanceTabs tab="concurrency" refreshState={refreshState} />}
-      />
+    <>
       {data ? (
         <>
           <Box margin={{bottom: 64}}>
             <RunConcurrencyContent
+              refreshState={refreshState}
               hasRunQueue={!!data?.instance.runQueuingSupported}
               runQueueConfig={data?.instance.runQueueConfig}
             />
@@ -96,6 +101,8 @@ const InstanceConcurrencyPage = React.memo(() => {
             refetch={queryResult.refetch}
             minValue={data.instance.minConcurrencyLimitValue}
             maxValue={data.instance.maxConcurrencyLimitValue}
+            selectedKey={selectedKey}
+            onSelectKey={setSelectedKey}
           />
         </>
       ) : (
@@ -103,9 +110,22 @@ const InstanceConcurrencyPage = React.memo(() => {
           <Spinner purpose="section" />
         </Box>
       )}
-    </Page>
+    </>
   );
 });
+
+export const InstanceConcurrencyPage = () => {
+  const {pageTitle} = React.useContext(InstancePageContext);
+  return (
+    <Page>
+      <PageHeader
+        title={<Heading>{pageTitle}</Heading>}
+        tabs={<InstanceTabs tab="concurrency" />}
+      />
+      <InstanceConcurrencyPageContent />
+    </Page>
+  );
+};
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
@@ -130,16 +150,23 @@ export const RunConcurrencyContent = ({
   hasRunQueue,
   runQueueConfig,
   onEdit,
+  refreshState,
 }: {
   hasRunQueue: boolean;
   runQueueConfig: RunQueueConfigFragment | null | undefined;
+  refreshState?: QueryRefreshState;
   onEdit?: () => void;
 }) => {
   if (!hasRunQueue) {
     return (
       <>
-        <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border="bottom"
+          flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+        >
           <Subheading>Run concurrency</Subheading>
+          {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
         </Box>
         <div>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
@@ -158,7 +185,7 @@ export const RunConcurrencyContent = ({
     );
   }
 
-  const info_content = (
+  const infoContent = (
     <Box padding={{vertical: 16, horizontal: 24}}>
       Run concurrency can be set in your run queue settings. See the{' '}
       <a
@@ -177,9 +204,7 @@ export const RunConcurrencyContent = ({
       <tbody>
         <tr>
           <td>Max concurrent runs:</td>
-          <td>
-            <Mono>{runQueueConfig.maxConcurrentRuns}</Mono>
-          </td>
+          <td>{runQueueConfig.maxConcurrentRuns}</td>
         </tr>
         <tr>
           <td>Tag concurrency limits:</td>
@@ -200,27 +225,34 @@ export const RunConcurrencyContent = ({
 
   return (
     <>
-      <RunConcurrencyLimitHeader onEdit={onEdit} />
-      {info_content}
+      <RunConcurrencyLimitHeader onEdit={onEdit} refreshState={refreshState} />
+      {infoContent}
       {settings_content}
     </>
   );
 };
 
-const RunConcurrencyLimitHeader = ({onEdit}: {onEdit?: () => void}) => (
+const RunConcurrencyLimitHeader = ({
+  onEdit,
+  refreshState,
+}: {
+  onEdit?: () => void;
+  refreshState?: QueryRefreshState;
+}) => (
   <Box
     flex={{justifyContent: 'space-between', alignItems: 'center'}}
     padding={{vertical: 16, horizontal: 24}}
     border="bottom"
   >
     <Subheading>Run concurrency</Subheading>
-    {onEdit ? (
-      <Button icon={<Icon name="edit" />} onClick={() => onEdit()}>
-        Edit configuration
-      </Button>
-    ) : (
-      <span />
-    )}
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
+      {onEdit ? (
+        <Button icon={<Icon name="edit" />} onClick={() => onEdit()}>
+          Edit configuration
+        </Button>
+      ) : null}
+    </Box>
   </Box>
 );
 
@@ -231,6 +263,8 @@ export const ConcurrencyLimits = ({
   refetch,
   minValue,
   maxValue,
+  selectedKey,
+  onSelectKey,
 }: {
   limits: ConcurrencyLimitFragment[];
   refetch: () => void;
@@ -238,12 +272,13 @@ export const ConcurrencyLimits = ({
   hasSupport?: boolean;
   maxValue?: number;
   minValue?: number;
+  selectedKey?: string | null;
+  onSelectKey: (key: string | undefined) => void;
 }) => {
   const [action, setAction] = React.useState<DialogAction>();
-  const [selectedKey, setSelectedKey] = React.useState<string | undefined>(undefined);
   const onConcurrencyStepsDialogClose = React.useCallback(() => {
-    setSelectedKey(undefined);
-  }, [setSelectedKey]);
+    onSelectKey(undefined);
+  }, [onSelectKey]);
 
   const limitsByKey = Object.fromEntries(
     limits.map(({concurrencyKey, slotCount}) => [concurrencyKey, slotCount]),
@@ -339,7 +374,7 @@ export const ConcurrencyLimits = ({
                   <Tag intent="primary" interactive>
                     <ButtonLink
                       onClick={() => {
-                        setSelectedKey(limit.concurrencyKey);
+                        onSelectKey(limit.concurrencyKey);
                       }}
                     >
                       View all
@@ -399,12 +434,10 @@ const ConcurrencyLimitHeader = ({onAdd}: {onAdd?: () => void}) => (
     padding={{vertical: 16, horizontal: 24}}
     border="top-and-bottom"
   >
-    <Subheading>
-      <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
-        <span>Global op/asset concurrency</span>
-        <Tag>Experimental</Tag>
-      </Box>
-    </Subheading>
+    <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+      <Subheading>Global op/asset concurrency</Subheading>
+      <Tag>Experimental</Tag>
+    </Box>
     {onAdd ? (
       <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
         Add concurrency limit
@@ -740,7 +773,7 @@ const ConcurrencyStepsDialog = ({
   title,
   onUpdate,
 }: {
-  concurrencyKey?: string;
+  concurrencyKey?: string | null;
   title: string | React.ReactNode;
   onClose: () => void;
   onUpdate: () => void;

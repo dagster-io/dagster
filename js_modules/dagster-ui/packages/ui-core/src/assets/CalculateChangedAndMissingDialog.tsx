@@ -55,7 +55,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
     const staleOrMissing = React.useMemo(
       () =>
         data?.assetNodes
-          .filter((node) => isAssetStale(node) || isAssetMissing(node))
+          .filter((node) => isAssetStale(node.assetKey, node, 'all') || isAssetMissing(node))
           .map(asAssetKeyInput),
       [data],
     );
@@ -175,7 +175,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
     };
     return (
       <>
-        <Dialog isOpen={isOpen} onClose={onClose} title="Materialize changed and missing assets">
+        <Dialog isOpen={isOpen} onClose={onClose} title="Materialize unsynced assets">
           <DialogBody>{content()}</DialogBody>
           <DialogFooter topBorder>
             {loading ? (

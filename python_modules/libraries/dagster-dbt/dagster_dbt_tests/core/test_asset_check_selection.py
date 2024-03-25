@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster_dbt import (
     DagsterDbtTranslator,
     DagsterDbtTranslatorSettings,
@@ -21,14 +21,13 @@ def my_dbt_assets_fixture(test_asset_checks_manifest: Dict[str, Any]) -> AssetsD
         manifest=test_asset_checks_manifest,
         dagster_dbt_translator=dagster_dbt_translator_with_checks,
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     return my_dbt_assets
 
 
 @pytest.fixture(name="asset_graph", scope="module")
-def asset_graph_fixture(my_dbt_assets: AssetsDefinition) -> InternalAssetGraph:
+def asset_graph_fixture(my_dbt_assets: AssetsDefinition) -> AssetGraph:
     return AssetGraph.from_assets([my_dbt_assets])
 
 
@@ -95,13 +94,13 @@ ALL_CHECK_KEYS = {
 }
 
 
-def test_all(my_dbt_assets: AssetsDefinition, asset_graph: InternalAssetGraph) -> None:
+def test_all(my_dbt_assets: AssetsDefinition, asset_graph: AssetGraph) -> None:
     asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="fqn:*")
     assert asset_selection.resolve(asset_graph) == ALL_ASSET_KEYS
     assert asset_selection.resolve_checks(asset_graph) == ALL_CHECK_KEYS
 
 
-def test_tag(my_dbt_assets: AssetsDefinition, asset_graph: InternalAssetGraph) -> None:
+def test_tag(my_dbt_assets: AssetsDefinition, asset_graph: AssetGraph) -> None:
     asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="tag:data_quality")
     assert asset_selection.resolve(asset_graph) == set()
     assert asset_selection.resolve_checks(asset_graph) == {
@@ -115,9 +114,7 @@ def test_tag(my_dbt_assets: AssetsDefinition, asset_graph: InternalAssetGraph) -
     }
 
 
-def test_selection_customers(
-    my_dbt_assets: AssetsDefinition, asset_graph: InternalAssetGraph
-) -> None:
+def test_selection_customers(my_dbt_assets: AssetsDefinition, asset_graph: AssetGraph) -> None:
     asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="customers")
     assert asset_selection.resolve(asset_graph) == {AssetKey(["customers"])}
     # all tests that reference model customers- includes a relationship test on orders
@@ -135,7 +132,7 @@ def test_selection_customers(
     }
 
 
-def test_excluding_tests(my_dbt_assets: AssetsDefinition, asset_graph: InternalAssetGraph) -> None:
+def test_excluding_tests(my_dbt_assets: AssetsDefinition, asset_graph: AssetGraph) -> None:
     asset_selection = build_dbt_asset_selection(
         [my_dbt_assets],
         dbt_select="customers",

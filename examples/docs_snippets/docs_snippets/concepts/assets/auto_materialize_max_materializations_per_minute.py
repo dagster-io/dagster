@@ -7,5 +7,4 @@ from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset
         max_materializations_per_minute=7
     ),
 )
-def asset1():
-    ...
+def asset1(): ...

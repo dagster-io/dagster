@@ -48,7 +48,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.partition import PartitionKeyRange
+from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     PartitionKeysTimeWindowPartitionsSubset,
@@ -72,15 +72,15 @@ from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
+from dagster._core.remote_representation.external_data import (
     external_partitions_definition_from_def,
 )
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
 )
@@ -92,12 +92,16 @@ from dagster._core.storage.event_log.migration import (
 )
 from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
@@ -258,20 +262,31 @@ def _default_loggers(event_callback):
 
 # This exists to create synthetic events to test the store
 def _synthesize_events(
-    ops_fn, run_id=None, check_success=True, instance=None, run_config=None
+    ops_fn_or_assets, run_id=None, check_success=True, instance=None, run_config=None, tags=None
 ) -> Tuple[List[EventLogEntry], JobExecutionResult]:
     events = []
 
     def _append_event(event):
         events.append(event)
 
-    @job(
-        resource_defs=_default_resources(),
-        logger_defs=_default_loggers(_append_event),
-        executor_def=in_process_executor,
-    )
-    def a_job():
-        ops_fn()
+    if isinstance(ops_fn_or_assets, list):  # assets
+        job_def = Definitions(
+            assets=ops_fn_or_assets,
+            loggers=_default_loggers(_append_event),
+            resources=_default_resources(),
+            executor=in_process_executor,
+        ).get_implicit_job_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
+        assert job_def
+        a_job = job_def
+    else:  # op_fn
+
+        @job(
+            resource_defs=_default_resources(),
+            logger_defs=_default_loggers(_append_event),
+            executor_def=in_process_executor,
+        )
+        def a_job():
+            ops_fn_or_assets()
 
     result = None
 
@@ -284,7 +299,9 @@ def _synthesize_events(
             **(run_config if run_config else {}),
         }
 
-        dagster_run = instance.create_run_for_job(a_job, run_id=run_id, run_config=run_config)
+        dagster_run = instance.create_run_for_job(
+            a_job, run_id=run_id, run_config=run_config, tags=tags
+        )
         result = execute_run(InMemoryJob(a_job), dagster_run, instance)
 
         if check_success:
@@ -748,7 +765,9 @@ class TestEventLogStorage:
         assert len(c_stats.attempts_list) == 1
 
     def test_secondary_index(self, storage: EventLogStorage):
-        if not isinstance(storage, SqlEventLogStorage):
+        if not isinstance(storage, SqlEventLogStorage) or isinstance(
+            storage, InMemoryEventLogStorage
+        ):
             pytest.skip("This test is for SQL-backed Event Log behavior")
 
         # test that newly initialized DBs will have the secondary indexes built
@@ -1105,6 +1124,38 @@ class TestEventLogStorage:
             assert record.event_log_entry.dagster_event
             assert record.event_log_entry.dagster_event.asset_key == asset_key
             assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
+
+    def test_asset_materialization_range(self, storage, test_run_id):
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+        class DummyIOManager(IOManager):
+            def handle_output(self, context, obj):
+                pass
+
+            def load_input(self, context):
+                return 1
+
+        @asset(partitions_def=partitions_def, io_manager_def=DummyIOManager())
+        def foo():
+            return {"a": 1, "b": 2}
+
+        with instance_for_test() as instance:
+            if not storage.has_instance:
+                storage.register_instance(instance)
+
+            events, _ = _synthesize_events(
+                [foo],
+                instance=instance,
+                run_id=test_run_id,
+                tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+            )
+            materializations = [
+                e for e in events if e.dagster_event.event_type == "ASSET_MATERIALIZATION"
+            ]
+            storage.store_event_batch(materializations)
+
+            result = storage.fetch_materializations(foo.key, limit=100)
+            assert len(result.records) == 2
 
     def test_asset_materialization_null_key_fails(self):
         with pytest.raises(check.CheckError):
@@ -3478,9 +3529,9 @@ class TestEventLogStorage:
                     storage.register_instance(created_instance)
 
                 asset_key = AssetKey("never_materializes_asset")
-                never_materializes_job = build_assets_job(
-                    "never_materializes_job", [never_materializes_asset]
-                )
+                never_materializes_job = Definitions(
+                    assets=[never_materializes_asset],
+                ).get_implicit_global_asset_job_def()
 
                 result = _execute_job_and_store_events(
                     created_instance, storage, never_materializes_job, run_id=run_id_1
@@ -4838,6 +4889,86 @@ class TestEventLogStorage:
         assert latest_checks[check_key_2].status == AssetCheckExecutionRecordStatus.PLANNED
         assert latest_checks[check_key_2].run_id == "fizbuz"
 
+    def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
+        if self.can_wipe():
+            storage.wipe()
+
+        for _ in range(2):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id="fizbuz",
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluationPlanned(
+                            asset_key=AssetKey(["my_asset"]), check_name="my_check"
+                        ),
+                    ),
+                )
+            )
+
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="Updated 2 rows for asset check evaluation",
+        ):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id="fizbuz",
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluation(
+                            asset_key=AssetKey(["my_asset"]),
+                            check_name="my_check",
+                            passed=True,
+                            metadata={},
+                            target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                                storage_id=42, run_id="fizbuz", timestamp=3.3
+                            ),
+                            severity=AssetCheckSeverity.ERROR,
+                        ),
+                    ),
+                )
+            )
+
+    def test_asset_check_evaluation_without_planned_event(self, storage: EventLogStorage):
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id="fizbuz",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluation(
+                        asset_key=AssetKey(["my_asset"]),
+                        check_name="my_check",
+                        passed=True,
+                        metadata={},
+                        target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                            storage_id=42, run_id="fizbuz", timestamp=3.3
+                        ),
+                        severity=AssetCheckSeverity.ERROR,
+                    ),
+                ),
+            )
+        )
+
+        # since no planned event is logged, we don't create a row in the sumary table
+        assert not storage.get_asset_check_execution_history(
+            AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check"), limit=10
+        )
+
     def test_external_asset_event(
         self,
         storage: EventLogStorage,
@@ -4919,8 +5050,7 @@ class TestEventLogStorage:
         )
         assert len(storage.get_logs_for_run(test_run_id)) == 1
 
-        class BlowUp(Exception):
-            ...
+        class BlowUp(Exception): ...
 
         # now try to delete
         with pytest.raises(BlowUp):

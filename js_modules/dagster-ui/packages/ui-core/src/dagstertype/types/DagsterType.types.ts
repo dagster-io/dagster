@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type DagsterTypeFragment_ListDagsterType_ = {
+export type DagsterTypeFragment_ListDagsterType = {
   __typename: 'ListDagsterType';
   key: string;
   name: string | null;
@@ -96,6 +96,20 @@ export type DagsterTypeFragment_ListDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -144,6 +158,12 @@ export type DagsterTypeFragment_ListDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -1337,6 +1357,20 @@ export type DagsterTypeFragment_ListDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -1385,6 +1419,12 @@ export type DagsterTypeFragment_ListDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -2578,6 +2618,20 @@ export type DagsterTypeFragment_ListDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -2626,6 +2680,12 @@ export type DagsterTypeFragment_ListDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -3800,6 +3860,20 @@ export type DagsterTypeFragment_ListDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -3846,6 +3920,12 @@ export type DagsterTypeFragment_ListDagsterType_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   inputSchemaType:
@@ -4946,7 +5026,7 @@ export type DagsterTypeFragment_ListDagsterType_ = {
     | null;
 };
 
-export type DagsterTypeFragment_NullableDagsterType_ = {
+export type DagsterTypeFragment_NullableDagsterType = {
   __typename: 'NullableDagsterType';
   key: string;
   name: string | null;
@@ -5040,6 +5120,20 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -5088,6 +5182,12 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -6281,6 +6381,20 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -6329,6 +6443,12 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -7522,6 +7642,20 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -7570,6 +7704,12 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -8744,6 +8884,20 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -8790,6 +8944,12 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   inputSchemaType:
@@ -9890,7 +10050,7 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
     | null;
 };
 
-export type DagsterTypeFragment_RegularDagsterType_ = {
+export type DagsterTypeFragment_RegularDagsterType = {
   __typename: 'RegularDagsterType';
   key: string;
   name: string | null;
@@ -9984,6 +10144,20 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -10032,6 +10206,12 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -11225,6 +11405,20 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -11273,6 +11467,12 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -12466,6 +12666,20 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -12514,6 +12728,12 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -13688,6 +13908,20 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -13734,6 +13968,12 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   inputSchemaType:
@@ -14835,11 +15075,11 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
 };
 
 export type DagsterTypeFragment =
-  | DagsterTypeFragment_ListDagsterType_
-  | DagsterTypeFragment_NullableDagsterType_
-  | DagsterTypeFragment_RegularDagsterType_;
+  | DagsterTypeFragment_ListDagsterType
+  | DagsterTypeFragment_NullableDagsterType
+  | DagsterTypeFragment_RegularDagsterType;
 
-export type InnerDagsterTypeFragment_ListDagsterType_ = {
+export type InnerDagsterTypeFragment_ListDagsterType = {
   __typename: 'ListDagsterType';
   key: string;
   name: string | null;
@@ -14912,6 +15152,20 @@ export type InnerDagsterTypeFragment_ListDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -14958,6 +15212,12 @@ export type InnerDagsterTypeFragment_ListDagsterType_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   inputSchemaType:
@@ -16058,7 +16318,7 @@ export type InnerDagsterTypeFragment_ListDagsterType_ = {
     | null;
 };
 
-export type InnerDagsterTypeFragment_NullableDagsterType_ = {
+export type InnerDagsterTypeFragment_NullableDagsterType = {
   __typename: 'NullableDagsterType';
   key: string;
   name: string | null;
@@ -16131,6 +16391,20 @@ export type InnerDagsterTypeFragment_NullableDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -16177,6 +16451,12 @@ export type InnerDagsterTypeFragment_NullableDagsterType_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   inputSchemaType:
@@ -17277,7 +17557,7 @@ export type InnerDagsterTypeFragment_NullableDagsterType_ = {
     | null;
 };
 
-export type InnerDagsterTypeFragment_RegularDagsterType_ = {
+export type InnerDagsterTypeFragment_RegularDagsterType = {
   __typename: 'RegularDagsterType';
   key: string;
   name: string | null;
@@ -17350,6 +17630,20 @@ export type InnerDagsterTypeFragment_RegularDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -17396,6 +17690,12 @@ export type InnerDagsterTypeFragment_RegularDagsterType_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   inputSchemaType:
@@ -18497,6 +18797,6 @@ export type InnerDagsterTypeFragment_RegularDagsterType_ = {
 };
 
 export type InnerDagsterTypeFragment =
-  | InnerDagsterTypeFragment_ListDagsterType_
-  | InnerDagsterTypeFragment_NullableDagsterType_
-  | InnerDagsterTypeFragment_RegularDagsterType_;
+  | InnerDagsterTypeFragment_ListDagsterType
+  | InnerDagsterTypeFragment_NullableDagsterType
+  | InnerDagsterTypeFragment_RegularDagsterType;

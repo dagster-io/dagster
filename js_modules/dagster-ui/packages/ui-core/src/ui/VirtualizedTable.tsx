@@ -9,7 +9,7 @@ export const HeaderCell = ({
   ...rest
 }: React.ComponentProps<typeof CellBox>) => {
   // no text select
-  const clickStyle = onClick ? {cursor: 'pointer', 'user-select': 'none'} : {};
+  const clickStyle = onClick ? {cursor: 'pointer', userSelect: 'none'} : {};
 
   return (
     <CellBox

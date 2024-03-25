@@ -3,7 +3,9 @@ import {Meta} from '@storybook/react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {
+  buildAssetCheckNeedsAgentUpgradeError,
   buildAssetCheckNeedsMigrationError,
+  buildAssetCheckNeedsUserCodeUpgrade,
   buildAssetChecks,
   buildAssetKey,
   buildAssetNode,
@@ -53,6 +55,44 @@ export const MigrationRequired = () => {
             assetNodeOrError: buildAssetNode({
               assetKey: buildAssetKey(testAssetKey),
               assetChecksOrError: buildAssetCheckNeedsMigrationError(),
+            }),
+          },
+        }),
+      ]}
+    />
+  );
+};
+
+export const AgentUpgradeRequired = () => {
+  return (
+    <Component
+      mocks={[
+        buildQueryMock<any, AssetChecksQueryVariables>({
+          query: ASSET_CHECKS_QUERY,
+          variables: {assetKey: testAssetKey},
+          data: {
+            assetNodeOrError: buildAssetNode({
+              assetKey: buildAssetKey(testAssetKey),
+              assetChecksOrError: buildAssetCheckNeedsAgentUpgradeError(),
+            }),
+          },
+        }),
+      ]}
+    />
+  );
+};
+
+export const NeedsUserCodeUpgradeRequired = () => {
+  return (
+    <Component
+      mocks={[
+        buildQueryMock<any, AssetChecksQueryVariables>({
+          query: ASSET_CHECKS_QUERY,
+          variables: {assetKey: testAssetKey},
+          data: {
+            assetNodeOrError: buildAssetNode({
+              assetKey: buildAssetKey(testAssetKey),
+              assetChecksOrError: buildAssetCheckNeedsUserCodeUpgrade(),
             }),
           },
         }),

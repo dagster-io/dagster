@@ -72,6 +72,7 @@ export const Default = () => {
         placeholder: 'Type the name of a US state…',
         style: {width: '250px'},
       }}
+      icon="search"
       items={US_STATES}
       inputValueRenderer={(item) => item}
       itemPredicate={(query, item) => item.toLocaleLowerCase().includes(query.toLocaleLowerCase())}

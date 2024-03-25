@@ -5,11 +5,11 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, Optional
 
 import dagster._check as check
-from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import InstanceRef
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
 from dagster._grpc.types import (

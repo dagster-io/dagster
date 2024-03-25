@@ -40,7 +40,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
     Output,
 )
-from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataMapping, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -68,7 +68,7 @@ from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
-    output_name_fn,
+    dagster_name_fn,
     result_to_events,
     select_unique_ids_from_manifest,
 )
@@ -205,7 +205,7 @@ def _events_for_structured_json_line(
         )
         yield Output(
             value=None,
-            output_name=output_name_fn(compiled_node_info),
+            output_name=dagster_name_fn(compiled_node_info),
             metadata=metadata,
         )
     elif node_resource_type == "test" and runtime_node_info.get("node_finished_at"):
@@ -497,7 +497,7 @@ def load_assets_from_dbt_project(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ] = default_metadata_from_dbt_resource_props,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
@@ -573,7 +573,7 @@ def load_assets_from_dbt_project(
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`. Deprecated: instead, configure auto-materialize
             policies on a dbt resource's meta field.
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]): [Deprecated]
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).
@@ -709,7 +709,7 @@ def load_assets_from_dbt_manifest(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ] = default_metadata_from_dbt_resource_props,
 ) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -781,7 +781,7 @@ def load_assets_from_dbt_manifest(
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`. Deprecated: instead, configure auto-materialize
             policies on a dbt resource's meta field.
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]): [Deprecated]
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).
@@ -870,7 +870,7 @@ def _load_assets_from_dbt_manifest(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ],
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ],
 ) -> Sequence[AssetsDefinition]:
     if partition_key_to_vars_fn:
@@ -1007,7 +1007,7 @@ def _raise_warnings_for_deprecated_args(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ],
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ],
 ):
     if node_info_to_asset_key != default_asset_key_fn:

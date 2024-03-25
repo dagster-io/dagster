@@ -3,8 +3,10 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {StaleReasonsTags} from './Stale';
+import {ChangedReasonsTag} from './ChangedReasons';
+import {StaleReasonsTag} from './Stale';
 import {isRunlessEvent} from './isRunlessEvent';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {
   AssetMaterializationFragment,
   AssetObservationFragment,
@@ -13,6 +15,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {LiveDataForNode, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
+import {isCanonicalColumnLineageEntry} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -24,10 +27,12 @@ export const LatestMaterializationMetadata = ({
   assetKey,
   latest,
   liveData,
+  definition,
 }: {
   assetKey: AssetKeyInput;
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
+  definition: Pick<AssetViewDefinitionNodeFragment, 'changedReasons'>;
 }) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
@@ -118,7 +123,13 @@ export const LatestMaterializationMetadata = ({
                 <Box flex={{gap: 8, alignItems: 'center'}}>
                   <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
                   {liveData && (
-                    <StaleReasonsTags assetKey={assetKey} liveData={liveData} include="all" />
+                    <>
+                      <StaleReasonsTag assetKey={assetKey} liveData={liveData} />
+                      <ChangedReasonsTag
+                        changedReasons={definition.changedReasons}
+                        assetKey={assetKey}
+                      />
+                    </>
                   )}
                 </Box>
               </td>
@@ -146,18 +157,20 @@ export const LatestMaterializationMetadata = ({
                 </td>
               </tr>
             ) : null}
-            {latestEvent.metadataEntries.map((entry) => (
-              <tr key={`metadata-${entry.label}`}>
-                <td>{entry.label}</td>
-                <td>
-                  <MetadataEntry
-                    entry={entry}
-                    expandSmallValues={true}
-                    repoLocation={repoAddress?.location}
-                  />
-                </td>
-              </tr>
-            ))}
+            {latestEvent.metadataEntries
+              .filter((entry) => !isCanonicalColumnLineageEntry(entry))
+              .map((entry) => (
+                <tr key={`metadata-${entry.label}`}>
+                  <td>{entry.label}</td>
+                  <td>
+                    <MetadataEntry
+                      entry={entry}
+                      expandSmallValues={true}
+                      repoLocation={repoAddress?.location}
+                    />
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </MetadataTable>
       ) : (

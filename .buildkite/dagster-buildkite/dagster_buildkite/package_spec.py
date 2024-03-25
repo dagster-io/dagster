@@ -165,9 +165,9 @@ class PackageSpec:
                 pytest_python_versions = sorted(
                     list(set(default_python_versions) - set(unsupported_python_versions))
                 )
-                # Use lowest supported python version if no defaults match.
+                # Use highest supported python version if no defaults_match
                 if len(pytest_python_versions) == 0:
-                    pytest_python_versions = [supported_python_versions[0]]
+                    pytest_python_versions = [supported_python_versions[-1]]
 
                 for py_version in pytest_python_versions:
                     version_factor = AvailablePythonVersion.to_tox_factor(py_version)

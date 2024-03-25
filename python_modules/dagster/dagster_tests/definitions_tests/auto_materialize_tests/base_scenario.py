@@ -61,9 +61,9 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
@@ -73,7 +73,7 @@ from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, 
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -193,7 +193,7 @@ class AssetReconciliationScenario(
             or isinstance(a, SourceAsset)
             for a in assets
         ):
-            asset_graph = AssetGraph.from_assets(assets, asset_checks=asset_checks)
+            asset_graph = AssetGraph.from_assets([*assets, *(asset_checks or [])])
             auto_materialize_asset_keys = (
                 asset_selection.resolve(asset_graph)
                 if asset_selection is not None
@@ -357,7 +357,7 @@ class AssetReconciliationScenario(
                 if run.is_observation:
                     observe(
                         instance=instance,
-                        source_assets=[
+                        assets=[
                             a
                             for a in self.assets
                             if isinstance(a, SourceAsset) and a.key in run.asset_keys
@@ -390,7 +390,7 @@ class AssetReconciliationScenario(
                     assert (
                         workspace.get_code_location_error("test_location") is None
                     ), workspace.get_code_location_error("test_location")
-                    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+                    asset_graph = workspace.asset_graph
 
             auto_materialize_asset_keys = (
                 self.asset_selection.resolve(asset_graph)
@@ -408,8 +408,8 @@ class AssetReconciliationScenario(
                 cursor=cursor,
                 auto_observe_asset_keys={
                     key
-                    for key in asset_graph.source_asset_keys
-                    if asset_graph.get_auto_observe_interval_minutes(key) is not None
+                    for key in asset_graph.observable_asset_keys
+                    if asset_graph.get(key).auto_observe_interval_minutes is not None
                 },
                 respect_materialization_data_versions=respect_materialization_data_versions,
                 logger=logging.getLogger("dagster.amp"),
@@ -505,7 +505,10 @@ class AssetReconciliationScenario(
 
                 try:
                     list(
-                        AssetDaemon(pre_sensor_interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                        AssetDaemon(  # noqa: SLF001
+                            settings=instance.get_auto_materialize_settings(),
+                            pre_sensor_interval_seconds=42,
+                        )._run_iteration_impl(
                             workspace_context,
                             threadpool_executor=None,
                             amp_tick_futures={},
@@ -716,7 +719,7 @@ def with_auto_materialize_policy(
 
 def with_implicit_auto_materialize_policies(
     assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]],
-    asset_graph: AssetGraph,
+    asset_graph: BaseAssetGraph,
     targeted_assets: Optional[AbstractSet[AssetKey]] = None,
 ) -> Sequence[AssetsDefinition]:
     """Accepts a list of assets, adding implied auto-materialize policies to targeted assets

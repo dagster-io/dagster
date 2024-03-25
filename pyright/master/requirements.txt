@@ -68,10 +68,12 @@
 -e python_modules/libraries/dagster-mlflow/
 -e python_modules/libraries/dagster-msteams/
 -e python_modules/libraries/dagster-mysql/
+-e python_modules/libraries/dagster-openai/
 -e python_modules/libraries/dagster-pagerduty/
 -e python_modules/libraries/dagster-pandas/
 -e python_modules/libraries/dagster-pandera/
 -e python_modules/libraries/dagster-papertrail/
+-e python_modules/libraries/dagster-polars[deltalake,gcp,test]
 -e python_modules/libraries/dagster-postgres/
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
@@ -89,6 +91,14 @@
 ### OTHER
 pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
+
+### CONSTRAINED BEYOND RUNTIME
+# The packages listed here are constrained beyond what is necessary for runtime
+# compatibility. Even though Dagster supports a wider range of versions at
+# runtime, some of these versions have bugged or incomplete type annotations
+# that trigger type errors
+apache-airflow>2.7
+pendulum<3
 
 # This is a temporary pin due to version conflicts between dbt 1.6 and some higher-order
 # dependencies of other integration libs. It is not important that the pyright typechecking env support

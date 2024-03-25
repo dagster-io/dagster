@@ -26,7 +26,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
@@ -72,7 +72,7 @@ export const PipelineRunsRoot = (props: Props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const trace = useStartTrace('PipelineRunsRoot');
+  const trace = usePageLoadTrace('PipelineRunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = useMemo(() => {

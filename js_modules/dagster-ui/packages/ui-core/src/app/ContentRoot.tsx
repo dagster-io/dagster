@@ -6,6 +6,7 @@ import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
+const AutomationRoot = lazy(() => import('../automation/AutomationRoot'));
 const FallthroughRoot = lazy(() => import('./FallthroughRoot'));
 const AssetsCatalogRoot = lazy(() => import('../assets/AssetsCatalogRoot'));
 const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
@@ -18,6 +19,8 @@ const RunsRoot = lazy(() => import('../runs/RunsRoot'));
 const ScheduledRunListRoot = lazy(() => import('../runs/ScheduledRunListRoot'));
 const SnapshotRoot = lazy(() => import('../snapshots/SnapshotRoot'));
 const GuessJobLocationRoot = lazy(() => import('../workspace/GuessJobLocationRoot'));
+const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
+const JobsRoot = lazy(() => import('../jobs/JobsRoot'));
 
 export const ContentRoot = memo(() => {
   const {pathname} = useLocation();
@@ -96,6 +99,21 @@ export const ContentRoot = memo(() => {
           <Route path="/overview">
             <Suspense fallback={<div />}>
               <OverviewRoot />
+            </Suspense>
+          </Route>
+          <Route path="/jobs">
+            <Suspense fallback={<div />}>
+              <JobsRoot />
+            </Suspense>
+          </Route>
+          <Route path="/automation">
+            <Suspense fallback={<div />}>
+              <AutomationRoot />
+            </Suspense>
+          </Route>
+          <Route path="/settings">
+            <Suspense fallback={<div />}>
+              <SettingsRoot />
             </Suspense>
           </Route>
           <Route path="*">

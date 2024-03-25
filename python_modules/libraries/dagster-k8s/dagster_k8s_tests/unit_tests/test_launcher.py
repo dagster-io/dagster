@@ -4,9 +4,9 @@ from unittest import mock
 
 import pytest
 from dagster import DagsterRunStatus, job, reconstructable
-from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
+from dagster._core.remote_representation import RepositoryHandle
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._core.test_utils import (
     create_run_for_test,

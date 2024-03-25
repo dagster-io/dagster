@@ -15,6 +15,8 @@ Dagster allows you to define and execute checks on your software-defined assets.
 
 .. autoclass:: AssetCheckKey
 
+.. autodecorator:: multi_asset_check
+
 .. autofunction:: load_asset_checks_from_modules
 
 .. autofunction:: load_asset_checks_from_current_module
@@ -24,3 +26,10 @@ Dagster allows you to define and execute checks on your software-defined assets.
 .. autofunction:: load_asset_checks_from_package_name
 
 .. autoclass:: AssetChecksDefinition
+
+.. autofunction:: build_freshness_checks_for_non_partitioned_assets
+
+.. autofunction:: build_freshness_checks_for_time_window_partitioned_assets
+
+.. autofunction:: build_sensor_for_freshness_checks 
+    

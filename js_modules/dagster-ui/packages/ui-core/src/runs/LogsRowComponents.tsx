@@ -1,4 +1,4 @@
-import {Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui-components';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
@@ -11,6 +11,7 @@ import {formatElapsedTimeWithMsec} from '../app/Util';
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserHourCycle, browserTimezone} from '../app/time/browserTimezone';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
@@ -162,37 +163,49 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
       <Tooltip
         canShow={canShowTooltip}
         content={
-          <MetadataTable
-            spacing={0}
-            rows={[
-              {
-                key: 'Since start of run',
-                value: (
-                  <div
-                    style={{textAlign: 'right', fontFamily: FontFamily.monospace, fontSize: '13px'}}
-                  >
-                    {runElapsedTime}
-                  </div>
-                ),
-              },
-              stepStartTime
-                ? {
-                    key: 'Since start of step',
-                    value: (
-                      <div
-                        style={{
-                          textAlign: 'right',
-                          fontFamily: FontFamily.monospace,
-                          fontSize: '13px',
-                        }}
-                      >
-                        {stepElapsedTime}
-                      </div>
-                    ),
-                  }
-                : null,
-            ]}
-          />
+          <div>
+            <Box margin={{bottom: 8}}>
+              <TimestampDisplay
+                timestamp={Number(time) / 1000}
+                timeFormat={{showSeconds: true, showMsec: true, showTimezone: false}}
+              />
+            </Box>
+            <MetadataTable
+              spacing={0}
+              rows={[
+                {
+                  key: 'Since start of run',
+                  value: (
+                    <div
+                      style={{
+                        textAlign: 'right',
+                        fontFamily: FontFamily.monospace,
+                        fontSize: '13px',
+                      }}
+                    >
+                      {runElapsedTime}
+                    </div>
+                  ),
+                },
+                stepStartTime
+                  ? {
+                      key: 'Since start of step',
+                      value: (
+                        <div
+                          style={{
+                            textAlign: 'right',
+                            fontFamily: FontFamily.monospace,
+                            fontSize: '13px',
+                          }}
+                        >
+                          {stepElapsedTime}
+                        </div>
+                      ),
+                    }
+                  : null,
+              ]}
+            />
+          </div>
         }
         placement="left"
       >

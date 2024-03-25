@@ -24,7 +24,7 @@ export const TestAssetCheck = buildAssetCheck({
         timestamp: testLatestMaterializationTimeStamp,
         runId: testLatestMaterializationRunId,
       }),
-      metadataEntries: [buildIntMetadataEntry({})],
+      metadataEntries: [],
       severity: AssetCheckSeverity.ERROR,
     }),
     runId: testLatestMaterializationRunId,

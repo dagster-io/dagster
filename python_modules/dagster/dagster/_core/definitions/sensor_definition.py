@@ -81,6 +81,7 @@ if TYPE_CHECKING:
     from dagster import ResourceDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.remote_representation.origin import CodeLocationOrigin
 
 
 @whitelist_for_serdes
@@ -135,6 +136,7 @@ class SensorEvaluationContext:
         resources (Optional[Dict[str, Any]]): A dict of resource keys to resource
             definitions to be made available during sensor execution.
         last_sensor_start_time (float): The last time that the sensor was started (UTC).
+        code_location_origin (Optional[CodeLocationOrigin]): The code location that the sensor is in.
 
     Example:
         .. code-block:: python
@@ -161,11 +163,13 @@ class SensorEvaluationContext:
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
         definitions: Optional["Definitions"] = None,
         last_sensor_start_time: Optional[float] = None,
+        code_location_origin: Optional["CodeLocationOrigin"] = None,
         # deprecated param
         last_completion_time: Optional[float] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
+        from dagster._core.remote_representation.origin import CodeLocationOrigin
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -185,6 +189,9 @@ class SensorEvaluationContext:
             check.opt_inst_param(definitions, "definitions", Definitions),
             check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
             error_on_none=False,
+        )
+        self._code_location_origin = check.opt_inst_param(
+            code_location_origin, "code_location_origin", CodeLocationOrigin
         )
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
@@ -252,6 +259,7 @@ class SensorEvaluationContext:
                 **wrap_resources_for_execution(resources_dict),
             },
             last_sensor_start_time=self._last_sensor_start_time,
+            code_location_origin=self.code_location_origin,
         )
 
     @public
@@ -403,6 +411,11 @@ class SensorEvaluationContext:
         return self._repository_def
 
     @property
+    def code_location_origin(self) -> Optional["CodeLocationOrigin"]:
+        """Optional[CodeLocationOrigin]: The CodeLocation that this sensor resides in."""
+        return self._code_location_origin
+
+    @property
     def log(self) -> logging.Logger:
         if self._logger:
             return self._logger
@@ -451,7 +464,7 @@ SensorEvaluationFunction: TypeAlias = Callable[
 ]
 
 
-def get_context_param_name(fn: Callable) -> Optional[str]:
+def get_context_param_name(fn: Callable[..., Any]) -> Optional[str]:
     """Determines the sensor's context parameter name by excluding all resource parameters."""
     resource_params = {param.name for param in get_resource_args(fn)}
 
@@ -976,10 +989,11 @@ class SensorDefinition(IHasInternalInit):
     @property
     def job_name(self) -> Optional[str]:
         """Optional[str]: The name of the job that is targeted by this sensor."""
-        if len(self._targets) > 1:
-            raise DagsterInvalidInvocationError(
-                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
-                " jobs."
+        if len(self._targets) == 0:
+            raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+        elif len(self._targets) > 1:
+            raise DagsterInvalidDefinitionError(
+                "job_name property not available when SensorDefinition has multiple jobs."
             )
         return self._targets[0].job_name
 
@@ -1188,7 +1202,7 @@ T = TypeVar("T")
 
 
 def get_sensor_context_from_args_or_kwargs(
-    fn: Callable,
+    fn: Callable[..., Any],
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     context_type: Type[T],
@@ -1232,7 +1246,7 @@ def get_sensor_context_from_args_or_kwargs(
 
 
 def get_or_create_sensor_context(
-    fn: Callable,
+    fn: Callable[..., Any],
     *args: Any,
     context_type: Type = SensorEvaluationContext,
     **kwargs: Any,

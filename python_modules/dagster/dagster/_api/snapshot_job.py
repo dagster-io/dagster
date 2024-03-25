@@ -4,8 +4,8 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import ExternalJobSubsetResult
-from dagster._core.host_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation.external_data import ExternalJobSubsetResult
+from dagster._core.remote_representation.origin import ExternalJobOrigin
 from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
 
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 def sync_get_external_job_subset_grpc(
     api_client: "DagsterGrpcClient",
     job_origin: ExternalJobOrigin,
+    include_parent_snapshot: bool,
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
@@ -36,6 +37,7 @@ def sync_get_external_job_subset_grpc(
                 op_selection=op_selection,
                 asset_selection=asset_selection,
                 asset_check_selection=asset_check_selection,
+                include_parent_snapshot=include_parent_snapshot,
             ),
         ),
         ExternalJobSubsetResult,

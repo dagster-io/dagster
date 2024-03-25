@@ -1,12 +1,13 @@
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, cast
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
@@ -68,24 +69,44 @@ class StepDelegatingExecutor(Executor):
             ),
         )
         self._should_verify_step = should_verify_step
+
         self._event_cursor: Optional[str] = None
+        self._pop_events_offset = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_OFFSET", "0"))
 
     @property
     def retries(self):
         return self._retries
 
-    def _pop_events(self, instance: DagsterInstance, run_id: str) -> Sequence[DagsterEvent]:
+    def _pop_events(
+        self, instance: DagsterInstance, run_id: str, seen_storage_ids: Set[int]
+    ) -> Sequence[DagsterEvent]:
+        adjusted_cursor = self._event_cursor
+
+        if self._pop_events_offset > 0 and self._event_cursor:
+            cursor_obj = EventLogCursor.parse(self._event_cursor)
+            check.invariant(
+                cursor_obj.is_id_cursor(),
+                "Applying a tailer offset only works with an id-based cursor",
+            )
+            adjusted_cursor = EventLogCursor.from_storage_id(
+                cursor_obj.storage_id() - self._pop_events_offset
+            ).to_string()
+
         conn = instance.get_records_for_run(
             run_id,
-            self._event_cursor,
+            adjusted_cursor,
             of_type=set(DagsterEventType),
         )
         self._event_cursor = conn.cursor
+
         dagster_events = [
             record.event_log_entry.dagster_event
             for record in conn.records
-            if record.event_log_entry.dagster_event
+            if record.event_log_entry.dagster_event and record.storage_id not in seen_storage_ids
         ]
+
+        seen_storage_ids.update(record.storage_id for record in conn.records)
+
         return dagster_events
 
     def _get_step_handler_context(
@@ -111,6 +132,7 @@ class StepDelegatingExecutor(Executor):
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+        seen_storage_ids = set()
 
         DagsterEvent.engine_event(
             plan_context,
@@ -139,6 +161,7 @@ class StepDelegatingExecutor(Executor):
                     prior_events = self._pop_events(
                         plan_context.instance,
                         plan_context.run_id,
+                        seen_storage_ids,
                     )
                     for dagster_event in prior_events:
                         yield dagster_event
@@ -237,6 +260,7 @@ class StepDelegatingExecutor(Executor):
                         for dagster_event in self._pop_events(
                             plan_context.instance,
                             plan_context.run_id,
+                            seen_storage_ids,
                         ):
                             yield dagster_event
                             # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles

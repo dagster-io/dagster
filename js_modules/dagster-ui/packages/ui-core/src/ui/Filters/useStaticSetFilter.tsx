@@ -1,5 +1,5 @@
 import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
-import {Fragment, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import {Fragment, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
@@ -27,6 +27,7 @@ type Args<TValue> = {
   onStateChanged?: (state: Set<TValue>) => void;
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
+  selectAllText?: React.ReactNode;
   menuWidth?: number | string;
   closeOnSelect?: boolean;
 };
@@ -35,6 +36,8 @@ export type StaticSetFilter<TValue> = FilterObject & {
   state: Set<TValue>;
   setState: (state: Set<TValue>) => void;
 };
+
+const selectAllSymbol = Symbol.for('useStaticSetFilter:SelectAll');
 
 export function useStaticSetFilter<TValue>({
   name,
@@ -51,6 +54,7 @@ export function useStaticSetFilter<TValue>({
   allowMultipleSelections = true,
   matchType = 'any-of',
   closeOnSelect = false,
+  selectAllText,
 }: Args<TValue>): StaticSetFilter<TValue> {
   const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
 
@@ -65,14 +69,23 @@ export function useStaticSetFilter<TValue>({
   // This filter can be used as both a controlled and an uncontrolled component necessitating an innerState for the uncontrolled case.
   const [innerState, setState] = useState(() => new Set(state || []));
 
-  useEffect(() => {
-    onStateChanged?.(innerState);
+  const isFirstRenderRef = useRef(true);
+
+  useLayoutEffect(() => {
+    if (!isFirstRenderRef.current) {
+      onStateChanged?.(innerState);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [innerState]);
 
   useEffect(() => {
-    setState(state ? new Set(state) : new Set());
+    if (!isFirstRenderRef.current) {
+      setState(state ? new Set(state) : new Set());
+    }
+    isFirstRenderRef.current = false;
   }, [state]);
+
+  const currentQueryRef = useRef<string>('');
 
   const filterObj: StaticSetFilter<TValue> = useMemo(
     () => ({
@@ -81,8 +94,10 @@ export function useStaticSetFilter<TValue>({
       state: innerState,
       isActive: innerState.size > 0,
       getResults: (query) => {
+        currentQueryRef.current = query;
+        let results;
         if (query === '') {
-          return allValues.map(({value}, index) => ({
+          results = allValues.map(({value}, index) => ({
             label: (
               <SetFilterLabel
                 value={value}
@@ -94,27 +109,79 @@ export function useStaticSetFilter<TValue>({
             key: getKey?.(value) || index.toString(),
             value,
           }));
+        } else {
+          results = allValues
+            .filter(({match}) =>
+              match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
+            )
+            .map(({value}, index) => ({
+              label: (
+                <SetFilterLabel
+                  value={value}
+                  renderLabel={renderLabel}
+                  filter={filterObjRef.current}
+                  allowMultipleSelections={allowMultipleSelections}
+                />
+              ),
+              key: getKey?.(value) || index.toString(),
+              value,
+            }));
         }
-
-        return allValues
-          .filter(({match}) =>
-            match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
-          )
-          .map(({value}, index) => ({
-            label: (
-              <SetFilterLabel
-                value={value}
-                renderLabel={renderLabel}
-                filter={filterObjRef.current}
-                allowMultipleSelections={allowMultipleSelections}
-              />
-            ),
-            key: getKey?.(value) || index.toString(),
-            value,
-          }));
+        if (allowMultipleSelections && results.length) {
+          return [
+            {
+              label: (
+                <SetFilterLabel
+                  value={selectAllSymbol}
+                  renderLabel={() => <>{selectAllText ?? 'Select all'}</>}
+                  isForcedActive={
+                    (state instanceof Set ? state.size : state?.length) === allValues.length
+                  }
+                  filter={filterObjRef.current}
+                  allowMultipleSelections={allowMultipleSelections}
+                />
+              ),
+              key: 'useStaticSetFilter:select-all-key',
+              value: selectAllSymbol,
+            },
+            ...results,
+          ];
+        }
+        return results;
       },
       onSelect: ({value, close}) => {
-        let newState = new Set(filterObjRef.current.state);
+        const state = filterObjRef.current.state;
+        if (typeof value === 'symbol' && value.toString() === selectAllSymbol.toString()) {
+          let selectResults;
+          if (currentQueryRef.current === '') {
+            selectResults = allValues;
+          } else {
+            selectResults = allValues.filter(({match}) =>
+              match.some((value) =>
+                value.toLowerCase().includes(currentQueryRef.current.toLowerCase()),
+              ),
+            );
+          }
+          const hasAnyUnselected = selectResults.find((result) => {
+            if (state instanceof Array) {
+              return state.indexOf(result.value) === -1;
+            } else if (state instanceof Set) {
+              return !state.has(result.value);
+            }
+            return true;
+          });
+          if (hasAnyUnselected) {
+            setState(new Set([...Array.from(state), ...selectResults.map(({value}) => value)]));
+          } else {
+            const stateCopy = new Set(state);
+            selectResults.forEach(({value}) => {
+              stateCopy.delete(value);
+            });
+            setState(stateCopy);
+          }
+          return;
+        }
+        let newState = new Set(state);
         if (newState.has(value)) {
           newState.delete(value);
         } else {
@@ -159,6 +226,7 @@ export function useStaticSetFilter<TValue>({
       allValues,
       allowMultipleSelections,
       getKey,
+      selectAllText,
     ],
   );
   const filterObjRef = useUpdatingRef(filterObj);
@@ -261,12 +329,13 @@ export function capitalizeFirstLetter(string: string) {
 
 type SetFilterLabelProps = {
   value: any;
+  isForcedActive?: boolean;
   filter: StaticSetFilter<any>;
   renderLabel: (value: any) => JSX.Element;
   allowMultipleSelections: boolean;
 };
 export function SetFilterLabel(props: SetFilterLabelProps) {
-  const {value, filter, renderLabel, allowMultipleSelections} = props;
+  const {value, filter, isForcedActive, renderLabel, allowMultipleSelections} = props;
   const isActive = filter.state.has(value);
 
   const labelRef = useRef<HTMLDivElement>(null);
@@ -280,7 +349,9 @@ export function SetFilterLabel(props: SetFilterLabelProps) {
       margin={allowMultipleSelections ? {left: 2} : {}}
       style={{maxWidth: '500px'}}
     >
-      {allowMultipleSelections ? <Checkbox checked={isActive} size="small" readOnly /> : null}
+      {allowMultipleSelections ? (
+        <Checkbox checked={isForcedActive || isActive} size="small" readOnly />
+      ) : null}
       <Box
         flex={{direction: 'row', alignItems: 'center', grow: 1, shrink: 1}}
         style={{overflow: 'hidden'}}

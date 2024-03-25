@@ -6,6 +6,7 @@ import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {RunlessEventTag} from './RunlessEventTag';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {isRunlessEvent} from './isRunlessEvent';
 import {
   AssetMaterializationFragment,
@@ -24,9 +25,11 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 export const AssetEventDetail = ({
   event,
   assetKey,
+  hidePartitionLinks = false,
 }: {
   assetKey: AssetKeyInput;
   event: AssetMaterializationFragment | AssetObservationFragment;
+  hidePartitionLinks?: boolean;
 }) => {
   const run = event.runOrError?.__typename === 'Run' ? event.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;
@@ -66,7 +69,18 @@ export const AssetEventDetail = ({
         {event.partition && (
           <Box flex={{gap: 4, direction: 'column'}}>
             <Subheading>Partition</Subheading>
-            <Link to={`?view=partitions&partition=${event.partition}`}>{event.partition}</Link>
+            {hidePartitionLinks ? (
+              event.partition
+            ) : (
+              <Link
+                to={assetDetailsPathForKey(assetKey, {
+                  view: 'partitions',
+                  partition: event.partition,
+                })}
+              >
+                {event.partition}
+              </Link>
+            )}
           </Box>
         )}
         <Box flex={{gap: 4, direction: 'column'}} style={{minHeight: 64}}>

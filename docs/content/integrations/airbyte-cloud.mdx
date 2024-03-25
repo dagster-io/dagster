@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster with Airbyte Cloud"
+title: "Airbyte Cloud & Dagster | Dagster Docs"
 description: Integrate your Airbyte Cloud connections into Dagster.
 ---
 
-# Using Airbyte Cloud with Dagster
+# Airbyte Cloud & Dagster
 
 <Note>
   Using self-hosted Airbyte? Check out the{" "}
@@ -111,7 +111,7 @@ airbyte_assets = build_airbyte_assets(
     destination_tables=["releases", "tags", "teams"],
 )
 
-defs = Definitions(assets=[airbyte_assets], resources={"airbyte": airbyte_instance})
+defs = Definitions(assets=airbyte_assets, resources={"airbyte": airbyte_instance})
 ```
 
 ---

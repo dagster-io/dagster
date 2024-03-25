@@ -93,8 +93,7 @@ def scope_schedule_databricks():
     from dagster import AssetSelection, asset, define_asset_job, job
 
     @asset
-    def my_databricks_table():
-        ...
+    def my_databricks_table(): ...
 
     materialize_databricks_table = define_asset_job(
         name="materialize_databricks_table",
@@ -102,8 +101,7 @@ def scope_schedule_databricks():
     )
 
     @job
-    def my_databricks_job():
-        ...
+    def my_databricks_job(): ...
 
     # start_schedule_databricks
     from dagster import (

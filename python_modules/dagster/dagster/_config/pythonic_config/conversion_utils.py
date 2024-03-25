@@ -138,15 +138,19 @@ def _convert_pydantic_field(
 
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
+        default_to_pass = (
+            pydantic_field.default
+            if pydantic_field.default is not PydanticUndefined
+            else FIELD_NO_DEFAULT_PROVIDED
+        )
+        if isinstance(default_to_pass, Enum):
+            default_to_pass = default_to_pass.name
+
         return Field(
             config=config_type,
             description=pydantic_field.description,
             is_required=pydantic_field.is_required() and not is_optional(field_type),
-            default_value=(
-                pydantic_field.default
-                if pydantic_field.default is not PydanticUndefined
-                else FIELD_NO_DEFAULT_PROVIDED
-            ),
+            default_value=default_to_pass,
         )
 
 
@@ -307,6 +311,7 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         raise DagsterInvalidPythonicConfigDefinitionError(
             invalid_type=model_cls, config_class=None, field_name=None
         )
+
     return Field(
         config=inner_config_type,
         default_value=(

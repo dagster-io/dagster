@@ -4,9 +4,9 @@ from dagster_dbt.cloud.cli import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR, app
 from typer.testing import CliRunner
 
 from .utils import (
+    DBT_CLOUD_ACCOUNT_ID,
     DBT_CLOUD_EMEA_HOST,
     DBT_CLOUD_US_HOST,
-    SAMPLE_ACCOUNT_ID,
     SAMPLE_API_PREFIX,
     SAMPLE_API_V3_PREFIX,
     SAMPLE_EMEA_API_PREFIX,
@@ -34,7 +34,7 @@ def test_cache_compile_references(
     monkeypatch: pytest.MonkeyPatch, host: str, api_prefix: str, api_v3_prefix: str
 ) -> None:
     monkeypatch.setenv("DBT_CLOUD_API_KEY", "test")
-    monkeypatch.setenv("DBT_CLOUD_ACCOUNT_ID", str(SAMPLE_ACCOUNT_ID))
+    monkeypatch.setenv("DBT_CLOUD_ACCOUNT_ID", str(DBT_CLOUD_ACCOUNT_ID))
     monkeypatch.setenv("DBT_CLOUD_PROJECT_ID", str(SAMPLE_PROJECT_ID))
     monkeypatch.setenv("DBT_CLOUD_HOST", str(host))
     compile_run_environment_variable_id = 3
@@ -66,7 +66,7 @@ def test_cache_compile_references(
 @responses.activate(assert_all_requests_are_fired=True)
 def test_skip_cache_compile_references(monkeypatch):
     monkeypatch.setenv("DBT_CLOUD_API_KEY", "test")
-    monkeypatch.setenv("DBT_CLOUD_ACCOUNT_ID", SAMPLE_ACCOUNT_ID)
+    monkeypatch.setenv("DBT_CLOUD_ACCOUNT_ID", DBT_CLOUD_ACCOUNT_ID)
     monkeypatch.setenv("DBT_CLOUD_PROJECT_ID", SAMPLE_PROJECT_ID)
 
     responses.get(f"{SAMPLE_API_PREFIX}/jobs", json=sample_list_job_details())

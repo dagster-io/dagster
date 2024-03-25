@@ -73,6 +73,8 @@ REPORTING_USER_TAG = f"{SYSTEM_TAG_PREFIX}reporting_user"
 
 RUN_ISOLATION_TAG = f"{SYSTEM_TAG_PREFIX}isolation"
 
+RUN_FAILURE_REASON_TAG = f"{SYSTEM_TAG_PREFIX}failure_reason"
+
 
 USER_EDITABLE_SYSTEM_TAGS = [
     PRIORITY_TAG,
@@ -81,6 +83,9 @@ USER_EDITABLE_SYSTEM_TAGS = [
     MAX_RUNTIME_SECONDS_TAG,
     RUN_ISOLATION_TAG,
 ]
+
+
+TAG_NO_VALUE = "__dagster_no_value"
 
 
 class TagType(Enum):

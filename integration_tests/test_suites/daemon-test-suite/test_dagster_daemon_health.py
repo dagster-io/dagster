@@ -1,16 +1,20 @@
 import time
 
 import pendulum
+import pytest
 from dagster import DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+    DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE,
+    RELOAD_WORKSPACE_INTERVAL,
     all_daemons_healthy,
     all_daemons_live,
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -456,3 +460,43 @@ def test_warn_multiple_daemons(capsys):
                         raise Exception("timed out waiting for heartbeats")
 
                     time.sleep(5)
+
+
+def test_workspace_refresh_failed(monkeypatch, caplog):
+    with instance_for_test() as instance:
+        from dagster._core.workspace.context import WorkspaceProcessContext
+
+        def refresh_failure(_):
+            raise Exception("Failed to load a location")
+
+        monkeypatch.setattr(WorkspaceProcessContext, "refresh_workspace", refresh_failure)
+
+        with daemon_controller_from_instance(
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+        ) as controller:
+            last_workspace_update_time = pendulum.now("UTC")
+
+            controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+            # doesn't try to refresh yet
+            assert not any(
+                "Daemon controller failed to refresh workspace." in str(record)
+                for record in caplog.records
+            )
+
+            with pendulum_freeze_time(
+                last_workspace_update_time.add(seconds=(RELOAD_WORKSPACE_INTERVAL + 1))
+            ):
+                controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+                # refresh fails, it logs but doesn't throw
+                assert any(
+                    "Daemon controller failed to refresh workspace." in str(record)
+                    for record in caplog.records
+                )
+
+            with pendulum_freeze_time(
+                last_workspace_update_time.add(seconds=(DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE + 1))
+            ):
+                # now it throws
+                with pytest.raises(Exception, match="Failed to load a location"):
+                    controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)

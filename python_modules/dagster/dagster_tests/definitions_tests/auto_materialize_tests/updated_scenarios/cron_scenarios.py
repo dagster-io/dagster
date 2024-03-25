@@ -5,11 +5,11 @@ from dagster._core.definitions.auto_materialize_rule import (
     WaitingOnAssetsRuleEvaluationData,
 )
 
-from ..asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec, hour_partition_key
 from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..scenario_specs import (
     daily_partitions_def,
     dynamic_partitions_def,
+    hour_partition_key,
     hourly_partitions_def,
     one_asset,
     one_asset_depends_on_two,
@@ -17,6 +17,7 @@ from .asset_daemon_scenario_states import (
     time_partitions_start_str,
     two_partitions_def,
 )
+from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 
 
 def get_cron_policy(
@@ -47,7 +48,7 @@ basic_hourly_cron_rule = AutoMaterializeRule.materialize_on_cron(
 cron_scenarios = [
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
@@ -72,8 +73,40 @@ cron_scenarios = [
         .assert_requested_runs(),
     ),
     AssetDaemonScenario(
+        id="basic_hourly_cron_unpartitioned_rule_added_later",
+        initial_spec=one_asset.with_asset_properties(
+            # this policy will never materialize the asset
+            auto_materialize_policy=AutoMaterializePolicy(
+                rules={AutoMaterializeRule.skip_on_parent_missing()}
+            )
+        ),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs()
+        # rule added after the first tick, should capture that this asset was not materialized
+        # since the previous tick
+        .with_asset_properties(auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule))
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["A"]))
+        .with_not_started_runs()
+        # back to the original policy which never materializes
+        .with_current_time_advanced(seconds=30)
+        .with_asset_properties(
+            auto_materialize_policy=AutoMaterializePolicy(
+                rules={AutoMaterializeRule.skip_on_parent_missing()}
+            )
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now we add the policy back in, but it's already been materialized since the previous tick
+        # so it shouldn't execute again
+        .with_current_time_advanced(seconds=30)
+        .with_asset_properties(auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule))
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+    AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned_multi_asset",
-        initial_state=three_assets_not_subsettable.with_asset_properties(
+        initial_spec=three_assets_not_subsettable.with_asset_properties(
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
@@ -90,7 +123,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_partitioned",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=hourly_partitions_def,
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule),
         )
@@ -121,7 +154,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_partitioned_with_timezone",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy("@daily", cron_timezone="America/Los_Angeles"),
             partitions_def=daily_partitions_def,
         ).with_current_time("2020-01-02T12:00"),
@@ -142,7 +175,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_cron_unpartitioned_wait_for_parents",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             keys="C", auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
@@ -205,7 +238,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_cron_partitioned_wait_for_parents",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             partitions_def=hourly_partitions_def,
         )
         .with_asset_properties(
@@ -364,7 +397,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_cron_all_partitions",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy(
                 basic_hourly_cron_schedule,
                 all_partitions=True,
@@ -391,7 +424,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="dynamic_cron_all_partitions",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=dynamic_partitions_def,
             auto_materialize_policy=get_cron_policy(
                 basic_hourly_cron_schedule,
@@ -423,7 +456,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="dynamic_cron_last_partition",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=dynamic_partitions_def,
             auto_materialize_policy=get_cron_policy(
                 basic_hourly_cron_schedule,
@@ -449,7 +482,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_cron_unpartitioned_wait_for_parents_with_cron_skip",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             keys="C",
             auto_materialize_policy=get_cron_policy(
                 basic_hourly_cron_schedule, use_cron_skip_rule=True
@@ -499,7 +532,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_cron_unpartitioned_wait_for_parents_with_cron_skip_single_run",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             # all assets get this policy
             auto_materialize_policy=get_cron_policy(
                 basic_hourly_cron_schedule, use_cron_skip_rule=True
@@ -519,7 +552,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_cron_partitioned_wait_for_parents_with_cron_skip",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             partitions_def=hourly_partitions_def,
         )
         .with_asset_properties(
@@ -571,7 +604,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="daily_unpartitioned_downstream_of_hourly_and_static_with_cron_skip",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             keys="A", partitions_def=two_partitions_def
         )
         .with_asset_properties(

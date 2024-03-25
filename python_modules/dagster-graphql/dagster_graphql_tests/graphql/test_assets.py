@@ -241,14 +241,13 @@ GET_ASSET_NODES_FROM_KEYS = """
 """
 
 GET_ASSET_IS_EXECUTABLE = """
-    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
-        assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
+    query AssetNodeQuery($assetKeys: [AssetKeyInput!]) {
+        assetNodes(assetKeys: $assetKeys) {
             id
             isExecutable
         }
     }
 """
-
 
 GET_ASSET_PARTITIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
@@ -278,6 +277,11 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
             partitionKeys
             latestMaterializationByPartition(partitions: $partitions) {
                 partition
+                runOrError {
+                    ... on Run {
+                        status
+                    }
+                }
                 stepStats {
                     startTime
                 }
@@ -1055,12 +1059,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert asset_node["id"] == 'test.test_repo.["asset_one"]'
 
     def test_asset_node_is_executable(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_selector(graphql_context, "executable_test_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_IS_EXECUTABLE,
             variables={
-                "pipelineSelector": selector,
                 "assetKeys": [
                     {"path": ["executable_asset"]},
                     {"path": ["unexecutable_asset"]},
@@ -1139,8 +1141,29 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
     def test_latest_materialization_per_partition(self, graphql_context: WorkspaceRequestContext):
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
+        _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="d")
+        counter = Counter()
+        traced_counter.set(counter)
 
         selector = infer_job_selector(graphql_context, "partition_materialization_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_MATERIALIZATION_PER_PARTITION,
+            variables={"pipelineSelector": selector, "partitions": ["c", "d"]},
+        )
+
+        counts = counter.counts()
+        assert counts.get("DagsterInstance.get_run_records") == 1
+
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
+        assert len(asset_node["latestMaterializationByPartition"]) == 2
+        materialization = asset_node["latestMaterializationByPartition"][0]
+        run_status = materialization["runOrError"]["status"]
+        assert run_status == "SUCCESS"
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_LATEST_MATERIALIZATION_PER_PARTITION,
@@ -1164,6 +1187,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         asset_node = result.data["assetNodes"][0]
         assert len(asset_node["latestMaterializationByPartition"]) == 1
         materialization = asset_node["latestMaterializationByPartition"][0]
+        run_status = materialization["runOrError"]["status"]
+        assert run_status == "SUCCESS"
+
         start_time = materialization["stepStats"]["startTime"]
         assert materialization["partition"] == "c"
 
@@ -1439,7 +1465,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 1
 
     def test_dynamic_partitions(self, graphql_context: WorkspaceRequestContext):
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
         selector = infer_job_selector(graphql_context, "dynamic_partitioned_assets_job")
 
         def _get_materialized_partitions():
@@ -1468,7 +1495,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 result.data["assetNodes"][i]["partitionKeysByDimension"][0]["partitionKeys"] == []
             )
 
-        counts = traced_counter.get().counts()
+        counts = counter.counts()
         assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
         partitions = ["foo", "bar", "baz"]
@@ -1916,7 +1943,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert sorted_asset_nodes[3]["type"]["displayName"] == "Any"
 
     def test_batch_fetch_only_once(self, graphql_context: WorkspaceRequestContext):
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
         result = execute_dagster_graphql(
             graphql_context,
             BATCH_LOAD_ASSETS,
@@ -1925,7 +1953,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert result.data
-        counts = traced_counter.get().counts()
+        counts = counter.counts()
         assert len(counts) == 1
         assert counts.get("DagsterInstance.get_asset_records") == 1
 
@@ -2283,13 +2311,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "dynamic_in_multipartitions_success_job",
             MultiPartitionKey({"dynamic": "1", "static": "a"}),
         )
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
             variables={"pipelineSelector": selector},
         )
-        counts = traced_counter.get().counts()
+        counts = counter.counts()
         assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
         assert result.data
@@ -2380,7 +2409,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert materializations[0]["runId"] == second_run_id
 
     def test_freshness_info(self, graphql_context: WorkspaceRequestContext, snapshot):
-        _create_run(graphql_context, "fresh_diamond_assets")
+        _create_run(graphql_context, "fresh_diamond_assets_job")
         result = execute_dagster_graphql(graphql_context, GET_FRESHNESS_INFO)
 
         assert result.data
@@ -2608,6 +2637,57 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[2]["latestMaterialization"] is None
             assert assets_live_info[2]["unstartedRunIds"] == [run_id]
             assert assets_live_info[2]["inProgressRunIds"] == []
+
+    def test_asset_in_progress_already_materialized(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_selector(graphql_context, "output_then_hang_job")
+
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {
+                            "resources": {"hanging_asset_resource": {"config": {"file": path}}}
+                        },
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_ASSET_IN_PROGRESS_RUNS,
+                variables={
+                    "assetKeys": [
+                        {"path": "output_then_hang_asset"},
+                    ]
+                },
+            )
+            graphql_context.instance.run_launcher.terminate(run_id)
+
+            assert result.data
+            assert result.data["assetsLatestInfo"]
+
+            assets_live_info = result.data["assetsLatestInfo"]
+
+            assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
+            assert len(assets_live_info) == 1
+
+            assert assets_live_info[0]["assetKey"]["path"] == ["output_then_hang_asset"]
+            assert assets_live_info[0]["latestMaterialization"] is not None
+            assert assets_live_info[0]["unstartedRunIds"] == []
+            assert assets_live_info[0]["inProgressRunIds"] == []
 
     def test_graph_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "hanging_graph_asset_job")

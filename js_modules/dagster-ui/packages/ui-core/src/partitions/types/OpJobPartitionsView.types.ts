@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type PartitionsStatusQueryVariables = Types.Exact<{
-  partitionSetName: Types.Scalars['String'];
+  partitionSetName: Types.Scalars['String']['input'];
   repositorySelector: Types.RepositorySelector;
 }>;
 

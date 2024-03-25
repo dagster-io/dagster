@@ -71,7 +71,7 @@ class _Job:
             node_defs,
             config_mapping,
             positional_inputs,
-            node_input_source_assets,
+            input_assets,
         ) = do_composition(
             decorator_name="@job",
             graph_name=self.name,
@@ -92,7 +92,7 @@ class _Job:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
-            node_input_source_assets=node_input_source_assets,
+            input_assets=input_assets,
         )
 
         job_def = graph_def.to_job(
@@ -114,8 +114,7 @@ class _Job:
 
 
 @overload
-def job(compose_fn: Callable[..., Any]) -> JobDefinition:
-    ...
+def job(compose_fn: Callable[..., Any]) -> JobDefinition: ...
 
 
 @overload
@@ -134,8 +133,7 @@ def job(
     version_strategy: Optional[VersionStrategy] = ...,
     partitions_def: Optional["PartitionsDefinition"] = ...,
     input_values: Optional[Mapping[str, object]] = ...,
-) -> _Job:
-    ...
+) -> _Job: ...
 
 
 @deprecated_param(

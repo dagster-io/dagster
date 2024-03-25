@@ -1,5 +1,6 @@
 import copy
 import logging
+import warnings
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
@@ -31,7 +32,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import is_valid_cron_schedule
+from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
 
 from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
@@ -84,7 +85,7 @@ class DefaultScheduleStatus(Enum):
 
 
 def get_or_create_schedule_context(
-    fn: Callable, *args: Any, **kwargs: Any
+    fn: Callable[..., Any], *args: Any, **kwargs: Any
 ) -> "ScheduleEvaluationContext":
     """Based on the passed resource function and the arguments passed to it, returns the
     user-passed ScheduleEvaluationContext or creates one if it is not passed.
@@ -578,6 +579,14 @@ class ScheduleDefinition(IHasInternalInit):
                 f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
                 "Dagster recognizes standard cron expressions consisting of 5 fields."
             )
+        if has_out_of_range_cron_interval(self._cron_schedule):  # type: ignore
+            warnings.warn(
+                "Found a cron schedule with an interval greater than the expected range for"
+                f" schedule '{name}'. Dagster currently normalizes this to an interval that may"
+                " fire more often than expected. You may want to break this cron schedule up into"
+                " a sequence of cron schedules. See"
+                " https://github.com/dagster-io/dagster/issues/15294 for more information."
+            )
 
         if job is not None:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
@@ -596,7 +605,7 @@ class ScheduleDefinition(IHasInternalInit):
 
         self._description = check.opt_str_param(description, "description")
 
-        self._environment_vars = check.opt_mapping_param(
+        self._environment_vars = check.opt_nullable_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
 
@@ -608,9 +617,9 @@ class ScheduleDefinition(IHasInternalInit):
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn: Optional[
-                Union[Callable[..., Any], DecoratedScheduleFunction]
-            ] = None
+            self._execution_fn: Optional[Union[Callable[..., Any], DecoratedScheduleFunction]] = (
+                None
+            )
             if isinstance(execution_fn, DecoratedScheduleFunction):
                 self._execution_fn = execution_fn
             else:
@@ -811,7 +820,7 @@ class ScheduleDefinition(IHasInternalInit):
         additional_warn_text="Setting this property no longer has any effect.",
     )
     @property
-    def environment_vars(self) -> Mapping[str, str]:
+    def environment_vars(self) -> Optional[Mapping[str, str]]:
         """Mapping[str, str]: Environment variables to export to the cron schedule."""
         return self._environment_vars
 

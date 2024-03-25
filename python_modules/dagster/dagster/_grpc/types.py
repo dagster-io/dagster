@@ -8,14 +8,14 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
-from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
-from dagster._core.host_representation.origin import (
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
 )
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.serdes import SetToSequenceFieldSerializer
 from dagster._utils.error import SerializableErrorInfo
@@ -495,6 +495,7 @@ class JobSubsetSnapshotArgs(
             ("op_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
+            ("include_parent_snapshot", bool),
         ],
     )
 ):
@@ -504,6 +505,7 @@ class JobSubsetSnapshotArgs(
         op_selection: Optional[Sequence[str]],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        include_parent_snapshot: Optional[bool] = None,
     ):
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
@@ -514,6 +516,9 @@ class JobSubsetSnapshotArgs(
             asset_selection=check.opt_nullable_set_param(asset_selection, "asset_selection"),
             asset_check_selection=check.opt_nullable_set_param(
                 asset_check_selection, "asset_check_selection"
+            ),
+            include_parent_snapshot=(
+                include_parent_snapshot if include_parent_snapshot is not None else True
             ),
         )
 

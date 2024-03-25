@@ -644,9 +644,9 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             # display in the UI
             self._partially_initialized_airbyte_instance = airbyte_resource_def
             # The processed copy is used to query the Airbyte instance
-            self._airbyte_instance: (
-                AirbyteResource
-            ) = self._partially_initialized_airbyte_instance.process_config_and_initialize()
+            self._airbyte_instance: AirbyteResource = (
+                self._partially_initialized_airbyte_instance.process_config_and_initialize()
+            )
         else:
             self._partially_initialized_airbyte_instance = airbyte_resource_def(
                 build_init_resource_context()

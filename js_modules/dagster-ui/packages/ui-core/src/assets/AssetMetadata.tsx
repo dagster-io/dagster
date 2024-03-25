@@ -4,7 +4,11 @@ import {Box, MetadataTable} from '@dagster-io/ui-components';
 import {AssetNodeOpMetadataFragment} from './types/AssetMetadata.types';
 import {DAGSTER_TYPE_FRAGMENT} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
-import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
+import {
+  HIDDEN_METADATA_ENTRY_LABELS,
+  METADATA_ENTRY_FRAGMENT,
+  MetadataEntry,
+} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 
 export const metadataForAssetNode = (
@@ -22,12 +26,14 @@ export const AssetMetadataTable = ({
   assetMetadata: MetadataEntryFragment[];
   repoLocation: string;
 }) => {
-  const rows = assetMetadata.map((entry) => {
-    return {
-      key: entry.label,
-      value: <MetadataEntry entry={entry} repoLocation={repoLocation} />,
-    };
-  });
+  const rows = assetMetadata
+    .filter((entry) => !HIDDEN_METADATA_ENTRY_LABELS.has(entry.label))
+    .map((entry) => {
+      return {
+        key: entry.label,
+        value: <MetadataEntry entry={entry} repoLocation={repoLocation} />,
+      };
+    });
   return (
     <Box padding={{vertical: 16, horizontal: 24}} style={{overflowX: 'auto'}}>
       <MetadataTable rows={rows} />

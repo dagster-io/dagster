@@ -3,7 +3,7 @@ from dagster import asset
 # start_example
 
 
-@asset(metadata={"owner": "alice@mycompany.com", "priority": "high"})
+@asset(metadata={"priority": "high"})
 def my_asset():
     return 5
 

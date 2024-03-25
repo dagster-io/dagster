@@ -15,6 +15,7 @@ import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
+import {AnchorButton} from '../ui/AnchorButton';
 
 type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
 
@@ -70,14 +71,16 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
               </Heading>
             )}
           />
-          <Tooltip placement="bottom" content="Copy asset key">
-            <CopyButton onClick={performCopy}>
-              <Icon
-                name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                color={Colors.accentGray()}
-              />
-            </CopyButton>
-          </Tooltip>
+          {copyableString ? (
+            <Tooltip placement="bottom" content="Copy asset key">
+              <CopyButton onClick={performCopy}>
+                <Icon
+                  name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
+                  color={Colors.accentGray()}
+                />
+              </CopyButton>
+            </Tooltip>
+          ) : undefined}
         </Box>
       }
       {...extra}
@@ -112,6 +115,12 @@ export const AssetGlobalLineageLink = () => (
       View global asset lineage
     </Box>
   </Link>
+);
+
+export const AssetGlobalLineageButton = () => (
+  <AnchorButton intent="primary" icon={<Icon name="schema" />} to="/asset-groups">
+    View lineage
+  </AnchorButton>
 );
 
 const BreadcrumbsWithSlashes = styled(Breadcrumbs)`

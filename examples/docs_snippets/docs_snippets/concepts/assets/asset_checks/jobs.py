@@ -9,18 +9,15 @@ from dagster import (
 
 
 @asset
-def my_asset():
-    ...
+def my_asset(): ...
 
 
 @asset_check(asset=my_asset)
-def check_1():
-    ...
+def check_1(): ...
 
 
 @asset_check(asset=my_asset)
-def check_2():
-    ...
+def check_2(): ...
 
 
 # includes my_asset and both checks

@@ -335,8 +335,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         """
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
-        ...
+    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
 
     def _messages_thread(
         self,
@@ -438,20 +437,16 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
 class PipesLogReader(ABC):
     @abstractmethod
-    def start(self, params: PipesParams, is_session_closed: Event) -> None:
-        ...
+    def start(self, params: PipesParams, is_session_closed: Event) -> None: ...
 
     @abstractmethod
-    def stop(self) -> None:
-        ...
+    def stop(self) -> None: ...
 
     @abstractmethod
-    def is_running(self) -> bool:
-        ...
+    def is_running(self) -> bool: ...
 
     @abstractmethod
-    def target_is_readable(self, params: PipesParams) -> bool:
-        ...
+    def target_is_readable(self, params: PipesParams) -> bool: ...
 
     @property
     def name(self) -> str:
@@ -474,8 +469,7 @@ class PipesChunkedLogReader(PipesLogReader):
         self.thread: Optional[Thread] = None
 
     @abstractmethod
-    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
-        ...
+    def download_log_chunk(self, params: PipesParams) -> Optional[str]: ...
 
     def start(self, params: PipesParams, is_session_closed: Event) -> None:
         self.thread = Thread(target=self._reader_thread, args=(params, is_session_closed))

@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 
 import pendulum
 import pytest
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG

@@ -1,6 +1,6 @@
 import {Button, Dialog, DialogBody, DialogFooter, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled, {createGlobalStyle} from 'styled-components';
 
 import {copyValue} from './DomUtils';
 import {testId} from '../testing/testId';
@@ -73,6 +73,7 @@ export const CustomAlertProvider = () => {
       onClose={() => setCustomAlert(null)}
       style={{width: 'auto', maxWidth: '80vw'}}
       isOpen={!!alert}
+      portalClassName="custom-alert-portal"
     >
       {alert ? (
         <DialogBody data-testid={testId('alert-body')}>
@@ -95,4 +96,10 @@ const Body = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
   font-size: 16px;
+`;
+
+export const GlobalCustomAlertPortalStyle = createGlobalStyle`
+  .custom-alert-portal {
+    z-index: 1000;
+  }
 `;

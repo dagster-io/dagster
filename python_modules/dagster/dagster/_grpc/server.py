@@ -42,7 +42,10 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
     user_code_error_boundary,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.libraries import DagsterLibraryRegistry
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
     ExternalPartitionExecutionErrorData,
     ExternalRepositoryErrorData,
@@ -51,10 +54,7 @@ from dagster._core.host_representation.external_data import (
     external_job_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.origin import ExternalRepositoryOrigin
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.libraries import DagsterLibraryRegistry
-from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.remote_representation.origin import ExternalRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
@@ -184,7 +184,7 @@ def _set_request_count(api_name: str, value: Any) -> None:
 
 def retrieve_metrics():
     class _MetricsRetriever:
-        def __call__(self, fn: Callable) -> Callable:
+        def __call__(self, fn: Callable[..., Any]) -> Callable:
             api_call = fn.__name__
             METRICS_RETRIEVAL_FUNCTIONS.add(api_call)
 
@@ -740,6 +740,7 @@ class DagsterApiServer(DagsterApiServicer):
                     job_subset_snapshot_args.op_selection,
                     job_subset_snapshot_args.asset_selection,
                     job_subset_snapshot_args.asset_check_selection,
+                    job_subset_snapshot_args.include_parent_snapshot,
                 )
             )
         except Exception:
@@ -792,7 +793,9 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
-            ser_job_data = serialize_value(external_job_data_from_def(job_def))
+            ser_job_data = serialize_value(
+                external_job_data_from_def(job_def, include_parent_snapshot=True)
+            )
             return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:
             return api_pb2.ExternalJobReply(
@@ -887,6 +890,7 @@ class DagsterApiServer(DagsterApiServicer):
             return serialize_value(
                 get_external_sensor_execution(
                     self._get_repo_for_origin(args.repository_origin),
+                    args.repository_origin.code_location_origin,
                     args.instance_ref,
                     args.sensor_name,
                     args.last_tick_completion_time,

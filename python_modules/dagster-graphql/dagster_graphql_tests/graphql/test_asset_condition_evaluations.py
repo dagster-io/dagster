@@ -5,7 +5,7 @@ from unittest.mock import PropertyMock, patch
 import dagster._check as check
 import pendulum
 from dagster import AssetKey, RunRequest
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetConditionEvaluationWithRunIds,
     AssetConditionSnapshot,
@@ -17,13 +17,9 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
-from dagster._core.definitions.run_request import (
-    InstigatorType,
-)
+from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.host_representation.origin import (
-    ExternalInstigatorOrigin,
-)
+from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -361,7 +357,10 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
 
         with patch(
-            "dagster._core.instance.DagsterInstance.auto_materialize_use_sensors",
+            graphql_context.instance.__class__.__module__
+            + "."
+            + graphql_context.instance.__class__.__name__
+            + ".auto_materialize_use_sensors",
             new_callable=PropertyMock,
         ) as mock_my_property:
             mock_my_property.return_value = True

@@ -212,9 +212,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             "dagster/run-id": run.run_id,
         }
         if run.external_job_origin:
-            labels[
-                "dagster/code-location"
-            ] = run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            labels["dagster/code-location"] = (
+                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            )
 
         job = construct_dagster_k8s_job(
             job_config,

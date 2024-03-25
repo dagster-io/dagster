@@ -8,7 +8,7 @@ import pytest
 from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin,

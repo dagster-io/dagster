@@ -26,7 +26,7 @@ export const AssetMaterializationGraphs = (props: {
   }, [props.groups]);
 
   const graphDataByMetadataLabel = extractNumericData(reversed, props.xAxis);
-  const graphLabels = Object.keys(graphDataByMetadataLabel).slice(0, 20).sort();
+  const graphLabels = Object.keys(graphDataByMetadataLabel).slice(0, 100).sort();
 
   if (process.env.NODE_ENV === 'test') {
     return <span />; // chartjs and our useViewport hook don't play nicely with jest

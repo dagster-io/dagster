@@ -333,7 +333,7 @@ export const AutomaterializeMiddlePanelWithData = ({
           <Box border="bottom" padding={{vertical: 12}} margin={{bottom: 12}}>
             <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24}}>
               <Box flex={{direction: 'column', gap: 5}}>
-                <Subtitle2>Evaluation Result</Subtitle2>
+                <Subtitle2>Evaluation result</Subtitle2>
                 <div>{statusTag}</div>
               </Box>
               {selectedEvaluation?.timestamp ? (

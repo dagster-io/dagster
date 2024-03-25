@@ -7,6 +7,7 @@ import pytest
 from dagster import (
     AssetIn,
     AssetOut,
+    AssetSpec,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
     IdentityPartitionMapping,
@@ -40,7 +41,9 @@ from dagster._core.definitions.asset_selection import (
     UpstreamAssetSelection,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.tags import TAG_NO_VALUE
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from pydantic import ValidationError
@@ -166,9 +169,13 @@ def test_asset_selection_groups(all_assets: _AssetList):
 def test_asset_selection_keys(all_assets: _AssetList):
     sel = AssetSelection.keys(AssetKey("alice"), AssetKey("bob"))
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+    assert str(sel) == "alice or bob"
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+    sel = AssetSelection.keys("alice", "bob", "carol", "dave")
+    assert str(sel) == "4 assets"
 
 
 def test_asset_selection_key_prefixes(all_assets: _AssetList):
@@ -364,8 +371,7 @@ def test_self_dep(partitions_def, partition_mapping):
         partitions_def=partitions_def,
         ins={"a": AssetIn(partition_mapping=partition_mapping)},
     )
-    def a(a):
-        ...
+    def a(a): ...
 
     assert AssetSelection.keys("a").resolve([a]) == {a.key}
     assert AssetSelection.keys("a").upstream().resolve([a]) == {a.key}
@@ -376,12 +382,10 @@ def test_self_dep(partitions_def, partition_mapping):
 
 def test_from_coercible_multi_asset():
     @multi_asset(outs={"asset1": AssetOut(), "asset2": AssetOut()})
-    def my_multi_asset():
-        ...
+    def my_multi_asset(): ...
 
     @asset
-    def other_asset():
-        ...
+    def other_asset(): ...
 
     assert (
         AssetSelection.from_coercible([my_multi_asset]).resolve([my_multi_asset, other_asset])
@@ -391,12 +395,10 @@ def test_from_coercible_multi_asset():
 
 def test_from_coercible_tuple():
     @asset
-    def foo():
-        ...
+    def foo(): ...
 
     @asset
-    def bar():
-        ...
+    def bar(): ...
 
     assert AssetSelection.from_coercible((foo, bar)).resolve([foo, bar]) == {
         AssetKey("foo"),
@@ -532,23 +534,22 @@ def test_all_asset_selection_subclasses_serializable():
 
 
 def test_to_serializable_asset_selection():
-    class UnserializableAssetSelection(AssetSelection, frozen=True):
-        def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+    class UnserializableAssetSelection(AssetSelection):
+        def resolve_inner(
+            self, asset_graph: BaseAssetGraph, allow_missing: bool
+        ) -> AbstractSet[AssetKey]:
             return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
 
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset_check(asset=asset1)
-    def check1():
-        ...
+    def check1(): ...
 
-    asset_graph = AssetGraph.from_assets([asset1, asset2], asset_checks=[check1])
+    asset_graph = AssetGraph.from_assets([asset1, asset2, check1])
 
     def assert_serializable_same(asset_selection: AssetSelection) -> None:
         assert asset_selection.to_serializable_asset_selection(asset_graph) == asset_selection
@@ -707,3 +708,48 @@ def test_deserialize_old_all_asset_selection():
     old_serialized_value = '{"__class__": "AllSelection"}'
     new_unserialized_value = deserialize_value(old_serialized_value, AllSelection)
     assert not new_unserialized_value.include_sources
+
+
+def test_from_string_tag():
+    assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
+    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", TAG_NO_VALUE)
+
+
+def test_tag():
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1", tags={"foo": "fooval"}),
+            AssetSpec("asset2", tags={"foo": "fooval2"}),
+            AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
+            AssetSpec("asset4", tags={"bar": "barval"}),
+        ]
+    )
+    def assets(): ...
+
+    assert AssetSelection.tag("foo", "fooval").resolve([assets]) == {
+        AssetKey(k) for k in ["asset1", "asset3"]
+    }
+
+
+def test_tag_string():
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1", tags={"foo": "fooval"}),
+            AssetSpec("asset2", tags={"foo": "fooval2"}),
+            AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
+            AssetSpec("asset4", tags={"bar": "barval"}),
+            AssetSpec("asset5", tags={"baz": TAG_NO_VALUE}),
+            AssetSpec("asset6", tags={"baz": TAG_NO_VALUE, "bar": "barval"}),
+        ]
+    )
+    def assets(): ...
+
+    assert AssetSelection.tag_string("foo=fooval").resolve([assets]) == {
+        AssetKey("asset1"),
+        AssetKey("asset3"),
+    }
+    assert AssetSelection.tag_string("foo").resolve([assets]) == set()
+    assert AssetSelection.tag_string("baz").resolve([assets]) == {
+        AssetKey("asset5"),
+        AssetKey("asset6"),
+    }

@@ -5,9 +5,9 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
-from dagster._core.host_representation.origin import ExternalJobOrigin
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation.origin import ExternalJobOrigin
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,

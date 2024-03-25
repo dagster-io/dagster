@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, List
 import dagster._check as check
 import graphene
 from dagster._core.definitions.selector import ResourceSelector
-from dagster._core.host_representation.external import ExternalRepository, ExternalResource
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external import ExternalRepository, ExternalResource
+from dagster._core.remote_representation.external_data import (
     ExternalResourceConfigEnvVar,
     ExternalResourceValue,
     NestedResourceType,

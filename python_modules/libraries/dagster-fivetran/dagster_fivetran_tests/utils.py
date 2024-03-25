@@ -63,14 +63,20 @@ def get_sample_connector_schema_config(tables):
     }
 
 
-def get_complex_sample_connector_schema_config():
+# Set schema names if you want to reuse this on multiple connectors for the same fivetran service
+# without getting duplicate asset keys.
+def get_complex_sample_connector_schema_config(
+    schema_name_1: str = "xyz1",
+    schema_name_2: str = "abc",
+    schema_name_3: str = "qwerty",
+):
     return {
         "code": "Success",
         "data": {
             "enable_new_by_default": False,
             "schemas": {
                 "schema_1": {
-                    "name_in_destination": "xyz1",
+                    "name_in_destination": schema_name_1,
                     "enabled": True,
                     "tables": {
                         "table_1": {
@@ -116,7 +122,7 @@ def get_complex_sample_connector_schema_config():
                     },
                 },
                 "schema_2": {
-                    "name_in_destination": "abc",
+                    "name_in_destination": schema_name_2,
                     "enabled": True,
                     "tables": {
                         "table_1": {
@@ -139,7 +145,7 @@ def get_complex_sample_connector_schema_config():
                     },
                 },
                 "schema_3": {
-                    "name_in_destination": "qwerty",
+                    "name_in_destination": schema_name_3,
                     "enabled": False,
                     "tables": {
                         "table_1": {
@@ -226,8 +232,8 @@ def get_sample_connectors_response_multiple():
             },
             {
                 "id": "FAKE",
-                "service": "some_other_service",
-                "schema": "some_other_service.some_name",
+                "service": "some_fake_service",
+                "schema": "some_fake_service.some_name",
                 "status": {
                     "setup_state": "broken",
                 },

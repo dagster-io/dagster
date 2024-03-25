@@ -124,8 +124,7 @@ def visit_flag(self, node: flag):
     self.body.append(html)
 
 
-def depart_flag(self, node: flag):
-    ...
+def depart_flag(self, node: flag): ...
 
 
 class FlagDirective(SphinxDirective):

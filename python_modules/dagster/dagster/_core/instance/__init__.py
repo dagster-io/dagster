@@ -16,6 +16,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Final,
     Generic,
     Iterable,
     List,
@@ -48,7 +49,7 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster._core.log_manager import DagsterLogRecord
+from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -68,6 +69,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
 )
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
@@ -102,6 +104,13 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 RUNLESS_RUN_ID = ""
 RUNLESS_JOB_NAME = ""
 
+# Sets the number of events that will be buffered before being written to the event log. Only
+# applies to explicitly batched events. Currently this defaults to 0, which turns off batching
+# entirely (multiple store_event calls are made instead of store_event_batch). This makes batching
+# opt-in.
+EVENT_BATCH_SIZE: Final = int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
+
+
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -121,6 +130,7 @@ if TYPE_CHECKING:
     from dagster._core.events import (
         AssetMaterialization,
         DagsterEvent,
+        DagsterEventBatchMetadata,
         DagsterEventType,
         EngineEventData,
     )
@@ -129,15 +139,15 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster._core.host_representation import (
+    from dagster._core.launcher import RunLauncher
+    from dagster._core.remote_representation import (
         CodeLocation,
         ExternalJob,
         ExternalJobOrigin,
         ExternalSensor,
         HistoricalJob,
     )
-    from dagster._core.host_representation.external import ExternalSchedule
-    from dagster._core.launcher import RunLauncher
+    from dagster._core.remote_representation.external import ExternalSchedule
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
@@ -181,6 +191,10 @@ if TYPE_CHECKING:
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
 
+def _is_batch_writing_enabled() -> bool:
+    return EVENT_BATCH_SIZE > 0
+
+
 def _check_run_equality(
     pipeline_run: DagsterRun, candidate_run: DagsterRun
 ) -> Mapping[str, Tuple[Any, Any]]:
@@ -219,22 +233,25 @@ class _EventListenerLogHandler(logging.Handler):
         self._instance = instance
         super(_EventListenerLogHandler, self).__init__()
 
-    def emit(self, record: DagsterLogRecord) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         from dagster._core.events import EngineEventData
         from dagster._core.events.log import StructuredLoggerMessage, construct_event_record
 
+        record_metadata = get_log_record_metadata(record)
         event = construct_event_record(
             StructuredLoggerMessage(
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,  # type: ignore
+                meta=record_metadata,
                 record=record,
             )
         )
 
         try:
-            self._instance.handle_new_event(event)
+            self._instance.handle_new_event(
+                event, batch_metadata=record_metadata["dagster_event_batch_metadata"]
+            )
         except Exception as e:
             sys.stderr.write(f"Exception while writing logger call to event log: {e}\n")
             if event.dagster_event:
@@ -307,12 +324,10 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
     @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        ...
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
 
     @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        ...
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -368,9 +383,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Stores TemporaryDirectory instances that were created for DagsterInstance.local_temp() calls
     # to be removed once the instance is garbage collected.
-    _TEMP_DIRS: (
-        "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]"
-    ) = weakref.WeakKeyDictionary()
+    _TEMP_DIRS: "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]" = (
+        weakref.WeakKeyDictionary()
+    )
 
     def __init__(
         self,
@@ -479,6 +494,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 "Run retries are enabled, but the configured event log storage does not support"
                 " them. Consider switching to Postgres or Mysql.",
             )
+
+        # Used for batched event handling
+        self._event_buffer: Dict[str, List[EventLogEntry]] = defaultdict(list)
 
     # ctors
 
@@ -816,6 +834,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_sensor_settings(self) -> Mapping[str, Any]:
         return self.get_settings("sensors")
 
+    def get_auto_materialize_settings(self) -> Mapping[str, Any]:
+        return self.get_settings("auto_materialize")
+
     @property
     def telemetry_enabled(self) -> bool:
         if self.is_ephemeral:
@@ -907,7 +928,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_retries_max_retries(self) -> int:
-        return self.get_settings("run_retries").get("max_retries")
+        return self.get_settings("run_retries").get("max_retries", 0)
 
     @property
     def auto_materialize_enabled(self) -> bool:
@@ -1056,7 +1077,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_historical_job(self, snapshot_id: str) -> "HistoricalJob":
-        from dagster._core.host_representation import HistoricalJob
+        from dagster._core.remote_representation import HistoricalJob
 
         snapshot = self._run_storage.get_job_snapshot(snapshot_id)
         parent_snapshot = (
@@ -1087,7 +1108,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_run_tags(
         self,
-        tag_keys: Optional[Sequence[str]] = None,
+        tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[Tuple[str, Set[str]]]:
@@ -1231,6 +1252,17 @@ class DagsterInstance(DynamicPartitionsStore):
             else None
         )
 
+        if execution_plan_snapshot:
+            from ..op_concurrency_limits_counter import (
+                compute_run_op_concurrency_info_for_snapshot,
+            )
+
+            run_op_concurrency = compute_run_op_concurrency_info_for_snapshot(
+                execution_plan_snapshot
+            )
+        else:
+            run_op_concurrency = None
+
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -1250,6 +1282,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_code_origin=job_code_origin,
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
+            run_op_concurrency=run_op_concurrency,
         )
 
     def _ensure_persisted_job_snapshot(
@@ -1263,20 +1296,16 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(parent_job_snapshot, "parent_job_snapshot", JobSnapshot)
 
         if job_snapshot.lineage_snapshot:
-            if not self._run_storage.has_job_snapshot(
-                job_snapshot.lineage_snapshot.parent_snapshot_id
-            ):
-                check.invariant(
-                    create_job_snapshot_id(parent_job_snapshot)  # type: ignore  # (possible none)
-                    == job_snapshot.lineage_snapshot.parent_snapshot_id,
-                    "Parent pipeline snapshot id out of sync with passed parent pipeline snapshot",
+            parent_snapshot_id = create_job_snapshot_id(check.not_none(parent_job_snapshot))
+
+            if job_snapshot.lineage_snapshot.parent_snapshot_id != parent_snapshot_id:
+                warnings.warn(
+                    f"Stored parent snapshot ID {parent_snapshot_id} did not match the parent snapshot ID {job_snapshot.lineage_snapshot.parent_snapshot_id} on the subsetted job"
                 )
 
-                returned_job_snapshot_id = self._run_storage.add_job_snapshot(
-                    parent_job_snapshot  # type: ignore  # (possible none)
-                )
-                check.invariant(
-                    job_snapshot.lineage_snapshot.parent_snapshot_id == returned_job_snapshot_id
+            if not self._run_storage.has_job_snapshot(parent_snapshot_id):
+                self._run_storage.add_job_snapshot(
+                    check.not_none(parent_job_snapshot), parent_snapshot_id
                 )
 
         job_snapshot_id = create_job_snapshot_id(job_snapshot)
@@ -1458,7 +1487,7 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> DagsterRun:
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.definitions.utils import validate_tags
-        from dagster._core.host_representation.origin import ExternalJobOrigin
+        from dagster._core.remote_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 
         check.str_param(job_name, "job_name")
@@ -1606,7 +1635,7 @@ class DagsterInstance(DynamicPartitionsStore):
             ReexecutionStrategy,
         )
         from dagster._core.execution.plan.state import KnownExecutionState
-        from dagster._core.host_representation import CodeLocation, ExternalJob
+        from dagster._core.remote_representation import CodeLocation, ExternalJob
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)
@@ -1620,12 +1649,16 @@ class DagsterInstance(DynamicPartitionsStore):
         root_run_id = parent_run.root_run_id or parent_run.run_id
         parent_run_id = parent_run.run_id
 
+        # these can differ from external_job.tags if tags were added at launch time
+        parent_run_tags = (
+            {key: val for key, val in parent_run.tags.items() if key != RUN_FAILURE_REASON_TAG}
+            if use_parent_run_tags
+            else {}
+        )
+
         tags = merge_dicts(
             external_job.tags,
-            (
-                # these can differ from external_job.tags if tags were added at launch time
-                parent_run.tags if use_parent_run_tags else {}
-            ),
+            parent_run_tags,
             extra_tags or {},
             {
                 PARENT_RUN_ID_TAG: parent_run_id,
@@ -2341,16 +2374,62 @@ class DagsterInstance(DynamicPartitionsStore):
     def store_event(self, event: "EventLogEntry") -> None:
         self._event_storage.store_event(event)
 
-    def handle_new_event(self, event: "EventLogEntry") -> None:
-        run_id = event.run_id
+    def handle_new_event(
+        self,
+        event: "EventLogEntry",
+        *,
+        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
+    ) -> None:
+        """Handle a new event by storing it and notifying subscribers.
 
-        self._event_storage.store_event(event)
+        Events may optionally be sent with `batch_metadata`. If batch writing is enabled, then
+        events sent with `batch_metadata` will not trigger an immediate write. Instead, they will be
+        kept in a batch-specific buffer (identified by `batch_metadata.id`) until either the buffer
+        reaches the EVENT_BATCH_SIZE or the end of the batch is reached (signaled by
+        `batch_metadata.is_end`). When this point is reached, all events in the buffer will be sent
+        to the storage layer in a single batch. If an error occurrs during batch writing, then we
+        fall back to iterative individual event writes.
 
-        if event.is_dagster_event and event.get_dagster_event().is_job_event:
-            self._run_storage.handle_run_event(run_id, event.get_dagster_event())
+        Args:
+            event (EventLogEntry): The event to handle.
+            batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
+        """
+        if batch_metadata is None or not _is_batch_writing_enabled():
+            events = [event]
+        else:
+            batch_id, is_batch_end = batch_metadata.id, batch_metadata.is_end
+            self._event_buffer[batch_id].append(event)
+            if is_batch_end or len(self._event_buffer[batch_id]) == EVENT_BATCH_SIZE:
+                events = self._event_buffer[batch_id]
+                del self._event_buffer[batch_id]
+            else:
+                return
 
-        for sub in self._subscribers[run_id]:
-            sub(event)
+        if len(events) == 1:
+            self._event_storage.store_event(events[0])
+        else:
+            try:
+                self._event_storage.store_event_batch(events)
+
+            # Fall back to storing events one by one if writing a batch fails. We catch a generic
+            # Exception because that is the parent class of the actually received error,
+            # dagster_cloud_cli.core.errors.GraphQLStorageError, which we cannot import here due to
+            # it living in a cloud package.
+            except Exception as e:
+                sys.stderr.write(f"Exception while storing event batch: {e}\n")
+                sys.stderr.write(
+                    "Falling back to storing multiple single-event storage requests...\n"
+                )
+                for event in events:
+                    self._event_storage.store_event(event)
+
+        for event in events:
+            run_id = event.run_id
+            if event.is_dagster_event and event.get_dagster_event().is_job_event:
+                self._run_storage.handle_run_event(run_id, event.get_dagster_event())
+
+            for sub in self._subscribers[run_id]:
+                sub(event)
 
     def add_event_listener(self, run_id: str, cb) -> None:
         self._subscribers[run_id].append(cb)
@@ -2513,7 +2592,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             run_id (str): The id of the run.
         """
-        from dagster._core.host_representation import ExternalJobOrigin
+        from dagster._core.remote_representation import ExternalJobOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)

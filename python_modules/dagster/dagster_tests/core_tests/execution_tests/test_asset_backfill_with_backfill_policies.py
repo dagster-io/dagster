@@ -1,5 +1,6 @@
 import math
-from unittest.mock import MagicMock
+from contextlib import ExitStack
+from unittest.mock import MagicMock, patch
 
 import pendulum
 import pytest
@@ -14,12 +15,17 @@ from dagster import (
     WeeklyPartitionsDefinition,
     asset,
 )
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterBackfillFailedError
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
     execute_asset_backfill_iteration_consume_generator,
@@ -494,13 +500,54 @@ def test_backfill_run_contains_more_than_one_asset():
     assert counts[3].num_targeted_partitions == downstream_num_of_partitions
 
 
-def test_dynamic_partitions():
+def test_dynamic_partitions_multi_run_backfill_policy():
+    @asset(
+        backfill_policy=BackfillPolicy.multi_run(),
+        partitions_def=DynamicPartitionsDefinition(name="apple"),
+    )
+    def asset1() -> None: ...
+
+    assets_by_repo_name = {"repo": [asset1]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("apple", ["foo", "bar"])
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        asset_selection=[asset1.key],
+        dynamic_partitions_store=instance,
+        partition_names=["foo", "bar"],
+        backfill_start_time=pendulum.now("UTC"),
+        all_partitions=False,
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert result.backfill_data != backfill_data
+    assert len(result.run_requests) == 2
+    assert any(
+        run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "foo"
+        and run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "foo"
+        for run_request in result.run_requests
+    )
+    assert any(
+        run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "bar"
+        and run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"
+        for run_request in result.run_requests
+    )
+
+
+def test_dynamic_partitions_single_run_backfill_policy():
     @asset(
         backfill_policy=BackfillPolicy.single_run(),
         partitions_def=DynamicPartitionsDefinition(name="apple"),
     )
-    def asset1() -> None:
-        ...
+    def asset1() -> None: ...
 
     assets_by_repo_name = {"repo": [asset1]}
     asset_graph = get_asset_graph(assets_by_repo_name)
@@ -529,9 +576,14 @@ def test_dynamic_partitions():
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"
 
 
-def test_assets_backfill_with_partition_mapping():
+@pytest.mark.parametrize("same_partitions", [True, False])
+def test_assets_backfill_with_partition_mapping(same_partitions):
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    if same_partitions:
+        # time at which there will be an identical set of partitions for the downstream asset
+        test_time = pendulum.parse("2023-03-04T00:00:00", tz="UTC")
+    else:
+        test_time = pendulum.now("UTC")
 
     @asset(
         name="upstream_a",
@@ -570,25 +622,36 @@ def test_assets_backfill_with_partition_mapping():
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_time=test_time,
         all_partitions=False,
     )
     assert backfill_data
-    result = execute_asset_backfill_iteration_consume_generator(
-        backfill_id="test_backfill_id",
-        asset_backfill_data=backfill_data,
-        asset_graph=asset_graph,
-        instance=instance,
-    )
+    with pendulum_freeze_time(test_time):
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id="test_backfill_id",
+            asset_backfill_data=backfill_data,
+            asset_graph=asset_graph,
+            instance=instance,
+        )
     assert len(result.run_requests) == 1
-    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
+
+    if same_partitions:
+        assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
+    else:
+        assert set(result.run_requests[0].asset_selection) == {upstream_a.key}
+
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-01"
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-03"
 
 
-def test_assets_backfill_with_partition_mapping_run_to_complete():
+@pytest.mark.parametrize("same_partitions", [True, False])
+def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions):
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    if same_partitions:
+        # time at which there will be an identical set of partitions for the downstream asset
+        test_time = pendulum.parse("2023-03-04T00:00:00", tz="UTC")
+    else:
+        test_time = pendulum.now("UTC")
 
     @asset(
         name="upstream_a",
@@ -627,7 +690,7 @@ def test_assets_backfill_with_partition_mapping_run_to_complete():
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_time=test_time,
         all_partitions=False,
     )
 
@@ -650,7 +713,11 @@ def test_assets_backfill_with_partition_mapping_run_to_complete():
     assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
 
     assert counts[1].asset_key == downstream_b.key
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 6
+    assert (
+        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 3
+        if same_partitions
+        else 6
+    )
     assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
     assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
 
@@ -834,7 +901,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
 
 def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    test_time = pendulum.parse("2023-03-10T00:00:00", tz="UTC")
 
     @asset(
         name="upstream_a",
@@ -878,16 +945,17 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_time=test_time,
         all_partitions=False,
     )
     assert backfill_data
-    result = execute_asset_backfill_iteration_consume_generator(
-        backfill_id="test_backfill_id",
-        asset_backfill_data=backfill_data,
-        asset_graph=asset_graph,
-        instance=instance,
-    )
+    with pendulum_freeze_time(test_time):
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id="test_backfill_id",
+            asset_backfill_data=backfill_data,
+            asset_graph=asset_graph,
+            instance=instance,
+        )
 
     assert len(result.run_requests) == 1
     assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
@@ -939,3 +1007,70 @@ def test_run_request_partition_order():
         PartitionKeyRange("2023-10-03", "2023-10-04"),
         PartitionKeyRange("2023-10-05", "2023-10-06"),
     ]
+
+
+# 0 turns off batching
+# 2 will require multiple batches to fulfill the backfill
+# 10 will require a single to fulfill the backfill
+@pytest.mark.parametrize("batch_size", [0, 2, 10])
+@pytest.mark.parametrize("throw_store_event_batch_error", [False, True])
+def test_single_run_backfill_full_execution(
+    batch_size: int, throw_store_event_batch_error: bool, capsys
+):
+    time_now = pendulum.now("UTC")
+
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def partitioned_asset():
+        return {"a": 1, "b": 2}
+
+    assets_by_repo_name = {
+        "repo": [
+            partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=None,
+        asset_graph=asset_graph,
+        asset_selection=[
+            partitioned_asset.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=time_now,
+    )
+
+    with instance_for_test() as instance:
+        with ExitStack() as stack:
+            stack.enter_context(patch("dagster._core.instance.EVENT_BATCH_SIZE", new=batch_size))
+            if throw_store_event_batch_error:
+                stack.enter_context(
+                    patch(
+                        "dagster._core.storage.event_log.base.EventLogStorage.store_event_batch",
+                        side_effect=Exception("failed"),
+                    )
+                )
+            run_backfill_to_completion(
+                asset_graph,
+                assets_by_repo_name,
+                backfill_data,
+                [],
+                instance,
+            )
+            events = instance.get_event_records(
+                EventRecordsFilter(
+                    asset_key=partitioned_asset.key,
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                )
+            )
+            assert len(events) == 4
+
+            if batch_size > 0 and throw_store_event_batch_error:
+                stderr = capsys.readouterr().err
+                assert "Exception while storing event batch" in stderr
+                assert (
+                    "Falling back to storing multiple single-event storage requests...\n" in stderr
+                )

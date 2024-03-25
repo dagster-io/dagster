@@ -3,6 +3,7 @@ import operator
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Callable,
     NamedTuple,
     Optional,
@@ -146,19 +147,27 @@ class AssetSubset(NamedTuple):
         partitions_def: Optional[PartitionsDefinition],
         asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
     ) -> "ValidAssetSubset":
-        if partitions_def is None:
-            return ValidAssetSubset(asset_key=asset_key, value=bool(asset_partitions_set))
-        else:
-            return ValidAssetSubset(
+        return (
+            ValidAssetSubset.from_partition_keys(
                 asset_key=asset_key,
-                value=partitions_def.subset_with_partition_keys(
-                    {
-                        ap.partition_key
-                        for ap in asset_partitions_set
-                        if ap.partition_key is not None
-                    }
-                ),
+                partitions_def=partitions_def,
+                partition_keys={
+                    ap.partition_key for ap in asset_partitions_set if ap.partition_key is not None
+                },
             )
+            if partitions_def
+            else ValidAssetSubset(asset_key=asset_key, value=bool(asset_partitions_set))
+        )
+
+    @staticmethod
+    def from_partition_keys(
+        asset_key: AssetKey,
+        partitions_def: PartitionsDefinition,
+        partition_keys: AbstractSet[str],
+    ) -> "ValidAssetSubset":
+        return ValidAssetSubset(
+            asset_key=asset_key, value=partitions_def.subset_with_partition_keys(partition_keys)
+        )
 
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
         if not self.is_partitioned:
@@ -201,7 +210,7 @@ class ValidAssetSubset(AssetSubset):
             )
             return self._replace(value=value)
 
-    def _oper(self, other: "ValidAssetSubset", oper: Callable) -> "ValidAssetSubset":
+    def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
         return self._replace(value=value)
 

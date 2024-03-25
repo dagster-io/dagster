@@ -7,6 +7,7 @@
     i.e. it`s late enough to pull in the required data time, and early enough to not go over the
     maximum lag minutes.
 """
+
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
@@ -19,8 +20,8 @@ from dagster._seven.compat.pendulum import (
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetSubsetWithMetadata
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
 
 
@@ -117,7 +118,7 @@ def get_expected_data_time_for_asset_key(
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
     """
-    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
     asset_key = context.asset_key
     asset_graph = context.asset_graph
@@ -129,12 +130,12 @@ def get_expected_data_time_for_asset_key(
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
         return context.data_time_resolver.get_current_data_time(asset_key, current_time)
-    elif asset_graph.has_non_source_parents(asset_key):
+    elif asset_graph.has_materializable_parents(asset_key):
         expected_data_time = None
-        for parent_key in asset_graph.get_parents(asset_key):
+        for parent_key in asset_graph.get(asset_key).parent_keys:
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
-            if isinstance(asset_graph, ExternalAssetGraph) and context.will_update_asset_partition(
+            if isinstance(asset_graph, RemoteAssetGraph) and context.will_update_asset_partition(
                 AssetKeyPartitionKey(parent_key)
             ):
                 parent_repo = asset_graph.get_repository_handle(parent_key)
@@ -162,14 +163,15 @@ def freshness_evaluation_results_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-    from .asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
 
     asset_key = context.asset_key
     current_time = context.evaluation_time
 
-    if not context.asset_graph.get_downstream_freshness_policies(
-        asset_key=asset_key
-    ) or context.asset_graph.is_partitioned(asset_key):
+    if (
+        not context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+        or context.asset_graph.get(asset_key).is_partitioned
+    ):
         return context.empty_subset(), []
 
     # figure out the current contents of this asset
@@ -207,7 +209,7 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=context.asset_graph.freshness_policies_by_key.get(asset_key),
+        local_policy=context.asset_graph.get(asset_key).freshness_policy,
         policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,

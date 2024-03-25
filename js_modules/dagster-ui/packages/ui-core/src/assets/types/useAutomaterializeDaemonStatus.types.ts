@@ -10,7 +10,7 @@ export type GetAutoMaterializePausedQuery = {
 };
 
 export type SetAutoMaterializePausedMutationVariables = Types.Exact<{
-  paused: Types.Scalars['Boolean'];
+  paused: Types.Scalars['Boolean']['input'];
 }>;
 
 export type SetAutoMaterializePausedMutation = {
