@@ -20,7 +20,7 @@ export const AppTopNavLinks = ({links}: {links: AppNavLinkType[]}) => {
   );
 };
 
-export const useNavLinks = (history: ReturnType<typeof useHistory>) => {
+export const navLinks = (history: ReturnType<typeof useHistory>) => {
   return [
     {
       title: 'overview' as const,
