@@ -179,10 +179,6 @@ export const AssetNodeOverview = ({
 
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
-      <AttributeAndValue label="Key">
-        <MiddleTruncate text={displayNameForAssetKey(assetNode.assetKey)} />
-      </AttributeAndValue>
-
       <AttributeAndValue label="Group">
         <Tag icon="asset_group">
           <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${assetNode.groupName}`)}>
