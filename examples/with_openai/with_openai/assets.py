@@ -1,11 +1,7 @@
 import os
 import pickle
 
-from dagster import (
-    AssetExecutionContext,
-    Config,
-    asset,
-)
+from dagster import AssetExecutionContext, Config, StaticPartitionsDefinition, asset
 from dagster_openai import OpenAIResource
 from filelock import FileLock
 from langchain.chains.qa_with_sources import stuff_prompt
@@ -17,8 +13,11 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 
 from .constants import SEARCH_INDEX_FILE, SUMMARY_TEMPLATE
-from .partitions import docs_partitions_def
 from .utils import get_github_docs
+
+docs_partitions_def = StaticPartitionsDefinition(
+    ["concepts", "dagster-cloud", "deployment", "guides", "integrations"]
+)
 
 
 @asset(compute_kind="GitHub", partitions_def=docs_partitions_def)
