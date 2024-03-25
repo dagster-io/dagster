@@ -5,15 +5,19 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Generic,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    TypeVar,
     Union,
     cast,
     overload,
 )
+
+from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._annotations import deprecated_param
@@ -41,6 +45,9 @@ from ..utils import DEFAULT_OUTPUT
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition
 
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 class _Op:
     def __init__(
@@ -75,7 +82,7 @@ class _Op:
         self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
-    def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
+    def __call__(self, fn: Callable[P, R]) -> "OpDefinition[P, R]":
         from dagster._config.pythonic_config import validate_resource_annotated_function
 
         from ..op_definition import OpDefinition
@@ -142,7 +149,7 @@ class _Op:
 
 
 @overload
-def op(compute_fn: Callable[..., Any]) -> "OpDefinition": ...
+def op(compute_fn: Callable[P, R]) -> "OpDefinition[P, R]": ...
 
 
 @overload
@@ -165,7 +172,7 @@ def op(
     param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
 )
 def op(
-    compute_fn: Optional[Callable] = None,
+    compute_fn: Optional[Callable[P, R]] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -177,7 +184,7 @@ def op(
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
-) -> Union["OpDefinition", _Op]:
+) -> Union["OpDefinition[P, R]", _Op]:
     """Create an op with the specified parameters from the decorated function.
 
     Ins and outs will be inferred from the type signature of the decorated function
@@ -273,10 +280,10 @@ def op(
     )
 
 
-class DecoratedOpFunction(NamedTuple):
+class DecoratedOpFunction(NamedTuple, Generic[P, R]):
     """Wrapper around the decorated op function to provide commonly used util methods."""
 
-    decorated_fn: Callable[..., Any]
+    decorated_fn: Callable[P, R]
 
     @property
     def name(self):
@@ -343,7 +350,7 @@ class DecoratedOpFunction(NamedTuple):
         return infer_output_props(self.decorated_fn).annotation
 
 
-class NoContextDecoratedOpFunction(DecoratedOpFunction):
+class NoContextDecoratedOpFunction(DecoratedOpFunction[P, R]):
     """Wrapper around a decorated op function, when the decorator does not permit a context
     parameter.
     """

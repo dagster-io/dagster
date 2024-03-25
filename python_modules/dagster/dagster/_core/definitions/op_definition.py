@@ -4,6 +4,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Generic,
     Iterator,
     Mapping,
     Optional,
@@ -14,7 +15,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias, get_args, get_origin
+from typing_extensions import ParamSpec, TypeAlias, get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
@@ -58,11 +59,16 @@ if TYPE_CHECKING:
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
+P = ParamSpec("P")
+R = TypeVar("R")
+
+OtherP = ParamSpec("OtherP")
+OtherR = TypeVar("OtherR")
 
 @deprecated_param(
     param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead."
 )
-class OpDefinition(NodeDefinition, IHasInternalInit):
+class OpDefinition(NodeDefinition, IHasInternalInit, Generic[P, R]):
     """Defines an op, the functional unit of user-defined computation.
 
     For more details on what a op is, refer to the
@@ -113,7 +119,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             )
     """
 
-    _compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"]
+    _compute_fn: Union[Callable[P, R], "DecoratedOpFunction"]
     _config_schema: IDefinitionConfigSchema
     _required_resource_keys: AbstractSet[str]
     _version: Optional[str]
@@ -121,7 +127,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def __init__(
         self,
-        compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
+        compute_fn: Union[Callable[P, R], "DecoratedOpFunction"],
         name: str,
         ins: Optional[Mapping[str, In]] = None,
         outs: Optional[Mapping[str, Out]] = None,
@@ -191,7 +197,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def dagster_internal_init(
         *,
-        compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
+        compute_fn: Union[Callable[OtherP, OtherR], "DecoratedOpFunction[OtherP, OtherR]"],
         name: str,
         ins: Optional[Mapping[str, In]],
         outs: Optional[Mapping[str, Out]],
@@ -202,7 +208,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str],
         retry_policy: Optional[RetryPolicy],
         code_version: Optional[str],
-    ) -> "OpDefinition":
+    ) -> "OpDefinition[OtherP, OtherR]":
         return OpDefinition(
             compute_fn=compute_fn,
             name=name,
@@ -244,7 +250,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
 
     @property
-    def compute_fn(self) -> Union[Callable[..., Any], "DecoratedOpFunction"]:
+    def compute_fn(self) -> Union[Callable[P, R], "DecoratedOpFunction"]:
         return self._compute_fn
 
     @public
@@ -369,7 +375,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         outs: Optional[Mapping[str, Out]] = None,
         config_schema: Optional[IDefinitionConfigSchema] = None,
         description: Optional[str] = None,
-    ) -> "OpDefinition":
+    ) -> "OpDefinition[P, R]":
         return OpDefinition.dagster_internal_init(
             name=name,
             ins=ins
@@ -393,7 +399,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-    ) -> "OpDefinition":
+    ) -> "OpDefinition[P, R]":
         return self.with_replaced_properties(
             name=name,
             description=description,
@@ -452,7 +458,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     ) -> Sequence[NodeInputHandle]:
         return [input_handle]
 
-    def __call__(self, *args, **kwargs) -> Any:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         from .composition import is_in_composition
 
         if is_in_composition():
