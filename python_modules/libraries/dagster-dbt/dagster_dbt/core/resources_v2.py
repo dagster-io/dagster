@@ -277,46 +277,6 @@ class DbtCliEventMessage:
                         metadata=metadata,
                     )
 
-    def _process_adapter_response_metadata(
-        self, adapter_response: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Process the adapter response metadata for a dbt CLI event.
-
-        The main interface for AdapterResponse is found at https://github.com/dbt-labs/dbt-adapters.
-
-        Currently, we pre-process the following dbt adapters, which have custom responses:
-
-        - https://github.com/dbt-labs/dbt-bigquery: BigQueryAdapterResponse
-        - https://github.com/databricks/dbt-databricks: DatabricksAdapterResponse
-        - https://github.com/dbt-labs/dbt-snowflake: SnowflakeAdapterResponse
-        - https://github.com/starburstdata/dbt-trino: TrinoAdapterResponse
-        """
-        allowlisted_adapter_response_keys = [
-            # AdapterResponse
-            *[
-                "rows_affected",
-            ],
-            # BigQueryAdapterResponse
-            *[
-                "bytes_processed",
-                "bytes_billed",
-                "job_id",
-                "slot_ms",
-            ],
-            # DatabricksAdapterResponse, SnowflakeAdapterResponse, TrinoAdapterResponse
-            *[
-                "query_id",
-            ],
-        ]
-
-        processed_adapter_response = {
-            key: value
-            for key, value in adapter_response.items()
-            if (key in allowlisted_adapter_response_keys and value)
-        }
-
-        return processed_adapter_response
-
     def _build_column_lineage_metadata(
         self,
         manifest: Mapping[str, Any],
