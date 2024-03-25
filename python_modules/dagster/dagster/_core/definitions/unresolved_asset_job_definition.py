@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optiona
 import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.assets_job import build_assets_job, get_asset_graph_for_job
+from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
@@ -187,7 +187,7 @@ class UnresolvedAssetJobDefinition(
                 f'Error resolving selection for asset job "{self.name}": {e}'
             ) from e
 
-        return build_assets_job(
+        return build_asset_job(
             self.name,
             asset_graph=job_asset_graph,
             config=self.config,

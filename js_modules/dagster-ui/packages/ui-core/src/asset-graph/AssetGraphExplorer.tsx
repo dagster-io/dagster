@@ -51,7 +51,7 @@ import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
-import {AssetGroupSelector, ChangeReason} from '../graphql/types';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PageLoadTrace} from '../performance';
@@ -69,20 +69,17 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
+type Filters = {
+  groups?: AssetGroupSelector[];
+  computeKindTags?: string[];
+  changedInBranch?: ChangeReason[];
+  tags?: DefinitionTag[];
+  owners?: AssetOwner[];
+};
 type OptionalFilters =
   | {
-      filters: {
-        groups?: AssetGroupSelector[];
-        computeKindTags?: string[];
-        changedInBranch?: ChangeReason[];
-      };
-      setFilters: React.Dispatch<
-        React.SetStateAction<{
-          groups?: AssetGroupSelector[];
-          computeKindTags?: string[];
-          changedInBranch?: ChangeReason[];
-        }>
-      >;
+      filters: Filters;
+      setFilters: React.Dispatch<React.SetStateAction<Filters>>;
     }
   | {filters?: null; setFilters?: null};
 
@@ -127,28 +124,24 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {filters, setFilters} = props;
 
-  const setComputeKindTags = React.useCallback(
-    (tags: string[]) =>
-      setFilters?.({
-        ...filters,
-        computeKindTags: tags,
-      }),
-    [setFilters, filters],
-  );
-
-  const setGroupFilters = React.useCallback(
-    (groups: AssetGroupSelector[]) => setFilters?.({...filters, groups}),
-    [filters, setFilters],
-  );
-
-  const setChangedInBranch = React.useCallback(
-    (changedInBranch: ChangeReason[]) =>
-      setFilters?.({
-        ...filters,
-        changedInBranch,
-      }),
-    [filters, setFilters],
-  );
+  const {setComputeKindTags, setGroupFilters, setChangedInBranch, setOwners, setAssetTags} =
+    React.useMemo(() => {
+      function makeSetter<T extends keyof Filters>(field: T) {
+        return (value: Filters[T]) => {
+          setFilters?.((filters) => ({
+            ...filters,
+            [field]: value,
+          }));
+        };
+      }
+      return {
+        setComputeKindTags: makeSetter('computeKindTags'),
+        setGroupFilters: makeSetter('groups'),
+        setChangedInBranch: makeSetter('changedInBranch'),
+        setOwners: makeSetter('owners'),
+        setAssetTags: makeSetter('tags'),
+      };
+    }, [setFilters]);
 
   const {button, filterBar} = useAssetGraphExplorerFilters({
     nodes: React.useMemo(
@@ -158,14 +151,14 @@ export const AssetGraphExplorer = (props: Props) => {
     isGlobalGraph: !!props.isGlobalGraph,
     assetGroups,
     visibleAssetGroups: React.useMemo(() => props.filters?.groups || [], [props.filters?.groups]),
-    setGroupFilters: props.filters?.groups ? setGroupFilters : undefined,
-    computeKindTags: props.filters?.computeKindTags || emptyArray,
-    setComputeKindTags: props.filters?.computeKindTags ? setComputeKindTags : undefined,
+    setGroupFilters: filters?.groups ? setGroupFilters : undefined,
+    computeKindTags: filters?.computeKindTags || emptyArray,
+    setComputeKindTags: filters?.computeKindTags ? setComputeKindTags : undefined,
     changedInBranch: React.useMemo(
-      () => props.filters?.changedInBranch || [],
-      [props.filters?.changedInBranch],
+      () => filters?.changedInBranch || [],
+      [filters?.changedInBranch],
     ),
-    setChangedInBranch: props.filters?.changedInBranch ? setChangedInBranch : undefined,
+    setChangedInBranch: filters?.changedInBranch ? setChangedInBranch : undefined,
     explorerPath: explorerPath.opsQuery,
     clearExplorerPath: React.useCallback(() => {
       onChangeExplorerPath(
@@ -176,6 +169,10 @@ export const AssetGraphExplorer = (props: Props) => {
         'push',
       );
     }, [explorerPath, onChangeExplorerPath]),
+    assetTags: filters?.tags || emptyArray,
+    setAssetTags: filters?.tags ? setAssetTags : undefined,
+    owners: filters?.owners || emptyArray,
+    setOwners: filters?.owners ? setOwners : undefined,
   });
 
   return (

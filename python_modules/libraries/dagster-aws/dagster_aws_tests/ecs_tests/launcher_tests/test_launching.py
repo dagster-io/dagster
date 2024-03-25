@@ -367,6 +367,9 @@ def test_reuse_task_definition(instance, ecs):
                 "secrets": secrets,
                 "environment": environment,
                 "command": ["echo", "HELLO"],
+                "healthCheck": {
+                    "command": ["HELLO"],
+                },
             },
             {
                 "image": "other_image",
@@ -488,6 +491,20 @@ def test_reuse_task_definition(instance, ecs):
     task_definition["containerDefinitions"][0]["linuxParameters"] = {
         "capabilities": {"add": ["SYS_PTRACE"]},
         "initProcessEnabled": True,
+    }
+    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
+    # Changed healthCheck fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["healthCheck"] = {
+        "command": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 0,
     }
     assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),

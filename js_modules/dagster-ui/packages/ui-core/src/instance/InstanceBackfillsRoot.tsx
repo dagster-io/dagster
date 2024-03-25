@@ -1,9 +1,9 @@
-import {Heading, Page, PageHeader} from '@dagster-io/ui-components';
+import {Page} from '@dagster-io/ui-components';
 
 import {InstanceBackfills} from './InstanceBackfills';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {OverviewTabs} from '../overview/OverviewTabs';
+import {OverviewPageHeader} from '../overview/OverviewPageHeader';
 
 export const InstanceBackfillsRoot = () => {
   useTrackPageView();
@@ -11,7 +11,7 @@ export const InstanceBackfillsRoot = () => {
 
   return (
     <Page>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="backfills" />} />
+      <OverviewPageHeader tab="backfills" />
       <InstanceBackfills />
     </Page>
   );

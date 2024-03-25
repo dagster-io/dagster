@@ -39,6 +39,8 @@ export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
   'dagster-dbt/exclude',
   'dagster_dbt/manifest',
   'dagster_dbt/dagster_dbt_translator',
+  'dagster_embedded_elt/dagster_sling_translator',
+  'dagster_embedded_elt/sling_replication_config',
 ]);
 
 export const LogRowStructuredContentTable = ({

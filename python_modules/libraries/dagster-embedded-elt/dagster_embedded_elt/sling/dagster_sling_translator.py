@@ -16,8 +16,7 @@ class DagsterSlingTranslator:
     target_prefix: str = "target"
 
     @public
-    @classmethod
-    def sanitize_stream_name(cls, stream_name: str) -> str:
+    def sanitize_stream_name(self, stream_name: str) -> str:
         """A function that takes a stream name from a Sling replication config and returns a
         sanitized name for the stream.
 
@@ -33,8 +32,7 @@ class DagsterSlingTranslator:
             .. code-block:: python
 
                 class CustomSlingTranslator(DagsterSlingTranslator):
-                    @classmethod
-                    def sanitize_stream_name(cls, stream_name: str) -> str:
+                    def sanitize_stream_name(self, stream_name: str) -> str:
                         return stream_name.replace(".", "")
         """
         return re.sub(r"[^a-zA-Z0-9_.]", "_", stream_name.replace('"', "").lower())
@@ -83,7 +81,6 @@ class DagsterSlingTranslator:
             .. code-block:: python
 
                 class CustomSlingTranslator(DagsterSlingTranslator):
-                    @classmethod
                     def get_asset_key_for_target(self, stream_definition) -> AssetKey:
                         map = {"stream1": "asset1", "stream2": "asset2"}
                         return AssetKey(map[stream_name])
@@ -107,8 +104,7 @@ class DagsterSlingTranslator:
         return AssetKey([self.target_prefix] + sanitized_components)
 
     @public
-    @classmethod
-    def get_deps_asset_key(cls, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
+    def get_deps_asset_key(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
         """A function that takes a stream name from a Sling replication config and returns a
         Dagster AssetKey for the dependencies of the replication stream.
 
@@ -138,8 +134,7 @@ class DagsterSlingTranslator:
             .. code-block:: python
 
                 class CustomSlingTranslator(DagsterSlingTranslator):
-                    @classmethod
-                    def get_deps_asset_key(cls, stream_name: str) -> AssetKey:
+                    def get_deps_asset_key(self, stream_name: str) -> AssetKey:
                         map = {"stream1": "asset1", "stream2": "asset2"}
                         return AssetKey(map[stream_name])
 
@@ -153,7 +148,7 @@ class DagsterSlingTranslator:
         if deps:
             assert isinstance(deps, list)
             for asset_key in deps:
-                if cls.sanitize_stream_name(asset_key) != asset_key:
+                if self.sanitize_stream_name(asset_key) != asset_key:
                     raise ValueError(
                         f"Deps Asset key {asset_key} for stream {stream_definition['name']} is not "
                         "sanitized. Please use only alphanumeric characters and underscores."
@@ -162,12 +157,11 @@ class DagsterSlingTranslator:
             return deps_out
 
         stream_name = stream_definition["name"]
-        components = cls.sanitize_stream_name(stream_name).split(".")
+        components = self.sanitize_stream_name(stream_name).split(".")
         return [AssetKey(components)]
 
-    @classmethod
     @public
-    def get_description(cls, stream_definition: Mapping[str, Any]) -> Optional[str]:
+    def get_description(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         config = stream_definition.get("config", {}) or {}
         if "sql" in config:
             return config["sql"]
@@ -175,22 +169,19 @@ class DagsterSlingTranslator:
         description = meta.get("dagster", {}).get("description")
         return description
 
-    @classmethod
     @public
-    def get_metadata(cls, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
+    def get_metadata(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         return {"stream_config": MetadataValue.json(stream_definition.get("config", {}))}
 
-    @classmethod
     @public
-    def get_group_name(cls, stream_definition: Mapping[str, Any]) -> Optional[str]:
+    def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
         return meta.get("dagster", {}).get("group")
 
-    @classmethod
     @public
     def get_freshness_policy(
-        cls, stream_definition: Mapping[str, Any]
+        self, stream_definition: Mapping[str, Any]
     ) -> Optional[FreshnessPolicy]:
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
@@ -202,10 +193,9 @@ class DagsterSlingTranslator:
                 cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
             )
 
-    @classmethod
     @public
     def get_auto_materialize_policy(
-        cls, stream_definition: Mapping[str, Any]
+        self, stream_definition: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})

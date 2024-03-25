@@ -24,7 +24,7 @@ def test_unserializable_asset_selection():
     @asset
     def asset2(): ...
 
-    class MySpecialAssetSelection(AssetSelection, frozen=True):
+    class MySpecialAssetSelection(AssetSelection):
         def resolve_inner(
             self, asset_graph: BaseAssetGraph, allow_missing: bool
         ) -> AbstractSet[AssetKey]:

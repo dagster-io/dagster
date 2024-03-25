@@ -215,6 +215,11 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
         is_required=False,
         description="Additional sidecar containers to include in run task definitions.",
     ),
+    "server_health_check": Field(
+        Permissive(),
+        is_required=False,
+        description="Health check to include in code server task definitions.",
+    ),
     **SHARED_TASK_DEFINITION_FIELDS,
     **SHARED_ECS_SCHEMA,
 }
@@ -241,6 +246,7 @@ class EcsContainerContext(
             ("server_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
             ("run_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
             ("repository_credentials", Optional[str]),
+            ("server_health_check", Optional[Mapping[str, Any]]),
         ],
     )
 ):
@@ -265,6 +271,7 @@ class EcsContainerContext(
         server_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
         run_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
         repository_credentials: Optional[str] = None,
+        server_health_check: Optional[Mapping[str, Any]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -293,6 +300,7 @@ class EcsContainerContext(
             repository_credentials=check.opt_str_param(
                 repository_credentials, "repository_credentials"
             ),
+            server_health_check=check.opt_mapping_param(server_health_check, "server_health_check"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -317,6 +325,7 @@ class EcsContainerContext(
             server_ecs_tags=[*other.server_ecs_tags, *self.server_ecs_tags],
             run_ecs_tags=[*other.run_ecs_tags, *self.run_ecs_tags],
             repository_credentials=other.repository_credentials or self.repository_credentials,
+            server_health_check=other.server_health_check or self.server_health_check,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -410,5 +419,6 @@ class EcsContainerContext(
                 server_ecs_tags=processed_context_value.get("server_ecs_tags"),
                 run_ecs_tags=processed_context_value.get("run_ecs_tags"),
                 repository_credentials=processed_context_value.get("repository_credentials"),
+                server_health_check=processed_context_value.get("server_health_check"),
             )
         )

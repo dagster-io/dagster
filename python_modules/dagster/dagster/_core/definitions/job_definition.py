@@ -770,8 +770,8 @@ class JobDefinition(IHasInternalInit):
     def _get_job_def_for_asset_selection(
         self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        from dagster._core.definitions.assets_job import (
-            build_assets_job,
+        from dagster._core.definitions.asset_job import (
+            build_asset_job,
             get_asset_graph_for_job,
         )
 
@@ -785,7 +785,7 @@ class JobDefinition(IHasInternalInit):
 
         job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
 
-        return build_assets_job(
+        return build_asset_job(
             name=self.name,
             asset_graph=job_asset_graph,
             executor_def=self.executor_def,

@@ -21,7 +21,7 @@ export type AssetViewDefinitionQuery = {
         definition: {
           __typename: 'AssetNode';
           id: string;
-          groupName: string | null;
+          groupName: string;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
@@ -67,6 +67,10 @@ export type AssetViewDefinitionQuery = {
                   id: string;
                   selectorId: string;
                   status: Types.InstigationStatus;
+                  typeSpecificData:
+                    | {__typename: 'ScheduleData'}
+                    | {__typename: 'SensorData'; lastCursor: string | null}
+                    | null;
                 };
               }
           >;
@@ -16108,7 +16112,7 @@ export type AssetViewDefinitionQuery = {
 export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
+  groupName: string;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;
@@ -16154,6 +16158,10 @@ export type AssetViewDefinitionNodeFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
         };
       }
   >;

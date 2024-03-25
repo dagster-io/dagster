@@ -168,7 +168,7 @@ class FromLoadableAsset(
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
-            metadata=input_def.metadata,
+            definition_metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=resource_config,
             resources=resources,
@@ -188,7 +188,10 @@ class FromLoadableAsset(
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_logged_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -305,7 +308,7 @@ class FromInputManager(
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
-            metadata=input_def.metadata,
+            definition_metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
             resources=build_resources_for_manager(input_manager_key, step_context),
@@ -313,7 +316,10 @@ class FromInputManager(
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_logged_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -491,7 +497,10 @@ class FromStepOutput(
         )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_logged_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,

@@ -1,8 +1,10 @@
-import logging
 import sqlite3
+from pathlib import Path
 
 import pytest
+import yaml
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     FreshnessPolicy,
     JsonMetadataValue,
@@ -59,17 +61,12 @@ def test_disabled_asset():
 
 def test_runs_base_sling_config(
     csv_to_sqlite_replication_config: SlingReplicationParam,
-    path_to_test_csv: str,
     path_to_temp_sqlite_db: str,
     sqlite_connection: sqlite3.Connection,
 ):
     @sling_assets(replication_config=csv_to_sqlite_replication_config)
-    def my_sling_assets(sling: SlingResource):
-        for row in sling.replicate(
-            replication_config=csv_to_sqlite_replication_config,
-            dagster_sling_translator=DagsterSlingTranslator(),
-        ):
-            logging.info(row)
+    def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
+        yield from sling.replicate(context=context)
 
     sling_resource = SlingResource(
         connections=[
@@ -82,7 +79,10 @@ def test_runs_base_sling_config(
         ]
     )
     res = materialize([my_sling_assets], resources={"sling": sling_resource})
+
     assert res.success
+    assert len(res.get_asset_materialization_events()) == 1
+
     counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == 3
 
@@ -105,11 +105,12 @@ def test_with_custom_name(replication_config: SlingReplicationParam):
 
 
 def test_base_with_meta_config_translator():
-    @sling_assets(
-        replication_config=file_relative_path(
-            __file__, "replication_configs/base_with_meta_config/replication.yaml"
-        )
+    replication_config_path = file_relative_path(
+        __file__, "replication_configs/base_with_meta_config/replication.yaml"
     )
+    replication_config = yaml.safe_load(Path(replication_config_path).read_bytes())
+
+    @sling_assets(replication_config=replication_config_path)
     def my_sling_assets(): ...
 
     assert my_sling_assets.keys == {
@@ -134,7 +135,13 @@ def test_base_with_meta_config_translator():
     }
 
     assert my_sling_assets.metadata_by_key == {
-        AssetKey(["target", "public", "accounts"]): {"stream_config": JsonMetadataValue(data=None)},
+        AssetKey(["target", "public", "accounts"]): {
+            "stream_config": JsonMetadataValue(data=None),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
         AssetKey(["target", "departments"]): {
             "stream_config": JsonMetadataValue(
                 data={
@@ -152,7 +159,11 @@ def test_base_with_meta_config_translator():
                         }
                     },
                 }
-            )
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "transactions"]): {
             "stream_config": JsonMetadataValue(
@@ -167,7 +178,11 @@ def test_base_with_meta_config_translator():
                         }
                     },
                 }
-            )
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "all_users"]): {
             "stream_config": JsonMetadataValue(
@@ -175,7 +190,11 @@ def test_base_with_meta_config_translator():
                     "sql": 'select all_user_id, name \nfrom public."all_Users"\n',
                     "object": "public.all_users",
                 }
-            )
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
         },
     }
 

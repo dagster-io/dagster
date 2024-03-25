@@ -551,24 +551,19 @@ def test_dagster_dbt_translator(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
 ):
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props):
+        def get_asset_key(self, dbt_resource_props):
             return AssetKey(["foo", dbt_resource_props["name"]])
 
-        @classmethod
-        def get_metadata(cls, dbt_resource_props):
+        def get_metadata(self, dbt_resource_props):
             return {"name_metadata": dbt_resource_props["name"] + "_metadata"}
 
-        @classmethod
-        def get_group_name(cls, dbt_resource_props):
+        def get_group_name(self, dbt_resource_props):
             return "foo_group" if dbt_resource_props["name"] == "cereals" else None
 
-        @classmethod
-        def get_freshness_policy(cls, dbt_resource_props):
+        def get_freshness_policy(self, dbt_resource_props):
             return FreshnessPolicy(maximum_lag_minutes=1)
 
-        @classmethod
-        def get_auto_materialize_policy(cls, dbt_resource_props):
+        def get_auto_materialize_policy(self, dbt_resource_props):
             return AutoMaterializePolicy.lazy()
 
     dbt_assets = load_assets_from_dbt_manifest(

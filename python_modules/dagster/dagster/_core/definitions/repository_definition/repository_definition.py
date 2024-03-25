@@ -17,7 +17,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.assets_job import (
+from dagster._core.definitions.asset_job import (
     ASSET_BASE_JOB_PREFIX,
 )
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData

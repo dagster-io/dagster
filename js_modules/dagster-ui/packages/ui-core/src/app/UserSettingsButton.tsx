@@ -2,7 +2,7 @@ import {Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import styled from 'styled-components';
 
-import {UserSettingsDialog} from './UserSettingsDialog';
+import {UserSettingsDialog} from './UserSettingsDialog/UserSettingsDialog';
 import {getVisibleFeatureFlagRows} from './getVisibleFeatureFlagRows';
 
 const SettingsButton = styled.button`

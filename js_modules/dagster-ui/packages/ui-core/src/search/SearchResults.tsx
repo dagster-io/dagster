@@ -48,6 +48,8 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'asset_group';
     case AssetFilterSearchResultType.ComputeKind:
       return 'tag';
+    case AssetFilterSearchResultType.Tag:
+      return 'tag';
     default:
       return 'source';
   }
@@ -59,6 +61,8 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Code location';
     case AssetFilterSearchResultType.ComputeKind:
       return 'Compute kind';
+    case AssetFilterSearchResultType.Tag:
+      return 'Tag';
     case AssetFilterSearchResultType.Owner:
       return 'Owner';
     case AssetFilterSearchResultType.AssetGroup:
@@ -151,14 +155,17 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
             $interactive={false}
             $textColor={Colors.textDefault()}
           >
-            <Icon
-              name={iconForType(item.type)}
-              color={isHighlight ? Colors.textDefault() : Colors.textLight()}
-            />
-            {isAssetFilterSearchResultType(item.type) && (
-              <Caption>{assetFilterPrefixString(item.type)}:&nbsp;</Caption>
-            )}
-            {labelComponents.map((component) => component)}
+            <Box flex={{gap: 4}}>
+              <Icon
+                name={iconForType(item.type)}
+                color={isHighlight ? Colors.textDefault() : Colors.textLight()}
+              />
+              {isAssetFilterSearchResultType(item.type) && (
+                <Caption>{assetFilterPrefixString(item.type)}:</Caption>
+              )}
+              <div>{labelComponents.map((component) => component)}</div>
+              {item.repoPath && <Caption>in {item.repoPath}</Caption>}
+            </Box>
           </StyledTag>
           <div style={{marginLeft: '8px'}}>
             <Description isHighlight={isHighlight}>

@@ -48,6 +48,7 @@ import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {MetadataEntries} from '../../metadata/MetadataEntry';
+import {Description} from '../../pipelines/Description';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
@@ -297,7 +298,7 @@ export const AssetChecks = ({
             >
               {lastExecution?.evaluation?.description ? (
                 <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
-                  <Body2>{lastExecution.evaluation.description}</Body2>
+                  <Description description={lastExecution.evaluation.description} maxHeight={260} />
                 </Box>
               ) : null}
               <Box padding={{top: 12}} flex={{direction: 'column', gap: 12}}>

@@ -1,4 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
+import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
@@ -6,8 +8,8 @@ import {useHistory, useParams} from 'react-router-dom';
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {writeAssetVisitToLocalStorage} from './RecentlyVisitedAssetsStorage';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetKey} from './types';
 import {
   AssetsCatalogRootQuery,
   AssetsCatalogRootQueryVariables,
@@ -18,7 +20,13 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {usePageLoadTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
-export const AssetsCatalogRoot = () => {
+export const AssetsCatalogRoot = ({
+  writeAssetVisit,
+  headerBreadcrumbs,
+}: {
+  writeAssetVisit?: (assetKey: AssetKey) => void;
+  headerBreadcrumbs: BreadcrumbProps[];
+}) => {
   useTrackPageView();
 
   const params = useParams();
@@ -52,16 +60,17 @@ export const AssetsCatalogRoot = () => {
       currentPath &&
       currentPath.length &&
       queryResult.loading === false &&
-      queryResult.data?.assetOrError.__typename === 'Asset'
+      queryResult.data?.assetOrError.__typename === 'Asset' &&
+      writeAssetVisit
     ) {
-      writeAssetVisitToLocalStorage({path: currentPath});
+      writeAssetVisit({path: currentPath});
     }
-  }, [currentPath, queryResult]);
+  }, [currentPath, queryResult, writeAssetVisit]);
 
   if (queryResult.loading) {
     return (
       <Page>
-        <AssetPageHeader assetKey={{path: currentPath}} />
+        <AssetPageHeader assetKey={{path: currentPath}} headerBreadcrumbs={headerBreadcrumbs} />
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
@@ -80,6 +89,7 @@ export const AssetsCatalogRoot = () => {
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <AssetPageHeader
           assetKey={{path: currentPath}}
+          headerBreadcrumbs={headerBreadcrumbs}
           right={
             <Box flex={{gap: 12, alignItems: 'center'}}>
               <AssetGlobalLineageLink />
@@ -96,7 +106,9 @@ export const AssetsCatalogRoot = () => {
     );
   }
 
-  return <AssetView assetKey={{path: currentPath}} trace={trace} />;
+  return (
+    <AssetView assetKey={{path: currentPath}} trace={trace} headerBreadcrumbs={headerBreadcrumbs} />
+  );
 };
 
 // Imported via React.lazy, which requires a default export.

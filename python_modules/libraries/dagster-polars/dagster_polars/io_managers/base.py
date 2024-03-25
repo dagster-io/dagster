@@ -315,7 +315,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             context.log.warning(self.get_missing_optional_input_log_message(context, path))
             return None
 
-        assert context.metadata is not None
+        assert context.definition_metadata is not None
 
         metadata: Optional[StorageMetadata] = None
 
@@ -326,7 +326,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         else:
             ldf, metadata = self.scan_df_from_path(path=path, context=context, with_metadata=True)
 
-        columns = context.metadata.get("columns")
+        columns = context.definition_metadata.get("columns")
         if columns is not None:
             context.log.debug(f"Loading {columns=}")
             ldf = ldf.select(columns)
@@ -425,8 +425,8 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             Any: The object loaded from the partition.
         """
         allow_missing_partitions = (
-            context.metadata.get("allow_missing_partitions", False)
-            if context.metadata is not None
+            context.definition_metadata.get("allow_missing_partitions", False)
+            if context.definition_metadata is not None
             else False
         )
 

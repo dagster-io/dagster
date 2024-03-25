@@ -97,7 +97,13 @@
           },
           {
             "title": "Asset checks (Experimental)",
-            "path": "/concepts/assets/asset-checks"
+            "path": "/concepts/assets/asset-checks",
+            "children": [
+              {
+                "title": "Defining & executing checks",
+                "path": "/concepts/assets/asset-checks/define-execute-asset-checks"
+              }
+            ]
           },
           {
             "title": "External assets (Experimental)",

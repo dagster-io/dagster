@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import qs from 'qs';
 import {useCallback, useEffect, useRef} from 'react';
 
+import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
 import {
@@ -13,29 +14,37 @@ import {
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {
-  GroupMetadata,
-  buildAssetCountBySection,
-  linkToCodeLocation,
-} from '../assets/AssetsOverview';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {Tag, buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 import {workspacePath} from '../workspace/workspacePath';
 
-const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
+export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
 };
 
-const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
+export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
   })}`;
 };
 
-const linkToAssetTableWithOwnerFilter = (owner: string) => {
+export const linkToAssetTableWithTagFilter = (tag: Tag) => {
+  return `/assets?${qs.stringify({
+    tags: JSON.stringify([tag]),
+  })}`;
+};
+
+export const linkToAssetTableWithOwnerFilter = (owner: string) => {
   return `/assets?${qs.stringify({
     owners: JSON.stringify([owner]),
   })}`;
+};
+
+export const linkToCodeLocation = (repoAddress: RepoAddress) => {
+  return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
 };
 
 const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
@@ -203,6 +212,14 @@ const secondaryDataToSearchResults = (
       }),
     );
 
+    const tagResults: SearchResult[] = countsBySection.countPerTag.map(({tag, assetCount}) => ({
+      label: buildTagString(tag),
+      description: '',
+      type: AssetFilterSearchResultType.Tag,
+      href: linkToAssetTableWithTagFilter(tag),
+      numResults: assetCount,
+    }));
+
     const codeLocationResults: SearchResult[] = countsBySection.countPerCodeLocation.map(
       (codeLocationAssetCount) => ({
         label: buildRepoPathForHuman(
@@ -223,6 +240,10 @@ const secondaryDataToSearchResults = (
         type: AssetFilterSearchResultType.AssetGroup,
         href: linkToAssetTableWithGroupFilter(groupAssetCount.groupMetadata),
         numResults: groupAssetCount.assetCount,
+        repoPath: buildRepoPathForHuman(
+          groupAssetCount.groupMetadata.repositoryName,
+          groupAssetCount.groupMetadata.repositoryLocationName,
+        ),
       }),
     );
 
@@ -238,6 +259,7 @@ const secondaryDataToSearchResults = (
     return [
       ...assets,
       ...computeKindResults,
+      ...tagResults,
       ...codeLocationResults,
       ...ownerResults,
       ...groupResults,
@@ -264,7 +286,7 @@ type IndexBuffer = {
 // version the cache in indexedDB. When the data in the cache must be invalidated, this version
 // should be bumped to prevent fetching stale data.
 export const SEARCH_PRIMARY_DATA_VERSION = 1;
-export const SEARCH_SECONDARY_DATA_VERSION = 1;
+export const SEARCH_SECONDARY_DATA_VERSION = 2;
 
 /**
  * Perform global search populated by two lazy queries, to be initialized upon some
@@ -492,6 +514,10 @@ export const SEARCH_SECONDARY_QUERY = gql`
               ... on UserAssetOwner {
                 email
               }
+            }
+            tags {
+              key
+              value
             }
             repository {
               id

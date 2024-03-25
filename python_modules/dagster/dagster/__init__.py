@@ -372,6 +372,9 @@ from dagster._core.definitions.schedule_definition import (
     ScheduleEvaluationContext as ScheduleEvaluationContext,
     build_schedule_context as build_schedule_context,
 )
+from dagster._core.definitions.schema_change_checks import (
+    build_column_schema_change_checks as build_column_schema_change_checks,
+)
 from dagster._core.definitions.selector import (
     CodeLocationSelector as CodeLocationSelector,
     JobSelector as JobSelector,
@@ -461,6 +464,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.execution.build_resources import build_resources as build_resources
 from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext as AssetCheckExecutionContext,
     AssetExecutionContext as AssetExecutionContext,
     OpExecutionContext as OpExecutionContext,
 )

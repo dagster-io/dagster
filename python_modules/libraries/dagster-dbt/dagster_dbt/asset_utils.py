@@ -786,24 +786,3 @@ def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
     has_self_dependency = dagster_metadata.get("has_self_dependency", False)
 
     return has_self_dependency
-
-
-from dagster import MaterializeResult, asset
-from pydantic import BaseModel
-
-
-class ColumnLineage(BaseModel):
-    bar: str
-
-
-@asset
-def my_asset():
-    mat_result = MaterializeResult(metadata={"foo": ColumnLineage(bar="baz")})
-    assert mat_result.get_event_log_representation().metadata["foo"] == {"bar": "baz"}
-    assert mat_result.metadata["foo"] == ColumnLineage(bar="baz")
-
-    mat_result = MaterializeResult(
-        metadata=dict(TableMetadataEntries(column_lineage=ColumnLineage(bar="baz")))
-    )
-    assert mat_result.get_event_log_representation().metadata["foo"] == {"bar": "baz"}
-    assert mat_result.metadata["foo"] == ColumnLineage(bar="baz")
