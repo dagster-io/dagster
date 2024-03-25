@@ -86,6 +86,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
       id: 'plots',
       title: 'Plots',
       to: buildAssetViewParams({...params, view: 'plots'}),
+      hidden: flagUseNewOverviewPage,
     } as AssetTabConfig,
     definition: {
       id: 'definition',
