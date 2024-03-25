@@ -81,7 +81,7 @@ defs = Definitions(
 )
 ```
 
-With this configuration, if you materialized an asset called `iris_dataset`, the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> would be permissioned with the role `writer` and store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
+With this configuration, if you materialized an asset called `iris_dataset`, the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> would use the role `WRITER` and store the data in the `FLOWERS.IRIS.IRIS_DATASET` table using the `PLANTS` warehouse.
 
 Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake" object="SnowflakeResource" /> to the `snowflake` key.
 
