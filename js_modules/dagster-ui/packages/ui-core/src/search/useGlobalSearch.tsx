@@ -15,11 +15,12 @@ import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {Tag, buildTagString} from '../ui/tagAsString';
+import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePath} from '../workspace/workspacePath';
+import {DefinitionTag} from '../graphql/types';
 
 export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
@@ -31,7 +32,7 @@ export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   })}`;
 };
 
-export const linkToAssetTableWithTagFilter = (tag: Tag) => {
+export const linkToAssetTableWithTagFilter = (tag: DefinitionTag) => {
   return `/assets?${qs.stringify({
     tags: JSON.stringify([tag]),
   })}`;

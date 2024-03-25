@@ -1,6 +1,7 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
-import {Tag, buildTagString} from '../ui/tagAsString';
+import {DefinitionTag} from '../graphql/types';
+import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
@@ -17,7 +18,7 @@ type CountByComputeKind = {
 };
 
 type CountPerTag = {
-  tag: Tag;
+  tag: DefinitionTag;
   assetCount: number;
 };
 
@@ -74,7 +75,7 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
       }
 
       assetDefinition.tags.forEach((tag) => {
-        const stringifiedTag = JSON.stringify({key: tag.key, value: tag.value});
+        const stringifiedTag = JSON.stringify(tag);
         assetCountByTag[stringifiedTag] = (assetCountByTag[stringifiedTag] || 0) + 1;
       });
 

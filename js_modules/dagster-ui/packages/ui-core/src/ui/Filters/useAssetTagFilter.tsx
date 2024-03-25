@@ -72,8 +72,15 @@ export function useAssetTagsForAssets(
 export function doesFilterArrayMatchValueArray<T, V>(
   filterArray: T[],
   valueArray: V[],
-  isMatch: (value1: T, value2: V) => boolean = (val1, val2) =>
-    JSON.stringify(val1) === JSON.stringify(val2),
+  isMatch: (value1: T, value2: V) => boolean = (val1, val2) => {
+    if (typeof val1 === 'object' && typeof val2 !== 'object') {
+      return (
+        JSON.stringify(val1, Object.keys(val1).sort()) ===
+        JSON.stringify(val2, Object.keys(val2).sort())
+      );
+    }
+    return JSON.stringify(val1) === JSON.stringify(val2);
+  },
 ) {
   if (filterArray.length && !valueArray.length) {
     return false;
