@@ -23,7 +23,7 @@ def source_docs():
     return list(get_github_docs("dagster-io", "dagster"))
 
 
-@asset()
+@asset
 def search_index(source_docs):
     source_chunks = []
     splitter = CharacterTextSplitter(separator=" ", chunk_size=1024, chunk_overlap=0)
