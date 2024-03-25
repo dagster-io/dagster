@@ -24,7 +24,7 @@ from dagster._annotations import (
     experimental,
     public,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
@@ -162,6 +162,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         self._pdb: Optional[ForkedPdb] = None
         self._events: List[DagsterEvent] = []
         self._output_metadata: Dict[str, Any] = {}
+
+    @property
+    def op_execution_context(self) -> "OpExecutionContext":
+        return self
 
     @public
     @property
@@ -1295,7 +1299,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @staticmethod
     def get() -> "OpExecutionContext":
-        ctx = _current_asset_execution_context.get()
+        ctx = _current_execution_context.get()
         if ctx is None:
             raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
         return ctx.op_execution_context
@@ -1371,9 +1375,14 @@ class AssetExecutionContext(OpExecutionContext):
 
     @staticmethod
     def get() -> "AssetExecutionContext":
-        ctx = _current_asset_execution_context.get()
+        ctx = _current_execution_context.get()
         if ctx is None:
             raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
+        if isinstance(ctx, AssetCheckExecutionContext):
+            raise DagsterInvariantViolationError(
+                "Can't use AssetExecutionContext.get() in the context of an "
+                "AssetCheckExecutionContext. Use AssetCheckExecutionContext.get() instead."
+            )
         return ctx
 
     @property
@@ -1781,33 +1790,162 @@ class AssetExecutionContext(OpExecutionContext):
         self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
 
 
+class AssetCheckExecutionContext:
+    def __init__(self, op_execution_context: OpExecutionContext) -> None:
+        self._op_execution_context = check.inst_param(
+            op_execution_context, "op_execution_context", OpExecutionContext
+        )
+        self._step_execution_context = self._op_execution_context._step_execution_context  # noqa: SLF001
+
+    @staticmethod
+    def get() -> "AssetCheckExecutionContext":
+        ctx = _current_execution_context.get()
+        if ctx is None:
+            raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
+        if not isinstance(ctx, AssetCheckExecutionContext):
+            raise DagsterInvariantViolationError(
+                "Can't use AssetCheckExecutionContext.get() in the context of an "
+                "AssetCheckExecutionContext or OpExecutionContext. Use AssetCheckExecutionContext.get() instead."
+            )
+        return ctx
+
+    @property
+    def op_execution_context(self) -> OpExecutionContext:
+        return self._op_execution_context
+
+    @public
+    @property
+    def log(self) -> DagsterLogManager:
+        """The log manager available in the execution context. Logs will be viewable in the Dagster UI.
+        Returns: DagsterLogManager.
+        """
+        return self.op_execution_context.log
+
+    @public
+    @property
+    def pdb(self) -> ForkedPdb:
+        """Gives access to pdb debugging from within the asset. Materializing the asset via the
+        Dagster UI or CLI will enter the pdb debugging context in the process used to launch the UI or
+        run the CLI.
+
+        Returns: dagster.utils.forked_pdb.ForkedPdb
+        """
+        return self.op_execution_context.pdb
+
+    @property
+    def run(self) -> DagsterRun:
+        """The DagsterRun object corresponding to the execution. Information like run_id,
+        run configuration, and the assets selected for materialization can be found on the DagsterRun.
+        """
+        return self.op_execution_context.run
+
+    @public
+    @property
+    def job_def(self) -> JobDefinition:
+        """The definition for the currently executing job. Information like the job name, and job tags
+        can be found on the JobDefinition.
+        Returns: JobDefinition.
+        """
+        return self.op_execution_context.job_def
+
+    #### check related
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return self.op_execution_context.selected_asset_check_keys
+
+    @public
+    @property
+    def check_specs(self) -> Sequence[AssetCheckSpec]:
+        """The asset check specs for the currently executing asset check."""
+        return list(self.op_execution_context.assets_def.check_specs)
+
+    #### op related
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def retry_number(self):
+        return self.op_execution_context.retry_number
+
+    @_copy_docs_from_op_execution_context
+    def describe_op(self) -> str:
+        return self.op_execution_context.describe_op()
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_def(self) -> OpDefinition:
+        return self.op_execution_context.op_def
+
+    #### execution related
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def instance(self) -> DagsterInstance:
+        return self.op_execution_context.instance
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def step_launcher(self) -> Optional[StepLauncher]:
+        return self.op_execution_context.step_launcher
+
+    @_copy_docs_from_op_execution_context
+    def get_step_execution_context(self) -> StepExecutionContext:
+        return self.op_execution_context.get_step_execution_context()
+
+    # misc
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def resources(self) -> Any:
+        return self.op_execution_context.resources
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def is_subset(self):
+        return self.op_execution_context.is_subset
+
+
+ExecutionContextTypes = Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext]
+
+
 @contextmanager
 def enter_execution_context(
     step_context: StepExecutionContext,
-) -> Iterator[Union[OpExecutionContext, AssetExecutionContext]]:
+) -> Iterator[ExecutionContextTypes]:
     """Get the correct context based on the type of step (op or asset) and the user provided context
     type annotation. Follows these rules.
 
-    step type     annotation                result
-    asset         AssetExecutionContext     AssetExecutionContext
-    asset         OpExecutionContext        OpExecutionContext
-    asset         None                      AssetExecutionContext
-    op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
-    op            OpExecutionContext        OpExecutionContext
-    op            None                      OpExecutionContext
-    asset_check   AssetExecutionContext     AssetExecutionContext
-    asset_check   OpExecutionContext        OpExecutionContext
-    asset_check   None                      AssetExecutionContext
+    step type     annotation                   result
+    asset         AssetExecutionContext        AssetExecutionContext
+    asset         AssetCheckExecutionContext   Error - not an asset check
+    asset         OpExecutionContext           OpExecutionContext
+    asset         None                         AssetExecutionContext
+    op            AssetExecutionContext        Error - we cannot init an AssetExecutionContextext w/o an AssetsDefinition
+    op            AssetCheckExecutionContext   Error - not an asset check
+    op            OpExecutionContext           OpExecutionContext
+    op            None                         OpExecutionContext
+    asset_check   AssetCheckExecutionContext   AssetCheckExecutionContext
+    asset_check   AssetExecutionContext        Error - not an asset
+    asset_check   OpExecutionContext           OpExecutionContext
+    asset_check   None                         AssetCheckExecutionContext
 
     For ops in graph-backed assets
-    step type     annotation                result
-    op            AssetExecutionContext     AssetExecutionContext
-    op            OpExecutionContext        OpExecutionContext
-    op            None                      OpExecutionContext
+    step type     annotation                   result
+    op            AssetExecutionContext        AssetExecutionContext
+    op            AssetCheckExecutionContext   Error - not an asset check
+    op            OpExecutionContext           OpExecutionContext
+    op            None                         OpExecutionContext
+
     """
     is_sda_step = step_context.is_sda_step
     is_op_in_graph_asset = step_context.is_in_graph_asset
-    is_asset_check = step_context.is_asset_check_step
+    asset_check_only_step = (
+        step_context.is_asset_check_step and not is_sda_step and not is_op_in_graph_asset
+    )
     context_annotation = EmptyAnnotation
     compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
     compute_fn = (
@@ -1819,25 +1957,46 @@ def enter_execution_context(
         context_param = compute_fn.get_context_arg()
         context_annotation = context_param.annotation
 
-    # It would be nice to do this check at definition time, rather than at run time, but we don't
-    # know if the op is part of an op job or a graph-backed asset until we have the step execution context
-    if (
-        context_annotation is AssetExecutionContext
-        and not is_sda_step
-        and not is_asset_check
-        and not is_op_in_graph_asset
-    ):
-        # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
-        # cannot be annotated with AssetExecutionContext
-        raise DagsterInvalidDefinitionError(
-            "Cannot annotate @op `context` parameter with type AssetExecutionContext unless the"
-            " op is part of a graph-backed asset. `context` must be annotated with"
-            " OpExecutionContext, or left blank."
-        )
+    if context_annotation is AssetCheckExecutionContext and not asset_check_only_step:
+        if is_sda_step:
+            raise DagsterInvalidDefinitionError(
+                "Cannot annotate @asset `context` parameter with type AssetCheckExecutionContext. "
+                "`context` must be annotated with AssetExecutionContext, OpExecutionContext, or left blank."
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                "Cannot annotate @op `context` parameter with type AssetCheckExecutionContext. "
+                "`context` must be annotated with OpExecutionContext, AssetExecutionContext (if part of "
+                "a graph-backed-asset) or left blank."
+            )
 
-    # Structured assuming upcoming changes to make AssetExecutionContext contain an OpExecutionContext
-    asset_ctx = AssetExecutionContext(op_execution_context=OpExecutionContext(step_context))
-    asset_token = _current_asset_execution_context.set(asset_ctx)
+    if context_annotation is AssetExecutionContext:
+        if asset_check_only_step:
+            raise DagsterInvalidDefinitionError(
+                "Cannot annotate @asset_check `context` parameter with type AssetExecutionContext. "
+                "`context` must be annotated with AssetCheckExecutionContext, OpExecutionContext, or left blank."
+            )
+
+        # It would be nice to do this check at definition time, rather than at run time, but we don't
+        # know if the op is part of an op job or a graph-backed asset until we have the step execution context
+        if not is_sda_step and not is_op_in_graph_asset:
+            # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
+            # cannot be annotated with AssetExecutionContext
+            raise DagsterInvalidDefinitionError(
+                "Cannot annotate @op `context` parameter with type AssetExecutionContext unless the"
+                " op is part of a graph-backed asset. `context` must be annotated with"
+                " OpExecutionContext, or left blank."
+            )
+
+    # default to AssetCheckExecutionContext in @asset_checks
+    if asset_check_only_step and context_annotation is not OpExecutionContext:
+        asset_ctx = AssetCheckExecutionContext(
+            op_execution_context=OpExecutionContext(step_context)
+        )
+    else:
+        asset_ctx = AssetExecutionContext(op_execution_context=OpExecutionContext(step_context))
+
+    asset_token = _current_execution_context.set(asset_ctx)
 
     try:
         if context_annotation is EmptyAnnotation:
@@ -1845,20 +2004,23 @@ def enter_execution_context(
             # * AssetExecutionContext for sda steps not in graph-backed assets, and asset_checks
             # * OpExecutionContext for non sda steps
             # * OpExecutionContext for ops in graph-backed assets
-            if is_asset_check:
+            if asset_check_only_step:
                 yield asset_ctx
             elif is_op_in_graph_asset or not is_sda_step:
                 yield asset_ctx.op_execution_context
             else:
                 yield asset_ctx
-        elif context_annotation is AssetExecutionContext:
+        elif (
+            context_annotation is AssetExecutionContext
+            or context_annotation is AssetCheckExecutionContext
+        ):
             yield asset_ctx
         else:
             yield asset_ctx.op_execution_context
     finally:
-        _current_asset_execution_context.reset(asset_token)
+        _current_execution_context.reset(asset_token)
 
 
-_current_asset_execution_context: ContextVar[Optional[AssetExecutionContext]] = ContextVar(
-    "_current_asset_execution_context", default=None
-)
+_current_execution_context: ContextVar[
+    Optional[Union[AssetExecutionContext, AssetCheckExecutionContext]]
+] = ContextVar("_current_execution_context", default=None)

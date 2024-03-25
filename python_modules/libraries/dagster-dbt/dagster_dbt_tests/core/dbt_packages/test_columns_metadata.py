@@ -172,13 +172,17 @@ def test_column_lineage(
         AssetKey(["stg_customers"]): TableColumnLineage(
             deps_by_column={
                 "customer_id": [
-                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="id")
+                    TableColumnDep(asset_key=AssetKey(["raw_source_customers"]), column_name="id")
                 ],
                 "first_name": [
-                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="first_name")
+                    TableColumnDep(
+                        asset_key=AssetKey(["raw_source_customers"]), column_name="first_name"
+                    )
                 ],
                 "last_name": [
-                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="last_name")
+                    TableColumnDep(
+                        asset_key=AssetKey(["raw_source_customers"]), column_name="last_name"
+                    )
                 ],
             }
         ),

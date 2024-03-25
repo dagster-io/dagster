@@ -21,7 +21,7 @@ DAGSTER_POLARS_STORAGE_METADATA_KEY = "dagster_polars_metadata"
 
 
 def get_pyarrow_dataset(path: "UPath", context: InputContext) -> ds.Dataset:
-    context_metadata = context.metadata or {}
+    context_metadata = context.definition_metadata or {}
 
     fs = path.fs if hasattr(path, "fs") else None
 
@@ -51,7 +51,7 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     :param context:
     :return:
     """
-    context_metadata = context.metadata or {}
+    context_metadata = context.definition_metadata or {}
 
     storage_options = cast(
         Optional[Dict[str, Any]],

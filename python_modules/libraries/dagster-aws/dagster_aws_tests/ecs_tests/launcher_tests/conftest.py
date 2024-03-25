@@ -477,6 +477,9 @@ def container_context_config(configured_secret: Secret) -> Mapping[str, Any]:
             ],
             "run_ecs_tags": [{"key": "ABC", "value": "DEF"}],  # with value
             "repository_credentials": "fake-secret-arn",
+            "server_health_check": {
+                "command": ["HELLO"],
+            },
         },
     }
 
@@ -540,6 +543,13 @@ def other_container_context_config(other_configured_secret):
                 }
             ],
             "repository_credentials": "fake-secret-arn",
+            "server_health_check": {
+                "command": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 0,
+            },
         },
     }
 

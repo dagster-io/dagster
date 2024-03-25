@@ -1,3 +1,5 @@
+import {renderHook} from '@testing-library/react';
+
 import {
   AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
@@ -14,7 +16,7 @@ import {
   buildRepository,
   buildRepositoryLocation,
 } from '../../graphql/types';
-import {buildAssetTabs} from '../AssetTabs';
+import {useAssetTabs} from '../AssetTabs';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 const autoMaterializePolicy = buildAutoMaterializePolicy({
@@ -233,8 +235,10 @@ describe('buildAssetTabs', () => {
   const params = {};
 
   it('shows all tabs', () => {
-    const tabList = buildAssetTabs({definition: definitionWithPartition, params});
-    const tabKeys = tabList.map(({id}) => id);
+    const hookResult = renderHook(() =>
+      useAssetTabs({definition: definitionWithPartition, params}),
+    );
+    const tabKeys = hookResult.result.current.map(({id}) => id);
     expect(tabKeys).toEqual([
       'partitions',
       'events',
@@ -247,29 +251,35 @@ describe('buildAssetTabs', () => {
   });
 
   it('hides auto-materialize tab if no auto-materialize policy', () => {
-    const tabList = buildAssetTabs({
-      definition: {...definitionWithPartition, autoMaterializePolicy: null},
-      params,
-    });
-    const tabKeys = tabList.map(({id}) => id);
+    const hookResult = renderHook(() =>
+      useAssetTabs({
+        definition: {...definitionWithPartition, autoMaterializePolicy: null},
+        params,
+      }),
+    );
+    const tabKeys = hookResult.result.current.map(({id}) => id);
     expect(tabKeys).toEqual(['partitions', 'events', 'checks', 'plots', 'definition', 'lineage']);
   });
 
   it('hides partitions tab if no partitions', () => {
-    const tabList = buildAssetTabs({
-      definition: definitionWithoutPartition,
-      params,
-    });
-    const tabKeys = tabList.map(({id}) => id);
+    const hookResult = renderHook(() =>
+      useAssetTabs({
+        definition: definitionWithoutPartition,
+        params,
+      }),
+    );
+    const tabKeys = hookResult.result.current.map(({id}) => id);
     expect(tabKeys).toEqual(['events', 'checks', 'plots', 'definition', 'lineage', 'automation']);
   });
 
   it('hides partitions and auto-materialize tabs if no partitions or auto-materializing', () => {
-    const tabList = buildAssetTabs({
-      definition: {...definitionWithoutPartition, autoMaterializePolicy: null},
-      params,
-    });
-    const tabKeys = tabList.map(({id}) => id);
+    const hookResult = renderHook(() =>
+      useAssetTabs({
+        definition: {...definitionWithoutPartition, autoMaterializePolicy: null},
+        params,
+      }),
+    );
+    const tabKeys = hookResult.result.current.map(({id}) => id);
     expect(tabKeys).toEqual(['events', 'checks', 'plots', 'definition', 'lineage']);
   });
 });

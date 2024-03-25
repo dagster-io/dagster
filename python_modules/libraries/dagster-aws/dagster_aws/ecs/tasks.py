@@ -30,6 +30,7 @@ class DagsterEcsTaskDefinitionConfig(
             ("volumes", Sequence[Mapping[str, Any]]),
             ("repository_credentials", Optional[str]),
             ("linux_parameters", Optional[Mapping[str, Any]]),
+            ("health_check", Optional[Mapping[str, Any]]),
         ],
     )
 ):
@@ -58,6 +59,7 @@ class DagsterEcsTaskDefinitionConfig(
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
         repository_credentials: Optional[str] = None,
         linux_parameters: Optional[Mapping[str, Any]] = None,
+        health_check: Optional[Mapping[str, Any]] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -80,6 +82,7 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_sequence_param(volumes, "volumes"),
             check.opt_str_param(repository_credentials, "repository_credentials"),
             check.opt_mapping_param(linux_parameters, "linux_parameters"),
+            check.opt_mapping_param(health_check, "health_check"),
         )
 
     def task_definition_dict(self):
@@ -112,6 +115,7 @@ class DagsterEcsTaskDefinitionConfig(
                         else {}
                     ),
                     ({"linuxParameters": self.linux_parameters} if self.linux_parameters else {}),
+                    ({"healthCheck": self.health_check} if self.health_check else {}),
                 ),
                 *self.sidecars,
             ],
@@ -177,6 +181,7 @@ class DagsterEcsTaskDefinitionConfig(
                 "credentialsParameter"
             ),
             linux_parameters=container_definition.get("linuxParameters"),
+            health_check=container_definition.get("healthCheck"),
         )
 
 
@@ -232,6 +237,11 @@ def get_task_definition_dict_from_current_task(
             ]
         )
     )
+
+    # Don't automatically include health check - may be specific to the current task
+    container_definition = {
+        key: val for key, val in container_definition.items() if key != "healthCheck"
+    }
 
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition

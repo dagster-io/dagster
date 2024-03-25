@@ -277,46 +277,6 @@ class DbtCliEventMessage:
                         metadata=metadata,
                     )
 
-    def _process_adapter_response_metadata(
-        self, adapter_response: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Process the adapter response metadata for a dbt CLI event.
-
-        The main interface for AdapterResponse is found at https://github.com/dbt-labs/dbt-adapters.
-
-        Currently, we pre-process the following dbt adapters, which have custom responses:
-
-        - https://github.com/dbt-labs/dbt-bigquery: BigQueryAdapterResponse
-        - https://github.com/databricks/dbt-databricks: DatabricksAdapterResponse
-        - https://github.com/dbt-labs/dbt-snowflake: SnowflakeAdapterResponse
-        - https://github.com/starburstdata/dbt-trino: TrinoAdapterResponse
-        """
-        allowlisted_adapter_response_keys = [
-            # AdapterResponse
-            *[
-                "rows_affected",
-            ],
-            # BigQueryAdapterResponse
-            *[
-                "bytes_processed",
-                "bytes_billed",
-                "job_id",
-                "slot_ms",
-            ],
-            # DatabricksAdapterResponse, SnowflakeAdapterResponse, TrinoAdapterResponse
-            *[
-                "query_id",
-            ],
-        ]
-
-        processed_adapter_response = {
-            key: value
-            for key, value in adapter_response.items()
-            if (key in allowlisted_adapter_response_keys and value)
-        }
-
-        return processed_adapter_response
-
     def _build_column_lineage_metadata(
         self,
         manifest: Mapping[str, Any],
@@ -379,21 +339,25 @@ class DbtCliEventMessage:
         # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
         for column_name in column_names:
-            dbt_parent_resource_props_by_alias: Dict[str, Dict[str, Any]] = {
-                parent_dbt_resource_props["alias"]: parent_dbt_resource_props
-                for parent_dbt_resource_props in map(
-                    lambda parent_unique_id: manifest["nodes"][parent_unique_id],
-                    dbt_resource_props["depends_on"]["nodes"],
-                )
-            }
+            dbt_parent_resource_props_by_identifier: Dict[str, Dict[str, Any]] = {}
+            for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
+                is_resource_type_source = parent_unique_id.startswith("source")
+                if is_resource_type_source:
+                    parent_dbt_resource_props = manifest["sources"][parent_unique_id]
+                    identifier = parent_dbt_resource_props["name"]
+                else:
+                    parent_dbt_resource_props = manifest["nodes"][parent_unique_id]
+                    identifier = parent_dbt_resource_props["alias"]
+
+                dbt_parent_resource_props_by_identifier[identifier] = parent_dbt_resource_props
 
             column_deps: Sequence[TableColumnDep] = []
             for sqlglot_lineage_node in lineage(
                 column=column_name, sql=optimized_node_ast, schema=sqlglot_mapping_schema
             ).walk():
                 column = sqlglot_lineage_node.expression.find(exp.Column)
-                if column and column.table in dbt_parent_resource_props_by_alias:
-                    parent_resource_props = dbt_parent_resource_props_by_alias[column.table]
+                if column and column.table in dbt_parent_resource_props_by_identifier:
+                    parent_resource_props = dbt_parent_resource_props_by_identifier[column.table]
                     parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
 
                     column_deps.append(
