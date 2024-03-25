@@ -20,7 +20,7 @@ from dagster._utils.log import get_dagster_logger
 
 if TYPE_CHECKING:
     from dagster import DagsterInstance
-    from dagster._core.events import DagsterEvent
+    from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata
     from dagster._core.storage.dagster_run import DagsterRun
 
 # Python's logging system allows you to attach arbitrary values to a log message/record by passing a
@@ -44,6 +44,23 @@ def set_log_record_event(record: logging.LogRecord, event: "DagsterEvent") -> No
 
 def has_log_record_event(record: logging.LogRecord) -> bool:
     return hasattr(record, LOG_RECORD_EVENT_ATTR)
+
+
+LOG_RECORD_EVENT_BATCH_METADATA_ATTR: Final = "dagster_event_batch_metadata"
+
+
+def get_log_record_event_batch_metadata(record: logging.LogRecord) -> "DagsterEventBatchMetadata":
+    return cast("DagsterEventBatchMetadata", getattr(record, LOG_RECORD_EVENT_BATCH_METADATA_ATTR))
+
+
+def set_log_record_event_batch_metadata(
+    record: logging.LogRecord, event: "DagsterEventBatchMetadata"
+) -> None:
+    setattr(record, LOG_RECORD_EVENT_BATCH_METADATA_ATTR, event)
+
+
+def has_log_record_event_batch_metadata(record: logging.LogRecord) -> bool:
+    return hasattr(record, LOG_RECORD_EVENT_BATCH_METADATA_ATTR)
 
 
 LOG_RECORD_METADATA_ATTR: Final = "dagster_meta"
@@ -93,6 +110,7 @@ class DagsterLogRecordMetadata(TypedDict):
     resource_name: Optional[str]
     resource_fn_name: Optional[str]
     dagster_event: Optional["DagsterEvent"]
+    dagster_event_batch_metadata: Optional["DagsterEventBatchMetadata"]
     orig_message: str
     log_message_id: str
     log_timestamp: str
@@ -141,7 +159,10 @@ def _error_str_for_event(event: "DagsterEvent") -> Optional[str]:
 
 
 def construct_log_record_metadata(
-    handler_metadata: DagsterLogHandlerMetadata, orig_message: str, event: Optional["DagsterEvent"]
+    handler_metadata: DagsterLogHandlerMetadata,
+    orig_message: str,
+    event: Optional["DagsterEvent"],
+    event_batch_metadata: Optional["DagsterEventBatchMetadata"],
 ) -> DagsterLogRecordMetadata:
     step_key = handler_metadata["step_key"] or (event.step_key if event else None)
     timestamp = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
@@ -156,18 +177,19 @@ def construct_log_record_metadata(
         log_message_id=make_new_run_id(),
         log_timestamp=timestamp,
         dagster_event=event,
+        dagster_event_batch_metadata=event_batch_metadata,
         step_key=step_key,
     )
 
 
 class DagsterLogHandler(logging.Handler):
     """Internal class used to turn regular logs into Dagster logs by adding Dagster-specific
-    metadata (such as pipeline_name or step_key), as well as reformatting the underlying message.
+    metadata (such as job_name or step_key), as well as reformatting the underlying message.
 
     Note: The `loggers` argument will be populated with the set of @loggers supplied to the current
-    pipeline run. These essentially work as handlers (they do not create their own log messages,
-    they simply re-log messages that are created from context.log.x() calls), which is why they are
-    referenced from within this handler class.
+    run. These essentially work as handlers (they do not create their own log messages, they simply
+    re-log messages that are created from context.log.x() calls), which is why they are referenced
+    from within this handler class.
     """
 
     def __init__(
@@ -212,7 +234,14 @@ class DagsterLogHandler(logging.Handler):
     def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
         # If this was a logged DagsterEvent, the event will be stored on the record
         event = get_log_record_event(record) if has_log_record_event(record) else None
-        metadata = construct_log_record_metadata(self._metadata, record.getMessage(), event)
+        event_batch_metadata = (
+            get_log_record_event_batch_metadata(record)
+            if has_log_record_event_batch_metadata(record)
+            else None
+        )
+        metadata = construct_log_record_metadata(
+            self._metadata, record.getMessage(), event, event_batch_metadata
+        )
         message = construct_log_record_message(metadata)
 
         # update the message to be formatted like other dagster logs
@@ -356,7 +385,11 @@ class DagsterLogManager(logging.Logger):
             logger.removeHandler(self._dagster_handler)
 
     def log_dagster_event(
-        self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"
+        self,
+        level: Union[str, int],
+        msg: str,
+        dagster_event: "DagsterEvent",
+        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
     ) -> None:
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
         (such as the asset or job name) will be automatically attached to the created record.
@@ -366,10 +399,24 @@ class DagsterLogManager(logging.Logger):
                 or an integer level such as logging.INFO or logging.DEBUG.
             msg (str): message describing the event
             dagster_event (DagsterEvent): DagsterEvent that will be logged
+            batch_metadata (BatchMetadata): Metadata about the batch that the event is a part of.
         """
-        self.log(level=level, msg=msg, extra={LOG_RECORD_EVENT_ATTR: dagster_event})
+        self.log(
+            level=level,
+            msg=msg,
+            extra={
+                LOG_RECORD_EVENT_ATTR: dagster_event,
+                LOG_RECORD_EVENT_BATCH_METADATA_ATTR: batch_metadata,
+            },
+        )
 
-    def log(self, level: Union[str, int], msg: object, *args: Any, **kwargs: Any) -> None:
+    def log(
+        self,
+        level: Union[str, int],
+        msg: object,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """Log a message at the given level. Attributes about the context it was logged in (such as
         the asset or job name) will be automatically attached to the created record.
 
