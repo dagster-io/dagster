@@ -777,7 +777,7 @@ class JobDefinition(IHasInternalInit):
 
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
-        selection = AssetSelection.keys(*selection_data.asset_selection)
+        selection = AssetSelection.assets(*selection_data.asset_selection)
         if selection_data.asset_check_selection is not None:
             selection = selection.without_checks() | AssetSelection.checks(
                 *selection_data.asset_check_selection

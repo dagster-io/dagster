@@ -176,6 +176,9 @@ def test_asset_selection_keys(all_assets: _AssetList):
     sel = AssetSelection.keys("alice", "bob", "carol", "dave")
     assert str(sel) == "4 assets"
 
+    sel = AssetSelection.keys("animals/zebra")
+    assert sel.resolve(all_assets) == _asset_keys_of({zebra})
+
 
 def test_asset_selection_key_prefixes(all_assets: _AssetList):
     sel = AssetSelection.key_prefixes("animals")
