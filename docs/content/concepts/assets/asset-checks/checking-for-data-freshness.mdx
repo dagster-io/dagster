@@ -22,7 +22,7 @@ By the end of this guide, you'll understand what freshness checks are and how to
 
 An asset is considered fresh if it's been materialized or observed within a defined time window. Otherwise, assets are considered overdue and in need of an update. To identify these assets, you can use **freshness checks**.
 
-Let's say members of your team review a dashboard every morning as part of their daily stand up. To ensure they have the most up-to-date information, assets powering the dashboard should be materialized no later than 7AM. Using a freshness check, we can define the time that the asset should be updated. If it's not, Dagster will mark it as **Overdue**.
+Let's say members of your team review a dashboard every morning as part of their daily stand up. To ensure they have the most up-to-date information, assets powering the dashboard should be materialized no later than 7AM. Using a freshness check, we can define the time that the asset should be updated by. If the check runs at that time and the asset hasn't been updated, the asset will be considered overdue and the check will fail.
 
 Additionally, freshness checks can also help communicate SLAs for their data freshness. For example, downstream asset consumers can look at the checks that are defined on those assets to determine when and how often they’re expected to be updated.
 
