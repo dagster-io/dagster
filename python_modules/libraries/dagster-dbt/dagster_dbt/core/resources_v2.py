@@ -70,6 +70,7 @@ from ..dbt_manifest import (
     DbtManifestParam,
     validate_manifest,
 )
+from ..dbt_project import DbtProject
 from ..errors import DagsterDbtCliRuntimeError
 from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
@@ -710,6 +711,8 @@ class DbtCliResource(ConfigurableResource):
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
         dbt_executable (str): The path to the dbt executable. By default, this is `dbt`.
+        state_artifacts_dir (Optional[str]): The path to a directory of dbt artifacts to be used
+            with the --state or --defer-state cli arguments.
 
     Examples:
         Creating a dbt resource with only a reference to ``project_dir``:
@@ -810,6 +813,40 @@ class DbtCliResource(ConfigurableResource):
         default=DBT_EXECUTABLE,
         description="The path to the dbt executable.",
     )
+    state_artifacts_dir: Optional[str] = Field(
+        description=(
+            "The path to a directory of dbt artifacts to be used with --state / --defer-state. "
+            "This can be used with methods such as auto_defer_args to allow for a @dbt_assets to "
+            "use defer in the appropriate environments."
+        )
+    )
+
+    def __init__(
+        self,
+        project_dir: Union[str, DbtProject],
+        global_config_flags: Optional[List[str]] = None,
+        profiles_dir: Optional[str] = None,
+        profile: Optional[str] = None,
+        target: Optional[str] = None,
+        dbt_executable: str = DBT_EXECUTABLE,
+        state_artifacts_dir: Optional[str] = None,
+    ):
+        if isinstance(project_dir, DbtProject):
+            project_state_artifacts_path = project_dir.state_artifacts_path
+            if state_artifacts_dir is None and project_state_artifacts_path:
+                state_artifacts_dir = os.fspath(project_state_artifacts_path)
+            project_dir = os.fspath(project_dir.project_dir)
+
+        # static typing doesn't understand whats going on here, thinks these fields dont exist
+        super().__init__(
+            project_dir=project_dir,  # type: ignore
+            global_config_flags=global_config_flags or [],  # type: ignore
+            profiles_dir=profiles_dir,  # type: ignore
+            profile=profile,  # type: ignore
+            target=target,  # type: ignore
+            dbt_executable=dbt_executable,  # type: ignore
+            state_artifacts_dir=state_artifacts_dir,  # type: ignore
+        )
 
     @classmethod
     def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
@@ -914,6 +951,22 @@ class DbtCliResource(ConfigurableResource):
         current_target_path = _get_dbt_target_path()
 
         return current_target_path.joinpath(path)
+
+    def auto_defer_args(self) -> Sequence[str]:
+        """Returns ['--defer', '--defer-state', state_artifacts_dir] if state_artifacts_dir was specified."""
+        if version.parse(dbt_version) < version.parse("1.6.0"):
+            state_flag = "--state"
+        else:
+            # Use the more scoped --defer-state on versions it is available
+            state_flag = "--defer-state"
+
+        if (
+            self.state_artifacts_dir
+            and Path(self.state_artifacts_dir).joinpath("manifest.json").exists()
+        ):
+            return ["--defer", state_flag, self.state_artifacts_dir]
+        else:
+            return []
 
     @public
     def cli(
