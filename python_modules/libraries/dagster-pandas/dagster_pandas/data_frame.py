@@ -125,7 +125,9 @@ def create_table_schema_metadata_from_dataframe(
     Returns:
         TableSchemaMetadataValue: returns an object with the TableSchema for the DataFrame.
     """
-    check.inst(pandas_df, pd.DataFrame, "Input must be a pandas DataFrame object")
+    check.inst_param(
+        pandas_df, "pandas_df", pd.DataFrame, "Input must be a pandas DataFrame object"
+    )
     return MetadataValue.table_schema(
         TableSchema(
             columns=[

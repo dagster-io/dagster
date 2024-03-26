@@ -20,7 +20,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
@@ -308,13 +308,11 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         api_client = DagsterKubernetesClient.production_client()
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
-        dagster_run = instance.get_run_by_id(execute_step_args.run_id)
-
-        check.inst(
-            dagster_run,
-            DagsterRun,
+        dagster_run = check.not_none(
+            instance.get_run_by_id(execute_step_args.run_id),
             f"Could not load run {execute_step_args.run_id}",
         )
+
         step_key = execute_step_args.step_keys_to_execute[0]
 
         celery_worker_name = self.request.hostname
