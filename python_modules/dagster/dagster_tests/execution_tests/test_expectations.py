@@ -92,5 +92,5 @@ def test_expectation_result_deprecated() -> None:
     assert is_deprecated(ExpectationResult)
     assert (
         get_deprecated_info(ExpectationResult).additional_warn_text
-        == "Please use AssetCheckResult and @asset_check instead."
+        == "If using assets, use AssetCheckResult and @asset_check instead."
     )
