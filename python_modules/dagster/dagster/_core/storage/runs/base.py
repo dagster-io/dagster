@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.types import RunTelemetryData
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 from dagster._core.storage.dagster_run import (
@@ -352,6 +353,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         """Latest heartbeats of all daemon types."""
+
+    def add_run_telemetry(
+        self,
+        run_telemetry: RunTelemetryData,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Not implemented in base class. Should be implemented in subclasses that support telemetry."""
+        pass
 
     @abstractmethod
     def wipe_daemon_heartbeats(self) -> None:

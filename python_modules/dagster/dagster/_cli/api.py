@@ -40,6 +40,11 @@ from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
+from .._core.execution.run_metrics_thread import (
+    DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
+    start_run_metrics_thread,
+    stop_run_metrics_thread,
+)
 from .utils import get_instance_for_cli
 
 
@@ -79,6 +84,47 @@ def execute_run_command(input_json):
                 sys.exit(return_code)
 
 
+def _is_isolated_run(dagster_run: DagsterRun) -> bool:
+    return dagster_run.tags.get("dagster/isolation") != "disabled"
+
+
+def _truthy_tag_value(dagster_run: DagsterRun, tag: str, default: str = "false") -> bool:
+    return dagster_run.tags.get(tag, default).casefold() in ["true", "1", "yes", "on"]
+
+
+def _should_start_metrics_thread(dagster_run: DagsterRun) -> bool:
+    return _truthy_tag_value(dagster_run, "dagster/run_metrics")
+
+
+def _enable_python_runtime_metrics(dagster_run: DagsterRun) -> bool:
+    return _truthy_tag_value(dagster_run, "dagster/python_runtime_metrics")
+
+
+def _report_container_metrics_as_engine_events(dagster_run: DagsterRun) -> bool:
+    return _truthy_tag_value(dagster_run, "dagster/container_metrics_engine_events")
+
+
+def _metrics_polling_interval(
+    dagster_run: DagsterRun, logger: Optional[logging.Logger] = None
+) -> float:
+    try:
+        return float(
+            dagster_run.tags.get(
+                "dagster/run_metrics_polling_interval_seconds",
+                DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
+            )
+        )
+    except ValueError:
+        if logger:
+            logger.warning(
+                (
+                    "Invalid value for dagster/run_metrics_polling_interval_seconds tag."
+                    f"Setting metric polling interval to default value: {DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS}."
+                )
+            )
+        return DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS
+
+
 def _execute_run_command_body(
     run_id: str,
     instance: DagsterInstance,
@@ -101,6 +147,24 @@ def _execute_run_command_body(
         dagster_run.job_code_origin,
         f"Run with id '{run_id}' does not include an origin.",
     )
+
+    start_metric_thread = _should_start_metrics_thread(dagster_run)
+    if start_metric_thread:
+        logger = logging.getLogger("run_metrics")
+        polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
+        metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
+            instance,
+            dagster_run,
+            container_metrics_enabled=True,
+            python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
+            report_container_metrics_as_engine_events=_report_container_metrics_as_engine_events(
+                dagster_run
+            ),
+            polling_interval=polling_interval,
+            logger=logger,
+        )
+    else:
+        metrics_thread, metrics_thread_shutdown_event = None, None
 
     recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
@@ -127,6 +191,11 @@ def _execute_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
+        if metrics_thread and metrics_thread_shutdown_event:
+            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
+            if not stopped:
+                instance.report_engine_event("Metrics thread did not shutdown properly")
+
         if instance.should_start_background_run_thread:
             cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
             cancellation_thread = check.not_none(cancellation_thread)
@@ -197,6 +266,24 @@ def _resume_run_command_body(
         f"Run with id '{run_id}' does not include an origin.",
     )
 
+    start_metric_thread = _should_start_metrics_thread(dagster_run)
+    if start_metric_thread:
+        logger = logging.getLogger("run_metrics")
+        polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
+        metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
+            instance,
+            dagster_run,
+            container_metrics_enabled=True,
+            python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
+            report_container_metrics_as_engine_events=_report_container_metrics_as_engine_events(
+                dagster_run
+            ),
+            polling_interval=polling_interval,
+            logger=logger,
+        )
+    else:
+        metrics_thread, metrics_thread_shutdown_event = None, None
+
     recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
     pid = os.getpid()
@@ -224,6 +311,11 @@ def _resume_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
+        if metrics_thread and metrics_thread_shutdown_event:
+            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
+            if not stopped:
+                instance.report_engine_event("Metrics thread did not shutdown properly")
+
         if instance.should_start_background_run_thread:
             cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
             cancellation_thread = check.not_none(cancellation_thread)
