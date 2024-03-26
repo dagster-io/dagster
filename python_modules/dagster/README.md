@@ -42,7 +42,7 @@ from sklearn.linear_model import LinearRegression
 @asset
 def country_populations() -> DataFrame:
     df = read_html("https://tinyurl.com/mry64ebh")[0]
-    df.columns = ["country", "continent", "rg", "pop2018", "pop2019", "change"]
+    df.columns = ["country", "pop2022", "pop2023", "change", "continent", "sr"]
     df["change"] = df["change"].str.rstrip("%").str.replace("−", "-").astype("float")
     return df
 
@@ -61,7 +61,7 @@ def continent_stats(country_populations: DataFrame, continent_change_model: Line
 The graph loaded into Dagster's web UI:
 
 <p align="center">
-  <img width="432" alt="An example asset graph as rendered in the Dagster UI" src="https://github.com/dagster-io/dagster/assets/654855/5b302b1b-4cc9-49bf-8689-232f7de87d31">
+  <img width="100%" alt="An example asset graph as rendered in the Dagster UI" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/example-lineage.png">
 </p>
 
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
