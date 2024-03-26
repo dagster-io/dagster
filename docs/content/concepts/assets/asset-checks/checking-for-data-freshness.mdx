@@ -5,9 +5,9 @@ description: "Use freshness checks to identify data assets that are overdue for 
 
 # Using asset checks to check data freshness
 
-A freshness check is a type of [asset check](/concepts/assets/asset-checks) that allows you to define the amount of time between materializations/observations for Dagster [assets](/concepts/assets/software-defined-assets).
+A freshness check is a type of [asset check](/concepts/assets/asset-checks) that allows you identify Dagster [assets](/concepts/assets/software-defined-assets) that are overdue for a data refresh.
 
-Using freshness checks, you can easily identify assets that are overdue for an update. As freshness checks don't depend on a specific root cause, it makes them helpful in accounting for unknowns. For example, freshness checks can identify overdue assets caused by any of the following:
+As freshness checks don't depend on a specific root cause, it makes them helpful in accounting for unknowns. For example, freshness checks can identify stale assets caused by any of the following:
 
 - The pipeline hitting an error and failing
 - Runs were never scheduled
@@ -22,15 +22,15 @@ By the end of this guide, you'll understand what freshness checks are and how to
 
 An asset is considered fresh if it's been materialized or observed within a defined time window. Otherwise, assets are considered overdue and in need of an update. To identify these assets, you can use **freshness checks**.
 
-Let's say an asset begins materializing at 12:00AM and takes 10 minutes to complete. Allowing for operational constraints and delays, the asset should always be materialized by 12:30AM. Using a freshness check, we can define the time that the asset should be updated. If it's not, Dagster will mark it as **Overdue**.
+Let's say members of your team review a dashboard every morning as part of their daily stand up. To ensure they have the most up-to-date information, assets powering the dashboard should be materialized no later than 7AM. Using a freshness check, we can define the time that the asset should be updated. If it's not, Dagster will mark it as **Overdue**.
 
-How freshness checks are implemented depends on the type of asset they target:
+Additionally, freshness checks can also help communicate SLAs for their data freshness. For example, downstream asset consumers can look at the checks that are defined on those assets to determine when and how often they’re expected to be updated.
+
+Freshness checks use an asset's latest update time to determine if it's overdue. How Dagster determines the last update time varies on the type of asset being targeted:
 
 - **For source assets**, which are assets whose data feeds a Dagster pipeline, freshness checks utilize the time the asset was last updated to determine freshness. In this guide, we'll demonstrate how to use [observable source assets](/concepts/assets/asset-observations#observable-source-assets) and a [schedule](/concepts/partitions-schedules-sensors/schedules) to achieve this.
 
-- **For materializable assets**, which are assets materialized by Dagster, Dagster can infer the asset's last update time using the asset's latest materialization timestamp. In this guide, we'll demonstrate how to use <PyObject object="asset" decorator />-decorated assets and a [sensor](/concepts/partitions-schedules-sensors/sensors) to achieve this.
-
-For materializable assets, freshness checks can also help you communicate SLAs for their data freshness. For example, downstream consumers of the assets can look at the checks that are defined on those assets to determine when and how often they’re expected to be updated.
+- **For materializable assets**, which are assets materialized by Dagster, Dagster infers the asset's last update time using the its latest materialization timestamp. In this guide, we'll demonstrate how to use <PyObject object="asset" decorator />-decorated assets and a [sensor](/concepts/partitions-schedules-sensors/sensors) to achieve this.
 
 ---
 
@@ -46,11 +46,11 @@ Before continuing, you should be familiar with:
 
 ## Defining freshness checks for source assets
 
-In this section, we'll demonstrate how to implement freshness checks for source assets. Source assets are assets whose data feeds a Dagster pipeline, but isn't materialized by Dagster.
+In this section, we'll demonstrate how to implement freshness checks for source assets. Source assets are assets whose data feeds a Dagster pipeline, but aren't materialized by Dagster.
 
 ### Step 1: Track the asset's last update time
 
-To run freshness checks on source assets, the checks need to know when the source assets were last updated. [Observable source assets](/concepts/assets/asset-observations#observable-source-assets) can be used to track the update times of these assets.
+To run freshness checks on source assets, the checks need to know when the source assets were last updated. [Observable source assets](/concepts/assets/asset-observations#observable-source-assets) - in this case, <PyObject object="multi_observable_source_asset" decorator /> can be used to track the update times of these assets.
 
 The following is an example of multiple Snowflake tables, backed by an observation function that queries Snowflake to find the most recent time the tables were updated. The function yields the update time as metadata to be stored in the Dagster event log:
 
@@ -74,7 +74,7 @@ def source_tables(snowflake: SnowflakeResource):
             )
 ```
 
-### Step 2: Create a schedule for the observation
+### Step 2: Schedule the observations
 
 Next, we'll define a [schedule](/concepts/partitions-schedules-sensors/schedules) that regularly executes the function in the `source_tables` observable source asset:
 
@@ -101,7 +101,7 @@ When the code location is loaded and the schedule is turned on, it will automati
 
 #### Option 1: Use hardcoded parameters
 
-In our example, we exepct the source tables to be updated no less than every two hours. We'll use the `build_freshness_checks` function to produce a set of asset checks that fail if an asset’s `last_updated_timestamp` is more than two hours before the current time:
+In our example, we exepct the source tables to be updated no less than every two hours. We'll use the <PyObject object="build_freshness_checks_for_non_partitioned_assets" /> function to produce a set of asset checks that fail if an asset’s `last_updated_timestamp` is more than two hours before the current time:
 
 ```python
 from dagster import build_freshness_checks_for_non_partitioned_assets
@@ -121,13 +121,11 @@ These checks will automatically execute after the observations of the source ass
 
 <Note>A Dagster Cloud Pro plan is required to use this feature.</Note>
 
-TODO: ADD NOTE ABOUT MATERIALIZATIONS AND ACCURACY
-
 Setting custom freshness policies on a large number of source assets can be time-consuming. Dagster Cloud Pro users can take advantage of a time series anomaly detection model instead of applying policies on an asset-by-asset basis. Freshness checks that use this approach function the same way checks with hardcoded parameters do.
 
 This model uses data from past materializations/observations to determine if data is arriving later than expected. **Note**: If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.
 
-In the following example, we used `build_anomaly_detection_freshness_checks` to accomplish this:
+In the following example, we'll use <PyObject object="build_anomaly_detection_freshness_checks" /> to accomplish this:
 
 ```python
 from dagster_cloud import build_anomaly_detection_freshness_checks
@@ -140,7 +138,7 @@ freshness_checks = build_anomaly_detection_freshness_checks(
 </TabItem>
 </TabGroup>
 
-### Step 4: Update the Definitions object
+### Step 4: Create a Definitions object
 
 The last step is to include the asset, checks, and schedule in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
@@ -214,7 +212,7 @@ In this section, we'll demonstrate how to implement freshness checks for materia
 
 ### Step 1: Define the freshness check
 
-In this example, we used the `build_freshness_checks` function to produce an asset check that will fail if an asset’s latest materialization is more than two hours before the current time:
+In this example, we'll use the <PyObject object="build_freshness_checks_for_non_partitioned_assets" /> function to produce an asset check. This check will fail if an asset’s latest materialization is more than two hours before the current time:
 
 ```python
 from dagster import build_freshness_checks_for_non_partitioned_assets
@@ -228,11 +226,11 @@ asset1_freshness_checks = build_freshness_checks_for_non_partitioned_assets(
 )
 ```
 
-### Step 2: Create a sensor to excecute the check
+### Step 2: Create a sensor to execute the check
 
 A [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors) is required to ensure the freshness check executes. If the check only runs after the asset has been materialized, the check won't be able to detect the times materialization fails.
 
-In this example, we used `build_sensor_for_freshness_checks` to create a sensor to automatically run the check. Based on the check's parameters and last run time, the sensor will run the check when enough time has elapsed that the asset might fail the check:
+In this example, we'll use <PyObject object="build_sensor_for_freshness_checks" /> to create a sensor to automatically run the check. Based on the check's parameters and last run time, the sensor will run the check when enough time has elapsed that the asset might fail the check:
 
 ```python
 from dagster import build_sensor_for_freshness_checks
@@ -242,7 +240,7 @@ freshness_checks_sensor = build_sensor_for_freshness_checks(
 )
 ```
 
-### Step 3: Update the Definitions object
+### Step 3: Create a Definitions object
 
 The last step is to include the asset, check, and sensor in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
@@ -303,13 +301,14 @@ This page allows you to see metadata about the check and its latest execution. Y
 
 ## APIs in this guide
 
-\[TODO - update this list]
-
-| Name                                        | Description                                                                                                                           |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset_check" decorator /> | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).                                |
-| <PyObject object="AssetCheckResult" />      | The class returned by asset checks.                                                                                                   |
-| <PyObject object="AssetCheckSpec" />        | A class that's passed to asset decorators to define checks that execute in the same [op](/concepts/ops-jobs-graphs/ops) as the asset. |
+| Name                                                                            | Description                                                                                                       |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset_check" decorator />                                     | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).            |
+| <PyObject object="build_freshness_checks_for_non_partitioned_assets" />         | A function that constructs a freshness check definition for each provided asset                                   |
+| <PyObject object="build_freshness_checks_for_time_window_partitioned_assets" /> | A function that constructs a freshness check definition for each provided time-window partitioned asset           |
+| <PyObject object="build_anomaly_detection_freshness_checks" />                  | TODO                                                                                                              |
+| <PyObject object="build_sensor_for_freshness_checks" />                         | Builds a sensor that triggers evaluation of freshness checks                                                      |
+| <PyObject object="ObserveResult" />                                             | An object representing a successful observation of an asset. Used with observable source assets to pass metadata. |
 
 ---
 
