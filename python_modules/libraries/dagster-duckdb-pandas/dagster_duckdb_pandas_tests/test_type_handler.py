@@ -1,4 +1,5 @@
 import os
+from typing import Iterator
 
 import duckdb
 import pandas as pd
@@ -20,12 +21,15 @@ from dagster import (
     materialize,
     op,
 )
-from dagster._check import CheckError
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
+from dagster_tests.storage_tests.test_db_io_manager_type_handler import (
+    DataFrameType,
+    TemplateTypeHandlerTestSuite,
+)
 
 
-@pytest.fixture
-def io_managers(tmp_path):
+@pytest.fixture(scope="session")
+def all_io_managers(tmp_path):
     return [
         duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
@@ -165,27 +169,24 @@ def test_loading_columns(tmp_path, io_managers):
             duckdb_conn.close()
 
 
-@op
-def non_supported_type() -> int:
-    return 1
+class TestDuckDBPandasTypeHandler(TemplateTypeHandlerTestSuite):
+    @property
+    def df_format(self) -> DataFrameType:
+        return DataFrameType.PANDAS
 
+    def io_managers(
+        self,
+    ):
+        return [
+            duckdb_pandas_io_manager.configured(
+                {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+            ),
+            DuckDBPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
+        ]
 
-@graph
-def not_supported():
-    non_supported_type()
-
-
-def test_not_supported_type(tmp_path, io_managers):
-    for io_manager in io_managers:
-        resource_defs = {"io_manager": io_manager}
-
-        job = not_supported.to_job(resource_defs=resource_defs)
-
-        with pytest.raises(
-            CheckError,
-            match="DuckDBIOManager does not have a handler for type '<class 'int'>'",
-        ):
-            job.execute_in_process()
+    def create_temporary_table(self, database: str, schema: str) -> Iterator[str]:
+        """Returns the name of the created table."""
+        yield self.temporary_table_name
 
 
 @asset(
