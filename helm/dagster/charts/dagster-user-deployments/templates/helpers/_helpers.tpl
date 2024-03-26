@@ -28,13 +28,20 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 # Image utils
-{{- define "dagster.dagsterImage.name" }}
+{{- define "dagster.dagsterImage.tag" }}
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
     {{- /* Filter the tag to parse strings, string integers, and string floats. */}}
-    {{- $tag := .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
-    {{- printf "%s:%s" .repository $tag }}
+    {{- .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
+  {{- end }}
+{{- end }}
+
+{{- define "dagster.dagsterImage.repository" }}
+  {{- $ := index . 0 }}
+
+  {{- with index . 1 }}
+    {{- .repository }}
   {{- end }}
 {{- end }}
 
