@@ -62,9 +62,9 @@ import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
 import {Description} from '../pipelines/Description';
 import {PipelineTag} from '../pipelines/PipelineReference';
+import {buildTagString} from '../ui/tagAsString';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-import {buildTagString} from '../ui/tagAsString';
 
 export const AssetNodeOverview = ({
   assetNode,
