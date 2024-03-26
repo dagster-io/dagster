@@ -53,6 +53,8 @@ ALL_CHECK_KEYS = {
     for asset_name, check_name in [
         ("customers", "not_null_customers_customer_id"),
         ("customers", "unique_customers_customer_id"),
+        ("customers", "singular_test_with_single_dependency"),
+        ("customers", "singular_test_with_meta_and_multiple_dependencies"),
         (
             "orders",
             "accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
@@ -140,6 +142,8 @@ def test_excluding_tests(my_dbt_assets: AssetsDefinition, asset_graph: AssetGrap
             [
                 "not_null_customers_customer_id",
                 "unique_customers_customer_id",
+                "singular_test_with_single_dependency",
+                "singular_test_with_meta_and_multiple_dependencies",
                 "relationships_orders_customer_id__customer_id__ref_customers_",
                 "relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_",
             ]
