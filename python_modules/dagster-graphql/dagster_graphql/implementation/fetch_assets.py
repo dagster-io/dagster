@@ -222,7 +222,11 @@ def get_asset_nodes_by_asset_key(
         _, _, preexisting_asset_node = asset_nodes_by_asset_key.get(
             external_asset_node.asset_key, (None, None, None)
         )
-        if preexisting_asset_node is None or preexisting_asset_node.is_source:
+        # If an asset node is already in the dict, we only overwrite it if that preexisting node is
+        # not executable in some manner (i.e. it is a source asset that is not an observable)
+        if preexisting_asset_node is None or (
+            preexisting_asset_node.is_source and not preexisting_asset_node.is_observable
+        ):
             if asset_keys is None or external_asset_node.asset_key in asset_keys:
                 asset_nodes_by_asset_key[external_asset_node.asset_key] = (
                     repo_loc,

@@ -523,6 +523,21 @@ GET_ASSET_OP = """
     }
 """
 
+GET_ASSET_IS_OBSERVABLE = """
+    query AssetQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                definition {
+                    assetKey {
+                        path
+                    }
+                    isObservable
+                }
+            }
+        }
+    }
+"""
+
 GET_OP_ASSETS = """
     query OpQuery($repositorySelector: RepositorySelector!, $opName: String!) {
         repositoryOrError(repositorySelector: $repositorySelector) {
@@ -2873,6 +2888,20 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             always_source_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
         )
         assert result_dependent_keys == dependent_asset_keys
+
+    def test_cross_repo_observable_source_asset(self, graphql_context: WorkspaceRequestContext):
+        """Ensure that when retrieving an asset that is observable in one repo and not in another,
+        we correctly represent it as observable when retrieving information about the asset key in
+        general.
+        """
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_IS_OBSERVABLE,
+            variables={"assetKey": {"path": ["sometimes_observable_source_asset"]}},
+        )
+        asset = result.data["assetOrError"]
+        assert asset["definition"]["assetKey"]["path"] == ["sometimes_observable_source_asset"]
+        assert asset["definition"]["isObservable"] is True
 
 
 def get_partitioned_asset_repo():
