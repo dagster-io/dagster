@@ -80,7 +80,7 @@ from .metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
-from .utils import DEFAULT_IO_MANAGER_KEY, validate_tags
+from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -131,7 +131,7 @@ class JobDefinition(IHasInternalInit):
         ] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        tags: Optional[Mapping[str, Any]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
@@ -174,7 +174,7 @@ class JobDefinition(IHasInternalInit):
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
-        self._tags = validate_tags(tags)
+        self._tags = normalize_tags(tags).tags
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
@@ -266,7 +266,7 @@ class JobDefinition(IHasInternalInit):
         ],
         description: Optional[str],
         partitions_def: Optional[PartitionsDefinition],
-        tags: Optional[Mapping[str, Any]],
+        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
         metadata: Optional[Mapping[str, RawMetadataValue]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],

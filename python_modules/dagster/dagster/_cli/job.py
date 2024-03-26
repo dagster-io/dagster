@@ -30,7 +30,7 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.api import create_execution_plan, execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -577,7 +577,7 @@ def _check_execute_external_job_args(
 
     return (
         run_config,
-        validate_tags(tags),
+        normalize_tags(tags).tags,
         op_selection,
     )
 

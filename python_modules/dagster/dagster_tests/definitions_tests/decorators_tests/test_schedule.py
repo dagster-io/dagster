@@ -1,6 +1,7 @@
 import inspect
 import json
 import re
+import warnings
 from datetime import datetime
 
 import pendulum
@@ -181,6 +182,29 @@ def test_schedule_with_nested_tags():
         {key: json.dumps(val) for key, val in nested_tags.items()},
         {"dagster/schedule_name": "my_tag_schedule"},
     )
+
+
+def test_invalid_tag_keys():
+    tags = {"my_tag&": "yes", "my_tag#": "yes"}
+
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as caught_warnings:
+
+        @schedule(cron_schedule="* * * * *", job_name="foo_job", tags=tags)
+        def my_tag_schedule():
+            return {}
+
+        assert len(caught_warnings) == 1
+        warning = caught_warnings[0]
+        assert "Non-compliant tag keys like ['my_tag&', 'my_tag#'] are deprecated" in str(
+            warning.message
+        )
+        assert warning.filename.endswith("test_schedule.py")
+
+    assert my_tag_schedule.evaluate_tick(
+        build_schedule_context(scheduled_execution_time=pendulum.now())
+    )[0][0].tags == merge_dicts(tags, {"dagster/schedule_name": "my_tag_schedule"})
 
 
 def test_scheduled_jobs():

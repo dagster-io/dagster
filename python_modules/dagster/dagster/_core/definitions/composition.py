@@ -51,7 +51,7 @@ from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
-from .utils import check_valid_name, validate_tags
+from .utils import NormalizedTags, check_valid_name, normalize_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -645,7 +645,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation[T_NodeDefinition]":
-        tags = validate_tags(tags)
+        tags = normalize_tags(tags).tags
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=self.given_alias,
@@ -686,7 +686,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
-        tags: Optional[Mapping[str, Any]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -701,7 +701,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                 "constructed using the `@graph` decorator support this method."
             )
 
-        tags = check.opt_mapping_param(tags, "tags", key_type=str)
+        tags = normalize_tags(tags)
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
         input_values = check.opt_mapping_param(input_values, "input_values")
         op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
@@ -713,7 +713,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             description=description,
             resource_defs=resource_defs,
             config=config,
-            tags={**(self.tags or {}), **tags},
+            tags=NormalizedTags(self.tags or {}).with_normalized_tags(tags),
             logger_defs=logger_defs,
             executor_def=executor_def,
             hooks=job_hooks,
