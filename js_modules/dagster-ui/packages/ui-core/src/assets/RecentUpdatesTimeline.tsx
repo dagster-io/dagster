@@ -81,7 +81,11 @@ const RecentUpdatesTimelineImpl = ({
     <Box flex={{direction: 'column', gap: 4}}>
       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
         <Subtitle2>Recent updates</Subtitle2>
-        <Caption color={Colors.textLighter()}>Last 100 updates</Caption>
+        <Caption color={Colors.textLighter()}>
+          {materializations.length === 100
+            ? 'Last 100 updates'
+            : `Showing all ${materializations.length} updates`}
+        </Caption>
       </Box>
       <Box border="all" padding={6 as any} style={{height: 32}}>
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
