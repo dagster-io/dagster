@@ -2,7 +2,7 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import AssetsCatalogRoot from '../../assets/AssetsCatalogRoot';
+import AssetsOverviewRoot from '../../assets/AssetsOverviewRoot';
 import {AppTopNav} from '../AppTopNav/AppTopNav';
 import {AppTopNavRightOfLogo} from '../AppTopNav/AppTopNavRightOfLogo.oss';
 import {InjectedComponentContext} from '../InjectedComponentContext';
@@ -16,7 +16,7 @@ describe('AppTopNav', () => {
   it('renders links and controls', async () => {
     render(
       <InjectedComponentContext.Provider
-        value={{AppTopNavRightOfLogo, AssetsOverview: AssetsCatalogRoot}}
+        value={{AppTopNavRightOfLogo, AssetsOverview: AssetsOverviewRoot}}
       >
         <MockedProvider>
           <MemoryRouter>
