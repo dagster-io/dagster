@@ -592,10 +592,13 @@ class AndAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(
-            operands=[
-                operand.to_serializable_asset_selection(asset_graph) for operand in self.operands
-            ]
+        return self.copy(
+            updates=dict(
+                operands=[
+                    operand.to_serializable_asset_selection(asset_graph)
+                    for operand in self.operands
+                ]
+            )
         )
 
     def needs_parentheses_when_operand(self) -> bool:
@@ -632,10 +635,13 @@ class OrAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(
-            operands=[
-                operand.to_serializable_asset_selection(asset_graph) for operand in self.operands
-            ]
+        return self.copy(
+            updates=dict(
+                operands=[
+                    operand.to_serializable_asset_selection(asset_graph)
+                    for operand in self.operands
+                ]
+            )
         )
 
     def needs_parentheses_when_operand(self) -> bool:
@@ -665,9 +671,11 @@ class SubtractAssetSelection(AssetSelection):
         ) - self.right.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(
-            left=self.left.to_serializable_asset_selection(asset_graph),
-            right=self.right.to_serializable_asset_selection(asset_graph),
+        return self.copy(
+            updates=dict(
+                left=self.left.to_serializable_asset_selection(asset_graph),
+                right=self.right.to_serializable_asset_selection(asset_graph),
+            )
         )
 
     def needs_parentheses_when_operand(self) -> bool:
@@ -688,7 +696,9 @@ class SinksAssetSelection(AssetSelection):
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.copy(
+            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        )
 
 
 @whitelist_for_serdes
@@ -705,7 +715,9 @@ class RequiredNeighborsAssetSelection(AssetSelection):
         return output
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.copy(
+            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        )
 
 
 @whitelist_for_serdes
@@ -719,7 +731,9 @@ class RootsAssetSelection(AssetSelection):
         return fetch_sources(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.copy(
+            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        )
 
 
 @whitelist_for_serdes
@@ -750,7 +764,9 @@ class DownstreamAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.copy(
+            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        )
 
 
 @whitelist_for_serdes
@@ -925,7 +941,9 @@ class UpstreamAssetSelection(AssetSelection):
         return {key for key in all_upstream if key in asset_graph.materializable_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.copy(
+            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        )
 
     def __str__(self) -> str:
         if self.depth is None:
@@ -955,4 +973,6 @@ class ParentSourcesAssetSelection(AssetSelection):
         return {key for key in all_upstream if key in asset_graph.external_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.copy(
+            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        )

@@ -1,6 +1,5 @@
 from typing import Any
 
-import pydantic
 from pydantic import BaseModel
 
 
@@ -16,10 +15,3 @@ class DagsterModel(BaseModel):
     class Config:
         extra = "forbid"
         frozen = True
-
-    def _replace(self, **kwargs: Any):
-        if pydantic.__version__ >= "2":
-            func = getattr(BaseModel, "model_copy")
-        else:
-            func = getattr(BaseModel, "copy")
-        return func(self, update=kwargs)
