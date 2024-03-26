@@ -1,6 +1,6 @@
 import boto3
 import pytest
-from moto import mock_s3, mock_secretsmanager, mock_ssm
+from moto import mock_aws
 
 
 # Make sure unit tests never connect to real AWS
@@ -12,7 +12,7 @@ def fake_aws_credentials(monkeypatch):
 
 @pytest.fixture
 def mock_s3_resource():
-    with mock_s3():
+    with mock_aws():
         yield boto3.resource("s3", region_name="us-east-1")
 
 
@@ -23,11 +23,11 @@ def mock_s3_bucket(mock_s3_resource):
 
 @pytest.fixture
 def mock_secretsmanager_resource():
-    with mock_secretsmanager():
+    with mock_aws():
         yield boto3.client("secretsmanager")
 
 
 @pytest.fixture
 def mock_ssm_client():
-    with mock_ssm():
+    with mock_aws():
         yield boto3.client("ssm")

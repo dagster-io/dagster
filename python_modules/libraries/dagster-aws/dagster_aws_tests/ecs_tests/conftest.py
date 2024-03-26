@@ -17,7 +17,7 @@ def ecs(region):
 
 @pytest.fixture
 def ec2(region):
-    with moto.mock_ec2():
+    with moto.mock_aws():
         yield boto3.resource("ec2", region_name=region)
 
 
@@ -38,5 +38,5 @@ def security_group(vpc):
 
 @pytest.fixture
 def secrets_manager(region):
-    with moto.mock_secretsmanager():
+    with moto.mock_aws():
         yield boto3.client("secretsmanager", region_name=region)
