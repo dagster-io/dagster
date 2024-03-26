@@ -232,7 +232,7 @@ export const AssetNodeOverview = ({
         {assetNode.tags && assetNode.tags.length > 0 && (
           <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
             {assetNode.tags.map((tag, idx) => (
-              <Tag key={idx}>{buildTagString({key: tag.key, value: tag.value})}</Tag>
+              <Tag key={idx}>{buildTagString(tag)}</Tag>
             ))}
           </Box>
         )}

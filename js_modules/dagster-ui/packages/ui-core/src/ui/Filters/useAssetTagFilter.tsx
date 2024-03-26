@@ -1,3 +1,4 @@
+import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 
@@ -72,8 +73,9 @@ export function useAssetTagsForAssets(
 export function doesFilterArrayMatchValueArray<T, V>(
   filterArray: T[],
   valueArray: V[],
-  isMatch: (value1: T, value2: V) => boolean = (val1, val2) =>
-    JSON.stringify(val1) === JSON.stringify(val2),
+  isMatch: (value1: T, value2: V) => boolean = (val1, val2) => {
+    return isEqual(val1, val2);
+  },
 ) {
   if (filterArray.length && !valueArray.length) {
     return false;
