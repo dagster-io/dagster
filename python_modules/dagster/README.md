@@ -42,7 +42,7 @@ from sklearn.linear_model import LinearRegression
 @asset
 def country_populations() -> DataFrame:
     df = read_html("https://tinyurl.com/mry64ebh")[0]
-    df.columns = ["country", "pop2022", "pop2023", "change", "continent", "sr"]
+    df.columns = ["country", "pop2022", "pop2023", "change", "continent", "region"]
     df["change"] = df["change"].str.rstrip("%").str.replace("−", "-").astype("float")
     return df
 
