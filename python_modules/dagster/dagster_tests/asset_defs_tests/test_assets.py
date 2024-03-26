@@ -145,14 +145,18 @@ def test_subset_with_checks():
 
     subbed = abc_.subset_for({a, b, c}, selected_asset_check_keys={check1, check2})
     assert subbed.check_specs_by_output_name == abc_.check_specs_by_output_name
+    assert len(subbed.check_specs_by_output_name) == 2
+    assert len(list(subbed.check_specs)) == 2
     assert subbed.node_check_specs_by_output_name == abc_.node_check_specs_by_output_name
 
     subbed = abc_.subset_for({a, b}, selected_asset_check_keys={check1})
     assert len(subbed.check_specs_by_output_name) == 1
+    assert len(list(subbed.check_specs)) == 1
     assert len(subbed.node_check_specs_by_output_name) == 2
 
     subbed_again = subbed.subset_for({a, b}, selected_asset_check_keys=set())
     assert len(subbed_again.check_specs_by_output_name) == 0
+    assert len(list(subbed_again.check_specs)) == 0
     assert len(subbed_again.node_check_specs_by_output_name) == 2
 
 
