@@ -18,8 +18,8 @@ class DagsterModel(BaseModel):
         extra = "forbid"
         frozen = True
 
-    def model_copy(self, *, update: Optional[Dict[str, Any]] = None, deep: bool = False) -> Self:
+    def model_copy(self, *, update: Optional[Dict[str, Any]] = None) -> Self:
         if pydantic.__version__ >= "2":
-            return super().model_copy(update=update, deep=deep)  # type: ignore
+            return super().model_copy(update=update)  # type: ignore
         else:
-            return super().copy(update=update, deep=deep)
+            return super().copy(update=update)
