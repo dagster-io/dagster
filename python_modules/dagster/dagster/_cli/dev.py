@@ -2,11 +2,14 @@ import logging
 import os
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence, Tuple
 
 import click
+import requests
+from watchfiles import watch
 
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -96,6 +99,20 @@ def dev_command_options(f):
     show_default=True,
     required=False,
 )
+@click.option(
+    "--reload",
+    help="Enable auto-reload.",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--reload-dir",
+    "reload_dirs",
+    multiple=True,
+    help="Set reload directories explicitly, instead of using the current working directory.",
+    default=[Path.cwd()],
+    type=click.Path(exists=True),
+)
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
@@ -106,6 +123,8 @@ def dev_command(
     port: Optional[str],
     host: Optional[str],
     live_data_poll_rate: Optional[str],
+    reload: bool,
+    reload_dirs: Sequence[Path],
     **kwargs: ClickArgValue,
 ) -> None:
     # check if dagster-webserver installed, crash if not
@@ -199,6 +218,8 @@ def dev_command(
             ]
             + args
         )
+        hot_reload_thread, hot_reload_stop_event = start_hot_reload_thread(logger, reload_dirs)
+
         try:
             while True:
                 time.sleep(_CHECK_SUBPROCESS_INTERVAL)
@@ -223,6 +244,15 @@ def dev_command(
             logger.info("Shutting down Dagster services...")
             interrupt_ipc_subprocess(daemon_process)
             interrupt_ipc_subprocess(webserver_process)
+            hot_reload_stop_event.set()
+
+            try:
+                hot_reload_thread.join(timeout=_SUBPROCESS_WAIT_TIMEOUT)
+                logger.info("Hot reload thread was shut down.")
+            except:
+                logger.exception(
+                    "An unexpected exception occurred while waiting for hot reload thread to join"
+                )
 
             try:
                 webserver_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
@@ -241,3 +271,49 @@ def dev_command(
                 daemon_process.kill()
 
             logger.info("Dagster services shut down.")
+
+
+def hot_reload_on_file_change(
+    reload_dirs: Sequence[Path], stop_event: threading.Event, logger: logging.Logger
+) -> None:
+    for file_changes in watch(*reload_dirs, stop_event=stop_event):
+        filtered_file_changes = [
+            (change, file_path)
+            for (change, file_path) in file_changes
+            if Path(file_path).suffix in [".py", ".yaml", ".yml", ".csv", ".sql"]
+        ]
+
+        if filtered_file_changes:
+            logger.info(
+                f"Detected file changes {[file_path for (_, file_path) in filtered_file_changes]},"
+                " reloading workspace..."
+            )
+
+            try:
+                response = requests.post(
+                    url="http://127.0.0.1:3000/graphql",
+                    headers={"content-type": "application/json"},
+                    data='{"query":"mutation{reloadWorkspace{__typename}}"}',
+                )
+                response.raise_for_status()
+
+                logger.info("Reloaded workspace.")
+            except:
+                logger.exception("An unexpected exception occurred while reloading workspace")
+
+
+def start_hot_reload_thread(
+    logger: logging.Logger, reload_dirs: Sequence[Path]
+) -> Tuple[threading.Thread, threading.Event]:
+    logger.info("Starting hot reload thread.")
+
+    stop_event = threading.Event()
+    thread = threading.Thread(
+        name="hot-reload",
+        target=hot_reload_on_file_change,
+        args=(reload_dirs, stop_event, logger),
+        daemon=True,
+    )
+    thread.start()
+
+    return thread, stop_event
