@@ -366,7 +366,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         }
         if dagster_run.external_job_origin:
             labels["dagster/code-location"] = (
-                dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
             )
         job = construct_dagster_k8s_job(
             job_config,

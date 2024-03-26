@@ -113,7 +113,7 @@ def retry_run(
         )
         return
 
-    origin = failed_run.external_job_origin.external_repository_origin
+    origin = failed_run.external_job_origin.repository_origin
     code_location = workspace.get_code_location(origin.code_location_origin.location_name)
     repo_name = origin.repository_name
 

@@ -298,7 +298,7 @@ def launch_scheduled_runs(
         and schedule_state.status == InstigatorStatus.DECLARED_IN_CODE
     ]
     for state in states_to_delete:
-        location_name = state.origin.external_repository_origin.code_location_origin.location_name
+        location_name = state.origin.repository_origin.code_location_origin.location_name
         # don't clean up auto running state if its location is an error state
         if location_name not in error_locations:
             logger.info(
@@ -709,8 +709,8 @@ def _submit_run_request(
             )
     else:
         job_subset_selector = JobSubsetSelector(
-            location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
-            repository_name=schedule_origin.external_repository_origin.repository_name,
+            location_name=schedule_origin.repository_origin.code_location_origin.location_name,
+            repository_name=schedule_origin.repository_origin.repository_name,
             job_name=external_schedule.job_name,
             op_selection=external_schedule.op_selection,
             asset_selection=run_request.asset_selection,
@@ -762,7 +762,7 @@ def _get_code_location_for_schedule(
 ) -> CodeLocation:
     schedule_origin = external_schedule.get_external_origin()
     return workspace_process_context.create_request_context().get_code_location(
-        schedule_origin.external_repository_origin.code_location_origin.location_name
+        schedule_origin.repository_origin.code_location_origin.location_name
     )
 
 
@@ -893,8 +893,8 @@ def _get_existing_run_for_request(
             matching_runs.append(run)
         # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
         elif (
-            external_schedule.get_external_origin().external_repository_origin.get_selector_id()
-            == run.external_job_origin.external_repository_origin.get_selector_id()
+            external_schedule.get_external_origin().repository_origin.get_selector_id()
+            == run.external_job_origin.repository_origin.get_selector_id()
         ):
             matching_runs.append(run)
 

@@ -7,7 +7,7 @@ from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
-from dagster._core.remote_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 def sync_get_external_execution_plan_grpc(
     api_client: "DagsterGrpcClient",
-    job_origin: ExternalJobOrigin,
+    job_origin: RemoteJobOrigin,
     run_config: Mapping[str, Any],
     job_snapshot_id: str,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
@@ -34,7 +34,7 @@ def sync_get_external_execution_plan_grpc(
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
-    check.inst_param(job_origin, "job_origin", ExternalJobOrigin)
+    check.inst_param(job_origin, "job_origin", RemoteJobOrigin)
     op_selection = check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     asset_selection = check.opt_nullable_set_param(
         asset_selection, "asset_selection", of_type=AssetKey

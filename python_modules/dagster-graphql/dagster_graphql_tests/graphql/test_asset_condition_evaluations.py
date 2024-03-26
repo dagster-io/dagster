@@ -19,7 +19,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
+from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -328,8 +328,8 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
 
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
     def test_auto_materialize_sensor(self, graphql_context: WorkspaceRequestContext):
-        sensor_origin = ExternalInstigatorOrigin(
-            external_repository_origin=infer_repository(graphql_context).get_external_origin(),
+        sensor_origin = RemoteInstigatorOrigin(
+            repository_origin=infer_repository(graphql_context).get_external_origin(),
             instigator_name="my_auto_materialize_sensor",
         )
 

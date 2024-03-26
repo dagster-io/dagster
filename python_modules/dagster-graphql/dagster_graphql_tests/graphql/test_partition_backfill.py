@@ -21,7 +21,7 @@ from dagster._core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
 )
-from dagster._core.remote_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test, environ
@@ -285,8 +285,8 @@ class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
 
         backfill = PartitionBackfill(
             backfill_id=make_new_backfill_id(),
-            partition_set_origin=ExternalPartitionSetOrigin(
-                external_repository_origin=repository.get_external_origin(),
+            partition_set_origin=RemotePartitionSetOrigin(
+                repository_origin=repository.get_external_origin(),
                 partition_set_name="integer_partition",
             ),
             status=BulkActionStatus.REQUESTED,

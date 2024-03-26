@@ -63,9 +63,9 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.events import DagsterEventType
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation import (
-    ExternalInstigatorOrigin,
-    ExternalRepositoryOrigin,
     ExternalSensor,
+    RemoteInstigatorOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.origin import (
@@ -1156,7 +1156,7 @@ def test_sensors_keyed_on_selector_not_origin(
 
         existing_origin = external_sensor.get_external_origin()
 
-        code_location_origin = existing_origin.external_repository_origin.code_location_origin
+        code_location_origin = existing_origin.repository_origin.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
             executable_path="/different/executable_path"
@@ -1164,7 +1164,7 @@ def test_sensors_keyed_on_selector_not_origin(
 
         # Change metadata on the origin that shouldn't matter for execution
         modified_origin = existing_origin._replace(
-            external_repository_origin=existing_origin.external_repository_origin._replace(
+            repository_origin=existing_origin.repository_origin._replace(
                 code_location_origin=code_location_origin._replace(
                     loadable_target_origin=modified_loadable_target_origin
                 )
@@ -1205,9 +1205,9 @@ def test_bad_load_sensor_repository(
         valid_origin = external_sensor.get_external_origin()
 
         # Swap out a new repository name
-        invalid_repo_origin = ExternalInstigatorOrigin(
-            ExternalRepositoryOrigin(
-                valid_origin.external_repository_origin.code_location_origin,
+        invalid_repo_origin = RemoteInstigatorOrigin(
+            RemoteRepositoryOrigin(
+                valid_origin.repository_origin.code_location_origin,
                 "invalid_repo_name",
             ),
             valid_origin.instigator_name,
@@ -1240,8 +1240,8 @@ def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
         valid_origin = external_sensor.get_external_origin()
 
         # Swap out a new repository name
-        invalid_repo_origin = ExternalInstigatorOrigin(
-            valid_origin.external_repository_origin,
+        invalid_repo_origin = RemoteInstigatorOrigin(
+            valid_origin.repository_origin,
             "invalid_sensor",
         )
 

@@ -40,10 +40,10 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation.origin import (
-    ExternalInstigatorOrigin,
-    ExternalJobOrigin,
-    ExternalPartitionSetOrigin,
-    ExternalRepositoryOrigin,
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemotePartitionSetOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnapshot
@@ -333,7 +333,7 @@ class ExternalRepository:
             RepositorySelector(self._handle.location_name, self._handle.repository_name)
         )
 
-    def get_external_origin(self) -> ExternalRepositoryOrigin:
+    def get_external_origin(self) -> RemoteRepositoryOrigin:
         return self.handle.get_external_origin()
 
     def get_python_origin(self) -> RepositoryPythonOrigin:
@@ -547,7 +547,7 @@ class ExternalJob(RepresentedJob):
         repository_python_origin = self.repository_handle.get_python_origin()
         return JobPythonOrigin(self.name, repository_python_origin)
 
-    def get_external_origin(self) -> ExternalJobOrigin:
+    def get_external_origin(self) -> RemoteJobOrigin:
         return self.handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:
@@ -758,7 +758,7 @@ class ExternalSchedule:
     def handle(self) -> InstigatorHandle:
         return self._handle
 
-    def get_external_origin(self) -> ExternalInstigatorOrigin:
+    def get_external_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:
@@ -902,7 +902,7 @@ class ExternalSensor:
     def run_tags(self) -> Mapping[str, str]:
         return self._external_sensor_data.run_tags
 
-    def get_external_origin(self) -> ExternalInstigatorOrigin:
+    def get_external_origin(self) -> RemoteInstigatorOrigin:
         return self._handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:
@@ -1016,7 +1016,7 @@ class ExternalPartitionSet:
     def repository_handle(self) -> RepositoryHandle:
         return self._handle.repository_handle
 
-    def get_external_origin(self) -> ExternalPartitionSetOrigin:
+    def get_external_origin(self) -> RemotePartitionSetOrigin:
         return self._handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:

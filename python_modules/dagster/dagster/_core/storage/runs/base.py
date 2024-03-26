@@ -22,7 +22,7 @@ from dagster._utils import PrintFn
 from ..daemon_cursor import DaemonCursorStorage
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import ExternalJobOrigin
+    from dagster._core.remote_representation.origin import RemoteJobOrigin
 
 
 class RunGroupInfo(TypedDict):
@@ -383,4 +383,4 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         return None
 
     @abstractmethod
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None: ...
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "RemoteJobOrigin") -> None: ...

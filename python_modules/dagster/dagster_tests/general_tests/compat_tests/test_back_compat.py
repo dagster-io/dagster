@@ -668,14 +668,14 @@ def test_external_job_origin_instigator_origin():
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
     from dagster._core.remote_representation.origin import (
-        ExternalInstigatorOrigin,
-        ExternalRepositoryOrigin,
         GrpcServerCodeLocationOrigin,
+        RemoteInstigatorOrigin,
+        RemoteRepositoryOrigin,
     )
 
     # serialize from current code, compare against old code
-    instigator_origin = ExternalInstigatorOrigin(
-        external_repository_origin=ExternalRepositoryOrigin(
+    instigator_origin = RemoteInstigatorOrigin(
+        repository_origin=RemoteRepositoryOrigin(
             code_location_origin=GrpcServerCodeLocationOrigin(
                 host="localhost", port=1234, location_name="test_location"
             ),
@@ -701,7 +701,7 @@ def test_external_job_origin_instigator_origin():
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
 
-    job_to_instigator = deserialize_value(job_origin_str, ExternalInstigatorOrigin)
+    job_to_instigator = deserialize_value(job_origin_str, RemoteInstigatorOrigin)
     # ensure that the origin id is stable
     assert job_to_instigator.get_id() == job_origin.get_id()
 
@@ -913,9 +913,9 @@ def test_repo_label_tag_migration():
 
 def test_add_bulk_actions_columns():
     from dagster._core.remote_representation.origin import (
-        ExternalPartitionSetOrigin,
-        ExternalRepositoryOrigin,
         GrpcServerCodeLocationOrigin,
+        RemotePartitionSetOrigin,
+        RemoteRepositoryOrigin,
     )
     from dagster._core.storage.runs.schema import BulkActionsTable
 
@@ -955,8 +955,8 @@ def test_add_bulk_actions_columns():
             assert backfill_count == migrated_row_count
 
             # check that we are writing to selector id, action types
-            external_origin = ExternalPartitionSetOrigin(
-                external_repository_origin=ExternalRepositoryOrigin(
+            external_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
                     code_location_origin=GrpcServerCodeLocationOrigin(port=1234, host="localhost"),
                     repository_name="fake_repository",
                 ),

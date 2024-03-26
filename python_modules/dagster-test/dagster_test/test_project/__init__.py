@@ -26,9 +26,9 @@ from dagster._core.remote_representation import (
     InProcessCodeLocationOrigin,
 )
 from dagster._core.remote_representation.origin import (
-    ExternalInstigatorOrigin,
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -200,14 +200,14 @@ class ReOriginatedExternalJobForTest(ExternalJob):
             ),
         )
 
-    def get_external_origin(self) -> ExternalJobOrigin:
+    def get_external_origin(self) -> RemoteJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return ExternalJobOrigin(
-            external_repository_origin=ExternalRepositoryOrigin(
+        return RemoteJobOrigin(
+            repository_origin=RemoteRepositoryOrigin(
                 code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
@@ -240,8 +240,8 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.
         """
-        return ExternalInstigatorOrigin(
-            external_repository_origin=ExternalRepositoryOrigin(
+        return RemoteInstigatorOrigin(
+            repository_origin=RemoteRepositoryOrigin(
                 code_location_origin=GrpcServerCodeLocationOrigin(
                     host="user-code-deployment-1",
                     port=3030,

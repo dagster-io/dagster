@@ -22,7 +22,7 @@ from dagster._core.definitions.run_request import (
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
+from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import (
@@ -212,7 +212,7 @@ class InstigatorState(
     NamedTuple(
         "_InstigationState",
         [
-            ("origin", ExternalInstigatorOrigin),
+            ("origin", RemoteInstigatorOrigin),
             ("instigator_type", InstigatorType),
             ("status", InstigatorStatus),
             ("instigator_data", Optional[InstigatorData]),
@@ -221,14 +221,14 @@ class InstigatorState(
 ):
     def __new__(
         cls,
-        origin: ExternalInstigatorOrigin,
+        origin: RemoteInstigatorOrigin,
         instigator_type: InstigatorType,
         status: InstigatorStatus,
         instigator_data: Optional[InstigatorData] = None,
     ):
         return super(InstigatorState, cls).__new__(
             cls,
-            check.inst_param(origin, "origin", ExternalInstigatorOrigin),
+            check.inst_param(origin, "origin", RemoteInstigatorOrigin),
             check.inst_param(instigator_type, "instigator_type", InstigatorType),
             check.inst_param(status, "status", InstigatorStatus),
             check_instigator_data(instigator_type, instigator_data),
@@ -248,13 +248,13 @@ class InstigatorState(
 
     @property
     def repository_origin_id(self) -> str:
-        return self.origin.external_repository_origin.get_id()
+        return self.origin.repository_origin.get_id()
 
     @property
     def repository_selector(self) -> RepositorySelector:
         return RepositorySelector(
-            self.origin.external_repository_origin.code_location_origin.location_name,
-            self.origin.external_repository_origin.repository_name,
+            self.origin.repository_origin.code_location_origin.location_name,
+            self.origin.repository_origin.repository_name,
         )
 
     @property
@@ -269,8 +269,8 @@ class InstigatorState(
     def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
-                self.origin.external_repository_origin.code_location_origin.location_name,
-                self.origin.external_repository_origin.repository_name,
+                self.origin.repository_origin.code_location_origin.location_name,
+                self.origin.repository_origin.repository_name,
                 self.origin.instigator_name,
             )
         )

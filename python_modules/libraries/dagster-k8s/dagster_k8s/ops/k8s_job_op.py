@@ -315,7 +315,7 @@ def execute_k8s_job(
     }
     if context.dagster_run.external_job_origin:
         labels["dagster/code-location"] = (
-            context.dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            context.dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
         )
 
     job = construct_dagster_k8s_job(
