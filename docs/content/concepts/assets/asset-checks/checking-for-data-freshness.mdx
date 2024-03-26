@@ -55,7 +55,7 @@ To run freshness checks on source assets, the checks need to know when the sourc
 The following is an example of multiple Snowflake tables, backed by an observation function that queries Snowflake to find the most recent time the tables were updated. The function yields the update time as metadata to be stored in the Dagster event log:
 
 ```python
-from dagster import multi_observable_source_asset, AssetSpec, Definitions, MetadataValue
+from dagster import multi_observable_source_asset, AssetSpec, Definitions, MetadataValue, ObserveResult
 from dagster_snowflake import fetch_last_updated_timestamps, SnowflakeResource
 
 table_names = ["charges", "customers"]
@@ -79,7 +79,7 @@ def source_tables(snowflake: SnowflakeResource):
 Next, we'll define a [schedule](/concepts/partitions-schedules-sensors/schedules) that regularly executes the function in the `source_tables` observable source asset:
 
 ```python
-from dagster import ScheduleDefinition
+from dagster import define_asset_job, AssetSelection, ScheduleDefinition
 
 source_tables_observation_schedule = ScheduleDefinition(
   job=define_asset_job(
@@ -117,7 +117,7 @@ These checks will automatically execute after the observations of the source ass
 </TabItem>
 <TabItem name="Option 2: Use time anomaly detection (Dagster Cloud Pro)">
 
-#### Option 2: Use time anomaly detection
+#### Option 2: Use time anomaly detection (Dagster Cloud Pro)
 
 <Note>A Dagster Cloud Pro plan is required to use this feature.</Note>
 
@@ -143,6 +143,8 @@ freshness_checks = build_anomaly_detection_freshness_checks(
 The last step is to include the asset, checks, and schedule in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
 ```python
+from dagster import Definitions
+
 defs = Definitions(
   assets=[source_table_freshness_checks],
   asset_checks=[source_table_freshness_checks],
@@ -154,12 +156,15 @@ At this point, the finished code should look like this:
 
 ```python
 from dagster import (
-  build_freshness_checks_for_non_partitioned_assets,
-  multi_observable_source_asset,
-  AssetSpec,
-  Definitions,
-  MetadataValue,
-  ScheduleDefinition,
+    build_freshness_checks_for_non_partitioned_assets,
+    define_asset_job,
+    multi_observable_source_asset,
+    AssetSelection,
+    AssetSpec,
+    Definitions,
+    ObserveResult,
+    MetadataValue,
+    ScheduleDefinition,
 )
 from dagster_snowflake import fetch_last_updated_timestamps, SnowflakeResource
 
