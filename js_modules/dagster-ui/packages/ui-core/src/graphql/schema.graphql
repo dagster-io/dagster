@@ -2197,7 +2197,6 @@ input AssetKeyInput {
 }
 
 input ExecutionMetadata {
-  runId: String
   tags: [ExecutionTag!]
   rootRunId: String
   parentRunId: String
