@@ -1,6 +1,8 @@
-from typing import Any
+from typing import Any, Dict, Optional
 
+import pydantic
 from pydantic import BaseModel
+from typing_extensions import Self
 
 
 class DagsterModel(BaseModel):
@@ -15,3 +17,9 @@ class DagsterModel(BaseModel):
     class Config:
         extra = "forbid"
         frozen = True
+
+    def model_copy(self, *, update: Optional[Dict[str, Any]] = None) -> Self:
+        if pydantic.__version__ >= "2":
+            return super().model_copy(update=update)  # type: ignore
+        else:
+            return super().copy(update=update)

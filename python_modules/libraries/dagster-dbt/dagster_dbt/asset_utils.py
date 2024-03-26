@@ -16,6 +16,7 @@ from typing import (
 )
 
 from dagster import (
+    AssetCheckKey,
     AssetCheckSpec,
     AssetKey,
     AssetsDefinition,
@@ -531,15 +532,6 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
     return "\n\n".join(filter(None, description_sections))
 
 
-def is_generic_test_on_attached_node_from_dbt_resource_props(
-    unique_id: str, dbt_resource_props: Mapping[str, Any]
-) -> bool:
-    attached_node_unique_id = dbt_resource_props.get("attached_node")
-    is_generic_test = bool(attached_node_unique_id)
-
-    return is_generic_test and attached_node_unique_id == unique_id
-
-
 def default_asset_check_fn(
     manifest: Mapping[str, Any],
     dbt_nodes: Mapping[str, Any],
@@ -549,28 +541,49 @@ def default_asset_check_fn(
     test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
     test_resource_props = dbt_nodes[test_unique_id]
-    parent_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
-    parent_ids.discard(unique_id)
+    parent_unique_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
+    parent_unique_ids.discard(unique_id)
 
-    is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
-        unique_id, test_resource_props
+    is_generic_test_on_attached_node = test_resource_props.get("attached_node") == unique_id
+    is_singular_test_with_single_dependency = (
+        not is_generic_test_on_attached_node
+        and len(set(test_resource_props["depends_on"]["nodes"])) == 1
+    )
+
+    has_asset_key_config = bool(
+        (
+            test_resource_props.get("config", {}).get("meta", {})
+            or test_resource_props.get("meta", {})
+        )
+        .get("dagster", {})
+        .get("asset_key", [])
+    )
+    is_singular_test_with_configured_asset_key = (
+        has_asset_key_config
+        and dagster_dbt_translator.get_asset_key(test_resource_props) == asset_key
     )
 
     if not all(
         [
             dagster_dbt_translator.settings.enable_asset_checks,
-            is_generic_test_on_attached_node,
+            is_generic_test_on_attached_node
+            or is_singular_test_with_single_dependency
+            or is_singular_test_with_configured_asset_key,
         ]
     ):
         return None
+
+    additional_deps = {
+        dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id])
+        for parent_id in parent_unique_ids
+    }
+    additional_deps.discard(asset_key)
 
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
         description=test_resource_props.get("meta", {}).get("description"),
-        additional_deps=[
-            dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id]) for parent_id in parent_ids
-        ],
+        additional_deps=additional_deps,
     )
 
 
@@ -789,3 +802,55 @@ def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
     has_self_dependency = dagster_metadata.get("has_self_dependency", False)
 
     return has_self_dependency
+
+
+def get_asset_check_key_for_test(
+    manifest: Mapping[str, Any],
+    dagster_dbt_translator: "DagsterDbtTranslator",
+    test_unique_id: str,
+) -> Optional[AssetCheckKey]:
+    if not test_unique_id.startswith("test"):
+        return None
+
+    test_resource_props = manifest["nodes"][test_unique_id]
+    upstream_unique_ids: AbstractSet[str] = set(test_resource_props["depends_on"]["nodes"])
+
+    # If the test is generic, it will have an attached node that we can use.
+    attached_node_unique_id = test_resource_props.get("attached_node")
+
+    # If the test is singular, infer the attached node from the upstream nodes.
+    if len(upstream_unique_ids) == 1:
+        [attached_node_unique_id] = upstream_unique_ids
+
+    # If the test is singular, but has multiple dependencies, infer the attached node from
+    # from the dbt meta.
+    has_asset_key_config = bool(
+        (
+            test_resource_props.get("config", {}).get("meta", {})
+            or test_resource_props.get("meta", {})
+        )
+        .get("dagster", {})
+        .get("asset_key", [])
+    )
+    attached_node_dbt_resource_props = (
+        (
+            manifest["nodes"].get(attached_node_unique_id)
+            or manifest["sources"].get(attached_node_unique_id)
+        )
+        if attached_node_unique_id
+        else test_resource_props
+    )
+    attached_node_asset_key = (
+        dagster_dbt_translator.get_asset_key(attached_node_dbt_resource_props)
+        if attached_node_unique_id or has_asset_key_config
+        else None
+    )
+
+    return (
+        AssetCheckKey(
+            name=test_resource_props["name"],
+            asset_key=attached_node_asset_key,
+        )
+        if attached_node_asset_key
+        else None
+    )

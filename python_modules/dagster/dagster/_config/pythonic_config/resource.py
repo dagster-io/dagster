@@ -478,15 +478,12 @@ class ConfigurableResourceFactory(
 
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
-            context_with_mapping = cast(
+            context_with_mapping = check.inst(
+                context,
                 InitResourceContextWithKeyMapping,
-                check.inst(
-                    context,
-                    InitResourceContextWithKeyMapping,
-                    "This ConfiguredResource contains unresolved partially-specified nested"
-                    " resources, and so can only be initialized using a"
-                    " InitResourceContextWithKeyMapping",
-                ),
+                "This ConfiguredResource contains unresolved partially-specified nested"
+                " resources, and so can only be initialized using a"
+                " InitResourceContextWithKeyMapping",
             )
             partial_resources_to_update = {
                 attr_name: context_with_mapping.resources_by_id[id(resource)]

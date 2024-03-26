@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 from dagster import ScheduleDefinition, graph
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -58,3 +60,21 @@ def test_weird_cron_inteval():
     ):
         schedule = ScheduleDefinition(job_name="my_pipeline", cron_schedule="*/90 * * * *")
         assert schedule.name == "my_pipeline_schedule"
+
+
+def test_invalid_tag_keys():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        ScheduleDefinition(
+            job_name="my_pipeline",
+            cron_schedule="0 0 * * *",
+            tags={"my_tag&": "yes", "my_tag#": "yes"},
+        )
+
+        assert len(caught_warnings) == 1
+        warning = caught_warnings[0]
+        assert "Non-compliant tag keys like ['my_tag&', 'my_tag#'] are deprecated" in str(
+            warning.message
+        )
+        assert warning.filename.endswith("test_schedule.py")

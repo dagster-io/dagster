@@ -7,7 +7,6 @@ from typing import (
     NewType,
     Optional,
     Sequence,
-    cast,
 )
 
 from dagster import _check as check
@@ -447,9 +446,9 @@ class AssetGraphView:
 
         @property
         def tw_partition_def(self) -> TimeWindowPartitionsDefinition:
-            return cast(
+            return check.inst(
+                self.tw_dim.partitions_def,
                 TimeWindowPartitionsDefinition,
-                check.inst(self.tw_dim.partitions_def, TimeWindowPartitionsDefinition),
             )
 
         @property
@@ -457,9 +456,9 @@ class AssetGraphView:
             return self.secondary_dim.partitions_def
 
     def _get_multi_dim_info(self, asset_key: AssetKey) -> "MultiDimInfo":
-        partitions_def = cast(
+        partitions_def = check.inst(
+            self._get_partitions_def(asset_key),
             MultiPartitionsDefinition,
-            check.inst(self._get_partitions_def(asset_key), MultiPartitionsDefinition),
         )
         return self.MultiDimInfo(
             tw_dim=partitions_def.time_window_dimension,
@@ -495,7 +494,4 @@ class AssetGraphView:
 def _required_tw_partitions_def(
     partitions_def: Optional["PartitionsDefinition"],
 ) -> TimeWindowPartitionsDefinition:
-    return cast(
-        TimeWindowPartitionsDefinition,
-        check.inst(partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed."),
-    )
+    return check.inst(partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed.")

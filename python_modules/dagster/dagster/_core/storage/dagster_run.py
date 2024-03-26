@@ -385,11 +385,9 @@ class DagsterRun(
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
-            from dagster._core.remote_representation.origin import ExternalJobOrigin
 
-            check.inst(
+            check.not_none(
                 self.external_job_origin,
-                ExternalJobOrigin,
                 "external_pipeline_origin is required for queued runs",
             )
 

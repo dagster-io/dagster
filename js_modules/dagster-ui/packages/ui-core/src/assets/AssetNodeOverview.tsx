@@ -63,6 +63,7 @@ import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
 import {Description} from '../pipelines/Description';
 import {PipelineTag} from '../pipelines/PipelineReference';
+import {buildTagString} from '../ui/tagAsString';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -235,9 +236,7 @@ export const AssetNodeOverview = ({
         {assetNode.tags && assetNode.tags.length > 0 && (
           <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
             {assetNode.tags.map((tag, idx) => (
-              <Tag key={idx}>
-                {tag.key}={tag.value}
-              </Tag>
+              <Tag key={idx}>{buildTagString(tag)}</Tag>
             ))}
           </Box>
         )}

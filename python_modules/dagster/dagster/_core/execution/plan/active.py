@@ -305,7 +305,7 @@ class ActiveExecution:
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
         step = self._plan.get_step_by_key(step_key)
-        return cast(ExecutionStep, check.inst(step, ExecutionStep))
+        return check.inst(step, ExecutionStep)
 
     def get_steps_to_execute(
         self,

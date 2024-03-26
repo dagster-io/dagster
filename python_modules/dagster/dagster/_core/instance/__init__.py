@@ -1486,7 +1486,7 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_job_partitions_def: Optional["PartitionsDefinition"] = None,
     ) -> DagsterRun:
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
-        from dagster._core.definitions.utils import validate_tags
+        from dagster._core.definitions.utils import normalize_tags
         from dagster._core.remote_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 
@@ -1499,7 +1499,7 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(status, "status", DagsterRunStatus)
         check.opt_mapping_param(tags, "tags", key_type=str)
 
-        validated_tags = validate_tags(tags)
+        validated_tags = normalize_tags(tags, warn_on_deprecated_tags=False).tags
 
         check.opt_str_param(root_run_id, "root_run_id")
         check.opt_str_param(parent_run_id, "parent_run_id")
@@ -2592,7 +2592,6 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             run_id (str): The id of the run.
         """
-        from dagster._core.remote_representation import ExternalJobOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)
@@ -2601,14 +2600,12 @@ class DagsterInstance(DynamicPartitionsStore):
                 f"Could not load run {run_id} that was passed to submit_run"
             )
 
-        check.inst(
+        check.not_none(
             run.external_job_origin,
-            ExternalJobOrigin,
             "External pipeline origin must be set for submitted runs",
         )
-        check.inst(
+        check.not_none(
             run.job_code_origin,
-            JobPythonOrigin,
             "Python origin must be set for submitted runs",
         )
 

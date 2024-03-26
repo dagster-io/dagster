@@ -35,7 +35,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
@@ -982,7 +982,9 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    job_tags = validate_tags(external_job.tags or {}, allow_reserved_tags=False)
+    job_tags = normalize_tags(
+        external_job.tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
+    ).tags
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
         # this gets applied in the sensor definition too, but we apply it here for backcompat

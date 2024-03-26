@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKey,
@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.source_asset import SourceAsset
 
 
-@experimental
 @whitelist_for_serdes
 class AssetCheckSeverity(Enum):
     """Severity level for an AssetCheckResult.
@@ -32,7 +31,6 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-@experimental(emit_runtime_warning=False)
 @whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
 class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
@@ -56,7 +54,6 @@ class AssetCheckKey(NamedTuple):
         return f"{self.asset_key.to_user_string()}:{self.name}"
 
 
-@experimental
 class AssetCheckSpec(
     NamedTuple(
         "_AssetCheckSpec",

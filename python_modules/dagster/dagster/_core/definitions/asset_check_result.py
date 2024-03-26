@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
 
 
-@experimental
 class AssetCheckResult(
     NamedTuple(
         "_AssetCheckResult",

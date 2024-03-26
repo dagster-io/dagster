@@ -417,8 +417,8 @@ class AssetMaterialization(
 
 
 @deprecated(
-    breaking_version="1.7",
-    additional_warn_text="Please use AssetCheckResult and @asset_check instead.",
+    breaking_version="2.0",
+    additional_warn_text="If using assets, use AssetCheckResult and @asset_check instead.",
 )
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},

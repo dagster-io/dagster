@@ -102,10 +102,10 @@ def inner_plan_execution_iterator(
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
                         ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
+                            dagster_event = check.inst(step_event, DagsterEvent)
+                            step_event_list.append(dagster_event)
+                            yield dagster_event
+                            active_execution.handle_event(dagster_event)
 
                         active_execution.verify_complete(job_context, step.key)
 
@@ -121,10 +121,10 @@ def inner_plan_execution_iterator(
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
                         ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
+                            dagster_event = check.inst(step_event, DagsterEvent)
+                            step_event_list.append(dagster_event)
+                            yield dagster_event
+                            active_execution.handle_event(dagster_event)
 
                         active_execution.verify_complete(job_context, step.key)
 

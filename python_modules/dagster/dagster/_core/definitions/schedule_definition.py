@@ -50,7 +50,7 @@ from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from .utils import check_valid_name, validate_tags
+from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -559,7 +559,7 @@ class ScheduleDefinition(IHasInternalInit):
         job_name: Optional[str] = None,
         run_config: Optional[Any] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Mapping[str, str]] = None,
@@ -645,7 +645,7 @@ class ScheduleDefinition(IHasInternalInit):
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
             elif tags:
-                tags = validate_tags(tags, allow_reserved_tags=False)
+                tags = normalize_tags(tags, allow_reserved_tags=False).tags
                 tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
@@ -688,7 +688,7 @@ class ScheduleDefinition(IHasInternalInit):
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = validate_tags(tags_fn(context), allow_reserved_tags=False)
+                    evaluated_tags = normalize_tags(tags_fn(context), allow_reserved_tags=False)
 
                 yield RunRequest(
                     run_key=None,
