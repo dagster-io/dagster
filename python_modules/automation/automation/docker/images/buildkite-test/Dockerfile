@@ -158,6 +158,7 @@ FROM system_base AS snapshot_builder
 # together with Dagster dependencies. This allows pip's dependency resolver to account for
 # everything.
 RUN git clone --depth 1 https://github.com/dagster-io/dagster.git
+RUN git clone --depth 1 https://github.com/dagster-io/dagster-cloud.git dagster/dagster-cloud-install
 
 WORKDIR dagster
 
