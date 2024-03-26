@@ -592,8 +592,8 @@ class AndAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(
+        return self.model_copy(
+            update=dict(
                 operands=[
                     operand.to_serializable_asset_selection(asset_graph)
                     for operand in self.operands
@@ -635,8 +635,8 @@ class OrAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(
+        return self.model_copy(
+            update=dict(
                 operands=[
                     operand.to_serializable_asset_selection(asset_graph)
                     for operand in self.operands
@@ -671,8 +671,8 @@ class SubtractAssetSelection(AssetSelection):
         ) - self.right.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(
+        return self.model_copy(
+            update=dict(
                 left=self.left.to_serializable_asset_selection(asset_graph),
                 right=self.right.to_serializable_asset_selection(asset_graph),
             )
@@ -696,8 +696,8 @@ class SinksAssetSelection(AssetSelection):
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.model_copy(
+            update=dict(child=self.child.to_serializable_asset_selection(asset_graph))
         )
 
 
@@ -715,8 +715,8 @@ class RequiredNeighborsAssetSelection(AssetSelection):
         return output
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.model_copy(
+            update=dict(child=self.child.to_serializable_asset_selection(asset_graph))
         )
 
 
@@ -731,8 +731,8 @@ class RootsAssetSelection(AssetSelection):
         return fetch_sources(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.model_copy(
+            update=dict(child=self.child.to_serializable_asset_selection(asset_graph))
         )
 
 
@@ -764,8 +764,8 @@ class DownstreamAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.model_copy(
+            update=dict(child=self.child.to_serializable_asset_selection(asset_graph))
         )
 
 
@@ -941,8 +941,8 @@ class UpstreamAssetSelection(AssetSelection):
         return {key for key in all_upstream if key in asset_graph.materializable_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.model_copy(
+            update=dict(child=self.child.to_serializable_asset_selection(asset_graph))
         )
 
     def __str__(self) -> str:
@@ -973,6 +973,6 @@ class ParentSourcesAssetSelection(AssetSelection):
         return {key for key in all_upstream if key in asset_graph.external_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return self.copy(
-            updates=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        return self.model_copy(
+            update=dict(child=self.child.to_serializable_asset_selection(asset_graph))
         )

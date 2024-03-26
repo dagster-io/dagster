@@ -37,12 +37,12 @@ def test_override_constructor_in_subclass_wrong_type():
         MyClass(foo="fdsjk", bar="fdslk")
 
 
-def test_replace():
+def test_model_copy():
     class MyClass(DagsterModel):
         foo: str
         bar: int
 
     obj = MyClass(foo="abc", bar=5)
-    assert obj._replace(foo="xyz") == MyClass(foo="xyz", bar=5)
-    assert obj._replace(bar=6) == MyClass(foo="abc", bar=6)
-    assert obj._replace(foo="xyz", bar=6) == MyClass(foo="xyz", bar=6)
+    assert obj.model_copy(update=dict(foo="xyz")) == MyClass(foo="xyz", bar=5)
+    assert obj.model_copy(update=dict(bar=6)) == MyClass(foo="abc", bar=6)
+    assert obj.model_copy(update=dict(foo="xyz", bar=6)) == MyClass(foo="xyz", bar=6)
