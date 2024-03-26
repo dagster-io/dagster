@@ -613,9 +613,22 @@ def opt_int_elem(
 # ##### INST
 # ########################
 
-# type-checking note: Attempting to use the passed type (Type[T] -> T) to infer the output type has
-# issues with abstract classes, so here we count on the incoming object to be typed before
-# this runtime validation check.
+# NOTE: inst() and opt_inst() perform narrowing, while inst_param() and opt_inst_param() do not. The
+# reason for this is that there is a trade-off between narrowing and passing type information
+# through untouched. The only working narrowing implementation will sometimes lose type information.
+# This is because not every static type can be expressed as a runtime-checkable type:
+#
+#     foo = Foo(Bar())  # type is Foo[Bar]
+#     inst(foo, Foo[Bar])  # illegal, can't pass parameterized types to inst()
+#     inst(foo, Foo)  # type is Foo; because we couldn't pass parameterized type, we lost info
+#
+# In contrast, we don't lose type information when we pass the type of the checked argument through
+# without modification.
+#
+# Because of this trade-off, it makes sense for inst() to perform narrowing but not inst_param().
+# With inst(), we rarely have rich type information at the callsite (if we did we wouldn't be
+# calling inst()). With inst_param(), on the other hand, we should always have rich type information
+# at the callsite from the type annotation, so we should never need to narrow.
 
 
 def inst_param(
@@ -670,21 +683,24 @@ def opt_inst_param(
     return default if obj is None else obj
 
 
-def inst(obj: T, ttype: TypeOrTupleOfTypes, additional_message: Optional[str] = None) -> T:
+def inst(
+    obj: object,
+    ttype: Union[Type[T], Tuple[Type[T], ...]],
+    additional_message: Optional[str] = None,
+) -> T:
     if not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, additional_message)
     return obj
 
 
 def opt_inst(
-    obj: T,
-    ttype: TypeOrTupleOfTypes,
+    obj: object,
+    ttype: Union[Type[T], Tuple[Type[T], ...]],
     additional_message: Optional[str] = None,
-    default: Optional[T] = None,
 ) -> Optional[T]:
     if obj is not None and not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, additional_message)
-    return default if obj is None else obj
+    return obj
 
 
 # ########################
@@ -964,21 +980,6 @@ def two_dim_mapping_param(
     if not isinstance(obj, Mapping):
         raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
     return _check_two_dim_mapping_entries(obj, key_type, value_type)
-
-
-# ########################
-# ##### NARROW
-# ########################
-
-
-def narrow(
-    obj: object,
-    ttype: Union[Type[T], Tuple[Type[T], ...]],
-    additional_message: Optional[str] = None,
-) -> T:
-    if not isinstance(obj, ttype):
-        raise _type_mismatch_error(obj, ttype, additional_message)
-    return obj
 
 
 # ########################
