@@ -8,7 +8,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    cast,
 )
 
 import dateutil
@@ -183,7 +182,7 @@ def generate_events(
             manifest_json=manifest_json,
         ):
             yield check.inst(
-                cast(Union[AssetMaterialization, AssetObservation], event),
+                event,
                 (AssetMaterialization, AssetObservation),
             )
 
@@ -224,7 +223,7 @@ def generate_materializations(
             asset_key_prefix + info["unique_id"].split(".")
         ),
     ):
-        yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+        yield check.inst(event, AssetMaterialization)
 
 
 def select_unique_ids_from_manifest(

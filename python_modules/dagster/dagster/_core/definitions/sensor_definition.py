@@ -806,8 +806,7 @@ class SensorDefinition(IHasInternalInit):
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
-            item = result[0]
-            check.inst(item, (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
+            item = check.inst(result[0], (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []

@@ -749,7 +749,7 @@ class ExecutionPlan(
 
     def get_executable_step_by_key(self, key: str) -> ExecutionStep:
         step = self.get_step_by_key(key)
-        return cast(ExecutionStep, check.inst(step, ExecutionStep))
+        return check.inst(step, ExecutionStep)
 
     def get_all_steps_in_topo_order(self) -> Sequence[IExecutionStep]:
         return [step for step_level in self.get_all_steps_by_level() for step in step_level]
@@ -1126,11 +1126,8 @@ class ExecutionPlan(
             if step_snap.kind == StepKind.COMPUTE:
                 step: IExecutionStep = ExecutionStep(
                     check.inst(
-                        cast(
-                            Union[StepHandle, ResolvedFromDynamicStepHandle],
-                            step_snap.step_handle,
-                        ),
-                        ttype=(StepHandle, ResolvedFromDynamicStepHandle),
+                        step_snap.step_handle,
+                        (StepHandle, ResolvedFromDynamicStepHandle),
                     ),
                     job_name,
                     step_inputs,  # type: ignore  # (plain StepInput only)
@@ -1140,8 +1137,8 @@ class ExecutionPlan(
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
                     check.inst(
-                        cast(UnresolvedStepHandle, step_snap.step_handle),
-                        ttype=UnresolvedStepHandle,
+                        step_snap.step_handle,
+                        UnresolvedStepHandle,
                     ),
                     job_name,
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedMappedStepInput only)
@@ -1150,7 +1147,7 @@ class ExecutionPlan(
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
-                    check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
+                    check.inst(step_snap.step_handle, StepHandle),
                     job_name,
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedCollectStepInput only)
                     step_outputs,

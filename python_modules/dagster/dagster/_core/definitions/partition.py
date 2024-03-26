@@ -109,11 +109,15 @@ class ScheduleType(Enum):
         return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
 
     def __gt__(self, other: "ScheduleType") -> bool:
-        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
+        check.inst_param(
+            other, "other", ScheduleType, "Cannot compare ScheduleType with non-ScheduleType"
+        )
         return self.ordinal > other.ordinal
 
     def __lt__(self, other: "ScheduleType") -> bool:
-        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
+        check.inst_param(
+            other, "other", ScheduleType, "Cannot compare ScheduleType with non-ScheduleType"
+        )
         return self.ordinal < other.ordinal
 
 

@@ -2592,7 +2592,6 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             run_id (str): The id of the run.
         """
-        from dagster._core.remote_representation import ExternalJobOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)
@@ -2601,14 +2600,12 @@ class DagsterInstance(DynamicPartitionsStore):
                 f"Could not load run {run_id} that was passed to submit_run"
             )
 
-        check.inst(
+        check.not_none(
             run.external_job_origin,
-            ExternalJobOrigin,
             "External pipeline origin must be set for submitted runs",
         )
-        check.inst(
+        check.not_none(
             run.job_code_origin,
-            JobPythonOrigin,
             "Python origin must be set for submitted runs",
         )
 
