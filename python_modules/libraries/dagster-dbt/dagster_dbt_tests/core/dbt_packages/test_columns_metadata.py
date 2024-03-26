@@ -137,7 +137,7 @@ def test_column_lineage(
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
-        selection=asset_key_selection and AssetSelection.keys(asset_key_selection),
+        selection=asset_key_selection and AssetSelection.assets(asset_key_selection),
     )
     assert result.success
 

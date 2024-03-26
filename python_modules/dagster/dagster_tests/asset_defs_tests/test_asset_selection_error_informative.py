@@ -24,7 +24,9 @@ def test_typo_asset_selection_one_similar(group_name, asset_key_prefix) -> None:
     @asset(group_name=group_name, key_prefix=asset_key_prefix)
     def asset1(): ...
 
-    my_job = define_asset_job("my_job", selection=AssetSelection.keys(asset_key_prefix + ["asst1"]))
+    my_job = define_asset_job(
+        "my_job", selection=AssetSelection.assets(asset_key_prefix + ["asst1"])
+    )
 
     with pytest.raises(
         DagsterInvalidSubsetError,
@@ -38,7 +40,7 @@ def test_typo_asset_selection_no_similar() -> None:
     @asset
     def asset1(): ...
 
-    my_job = define_asset_job("my_job", selection=AssetSelection.keys("not_close_to_asset1"))
+    my_job = define_asset_job("my_job", selection=AssetSelection.assets("not_close_to_asset1"))
 
     with pytest.raises(
         DagsterInvalidSubsetError,
@@ -58,7 +60,7 @@ def test_typo_asset_selection_many_similar() -> None:
     @asset
     def asst(): ...
 
-    my_job = define_asset_job("my_job", selection=AssetSelection.keys("asst1"))
+    my_job = define_asset_job("my_job", selection=AssetSelection.assets("asst1"))
 
     with pytest.raises(
         DagsterInvalidSubsetError,
@@ -76,7 +78,7 @@ def test_typo_asset_selection_wrong_prefix() -> None:
     @asset(key_prefix=["my", "prefix"])
     def asset1(): ...
 
-    my_job = define_asset_job("my_job", selection=AssetSelection.keys(["my", "prfix", "asset1"]))
+    my_job = define_asset_job("my_job", selection=AssetSelection.assets(["my", "prfix", "asset1"]))
 
     with pytest.raises(
         DagsterInvalidSubsetError,
@@ -92,7 +94,7 @@ def test_typo_asset_selection_wrong_prefix_and_wrong_key() -> None:
     @asset(key_prefix=["my", "prefix"])
     def asset1(): ...
 
-    my_job = define_asset_job("my_job", selection=AssetSelection.keys(["my", "prfix", "asset4"]))
+    my_job = define_asset_job("my_job", selection=AssetSelection.assets(["my", "prfix", "asset4"]))
 
     with pytest.raises(
         DagsterInvalidSubsetError,
@@ -108,7 +110,7 @@ def test_one_off_component_prefix() -> None:
 
     # One more component in the prefix
     my_job = define_asset_job(
-        "my_job", selection=AssetSelection.keys(["my", "prefix", "nested", "asset1"])
+        "my_job", selection=AssetSelection.assets(["my", "prefix", "nested", "asset1"])
     )
 
     with pytest.raises(
@@ -118,7 +120,7 @@ def test_one_off_component_prefix() -> None:
         defs = Definitions(assets=[asset1], jobs=[my_job])
         defs.get_job_def("my_job")
 
-    my_job = define_asset_job("my_job", selection=AssetSelection.keys(["my", "asset1"]))
+    my_job = define_asset_job("my_job", selection=AssetSelection.assets(["my", "asset1"]))
 
     with pytest.raises(
         DagsterInvalidSubsetError,

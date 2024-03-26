@@ -161,5 +161,5 @@ source_assets = [
 
 defs = Definitions(
     assets=[*assets, *source_assets],
-    jobs=[define_asset_job("external_system_job", AssetSelection.keys("alpha", "beta"))],
+    jobs=[define_asset_job("external_system_job", AssetSelection.assets("alpha", "beta"))],
 )
