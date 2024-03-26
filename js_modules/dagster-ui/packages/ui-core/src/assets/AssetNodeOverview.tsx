@@ -32,6 +32,7 @@ import {AutomaterializePolicyTag} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {MaterializationTag} from './MaterializationTag';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {RecentUpdatesTimeline} from './RecentUpdatesTimeline';
 import {SimpleStakeholderAssetStatus} from './SimpleStakeholderAssetStatus';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {AssetChecksStatusSummary} from './asset-checks/AssetChecksStatusSummary';
@@ -110,26 +111,29 @@ export const AssetNodeOverview = ({
   });
 
   const renderStatusSection = () => (
-    <Box flex={{direction: 'row'}}>
-      <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-        <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
-        <Box flex={{gap: 8, alignItems: 'center'}}>
-          {liveData ? (
-            <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
-          ) : (
-            <NoValue />
-          )}
-          {assetNode && assetNode.freshnessPolicy && (
-            <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
-          )}
-        </Box>
-      </Box>
-      {liveData?.assetChecks.length ? (
+    <Box flex={{direction: 'column', gap: 16}}>
+      <Box flex={{direction: 'row'}}>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Check results</Subtitle2>
-          <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
+          <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
+          <Box flex={{gap: 8, alignItems: 'center'}}>
+            {liveData ? (
+              <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
+            ) : (
+              <NoValue />
+            )}
+            {assetNode && assetNode.freshnessPolicy && (
+              <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
+            )}
+          </Box>
         </Box>
-      ) : undefined}
+        {liveData?.assetChecks.length ? (
+          <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+            <Subtitle2>Check results</Subtitle2>
+            <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
+          </Box>
+        ) : undefined}
+      </Box>
+      {assetNode.isPartitioned ? null : <RecentUpdatesTimeline assetKey={assetNode.assetKey} />}
     </Box>
   );
 

@@ -15,7 +15,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
  */
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
-  params: AssetViewParams,
+  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
   // The params behavior on this page is a bit nuanced - there are two main query
