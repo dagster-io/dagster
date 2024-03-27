@@ -324,11 +324,14 @@ class DbtCliEventMessage:
                 },
             )
 
+        dialect = manifest["metadata"]["adapter_type"]
         node_sql_path = target_path.joinpath(
             "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
         )
         node_ast = parse_one(sql=node_sql_path.read_text()).expression
-        optimized_node_ast = cast(exp.Query, optimize(node_ast, schema=sqlglot_mapping_schema))
+        optimized_node_ast = cast(
+            exp.Query, optimize(node_ast, schema=sqlglot_mapping_schema, dialect=dialect)
+        )
 
         # 2. Retrieve the column names from the current node.
         column_names = optimized_node_ast.named_selects
@@ -348,7 +351,10 @@ class DbtCliEventMessage:
         for column_name in column_names:
             column_deps: Sequence[TableColumnDep] = []
             for sqlglot_lineage_node in lineage(
-                column=column_name, sql=optimized_node_ast, schema=sqlglot_mapping_schema
+                column=column_name,
+                sql=optimized_node_ast,
+                schema=sqlglot_mapping_schema,
+                dialect=dialect,
             ).walk():
                 # Only the leaves of the lineage graph contain relevant information.
                 if sqlglot_lineage_node.downstream:
@@ -361,7 +367,7 @@ class DbtCliEventMessage:
 
                 # Attempt to retrieve the table's associated asset key and column.
                 parent_column_name = exp.to_column(sqlglot_lineage_node.name).name
-                parent_relation_name = table_name(table, identify=True)
+                parent_relation_name = table_name(table, dialect=dialect, identify=True)
                 parent_resource_props = dbt_parent_resource_props_by_relation_name.get(
                     parent_relation_name
                 )
