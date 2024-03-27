@@ -32,9 +32,9 @@ class DltDagsterResource(ConfigurableResource):
             mapping with pendulum DateTime and Timezone values casted to strings
 
         """
-        from pendulum import DateTime, Timezone
+        from pendulum import DateTime, Timezone  # type: ignore
 
-        def _recursive_cast(value):
+        def _recursive_cast(value: Any):
             if isinstance(value, dict):
                 return {k: _recursive_cast(v) for k, v in value.items()}
             elif isinstance(value, list):
