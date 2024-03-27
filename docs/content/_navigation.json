@@ -102,6 +102,10 @@
               {
                 "title": "Defining & executing checks",
                 "path": "/concepts/assets/asset-checks/define-execute-asset-checks"
+              },
+              {
+                "title": "Checking data freshness",
+                "path": "/concepts/assets/asset-checks/checking-for-data-freshness"
               }
             ]
           },
