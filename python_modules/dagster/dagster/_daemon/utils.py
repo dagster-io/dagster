@@ -15,7 +15,7 @@ class ErrorCapture:
         logger: Optional[logging.Logger] = None,
         log_message: Optional[str] = None,
         append_error_info_to_log_message: bool = False,
-    ) -> Optional[SerializableErrorInfo]:
+    ) -> SerializableErrorInfo:
         error_info = serializable_error_info_from_exc_info(exc_info)
         if logger and log_message:
             if append_error_info_to_log_message:
