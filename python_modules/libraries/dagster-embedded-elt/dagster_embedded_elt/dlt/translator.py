@@ -10,7 +10,7 @@ from dlt.extract.resource import DltResource
 
 
 @dataclass
-class DltDagsterTranslator:
+class DagsterDltTranslator:
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Defines asset key for a given dlt resource key and dataset name.

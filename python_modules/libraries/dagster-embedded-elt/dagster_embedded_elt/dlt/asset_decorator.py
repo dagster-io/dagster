@@ -9,7 +9,7 @@ from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
 from .constants import META_KEY_PIPELINE, META_KEY_SOURCE
-from .translator import DltDagsterTranslator
+from .translator import DagsterDltTranslator
 
 
 def dlt_assets(
@@ -18,7 +18,7 @@ def dlt_assets(
     dlt_pipeline: Pipeline,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
-    dlt_dagster_translator: DltDagsterTranslator = DltDagsterTranslator(),
+    dlt_dagster_translator: DagsterDltTranslator = DagsterDltTranslator(),
 ) -> Callable[..., AssetsDefinition]:
     def inner(fn) -> AssetsDefinition:
         specs = [
