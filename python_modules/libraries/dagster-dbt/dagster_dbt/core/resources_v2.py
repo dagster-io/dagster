@@ -53,6 +53,7 @@ from sqlglot import (
     exp,
     parse_one,
 )
+from sqlglot.expressions import table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 from typing_extensions import Literal
@@ -327,45 +328,53 @@ class DbtCliEventMessage:
             "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
         )
         node_ast = parse_one(sql=node_sql_path.read_text()).expression
-        optimized_node_ast = cast(
-            exp.Query,
-            optimize(
-                node_ast,
-                schema=sqlglot_mapping_schema,
-                validate_qualify_columns=False,  # Don't throw an error if we can't qualify a column without ambiguity.
-            ),
-        )
+        optimized_node_ast = cast(exp.Query, optimize(node_ast, schema=sqlglot_mapping_schema))
 
         # 2. Retrieve the column names from the current node.
-        column_names = cast(exp.Query, optimized_node_ast).named_selects
+        column_names = optimized_node_ast.named_selects
 
         # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
+        dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
+        for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
+            is_resource_type_source = parent_unique_id.startswith("source")
+            parent_dbt_resource_props = (
+                manifest["sources"] if is_resource_type_source else manifest["nodes"]
+            )[parent_unique_id]
+            relation_name = parent_dbt_resource_props["relation_name"]
+
+            dbt_parent_resource_props_by_relation_name[relation_name] = parent_dbt_resource_props
+
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
         for column_name in column_names:
-            dbt_parent_resource_props_by_identifier: Dict[str, Dict[str, Any]] = {}
-            for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
-                is_resource_type_source = parent_unique_id.startswith("source")
-                if is_resource_type_source:
-                    parent_dbt_resource_props = manifest["sources"][parent_unique_id]
-                    identifier = parent_dbt_resource_props["name"]
-                else:
-                    parent_dbt_resource_props = manifest["nodes"][parent_unique_id]
-                    identifier = parent_dbt_resource_props["alias"]
-
-                dbt_parent_resource_props_by_identifier[identifier] = parent_dbt_resource_props
-
             column_deps: Sequence[TableColumnDep] = []
             for sqlglot_lineage_node in lineage(
                 column=column_name, sql=optimized_node_ast, schema=sqlglot_mapping_schema
             ).walk():
-                column = sqlglot_lineage_node.expression.find(exp.Column)
-                if column and column.table in dbt_parent_resource_props_by_identifier:
-                    parent_resource_props = dbt_parent_resource_props_by_identifier[column.table]
-                    parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
+                # Only the leaves of the lineage graph contain relevant information.
+                if sqlglot_lineage_node.downstream:
+                    continue
 
-                    column_deps.append(
-                        TableColumnDep(asset_key=parent_asset_key, column_name=column.name)
+                # Attempt to find a table in the lineage node.
+                table = sqlglot_lineage_node.expression.find(exp.Table)
+                if not table:
+                    continue
+
+                # Attempt to retrieve the table's associated asset key and column.
+                parent_column_name = exp.to_column(sqlglot_lineage_node.name).name
+                parent_relation_name = table_name(table, identify=True)
+                parent_resource_props = dbt_parent_resource_props_by_relation_name.get(
+                    parent_relation_name
+                )
+                if not parent_resource_props:
+                    continue
+
+                # Add the column dependency.
+                column_deps.append(
+                    TableColumnDep(
+                        asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
+                        column_name=parent_column_name,
                     )
+                )
 
             deps_by_column[column_name] = column_deps
 
