@@ -99,36 +99,39 @@ export const RecentUpdatesTimeline = ({
       </Box>
       <Box border="all" padding={6 as any} style={{height: 32}}>
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
-          {bucketedMaterializations.map((bucket) => (
-            <TickWrapper
-              key={bucket.start}
-              style={{
-                left: tickWidth * bucket.start,
-                width: tickWidth * (bucket.end - bucket.start + 1),
-              }}
-            >
-              <Popover
-                content={
-                  <Box flex={{direction: 'column', gap: 8}}>
-                    <Box padding={8} border="bottom">
-                      <Subtitle2>Materializations</Subtitle2>
-                    </Box>
-                    <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
-                      {bucket.materializations
-                        .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
-                        .map((materialization, index) => (
-                          <AssetUpdate assetKey={assetKey} event={materialization} key={index} />
-                        ))}
-                    </div>
-                  </Box>
-                }
+          {bucketedMaterializations.map((bucket) => {
+            const width = tickWidth * (bucket.end - bucket.start + 1);
+            return (
+              <TickWrapper
+                key={bucket.start}
+                style={{
+                  left: tickWidth * bucket.start,
+                  width,
+                }}
               >
-                <Tick style={{width: tickWidth * (bucket.end - bucket.start + 1)}}>
-                  {bucket.materializations.length > 1 ? bucket.materializations.length : null}
-                </Tick>
-              </Popover>
-            </TickWrapper>
-          ))}
+                <Popover
+                  content={
+                    <Box flex={{direction: 'column', gap: 8}}>
+                      <Box padding={8} border="bottom">
+                        <Subtitle2>Materializations</Subtitle2>
+                      </Box>
+                      <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
+                        {bucket.materializations
+                          .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+                          .map((materialization, index) => (
+                            <AssetUpdate assetKey={assetKey} event={materialization} key={index} />
+                          ))}
+                      </div>
+                    </Box>
+                  }
+                >
+                  <Tick style={{width}}>
+                    {bucket.materializations.length > 1 ? bucket.materializations.length : null}
+                  </Tick>
+                </Popover>
+              </TickWrapper>
+            );
+          })}
         </div>
       </Box>
       <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
