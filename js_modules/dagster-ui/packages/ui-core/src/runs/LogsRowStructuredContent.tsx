@@ -26,7 +26,7 @@ import {
   MetadataEntries,
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;

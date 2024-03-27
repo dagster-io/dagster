@@ -12,8 +12,9 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
-import {METADATA_ENTRY_FRAGMENT, MetadataEntries} from '../../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
+import {MetadataEntries} from '../../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 
 export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntryFragment[]}) {
   const [showMetadata, setShowMetadata] = useState(false);
