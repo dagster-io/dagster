@@ -19,7 +19,11 @@ export const FeatureFlag = {
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
 export const getFeatureFlags: () => FeatureFlagType[] = memoize(
-  () => getJSONForKey(DAGSTER_FLAGS_KEY) || [],
+  () =>
+    getJSONForKey(DAGSTER_FLAGS_KEY) || [
+      // Enable the new asset details page by default.
+      FeatureFlag.flagUseNewOverviewPage,
+    ],
 );
 
 export const featureEnabled = memoize((flag: FeatureFlagType) => getFeatureFlags().includes(flag));
