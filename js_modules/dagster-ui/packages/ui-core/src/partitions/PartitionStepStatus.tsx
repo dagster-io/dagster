@@ -8,6 +8,7 @@ import {
   Icon,
   Menu,
   MenuItem,
+  MiddleTruncate,
   Popover,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -277,12 +278,12 @@ const PartitionStepStatus = (props: PartitionStepStatusProps) => {
             <Divider />
             {stepRows.map((step) => (
               <LeftLabel
-                style={{paddingLeft: 8 + step.x}}
+                style={{paddingLeft: 8 + step.x, paddingRight: 8}}
                 key={step.name}
                 data-tooltip={step.name}
                 hovered={step.name === hovered?.stepName}
               >
-                {step.name}
+                <MiddleTruncate text={step.name} />
               </LeftLabel>
             ))}
           </GridColumn>
