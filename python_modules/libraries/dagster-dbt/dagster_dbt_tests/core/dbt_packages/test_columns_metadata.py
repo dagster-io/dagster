@@ -21,6 +21,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dbt.version import __version__ as dbt_version
 from packaging import version
+from pytest_mock import MockFixture
 
 from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
 
@@ -93,6 +94,34 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
             ],
             context=context,
         ).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+
+    assert result.success
+    assert all(
+        not TableMetadataEntries.extract(event.materialization.metadata).column_lineage
+        for event in result.get_asset_materialization_events()
+    )
+
+
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.6.0"),
+    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
+)
+def test_exception_column_lineage(
+    mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+) -> None:
+    mocker.patch(
+        "dagster_dbt.core.resources_v2.DbtCliEventMessage._build_column_lineage_metadata",
+        side_effect=Exception("An error occurred"),
+    )
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
 
     result = materialize(
         [my_dbt_assets],
