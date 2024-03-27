@@ -14,3 +14,15 @@ repos:
       entry: bash -c "cd docs && make mdx-format"
       pass_filenames: false
       files: ^docs/content
+
+    # We do not use pyright's provided pre-commit hook because we need the environment management
+    # supplied by `scripts/run-pyright.py`.
+    - id: pyright
+      name: pyright
+      entry: make quick_pyright
+      stages: [pre-push]
+      # This means pre-commit will not try to install a new environment for this hook. It relies on
+      # having a pre-existing `make` installed (and scripts/run-pyright.py).
+      language: system
+      pass_filenames: false
+      types: [python]
