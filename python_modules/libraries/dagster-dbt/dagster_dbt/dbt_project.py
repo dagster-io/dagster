@@ -2,12 +2,12 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Optional, Protocol, Sequence, Union, runtime_checkable
+from typing import Optional, Sequence, Union
 
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
 
-from .errors import DagsterDbtProjectNotFoundError
+from .errors import DagsterDbtManifestNotFoundError, DagsterDbtProjectNotFoundError
 
 logger = logging.getLogger("dagster-dbt.artifacts")
 
@@ -20,30 +20,51 @@ def parse_on_load_opt_in() -> bool:
     return bool(os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"))
 
 
-@runtime_checkable
-class ManifestInitFn(Protocol):
-    def __call__(self, project: "DbtProject", *, deploying: bool) -> None: ...
+@experimental
+class DbtManifestPreparer:
+    """A dbt manifest represented by DbtProject."""
+
+    def on_load(self, project: "DbtProject") -> None:
+        """Invoked when DbtProject is instantiated with this preparer."""
+
+    def prepare(self, project: "DbtProject") -> None:
+        """Called explictly to prepare the manifest for this the project."""
 
 
-def dagster_dbt_manifest_init(
-    project: "DbtProject",
-    deploying: bool,
-    generate_cli_args: Sequence = ("parse", "--quiet"),
-):
-    """A dbt manifest init function that helps achieve the behaviors:
-    * During development, reload the manifest at run time to pick up any changes.
-    * When deploying, expect a manifest that was created at build time to reduce start-up time.
+@experimental
+class DagsterDbtManifestPreparer(DbtManifestPreparer):
+    def __init__(
+        self,
+        generate_cli_args: Optional[Sequence[str]] = None,
+    ):
+        """The default DbtManifestPreparer, this handler provides an experience of:
+            * During development, reload the manifest at run time to pick up any changes.
+            * When deploying, expect a manifest that was created at build time to reduce start-up time.
 
-    The default generate_cli_args of ("parse", "--quiet") can be overridden using functools.partial
-    or writing another function that calls this one with that argument set.
-    """
-    from .core.resources_v2 import DbtCliResource
+        Args:
+            generate_cli_args (Sequence[str]):
+                The arguments to pass to the dbt cli to generate a manifest.json.
+                Default: ["parse", "--quiet"]
+        """
+        self._generate_cli_args = generate_cli_args or ["parse", "--quiet"]
 
-    if deploying or using_dagster_dev() or parse_on_load_opt_in():
+    def on_load(self, project: "DbtProject"):
+        if using_dagster_dev() or parse_on_load_opt_in():
+            self.prepare(project)
+            if not project.manifest_path.exists():
+                raise DagsterDbtManifestNotFoundError(
+                    f"Did not find manifest.json at expected path {project.manifest_path} "
+                    f"after running '{self.prepare.__qualname__}'. Ensure the implementation respects "
+                    "all DbtProject properties."
+                )
+
+    def prepare(self, project: "DbtProject") -> None:
+        from .core.resources_v2 import DbtCliResource
+
         DbtCliResource(project_dir=os.fspath(project.project_dir)).cli(
-            generate_cli_args,
+            self._generate_cli_args,
             target_path=project.target_dir,
-        ).wait()
+        ).wait().target_path.joinpath("manifest.json")
 
 
 @experimental
@@ -52,7 +73,7 @@ class DbtProject(DagsterModel):
     target_dir: Path
     manifest_path: Path
     packaged_project_dir: Optional[Path]
-    manifest_init_fn: Optional[ManifestInitFn]
+    manifest_preparer: Optional[DbtManifestPreparer]
 
     def __init__(
         self,
@@ -60,7 +81,7 @@ class DbtProject(DagsterModel):
         *,
         target_dir: Union[Path, str] = "target",
         packaged_project_dir: Optional[Union[Path, str]] = None,
-        manifest_init_fn: Optional[ManifestInitFn] = dagster_dbt_manifest_init,
+        manifest_preparer: Optional[DbtManifestPreparer] = DagsterDbtManifestPreparer(),
     ):
         """Representation of a dbt project.
 
@@ -70,11 +91,10 @@ class DbtProject(DagsterModel):
             target_dir (Union[str, Path]):
                 The folder in the project directory to output artifacts.
                 Default: "target"
-            manifest_init_fn (Optional[ManifestInitFn]):
-                A function invoked at init time and via prepare_for_deployment
-                that can be used to ensure the manifest.json is in the right state at
+            manifest_preparer (Optional[DbtManifestPreparer]):
+                A object for ensuring that manifest.json is in the right state at
                 the right times.
-                Default: dagster_dbt_manifest_init
+                Default: DagsterDbtManifestPreparer
             packaged_project_dir (Optional[Union[str, Path]]):
                 A directory that will contain a copy of the dbt project and the manifest.json
                 when the artifacts have been built. The prepare method will handle syncing
@@ -99,10 +119,10 @@ class DbtProject(DagsterModel):
             target_dir=target_dir,
             manifest_path=manifest_path,
             packaged_project_dir=packaged_project_dir,
-            manifest_init_fn=manifest_init_fn,
+            manifest_preparer=manifest_preparer,
         )
-        if manifest_init_fn:
-            manifest_init_fn(self, deploying=False)
+        if manifest_preparer:
+            manifest_preparer.on_load(self)
 
 
 def prepare_for_deployment(project: DbtProject):
@@ -111,10 +131,10 @@ def prepare_for_deployment(project: DbtProject):
         * project.manifest_init_fn(project, deploying=True)
         * sync_project_to_packaged_dir.
     """
-    if project.manifest_init_fn:
-        logger.info(f"Running manifest init function {project.manifest_init_fn.__qualname__}.")
-        project.manifest_init_fn(project, deploying=True)
-        logger.info("Manifest init complete.")
+    if project.manifest_preparer:
+        logger.info(f"Preparing manifest with {project.manifest_preparer.prepare.__qualname__}.")
+        project.manifest_preparer.prepare(project)
+        logger.info("Manifest preparation complete.")
 
     if project.packaged_project_dir:
         sync_project_to_packaged_dir(project)
