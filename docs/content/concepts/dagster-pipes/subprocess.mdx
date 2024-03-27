@@ -5,13 +5,13 @@ description: "Learn how to use Dagster Pipes's built-in subprocess implementatio
 
 # Dagster Pipes tutorial
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s built-in subprocess `PipesSubprocessClient` to run a local subprocess with a given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
+In this guide, we’ll show you how to use [Dagster Pipes](/concepts/dagster-pipes) with Dagster’s built-in subprocess `PipesSubprocessClient` to run a local subprocess with a given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
 
 To get there, you'll:
 
-- [Create a Dagster asset that invokes a subprocess](/guides/dagster-pipes/subprocess/create-subprocess-asset)
-- [Modify existing code to work with Dagster Pipes to send information back to Dagster](/guides/dagster-pipes/subprocess/modify-external-code)
-- Learn about using Dagster Pipes with other entities in the Dagster system in the [Reference](/guides/dagster-pipes/subprocess/reference) section
+- [Create a Dagster asset that invokes a subprocess](/concepts/dagster-pipes/subprocess/create-subprocess-asset)
+- [Modify existing code to work with Dagster Pipes to send information back to Dagster](/concepts/dagster-pipes/subprocess/modify-external-code)
+- Learn about using Dagster Pipes with other entities in the Dagster system in the [Reference](/concepts/dagster-pipes/subprocess/reference) section
 
 <Note>
 
@@ -19,7 +19,7 @@ This guide focuses on using an out-of-the-box `PipesSubprocessClient` resource. 
 
 <!-- Uncomment when the page is ready -->
 
-<!-- Refer to [Customizing Dagster Pipes protocols](/guides/dagster-pipes/dagster-pipes-details-and-customization) for more info. -->
+<!-- Refer to [Customizing Dagster Pipes protocols](/concepts/dagster-pipes/dagster-pipes-details-and-customization) for more info. -->
 
 </Note>
 
@@ -51,4 +51,4 @@ if __name__ == "__main__":
 
 ## Ready to get started?
 
-When you've fulfilled all the prerequisites for the tutorial, you can get started by [creating a Dagster asset that executes a subprocess](/guides/dagster-pipes/subprocess/create-subprocess-asset).
+When you've fulfilled all the prerequisites for the tutorial, you can get started by [creating a Dagster asset that executes a subprocess](/concepts/dagster-pipes/subprocess/create-subprocess-asset).

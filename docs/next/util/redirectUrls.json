@@ -80,8 +80,8 @@
     "statusCode": 302
   },
   {
-    "source": "/overview", 
-    "destination": "/concepts", 
+    "source": "/overview",
+    "destination": "/concepts",
     "statusCode": 302
   },
   {
@@ -758,6 +758,11 @@
   {
     "source": "/getting-started/hello-dagster",
     "destination": "/getting-started/quickstart",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster-pipes/:slug*",
+    "destination": "/concepts/dagster-pipes/:slug*",
     "statusCode": 302
   }
 ]
