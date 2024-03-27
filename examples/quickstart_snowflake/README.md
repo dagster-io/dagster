@@ -56,7 +56,7 @@ To connect to Snowflake, you'll need to set up your credentials in Dagster.
 
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
-In this example, we use [SnowflakePandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake-pandas#dagster_snowflake_pandas.SnowflakePandasIOManager) to write outputs to Snowflake and read inputs from it. The configurations of the Snowflake connection are defined [in `quickstart_snowflake/__init__.py`](./quickstart_snowflake/__init__.py), which requires the following environment variables:
+In this example, we use [SnowflakePandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake-pandas#dagster_snowflake_pandas.SnowflakePandasIOManager) to write outputs to Snowflake and read inputs from it. The configurations of the Snowflake connection are defined [in `quickstart_snowflake/definitions.py`](./quickstart_snowflake/definitions.py), which requires the following environment variables:
 
 - `SNOWFLAKE_ACCOUNT`
 - `SNOWFLAKE_USER`

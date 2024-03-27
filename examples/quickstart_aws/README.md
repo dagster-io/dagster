@@ -185,7 +185,7 @@ Note: You'll find a `path` metadata attached to every asset. This is because ass
 
 Finally, let's refresh our plots every day so we can monitor popular topics over time. To do so, we can use [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#schedules).
 
-We've defined a daily schedule and job in [`quickstart_aws/repository.py`](./quickstart_aws/repository.py) for all assets that are defined in the [`quickstart_aws/assets/`](./quickstart_aws/assets) module.
+We've defined a daily schedule and job in [`quickstart_aws/definitions.py`](./quickstart_aws/definitions.py) for all assets that are defined in the [`quickstart_aws/assets/`](./quickstart_aws/assets) module.
 
 Now, let's turn on the daily schedule within Dagster.
 
