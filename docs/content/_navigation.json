@@ -833,7 +833,17 @@
       },
       {
         "title": "Embedded ELT",
-        "path": "/integrations/embedded-elt"
+        "path": "/integrations/embedded-elt",
+        "children": [
+          {
+            "title": "dlt Integration",
+            "path": "/integrations/embedded-elt/dlt"
+          },
+          {
+            "title": "Sling Integration",
+            "path": "/integrations/embedded-elt/sling"
+          }
+        ]
       },
       {
         "title": "Fivetran",
