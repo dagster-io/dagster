@@ -30,6 +30,10 @@ defs = Definitions(
 
 # start_key_file
 
+from dagster_snowflake_pandas import SnowflakePandasIOManager
+
+from dagster import Definitions, EnvVar
+
 defs = Definitions(
     assets=[iris_dataset],
     resources={

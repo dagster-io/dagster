@@ -1,5 +1,3 @@
-# start_example
-
 import pandas as pd
 
 from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
@@ -31,6 +29,3 @@ def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
 @asset
 def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
     return iris_dataset_partitioned.dropna().drop_duplicates()
-
-
-# end_example
