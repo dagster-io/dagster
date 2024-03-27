@@ -46,3 +46,20 @@ def test_model_copy():
     assert obj.model_copy(update=dict(foo="xyz")) == MyClass(foo="xyz", bar=5)
     assert obj.model_copy(update=dict(bar=6)) == MyClass(foo="abc", bar=6)
     assert obj.model_copy(update=dict(foo="xyz", bar=6)) == MyClass(foo="xyz", bar=6)
+
+
+def test_non_model_param():
+    class SomeClass: ...
+
+    class OtherClass: ...
+
+    class MyModel(DagsterModel):
+        some_class: SomeClass
+
+    MyModel(some_class=SomeClass())
+
+    with pytest.raises(ValidationError):
+        MyModel(some_class=OtherClass())  # wrong class
+
+    with pytest.raises(ValidationError):
+        MyModel(some_class=SomeClass)  # forgot ()
