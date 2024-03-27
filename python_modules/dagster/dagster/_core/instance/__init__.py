@@ -572,17 +572,17 @@ class DagsterInstance(DynamicPartitionsStore):
         if not os.path.isabs(dagster_home_path):
             raise DagsterInvariantViolationError(
                 (
-                    '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
+                    f'$DAGSTER_HOME "{dagster_home_path}" must be an absolute path. Dagster requires this '
                     "environment variable to be set to an existing directory in your filesystem."
-                ).format(dagster_home_path)
+                )
             )
 
         if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
             raise DagsterInvariantViolationError(
                 (
-                    '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
+                    f'$DAGSTER_HOME "{dagster_home_path}" is not a directory or does not exist. Dagster requires this'
                     " environment variable to be set to an existing directory in your filesystem"
-                ).format(dagster_home_path)
+                )
             )
 
         return DagsterInstance.from_config(dagster_home_path)
@@ -1763,11 +1763,8 @@ class DagsterInstance(DynamicPartitionsStore):
 
             if field_diff:
                 raise DagsterRunConflict(
-                    "Found conflicting existing run with same id {run_id}. Runs differ in:"
-                    "\n{field_diff}".format(
-                        run_id=dagster_run.run_id,
-                        field_diff=_format_field_diff(field_diff),
-                    ),
+                    f"Found conflicting existing run with same id {dagster_run.run_id}. Runs differ in:"
+                    f"\n{_format_field_diff(field_diff)}",
                 )
             return candidate_run  # type: ignore  # (possible none)
 

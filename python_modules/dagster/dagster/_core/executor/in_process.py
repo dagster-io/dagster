@@ -71,8 +71,6 @@ class InProcessExecutor(Executor):
 
         yield DagsterEvent.engine_event(
             plan_context,
-            "Finished steps in process (pid: {pid}) in {duration_ms}".format(
-                pid=os.getpid(), duration_ms=format_duration(timer_result.millis)
-            ),
+            f"Finished steps in process (pid: {os.getpid()}) in {format_duration(timer_result.millis)}",
             event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute),
         )

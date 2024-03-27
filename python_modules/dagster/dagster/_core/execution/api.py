@@ -128,10 +128,8 @@ def execute_run_iterator(
             dagster_run.status == DagsterRunStatus.STARTED
             or dagster_run.status == DagsterRunStatus.STARTING,
             desc=(
-                "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
-                "resuming from a run worker failure".format(
-                    dagster_run.job_name, dagster_run.run_id, dagster_run.status
-                )
+                f"Run of {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected STARTED or STARTING because it's "
+                "resuming from a run worker failure"
             ),
         )
 
@@ -220,9 +218,7 @@ def execute_run(
     check.invariant(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
-        desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.job_name, dagster_run.run_id, dagster_run.status
-        ),
+        desc=f"Run {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected NOT_STARTED or STARTING",
     )
     if (
         dagster_run.resolved_op_selection

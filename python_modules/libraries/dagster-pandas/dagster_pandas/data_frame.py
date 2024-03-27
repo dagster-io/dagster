@@ -107,10 +107,7 @@ def create_dagster_pandas_dataframe_description(description, columns):
     title = "\n".join([description, "### Columns", ""])
     buildme = title
     for column in columns:
-        buildme += "{}\n{}\n".format(
-            _build_column_header(column.name, column.constraints),
-            _construct_constraint_list(column.constraints),
-        )
+        buildme += f"{_build_column_header(column.name, column.constraints)}\n{_construct_constraint_list(column.constraints)}\n"
     return buildme
 
 

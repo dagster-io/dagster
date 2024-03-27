@@ -1239,9 +1239,7 @@ def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, No
             if node_def.name in all_defs:
                 if all_defs[node_def.name] != node_def:
                     raise DagsterInvalidDefinitionError(
-                        'Detected conflicting node definitions with the same name "{name}"'.format(
-                            name=node_def.name
-                        )
+                        f'Detected conflicting node definitions with the same name "{node_def.name}"'
                     )
             else:
                 all_defs[node_def.name] = node_def
