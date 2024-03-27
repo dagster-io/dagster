@@ -123,7 +123,9 @@ export const RecentUpdatesTimeline = ({
                   </Box>
                 }
               >
-                <Tick>{bucket.materializations.length}</Tick>
+                <Tick style={{width: tickWidth * (bucket.end - bucket.start + 1)}}>
+                  {bucket.materializations.length > 1 ? bucket.materializations.length : null}
+                </Tick>
               </Popover>
             </TickWrapper>
           ))}
