@@ -37,8 +37,11 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
-from dagster._core.definitions.metadata import TableMetadataEntries
-from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
+from dagster._core.definitions.metadata import (
+    TableColumnDep,
+    TableColumnLineage,
+    TableMetadataEntries,
+)
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType

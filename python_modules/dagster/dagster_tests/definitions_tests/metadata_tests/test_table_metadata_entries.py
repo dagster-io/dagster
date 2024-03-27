@@ -1,4 +1,6 @@
+import pytest
 from dagster import AssetKey, AssetMaterialization, TableColumn, TableSchema
+from dagster._check import CheckError
 from dagster._core.definitions.metadata import (
     TableMetadataEntries,
 )
@@ -26,20 +28,49 @@ def test_table_metadata_entries():
     assert TableMetadataEntries.extract(dict(TableMetadataEntries())) == TableMetadataEntries()
 
 
-def test_column_specs() -> None:
+def test_invalid_column_lineage() -> None:
+    with pytest.raises(CheckError):
+        TableColumnLineage(
+            {
+                "column": [
+                    TableColumnDep(
+                        asset_key=AssetKey("upstream"),
+                        column_name="upstream_column",
+                    ),
+                    TableColumnDep(
+                        asset_key=AssetKey("upstream"),
+                        column_name="upstream_column",
+                    ),
+                ],
+            }
+        )
+
+
+def test_column_lineage() -> None:
+    expected_deps = [
+        TableColumnDep(
+            asset_key=AssetKey("upstream"),
+            column_name="upstream_column_b",
+        ),
+        TableColumnDep(
+            asset_key=AssetKey("upstream"),
+            column_name="upstream_column_a",
+        ),
+    ]
     expected_column_lineage = TableColumnLineage(
         {
-            "column": [
-                TableColumnDep(
-                    asset_key=AssetKey("upstream"),
-                    column_name="upstream_column",
-                )
-            ]
+            "column": expected_deps,
         }
     )
     expected_metadata = {"dagster/column_lineage": expected_column_lineage}
 
-    table_metadata_entries = TableMetadataEntries(column_lineage=expected_column_lineage)
+    table_metadata_entries = TableMetadataEntries(
+        column_lineage=TableColumnLineage(
+            {
+                "column": list(reversed(expected_deps)),
+            }
+        )
+    )
 
     dict_table_metadata_entries = dict(table_metadata_entries)
     assert dict_table_metadata_entries == expected_metadata
