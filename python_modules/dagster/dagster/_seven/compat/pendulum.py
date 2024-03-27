@@ -30,7 +30,7 @@ def pendulum_create_timezone(tz_name: str):
 
         return Timezone(tz_name)
     else:
-        return pendulum.tz.timezone(tz_name)  # type: ignore
+        return pendulum.tz.timezone(tz_name)
 
 
 @contextmanager

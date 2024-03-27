@@ -95,7 +95,7 @@ def visit_inline_flag(self, node: inline_flag):
 
 
 class flag(nodes.Element):
-    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]  # type: ignore
+    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]
 
 
 def visit_flag(self, node: flag):
