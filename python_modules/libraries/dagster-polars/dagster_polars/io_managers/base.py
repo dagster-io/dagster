@@ -4,6 +4,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    List,
     Literal,
     Mapping,
     Optional,
@@ -59,6 +60,8 @@ POLARS_EAGER_FRAME_ANNOTATIONS = [
     Optional[Tuple[pl.DataFrame, StorageMetadata]],
     # multiple partitions + metadata
     DataFramePartitionsWithMetadata,
+    # dynamic outputs for .collect()
+    List[pl.DataFrame],
 ]
 
 POLARS_LAZY_FRAME_ANNOTATIONS = [
@@ -73,15 +76,19 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
     Optional[Tuple[pl.LazyFrame, StorageMetadata]],
     # multiple partitions + metadata
     LazyFramePartitionsWithMetadata,
+    # dynamic outputs for .collect()
+    List[pl.LazyFrame],
 ]
 
 
 if sys.version_info >= (3, 9):
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(list[pl.DataFrame])
 
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(list[pl.LazyFrame])
 
 
 def annotation_is_typing_optional(annotation) -> bool:
@@ -90,6 +97,10 @@ def annotation_is_typing_optional(annotation) -> bool:
 
 def annotation_is_tuple(annotation) -> bool:
     return get_origin(annotation) in (Tuple, tuple)
+
+
+def annotation_is_list(annotation) -> bool:
+    return get_origin(annotation) in (List, list)
 
 
 def annotation_for_multiple_partitions(annotation) -> bool:
