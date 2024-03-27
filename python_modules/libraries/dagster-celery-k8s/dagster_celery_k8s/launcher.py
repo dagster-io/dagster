@@ -298,9 +298,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             else:
                 self._instance.report_engine_event(
                     message=(
-                        "Dagster Job was not terminated successfully; delete_job returned {}".format(
-                            termination_result
-                        )
+                        f"Dagster Job was not terminated successfully; delete_job returned {termination_result}"
                     ),
                     dagster_run=run,
                     cls=self.__class__,

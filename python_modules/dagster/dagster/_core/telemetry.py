@@ -142,10 +142,8 @@ def _telemetry_wrapper(
 
     if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
         raise DagsterInvariantViolationError(
-            "Attempted to log telemetry for function {name} that is not in telemetry whitelisted "
-            "functions list: {whitelist}.".format(
-                name=f.__name__, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS
-            )
+            f"Attempted to log telemetry for function {f.__name__} that is not in telemetry whitelisted "
+            f"functions list: {TELEMETRY_WHITELISTED_FUNCTIONS}."
         )
 
     var_names = f.__code__.co_varnames

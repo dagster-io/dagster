@@ -331,12 +331,8 @@ def do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: A
         return TypeCheck(
             success=False,
             description=(
-                "Type checks must return TypeCheck. Type check for type {type_name} returned "
-                "value of type {return_type} when checking runtime value of type {dagster_type}."
-            ).format(
-                type_name=dagster_type.display_name,
-                return_type=type(type_check),
-                dagster_type=type(value),
+                f"Type checks must return TypeCheck. Type check for type {dagster_type.display_name} returned "
+                f"value of type {type(type_check)} when checking runtime value of type {type(value)}."
             ),
         )
     return type_check

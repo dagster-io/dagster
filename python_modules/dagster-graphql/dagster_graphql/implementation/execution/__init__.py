@@ -132,9 +132,7 @@ def terminate_pipeline_execution(
     if not valid_status:
         return GrapheneTerminateRunFailure(
             run=graphene_run,
-            message="Run {run_id} could not be terminated due to having status {status}.".format(
-                run_id=run.run_id, status=run.status.value
-            ),
+            message=f"Run {run.run_id} could not be terminated due to having status {run.status.value}.",
         )
 
     if force_mark_as_canceled:
