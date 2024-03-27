@@ -1,5 +1,7 @@
 # pyright: reportPrivateImportUsage=false
 
+import datetime
+
 import pendulum
 import pytest
 from dagster import (
@@ -9,8 +11,8 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.freshness_checks.non_partitioned import (
-    build_freshness_checks_for_non_partitioned_assets,
+from dagster._core.definitions.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
 )
 from dagster._core.definitions.freshness_checks.sensor import (
     FreshnessCheckSensorCursor,
@@ -29,8 +31,8 @@ def test_params() -> None:
     def my_asset():
         pass
 
-    checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_asset], maximum_lag_minutes=10
+    checks = build_last_update_freshness_checks(
+        assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
     # Only essential params
@@ -71,11 +73,11 @@ def test_maximum_lag_minutes() -> None:
     def my_other_asset():
         pass
 
-    ten_minute_checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_asset], maximum_lag_minutes=10
+    ten_minute_checks = build_last_update_freshness_checks(
+        assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
-    twenty_minute_checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_other_asset], maximum_lag_minutes=20
+    twenty_minute_checks = build_last_update_freshness_checks(
+        assets=[my_other_asset], lower_bound_delta=datetime.timedelta(minutes=20)
     )
 
     sensor = build_sensor_for_freshness_checks(
@@ -179,19 +181,21 @@ def test_freshness_cron() -> None:
     def my_ahead_asset():
         pass
 
-    utc_checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_utc_asset], freshness_cron="0 0 * * *", maximum_lag_minutes=10
+    utc_checks = build_last_update_freshness_checks(
+        assets=[my_utc_asset],
+        freshness_cron="0 0 * * *",
+        lower_bound_delta=datetime.timedelta(minutes=10),
     )
-    behind_checks = build_freshness_checks_for_non_partitioned_assets(
+    behind_checks = build_last_update_freshness_checks(
         assets=[my_behind_asset],
         freshness_cron="0 0 * * *",
-        maximum_lag_minutes=10,
+        lower_bound_delta=datetime.timedelta(minutes=10),
         freshness_cron_timezone="Etc/GMT-5",
     )
-    ahead_checks = build_freshness_checks_for_non_partitioned_assets(
+    ahead_checks = build_last_update_freshness_checks(
         assets=[my_ahead_asset],
         freshness_cron="0 0 * * *",
-        maximum_lag_minutes=10,
+        lower_bound_delta=datetime.timedelta(minutes=10),
         freshness_cron_timezone="Etc/GMT+5",
     )
 
