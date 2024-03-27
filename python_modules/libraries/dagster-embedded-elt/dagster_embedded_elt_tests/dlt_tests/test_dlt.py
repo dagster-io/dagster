@@ -14,8 +14,8 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_rule import MaterializeOnCronRule
 from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.dlt.asset_decorator import dlt_assets
-from dagster_embedded_elt.dlt.resource import DltDagsterResource
-from dagster_embedded_elt.dlt.translator import DltDagsterTranslator
+from dagster_embedded_elt.dlt.resource import DagsterDltResource
+from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 from dlt.extract.resource import DltResource
 
 from .dlt_test_sources.duckdb_with_transformer import pipeline
@@ -40,7 +40,7 @@ def _teardown():
 def test_example_pipeline_asset_keys():
     @dlt_assets(dlt_source=DLT_SOURCE, dlt_pipeline=DLT_PIPELINE)
     def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DltDagsterResource
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
         yield from dlt_pipeline_resource.run(context=context)
 
@@ -53,13 +53,13 @@ def test_example_pipeline_asset_keys():
 def test_example_pipeline(_teardown):
     @dlt_assets(dlt_source=DLT_SOURCE, dlt_pipeline=DLT_PIPELINE)
     def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DltDagsterResource
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
         yield from dlt_pipeline_resource.run(context=context)
 
     res = materialize(
         [example_pipeline_assets],
-        resources={"dlt_pipeline_resource": DltDagsterResource()},
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
     )
     assert res.success
 
@@ -72,7 +72,7 @@ def test_example_pipeline(_teardown):
 
 
 def test_multi_asset_names_do_not_conflict(_teardown):
-    class CustomDagsterDltTranslator(DltDagsterTranslator):
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_asset_key(self, resource: DltResource) -> AssetKey:
             return AssetKey("custom_" + resource.name)
 
@@ -93,7 +93,7 @@ def test_multi_asset_names_do_not_conflict(_teardown):
 
 
 def test_get_materialize_policy(_teardown):
-    class CustomDagsterDltTranslator(DltDagsterTranslator):
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
         ) -> Optional[AutoMaterializePolicy]:
@@ -129,7 +129,7 @@ def test_example_pipeline_has_required_metadata_keys(_teardown):
 
     @dlt_assets(dlt_source=DLT_SOURCE, dlt_pipeline=DLT_PIPELINE)
     def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DltDagsterResource
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
         for asset in dlt_pipeline_resource.run(context=context):
             assert asset.metadata
@@ -138,7 +138,7 @@ def test_example_pipeline_has_required_metadata_keys(_teardown):
 
     res = materialize(
         [example_pipeline_assets],
-        resources={"dlt_pipeline_resource": DltDagsterResource()},
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
     )
     assert res.success
 
@@ -146,13 +146,13 @@ def test_example_pipeline_has_required_metadata_keys(_teardown):
 def test_example_pipeline_subselection(_teardown):
     @dlt_assets(dlt_source=DLT_SOURCE, dlt_pipeline=DLT_PIPELINE)
     def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DltDagsterResource
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
         yield from dlt_pipeline_resource.run(context=context)
 
     res = materialize(
         [example_pipeline_assets],
-        resources={"dlt_pipeline_resource": DltDagsterResource()},
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
         selection=[AssetKey(["dlt_pipeline_repos"])],
     )
     assert res.success

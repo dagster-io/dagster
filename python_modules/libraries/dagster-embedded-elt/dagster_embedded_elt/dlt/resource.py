@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 from .constants import META_KEY_PIPELINE, META_KEY_SOURCE
 
 
-class DltDagsterResource(ConfigurableResource):
+class DagsterDltResource(ConfigurableResource):
     def _cast_load_info_metadata(self, mapping: Mapping[Any, Any]) -> Mapping[Any, Any]:
         """Converts pendulum DateTime and Timezone values in a mapping to strings.
 
