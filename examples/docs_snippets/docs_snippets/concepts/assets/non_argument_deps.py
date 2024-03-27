@@ -1,3 +1,6 @@
+# NOTE: these assets are also used in docs_snippets/concepts/assets/build_job.py
+
+
 def execute_query(query):
     del query
 
