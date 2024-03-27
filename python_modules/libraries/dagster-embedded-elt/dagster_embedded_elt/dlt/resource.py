@@ -23,14 +23,14 @@ class DagsterDltResource(ConfigurableResource):
     def _cast_load_info_metadata(self, mapping: Mapping[Any, Any]) -> Mapping[Any, Any]:
         """Converts pendulum DateTime and Timezone values in a mapping to strings.
 
-        Workaround for dagster._core.errors.DagsterInvalidMetadata: Could not resolve the
-        metadata value for "jobs" to a known type. Value is not JSON serializable.
+        Workaround for dagster._core.errors.DagsterInvalidMetadata: Could not resolve the metadata
+        value for "jobs" to a known type. Value is not JSON serializable.
 
         Args:
-            mapping (Mapping): dictionary possibly containing pendulum values
+            mapping (Mapping): Dictionary possibly containing pendulum values
 
         Returns:
-            mapping with pendulum DateTime and Timezone values casted to strings
+            Mapping[Any, Any]: Metadata with pendulum DateTime and Timezone values casted to strings
 
         """
         from pendulum import DateTime, Timezone  # type: ignore
@@ -53,11 +53,11 @@ class DagsterDltResource(ConfigurableResource):
         """Helper method to extract dlt resource metadata from load info dict.
 
         Args:
-            resource (DltResource) dlt resource being materialized
-            load_info (LoadInfo) run metadata from dlt pipeline.run(...)
+            resource (DltResource): The dlt resource being materialized
+            load_info (LoadInfo): Run metadata from dlt `pipeline.run(...)`
 
         Returns:
-            Mapping[str, Any]: asset-specific metadata dictionary
+            Mapping[str, Any]: Asset-specific metadata dictionary
 
         """
         dlt_base_metadata_types = {
@@ -90,14 +90,14 @@ class DagsterDltResource(ConfigurableResource):
         context: Union[OpExecutionContext, AssetExecutionContext],
         **kwargs,
     ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
-        """Runs dlt pipeline.
+        """Runs the dlt pipeline with subset support.
 
         Args:
-            context (Union[OpExecutionContext, AssetExecutionContext]) execution context
-            **kwargs (dict[str, Any]) keyword args passed to pipeline `run` method
+            context (Union[OpExecutionContext, AssetExecutionContext]): Asset or op execution context
+            **kwargs (dict[str, Any]): Keyword args passed to pipeline `run` method
 
         Returns:
-            Iterator[Union[AssetMaterialization, MaterializeResult]] materialization in asset or op
+            Iterator[Union[AssetMaterialization, MaterializeResult]]: A generator of AssetMaterialization or MaterializeResult
 
         """
         metadata_by_key = context.assets_def.metadata_by_key
