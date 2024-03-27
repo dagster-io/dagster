@@ -70,7 +70,7 @@ def pending_repo():
         define_cacheable_and_uncacheable_assets(),
         define_asset_job(
             "all_asset_job",
-            selection=AssetSelection.keys(
+            selection=AssetSelection.assets(
                 AssetKey("a"), AssetKey("b"), AssetKey("upstream"), AssetKey("downstream")
             ),
         ),

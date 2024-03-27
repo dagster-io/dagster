@@ -2935,13 +2935,13 @@ def get_partitioned_asset_repo():
     def partitioned_asset_repo():
         return [
             abc_asset,
-            define_asset_job("abc_asset_job", AssetSelection.keys("abc_asset")),
+            define_asset_job("abc_asset_job", AssetSelection.assets("abc_asset")),
             daily_asset,
-            define_asset_job("daily_asset_job", AssetSelection.keys("daily_asset")),
+            define_asset_job("daily_asset_job", AssetSelection.assets("daily_asset")),
             multipartitions_asset,
             define_asset_job(
                 "multipartitions_job",
-                AssetSelection.keys("multipartitions_asset"),
+                AssetSelection.assets("multipartitions_asset"),
                 partitions_def=multipartitions_def,
             ),
         ]

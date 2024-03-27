@@ -36,4 +36,4 @@ def test_unserializable_asset_selection():
     defs = Definitions(assets=[asset1, asset2])
     assert external_sensor_data_from_def(
         sensor1, defs.get_repository_def()
-    ).asset_selection == AssetSelection.keys("asset1")
+    ).asset_selection == AssetSelection.assets("asset1")

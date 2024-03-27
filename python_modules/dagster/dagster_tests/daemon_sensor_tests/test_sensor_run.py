@@ -120,7 +120,7 @@ def check_a():
     return AssetCheckResult(passed=True)
 
 
-asset_job = define_asset_job("abc", selection=AssetSelection.keys("c", "b").upstream())
+asset_job = define_asset_job("abc", selection=AssetSelection.assets("c", "b").upstream())
 
 asset_and_check_job = define_asset_job(
     "asset_and_check_job",
@@ -310,19 +310,20 @@ def backlog_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(monitored_assets=AssetSelection.keys("asset_c").upstream(include_self=False))
+@multi_asset_sensor(monitored_assets=AssetSelection.assets("asset_c").upstream(include_self=False))
 def asset_selection_sensor(context):
     assert context.asset_keys == [AssetKey("asset_b")]
     assert context.latest_materialization_records_by_key().keys() == {AssetKey("asset_b")}
 
 
-@sensor(asset_selection=AssetSelection.keys("asset_a", "asset_b"))
+@sensor(asset_selection=AssetSelection.assets("asset_a", "asset_b"))
 def targets_asset_selection_sensor():
     return [RunRequest(), RunRequest(asset_selection=[AssetKey("asset_b")])]
 
 
 @multi_asset_sensor(
-    monitored_assets=AssetSelection.keys("asset_b"), request_assets=AssetSelection.keys("asset_c")
+    monitored_assets=AssetSelection.assets("asset_b"),
+    request_assets=AssetSelection.assets("asset_c"),
 )
 def multi_asset_sensor_targets_asset_selection(context):
     asset_events = context.latest_materialization_records_by_key()
@@ -351,7 +352,7 @@ def hourly_asset_3():
 
 hourly_asset_job = define_asset_job(
     "hourly_asset_job",
-    AssetSelection.keys("hourly_asset_3"),
+    AssetSelection.assets("hourly_asset_3"),
     partitions_def=hourly_partitions_def_2022,
 )
 
@@ -365,7 +366,7 @@ def weekly_asset():
 
 
 weekly_asset_job = define_asset_job(
-    "weekly_asset_job", AssetSelection.keys("weekly_asset"), partitions_def=weekly_partitions_def
+    "weekly_asset_job", AssetSelection.assets("weekly_asset"), partitions_def=weekly_partitions_def
 )
 
 
@@ -682,7 +683,7 @@ def multipartitioned_with_two_dynamic_dims():
     pass
 
 
-@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+@sensor(asset_selection=AssetSelection.assets(multipartitioned_with_two_dynamic_dims.key))
 def success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
@@ -695,7 +696,7 @@ def success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(con
     )
 
 
-@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+@sensor(asset_selection=AssetSelection.assets(multipartitioned_with_two_dynamic_dims.key))
 def error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
@@ -720,7 +721,9 @@ def multipartitioned_asset_with_static_time_dimensions():
     pass
 
 
-@sensor(asset_selection=AssetSelection.keys(multipartitioned_asset_with_static_time_dimensions.key))
+@sensor(
+    asset_selection=AssetSelection.assets(multipartitioned_asset_with_static_time_dimensions.key)
+)
 def multipartitions_with_static_time_dimensions_run_requests_sensor(context):
     return SensorResult(
         run_requests=[

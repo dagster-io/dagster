@@ -104,7 +104,7 @@ freshness_policy_scenarios = {
     ),
     "freshness_complex_subsettable": AssetReconciliationScenario(
         assets=subsettable_multi_asset_complex,
-        asset_selection=AssetSelection.keys("avg_order").upstream(),
+        asset_selection=AssetSelection.assets("avg_order").upstream(),
         unevaluated_runs=[
             # everything exists
             run(
