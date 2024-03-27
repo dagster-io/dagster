@@ -1,6 +1,7 @@
 {{- define "dagsterYaml.postgresql.config" }}
 postgres_db:
-  username: {{ .Values.postgresql.postgresqlUsername }}
+  username:
+    env: DAGSTER_PG_USERNAME
   password:
     env: DAGSTER_PG_PASSWORD
   hostname: {{ include "dagster.postgresql.host" . }}
