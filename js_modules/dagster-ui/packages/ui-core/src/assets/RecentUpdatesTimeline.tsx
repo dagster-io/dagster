@@ -33,7 +33,7 @@ export const RecentUpdatesTimeline = ({
   materializations: ReturnType<typeof useRecentAssetEvents>['materializations'];
 }) => {
   const {containerProps, viewport} = useViewport();
-  const widthAvailablePerTick = viewport.width / materializations.length;
+  const widthAvailablePerTick = viewport.width / Math.max(materializations.length, 100);
 
   const tickWidth = Math.max(widthAvailablePerTick, MIN_TICK_WIDTH);
 
