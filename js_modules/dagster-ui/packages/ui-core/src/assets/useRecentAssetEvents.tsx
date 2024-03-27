@@ -42,6 +42,7 @@ export function useRecentAssetEvents(
     ASSET_EVENTS_QUERY,
     {
       skip: !assetKey,
+      fetchPolicy: 'cache-and-network',
       variables: loadUsingPartitionKeys
         ? {
             assetKey: {path: assetKey?.path ?? []},

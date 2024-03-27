@@ -42,6 +42,7 @@ import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPat
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {useLatestPartitionEvents} from './useLatestPartitionEvents';
+import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
@@ -101,6 +102,12 @@ export const AssetNodeOverview = ({
   );
   const {UserDisplay} = useLaunchPadHooks();
 
+  const {materializations} = useRecentAssetEvents(
+    assetNode.isPartitioned ? undefined : assetNode.assetKey,
+    {},
+    {assetHasDefinedPartitions: false},
+  );
+
   if (loading) {
     return <AssetNodeOverviewLoading />;
   }
@@ -134,7 +141,9 @@ export const AssetNodeOverview = ({
           </Box>
         ) : undefined}
       </Box>
-      {assetNode.isPartitioned ? null : <RecentUpdatesTimeline assetKey={assetNode.assetKey} />}
+      {materializations.length ? (
+        <RecentUpdatesTimeline materializations={materializations} assetKey={assetNode.assetKey} />
+      ) : null}
     </Box>
   );
 

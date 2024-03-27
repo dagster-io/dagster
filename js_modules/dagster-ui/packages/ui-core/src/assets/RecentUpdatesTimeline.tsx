@@ -1,31 +1,41 @@
-import {Box, Caption, Colors, Subtitle2, useViewport} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Colors,
+  Icon,
+  Popover,
+  Subtitle2,
+  Tag,
+  useViewport,
+} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {RunlessEventTag} from './RunlessEventTag';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {isRunlessEvent} from './isRunlessEvent';
+import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
-import {AssetKeyInput} from '../graphql/types';
+import {Timestamp} from '../app/time/Timestamp';
+import {AssetRunLink} from '../asset-graph/AssetRunLinking';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
-const MIN_TICK_WIDTH = 20;
+const MIN_TICK_WIDTH = 5;
 
-export const RecentUpdatesTimeline = ({assetKey}: {assetKey: AssetKeyInput}) => {
-  const {materializations} = useRecentAssetEvents(assetKey, {}, {assetHasDefinedPartitions: false});
-
-  if (!materializations.length) {
-    return null;
-  }
-  return <RecentUpdatesTimelineImpl materializations={materializations} />;
-};
-
-const RecentUpdatesTimelineImpl = ({
+export const RecentUpdatesTimeline = ({
+  assetKey,
   materializations,
 }: {
+  assetKey: AssetKey;
   materializations: ReturnType<typeof useRecentAssetEvents>['materializations'];
 }) => {
   const {containerProps, viewport} = useViewport();
   const widthAvailablePerTick = viewport.width / materializations.length;
 
-  const tickWidth = Math.min(widthAvailablePerTick, MIN_TICK_WIDTH);
+  const tickWidth = Math.max(widthAvailablePerTick, MIN_TICK_WIDTH);
 
   const buckets = Math.ceil(viewport.width / tickWidth);
 
@@ -90,15 +100,32 @@ const RecentUpdatesTimelineImpl = ({
       <Box border="all" padding={6 as any} style={{height: 32}}>
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
           {bucketedMaterializations.map((bucket) => (
-            <Tick
+            <TickWrapper
               key={bucket.start}
               style={{
                 left: tickWidth * bucket.start,
-                width: tickWidth * (bucket.end - bucket.start) - 1,
+                width: tickWidth * (bucket.end - bucket.start + 1),
               }}
             >
-              {bucket.materializations.length}
-            </Tick>
+              <Popover
+                content={
+                  <Box flex={{direction: 'column', gap: 8}}>
+                    <Box padding={8} border="bottom">
+                      <Subtitle2>Materializations</Subtitle2>
+                    </Box>
+                    <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
+                      {bucket.materializations
+                        .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+                        .map((materialization, index) => (
+                          <AssetUpdate assetKey={assetKey} event={materialization} key={index} />
+                        ))}
+                    </div>
+                  </Box>
+                }
+              >
+                <Tick>{bucket.materializations.length}</Tick>
+              </Popover>
+            </TickWrapper>
           ))}
         </div>
       </Box>
@@ -108,6 +135,51 @@ const RecentUpdatesTimelineImpl = ({
         </Caption>
         <Caption color={Colors.textLighter()}>{formatDateTime(new Date(endTimestamp), {})}</Caption>
       </Box>
+    </Box>
+  );
+};
+
+const AssetUpdate = ({
+  assetKey,
+  event,
+}: {
+  assetKey: AssetKey;
+  event: ReturnType<typeof useRecentAssetEvents>['materializations'][0];
+}) => {
+  const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
+  return (
+    <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}} padding={4} border="bottom">
+      {event.__typename === 'MaterializationEvent' ? (
+        <Icon name="materialization" />
+      ) : (
+        <Icon name="observation" />
+      )}
+      <Link
+        to={assetDetailsPathForKey(assetKey, {
+          view: 'events',
+          time: event.timestamp,
+        })}
+      >
+        <Caption>
+          <Timestamp timestamp={{ms: Number(event.timestamp)}} />
+        </Caption>
+      </Link>
+      {event && run ? (
+        <Tag>
+          <AssetRunLink
+            runId={run.id}
+            assetKey={assetKey}
+            event={{stepKey: event.stepKey, timestamp: event.timestamp}}
+          >
+            <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+              <RunStatusWithStats runId={run.id} status={run.status} size={8} />
+              {titleForRun(run)}
+            </Box>
+          </AssetRunLink>
+        </Tag>
+      ) : event && isRunlessEvent(event) ? (
+        <RunlessEventTag tags={event.tags} />
+      ) : undefined}
     </Box>
   );
 };
@@ -125,4 +197,8 @@ const Tick = styled.div`
   &:hover {
     background-color: ${Colors.accentGreenHover()};
   }
+`;
+
+const TickWrapper = styled.div`
+  position: absolute;
 `;
