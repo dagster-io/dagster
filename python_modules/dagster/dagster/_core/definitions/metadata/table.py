@@ -267,6 +267,7 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 # ###########################
 
 
+@experimental
 @whitelist_for_serdes
 class TableColumnDep(
     NamedTuple(
@@ -291,6 +292,7 @@ class TableColumnDep(
         )
 
 
+@experimental
 @whitelist_for_serdes
 class TableColumnLineage(
     NamedTuple(
