@@ -696,7 +696,7 @@ def test_can_subset_select_only_asset() -> None:
 
     result = materialize(
         [foo],
-        selection=AssetSelection.keys(AssetKey("asset1")) - AssetSelection.checks_for_assets(foo),
+        selection=AssetSelection.assets(AssetKey("asset1")) - AssetSelection.checks_for_assets(foo),
     )
 
     assert len(result.get_asset_materialization_events()) == 1
@@ -770,7 +770,7 @@ def test_graph_asset_all():
 
 def test_graph_asset_subset_no_checks():
     result = materialize(
-        assets=[my_asset], selection=AssetSelection.keys(AssetKey("asset_one")).without_checks()
+        assets=[my_asset], selection=AssetSelection.assets(AssetKey("asset_one")).without_checks()
     )
     assert result.success
 
@@ -779,7 +779,7 @@ def test_graph_asset_subset_no_checks():
 
 
 def test_graph_asset_subset_with_checks():
-    result = materialize(assets=[my_asset], selection=AssetSelection.keys(AssetKey("asset_one")))
+    result = materialize(assets=[my_asset], selection=AssetSelection.assets(AssetKey("asset_one")))
     assert result.success
 
     assert len(result.get_asset_materialization_events()) == 1
@@ -821,7 +821,7 @@ def test_nested_graph_asset_all():
 def test_nested_graph_asset_subset_no_checks():
     result = materialize(
         assets=[nested_check_graph_asset],
-        selection=AssetSelection.keys(AssetKey("asset_one")).without_checks(),
+        selection=AssetSelection.assets(AssetKey("asset_one")).without_checks(),
     )
     assert result.success
 
@@ -831,7 +831,7 @@ def test_nested_graph_asset_subset_no_checks():
 
 def test_nested_graph_asset_subset_with_checks():
     result = materialize(
-        assets=[nested_check_graph_asset], selection=AssetSelection.keys(AssetKey("asset_one"))
+        assets=[nested_check_graph_asset], selection=AssetSelection.assets(AssetKey("asset_one"))
     )
     assert result.success
 
@@ -862,7 +862,8 @@ def validate_promote_graph_asset():
 
 def test_validate_promote_graph_asset_subset_checks_and_asset():
     result = materialize(
-        assets=[validate_promote_graph_asset], selection=AssetSelection.keys(AssetKey("asset_one"))
+        assets=[validate_promote_graph_asset],
+        selection=AssetSelection.assets(AssetKey("asset_one")),
     )
     assert result.success
 

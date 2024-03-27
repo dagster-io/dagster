@@ -77,9 +77,9 @@ from dagster._core.remote_representation.external_data import (
     external_partitions_definition_from_def,
 )
 from dagster._core.remote_representation.origin import (
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
@@ -121,8 +121,8 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
             create_run_for_test(
                 instance,
                 run_id=run_id,
-                external_job_origin=ExternalJobOrigin(
-                    ExternalRepositoryOrigin(
+                external_job_origin=RemoteJobOrigin(
+                    RemoteRepositoryOrigin(
                         InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
                                 executable_path=sys.executable,

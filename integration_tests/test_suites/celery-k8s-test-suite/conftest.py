@@ -27,8 +27,8 @@ def dagster_docker_image():
             client = docker.from_env()
             client.images.get(docker_image)
             print(  # noqa: T201
-                "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-                "docker rmi {image}".format(image=docker_image)
+                f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
+                f"docker rmi {docker_image}"
             )
         except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)

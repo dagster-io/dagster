@@ -141,7 +141,7 @@ setup(
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
-            "pyright==1.1.349",
+            "pyright==1.1.356",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -165,7 +165,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.3.0",
+            "ruff==0.3.4",
         ],
     },
     entry_points={

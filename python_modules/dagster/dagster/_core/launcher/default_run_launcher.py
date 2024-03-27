@@ -115,7 +115,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         external_job_origin = check.not_none(run.external_job_origin)
         code_location = context.workspace.get_code_location(
-            external_job_origin.external_repository_origin.code_location_origin.location_name
+            external_job_origin.repository_origin.code_location_origin.location_name
         )
 
         check.inst(

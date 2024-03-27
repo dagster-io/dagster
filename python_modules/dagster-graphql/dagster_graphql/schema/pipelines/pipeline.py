@@ -425,9 +425,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_repositoryOrigin(self, _graphene_info: ResolveInfo):
         return (
-            GrapheneRepositoryOrigin(
-                self.dagster_run.external_job_origin.external_repository_origin
-            )
+            GrapheneRepositoryOrigin(self.dagster_run.external_job_origin.repository_origin)
             if self.dagster_run.external_job_origin
             else None
         )
@@ -770,7 +768,7 @@ class GrapheneIPipelineSnapshotMixin:
                 job_name=pipeline.name,
                 tags={
                     REPOSITORY_LABEL_TAG: (
-                        pipeline.get_external_origin().external_repository_origin.get_label()
+                        pipeline.get_external_origin().repository_origin.get_label()
                     )
                 },
             )

@@ -973,9 +973,7 @@ class DagsterEvent(
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_RESTARTED,
             step_context=step_context,
-            message='Started re-execution (attempt # {n}) of step "{step_key}".'.format(
-                step_key=step_context.step.key, n=previous_attempts + 1
-            ),
+            message=f'Started re-execution (attempt # {previous_attempts + 1}) of step "{step_context.step.key}".',
         )
 
     @staticmethod
@@ -986,10 +984,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_SUCCESS,
             step_context=step_context,
             event_specific_data=success,
-            message='Finished execution of step "{step_key}" in {duration}.'.format(
-                step_key=step_context.step.key,
-                duration=format_duration(success.duration_ms),
-            ),
+            message=f'Finished execution of step "{step_context.step.key}" in {format_duration(success.duration_ms)}.',
         )
 
     @staticmethod
@@ -1323,13 +1318,7 @@ class DagsterEvent(
             ObjectStoreOperationType(object_store_operation_result.op)
             == ObjectStoreOperationType.CP_OBJECT
         ):
-            message = (
-                "Copied intermediate object for input {value_name} from {key} to {dest_key}"
-            ).format(
-                value_name=value_name,
-                key=object_store_operation_result.key,
-                dest_key=object_store_operation_result.dest_key,
-            )
+            message = f"Copied intermediate object for input {value_name} from {object_store_operation_result.key} to {object_store_operation_result.dest_key}"
         else:
             message = ""
 

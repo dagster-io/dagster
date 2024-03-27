@@ -309,9 +309,7 @@ class CustomPointer(
         )
 
     def describe(self) -> str:
-        return "reconstructable using {module}.{fn_name}".format(
-            module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
-        )
+        return f"reconstructable using {self.reconstructor_pointer.module}.{self.reconstructor_pointer.fn_name}"
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
     # - `ReconstructableJob` uses `lru_cache`

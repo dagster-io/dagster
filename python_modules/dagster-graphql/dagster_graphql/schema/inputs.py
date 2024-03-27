@@ -259,7 +259,6 @@ class GrapheneResourceSelector(graphene.InputObjectType):
 
 
 class GrapheneExecutionMetadata(graphene.InputObjectType):
-    runId = graphene.String()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     rootRunId = graphene.String(
         description="""The ID of the run at the root of the run group. All partial /

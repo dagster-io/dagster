@@ -3,7 +3,7 @@ title: "Asset checks | Dagster"
 description: Asset checks are a way to define expectations about the quality of your data.
 ---
 
-# Asset checks (Experimental)
+# Asset checks
 
 Dagster allows you to define and execute data quality checks on your [Software-defined Assets](/concepts/assets/software-defined-assets). Each asset check verifies some property of a data asset, e.g. that there are no null values in a particular column.
 
@@ -31,6 +31,7 @@ With asset checks, you can also:
 
 - Block downstream execution based on check results
 - Use severity levels and metadata [to communicate actionable details about check results in the UI](/concepts/assets/asset-checks/define-execute-asset-checks#using-asset-check-results)
+- Use freshness checks [to identify stale assets that are due for a refresh](/concepts/assets/asset-checks/checking-for-data-freshness)
 - **Dagster Cloud only**: [Create alerts based on asset check results](/dagster-cloud/managing-deployments/alerts)
 
 ---

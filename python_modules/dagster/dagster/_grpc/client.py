@@ -14,7 +14,7 @@ import dagster._seven as seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.origin import ExternalRepositoryOrigin
+from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -324,13 +324,13 @@ class DagsterGrpcClient:
 
     def external_repository(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
     ) -> str:
         check.inst_param(
             external_repository_origin,
             "external_repository_origin",
-            ExternalRepositoryOrigin,
+            RemoteRepositoryOrigin,
         )
 
         res = self._query(
@@ -345,13 +345,13 @@ class DagsterGrpcClient:
 
     def external_job(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         job_name: str,
     ) -> api_pb2.ExternalJobReply:
         check.inst_param(
             external_repository_origin,
             "external_repository_origin",
-            ExternalRepositoryOrigin,
+            RemoteRepositoryOrigin,
         )
 
         return self._query(
@@ -363,7 +363,7 @@ class DagsterGrpcClient:
 
     def streaming_external_repository(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
         timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> Iterator[dict]:

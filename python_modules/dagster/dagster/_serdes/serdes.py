@@ -1122,14 +1122,14 @@ def _check_serdes_tuple_class_invariants(
         for extra_param_index in range(len(klass._fields), len(value_params) - 1):
             if value_params[extra_param_index].default == Parameter.empty:
                 error_msg = (
-                    'Parameter "{param_name}" is a parameter to the __new__ '
+                    f'Parameter "{value_params[extra_param_index].name}" is a parameter to the __new__ '
                     "method but is not a field in this namedtuple. The only "
                     "reason why this should exist is that "
                     "it is a field that used to exist (we refer to this as the graveyard) "
                     "but no longer does. However it might exist in historical storage. This "
                     "parameter existing ensures that serdes continues to work. However these "
                     "must come at the end and have a default value for pickling to work."
-                ).format(param_name=value_params[extra_param_index].name)
+                )
                 raise SerdesUsageError(_with_header(error_msg))
 
 

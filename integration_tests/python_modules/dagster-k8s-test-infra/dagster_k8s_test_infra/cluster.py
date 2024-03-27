@@ -68,8 +68,8 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                         client = docker.from_env()
                         client.images.get(docker_image)
                         print(
-                            "Found existing image tagged {image}, skipping image build. To rebuild,"
-                            " first run: docker rmi {image}".format(image=docker_image)
+                            f"Found existing image tagged {docker_image}, skipping image build. To rebuild,"
+                            f" first run: docker rmi {docker_image}"
                         )
                     except docker.errors.ImageNotFound:
                         build_and_tag_test_image(docker_image)

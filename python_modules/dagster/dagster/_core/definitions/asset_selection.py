@@ -2,7 +2,7 @@ import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
+from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -17,7 +17,6 @@ from dagster._core.selector.subset_selector import (
     fetch_sources,
     parse_clause,
 )
-from dagster._core.storage.tags import TAG_NO_VALUE
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -57,10 +56,10 @@ class AssetSelection(ABC, DagsterModel):
             AssetSelection.groups("marketing")
 
             # Select all assets in group "marketing", as well as the asset with key "promotion":
-            AssetSelection.groups("marketing") | AssetSelection.keys("promotion")
+            AssetSelection.groups("marketing") | AssetSelection.assets("promotion")
 
             # Select all assets in group "marketing" that are downstream of asset "leads":
-            AssetSelection.groups("marketing") & AssetSelection.keys("leads").downstream()
+            AssetSelection.groups("marketing") & AssetSelection.assets("leads").downstream()
 
             # Select a list of assets:
             AssetSelection.assets(*my_assets_list)
@@ -69,7 +68,7 @@ class AssetSelection(ABC, DagsterModel):
             AssetSelection.all() - AssetSelection.groups("marketing")
 
             # Select all assets which are materialized by the same op as "projections":
-            AssetSelection.keys("projections").required_multi_asset_neighbors()
+            AssetSelection.assets("projections").required_multi_asset_neighbors()
 
             # Select all assets in group "marketing" and exclude their asset checks:
             AssetSelection.groups("marketing") - AssetSelection.all_asset_checks()
@@ -101,16 +100,55 @@ class AssetSelection(ABC, DagsterModel):
 
     @public
     @staticmethod
-    def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
-        """Returns a selection that includes all of the provided assets and asset checks that target them."""
-        return KeysAssetSelection(
-            selected_keys=[key for assets_def in assets_defs for key in assets_def.keys]
-        )
+    def assets(*assets_defs: Union[AssetsDefinition, CoercibleToAssetKey]) -> "KeysAssetSelection":
+        """Returns a selection that includes all of the provided assets and asset checks that target
+        them.
+
+        Args:
+            *assets_defs (Union[AssetsDefinition, str, Sequence[str], AssetKey]): The assets to
+                select.
+
+        Examples:
+            .. code-block:: python
+
+                AssetSelection.assets(AssetKey(["a"]))
+
+                AssetSelection.assets("a")
+
+                AssetSelection.assets(AssetKey(["a"]), AssetKey(["b"]))
+
+                AssetSelection.assets("a", "b")
+
+                @asset
+                def asset1():
+                    ...
+
+                AssetSelection.assets(asset1)
+
+                asset_key_list = [AssetKey(["a"]), AssetKey(["b"])]
+                AssetSelection.assets(*asset_key_list)
+        """
+        selected_keys: List[AssetKey] = []
+        for el in assets_defs:
+            if isinstance(el, AssetsDefinition):
+                selected_keys.extend(el.keys)
+            else:
+                selected_keys.append(
+                    AssetKey.from_user_string(el)
+                    if isinstance(el, str)
+                    else AssetKey.from_coercible(el)
+                )
+
+        return KeysAssetSelection(selected_keys=selected_keys)
 
     @public
     @staticmethod
+    @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.assets instead.")
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
-        """Returns a selection that includes assets with any of the provided keys and all asset checks that target them.
+        """Returns a selection that includes assets with any of the provided keys and all asset
+        checks that target them.
+
+        Deprecated: use AssetSelection.assets instead.
 
         Examples:
             .. code-block:: python
@@ -197,9 +235,7 @@ class AssetSelection(ABC, DagsterModel):
         """
         split_by_equals_segments = string.split("=")
         if len(split_by_equals_segments) == 1:
-            return TagAssetSelection(
-                key=string, value=TAG_NO_VALUE, include_sources=include_sources
-            )
+            return TagAssetSelection(key=string, value="", include_sources=include_sources)
         elif len(split_by_equals_segments) == 2:
             key, value = split_by_equals_segments
             return TagAssetSelection(key=key, value=value, include_sources=include_sources)
@@ -411,7 +447,7 @@ class AssetSelection(ABC, DagsterModel):
 
         parts = parse_clause(string)
         if parts is not None:
-            key_selection = cls.keys(parts.item_name)
+            key_selection = cls.assets(parts.item_name)
             if parts.up_depth and parts.down_depth:
                 selection = key_selection.upstream(parts.up_depth) | key_selection.downstream(
                     parts.down_depth
@@ -443,7 +479,7 @@ class AssetSelection(ABC, DagsterModel):
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
         ):
-            return AssetSelection.keys(
+            return AssetSelection.assets(
                 *(
                     key
                     for el in selection
@@ -455,7 +491,7 @@ class AssetSelection(ABC, DagsterModel):
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, AssetKey) for el in selection
         ):
-            return cls.keys(*cast(Sequence[AssetKey], selection))
+            return cls.assets(*cast(Sequence[AssetKey], selection))
         else:
             check.failed(
                 "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
@@ -464,7 +500,7 @@ class AssetSelection(ABC, DagsterModel):
             )
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
-        return AssetSelection.keys(*self.resolve(asset_graph))
+        return KeysAssetSelection(selected_keys=list(self.resolve(asset_graph)))
 
     def needs_parentheses_when_operand(self) -> bool:
         """When generating a string representation of an asset selection and this asset selection

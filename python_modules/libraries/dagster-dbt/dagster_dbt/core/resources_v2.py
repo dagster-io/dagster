@@ -40,8 +40,11 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
-from dagster._core.definitions.metadata import TableMetadataEntries
-from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
+from dagster._core.definitions.metadata import (
+    TableColumnDep,
+    TableColumnLineage,
+    TableMetadataEntries,
+)
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
@@ -53,6 +56,7 @@ from sqlglot import (
     exp,
     parse_one,
 )
+from sqlglot.expressions import table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 from typing_extensions import Final, Literal
@@ -222,15 +226,20 @@ class DbtCliEventMessage:
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             duration_seconds = (finished_at - started_at).total_seconds()
 
-            lineage_metadata = (
-                self._build_column_lineage_metadata(
+            lineage_metadata = {}
+            try:
+                lineage_metadata = self._build_column_lineage_metadata(
                     manifest=manifest,
                     dagster_dbt_translator=dagster_dbt_translator,
                     target_path=target_path,
                 )
-                if target_path
-                else {}
-            )
+            except Exception as e:
+                logger.warning(
+                    "An error occurred while building column lineage metadata for the dbt resource"
+                    f" `{dbt_resource_props['original_file_path']}`."
+                    " Lineage metadata will not be included in the event.\n\n"
+                    f"Exception: {e}"
+                )
 
             if has_asset_def:
                 yield Output(
@@ -326,7 +335,7 @@ class DbtCliEventMessage:
         self,
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
-        target_path: Path,
+        target_path: Optional[Path],
     ) -> Dict[str, Any]:
         """Process the lineage metadata for a dbt CLI event.
 
@@ -343,6 +352,7 @@ class DbtCliEventMessage:
             version.parse(dbt_version) < version.parse("1.6.0")
             # Column lineage can only be built if initial metadata is provided.
             or not self.has_column_lineage_metadata
+            or not target_path
         ):
             return {}
 
@@ -365,49 +375,63 @@ class DbtCliEventMessage:
                 },
             )
 
+        dialect = manifest["metadata"]["adapter_type"]
         node_sql_path = target_path.joinpath(
             "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
         )
         node_ast = parse_one(sql=node_sql_path.read_text()).expression
         optimized_node_ast = cast(
-            exp.Query,
-            optimize(
-                node_ast,
-                schema=sqlglot_mapping_schema,
-                validate_qualify_columns=False,  # Don't throw an error if we can't qualify a column without ambiguity.
-            ),
+            exp.Query, optimize(node_ast, schema=sqlglot_mapping_schema, dialect=dialect)
         )
 
         # 2. Retrieve the column names from the current node.
-        column_names = cast(exp.Query, optimized_node_ast).named_selects
+        column_names = optimized_node_ast.named_selects
 
         # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
+        dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
+        for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
+            is_resource_type_source = parent_unique_id.startswith("source")
+            parent_dbt_resource_props = (
+                manifest["sources"] if is_resource_type_source else manifest["nodes"]
+            )[parent_unique_id]
+            relation_name = parent_dbt_resource_props["relation_name"]
+
+            dbt_parent_resource_props_by_relation_name[relation_name] = parent_dbt_resource_props
+
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
         for column_name in column_names:
-            dbt_parent_resource_props_by_identifier: Dict[str, Dict[str, Any]] = {}
-            for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
-                is_resource_type_source = parent_unique_id.startswith("source")
-                if is_resource_type_source:
-                    parent_dbt_resource_props = manifest["sources"][parent_unique_id]
-                    identifier = parent_dbt_resource_props["name"]
-                else:
-                    parent_dbt_resource_props = manifest["nodes"][parent_unique_id]
-                    identifier = parent_dbt_resource_props["alias"]
-
-                dbt_parent_resource_props_by_identifier[identifier] = parent_dbt_resource_props
-
             column_deps: Sequence[TableColumnDep] = []
             for sqlglot_lineage_node in lineage(
-                column=column_name, sql=optimized_node_ast, schema=sqlglot_mapping_schema
+                column=column_name,
+                sql=optimized_node_ast,
+                schema=sqlglot_mapping_schema,
+                dialect=dialect,
             ).walk():
-                column = sqlglot_lineage_node.expression.find(exp.Column)
-                if column and column.table in dbt_parent_resource_props_by_identifier:
-                    parent_resource_props = dbt_parent_resource_props_by_identifier[column.table]
-                    parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
+                # Only the leaves of the lineage graph contain relevant information.
+                if sqlglot_lineage_node.downstream:
+                    continue
 
-                    column_deps.append(
-                        TableColumnDep(asset_key=parent_asset_key, column_name=column.name)
+                # Attempt to find a table in the lineage node.
+                table = sqlglot_lineage_node.expression.find(exp.Table)
+                if not table:
+                    continue
+
+                # Attempt to retrieve the table's associated asset key and column.
+                parent_column_name = exp.to_column(sqlglot_lineage_node.name).name
+                parent_relation_name = table_name(table, dialect=dialect, identify=True)
+                parent_resource_props = dbt_parent_resource_props_by_relation_name.get(
+                    parent_relation_name
+                )
+                if not parent_resource_props:
+                    continue
+
+                # Add the column dependency.
+                column_deps.append(
+                    TableColumnDep(
+                        asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
+                        column_name=parent_column_name,
                     )
+                )
 
             deps_by_column[column_name] = column_deps
 

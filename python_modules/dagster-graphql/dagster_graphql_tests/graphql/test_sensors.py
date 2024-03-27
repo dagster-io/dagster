@@ -8,8 +8,8 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.remote_representation import (
-    ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -1311,7 +1311,7 @@ def _get_unloadable_sensor_origin(name):
         python_file=__file__,
         working_directory=working_directory,
     )
-    return ExternalRepositoryOrigin(
+    return RemoteRepositoryOrigin(
         InProcessCodeLocationOrigin(loadable_target_origin), "fake_repository"
     ).get_instigator_origin(name)
 

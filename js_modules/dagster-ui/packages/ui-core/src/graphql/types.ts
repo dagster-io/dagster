@@ -1354,7 +1354,6 @@ export type EventTag = {
 export type ExecutionMetadata = {
   parentRunId?: InputMaybe<Scalars['String']['input']>;
   rootRunId?: InputMaybe<Scalars['String']['input']>;
-  runId?: InputMaybe<Scalars['String']['input']>;
   tags?: InputMaybe<Array<ExecutionTag>>;
 };
 
@@ -7719,7 +7718,6 @@ export const buildExecutionMetadata = (
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'autem',
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'ut',
-    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'dolor',
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };

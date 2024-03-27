@@ -199,9 +199,7 @@ def execute_notebook(
 
         except Exception as ex:
             step_context.log.warn(
-                "Error when attempting to materialize executed notebook: {exc}".format(
-                    exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                )
+                f"Error when attempting to materialize executed notebook: {serializable_error_info_from_exc_info(sys.exc_info())!s}"
             )
 
             if isinstance(ex, ExecutionError):

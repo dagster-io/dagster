@@ -395,9 +395,7 @@ def expand_list(original_root: object, the_list: Sequence[object], stack: List[s
             original_root,
             the_list,
             stack,
-            "List have a single item and contain a valid type i.e. [int]. Got item {}".format(
-                repr(the_list[0])
-            ),
+            f"List have a single item and contain a valid type i.e. [int]. Got item {the_list[0]!r}",
         )
 
     return Array(inner_type)
@@ -425,9 +423,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
-                repr(the_dict[key])
-            ),
+            f"Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {the_dict[key]!r}",
         )
 
     return Map(key_type, inner_type)

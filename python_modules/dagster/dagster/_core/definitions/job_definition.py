@@ -777,7 +777,7 @@ class JobDefinition(IHasInternalInit):
 
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
-        selection = AssetSelection.keys(*selection_data.asset_selection)
+        selection = AssetSelection.assets(*selection_data.asset_selection)
         if selection_data.asset_check_selection is not None:
             selection = selection.without_checks() | AssetSelection.checks(
                 *selection_data.asset_check_selection
@@ -1239,9 +1239,7 @@ def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, No
             if node_def.name in all_defs:
                 if all_defs[node_def.name] != node_def:
                     raise DagsterInvalidDefinitionError(
-                        'Detected conflicting node definitions with the same name "{name}"'.format(
-                            name=node_def.name
-                        )
+                        f'Detected conflicting node definitions with the same name "{node_def.name}"'
                     )
             else:
                 all_defs[node_def.name] = node_def
