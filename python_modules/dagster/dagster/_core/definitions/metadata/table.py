@@ -291,6 +291,7 @@ class TableColumnDep(
         )
 
 
+@experimental
 @whitelist_for_serdes
 class TableColumnLineage(
     NamedTuple(
