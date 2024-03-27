@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Union
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -102,8 +102,8 @@ class DltDagsterResource(ConfigurableResource):
         metadata_by_key = context.assets_def.metadata_by_key
         first_asset_metadata = next(iter(metadata_by_key.values()))
 
-        dlt_source: DltSource | None = first_asset_metadata.get(META_KEY_SOURCE)
-        dlt_pipeline: Pipeline | None = first_asset_metadata.get(META_KEY_PIPELINE)
+        dlt_source: Optional[DltSource] = first_asset_metadata.get(META_KEY_SOURCE)
+        dlt_pipeline: Optional[Pipeline] = first_asset_metadata.get(META_KEY_PIPELINE)
 
         if not dlt_source or not dlt_pipeline:
             raise Exception(
