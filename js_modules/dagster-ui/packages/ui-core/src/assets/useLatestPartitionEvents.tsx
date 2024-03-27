@@ -9,7 +9,7 @@ import {
   AssetOverviewMetadataEventsQueryVariables,
 } from './types/useLatestPartitionEvents.types';
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 export function useLatestPartitionEvents(
   assetNode: AssetNodeDefinitionFragment,

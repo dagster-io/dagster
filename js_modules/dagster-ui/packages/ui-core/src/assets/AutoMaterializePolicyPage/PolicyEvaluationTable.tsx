@@ -13,7 +13,7 @@ import {
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
 import {AssetConditionEvaluationStatus} from '../../graphql/types';
-import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';

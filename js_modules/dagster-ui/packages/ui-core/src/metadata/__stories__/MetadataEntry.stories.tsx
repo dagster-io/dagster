@@ -9,7 +9,7 @@ import {
   TableSchemaMetadataEntry,
 } from '../../graphql/types';
 import {MetadataEntries} from '../MetadataEntry';
-import {MetadataEntryFragment} from '../types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../types/MetadataEntryFragment.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

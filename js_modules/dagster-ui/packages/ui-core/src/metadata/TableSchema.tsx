@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   Caption,
@@ -13,7 +12,7 @@ import {
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import {createContext, useContext, useState} from 'react';
 
-import {TableSchemaFragment} from './types/TableSchema.types';
+import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
@@ -192,25 +191,3 @@ const ArbitraryConstraintTag = ({constraint}: {constraint: string}) => {
     return <Tag intent="primary">{constraint}</Tag>;
   }
 };
-
-export const TABLE_SCHEMA_FRAGMENT = gql`
-  fragment TableSchemaFragment on TableSchema {
-    columns {
-      name
-      description
-      type
-      constraints {
-        ...ConstraintsForTableColumn
-      }
-    }
-    constraints {
-      other
-    }
-  }
-
-  fragment ConstraintsForTableColumn on TableColumnConstraints {
-    nullable
-    unique
-    other
-  }
-`;

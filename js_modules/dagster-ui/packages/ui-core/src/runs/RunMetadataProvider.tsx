@@ -6,7 +6,7 @@ import {RunContext} from './RunContext';
 import {RunFragment} from './types/RunFragments.types';
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProvider.types';
 import {StepEventStatus} from '../graphql/types';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 export enum IStepState {
   PREPARING = 'preparing',

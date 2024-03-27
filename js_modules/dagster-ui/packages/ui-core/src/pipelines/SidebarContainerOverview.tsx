@@ -9,7 +9,8 @@ import {
 } from './SidebarResourcesSection';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 import {breakOnUnderscores} from '../app/Util';
-import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
+import {MetadataEntry} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
