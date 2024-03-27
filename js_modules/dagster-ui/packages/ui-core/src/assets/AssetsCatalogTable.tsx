@@ -46,7 +46,7 @@ type Asset = AssetTableFragment;
 let globalTableCache: AssetCatalogTableQuery;
 const groupTableCache = new Map();
 
-function useAllAssets(groupSelector?: AssetGroupSelector) {
+export function useAllAssets(groupSelector?: AssetGroupSelector) {
   const client = useApolloClient();
   const [{error, assets}, setErrorAndAssets] = React.useState<{
     error: PythonErrorFragment | undefined;
