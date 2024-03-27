@@ -43,13 +43,26 @@ If release name contains chart name it will be used as a full name.
 {{- define "dagster.webserver.dagsterWebserverCommand" -}}
 {{- $_ := include "dagster.backcompat" . | mustFromJson -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
-dagster-webserver -h 0.0.0.0 -p {{ $_.Values.dagsterWebserver.service.port }}
-{{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
-{{- with $_.Values.dagsterWebserver.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
-{{- with $_.Values.dagsterWebserver.dbPoolRecycle }} --db-pool-recycle {{ . }} {{- end -}}
-{{- if $_.Values.dagsterWebserver.pathPrefix }} --path-prefix {{ $_.Values.dagsterWebserver.pathPrefix }} {{- end -}}
-{{- with $_.Values.dagsterWebserver.logLevel }} --log-level {{ . }} {{- end -}}
-{{- if .webserverReadOnly }} --read-only {{- end -}}
+{{- $command := printf "dagster-webserver -h 0.0.0.0 -p %d" (int $_.Values.dagsterWebserver.service.port) -}}
+{{- if $userDeployments.enabled -}}
+{{- $command = printf "%s -w /dagster-workspace/workspace.yaml" $command -}}
+{{- end -}}
+{{- with $_.Values.dagsterWebserver.dbStatementTimeout -}}
+{{- $command = printf "%s --db-statement-timeout %s" $command . -}}
+{{- end -}}
+{{- with $_.Values.dagsterWebserver.dbPoolRecycle -}}
+{{- $command = printf "%s --db-pool-recycle %s" $command . -}}
+{{- end -}}
+{{- if $_.Values.dagsterWebserver.pathPrefix -}}
+{{- $command = printf "%s --path-prefix %s" $command $_.Values.dagsterWebserver.pathPrefix -}}
+{{- end -}}
+{{- with $_.Values.dagsterWebserver.logLevel -}}
+{{- $command = printf "%s --log-level %s" $command . -}}
+{{- end -}}
+{{- if .webserverReadOnly -}}
+{{- $command = printf "%s --read-only" $command -}}
+{{- end -}}
+{{- $command -}}
 {{- end -}}
 
 {{- define "dagster.dagsterDaemon.daemonCommand" -}}
