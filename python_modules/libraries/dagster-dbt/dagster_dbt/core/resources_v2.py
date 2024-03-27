@@ -201,15 +201,20 @@ class DbtCliEventMessage:
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             duration_seconds = (finished_at - started_at).total_seconds()
 
-            lineage_metadata = (
-                self._build_column_lineage_metadata(
+            lineage_metadata = {}
+            try:
+                lineage_metadata = self._build_column_lineage_metadata(
                     manifest=manifest,
                     dagster_dbt_translator=dagster_dbt_translator,
                     target_path=target_path,
                 )
-                if target_path
-                else {}
-            )
+            except Exception as e:
+                logger.warning(
+                    "An error occurred while building column lineage metadata for the dbt resource"
+                    f" `{dbt_resource_props['original_file_path']}`."
+                    " Lineage metadata will not be included in the event.\n\n"
+                    f"Exception: {e}"
+                )
 
             if has_asset_def:
                 yield Output(
@@ -285,7 +290,7 @@ class DbtCliEventMessage:
         self,
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
-        target_path: Path,
+        target_path: Optional[Path],
     ) -> Dict[str, Any]:
         """Process the lineage metadata for a dbt CLI event.
 
@@ -302,6 +307,7 @@ class DbtCliEventMessage:
             version.parse(dbt_version) < version.parse("1.6.0")
             # Column lineage can only be built if initial metadata is provided.
             or not self.has_column_lineage_metadata
+            or not target_path
         ):
             return {}
 
