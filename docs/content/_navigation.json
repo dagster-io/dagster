@@ -96,7 +96,7 @@
             "path": "/concepts/assets/asset-selection-syntax"
           },
           {
-            "title": "Asset checks (Experimental)",
+            "title": "Asset checks",
             "path": "/concepts/assets/asset-checks",
             "children": [
               {
@@ -673,7 +673,7 @@
             ]
           },
           {
-            "title":  "Best practices",
+            "title": "Best practices",
             "path": "/dagster-cloud/best-practices",
             "children": [
               {
@@ -1179,7 +1179,7 @@
             "path": "/_apidocs/dynamic"
           },
           {
-            "title": "Asset checks (Experimental)",
+            "title": "Asset checks",
             "path": "/_apidocs/asset-checks"
           },
           {
