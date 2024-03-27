@@ -42,7 +42,7 @@ from dagster._core.remote_representation import (
     ExternalSensor,
 )
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.origin import ExternalInstigatorOrigin
+from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -145,7 +145,7 @@ def _get_pre_sensor_auto_materialize_cursor(
 
 
 def get_current_evaluation_id(
-    instance: DagsterInstance, sensor_origin: Optional[ExternalInstigatorOrigin]
+    instance: DagsterInstance, sensor_origin: Optional[RemoteInstigatorOrigin]
 ) -> Optional[int]:
     if not sensor_origin:
         cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
@@ -335,7 +335,7 @@ class AssetDaemon(DagsterDaemon):
     def _get_print_sensor_name(self, sensor: Optional[ExternalSensor]) -> str:
         if not sensor:
             return ""
-        repo_origin = sensor.get_external_origin().external_repository_origin
+        repo_origin = sensor.get_external_origin().repository_origin
         repo_name = repo_origin.repository_name
         location_name = repo_origin.code_location_origin.location_name
         repo_name = (

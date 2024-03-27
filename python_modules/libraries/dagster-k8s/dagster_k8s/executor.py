@@ -275,7 +275,7 @@ class K8sStepHandler(StepHandler):
         }
         if run.external_job_origin:
             labels["dagster/code-location"] = (
-                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                run.external_job_origin.repository_origin.code_location_origin.location_name
             )
         job = construct_dagster_k8s_job(
             job_config=job_config,

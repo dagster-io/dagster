@@ -1,7 +1,7 @@
 from dagster._core.remote_representation.origin import (
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
     RegisteredCodeLocationOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster_aws.ecs.utils import get_task_definition_family, sanitize_family
 
@@ -16,8 +16,8 @@ def test_sanitize_family():
 
 
 def test_get_task_definition_family():
-    external_job_origin = ExternalJobOrigin(
-        external_repository_origin=ExternalRepositoryOrigin(
+    external_job_origin = RemoteJobOrigin(
+        repository_origin=RemoteRepositoryOrigin(
             repository_name="the_repo",
             code_location_origin=RegisteredCodeLocationOrigin(location_name="the_location"),
         ),
@@ -35,8 +35,8 @@ def test_long_names():
     long_repo_name = "b" * 512
     long_location_name = "c" * 512
 
-    external_job_origin = ExternalJobOrigin(
-        external_repository_origin=ExternalRepositoryOrigin(
+    external_job_origin = RemoteJobOrigin(
+        repository_origin=RemoteRepositoryOrigin(
             repository_name=long_repo_name,
             code_location_origin=RegisteredCodeLocationOrigin(location_name=long_location_name),
         ),

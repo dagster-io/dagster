@@ -44,12 +44,12 @@ from .historical import HistoricalJob as HistoricalJob
 from .origin import (
     IN_PROCESS_NAME as IN_PROCESS_NAME,
     CodeLocationOrigin as CodeLocationOrigin,
-    ExternalInstigatorOrigin as ExternalInstigatorOrigin,
-    ExternalJobOrigin as ExternalJobOrigin,
-    ExternalRepositoryOrigin as ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteInstigatorOrigin as RemoteInstigatorOrigin,
+    RemoteJobOrigin as RemoteJobOrigin,
+    RemoteRepositoryOrigin as RemoteRepositoryOrigin,
 )
 
 # ruff: isort: split
