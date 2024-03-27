@@ -579,6 +579,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
+    @experimental
     def column_lineage(
         lineage: TableColumnLineage,
     ) -> "TableColumnLineageMetadataValue":
@@ -1296,6 +1297,7 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
         return cls(**kwargs)
 
 
+@experimental
 class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
     """Metadata entries that apply to definitions, observations, or materializations of assets that
     are tables.
