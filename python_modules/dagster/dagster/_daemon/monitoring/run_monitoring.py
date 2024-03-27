@@ -19,6 +19,7 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
+from dagster._daemon.utils import ErrorCapture
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -193,11 +194,12 @@ def execute_run_monitoring_iteration(
             else:
                 check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                f"Hit error while monitoring run {run_record.dagster_run.run_id}: {error_info}"
+            yield ErrorCapture.on_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"Hit error while monitoring run {run_record.dagster_run.run_id}",
+                append_error_info_to_log_message=True,
             )
-            yield error_info
         else:
             yield
 
