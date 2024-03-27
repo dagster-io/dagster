@@ -65,7 +65,7 @@ def execute_check_for_asset(
 ) -> ExecuteInProcessResult:
     the_job = define_asset_job(
         name="test_asset_job",
-        selection=AssetSelection.checks(*asset_checks),
+        selection=AssetSelection.checks(*(asset_checks or [])),
     )
 
     defs = Definitions(assets=assets, asset_checks=asset_checks, jobs=[the_job])

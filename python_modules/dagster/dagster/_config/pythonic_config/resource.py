@@ -831,7 +831,7 @@ class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
 
-    def __get__(self, obj: "ConfigurableResourceFactory", __owner: Any) -> V:
+    def __get__(self, obj: "ConfigurableResourceFactory", owner: Any) -> V:
         return getattr(obj, self._name)
 
     def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
