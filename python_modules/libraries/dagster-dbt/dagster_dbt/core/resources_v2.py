@@ -46,6 +46,11 @@ from dagster._core.definitions.metadata import (
     TableMetadataEntries,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
+from dbt.adapters.base.impl import BaseAdapter
+from dbt.adapters.factory import FACTORY
+from dbt.cli.context import make_context
+from dbt.cli.requires import preflight, profile, project
+from dbt.config import RuntimeConfig
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -463,6 +468,7 @@ class DbtCliInvocation:
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
+    adapter: Optional[BaseAdapter] = field(default=None)
     _stdout: List[str] = field(init=False, default_factory=list)
     _error_messages: List[str] = field(init=False, default_factory=list)
 
@@ -477,6 +483,7 @@ class DbtCliInvocation:
         target_path: Path,
         raise_on_error: bool,
         context: Optional[OpExecutionContext],
+        adapter: Optional[BaseAdapter],
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -518,6 +525,7 @@ class DbtCliInvocation:
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
+            adapter=adapter,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
@@ -990,6 +998,33 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
+    def _initialize_adapter(self, args: Sequence[str]) -> Optional[BaseAdapter]:
+        current_path = os.getcwd()
+        os.chdir(path=self.project_dir)
+        ctx = check.not_none(make_context(args=args[1:]))
+
+        # When invoking Dagster from the CLI, we use Click. dbt also uses Click. We need
+        # sys.argv to reference the dbt CLI command that's running, not the Dagster CLI command.
+        sys.argv = list(args)
+
+        # Do the dbt setup.
+        preflight(lambda _: None)(ctx)
+        profile(lambda _: None)(ctx)
+        project(lambda _: None)(ctx)
+
+        # Retrieve the dbt credentials as specified from the profiles.yml file.
+        config = RuntimeConfig.from_parts(
+            ctx.obj["project"],
+            ctx.obj["profile"],
+            ctx.obj["flags"],
+        )
+
+        # Initialize the dbt adapter.
+        FACTORY.register_adapter(config)
+        adapter = cast(BaseAdapter, FACTORY.lookup_adapter(config.credentials.type))
+        os.chdir(path=current_path)
+        return adapter
+
     @public
     def cli(
         self,
@@ -1210,6 +1245,8 @@ class DbtCliResource(ConfigurableResource):
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
+        adapter = self._initialize_adapter(args)
+
         return DbtCliInvocation.run(
             args=args,
             env=env,
@@ -1219,6 +1256,7 @@ class DbtCliResource(ConfigurableResource):
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
+            adapter=adapter,
         )
 
 
