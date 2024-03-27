@@ -39,9 +39,9 @@ from dagster._core.remote_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
-    ExternalSensorData,
     ExternalTargetData,
     ExternalTimeWindowPartitionsDefinitionData,
+    SensorSnap,
     external_asset_nodes_from_defs,
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
@@ -1129,8 +1129,8 @@ def test_back_compat_external_sensor():
         '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode":'
         ' "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
     )
-    external_sensor_data = deserialize_value(SERIALIZED_0_12_10_SENSOR, ExternalSensorData)
-    assert isinstance(external_sensor_data, ExternalSensorData)
+    external_sensor_data = deserialize_value(SERIALIZED_0_12_10_SENSOR, SensorSnap)
+    assert isinstance(external_sensor_data, SensorSnap)
     assert len(external_sensor_data.target_dict) == 1
     assert "my_pipeline" in external_sensor_data.target_dict
     target = external_sensor_data.target_dict["my_pipeline"]
