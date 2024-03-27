@@ -329,14 +329,14 @@ DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
 
 Ensure that these are defined in your `.env` file, and in the Dagster Cloud environment.
 
-## 4. Define a `DltDagsterResource`
+## 4. Define a `DagsterDltResource`
 
-Create a `DltDagsterResource` resources:
+Create a `DagsterDltResource` resources:
 
 ```python
-from dagster_embedded_elt.dlt.resource import DltDagsterResource
+from dagster_embedded_elt.dlt.resource import DagsterDltResource
 
-dlt_resource = DltDagsterResource()
+dlt_resource = DagsterDltResource()
 ```
 
 ## 5. Create a `dlt_assets` definition for GitHub
@@ -356,7 +356,7 @@ Using the `dlt_assets` decorator, we can specify the `dlt` GitHub source as the 
     name="github",
     group_name="github",
 )
-def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DltDagsterResource):
+def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
     yield from dlt.run(context=context)
 
 
