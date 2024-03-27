@@ -255,7 +255,6 @@ class UPathIOManager(MemoizableIOManager):
             else:
                 raise e
 
-        context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
 
     def _load_partition_from_path(
