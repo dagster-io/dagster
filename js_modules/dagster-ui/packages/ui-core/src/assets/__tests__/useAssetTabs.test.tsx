@@ -240,11 +240,11 @@ describe('buildAssetTabs', () => {
     );
     const tabKeys = hookResult.result.current.map(({id}) => id);
     expect(tabKeys).toEqual([
+      'overview',
       'partitions',
       'events',
       'checks',
       'plots',
-      'definition',
       'lineage',
       'automation',
     ]);
@@ -258,7 +258,7 @@ describe('buildAssetTabs', () => {
       }),
     );
     const tabKeys = hookResult.result.current.map(({id}) => id);
-    expect(tabKeys).toEqual(['partitions', 'events', 'checks', 'plots', 'definition', 'lineage']);
+    expect(tabKeys).toEqual(['overview', 'partitions', 'events', 'checks', 'plots', 'lineage']);
   });
 
   it('hides partitions tab if no partitions', () => {
@@ -269,7 +269,7 @@ describe('buildAssetTabs', () => {
       }),
     );
     const tabKeys = hookResult.result.current.map(({id}) => id);
-    expect(tabKeys).toEqual(['events', 'checks', 'plots', 'definition', 'lineage', 'automation']);
+    expect(tabKeys).toEqual(['overview', 'events', 'checks', 'plots', 'lineage', 'automation']);
   });
 
   it('hides partitions and auto-materialize tabs if no partitions or auto-materializing', () => {
@@ -280,6 +280,6 @@ describe('buildAssetTabs', () => {
       }),
     );
     const tabKeys = hookResult.result.current.map(({id}) => id);
-    expect(tabKeys).toEqual(['events', 'checks', 'plots', 'definition', 'lineage']);
+    expect(tabKeys).toEqual(['overview', 'events', 'checks', 'plots', 'lineage']);
   });
 });
