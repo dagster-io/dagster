@@ -17,7 +17,7 @@ import {
 } from './AssetNodeOverview';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
-import {AssetPlots} from './AssetPlots';
+import {AssetPlotsPage} from './AssetPlotsPage';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
@@ -209,7 +209,7 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
       return <AssetLoadingDefinitionState />;
     }
     return (
-      <AssetPlots
+      <AssetPlotsPage
         assetKey={assetKey}
         assetHasDefinedPartitions={!!definition?.partitionDefinition}
         params={params}

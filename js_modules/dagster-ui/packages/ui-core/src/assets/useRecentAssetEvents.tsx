@@ -56,7 +56,7 @@ export function useRecentAssetEvents(
     },
   );
 
-  return useMemo(() => {
+  const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];
@@ -79,6 +79,8 @@ export function useRecentAssetEvents(
       xAxis,
     };
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
+
+  return value;
 }
 
 export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
