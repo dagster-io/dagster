@@ -14,7 +14,7 @@ from dagster._core.storage.tags import (
     RUN_FAILURE_REASON_TAG,
 )
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._daemon.utils import ErrorCapture
 
 DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 
@@ -194,7 +194,7 @@ def consume_new_runs_for_automatic_reexecution(
         try:
             retry_run(run, retry_number, workspace_process_context)
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            error_info = ErrorCapture.on_exception(exc_info=sys.exc_info())
             workspace_process_context.instance.report_engine_event(
                 "Failed to retry run",
                 run,
