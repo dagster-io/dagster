@@ -177,7 +177,7 @@ def iris_setosa(snowflake: SnowflakeResource) -> None:
     """
 
     with snowflake.get_connection() as conn:
-        conn.cursor().execute(query)
+        conn.cursor.execute(query)
 ```
 
 To accomplish this, we defined a dependency on the `iris_dataset` asset using the `deps` parameter. Then, the SQL query runs and creates the table of _Iris Setosa_ data.
@@ -262,7 +262,7 @@ def iris_setosa(snowflake: SnowflakeResource) -> None:
     """
 
     with snowflake.get_connection() as conn:
-        conn.cursor().execute(query)
+        conn.cursor.execute(query)
 
 
 defs = Definitions(
