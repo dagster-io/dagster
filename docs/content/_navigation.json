@@ -272,7 +272,7 @@
                 "path": "/concepts/ops-jobs-graphs/job-execution"
               },
               {
-                "title": "Job metadata & tags",
+                "title": "Op job metadata",
                 "path": "/concepts/ops-jobs-graphs/metadata-tags"
               }
             ]
