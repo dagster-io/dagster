@@ -58,7 +58,7 @@ export const RecentUpdatesTimeline = ({
 
     materializations.forEach((materialization) => {
       const bucketNumber = Math.floor(
-        ((parseInt(materialization.timestamp) - startTimestamp) / range) * buckets,
+        ((parseInt(materialization.timestamp) - startTimestamp) / range) * (buckets - 1),
       );
       firstPassBucketsArray[bucketNumber] = firstPassBucketsArray[bucketNumber] || {
         number: bucketNumber,
@@ -129,8 +129,9 @@ export const RecentUpdatesTimeline = ({
                 <TickWrapper
                   key={bucket.start}
                   style={{
-                    left: `${(bucket.start * 100) / 101}%`,
-                    width: `${(width * 100) / 101}%`,
+                    // 100 buckets
+                    left: `${bucket.start}%`,
+                    width: `${width}%`,
                   }}
                 >
                   <Popover
