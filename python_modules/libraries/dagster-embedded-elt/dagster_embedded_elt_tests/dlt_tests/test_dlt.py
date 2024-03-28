@@ -50,7 +50,7 @@ def test_example_pipeline_asset_keys():
     } == example_pipeline_assets.keys
 
 
-def test_example_pipeline(_teardown):
+def test_example_pipeline():
     @dlt_assets(dlt_source=DLT_SOURCE, dlt_pipeline=DLT_PIPELINE)
     def example_pipeline_assets(
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
@@ -71,7 +71,7 @@ def test_example_pipeline(_teardown):
         assert row and row[0] == 7
 
 
-def test_multi_asset_names_do_not_conflict(_teardown):
+def test_multi_asset_names_do_not_conflict():
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_asset_key(self, resource: DltResource) -> AssetKey:
             return AssetKey("custom_" + resource.name)
@@ -92,7 +92,7 @@ def test_multi_asset_names_do_not_conflict(_teardown):
     assert Definitions(assets=[assets1, assets2])
 
 
-def test_get_materialize_policy(_teardown):
+def test_get_materialize_policy():
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
@@ -116,7 +116,7 @@ def test_get_materialize_policy(_teardown):
         )
 
 
-def test_example_pipeline_has_required_metadata_keys(_teardown):
+def test_example_pipeline_has_required_metadata_keys():
     required_metadata_keys = {
         "destination_type",
         "destination_name",
@@ -143,7 +143,7 @@ def test_example_pipeline_has_required_metadata_keys(_teardown):
     assert res.success
 
 
-def test_example_pipeline_subselection(_teardown):
+def test_example_pipeline_subselection():
     @dlt_assets(dlt_source=DLT_SOURCE, dlt_pipeline=DLT_PIPELINE)
     def example_pipeline_assets(
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
