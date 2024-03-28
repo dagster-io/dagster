@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import {AssetTabConfig, AssetTabConfigInput, useAssetTabs} from './AssetTabs';
-
 import {AssetKey, AssetViewParams} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {GraphData} from '../asset-graph/Utils';
