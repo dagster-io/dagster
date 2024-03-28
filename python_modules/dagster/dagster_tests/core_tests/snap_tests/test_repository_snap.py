@@ -28,10 +28,10 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.remote_representation import ExternalJobData, external_repository_data_from_def
 from dagster._core.remote_representation.external_data import (
-    ExternalResourceData,
     NestedResource,
     NestedResourceType,
     ResourceJobUsageEntry,
+    ResourceSnap,
 )
 from dagster._core.snap import JobSnapshot
 
@@ -749,20 +749,20 @@ def test_repository_snap_definitions_resources_schedule_sensor_usage():
     foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
     assert len(foo) == 1
 
-    assert set(cast(ExternalResourceData, foo[0]).schedules_using) == {
+    assert set(cast(ResourceSnap, foo[0]).schedules_using) == {
         "my_schedule",
         "my_schedule_two",
     }
-    assert set(cast(ExternalResourceData, foo[0]).sensors_using) == {"my_sensor", "my_sensor_two"}
+    assert set(cast(ResourceSnap, foo[0]).sensors_using) == {"my_sensor", "my_sensor_two"}
 
     bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
     assert len(bar) == 1
 
-    assert set(cast(ExternalResourceData, bar[0]).schedules_using) == set()
-    assert set(cast(ExternalResourceData, bar[0]).sensors_using) == {"my_sensor_two"}
+    assert set(cast(ResourceSnap, bar[0]).schedules_using) == set()
+    assert set(cast(ResourceSnap, bar[0]).sensors_using) == {"my_sensor_two"}
 
     baz = [data for data in external_repo_data.external_resource_data if data.name == "baz"]
     assert len(baz) == 1
 
-    assert set(cast(ExternalResourceData, baz[0]).schedules_using) == set({"my_schedule_two"})
-    assert set(cast(ExternalResourceData, baz[0]).sensors_using) == set()
+    assert set(cast(ResourceSnap, baz[0]).schedules_using) == set({"my_schedule_two"})
+    assert set(cast(ResourceSnap, baz[0]).sensors_using) == set()
