@@ -12,7 +12,7 @@ import {
 import {Timestamp} from '../app/time/Timestamp';
 import {HIDDEN_METADATA_ENTRY_LABELS, MetadataEntry} from '../metadata/MetadataEntry';
 import {isCanonicalColumnLineageEntry, isCanonicalColumnSchemaEntry} from '../metadata/TableSchema';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {titleForRun} from '../runs/RunUtils';
 
 type TableEvent = Pick<

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   Button,
@@ -18,8 +17,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {TABLE_SCHEMA_FRAGMENT, TableSchema} from './TableSchema';
-import {MetadataEntryFragment} from './types/MetadataEntry.types';
+import {TableSchema} from './TableSchema';
+import {MetadataEntryFragment} from './types/MetadataEntryFragment.types';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -262,91 +261,6 @@ export const MetadataEntry = ({
       return assertUnreachable(entry);
   }
 };
-
-export const METADATA_ENTRY_FRAGMENT = gql`
-  fragment MetadataEntryFragment on MetadataEntry {
-    label
-    description
-    ... on PathMetadataEntry {
-      path
-    }
-    ... on NotebookMetadataEntry {
-      path
-    }
-    ... on JsonMetadataEntry {
-      jsonString
-    }
-    ... on UrlMetadataEntry {
-      url
-    }
-    ... on TextMetadataEntry {
-      text
-    }
-    ... on MarkdownMetadataEntry {
-      mdStr
-    }
-    ... on PythonArtifactMetadataEntry {
-      module
-      name
-    }
-    ... on FloatMetadataEntry {
-      floatValue
-    }
-    ... on TimestampMetadataEntry {
-      timestamp
-    }
-    ... on IntMetadataEntry {
-      intValue
-      intRepr
-    }
-    ... on BoolMetadataEntry {
-      boolValue
-    }
-    ... on PipelineRunMetadataEntry {
-      runId
-    }
-    ... on AssetMetadataEntry {
-      assetKey {
-        path
-      }
-    }
-    ... on JobMetadataEntry {
-      jobName
-      repositoryName
-      locationName
-    }
-    ... on TableColumnLineageMetadataEntry {
-      lineage {
-        columnName
-        columnDeps {
-          assetKey {
-            path
-          }
-          columnName
-        }
-      }
-    }
-    ... on TableMetadataEntry {
-      table {
-        records
-        schema {
-          ...TableSchemaFragment
-        }
-      }
-    }
-    ... on TableSchemaMetadataEntry {
-      ...TableSchemaForMetadataEntry
-    }
-  }
-
-  fragment TableSchemaForMetadataEntry on TableSchemaMetadataEntry {
-    schema {
-      ...TableSchemaFragment
-    }
-  }
-
-  ${TABLE_SCHEMA_FRAGMENT}
-`;
 
 const IconButton = styled.button`
   background: transparent;
