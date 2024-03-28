@@ -64,8 +64,6 @@ export const RecentUpdatesTimeline = ({
       firstPassBucketsArray[bucketNumber]!.materializations.push(materialization);
     });
 
-    console.log({firstPassBucketsArray});
-
     const secondPassBucketsArray: Array<{
       start: number;
       end: number;
@@ -182,38 +180,42 @@ const AssetUpdate = ({
 }) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
   return (
-    <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}} padding={4} border="bottom">
-      {event.__typename === 'MaterializationEvent' ? (
-        <Icon name="materialization" />
-      ) : (
-        <Icon name="observation" />
-      )}
-      <Link
-        to={assetDetailsPathForKey(assetKey, {
-          view: 'events',
-          time: event.timestamp,
-        })}
-      >
-        <Caption>
-          <Timestamp timestamp={{ms: Number(event.timestamp)}} />
-        </Caption>
-      </Link>
-      {event && run ? (
-        <Tag>
-          <AssetRunLink
-            runId={run.id}
-            assetKey={assetKey}
-            event={{stepKey: event.stepKey, timestamp: event.timestamp}}
-          >
-            <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-              <RunStatusWithStats runId={run.id} status={run.status} size={8} />
-              {titleForRun(run)}
-            </Box>
-          </AssetRunLink>
-        </Tag>
-      ) : event && isRunlessEvent(event) ? (
-        <RunlessEventTag tags={event.tags} />
-      ) : undefined}
+    <Box padding={4} border="bottom" flex={{justifyContent: 'space-between', gap: 8}}>
+      <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+        {event.__typename === 'MaterializationEvent' ? (
+          <Icon name="materialization" />
+        ) : (
+          <Icon name="observation" />
+        )}
+        <Link
+          to={assetDetailsPathForKey(assetKey, {
+            view: 'events',
+            time: event.timestamp,
+          })}
+        >
+          <Caption>
+            <Timestamp timestamp={{ms: Number(event.timestamp)}} />
+          </Caption>
+        </Link>
+      </Box>
+      <div>
+        {event && run ? (
+          <Tag>
+            <AssetRunLink
+              runId={run.id}
+              assetKey={assetKey}
+              event={{stepKey: event.stepKey, timestamp: event.timestamp}}
+            >
+              <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+                <RunStatusWithStats runId={run.id} status={run.status} size={8} />
+                {titleForRun(run)}
+              </Box>
+            </AssetRunLink>
+          </Tag>
+        ) : event && isRunlessEvent(event) ? (
+          <RunlessEventTag tags={event.tags} />
+        ) : undefined}
+      </div>
     </Box>
   );
 };
