@@ -46,6 +46,7 @@ from dagster._core.definitions.metadata import (
     TableMetadataEntries,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
+from dagster._utils.warnings import disable_dagster_warnings
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -436,9 +437,12 @@ class DbtCliEventMessage:
             deps_by_column[column_name] = column_deps
 
         # 4. Render the lineage as metadata.
-        return dict(
-            TableMetadataEntries(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
-        )
+        with disable_dagster_warnings():
+            return dict(
+                TableMetadataEntries(
+                    column_lineage=TableColumnLineage(deps_by_column=deps_by_column)
+                )
+            )
 
 
 @dataclass
