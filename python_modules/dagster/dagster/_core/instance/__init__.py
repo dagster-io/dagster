@@ -1513,6 +1513,9 @@ class DagsterInstance(DynamicPartitionsStore):
             execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
         )
 
+        if run_id:
+            raise
+
         if root_run_id or parent_run_id:
             check.invariant(
                 root_run_id and parent_run_id,
