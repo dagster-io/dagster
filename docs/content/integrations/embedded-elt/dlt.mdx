@@ -7,6 +7,41 @@ description: Ingest data with ease using Dagster and dlt
 
 To get started with `dagster-embedded-elt` and _dlt_, first familiarize yourself with the quick [introduction to dlt](https://dlthub.com/docs/intro). When using the _dlt_ integration, you can either write your own sources, or use one of the many pre-made [verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) in the _dlt_ ecosystem.
 
+## Background
+
+The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well structured data sets. It offers many advanced features, such as handling of connection secrets, converting data into the structure required for a destination, and incremental updates and merges. Additionally, _dlt_ provides a large collection of [verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations/), meaning there is a good chance you won't have to write any code, and can instead leverage the work of the community!
+
+The Dagster _dlt_ integration makes use of [multi-assets](/concepts/assets/multi-assets#multi-assets), a single definition that results in multiple assets. These assets are derived from the `DltSource`. Let's take a look at an example _dlt_ source definition. In this example we are defining a source that is comprised of two resources. Each of resources queries an API endpoint and yields the data that we wish to load into our data warehouse. The two _resources_ defined on this _source_ will map to Dagster assets.
+
+```python
+@dlt.source
+def example(api_key: str = dlt.secrets.value):
+    @dlt.resource(primary_key="id", write_disposition="merge")
+    def courses():
+        response = requests.get(url=BASE_URL + "courses")
+        response.raise_for_status()
+        yield response.json().get("items")
+
+    @dlt.resource(primary_key="id", write_disposition="merge")
+    def users():
+        for page in _paginate(BASE_URL + "users"):
+            yield page
+
+    return courses, users
+```
+
+Next, we can define a _pipeline_ specifying how we would like to load this data.
+
+```python
+pipeline = dlt.pipeline(
+    pipeline_name="example_pipeline", destination="snowflake", dataset_name="example_data"
+)
+```
+
+These are the two components required to load data using _dlt_, a _source_ and a _pipeline_. To integrate with Dagster, these will be the parameters to our multi-asset decorator.
+
+Next, we will discuss how to setup your Dagster project for _dlt_, and walk through how you can leverage a pre-defined _verified source_.
+
 ## 1. Configuring your Dagster project to support `dlt`
 
 You will need to define a location for the `dlt` code used for ingesting data. We recommend creating a `dlt_sources` directory at the root of your Dagster project, however, this code can reside anywhere within your Python project.
@@ -17,7 +52,15 @@ cd $DAGSTER_HOME && mkdir dlt_sources
 
 ## 2. Initialize `dlt` ingestion code
 
-In your `dlt_sources/` directory, you can write your own ingestion code following the [dlt tutorial](https://dlthub.com/docs/tutorial/load-data-from-an-api), or you can opt to use a verified source. Here, we are going to demonstrate how you integrate the [GitHub source](https://dlthub.com/docs/dlt-ecosystem/verified-sources/github) provided by `dlt`.
+In your `dlt_sources/` directory, you can write your own ingestion code following the [dlt tutorial](https://dlthub.com/docs/tutorial/load-data-from-an-api), or you can use a verified source. Here, we are going to demonstrate how you integrate the [GitHub source](https://dlthub.com/docs/dlt-ecosystem/verified-sources/github) provided by `dlt`.
+
+First, install the _dlt_ command line utility.
+
+```bash
+$ pip install dlt
+```
+
+Then, create a location for your _dlt_ source code, and initialize the GitHub source.
 
 ```bash
 $ cd dlt_sources/
@@ -75,7 +118,7 @@ Ensure that these are defined in your environment.
 
 ## 4. Define a `DagsterDltResource`
 
-Create a `DagsterDltResource` resource:
+The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a _dlt_ pipeline runner. This can be shared across _dlt_ pipelines, and is a required parameter to our _dlt_ asset definition.
 
 ```python
 from dagster_embedded_elt.dlt.resource import DagsterDltResource
