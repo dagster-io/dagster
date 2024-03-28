@@ -715,7 +715,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         job_name: Optional[str] = None,
     ) -> Mapping[str, str]:
         from dagster._core.remote_representation.external_data import (
-            external_partition_set_name_for_job_name,
+            partition_set_snap_name_for_job_name,
         )
 
         # _tags_for_partition_fn is deprecated, we can remove this branching logic in 2.0
@@ -732,7 +732,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
             # order for reexecution against partitions to work properly.
             **(
-                {PARTITION_SET_TAG: external_partition_set_name_for_job_name(job_name)}
+                {PARTITION_SET_TAG: partition_set_snap_name_for_job_name(job_name)}
                 if job_name
                 else {}
             ),

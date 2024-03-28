@@ -34,12 +34,11 @@ from dagster._core.remote_representation.external_data import (
     AssetChildEdgeSnap,
     AssetNodeSnap,
     AssetParentEdgeSnap,
-    ExternalTimeWindowPartitionsDefinitionData,
+    MultiPartitionsSnap,
     SensorSnap,
     TargetSnap,
+    TimeWindowPartitionsSnap,
     asset_node_snaps_from_repo,
-    external_multi_partitions_definition_from_def,
-    external_time_window_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_value, serialize_value, unpack_value
 from dagster._time import create_datetime, get_timezone
@@ -149,14 +148,14 @@ def test_asset_with_single_run_backfill_policy():
 
 
 def test_asset_with_multi_run_backfill_policy():
-    partitions_def_data = ExternalTimeWindowPartitionsDefinitionData(
+    partitions_snap = TimeWindowPartitionsSnap(
         cron_schedule="5 13 * * 0",
         start=create_datetime(year=2022, month=5, day=5, tz="US/Central").timestamp(),
         timezone="US/Central",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         end_offset=1,
     )
-    partitions_def = partitions_def_data.get_partitions_definition()
+    partitions_def = partitions_snap.get_partitions_definition()
 
     @asset(
         description="hullo_ten_partitions_per_run",
@@ -187,7 +186,7 @@ def test_asset_with_multi_run_backfill_policy():
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
-            partitions_def_data=partitions_def_data,
+            partitions=partitions_snap,
             backfill_policy=BackfillPolicy.multi_run(10),
         )
     ]
@@ -1125,7 +1124,7 @@ def _check_partitions_def_equal(
 def test_back_compat_external_time_window_partitions_def():
     start = datetime(year=2022, month=5, day=5)
 
-    external = ExternalTimeWindowPartitionsDefinitionData(
+    external = TimeWindowPartitionsSnap(
         schedule_type=ScheduleType.WEEKLY,
         start=datetime(year=2022, month=5, day=5, tzinfo=get_timezone("Europe/Berlin")).timestamp(),
         timezone="Europe/Berlin",
@@ -1160,9 +1159,7 @@ def test_external_time_window_partitions_def_cron_schedule():
         cron_schedule="0 10,13 * * *",
     )
 
-    external = external_time_window_partitions_definition_from_def(
-        partitions_def
-    ).get_partitions_definition()
+    external = TimeWindowPartitionsSnap.from_def(partitions_def).get_partitions_definition()
 
     _check_partitions_def_equal(external, partitions_def)
 
@@ -1175,9 +1172,7 @@ def test_external_multi_partitions_def():
         }
     )
 
-    external = external_multi_partitions_definition_from_def(
-        partitions_def
-    ).get_partitions_definition()
+    external = MultiPartitionsSnap.from_def(partitions_def).get_partitions_definition()
 
     assert external == partitions_def
 
@@ -1229,7 +1224,7 @@ def test_graph_multi_asset_description():
 def test_external_time_window_valid_partition_key():
     hourly_partition = HourlyPartitionsDefinition(start_date="2023-03-11-15:00")
 
-    external_partitions_def = external_time_window_partitions_definition_from_def(hourly_partition)
+    external_partitions_def = TimeWindowPartitionsSnap.from_def(hourly_partition)
     assert (
         external_partitions_def.get_partitions_definition().has_partition_key("2023-03-11-15:00")
         is True

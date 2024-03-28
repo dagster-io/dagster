@@ -9,7 +9,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
-    ExternalPartitionExecutionErrorData,
+    PartitionExecutionErrorSnap,
     PresetSnap,
 )
 from dagster._core.remote_representation.represented import RepresentedJob
@@ -970,7 +970,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             instance=graphene_info.context.instance,
         )
 
-        if isinstance(result, ExternalPartitionExecutionErrorData):
+        if isinstance(result, PartitionExecutionErrorSnap):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
 
         all_partition_keys = result.partition_names

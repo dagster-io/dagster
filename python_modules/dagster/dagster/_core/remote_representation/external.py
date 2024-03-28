@@ -471,10 +471,8 @@ class ExternalRepository:
             if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
                 continue
 
-            if asset_node.partitions_def_data is not None:
-                unique_partitions_defs.add(
-                    asset_node.partitions_def_data.get_partitions_definition()
-                )
+            if asset_node.partitions is not None:
+                unique_partitions_defs.add(asset_node.partitions.get_partitions_definition())
 
         if len(unique_partitions_defs) == 1:
             return next(iter(unique_partitions_defs))
@@ -1159,16 +1157,16 @@ class ExternalPartitionSet:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
-        return self._external_partition_set_data.external_partitions_data is not None
+        return self._external_partition_set_data.partitions is not None
 
     def has_partitions_definition(self) -> bool:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to get the
         # partitions definition
-        return self._external_partition_set_data.external_partitions_data is not None
+        return self._external_partition_set_data.partitions is not None
 
     def get_partitions_definition(self) -> PartitionsDefinition:
-        partitions_data = self._external_partition_set_data.external_partitions_data
+        partitions_data = self._external_partition_set_data.partitions
         if partitions_data is None:
             check.failed(
                 "Partition set does not have partition data, cannot get partitions definition"
@@ -1176,8 +1174,8 @@ class ExternalPartitionSet:
         return partitions_data.get_partitions_definition()
 
     def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
-        partitions_data = self._external_partition_set_data.external_partitions_data
-        if partitions_data is None:
+        partitions = self._external_partition_set_data.partitions
+        if partitions is None:
             check.failed(
                 "Partition set does not have partition data, cannot get partitions definition"
             )

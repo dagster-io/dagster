@@ -18,9 +18,7 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.external_data import (
-    job_name_for_external_partition_set_name,
-)
+from dagster._core.remote_representation.external_data import job_name_for_partition_set_snap_name
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -212,7 +210,7 @@ class PartitionBackfill(
         if self.is_asset_backfill:
             return None
         return (
-            job_name_for_external_partition_set_name(self.partition_set_name)
+            job_name_for_partition_set_snap_name(self.partition_set_name)
             if self.partition_set_name
             else None
         )
