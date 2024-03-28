@@ -45,7 +45,6 @@ from dagster._core.definitions import (
     ScheduleDefinition,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import AssetExecutionType
@@ -127,7 +126,7 @@ class ExternalRepositoryData(IHaveNew):
     external_job_datas: Optional[Sequence["ExternalJobData"]]
     external_job_refs: Optional[Sequence["ExternalJobRef"]]
     external_resource_data: Optional[Sequence["ExternalResourceData"]]
-    external_asset_checks: Optional[Sequence["ExternalAssetCheck"]]
+    external_asset_checks: Optional[Sequence["AssetCheckNodeSnap"]]
     metadata: Optional[MetadataMapping]
     utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]]
 
@@ -141,7 +140,7 @@ class ExternalRepositoryData(IHaveNew):
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
-        external_asset_checks: Optional[Sequence["ExternalAssetCheck"]] = None,
+        external_asset_checks: Optional[Sequence["AssetCheckNodeSnap"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
@@ -967,9 +966,12 @@ class ExternalResourceData(IHaveNew):
         )
 
 
-@whitelist_for_serdes(storage_field_names={"execution_set_identifier": "atomic_execution_unit_id"})
+@whitelist_for_serdes(
+    storage_name="ExternalAssetCheck",
+    storage_field_names={"execution_set_identifier": "atomic_execution_unit_id"},
+)
 @record_custom
-class ExternalAssetCheck(IHaveNew):
+class AssetCheckNodeSnap(IHaveNew):
     """Serializable data associated with an asset check."""
 
     name: str
@@ -1362,7 +1364,7 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
-        external_asset_checks=external_asset_checks_from_defs(jobs, repository_def.asset_graph),
+        external_asset_checks=asset_check_node_snaps_from_repo(repository_def),
         metadata=repository_def.metadata,
         utilized_env_vars={
             env_var: [
@@ -1374,26 +1376,23 @@ def external_repository_data_from_def(
     )
 
 
-def external_asset_checks_from_defs(
-    job_defs: Sequence[JobDefinition],
-    asset_graph: AssetGraph,
-) -> Sequence[ExternalAssetCheck]:
+def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetCheckNodeSnap]:
     job_names_by_check_key: Dict[AssetCheckKey, List[str]] = defaultdict(list)
 
-    for job_def in job_defs:
+    for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
         for check_key in asset_layer.asset_graph.asset_check_keys:
             job_names_by_check_key[check_key].append(job_def.name)
 
     external_checks = []
     for check_key, job_names in job_names_by_check_key.items():
-        spec = asset_graph.get_check_spec(check_key)
+        spec = repo.asset_graph.get_check_spec(check_key)
         external_checks.append(
-            ExternalAssetCheck(
+            AssetCheckNodeSnap(
                 name=check_key.name,
                 asset_key=check_key.asset_key,
                 description=spec.description,
-                execution_set_identifier=asset_graph.get_execution_set_identifier(check_key),
+                execution_set_identifier=repo.asset_graph.get_execution_set_identifier(check_key),
                 job_names=job_names,
                 blocking=spec.blocking,
                 additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
@@ -1421,8 +1420,9 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
     asset_node_snaps: List[AssetNodeSnap] = []
-    for key in sorted(repo.asset_graph.all_asset_keys):
-        asset_node = repo.asset_graph.get(key)
+    asset_graph = repo.asset_graph
+    for key in sorted(asset_graph.all_asset_keys):
+        asset_node = asset_graph.get(key)
 
         # Materializable assets (which are always part of at least one job, due to asset base jobs)
         # have various fields related to their op/output/jobs etc defined. External assets have null

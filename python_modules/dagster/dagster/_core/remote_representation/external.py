@@ -43,9 +43,9 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
+    AssetCheckNodeSnap,
     AssetNodeSnap,
     EnvVarConsumer,
-    ExternalAssetCheck,
     ExternalJobData,
     ExternalJobRef,
     ExternalPresetData,
@@ -163,10 +163,10 @@ class ExternalRepository:
             for job_name in asset_node.job_names:
                 self._asset_jobs.setdefault(job_name, []).append(asset_node)
 
-        self._asset_check_jobs: Dict[str, List[ExternalAssetCheck]] = {}
-        for asset_check in external_repository_data.external_asset_checks or []:
-            for job_name in asset_check.job_names:
-                self._asset_check_jobs.setdefault(job_name, []).append(asset_check)
+        self._asset_check_jobs: Dict[str, List[AssetCheckNodeSnap]] = {}
+        for asset_check_node_snap in external_repository_data.external_asset_checks or []:
+            for job_name in asset_check_node_snap.job_names:
+                self._asset_check_jobs.setdefault(job_name, []).append(asset_check_node_snap)
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
@@ -413,9 +413,9 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
-    def get_external_asset_checks(
+    def get_asset_check_node_snaps(
         self, job_name: Optional[str] = None
-    ) -> Sequence[ExternalAssetCheck]:
+    ) -> Sequence[AssetCheckNodeSnap]:
         if job_name:
             return self._asset_check_jobs.get(job_name, [])
         else:
@@ -435,7 +435,7 @@ class ExternalRepository:
             ],
             repo_handle_asset_checks=[
                 (self.handle, asset_check_node)
-                for asset_check_node in self.get_external_asset_checks()
+                for asset_check_node in self.get_asset_check_node_snaps()
             ],
         )
 

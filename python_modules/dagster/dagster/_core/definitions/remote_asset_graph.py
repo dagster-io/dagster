@@ -41,7 +41,7 @@ from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.external_data import AssetNodeSnap, ExternalAssetCheck
+    from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
     from dagster._core.selector.subset_selector import DependencyGraph
 
 
@@ -236,7 +236,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, RemoteAssetNode],
-        asset_checks_by_key: Mapping[AssetCheckKey, "ExternalAssetCheck"],
+        asset_checks_by_key: Mapping[AssetCheckKey, "AssetCheckNodeSnap"],
         asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[EntityKey]],
         repository_handles_by_asset_check_key: Mapping[AssetCheckKey, RepositoryHandle],
     ):
@@ -253,12 +253,12 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def from_repository_handles_and_asset_node_snaps(
         cls,
         repo_handle_assets: Sequence[Tuple[RepositoryHandle, "AssetNodeSnap"]],
-        repo_handle_asset_checks: Sequence[Tuple[RepositoryHandle, "ExternalAssetCheck"]],
+        repo_handle_asset_checks: Sequence[Tuple[RepositoryHandle, "AssetCheckNodeSnap"]],
     ) -> "RemoteAssetGraph":
         _warn_on_duplicate_nodes(repo_handle_assets)
 
         # Build an index of execution sets by key. An execution set is a set of assets and checks
-        # that must be executed together. AssetNodeSnaps and ExternalAssetChecks already have an
+        # that must be executed together. AssetNodeSnaps and AssetCheckNodeSnaps already have an
         # optional execution_set_identifier set. A null execution_set_identifier indicates that the
         # node or check can be executed independently.
         assets = [asset for _, asset in repo_handle_assets]
@@ -288,7 +288,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         # Build the set of ExternalAssetChecks, indexed by key. Also the index of execution units for
         # each asset check key.
         check_keys_by_asset_key: Dict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
-        asset_checks_by_key: Dict[AssetCheckKey, "ExternalAssetCheck"] = {}
+        asset_checks_by_key: Dict[AssetCheckKey, "AssetCheckNodeSnap"] = {}
         repository_handles_by_asset_check_key: Dict[AssetCheckKey, RepositoryHandle] = {}
         for repo_handle, asset_check in repo_handle_asset_checks:
             asset_checks_by_key[asset_check.key] = asset_check
@@ -339,7 +339,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         return {k: node.priority_node_snap for k, node in self._asset_nodes_by_key.items()}
 
     @property
-    def asset_checks(self) -> Sequence["ExternalAssetCheck"]:
+    def asset_checks(self) -> Sequence["AssetCheckNodeSnap"]:
         return list(self._asset_checks_by_key.values())
 
     @cached_property
@@ -448,11 +448,11 @@ def _warn_on_duplicates_within_subset(
 
 def _build_execution_set_index(
     asset_node_snaps: Iterable["AssetNodeSnap"],
-    external_asset_checks: Iterable["ExternalAssetCheck"],
+    asset_check_node_snaps: Iterable["AssetCheckNodeSnap"],
 ) -> Mapping[EntityKey, AbstractSet[EntityKey]]:
     from dagster._core.remote_representation.external_data import AssetNodeSnap
 
-    all_items = [*asset_node_snaps, *external_asset_checks]
+    all_items = [*asset_node_snaps, *asset_check_node_snaps]
 
     execution_sets_by_id: Dict[str, Set[EntityKey]] = defaultdict(set)
     for item in all_items:
