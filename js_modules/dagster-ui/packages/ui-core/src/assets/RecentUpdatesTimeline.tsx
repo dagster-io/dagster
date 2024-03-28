@@ -123,14 +123,13 @@ export const RecentUpdatesTimeline = ({
       <Box border="all" padding={6 as any} style={{height: 32}}>
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
           {bucketedMaterializations.map((bucket) => {
-            const width = Math.max(bucket.end - bucket.start, 1);
+            const width = bucket.end - bucket.start + 1;
             return (
               <>
                 <TickWrapper
                   key={bucket.start}
                   style={{
-                    // 100 buckets
-                    left: `${bucket.start}%`,
+                    left: `${(100 * bucket.start) / buckets}%`,
                     width: `${width}%`,
                   }}
                 >
