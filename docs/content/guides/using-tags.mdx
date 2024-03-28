@@ -63,8 +63,10 @@ Adding tags to a job will attach them to every run executed by the job.
 
 Tags can be applied to [asset jobs](/concepts/assets/asset-jobs), which are defined using <PyObject object="define_asset_job" />:
 
-```python file=/guides/tags.py lines=9-11
-# end_asset_tags
+```python file=/guides/tags.py startafter=start_asset_job_tags endbefore=end_asset_job_tags
+asset_job = define_asset_job(
+    name="marketing_job", selection="*", tags={"dagster/max_runtime": 10}
+)
 ```
 
 </TabItem>
@@ -74,14 +76,16 @@ Tags can be applied to [asset jobs](/concepts/assets/asset-jobs), which are defi
 
 Tags can be applied to [op jobs](/concepts/ops-jobs-graphs/jobs), which are defined using <PyObject object="job" decorator />:
 
-```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_tags_on_job endbefore=end_tags_on_job
-No match for startAfter value "start_tags_on_job"
+```python file=/guides/tags.py startafter=start_op_job_tags endbefore=end_op_job_tags
+@job(tags={"domain": "marketing"})
+def email_job():
+    send_email()
 ```
 
 In addition to adding tags on the <PyObject object="job" decorator /> decorator, you can also add metadata using the <PyObject object="GraphDefinition" method="to_job" /> method:
 
-```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_tags_on_graph_to_job endbefore=end_tags_on_graph_to_job
-No match for startAfter value "start_tags_on_graph_to_job"
+```python file=/guides/tags.py startafter=start_tags_on_graph_to_job endbefore=end_tags_on_graph_to_job
+my_second_job_with_tags = email_graph.to_job(tags={"domain": "marketing"})
 ```
 
 </TabItem>
