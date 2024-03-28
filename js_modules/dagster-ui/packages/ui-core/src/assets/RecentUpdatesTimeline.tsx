@@ -129,8 +129,8 @@ export const RecentUpdatesTimeline = ({
                 <TickWrapper
                   key={bucket.start}
                   style={{
-                    left: `${(100 * bucket.start) / buckets}%`,
-                    width: `${width}%`,
+                    left: bucket.start * tickWidth,
+                    width: width * tickWidth,
                   }}
                 >
                   <Popover
@@ -250,6 +250,9 @@ const Tick = styled.div`
   background-color: ${Colors.backgroundGreen()};
   cursor: pointer;
   border-radius: 2px;
+  &:hover {
+    background-color: ${Colors.accentGreenHover()};
+  }
 
 `;
 
@@ -258,7 +261,6 @@ const TickText = styled.div`
   place-content: center;
   color: transparent;
   &:hover {
-    background-color: ${Colors.accentGreenHover()};
     color: ${Colors.textLight()};
   }
 `;
