@@ -4,25 +4,16 @@ import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster_dbt import (
-    DagsterDbtTranslator,
-    DagsterDbtTranslatorSettings,
     build_dbt_asset_selection,
 )
 from dagster_dbt.asset_decorator import dbt_assets
 
 pytest.importorskip("dbt.version", "1.6")
 
-dagster_dbt_translator_with_checks = DagsterDbtTranslator(
-    settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
-)
-
 
 @pytest.fixture(name="my_dbt_assets", scope="module")
 def my_dbt_assets_fixture(test_asset_checks_manifest: Dict[str, Any]) -> AssetsDefinition:
-    @dbt_assets(
-        manifest=test_asset_checks_manifest,
-        dagster_dbt_translator=dagster_dbt_translator_with_checks,
-    )
+    @dbt_assets(manifest=test_asset_checks_manifest)
     def my_dbt_assets(): ...
 
     return my_dbt_assets
