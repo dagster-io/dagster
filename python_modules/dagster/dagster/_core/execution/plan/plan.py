@@ -76,7 +76,7 @@ from .inputs import (
     UnresolvedMappedStepInput,
 )
 from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
-from .state import KnownExecutionState, StepOutputVersionData
+from .state import KnownExecutionState
 from .step import (
     ExecutionStep,
     IExecutionStep,
@@ -714,9 +714,7 @@ class ExecutionPlan(
 
     @property
     def step_output_versions(self) -> Mapping[StepOutputHandle, str]:
-        return StepOutputVersionData.get_version_dict_from_list(
-            self.known_state.step_output_versions if self.known_state else []
-        )
+        return self.known_state.step_output_versions if self.known_state else {}
 
     @property
     def step_keys_to_execute(self) -> Sequence[str]:
@@ -867,11 +865,10 @@ class ExecutionPlan(
         # If step output versions were provided when constructing the subset plan, add them to the
         # known state.
         if len(step_output_versions) > 0:
-            versions = StepOutputVersionData.get_version_list_from_dict(step_output_versions)  # type: ignore  # (possible none)
             if self.known_state:
-                known_state = self.known_state._replace(step_output_versions=versions)
+                known_state = self.known_state._replace(step_output_versions=step_output_versions)
             else:
-                known_state = KnownExecutionState(step_output_versions=versions)
+                known_state = KnownExecutionState(step_output_versions=step_output_versions)  # type: ignore  # (possible none)
         else:
             known_state = self.known_state
 

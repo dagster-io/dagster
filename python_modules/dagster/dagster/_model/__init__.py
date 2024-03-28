@@ -9,6 +9,7 @@ class DagsterModel(BaseModel):
     """Standardizes on Pydantic settings that are stricter than the default.
     - Frozen, to avoid complexity caused by mutation.
     - extra=forbid, to avoid bugs caused by accidentally constructing with the wrong arguments.
+    - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
     """
 
     def __init__(self, **data: Any) -> None:
@@ -17,6 +18,7 @@ class DagsterModel(BaseModel):
     class Config:
         extra = "forbid"
         frozen = True
+        arbitrary_types_allowed = True
 
     def model_copy(self, *, update: Optional[Dict[str, Any]] = None) -> Self:
         if pydantic.__version__ >= "2":

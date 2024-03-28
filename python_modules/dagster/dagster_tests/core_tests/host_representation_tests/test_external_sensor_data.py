@@ -2,7 +2,7 @@ from typing import AbstractSet
 
 from dagster import AssetKey, AssetSelection, Definitions, asset, sensor
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.remote_representation.external_data import external_sensor_data_from_def
+from dagster._core.remote_representation.external_data import SensorSnap
 
 
 def test_external_sensor_has_asset_selection():
@@ -12,7 +12,7 @@ def test_external_sensor_has_asset_selection():
     defs = Definitions(sensors=[sensor1])
 
     assert (
-        external_sensor_data_from_def(sensor1, defs.get_repository_def()).asset_selection
+        SensorSnap.from_def(sensor1, defs.get_repository_def()).asset_selection
         == sensor1.asset_selection
     )
 
@@ -34,6 +34,6 @@ def test_unserializable_asset_selection():
     def sensor1(): ...
 
     defs = Definitions(assets=[asset1, asset2])
-    assert external_sensor_data_from_def(
+    assert SensorSnap.from_def(
         sensor1, defs.get_repository_def()
     ).asset_selection == AssetSelection.assets("asset1")
