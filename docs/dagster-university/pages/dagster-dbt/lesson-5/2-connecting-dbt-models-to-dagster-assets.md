@@ -40,13 +40,11 @@ Open the `assets/dbt.py` file and do the following:
     
 3. In this class, create a method called `get_asset_key.`
 
-   This is a method of `DagsterDbtTranslator` class that we'll override and customize to do as we need. It is a `@classmethod`, so we'll annotate it with the `@classmethod` decorator and have its first argument be `cls`, to follow [Pythonic conventions](https://builtin.com/software-engineering-perspectives/python-cls). The second argument refers to a dictionary/JSON object for the dbt model’s properties, which is based on the manifest file from earlier. Let’s call that second argument `dbt_resource_props`. The return value of this function is an object of the `AssetKey` class.
+   This is a method of `DagsterDbtTranslator` class that we'll override and customize to do as we need. It is an instance method, so we'll have its first argument be `self`, to follow [Pythonic conventions](https://builtin.com/software-engineering-perspectives/python-guide). The second argument refers to a dictionary/JSON object for the dbt model’s properties, which is based on the manifest file from earlier. Let’s call that second argument `dbt_resource_props`. The return value of this function is an object of the `AssetKey` class.
     
     ```python
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-    
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props):
+        def get_asset_key(self, dbt_resource_props):
     ```
     
 4. Now, let’s fill in the `get_asset_key` method with our own logic for defining asset keys.
@@ -54,8 +52,7 @@ Open the `assets/dbt.py` file and do the following:
    1. There are two properties that we’ll want from `dbt_resource_props`: the `type` (ex., model, source, seed, snapshot) and the `name`, such as `trips` or `stg_trips`. Access both of those properties from the `dbt_resource_props` argument and store them in their own respective variables (`type` and `name`):
        
       ```python
-         @classmethod
-          def get_asset_key(cls, dbt_resource_props):
+          def get_asset_key(self, dbt_resource_props):
               type = dbt_resource_props["resource_type"]
               name = dbt_resource_props["name"]
       ```
@@ -65,8 +62,7 @@ Open the `assets/dbt.py` file and do the following:
       Copy and paste the following code to return an `AssetKey` of `AssetKey(f"taxi_{name}")`:
        
       ```python
-         @classmethod
-          def get_asset_key(cls, dbt_resource_props):
+          def get_asset_key(self, dbt_resource_props):
               type = dbt_resource_props["resource_type"]
               name = dbt_resource_props["name"]
       
@@ -78,8 +74,7 @@ Open the `assets/dbt.py` file and do the following:
       The object-oriented pattern of the `DagsterDbtTranslator` means that we can leverage the existing implementations of the parent class by using the `super` method. We’ll use this pattern to customize how the sources are defined but default to the original logic for deciding the model asset keys. Copy and paste the code below to complete the `get_asset_key` function:
        
       ```python
-          @classmethod
-          def get_asset_key(cls, dbt_resource_props):
+          def get_asset_key(self, dbt_resource_props):
               resource_type = dbt_resource_props["resource_type"]
               name = dbt_resource_props["name"]
               if resource_type == "source":
@@ -119,8 +114,7 @@ from ..resources import dbt_resource
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-    @classmethod
-    def get_asset_key(cls, dbt_resource_props):
+    def get_asset_key(self, dbt_resource_props):
         resource_type = dbt_resource_props["resource_type"]
         name = dbt_resource_props["name"]
         if resource_type == "source":
