@@ -37,7 +37,7 @@ export const RecentUpdatesTimeline = ({
 
   const tickWidth = Math.max(widthAvailablePerTick, MIN_TICK_WIDTH);
 
-  const buckets = Math.ceil(viewport.width / tickWidth);
+  const buckets = Math.floor(viewport.width / tickWidth);
 
   const endTimestamp = parseInt(materializations[0]!.timestamp);
   const startTimestamp = parseInt(materializations[materializations.length - 1]!.timestamp);
