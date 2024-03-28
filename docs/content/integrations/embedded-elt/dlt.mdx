@@ -59,7 +59,7 @@ $ tree -a
 
 This integration manages connections and secrets using environment variables as `dlt`. The `dlt` library is able to "magically" infer required environment variables used by its sources and resources. See [Secrets and Configs](https://dlthub.com/docs/general-usage/credentials/configuration) for more information.
 
-In this example, the `github_reactions` source requires a GitHub access token, and the _snowflake_ destination requires database connection details. This results in the required environment variables:
+In this example, the `github_reactions` source requires a GitHub access token, and the _snowflake_ destination requires database connection details. This results in the following required environment variables:
 
 ```bash
 SOURCES__GITHUB__ACCESS_TOKEN=""
@@ -71,11 +71,11 @@ DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
 DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
 ```
 
-Ensure that these are defined in your `.env` file, and in the Dagster Cloud environment.
+Ensure that these are defined in your environment.
 
 ## 4. Define a `DagsterDltResource`
 
-Create a `DagsterDltResource` resources:
+Create a `DagsterDltResource` resource:
 
 ```python
 from dagster_embedded_elt.dlt.resource import DagsterDltResource
@@ -85,7 +85,7 @@ dlt_resource = DagsterDltResource()
 
 ## 5. Create a `dlt_assets` definition for GitHub
 
-Using the `dlt_assets` decorator, we can specify the `dlt` GitHub source as the `dlt_source` parameter, and our pipeline specifying that we would like the data loaded to Snowflake in the `dlt_pipeline`. In the body of the decorated function we call the `dlt.run`
+The `dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we will use the `github_reactions` source and create a `dlt_pipeline` to ingest from Github to Snowflake.
 
 ```python
 @dlt_assets(
