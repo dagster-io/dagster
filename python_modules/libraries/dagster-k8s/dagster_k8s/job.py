@@ -106,7 +106,7 @@ class UserDefinedDagsterK8sConfig(
         job_config: Optional[Mapping[str, Any]] = None,
         job_metadata: Optional[Mapping[str, Any]] = None,
         job_spec_config: Optional[Mapping[str, Any]] = None,
-        merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.SHALLOW,
+        merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
     ):
         container_config = check.opt_mapping_param(
             container_config, "container_config", key_type=str
@@ -173,7 +173,7 @@ class UserDefinedDagsterK8sConfig(
             job_metadata=config_dict.get("job_metadata"),
             job_spec_config=config_dict.get("job_spec_config"),
             merge_behavior=K8sConfigMergeBehavior(
-                config_dict.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
+                config_dict.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
             ),
         )
 
@@ -233,7 +233,7 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
         job_metadata=user_defined_k8s_config.get("job_metadata"),
         job_spec_config=user_defined_k8s_config.get("job_spec_config"),
         merge_behavior=K8sConfigMergeBehavior(
-            user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
+            user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
         ),
     )
 
@@ -252,7 +252,7 @@ class DagsterK8sJobConfig(
             ("job_image", Optional[str]),
             ("dagster_home", Optional[str]),
             ("image_pull_policy", str),
-            ("image_pull_secrets", Optional[Sequence[Mapping[str, str]]]),
+            ("image_pull_secrets", Sequence[Mapping[str, str]]),
             ("service_account_name", Optional[str]),
             ("instance_config_map", Optional[str]),
             ("postgres_password_secret", Optional[str]),
@@ -808,6 +808,8 @@ def construct_dagster_k8s_job(
 
     job_image = container_config.pop("image", job_config.job_image)
 
+    image_pull_policy = container_config.pop("image_pull_policy", job_config.image_pull_policy)
+
     user_defined_k8s_volume_mounts = container_config.pop("volume_mounts", [])
 
     user_defined_resources = container_config.pop("resources", {})
@@ -825,7 +827,7 @@ def construct_dagster_k8s_job(
         {
             "name": container_name,
             "image": job_image,
-            "image_pull_policy": job_config.image_pull_policy,
+            "image_pull_policy": image_pull_policy,
             "env": [*env, *job_config.env, *user_defined_env_vars],
             "env_from": [*job_config.env_from_sources, *user_defined_env_from],
             "volume_mounts": volume_mounts,
@@ -857,6 +859,8 @@ def construct_dagster_k8s_job(
 
     user_defined_containers = pod_spec_config.pop("containers", [])
 
+    user_defined_image_pull_secrets = pod_spec_config.pop("image_pull_secrets", [])
+
     template = {
         "metadata": merge_dicts(
             pod_template_spec_metadata,
@@ -871,7 +875,10 @@ def construct_dagster_k8s_job(
             {"restart_policy": "Never"},
             pod_spec_config,
             {
-                "image_pull_secrets": job_config.image_pull_secrets,
+                "image_pull_secrets": [
+                    *job_config.image_pull_secrets,
+                    *user_defined_image_pull_secrets,
+                ],
                 "service_account_name": service_account_name,
                 "automount_service_account_token": automount_service_account_token,
                 "containers": [container_config] + user_defined_containers,
