@@ -61,13 +61,11 @@ class TestSnowflakePandasTypeHandler(TemplateTypeHandlerTestSuite):
     @contextmanager
     def temporary_table_name(self) -> Iterator[str]:
         table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
-        with SnowflakeResource(
-            database=self.database, **self.shared_buildkite_snowflake_config
-        ).get_connection() as conn:
+        with self.get_db_connection() as conn:
             try:
                 yield table_name
             finally:
-                conn.cursor().execute(f"drop table {self.schema}.{table_name}")
+                conn.execute(f"drop table {self.schema}.{table_name}")
 
     def io_managers(self):
         return [

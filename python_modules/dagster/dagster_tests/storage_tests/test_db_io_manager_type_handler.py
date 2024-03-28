@@ -16,6 +16,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
+    fs_io_manager,
     graph,
     instance_for_test,
     materialize,
@@ -163,9 +164,10 @@ class TemplateTypeHandlerTestSuite:
     def test_time_window_partitioned(self):
         for io_manager in self.io_managers():
             with self.temporary_table_name() as table_name:
+                partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
                 @asset(
-                    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+                    partitions_def=partitions_def,
                     key_prefix=[self.schema],
                     metadata={"partition_expr": "TIME"},
                     config_schema={"value": str},
@@ -183,10 +185,21 @@ class TemplateTypeHandlerTestSuite:
                         }
                     )
 
-                resource_defs = {"io_manager": io_manager}
+                @asset(
+                    partitions_def=partitions_def,
+                    key_prefix=[self.schema],
+                    ins={"df": AssetIn([self.schema, table_name])},
+                    io_manager_key="fs_io",
+                )
+                def downstream_partitioned(df: pd.DataFrame) -> None:
+                    # assert that we only get the expected number of rows
+                    assert len(df.index) == 3
+
+                resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
+                to_materialize = [daily_partitioned, downstream_partitioned]
 
                 materialize(
-                    [daily_partitioned],
+                    to_materialize,
                     partition_key="2022-01-01",
                     resources=resource_defs,
                     run_config={
@@ -197,7 +210,7 @@ class TemplateTypeHandlerTestSuite:
                 assert self.select_all_from_table(table_name)["A"].tolist() == ["1", "1", "1"]
 
                 materialize(
-                    [daily_partitioned],
+                    to_materialize,
                     partition_key="2022-01-02",
                     resources=resource_defs,
                     run_config={
@@ -215,7 +228,7 @@ class TemplateTypeHandlerTestSuite:
                 ]
 
                 materialize(
-                    [daily_partitioned],
+                    to_materialize,
                     partition_key="2022-01-01",
                     resources=resource_defs,
                     run_config={
@@ -235,9 +248,10 @@ class TemplateTypeHandlerTestSuite:
     def test_static_partitioned(self):
         for io_manager in self.io_managers():
             with self.temporary_table_name() as table_name:
+                partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
                 @asset(
-                    partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
+                    partitions_def=partitions_def,
                     key_prefix=[self.schema],
                     metadata={"partition_expr": "COLOR"},
                     config_schema={"value": str},
@@ -254,10 +268,21 @@ class TemplateTypeHandlerTestSuite:
                         }
                     )
 
-                resource_defs = {"io_manager": io_manager}
+                @asset(
+                    partitions_def=partitions_def,
+                    key_prefix=[self.schema],
+                    ins={"df": AssetIn([self.schema, table_name])},
+                    io_manager_key="fs_io",
+                )
+                def downstream_partitioned(df: pd.DataFrame) -> None:
+                    # assert that we only get the expected number of rows
+                    assert len(df.index) == 3
+
+                resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
+                to_materialize = [static_partitioned, downstream_partitioned]
 
                 materialize(
-                    [static_partitioned],
+                    to_materialize,
                     partition_key="red",
                     resources=resource_defs,
                     run_config={
@@ -268,7 +293,7 @@ class TemplateTypeHandlerTestSuite:
                 assert self.select_all_from_table(table_name)["A"].tolist() == ["1", "1", "1"]
 
                 materialize(
-                    [static_partitioned],
+                    to_materialize,
                     partition_key="blue",
                     resources=resource_defs,
                     run_config={
@@ -286,7 +311,7 @@ class TemplateTypeHandlerTestSuite:
                 ]
 
                 materialize(
-                    [static_partitioned],
+                    to_materialize,
                     partition_key="red",
                     resources=resource_defs,
                     run_config={
@@ -306,14 +331,15 @@ class TemplateTypeHandlerTestSuite:
     def test_multi_partitioned(self):
         for io_manager in self.io_managers():
             with self.temporary_table_name() as table_name:
+                partitions_def = MultiPartitionsDefinition(
+                    {
+                        "TIME": DailyPartitionsDefinition(start_date="2022-01-01"),
+                        "COLOR": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+                    }
+                )
 
                 @asset(
-                    partitions_def=MultiPartitionsDefinition(
-                        {
-                            "TIME": DailyPartitionsDefinition(start_date="2022-01-01"),
-                            "COLOR": StaticPartitionsDefinition(["red", "yellow", "blue"]),
-                        }
-                    ),
+                    partitions_def=partitions_def,
                     key_prefix=[self.schema],
                     metadata={"partition_expr": {"TIME": "TIME", "COLOR": "COLOR"}},
                     config_schema={"value": str},
@@ -331,10 +357,21 @@ class TemplateTypeHandlerTestSuite:
                         }
                     )
 
-                resource_defs = {"io_manager": io_manager}
+                @asset(
+                    partitions_def=partitions_def,
+                    key_prefix=[self.schema],
+                    ins={"df": AssetIn([self.schema, table_name])},
+                    io_manager_key="fs_io",
+                )
+                def downstream_partitioned(df: pd.DataFrame) -> None:
+                    # assert that we only get the expected number of rows
+                    assert len(df.index) == 3
+
+                resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
+                to_materialize = [multi_partitioned, downstream_partitioned]
 
                 materialize(
-                    [multi_partitioned],
+                    to_materialize,
                     partition_key=MultiPartitionKey({"TIME": "2022-01-01", "COLOR": "red"}),
                     resources=resource_defs,
                     run_config={
@@ -345,7 +382,7 @@ class TemplateTypeHandlerTestSuite:
                 assert self.select_all_from_table(table_name)["A"].tolist() == ["1", "1", "1"]
 
                 materialize(
-                    [multi_partitioned],
+                    to_materialize,
                     partition_key=MultiPartitionKey({"TIME": "2022-01-01", "COLOR": "blue"}),
                     resources=resource_defs,
                     run_config={
@@ -362,7 +399,7 @@ class TemplateTypeHandlerTestSuite:
                 ]
 
                 materialize(
-                    [multi_partitioned],
+                    to_materialize,
                     partition_key=MultiPartitionKey({"TIME": "2022-01-02", "COLOR": "red"}),
                     resources=resource_defs,
                     run_config={
@@ -383,7 +420,7 @@ class TemplateTypeHandlerTestSuite:
                 ]
 
                 materialize(
-                    [multi_partitioned],
+                    to_materialize,
                     partition_key=MultiPartitionKey({"TIME": "2022-01-01", "COLOR": "red"}),
                     resources=resource_defs,
                     run_config={
@@ -406,10 +443,10 @@ class TemplateTypeHandlerTestSuite:
     def test_dynamic_partitioned(self):
         for io_manager in self.io_managers():
             with self.temporary_table_name() as table_name:
-                dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
+                partitions_def = DynamicPartitionsDefinition(name="dynamic_fruits")
 
                 @asset(
-                    partitions_def=dynamic_fruits,
+                    partitions_def=partitions_def,
                     key_prefix=[self.schema],
                     metadata={"partition_expr": "FRUIT"},
                     config_schema={"value": str},
@@ -425,13 +462,24 @@ class TemplateTypeHandlerTestSuite:
                         }
                     )
 
-                with instance_for_test() as instance:
-                    resource_defs = {"io_manager": io_manager}
+                @asset(
+                    partitions_def=partitions_def,
+                    key_prefix=[self.schema],
+                    ins={"df": AssetIn([self.schema, table_name])},
+                    io_manager_key="fs_io",
+                )
+                def downstream_partitioned(df: pd.DataFrame) -> None:
+                    # assert that we only get the expected number of rows
+                    assert len(df.index) == 3
 
-                    instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
+                resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
+                to_materialize = [dynamic_partitioned, downstream_partitioned]
+
+                with instance_for_test() as instance:
+                    instance.add_dynamic_partitions(partitions_def.name, ["apple"])
 
                     materialize(
-                        [dynamic_partitioned],
+                        to_materialize,
                         partition_key="apple",
                         resources=resource_defs,
                         instance=instance,
@@ -442,10 +490,10 @@ class TemplateTypeHandlerTestSuite:
 
                     assert self.select_all_from_table(table_name)["A"].tolist() == ["1", "1", "1"]
 
-                    instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
+                    instance.add_dynamic_partitions(partitions_def.name, ["orange"])
 
                     materialize(
-                        [dynamic_partitioned],
+                        to_materialize,
                         partition_key="orange",
                         resources=resource_defs,
                         instance=instance,
@@ -464,7 +512,7 @@ class TemplateTypeHandlerTestSuite:
                     ]
 
                     materialize(
-                        [dynamic_partitioned],
+                        to_materialize,
                         partition_key="apple",
                         resources=resource_defs,
                         instance=instance,
@@ -484,10 +532,10 @@ class TemplateTypeHandlerTestSuite:
     def test_self_dependent_asset(self):
         for io_manager in self.io_managers():
             with self.temporary_table_name() as table_name:
-                daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+                partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
 
                 @asset(
-                    partitions_def=daily_partitions,
+                    partitions_def=partitions_def,
                     key_prefix=[self.schema],
                     ins={
                         "self_dependent_asset": AssetIn(
@@ -529,10 +577,21 @@ class TemplateTypeHandlerTestSuite:
                         }
                     )
 
-                resource_defs = {"io_manager": io_manager}
+                @asset(
+                    partitions_def=partitions_def,
+                    key_prefix=[self.schema],
+                    ins={"df": AssetIn([self.schema, table_name])},
+                    io_manager_key="fs_io",
+                )
+                def downstream_partitioned(df: pd.DataFrame) -> None:
+                    # assert that we only get the expected number of rows
+                    assert len(df.index) == 3
+
+                resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
+                to_materialize = [self_dependent_asset, downstream_partitioned]
 
                 materialize(
-                    [self_dependent_asset],
+                    to_materialize,
                     partition_key="2023-01-01",
                     resources=resource_defs,
                     run_config={
@@ -547,7 +606,7 @@ class TemplateTypeHandlerTestSuite:
                 assert self.select_all_from_table(table_name)["A"].tolist() == ["1", "1", "1"]
 
                 materialize(
-                    [self_dependent_asset],
+                    to_materialize,
                     partition_key="2023-01-02",
                     resources=resource_defs,
                     run_config={
