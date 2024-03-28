@@ -37,7 +37,6 @@ def items(
             conn=conn,
             df=result,
             table_name="items",
-            schema=snowflake_resource.schema,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
