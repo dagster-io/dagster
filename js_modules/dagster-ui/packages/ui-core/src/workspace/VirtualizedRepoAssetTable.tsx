@@ -32,7 +32,7 @@ const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-s
 export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const repoKey = repoAddressAsHumanString(repoAddress);
-  const {expandedKeys, onToggle} = useAssetGroupExpansionState(
+  const {expandedKeys, onToggle} = usePersistedExpansionState(
     `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
   );
 
@@ -202,7 +202,7 @@ const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parse
 /**
  * Use localStorage to persist the expanded/collapsed visual state of asset groups.
  */
-const useAssetGroupExpansionState = (storageKey: string) => {
+export const usePersistedExpansionState = (storageKey: string) => {
   const {basePath} = useContext(AppContext);
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
     `${basePath}:dagster.${storageKey}`,
@@ -210,13 +210,13 @@ const useAssetGroupExpansionState = (storageKey: string) => {
   );
 
   const onToggle = useCallback(
-    (groupName: string) => {
+    (key: string) => {
       setExpandedKeys((current) => {
         const nextExpandedKeys = new Set(current || []);
-        if (nextExpandedKeys.has(groupName)) {
-          nextExpandedKeys.delete(groupName);
+        if (nextExpandedKeys.has(key)) {
+          nextExpandedKeys.delete(key);
         } else {
-          nextExpandedKeys.add(groupName);
+          nextExpandedKeys.add(key);
         }
         return Array.from(nextExpandedKeys);
       });
