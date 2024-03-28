@@ -1,3 +1,3 @@
-import BaseFallthroughRoot from './BaseFallthroughRoot';
+import {BaseFallthroughRoot} from './BaseFallthroughRoot';
 
 export const FallthroughRoot = BaseFallthroughRoot;
