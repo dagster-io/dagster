@@ -3,6 +3,7 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {TopNavLink} from './AppTopNav';
+import {assetsPathMatcher, locationPathMatcher, settingsPathMatcher} from './activePathMatchers';
 import {DeploymentStatusIcon} from '../../nav/DeploymentStatusIcon';
 import {FeatureFlag, featureEnabled} from '../Flags';
 import {ShortcutHandler} from '../ShortcutHandler';
@@ -64,10 +65,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
           <TopNavLink
             to="/assets"
             data-cy="AppTopNav_AssetsLink"
-            isActive={(_, location) => {
-              const {pathname} = location;
-              return pathname.startsWith('/assets') || pathname.startsWith('/asset-groups');
-            }}
+            isActive={assetsPathMatcher}
             exact={false}
           >
             Assets
@@ -88,10 +86,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
               <TopNavLink
                 to="/settings"
                 data-cy="AppTopNav_SettingsLink"
-                isActive={(_, location) => {
-                  const {pathname} = location;
-                  return pathname.startsWith('/settings') || pathname.startsWith('/locations');
-                }}
+                isActive={settingsPathMatcher}
               >
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   Settings
@@ -113,14 +108,7 @@ export const navLinks = (history: ReturnType<typeof useHistory>) => {
               <TopNavLink
                 to="/locations"
                 data-cy="AppTopNav_StatusLink"
-                isActive={(_, location) => {
-                  const {pathname} = location;
-                  return (
-                    pathname.startsWith('/locations') ||
-                    pathname.startsWith('/health') ||
-                    pathname.startsWith('/config')
-                  );
-                }}
+                isActive={locationPathMatcher}
               >
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   Deployment
