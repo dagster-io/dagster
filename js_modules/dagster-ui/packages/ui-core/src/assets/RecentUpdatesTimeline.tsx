@@ -24,6 +24,7 @@ import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 const MIN_TICK_WIDTH = 5;
+const BUCKETS = 100;
 
 export const RecentUpdatesTimeline = ({
   assetKey,
@@ -33,7 +34,7 @@ export const RecentUpdatesTimeline = ({
   materializations: ReturnType<typeof useRecentAssetEvents>['materializations'];
 }) => {
   const {containerProps, viewport} = useViewport();
-  const widthAvailablePerTick = viewport.width / 100;
+  const widthAvailablePerTick = viewport.width / BUCKETS;
 
   const tickWidth = Math.max(widthAvailablePerTick, MIN_TICK_WIDTH);
 
@@ -63,6 +64,8 @@ export const RecentUpdatesTimeline = ({
       firstPassBucketsArray[bucketNumber]!.materializations.push(materialization);
     });
 
+    console.log({firstPassBucketsArray});
+
     const secondPassBucketsArray: Array<{
       start: number;
       end: number;
@@ -82,6 +85,7 @@ export const RecentUpdatesTimeline = ({
         lastBucket.materializations = [...lastBucket.materializations, ...bucket.materializations];
       }
     });
+
     return secondPassBucketsArray;
   }, [viewport.width, buckets, materializations, startTimestamp, range]);
 
@@ -100,36 +104,69 @@ export const RecentUpdatesTimeline = ({
       <Box border="all" padding={6 as any} style={{height: 32}}>
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
           {bucketedMaterializations.map((bucket) => {
-            const width = tickWidth * (bucket.end - bucket.start + 1);
+            const width = Math.max(bucket.end - bucket.start, 1);
             return (
-              <TickWrapper
-                key={bucket.start}
-                style={{
-                  left: tickWidth * bucket.start,
-                  width,
-                }}
-              >
-                <Popover
-                  content={
-                    <Box flex={{direction: 'column', gap: 8}}>
-                      <Box padding={8} border="bottom">
-                        <Subtitle2>Materializations</Subtitle2>
-                      </Box>
-                      <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
-                        {bucket.materializations
-                          .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
-                          .map((materialization, index) => (
-                            <AssetUpdate assetKey={assetKey} event={materialization} key={index} />
-                          ))}
-                      </div>
-                    </Box>
-                  }
+              <>
+                <TickWrapper
+                  key={bucket.start}
+                  style={{
+                    left: `${(bucket.start * 100) / 101}%`,
+                    width: `${(width * 100) / 101}%`,
+                  }}
                 >
-                  <Tick style={{width}}>
-                    {bucket.materializations.length > 1 ? bucket.materializations.length : null}
-                  </Tick>
-                </Popover>
-              </TickWrapper>
+                  <Popover
+                    content={
+                      <Box flex={{direction: 'column', gap: 8}}>
+                        <Box padding={8} border="bottom">
+                          <Subtitle2>Materializations</Subtitle2>
+                        </Box>
+                        <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
+                          {bucket.materializations
+                            .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+                            .map((materialization, index) => (
+                              <AssetUpdate
+                                assetKey={assetKey}
+                                event={materialization}
+                                key={index}
+                              />
+                            ))}
+                        </div>
+                      </Box>
+                    }
+                  >
+                    <>
+                      <Tick>
+                        {bucket.materializations.map(({timestamp}) => {
+                          const bucketRange = Math.max(bucket.end - bucket.start, 1);
+                          const left = (100 * (parseInt(timestamp) - startTimestamp)) / range;
+                          const leftInner = (100 * (left - bucket.start)) / bucketRange;
+                          return (
+                            <div
+                              key={timestamp}
+                              style={{
+                                left: `${leftInner}%`,
+                                width: '1px',
+                                backgroundColor: Colors.accentGreen(),
+                                top: 0,
+                                bottom: 0,
+                                position: 'absolute',
+                                opacity: 0.5,
+                              }}
+                            />
+                          );
+                        })}
+                        <span
+                          style={{position: 'absolute', left: 0, right: 0, textAlign: 'center'}}
+                        >
+                          {bucket.materializations.length > 1
+                            ? bucket.materializations.length
+                            : null}
+                        </span>
+                      </Tick>
+                    </>
+                  </Popover>
+                </TickWrapper>
+              </>
             );
           })}
         </div>
@@ -191,16 +228,19 @@ const AssetUpdate = ({
 
 const Tick = styled.div`
   position: absolute;
+  width 100%;
   top: 0;
   bottom: 0;
-  background-color: ${Colors.accentGreen()};
-  color: ${Colors.backgroundDefault()};
+  overflow: hidden;
+  background-color: ${Colors.backgroundGreen()};
   cursor: pointer;
-  border-radius: 200px;
+  border-radius: 2px;
   display: grid;
   place-content: center;
+  color: transparent;
   &:hover {
     background-color: ${Colors.accentGreenHover()};
+    color: ${Colors.textLight()};
   }
 `;
 
