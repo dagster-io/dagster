@@ -6,10 +6,14 @@ from typing import Any, Dict
 import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
+from dagster._core.code_pointer import load_python_file
+from dagster._core.definitions.load_assets_from_modules import find_objects_in_module_of_types
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
+
+from dagster_dbt.dbt_project import DbtProject
 
 from ..include import STARTER_PROJECT_PATH
 from ..version import __version__ as dagster_dbt_version
@@ -25,7 +29,7 @@ app = typer.Typer(
 project_app = typer.Typer(
     name="project",
     no_args_is_help=True,
-    help="Commands to initialize a new Dagster project with an existing dbt project.",
+    help="Commands for using a dbt project in Dagster.",
     add_completion=False,
 )
 app.add_typer(project_app)
@@ -271,6 +275,22 @@ def project_scaffold_command(
             padding=1,
         ),
     )
+
+
+@project_app.command(name="prepare-for-deployment")
+def project_prepare(
+    file: Annotated[
+        str,
+        typer.Option(
+            help="The file containing DbtProject definitions to prepare.",
+        ),
+    ],
+) -> None:
+    """This command will invoke `prepare_for_deployment` on `DbtProject`s found in the target module/file."""
+    contents = load_python_file(file, None)
+    for project in find_objects_in_module_of_types(contents, DbtProject):
+        console.print("Preparing", project)
+        project.prepare_for_deployment()
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)
