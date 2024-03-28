@@ -1052,6 +1052,10 @@
             "path": "/guides/dagster/recommended-project-structure"
           },
           {
+            "title": "Using tags to attach metadata",
+            "path": "/guides/using-tags"
+          }
+          {
             "title": "Building machine learning pipelines",
             "path": "/guides/dagster/ml-pipeline"
           },

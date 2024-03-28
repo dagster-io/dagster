@@ -1,0 +1,166 @@
+---
+title: "Using tags to attach metadata | Dagster Docs"
+description: "Attach metadata to various Dagster definitions by using tags."
+---
+
+# Using tags to attach metadata
+
+Tags allow you to attach metadata to assets, ops, jobs, and job runs. By the end of this guide, you'll understand what tags are, how they work in Dagster, and how to apply them in your code.
+
+---
+
+## How it works
+
+Tags are key/value pairs of strings that can be applied to assets, ops, jobs, and job runs using the `tags` argument. For example:
+
+```python file=/guides/tags.py startafter=start_asset_tags endbefore=end_asset_tags
+@asset(tags={"domain": "marketing", "pii": "true"})
+def leads():
+    ...
+```
+
+### Tag keys
+
+Valid tag keys have two segments: an optional prefix and name, separated by a slash (`/`). Prefixes are typically expected to be Python package names. For example: `dagster/priority`
+
+Prefixes and name segments must each:
+
+- Be 63 characters or less
+- Contain only alphanumeric characters, dashes (`-`), underscores (`_`), and dots (`.`)
+
+### Tag values
+
+Tag values must:
+
+- Be 63 characters or less
+- Contain only alphanumeric characters, dashes (`-`), underscores (`_`), and dots (`.`)
+- Be a string or JSON that serializable to a string
+
+---
+
+## Specifying tags
+
+### Assets
+
+Tags are useful for organizing assets non-hierarchical ways. Unlike asset groups, where each asset belongs to a single group, each asset can have many tags. For example:
+
+```python file=/guides/tags.py startafter=start_asset_tags endbefore=end_asset_tags
+@asset(tags={"domain": "marketing", "pii": "true"})
+def leads():
+    ...
+```
+
+Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, <PyObject object="AssetOut" />, and <PyObject object="graph_asset" decorator />.
+
+### Jobs
+
+Adding tags to a job will attach them to every run executed by the job.
+
+<TabGroup>
+<TabItem name="Asset jobs">
+
+#### Asset jobs
+
+Tags can be applied to [asset jobs](/concepts/assets/asset-jobs), which are defined using <PyObject object="define_asset_job" />:
+
+```python file=/guides/tags.py lines=9-11
+# end_asset_tags
+```
+
+</TabItem>
+<TabItem name="Op jobs">
+
+#### Op jobs
+
+Tags can be applied to [op jobs](/concepts/ops-jobs-graphs/jobs), which are defined using <PyObject object="job" decorator />:
+
+```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_tags_on_job endbefore=end_tags_on_job
+No match for startAfter value "start_tags_on_job"
+```
+
+In addition to adding tags on the <PyObject object="job" decorator /> decorator, you can also add metadata using the <PyObject object="GraphDefinition" method="to_job" /> method:
+
+```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_tags_on_graph_to_job endbefore=end_tags_on_graph_to_job
+No match for startAfter value "start_tags_on_graph_to_job"
+```
+
+</TabItem>
+</TabGroup>
+
+#### System tags
+
+In some cases, Dagster will automatically add tags to job runs:
+
+| Tag                     | Description                         |
+| ----------------------- | ----------------------------------- |
+| `dagster/op_selection`  | The op selection for the run        |
+| `dagster/partition`     | The partition of the run            |
+| `dagster/schedule_name` | The schedule that triggered the run |
+| `dagster/sensor_name`   | The sensor that triggered the run   |
+| `dagster/backfill`      | The backfill ID                     |
+| `dagster/parent_run_id` | The parent run of a re-executed run |
+| `dagster/image`         | The Docker image tag                |
+
+#### Using tags to affect run execution
+
+Some features of Dagster are controlled using the tags attached to a run. Some examples include:
+
+- [Customizing Kubernetes config](/deployment/guides/kubernetes/customizing-your-deployment)
+- [Specifying Celery config](/deployment/guides/kubernetes/deploying-with-helm-advanced#configuring-celery-queues)
+- [Setting concurrency limits when using the `QueuedRunCoordinator`](/guides/limiting-concurrency-in-data-pipelines)
+- [Setting the priority of different runs](/guides/customizing-run-queue-priority)
+
+---
+
+## Viewing tags in the Dagster UI
+
+<!-- ### Assets
+
+To view the tags applied to an asset, navigate to the asset's **Details** page and open the **Overview** tab:
+
+\[TODO- IMAGE]
+
+When viewing an asset graph or list of assets in the UI, you can filter to only include assets with a particular set of tags.
+
+### Viewing job and run tags-->
+
+View tags attached to runs by navigating to the **Runs** page in the UI:
+
+<Image
+alt="tags-viewer.png"
+src="/images/concepts/ops-jobs-graphs/tags-viewer.png"
+width={2880}
+height={1406}
+/>
+
+When executing a job, use the **Launchpad** to add tags to the run:
+
+<Image
+alt="tag-adder.png"
+src="/images/concepts/ops-jobs-graphs/tag-adder.png"
+width={2880}
+height={1406}
+/>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Software-defined Assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset jobs"
+    href="/concepts/assets/asset-jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Ops"
+    href="/concepts/ops-jobs-graphs/ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op jobs"
+    href="/concepts/ops-jobs-graphs/jobs"
+  ></ArticleListItem>
+</ArticleList>
