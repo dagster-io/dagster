@@ -5,7 +5,7 @@ import {useMemo} from 'react';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -57,7 +57,7 @@ export function useRecentAssetEvents(
     },
   );
 
-  return useMemo(() => {
+  const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];
@@ -80,6 +80,8 @@ export function useRecentAssetEvents(
       xAxis,
     };
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
+
+  return value;
 }
 
 export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;

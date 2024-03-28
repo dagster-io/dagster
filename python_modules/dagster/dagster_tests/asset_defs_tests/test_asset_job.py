@@ -2422,7 +2422,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\] and check keys \[\], but"
                 r" attempted to "
-                r"select only \[AssetKey\(\['a'\]\)\]",
+                r"select only assets \[AssetKey\(\['a'\]\)\] and checks \[\]",
             ),
         ),
     ],

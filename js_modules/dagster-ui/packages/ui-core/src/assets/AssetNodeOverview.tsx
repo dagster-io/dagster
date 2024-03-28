@@ -411,6 +411,7 @@ export const AssetNodeOverview = ({
           )}
           <LargeCollapsibleSection header="Metadata" icon="view_list">
             <AssetEventMetadataEntriesTable
+              assetKey={assetNode.assetKey}
               showHeader
               showTimestamps
               showFilter
@@ -418,6 +419,7 @@ export const AssetNodeOverview = ({
               observations={[]}
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
+              assetHasDefinedPartitions={!!assetNode.partitionDefinition}
               event={materialization || observation || null}
               emptyState={
                 <SectionEmptyState

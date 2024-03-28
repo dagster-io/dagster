@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import {AssetTabConfig, AssetTabConfigInput, useAssetTabs} from './AssetTabs';
-import {AssetChecksBanner} from './asset-checks/AssetChecksBanner';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {GraphData} from '../asset-graph/Utils';
@@ -27,14 +26,12 @@ type AssetFeatureContextType = {
 
   useTabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
   renderFeatureView: (input: AssetViewFeatureInput) => React.ReactNode;
-  AssetChecksBanner: React.ComponentType<{onClose: () => void}>;
   AssetColumnLinksCell: (input: {column: string | null}) => React.ReactNode;
 };
 
 export const AssetFeatureContext = React.createContext<AssetFeatureContextType>({
   useTabBuilder: () => [],
   renderFeatureView: () => <span />,
-  AssetChecksBanner: () => <span />,
   AssetColumnLinksCell: () => undefined,
   LineageOptions: undefined,
   LineageGraph: undefined,
@@ -47,7 +44,6 @@ export const AssetFeatureProvider = ({children}: {children: React.ReactNode}) =>
     return {
       useTabBuilder: useAssetTabs,
       renderFeatureView,
-      AssetChecksBanner,
       AssetColumnLinksCell: () => undefined,
       LineageOptions: undefined,
       LineageGraph: undefined,
