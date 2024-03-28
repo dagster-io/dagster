@@ -30,7 +30,7 @@ DLT_PIPELINE = dlt.pipeline(
 )
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def _teardown():
     yield
     if os.path.exists(EXAMPLE_PIPELINE_DUCKDB):
