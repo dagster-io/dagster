@@ -240,6 +240,10 @@ const Tick = styled.div`
 
 const TickWrapper = styled.div`
   position: absolute;
+  height: 20px;
+  * {
+    height: 20px;
+  }
 `;
 
 const InnerTick = styled.div`
