@@ -26,7 +26,7 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import Final
+from typing_extensions import Final, Self
 
 from dagster import (
     StaticPartitionsDefinition,
@@ -115,9 +115,9 @@ class ExternalRepositoryData(
         "_ExternalRepositoryData",
         [
             ("name", str),
-            ("external_schedule_datas", Sequence["ExternalScheduleData"]),
-            ("external_partition_set_datas", Sequence["ExternalPartitionSetData"]),
-            ("external_sensor_datas", Sequence["ExternalSensorData"]),
+            ("external_schedule_datas", Sequence["ScheduleSnap"]),
+            ("external_partition_set_datas", Sequence["PartitionSetSnap"]),
+            ("external_sensor_datas", Sequence["SensorSnap"]),
             ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
             ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
@@ -131,9 +131,9 @@ class ExternalRepositoryData(
     def __new__(
         cls,
         name: str,
-        external_schedule_datas: Sequence["ExternalScheduleData"],
-        external_partition_set_datas: Sequence["ExternalPartitionSetData"],
-        external_sensor_datas: Optional[Sequence["ExternalSensorData"]] = None,
+        external_schedule_datas: Sequence["ScheduleSnap"],
+        external_partition_set_datas: Sequence["PartitionSetSnap"],
+        external_sensor_datas: Optional[Sequence["SensorSnap"]] = None,
         external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
@@ -146,17 +146,17 @@ class ExternalRepositoryData(
             cls,
             name=check.str_param(name, "name"),
             external_schedule_datas=check.sequence_param(
-                external_schedule_datas, "external_schedule_datas", of_type=ExternalScheduleData
+                external_schedule_datas, "external_schedule_datas", of_type=ScheduleSnap
             ),
             external_partition_set_datas=check.sequence_param(
                 external_partition_set_datas,
                 "external_partition_set_datas",
-                of_type=ExternalPartitionSetData,
+                of_type=PartitionSetSnap,
             ),
             external_sensor_datas=check.opt_sequence_param(
                 external_sensor_datas,
                 "external_sensor_datas",
-                of_type=ExternalSensorData,
+                of_type=SensorSnap,
             ),
             external_asset_graph_data=check.opt_sequence_param(
                 external_asset_graph_data,
@@ -237,7 +237,7 @@ class ExternalRepositoryData(
 
         return False
 
-    def get_external_partition_set_data(self, name) -> "ExternalPartitionSetData":
+    def get_external_partition_set_data(self, name) -> "PartitionSetSnap":
         check.str_param(name, "name")
 
         for external_partition_set_data in self.external_partition_set_datas:
@@ -415,19 +415,20 @@ class ExternalPresetData(
 
 
 @whitelist_for_serdes(
+    storage_name="ExternalScheduleData",
     storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
     skip_when_empty_fields={"default_status"},
 )
-class ExternalScheduleData(
+class ScheduleSnap(
     NamedTuple(
-        "_ExternalScheduleData",
+        "_ScheduleSnap",
         [
             ("name", str),
             ("cron_schedule", Union[str, Sequence[str]]),
             ("job_name", str),
             ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
-            ("environment_vars", Optional[Mapping[str, str]]),
+            ("environment_vars", Mapping[str, str]),
             ("partition_set_name", Optional[str]),
             ("execution_timezone", Optional[str]),
             ("description", Optional[str]),
@@ -437,29 +438,29 @@ class ExternalScheduleData(
 ):
     def __new__(
         cls,
-        name,
-        cron_schedule,
-        job_name,
-        op_selection,
-        mode,
-        environment_vars,
-        partition_set_name,
-        execution_timezone,
-        description=None,
-        default_status=None,
+        name: str,
+        cron_schedule: Union[str, Sequence[str]],
+        job_name: str,
+        op_selection: Optional[Sequence[str]],
+        mode: Optional[str],
+        environment_vars: Optional[Mapping[str, str]],
+        partition_set_name: Optional[str],
+        execution_timezone: Optional[str],
+        description: Optional[str] = None,
+        default_status: Optional[DefaultScheduleStatus] = None,
     ):
         cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(cron_schedule, str):
             cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
 
-        return super(ExternalScheduleData, cls).__new__(
+        return super(ScheduleSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             cron_schedule=cron_schedule,
             job_name=check.str_param(job_name, "job_name"),
-            op_selection=check.opt_nullable_list_param(op_selection, "op_selection", str),
+            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
             mode=check.opt_str_param(mode, "mode"),
-            environment_vars=check.opt_dict_param(environment_vars, "environment_vars"),
+            environment_vars=check.opt_mapping_param(environment_vars, "environment_vars"),
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
             execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
             description=check.opt_str_param(description, "description"),
@@ -469,6 +470,21 @@ class ExternalScheduleData(
                 if default_status == DefaultScheduleStatus.RUNNING
                 else None
             ),
+        )
+
+    @classmethod
+    def from_def(cls, schedule_def: ScheduleDefinition) -> Self:
+        return cls(
+            name=schedule_def.name,
+            cron_schedule=schedule_def.cron_schedule,
+            job_name=schedule_def.job_name,
+            op_selection=schedule_def._target.op_selection,  # noqa: SLF001
+            mode=DEFAULT_MODE_NAME,
+            environment_vars=schedule_def.environment_vars,
+            partition_set_name=None,
+            execution_timezone=schedule_def.execution_timezone,
+            description=schedule_def.description,
+            default_status=schedule_def.default_status,
         )
 
 
@@ -517,12 +533,13 @@ class ExternalSensorMetadata(
 
 
 @whitelist_for_serdes(
+    storage_name="ExternalSensorData",
     storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
     skip_when_empty_fields={"default_status", "sensor_type"},
 )
-class ExternalSensorData(
+class SensorSnap(
     NamedTuple(
-        "_ExternalSensorData",
+        "_SensorSnap",
         [
             ("name", str),
             ("job_name", Optional[str]),
@@ -574,7 +591,7 @@ class ExternalSensorData(
                 "asset_selection must be serializable",
             )
 
-        return super(ExternalSensorData, cls).__new__(
+        return super(SensorSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             job_name=check.opt_str_param(job_name, "job_name"),  # keep legacy field populated
@@ -597,6 +614,58 @@ class ExternalSensorData(
             sensor_type=sensor_type,
             asset_selection=asset_selection,
             run_tags=run_tags or {},
+        )
+
+    @classmethod
+    def from_def(cls, sensor_def: SensorDefinition, repository_def: RepositoryDefinition) -> Self:
+        first_target = sensor_def.targets[0] if sensor_def.targets else None
+
+        asset_keys = None
+        if isinstance(sensor_def, AssetSensorDefinition):
+            asset_keys = [sensor_def.asset_key]
+
+        if sensor_def.asset_selection is not None:
+            target_dict = {
+                base_asset_job_name: ExternalTargetData(
+                    job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
+                )
+                for base_asset_job_name in repository_def.get_implicit_asset_job_names()
+            }
+
+            serializable_asset_selection = (
+                sensor_def.asset_selection.to_serializable_asset_selection(
+                    repository_def.asset_graph
+                )
+            )
+        else:
+            target_dict = {
+                target.job_name: ExternalTargetData(
+                    job_name=target.job_name,
+                    mode=DEFAULT_MODE_NAME,
+                    op_selection=target.op_selection,
+                )
+                for target in sensor_def.targets
+            }
+
+            serializable_asset_selection = None
+
+        return cls(
+            name=sensor_def.name,
+            job_name=first_target.job_name if first_target else None,
+            mode=None,
+            op_selection=first_target.op_selection if first_target else None,
+            target_dict=target_dict,
+            min_interval=sensor_def.minimum_interval_seconds,
+            description=sensor_def.description,
+            metadata=ExternalSensorMetadata(asset_keys=asset_keys),
+            default_status=sensor_def.default_status,
+            sensor_type=sensor_def.sensor_type,
+            asset_selection=serializable_asset_selection,
+            run_tags=(
+                sensor_def.run_tags
+                if isinstance(sensor_def, AutoMaterializeSensorDefinition)
+                else None
+            ),
         )
 
 
@@ -822,11 +891,12 @@ class ExternalDynamicPartitionsDefinitionData(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"}
+    storage_name="ExternalPartitionSetData",
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
 )
-class ExternalPartitionSetData(
+class PartitionSetSnap(
     NamedTuple(
-        "_ExternalPartitionSetData",
+        "_PartitionSetSnap",
         [
             ("name", str),
             ("job_name", str),
@@ -844,7 +914,7 @@ class ExternalPartitionSetData(
         mode: Optional[str],
         external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
     ):
-        return super(ExternalPartitionSetData, cls).__new__(
+        return super(PartitionSetSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             job_name=check.str_param(job_name, "job_name"),
@@ -855,6 +925,36 @@ class ExternalPartitionSetData(
                 "external_partitions_data",
                 ExternalPartitionsDefinitionData,
             ),
+        )
+
+    @classmethod
+    def from_job_def(cls, job_def: JobDefinition) -> Self:
+        check.inst_param(job_def, "job_def", JobDefinition)
+        partitions_def = check.not_none(job_def.partitions_def)
+
+        partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            partitions_def_data = external_time_window_partitions_definition_from_def(
+                partitions_def
+            )
+        elif isinstance(partitions_def, StaticPartitionsDefinition):
+            partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
+        elif (
+            isinstance(partitions_def, DynamicPartitionsDefinition)
+            and partitions_def.name is not None
+        ):
+            partitions_def_data = external_dynamic_partitions_definition_from_def(partitions_def)
+        elif isinstance(partitions_def, MultiPartitionsDefinition):
+            partitions_def_data = external_multi_partitions_definition_from_def(partitions_def)
+        else:
+            partitions_def_data = None
+
+        return cls(
+            name=external_partition_set_name_for_job_name(job_def.name),
+            job_name=job_def.name,
+            op_selection=None,
+            mode=DEFAULT_MODE_NAME,
+            external_partitions_data=partitions_def_data,
         )
 
 
@@ -1458,25 +1558,23 @@ def external_repository_data_from_def(
     return ExternalRepositoryData(
         name=repository_def.name,
         external_schedule_datas=sorted(
-            list(map(external_schedule_data_from_def, repository_def.schedule_defs)),
+            [ScheduleSnap.from_def(schedule_def) for schedule_def in repository_def.schedule_defs],
             key=lambda sd: sd.name,
         ),
-        # `PartitionSetDefinition` has been deleted, so we now construct `ExternalPartitonSetData`
+        # `PartitionSetDefinition` has been deleted, so we now construct `PartitionSetSnap`
         # from jobs instead of going through the intermediary `PartitionSetDefinition`. Eventually
-        # we will remove `ExternalPartitionSetData` as well.
+        # we will remove `PartitionSetSnap` as well.
         external_partition_set_datas=sorted(
-            filter(
-                None,
-                [
-                    external_partition_set_data_from_def(job_def)
-                    for job_def in repository_def.get_all_jobs()
-                ],
-            ),
-            key=lambda psd: psd.name,
+            [
+                PartitionSetSnap.from_job_def(job_def)
+                for job_def in repository_def.get_all_jobs()
+                if job_def.partitions_def is not None
+            ],
+            key=lambda pss: pss.name,
         ),
         external_sensor_datas=sorted(
             [
-                external_sensor_data_from_def(sensor_def, repository_def)
+                SensorSnap.from_def(sensor_def, repository_def)
                 for sensor_def in repository_def.sensor_defs
             ],
             key=lambda sd: sd.name,
@@ -1860,9 +1958,9 @@ def external_resource_data_from_def(
     )
 
 
-def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ExternalScheduleData:
+def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ScheduleSnap:
     check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
-    return ExternalScheduleData(
+    return ScheduleSnap(
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         job_name=schedule_def.job_name,
@@ -1950,7 +2048,7 @@ def external_dynamic_partitions_definition_from_def(
 
 def external_partition_set_data_from_def(
     job_def: JobDefinition,
-) -> Optional[ExternalPartitionSetData]:
+) -> Optional[PartitionSetSnap]:
     check.inst_param(job_def, "job_def", JobDefinition)
 
     partitions_def = job_def.partitions_def
@@ -1971,7 +2069,7 @@ def external_partition_set_data_from_def(
     else:
         partitions_def_data = None
 
-    return ExternalPartitionSetData(
+    return PartitionSetSnap(
         name=external_partition_set_name_for_job_name(job_def.name),
         job_name=job_def.name,
         op_selection=None,
@@ -1990,56 +2088,6 @@ def external_partition_set_name_for_job_name(job_name) -> str:
 def job_name_for_external_partition_set_name(name: str) -> str:
     job_name_len = len(name) - len(EXTERNAL_PARTITION_SET_NAME_SUFFIX)
     return name[:job_name_len]
-
-
-def external_sensor_data_from_def(
-    sensor_def: SensorDefinition, repository_def: RepositoryDefinition
-) -> ExternalSensorData:
-    first_target = sensor_def.targets[0] if sensor_def.targets else None
-
-    asset_keys = None
-    if isinstance(sensor_def, AssetSensorDefinition):
-        asset_keys = [sensor_def.asset_key]
-
-    if sensor_def.asset_selection is not None:
-        target_dict = {
-            base_asset_job_name: ExternalTargetData(
-                job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
-            )
-            for base_asset_job_name in repository_def.get_implicit_asset_job_names()
-        }
-
-        serializable_asset_selection = sensor_def.asset_selection.to_serializable_asset_selection(
-            repository_def.asset_graph
-        )
-    else:
-        target_dict = {
-            target.job_name: ExternalTargetData(
-                job_name=target.job_name,
-                mode=DEFAULT_MODE_NAME,
-                op_selection=target.op_selection,
-            )
-            for target in sensor_def.targets
-        }
-
-        serializable_asset_selection = None
-
-    return ExternalSensorData(
-        name=sensor_def.name,
-        job_name=first_target.job_name if first_target else None,
-        mode=None,
-        op_selection=first_target.op_selection if first_target else None,
-        target_dict=target_dict,
-        min_interval=sensor_def.minimum_interval_seconds,
-        description=sensor_def.description,
-        metadata=ExternalSensorMetadata(asset_keys=asset_keys),
-        default_status=sensor_def.default_status,
-        sensor_type=sensor_def.sensor_type,
-        asset_selection=serializable_asset_selection,
-        run_tags=(
-            sensor_def.run_tags if isinstance(sensor_def, AutoMaterializeSensorDefinition) else None
-        ),
-    )
 
 
 def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[ExternalPresetData]:
