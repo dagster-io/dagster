@@ -3,10 +3,10 @@
 import * as Types from '../../graphql/types';
 
 export type ComputeLogsSubscriptionVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
-  stepKey: Types.Scalars['String'];
+  runId: Types.Scalars['ID']['input'];
+  stepKey: Types.Scalars['String']['input'];
   ioType: Types.ComputeIoType;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type ComputeLogsSubscription = {

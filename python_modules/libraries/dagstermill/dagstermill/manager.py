@@ -322,7 +322,7 @@ class Manager:
         # Note: yield_result currently does not support DynamicOutput
 
         # dagstermill assets do not support yielding additional results within the notebook:
-        if len(step_context.job_def.asset_layer.asset_keys) > 0:
+        if len(step_context.job_def.asset_layer.executable_asset_keys) > 0:
             raise DagstermillError(
                 "dagstermill assets do not currently support dagstermill.yield_result"
             )

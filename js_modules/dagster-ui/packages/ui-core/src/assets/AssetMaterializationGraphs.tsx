@@ -26,24 +26,30 @@ export const AssetMaterializationGraphs = (props: {
   }, [props.groups]);
 
   const graphDataByMetadataLabel = extractNumericData(reversed, props.xAxis);
-  const graphLabels = Object.keys(graphDataByMetadataLabel).slice(0, 20).sort();
+  const graphLabels = Object.keys(graphDataByMetadataLabel).slice(0, 100).sort();
 
   if (process.env.NODE_ENV === 'test') {
     return <span />; // chartjs and our useViewport hook don't play nicely with jest
   }
+
+  const columns = props.columnCount || 2;
 
   return (
     <>
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: `1fr `.repeat(props.columnCount || 2),
+          gridTemplateColumns: `1fr `.repeat(columns),
           justifyContent: 'stretch',
         }}
       >
-        {graphLabels.map((label) => (
-          <Box key={label} style={{width: '100%'}} border="bottom">
-            <Box style={{width: '100%'}} border="right">
+        {graphLabels.map((label, ii) => (
+          <Box
+            key={label}
+            style={{width: '100%'}}
+            border={ii < columns ? 'top-and-bottom' : 'bottom'}
+          >
+            <Box style={{width: '100%'}} border={ii % columns ? 'right' : 'left-and-right'}>
               {props.asSidebarSection ? (
                 <Box padding={{horizontal: 24, top: 8}} flex={{justifyContent: 'space-between'}}>
                   <Caption style={{fontWeight: 700}}>{label}</Caption>
@@ -79,7 +85,7 @@ export const AssetMaterializationGraphs = (props: {
             No numeric metadata entries available to be graphed.
           </Box>
         ) : (
-          <Box padding={{horizontal: 24, top: 64}}>
+          <Box padding={{horizontal: 24, vertical: 64}}>
             <NonIdealState
               shrinkable
               icon="asset_plot"

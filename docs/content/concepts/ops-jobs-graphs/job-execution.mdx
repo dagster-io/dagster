@@ -220,8 +220,7 @@ For example, the following job will execute at most two ops at once with the `da
         }
     }
 )
-def tag_concurrency_job():
-    ...
+def tag_concurrency_job(): ...
 ```
 
 **Note:** These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject module="dagster_celery" object="celery_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />.

@@ -1,11 +1,14 @@
 import os
 from time import sleep
 
+from dagster._core.events import RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import (
+    RESUME_RETRY_TAG,
+    RUN_FAILURE_REASON_TAG,
+)
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
-from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster_graphql.client.query import (
@@ -35,7 +38,6 @@ from .utils import (
     step_did_succeed,
     step_did_succeed_in_records,
     step_started,
-    sync_execute_get_events,
 )
 
 
@@ -311,7 +313,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
     def test_successful_pipeline_reexecution(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "csv_hello_world")
-        run_id = make_new_run_id()
         result_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -319,10 +320,10 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": csv_hello_world_ops_config(),
-                    "executionMetadata": {"runId": run_id},
                 }
             },
         )
+        run_id = result_one.data["launchPipelineExecution"]["run"]["runId"]
 
         assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
@@ -332,8 +333,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert get_step_output_event(logs, "sum_sq_op")
 
         # retry
-        new_run_id = make_new_run_id()
-
         result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -343,7 +342,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                     "runConfigData": csv_hello_world_ops_config(),
                     "stepKeys": ["sum_sq_op"],
                     "executionMetadata": {
-                        "runId": new_run_id,
                         "rootRunId": run_id,
                         "parentRunId": run_id,
                         "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
@@ -355,6 +353,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         query_result = result_two.data["launchPipelineReexecution"]
         assert query_result["__typename"] == "LaunchRunSuccess"
 
+        new_run_id = query_result["run"]["runId"]
         result = get_all_logs_for_finished_run_via_subscription(graphql_context, new_run_id)
         logs = result["pipelineRunLogs"]["messages"]
 
@@ -372,22 +371,20 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         context = graphql_context
         selector = infer_job_selector(graphql_context, "csv_hello_world")
 
-        run_id = make_new_run_id()
-        execute_dagster_graphql_and_finish_runs(
+        result = execute_dagster_graphql_and_finish_runs(
             context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": csv_hello_world_ops_config(),
-                    "executionMetadata": {"runId": run_id},
                 }
             },
         )
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
         # retry
-        new_run_id = make_new_run_id()
-        execute_dagster_graphql_and_finish_runs(
+        retry_result = execute_dagster_graphql_and_finish_runs(
             context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
@@ -396,7 +393,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                     "runConfigData": csv_hello_world_ops_config(),
                     "stepKeys": ["sum_sq_op"],
                     "executionMetadata": {
-                        "runId": new_run_id,
                         "rootRunId": run_id,
                         "parentRunId": run_id,
                         "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
@@ -404,18 +400,19 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
+        new_run_id = retry_result.data["launchPipelineReexecution"]["run"]["runId"]
 
-        result_one = execute_dagster_graphql_and_finish_runs(
+        info_result_one = execute_dagster_graphql_and_finish_runs(
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": run_id}
         )
-        query_result_one = result_one.data["pipelineRunOrError"]
+        query_result_one = info_result_one.data["pipelineRunOrError"]
         assert query_result_one["__typename"] == "Run"
         assert query_result_one["stepKeysToExecute"] is None
 
-        result_two = execute_dagster_graphql_and_finish_runs(
+        info_result_two = execute_dagster_graphql_and_finish_runs(
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": new_run_id}
         )
-        query_result_two = result_two.data["pipelineRunOrError"]
+        query_result_two = info_result_two.data["pipelineRunOrError"]
         assert query_result_two["__typename"] == "Run"
         stepKeysToExecute = query_result_two["stepKeysToExecute"]
         assert stepKeysToExecute is not None
@@ -424,7 +421,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
     def test_pipeline_reexecution_invalid_step_in_subset(
         self, graphql_context: WorkspaceRequestContext
     ):
-        run_id = make_new_run_id()
         selector = infer_job_selector(graphql_context, "csv_hello_world")
         result_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -433,15 +429,13 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": csv_hello_world_ops_config(),
-                    "executionMetadata": {"runId": run_id},
                 }
             },
         )
         assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+        run_id = result_one.data["launchPipelineExecution"]["run"]["runId"]
 
         # retry
-        new_run_id = make_new_run_id()
-
         result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -451,7 +445,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                     "runConfigData": csv_hello_world_ops_config(),
                     "stepKeys": ["nope"],
                     "executionMetadata": {
-                        "runId": new_run_id,
                         "rootRunId": run_id,
                         "parentRunId": run_id,
                         "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
@@ -539,6 +532,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run and run.status == DagsterRunStatus.FAILURE
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.STEP_FAILURE.value
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -688,17 +682,22 @@ def test_graphene_reexecution_strategy():
         assert ReexecutionStrategy[strategy.value]
 
 
-def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
+def _do_retry_intermediates_test(graphql_context):
     selector = infer_job_selector(graphql_context, "eventually_successful")
-    logs = sync_execute_get_events(
-        context=graphql_context,
+    result = execute_dagster_graphql_and_finish_runs(
+        graphql_context,
+        LAUNCH_PIPELINE_EXECUTION_MUTATION,
         variables={
             "executionParams": {
                 "selector": selector,
-                "executionMetadata": {"runId": run_id},
             }
         },
     )
+    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+    run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+    logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+        "pipelineRunLogs"
+    ]["messages"]
 
     assert step_did_succeed(logs, "spawn")
     assert step_did_fail(logs, "fail")
@@ -713,7 +712,6 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
             "executionParams": {
                 "selector": selector,
                 "executionMetadata": {
-                    "runId": reexecution_run_id,
                     "rootRunId": run_id,
                     "parentRunId": run_id,
                     "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
@@ -722,17 +720,18 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
         },
     )
 
-    return retry_one
+    retry_run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+    return retry_run_id
 
 
 class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
     def test_retry_requires_intermediates_async_only(
         self, graphql_context: WorkspaceRequestContext
     ):
-        run_id = make_new_run_id()
-        reexecution_run_id = make_new_run_id()
+        # run_id = make_new_run_id()
+        # reexecution_run_id = make_new_run_id()
 
-        _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id)
+        reexecution_run_id = _do_retry_intermediates_test(graphql_context)
         reexecution_run = graphql_context.instance.get_run_by_id(reexecution_run_id)
         assert reexecution_run
         assert reexecution_run.is_failure_or_canceled
@@ -740,8 +739,7 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
     def test_retry_early_terminate(self, graphql_context: WorkspaceRequestContext):
         instance = graphql_context.instance
         selector = infer_job_selector(graphql_context, "retry_multi_input_early_terminate_job")
-        run_id = make_new_run_id()
-        execute_dagster_graphql(
+        result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
@@ -753,10 +751,11 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
                             "get_input_two": {"config": {"wait_to_terminate": True}},
                         },
                     },
-                    "executionMetadata": {"runId": run_id},
                 }
             },
         )
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         # Wait until the first step succeeded
         while instance.get_run_stats(run_id).steps_succeeded < 1:
             sleep(0.1)
@@ -784,9 +783,7 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
         assert run and run.status == DagsterRunStatus.CANCELED
 
         # Start retry
-        new_run_id = make_new_run_id()
-
-        execute_dagster_graphql_and_finish_runs(
+        retry_result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
@@ -799,7 +796,6 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
                         },
                     },
                     "executionMetadata": {
-                        "runId": new_run_id,
                         "rootRunId": run_id,
                         "parentRunId": run_id,
                         "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
@@ -808,6 +804,7 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
             },
         )
 
+        new_run_id = retry_result.data["launchPipelineReexecution"]["run"]["runId"]
         retry_records = instance.all_logs(new_run_id)
         # The first step should not run and the other three steps should succeed in retry
         assert step_did_not_run_in_records(retry_records, "return_one")

@@ -161,8 +161,8 @@ class ArtifactsIOManager(IOManager):
 
         with self.wandb_run() as run:
             parameters = {}
-            if context.metadata is not None:
-                parameters = context.metadata.get("wandb_artifact_configuration", {})
+            if context.definition_metadata is not None:
+                parameters = context.definition_metadata.get("wandb_artifact_configuration", {})
 
             raise_on_unknown_write_configuration_keys(parameters)
 
@@ -364,8 +364,8 @@ class ArtifactsIOManager(IOManager):
     def _download_artifact(self, context: InputContext):
         with self.wandb_run() as run:
             parameters = {}
-            if context.metadata is not None:
-                parameters = context.metadata.get("wandb_artifact_configuration", {})
+            if context.definition_metadata is not None:
+                parameters = context.definition_metadata.get("wandb_artifact_configuration", {})
 
             raise_on_unknown_read_configuration_keys(parameters)
 

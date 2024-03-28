@@ -1,10 +1,10 @@
 import pytest
-from dagster import Definitions
-from dagster._core.definitions.assets_job import build_assets_job
+from dagster import AssetSpec, multi_observable_source_asset
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import io_manager
@@ -48,44 +48,32 @@ def test_no_context_observable_asset():
         executed["yes"] = True
         return DataVersion("version-string")
 
-    asset_job = build_assets_job(
-        "source_job", source_assets=[observable_asset_no_context], assets=[]
-    )
-
-    defs = Definitions(jobs=[asset_job], assets=[observable_asset_no_context])
-
-    job_def = defs.get_job_def("source_job")
-
-    assert job_def.execute_in_process().success
-
+    result = observe([observable_asset_no_context])
+    assert result.success
     assert executed["yes"]
 
 
 def test_key_and_name_args():
     @observable_source_asset(key=["apple", "banana"])
-    def key_specified():
-        ...
+    def key_specified(): ...
 
     assert key_specified.key == AssetKey(["apple", "banana"])
     assert key_specified.op.name == "apple__banana"
 
     @observable_source_asset(key_prefix=["apple", "banana"])
-    def key_prefix_specified():
-        ...
+    def key_prefix_specified(): ...
 
     assert key_prefix_specified.key == AssetKey(["apple", "banana", "key_prefix_specified"])
     assert key_prefix_specified.op.name == "apple__banana__key_prefix_specified"
 
     @observable_source_asset(name="peach")
-    def name_specified():
-        ...
+    def name_specified(): ...
 
     assert name_specified.key == AssetKey(["peach"])
     assert name_specified.op.name == "peach"
 
     @observable_source_asset(key_prefix=["apple", "banana"], name="peach")
-    def key_prefix_and_name_specified():
-        ...
+    def key_prefix_and_name_specified(): ...
 
     assert key_prefix_and_name_specified.key == AssetKey(["apple", "banana", "peach"])
     assert key_prefix_and_name_specified.op.name == "apple__banana__peach"
@@ -96,8 +84,7 @@ def test_key_and_name_args():
     ):
 
         @observable_source_asset(key_prefix=["apple", "banana"], key=["peach", "nectarine"])
-        def key_prefix_and_key_specified():
-            ...
+        def key_prefix_and_key_specified(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -105,5 +92,41 @@ def test_key_and_name_args():
     ):
 
         @observable_source_asset(name=["peach"], key=["peach", "nectarine"])
-        def name_and_key_specified():
-            ...
+        def name_and_key_specified(): ...
+
+
+def test_op_tags():
+    tags = {"foo": "bar"}
+
+    @observable_source_asset(op_tags=tags)
+    def op_tags_specified(): ...
+
+    assert op_tags_specified.op.tags == tags
+
+
+def test_tags():
+    tags = {"foo": "bar"}
+
+    @observable_source_asset(tags=tags)
+    def asset1(): ...
+
+    assert asset1.tags == tags
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @observable_source_asset(tags={"a%": "b"})
+        def asset1(): ...
+
+
+def test_multi_observable_source_asset_tags():
+    tags = {"foo": "bar"}
+
+    @multi_observable_source_asset(specs=[AssetSpec("asset1", tags=tags)])
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == tags
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_observable_source_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])
+        def assets(): ...

@@ -1,3 +1,4 @@
+import {QueryResult} from '@apollo/client';
 import {
   Box,
   Button,
@@ -16,6 +17,10 @@ import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorTargetList} from './SensorTargetList';
 import {SensorFragment} from './types/SensorFragment.types';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+} from './types/SensorRoot.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -53,11 +58,13 @@ export const SensorDetails = ({
   repoAddress,
   daemonHealth,
   refreshState,
+  selectionQueryResult,
 }: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
   refreshState: QueryRefreshState;
+  selectionQueryResult: QueryResult<SensorAssetSelectionQuery, SensorAssetSelectionQueryVariables>;
 }) => {
   const {
     name,
@@ -80,6 +87,12 @@ export const SensorDetails = ({
 
   const [showTestTickDialog, setShowTestTickDialog] = useState(false);
   const running = status === InstigationStatus.RUNNING;
+
+  const assetSelectionResult = selectionQueryResult.data?.sensorOrError;
+
+  const assetSelectionData =
+    assetSelectionResult?.__typename === 'Sensor' ? assetSelectionResult : null;
+  const selectedAssets = assetSelectionData?.assetSelection;
 
   return (
     <>
@@ -150,11 +163,16 @@ export const SensorDetails = ({
               </td>
             </tr>
           )}
-          {sensor.targets && sensor.targets.length ? (
+          {(sensor.targets && sensor.targets.length) || selectedAssets ? (
             <tr>
               <td>Target</td>
               <td>
-                <SensorTargetList targets={sensor.targets} repoAddress={repoAddress} />
+                <SensorTargetList
+                  targets={sensor.targets}
+                  repoAddress={repoAddress}
+                  selectionQueryResult={selectionQueryResult}
+                  sensorType={sensor.sensorType}
+                />
               </td>
             </tr>
           ) : null}
@@ -186,7 +204,7 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
-          {sensor.sensorType !== SensorType.AUTOMATION_POLICY ? (
+          {sensor.sensorType !== SensorType.AUTO_MATERIALIZE ? (
             <tr>
               <td>
                 <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>

@@ -1,5 +1,4 @@
-"""Scenarios where the set of asset definitions changes between ticks.
-"""
+"""Scenarios where the set of asset definitions changes between ticks."""
 
 from ..base_scenario import AssetReconciliationScenario
 from .basic_scenarios import one_asset, two_assets_in_sequence

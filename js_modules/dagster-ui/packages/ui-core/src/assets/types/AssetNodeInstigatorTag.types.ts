@@ -30,6 +30,10 @@ export type AssetNodeInstigatorsFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
         };
       }
   >;

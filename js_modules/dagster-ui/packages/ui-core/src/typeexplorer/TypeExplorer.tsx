@@ -6,7 +6,7 @@ import {CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorer.types';
 import {gqlTypePredicate} from '../app/Util';
 import {dagsterTypeKind} from '../dagstertype/DagsterType';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';

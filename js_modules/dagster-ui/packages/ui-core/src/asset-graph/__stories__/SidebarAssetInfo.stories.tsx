@@ -11,12 +11,17 @@ import {
   AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
   RunStatus,
-  buildAssetChecks,
   buildAssetNode,
   buildAutoMaterializePolicy,
   buildAutoMaterializeRule,
+  buildCompositeConfigType,
   buildFreshnessPolicy,
+  buildRegularDagsterType,
+  buildRepository,
+  buildRepositoryLocation,
+  buildSolidDefinition,
 } from '../../graphql/types';
+import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
@@ -28,12 +33,12 @@ export default {
   component: SidebarAssetInfo,
 };
 
-const MockRepo = {
+const MockRepo = buildRepository({
   __typename: 'Repository',
   id: 'test.py.repo',
   name: 'test.py',
-  location: {__typename: 'RepositoryLocation', id: 'repo', name: 'repo'},
-} as const;
+  location: buildRepositoryLocation({id: 'repo', name: 'repo'}),
+});
 
 const MockAssetKey = {__typename: 'AssetKey' as const, path: ['asset1']};
 
@@ -45,7 +50,7 @@ const buildGraphNodeMock = (definitionOverrides: Partial<AssetNode>): GraphNode 
     assetKey: MockAssetKey,
     jobNames: ['__ASSET_JOB_1'],
     opNames: ['asset1'],
-    groupName: null,
+    groupName: 'default',
     graphName: null,
     isPartitioned: false,
     isObservable: false,
@@ -56,35 +61,26 @@ const buildGraphNodeMock = (definitionOverrides: Partial<AssetNode>): GraphNode 
 
 const buildSidebarQueryMock = (
   overrides: Partial<SidebarAssetQuery['assetNodeOrError']> = {},
-): MockedResponse<SidebarAssetQuery> => ({
-  request: {
+): MockedResponse<SidebarAssetQuery> =>
+  buildQueryMock({
     query: SIDEBAR_ASSET_QUERY,
     variables: {
       assetKey: {
         path: ['asset1'],
       },
     },
-  },
-  result: {
     data: {
-      __typename: 'Query',
-      assetNodeOrError: {
-        __typename: 'AssetNode',
+      assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset1"]',
         description: null,
-        backfillPolicy: null,
-        configField: null,
         metadataEntries: [],
-        assetChecksOrError: buildAssetChecks({checks: []}),
         jobNames: ['test_job'],
-        autoMaterializePolicy: null,
-        freshnessPolicy: null,
-        partitionDefinition: null,
         assetKey: {
           path: ['asset1'],
           __typename: 'AssetKey',
         },
-        op: {
+        // @ts-expect-error not sure why the types dont match up, investigate later
+        op: buildSolidDefinition({
           name: 'asset1',
           description: null,
           metadata: [
@@ -99,9 +95,9 @@ const buildSidebarQueryMock = (
               __typename: 'MetadataItemDefinition',
             },
           ],
-          __typename: 'SolidDefinition',
-        },
+        }),
         opVersion: null,
+        // @ts-expect-error not sure why the types dont match up, investigate later
         repository: MockRepo,
         requiredResources: [
           {
@@ -121,7 +117,8 @@ const buildSidebarQueryMock = (
             resourceKey: 'just_another_resource',
           },
         ],
-        type: {
+        // @ts-expect-error not sure why the types dont match up, investigate later
+        type: buildRegularDagsterType({
           key: 'Any',
           name: 'Any',
           displayName: 'Any',
@@ -131,24 +128,21 @@ const buildSidebarQueryMock = (
           isBuiltin: true,
           isNothing: false,
           metadataEntries: [],
-          inputSchemaType: {
-            __typename: 'CompositeConfigType',
+          inputSchemaType: buildCompositeConfigType({
             key: 'Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4',
             description: null,
             isSelector: true,
             typeParamKeys: [],
             fields: [],
             recursiveConfigTypes: [],
-          },
+          }),
           outputSchemaType: null,
-          __typename: 'RegularDagsterType',
           innerTypes: [],
-        },
+        }),
         ...overrides,
-      },
+      }),
     },
-  },
-});
+  });
 
 const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetEventsQuery> => ({
   request: {

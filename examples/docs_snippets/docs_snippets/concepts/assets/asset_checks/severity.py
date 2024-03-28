@@ -8,8 +8,7 @@ from dagster import (
 
 
 @asset
-def my_asset():
-    ...
+def my_asset(): ...
 
 
 @asset_check(asset=my_asset)

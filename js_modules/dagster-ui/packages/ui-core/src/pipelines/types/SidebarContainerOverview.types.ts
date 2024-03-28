@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type SidebarRootContainerFragment_CompositeSolidDefinition_ = {
+export type SidebarRootContainerFragment_CompositeSolidDefinition = {
   __typename: 'CompositeSolidDefinition';
   id: string;
   name: string;
@@ -1133,7 +1133,7 @@ export type SidebarRootContainerFragment_CompositeSolidDefinition_ = {
   }>;
 };
 
-export type SidebarRootContainerFragment_Graph_ = {
+export type SidebarRootContainerFragment_Graph = {
   __typename: 'Graph';
   id: string;
   name: string;
@@ -2264,7 +2264,7 @@ export type SidebarRootContainerFragment_Graph_ = {
   }>;
 };
 
-export type SidebarRootContainerFragment_Job_ = {
+export type SidebarRootContainerFragment_Job = {
   __typename: 'Job';
   id: string;
   name: string;
@@ -3395,7 +3395,7 @@ export type SidebarRootContainerFragment_Job_ = {
   }>;
 };
 
-export type SidebarRootContainerFragment_Pipeline_ = {
+export type SidebarRootContainerFragment_Pipeline = {
   __typename: 'Pipeline';
   id: string;
   name: string;
@@ -4526,7 +4526,7 @@ export type SidebarRootContainerFragment_Pipeline_ = {
   }>;
 };
 
-export type SidebarRootContainerFragment_PipelineSnapshot_ = {
+export type SidebarRootContainerFragment_PipelineSnapshot = {
   __typename: 'PipelineSnapshot';
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
@@ -4596,6 +4596,20 @@ export type SidebarRootContainerFragment_PipelineSnapshot_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -4642,6 +4656,12 @@ export type SidebarRootContainerFragment_PipelineSnapshot_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   modes: Array<{
@@ -5771,8 +5791,8 @@ export type SidebarRootContainerFragment_PipelineSnapshot_ = {
 };
 
 export type SidebarRootContainerFragment =
-  | SidebarRootContainerFragment_CompositeSolidDefinition_
-  | SidebarRootContainerFragment_Graph_
-  | SidebarRootContainerFragment_Job_
-  | SidebarRootContainerFragment_Pipeline_
-  | SidebarRootContainerFragment_PipelineSnapshot_;
+  | SidebarRootContainerFragment_CompositeSolidDefinition
+  | SidebarRootContainerFragment_Graph
+  | SidebarRootContainerFragment_Job
+  | SidebarRootContainerFragment_Pipeline
+  | SidebarRootContainerFragment_PipelineSnapshot;

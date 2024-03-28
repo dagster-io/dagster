@@ -186,8 +186,9 @@ class MultiprocessExecutor(Executor):
         timer_result: Optional[TimerResult] = None
         with ExitStack() as stack:
             timer_result = stack.enter_context(time_execution_scope())
+
             instance_concurrency_context = stack.enter_context(
-                InstanceConcurrencyContext(plan_context.instance, plan_context.run_id)
+                InstanceConcurrencyContext(plan_context.instance, plan_context.dagster_run)
             )
             active_execution = stack.enter_context(
                 ActiveExecution(
@@ -320,9 +321,7 @@ class MultiprocessExecutor(Executor):
         if timer_result:
             yield DagsterEvent.engine_event(
                 plan_context,
-                "Multiprocess executor: parent process exiting after {duration} (pid: {pid})".format(
-                    duration=format_duration(timer_result.millis), pid=os.getpid()
-                ),
+                f"Multiprocess executor: parent process exiting after {format_duration(timer_result.millis)} (pid: {os.getpid()})",
                 event_specific_data=EngineEventData.multiprocess(os.getpid()),
             )
 

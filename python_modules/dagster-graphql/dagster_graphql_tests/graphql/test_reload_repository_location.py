@@ -4,7 +4,7 @@ from unittest import mock
 
 from dagster import file_relative_path, repository
 from dagster._core.code_pointer import CodePointer
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     external_repository_data_from_def,
 )
@@ -289,13 +289,13 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             # note it where the function is *used* that needs to mocked, not
             # where it is defined.
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-            "dagster._core.host_representation.code_location.sync_list_repositories_grpc"
+            "dagster._core.remote_representation.code_location.sync_list_repositories_grpc"
         ) as cli_command_mock:
             with mock.patch(
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._core.host_representation.code_location.sync_get_streaming_external_repositories_data_grpc"
+                "dagster._core.remote_representation.code_location.sync_get_streaming_external_repositories_data_grpc"
             ) as external_repository_mock:
 
                 @repository
@@ -356,7 +356,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             # note it where the function is *used* that needs to mocked, not
             # where it is defined.
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-            "dagster._core.host_representation.code_location.sync_list_repositories_grpc"
+            "dagster._core.remote_representation.code_location.sync_list_repositories_grpc"
         ) as cli_command_mock:
             cli_command_mock.side_effect = Exception("Mocked repository load failure")
 

@@ -1,7 +1,12 @@
 import graphene
 
 from .asset_key import GrapheneAssetKey
-from .table import GrapheneTable, GrapheneTableSchema
+from .table import (
+    GrapheneTable,
+    GrapheneTableColumnLineageEntry,
+    GrapheneTableSchema,
+)
+from .util import non_null_list
 
 
 class GrapheneMetadataItemDefinition(graphene.ObjectType):
@@ -50,6 +55,14 @@ class GrapheneTableSchemaMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
         name = "TableSchemaMetadataEntry"
+
+
+class GrapheneTableColumnLineageMetadataEntry(graphene.ObjectType):
+    lineage = non_null_list(GrapheneTableColumnLineageEntry)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "TableColumnLineageMetadataEntry"
 
 
 class GrapheneJsonMetadataEntry(graphene.ObjectType):
@@ -155,9 +168,18 @@ class GrapheneNullMetadataEntry(graphene.ObjectType):
         name = "NullMetadataEntry"
 
 
+class GrapheneTimestampMetadataEntry(graphene.ObjectType):
+    timestamp = graphene.NonNull(graphene.Float)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "TimestampMetadataEntry"
+
+
 def types():
     return [
         GrapheneMetadataEntry,
+        GrapheneTableColumnLineageMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
         GrapheneTableMetadataEntry,
         GrapheneFloatMetadataEntry,
@@ -175,4 +197,5 @@ def types():
         GrapheneAssetMetadataEntry,
         GrapheneJobMetadataEntry,
         GrapheneNullMetadataEntry,
+        GrapheneTimestampMetadataEntry,
     ]

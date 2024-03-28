@@ -38,10 +38,10 @@ from dagster import (
     materialize,
     multi_asset,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,
     PartitionsByAssetSelector,
@@ -55,7 +55,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.host_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.remote_representation.external_data import external_asset_nodes_from_defs
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -317,13 +317,14 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
                 scenario.evaluation_time,
                 dynamic_partitions_store=instance,
             )
-
             if failures == "no_failures":
                 fail_asset_partitions: Set[AssetKeyPartitionKey] = set()
             elif failures == "root_failures":
                 fail_asset_partitions = set(
                     (
-                        backfill_data.target_subset.filter_asset_keys(asset_graph.root_asset_keys)
+                        backfill_data.target_subset.filter_asset_keys(
+                            asset_graph.root_materializable_asset_keys
+                        )
                     ).iterate_asset_partitions()
                 )
             elif failures == "random_half_failures":
@@ -434,7 +435,7 @@ def test_do_not_rerequest_while_existing_run_in_progress():
 
 def make_backfill_data(
     some_or_all: str,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: RemoteAssetGraph,
     instance: DagsterInstance,
     current_time: datetime.datetime,
 ) -> AssetBackfillData:
@@ -457,14 +458,14 @@ def make_backfill_data(
 
 
 def make_random_subset(
-    asset_graph: ExternalAssetGraph,
+    asset_graph: RemoteAssetGraph,
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
     # all partitions downstream of half of the partitions in each partitioned root asset
     root_asset_partitions: Set[AssetKeyPartitionKey] = set()
-    for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
-        partitions_def = asset_graph.get_partitions_def(root_asset_key)
+    for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
+        partitions_def = asset_graph.get(root_asset_key).partitions_def
 
         if partitions_def is not None:
             partition_keys = list(
@@ -491,13 +492,13 @@ def make_random_subset(
 
 def make_subset_from_partition_keys(
     partition_keys: Sequence[str],
-    asset_graph: ExternalAssetGraph,
+    asset_graph: RemoteAssetGraph,
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
     root_asset_partitions: Set[AssetKeyPartitionKey] = set()
-    for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
-        if asset_graph.get_partitions_def(root_asset_key) is not None:
+    for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
+        if asset_graph.get(root_asset_key).is_partitioned:
             root_asset_partitions.update(
                 AssetKeyPartitionKey(root_asset_key, partition_key)
                 for partition_key in partition_keys
@@ -514,7 +515,7 @@ def make_subset_from_partition_keys(
 
 def get_asset_graph(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
-) -> ExternalAssetGraph:
+) -> RemoteAssetGraph:
     assets_defs_by_key = {
         key: assets_def
         for assets in assets_by_repo_name.values()
@@ -522,7 +523,7 @@ def get_asset_graph(
         for key in assets_def.keys
     }
     with patch(
-        "dagster._core.host_representation.external_data.get_builtin_partition_mapping_types"
+        "dagster._core.remote_representation.external_data.get_builtin_partition_mapping_types"
     ) as get_builtin_partition_mapping_types:
         get_builtin_partition_mapping_types.return_value = tuple(
             assets_def.infer_partition_mapping(
@@ -538,10 +539,11 @@ def get_asset_graph(
 def execute_asset_backfill_iteration_consume_generator(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: RemoteAssetGraph,
     instance: DagsterInstance,
 ) -> AssetBackfillIterationResult:
-    traced_counter.set(Counter())
+    counter = Counter()
+    traced_counter.set(counter)
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
@@ -554,15 +556,14 @@ def execute_asset_backfill_iteration_consume_generator(
             backfill_start_time=asset_backfill_data.backfill_start_time,
         ):
             if isinstance(result, AssetBackfillIterationResult):
-                counts = traced_counter.get().counts()
-                assert counts.get("DagsterInstance.get_dynamic_partitions", 0) <= 1
+                assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
                 return result
 
     assert False
 
 
 def run_backfill_to_completion(
-    asset_graph: ExternalAssetGraph,
+    asset_graph: RemoteAssetGraph,
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
     backfill_data: AssetBackfillData,
     fail_asset_partitions: Iterable[AssetKeyPartitionKey],
@@ -659,7 +660,7 @@ def run_backfill_to_completion(
 
 
 def _requested_asset_partitions_in_run_request(
-    run_request: RunRequest, asset_graph: AssetGraph
+    run_request: RunRequest, asset_graph: BaseAssetGraph
 ) -> Set[AssetKeyPartitionKey]:
     asset_keys = run_request.asset_selection
     assert asset_keys is not None
@@ -675,7 +676,7 @@ def _requested_asset_partitions_in_run_request(
         asset_partitions = []
         for asset_key in asset_keys:
             asset_partitions.extend(
-                asset_graph.get_asset_partitions_in_range(
+                asset_graph.get_partitions_in_range(
                     asset_key=asset_key,
                     partition_key_range=partition_range,
                     dynamic_partitions_store=MagicMock(),
@@ -700,21 +701,19 @@ def _requested_asset_partitions_in_run_request(
 
 def external_asset_graph_from_assets_by_repo_name(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
-) -> ExternalAssetGraph:
+) -> RemoteAssetGraph:
     from_repository_handles_and_external_asset_nodes = []
 
     for repo_name, assets in assets_by_repo_name.items():
         repo = Definitions(assets=assets).get_repository_def()
 
-        external_asset_nodes = external_asset_nodes_from_defs(
-            repo.get_all_jobs(), source_assets_by_key=repo.source_assets_by_key
-        )
+        external_asset_nodes = external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph)
         repo_handle = MagicMock(repository_name=repo_name)
         from_repository_handles_and_external_asset_nodes.extend(
             [(repo_handle, asset_node) for asset_node in external_asset_nodes]
         )
 
-    return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
+    return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
         from_repository_handles_and_external_asset_nodes, external_asset_checks=[]
     )
 
@@ -1610,3 +1609,74 @@ def test_multi_asset_internal_deps_asset_backfill():
     assert AssetKeyPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
     assert AssetKeyPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
     assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
+
+
+def test_multi_asset_internal_and_external_deps_asset_backfill() -> None:
+    pd = StaticPartitionsDefinition(["1", "2", "3"])
+
+    @asset(partitions_def=pd)
+    def upstream():
+        pass
+
+    @multi_asset(
+        deps={upstream},
+        outs={"a": AssetOut(key="a"), "b": AssetOut(key="b"), "c": AssetOut(key="c")},
+        internal_asset_deps={
+            "c": {AssetKey("a"), AssetKey("upstream")},
+            "b": {AssetKey("a")},
+            "a": set(),
+        },
+        partitions_def=pd,
+    )
+    def my_multi_asset():
+        pass
+
+    instance = DagsterInstance.ephemeral()
+    repo_with_unpartitioned_root = {"repo": [my_multi_asset, upstream]}
+    asset_graph = get_asset_graph(repo_with_unpartitioned_root)
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["1"],
+        asset_selection=[AssetKey("a"), AssetKey("b"), AssetKey("c")],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2024, 1, 9, 0, 0, 0),
+    )
+    backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, repo_with_unpartitioned_root
+    )
+    assert AssetKeyPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
+
+
+def test_run_request_partition_order():
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"))
+    def foo():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"), deps={foo})
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {"repo1": [foo], "repo2": [foo_child]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["2023-10-02", "2023-10-01", "2023-10-03"],
+        asset_selection=[foo.key, foo_child.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 10, 4, 0, 0, 0),
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
+    )
+
+    assert [run_request.partition_key for run_request in result.run_requests] == [
+        "2023-10-01",
+        "2023-10-02",
+        "2023-10-03",
+    ]

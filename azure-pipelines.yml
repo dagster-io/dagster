@@ -8,7 +8,7 @@ parameters:
   - name: py3_versions
     type: object
     default:
-      - "3.9"
+      - "3.10"
   - name: py3_env_suffixes
     type: object
     default:
@@ -38,11 +38,8 @@ jobs:
         inputs:
           versionSpec: "$(python.version)"
           architecture: "x64"
-      - script: choco install vcpython27 --yes
-        condition: eq(variables['python.version'], '2.7')
-        displayName: "Install vcpython27"
-      - script: pip install "tox<4.0.0"
-        displayName: "Install tox"
+      - script: pip install "tox<4.0.0" uv
+        displayName: "Install tox & uv"
       - script: cd python_modules\dagster && tox -e %TOXENV% && cd ..\..
         displayName: "Run tests"
       - task: PublishTestResults@2

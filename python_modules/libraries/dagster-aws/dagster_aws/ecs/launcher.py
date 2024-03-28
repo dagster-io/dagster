@@ -219,6 +219,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return None
         return self.task_definition_dict.get("sidecar_containers")
 
+    @property
+    def linux_parameters(self) -> Optional[Mapping[str, Any]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("linux_parameters")
+
     @classmethod
     def config_type(cls):
         return {
@@ -238,6 +244,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                                 " from an environment variable."
                             ),
                         ),
+                        "linux_parameters": Field(Permissive(), is_required=False),
                         **SHARED_TASK_DEFINITION_FIELDS,
                     },
                 ),
@@ -606,6 +613,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
                     repository_credentials=container_context.repository_credentials,
+                    linux_parameters=self.linux_parameters,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:

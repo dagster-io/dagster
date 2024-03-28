@@ -18,12 +18,14 @@ from dagster import (
     TableMetadataValue,
     TableSchemaMetadataValue,
     TextMetadataValue,
+    TimestampMetadataValue,
     UrlMetadataValue,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
     MetadataValue,
+    TableColumnLineageMetadataValue,
 )
 from dagster._core.events import (
     DagsterEventType,
@@ -53,9 +55,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
+        GrapheneTableColumnLineageEntry,
+        GrapheneTableColumnLineageMetadataEntry,
         GrapheneTableMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
         GrapheneTextMetadataEntry,
+        GrapheneTimestampMetadataEntry,
         GrapheneUrlMetadataEntry,
     )
     from ..schema.table import GrapheneTable, GrapheneTableSchema
@@ -163,6 +168,18 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                     columns=value.schema.columns,
                 ),
             )
+        elif isinstance(value, TableColumnLineageMetadataValue):
+            yield GrapheneTableColumnLineageMetadataEntry(
+                label=key,
+                lineage=[
+                    GrapheneTableColumnLineageEntry(
+                        column_name=column_name, column_deps=column_deps
+                    )
+                    for column_name, column_deps in value.column_lineage.deps_by_column.items()
+                ],
+            )
+        elif isinstance(value, TimestampMetadataValue):
+            yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")

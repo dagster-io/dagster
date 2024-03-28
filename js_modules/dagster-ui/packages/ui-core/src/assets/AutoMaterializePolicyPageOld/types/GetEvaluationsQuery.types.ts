@@ -4,8 +4,8 @@ import * as Types from '../../../graphql/types';
 
 export type OldGetEvaluationsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  limit: Types.Scalars['Int'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type OldGetEvaluationsQuery = {

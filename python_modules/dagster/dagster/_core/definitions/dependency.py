@@ -35,7 +35,7 @@ from dagster._utils import hash_collection
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .output import OutputDefinition
-from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
+from .utils import DEFAULT_OUTPUT, normalize_tags, struct_to_string
 
 if TYPE_CHECKING:
     from dagster._core.definitions.op_definition import OpDefinition
@@ -144,7 +144,7 @@ class Node(ABC):
             "graph_definition",
             GraphDefinition,
         )
-        self._additional_tags = validate_tags(tags)
+        self._additional_tags = normalize_tags(tags).tags
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
@@ -240,8 +240,7 @@ class Node(ABC):
         return self._retry_policy
 
     @abstractmethod
-    def describe_node(self) -> str:
-        ...
+    def describe_node(self) -> str: ...
 
     @abstractmethod
     def get_resource_requirements(
@@ -249,8 +248,7 @@ class Node(ABC):
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
         asset_layer: Optional["AssetLayer"] = None,
-    ) -> Iterator["ResourceRequirement"]:
-        ...
+    ) -> Iterator["ResourceRequirement"]: ...
 
 
 class GraphNode(Node):

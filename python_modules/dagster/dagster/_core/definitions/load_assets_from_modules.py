@@ -1,5 +1,4 @@
 import inspect
-import os
 import pkgutil
 from importlib import import_module
 from types import ModuleType
@@ -22,13 +21,13 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .assets import AssetsDefinition
-from .cacheable_assets import CacheableAssetsDefinition
-from .events import (
+from .asset_key import (
     AssetKey,
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from .assets import AssetsDefinition
+from .cacheable_assets import CacheableAssetsDefinition
 from .source_asset import SourceAsset
 
 
@@ -340,10 +339,11 @@ def load_assets_from_package_name(
 
 def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
     yield package_module
-    package_path = package_module.__file__
-    if package_path:
-        for _, modname, is_pkg in pkgutil.walk_packages([os.path.dirname(package_path)]):
-            submodule = import_module(f"{package_module.__name__}.{modname}")
+    if package_module.__file__:
+        for _, modname, is_pkg in pkgutil.walk_packages(
+            package_module.__path__, prefix=package_module.__name__ + "."
+        ):
+            submodule = import_module(modname)
             if is_pkg:
                 yield from find_modules_in_package(submodule)
             else:
@@ -396,6 +396,9 @@ def prefix_assets(
 
     """
     asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.keys}
+    check_target_keys = {
+        key.asset_key for assets_def in assets_defs for key in assets_def.check_keys
+    }
     source_asset_keys = {source_asset.key for source_asset in source_assets}
 
     if isinstance(key_prefix, str):
@@ -408,8 +411,8 @@ def prefix_assets(
             asset_key: AssetKey([*key_prefix, *asset_key.path]) for asset_key in assets_def.keys
         }
         input_asset_key_replacements = {}
-        for dep_asset_key in assets_def.dependency_keys:
-            if dep_asset_key in asset_keys:
+        for dep_asset_key in assets_def.keys_by_input_name.values():
+            if dep_asset_key in asset_keys or dep_asset_key in check_target_keys:
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
                     [*key_prefix, *dep_asset_key.path]
                 )

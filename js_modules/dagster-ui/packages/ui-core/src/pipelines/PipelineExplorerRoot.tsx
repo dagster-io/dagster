@@ -22,7 +22,7 @@ import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';

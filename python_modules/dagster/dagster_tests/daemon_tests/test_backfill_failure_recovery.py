@@ -5,7 +5,7 @@ import pendulum
 import pytest
 from dagster import DagsterInstance
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalRepository,
 )
 from dagster._core.test_utils import (

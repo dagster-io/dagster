@@ -81,9 +81,9 @@ def inner_plan_execution_iterator(
                 check.invariant(
                     len(missing_resources) == 0,
                     (
-                        "Expected step context for solid {solid_name} to have all required"
-                        " resources, but missing {missing_resources}."
-                    ).format(solid_name=step_context.op.name, missing_resources=missing_resources),
+                        f"Expected step context for solid {step_context.op.name} to have all required"
+                        f" resources, but missing {missing_resources}."
+                    ),
                 )
 
                 with ExitStack() as step_stack:
@@ -102,10 +102,10 @@ def inner_plan_execution_iterator(
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
                         ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
+                            dagster_event = check.inst(step_event, DagsterEvent)
+                            step_event_list.append(dagster_event)
+                            yield dagster_event
+                            active_execution.handle_event(dagster_event)
 
                         active_execution.verify_complete(job_context, step.key)
 
@@ -121,10 +121,10 @@ def inner_plan_execution_iterator(
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
                         ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
+                            dagster_event = check.inst(step_event, DagsterEvent)
+                            step_event_list.append(dagster_event)
+                            yield dagster_event
+                            active_execution.handle_event(dagster_event)
 
                         active_execution.verify_complete(job_context, step.key)
 
@@ -195,12 +195,8 @@ def _trigger_hook(
         check.invariant(
             isinstance(hook_execution_result, HookExecutionResult),
             (
-                "Error in hook {hook_name}: hook unexpectedly returned result {result} of "
-                "type {type_}. Should be a HookExecutionResult"
-            ).format(
-                hook_name=hook_def.name,
-                result=hook_execution_result,
-                type_=type(hook_execution_result),
+                f"Error in hook {hook_def.name}: hook unexpectedly returned result {hook_execution_result} of "
+                f"type {type(hook_execution_result)}. Should be a HookExecutionResult"
             ),
         )
         if hook_execution_result and hook_execution_result.is_skipped:

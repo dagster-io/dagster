@@ -6,9 +6,9 @@ from unittest import mock
 import pytest
 from dagster import file_relative_path, job, repository
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.code_location import GrpcServerCodeLocation
-from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
 )

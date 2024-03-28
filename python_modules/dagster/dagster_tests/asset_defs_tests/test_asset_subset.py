@@ -1,6 +1,6 @@
 import datetime
 import operator
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import pytest
 from dagster import (
@@ -73,7 +73,7 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
 @pytest.mark.parametrize("second_all", [True, False])
 def test_operations(
     partitions_def: Optional[PartitionsDefinition],
-    operation: Callable,
+    operation: Callable[..., Any],
     first_all: bool,
     second_all: bool,
 ) -> None:

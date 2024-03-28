@@ -27,7 +27,7 @@ def test_resource_telemetry():
     libraries = [
         library.name.replace("-", "_")
         for library in os.scandir(libraries_dir)
-        if not library.name.endswith("CONTRIBUTING.md")
+        if not (library.name.startswith(".") or library.name.endswith("CONTRIBUTING.md"))
     ]
     libraries.append("dagster")
 

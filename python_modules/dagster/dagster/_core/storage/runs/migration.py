@@ -204,7 +204,7 @@ def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
         # nothing to do
         return
 
-    repository_label = run.external_job_origin.external_repository_origin.get_label()
+    repository_label = run.external_job_origin.repository_origin.get_label()
     try:
         conn.execute(
             RunTagsTable.insert().values(

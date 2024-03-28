@@ -11,7 +11,7 @@ from dagster._core.execution.context_creation_job import create_context_free_log
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
-from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import (
     create_run_for_test,

@@ -40,9 +40,9 @@ for scenario_name, scenario in {**ASSET_RECONCILIATION_SCENARIOS, **DAEMON_ONLY_
 
         for location_name, assets in scenario.code_locations.items():
             d = Definitions(assets=assets, executor=in_process_executor)
-            globals()[
-                "hacky_daemon_repo_" + scenario_name + "_" + location_name
-            ] = d.get_repository_def()
+            globals()["hacky_daemon_repo_" + scenario_name + "_" + location_name] = (
+                d.get_repository_def()
+            )
     else:
         assert scenario.code_locations is None
 

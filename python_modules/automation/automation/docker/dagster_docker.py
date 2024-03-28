@@ -1,6 +1,6 @@
 import contextlib
 import os
-from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
+from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional
 
 import dagster._check as check
 import yaml
@@ -60,7 +60,7 @@ class DagsterDockerImage(
         cls,
         image: str,
         images_path: Optional[str] = None,
-        build_cm: Callable = do_nothing,
+        build_cm: Callable[..., Any] = do_nothing,
     ):
         return super(DagsterDockerImage, cls).__new__(
             cls,

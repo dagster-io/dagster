@@ -13,7 +13,9 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_condition import AssetConditionEvaluationWithRunIds
+from dagster._core.definitions.asset_condition.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
@@ -44,8 +46,8 @@ if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster._core.host_representation.origin import ExternalJobOrigin
     from dagster._core.instance import DagsterInstance
+    from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import (
         AutoMaterializeAssetEvaluationRecord,
         InstigatorState,
@@ -238,7 +240,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def get_run_tags(
         self,
-        tag_keys: Optional[Sequence[str]] = None,
+        tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[Tuple[str, Set[str]]]:
@@ -342,7 +344,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         return self._storage.run_storage.set_cursor_values(pairs)
 
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None:
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "RemoteJobOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
 
 

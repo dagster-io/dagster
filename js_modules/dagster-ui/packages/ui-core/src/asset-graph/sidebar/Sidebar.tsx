@@ -139,7 +139,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       > = {};
 
       let groupsCount = 0;
-      Object.entries(graphData.nodes).forEach(([id, node]) => {
+      Object.values(graphData.nodes).forEach((node) => {
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
         const groupName = node.definition.groupName || 'default';
@@ -163,29 +163,37 @@ export const AssetGraphExplorerSidebar = React.memo(
         codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(node);
       });
       const codeLocationsCount = Object.keys(codeLocationNodes).length;
-      Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
-        folderNodes.push({locationName, id: locationName, level: 1});
-        if (openNodes.has(locationName) || codeLocationsCount === 1) {
-          Object.entries(locationNode.groups).forEach(([id, groupNode]) => {
-            folderNodes.push({
-              groupNode,
-              id,
-              level: 2,
-            });
-            if (openNodes.has(id) || groupsCount === 1) {
-              groupNode.assets
-                .sort((a, b) => COLLATOR.compare(a.id, b.id))
-                .forEach((assetNode) => {
-                  folderNodes.push({
-                    id: assetNode.id,
-                    path: locationName + ':' + groupNode.groupName + ':' + assetNode.assetKey,
-                    level: 3,
-                  });
+      Object.entries(codeLocationNodes)
+        .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.locationName, b.locationName))
+        .forEach(([locationName, locationNode]) => {
+          folderNodes.push({locationName, id: locationName, level: 1});
+          if (openNodes.has(locationName) || codeLocationsCount === 1) {
+            Object.entries(locationNode.groups)
+              .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
+              .forEach(([id, groupNode]) => {
+                folderNodes.push({
+                  groupNode,
+                  id,
+                  level: 2,
                 });
-            }
-          });
-        }
-      });
+                if (openNodes.has(id) || groupsCount === 1) {
+                  groupNode.assets
+                    .sort((a, b) => COLLATOR.compare(a.id, b.id))
+                    .forEach((assetNode) => {
+                      folderNodes.push({
+                        id: assetNode.id,
+                        path: [
+                          locationName,
+                          groupNode.groupName,
+                          tokenForAssetKey(assetNode.assetKey),
+                        ].join(':'),
+                        level: 3,
+                      });
+                    });
+                }
+              });
+          }
+        });
 
       if (groupsCount === 1) {
         return folderNodes
@@ -326,11 +334,11 @@ export const AssetGraphExplorerSidebar = React.memo(
                 selectNode(e, nextNode.id);
               } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
                 const open = e.code === 'ArrowRight';
+                const node = renderedNodes[indexOfLastSelectedNode];
+                if (!node || 'path' in node) {
+                  return;
+                }
                 setOpenNodes((nodes) => {
-                  const node = renderedNodes[indexOfLastSelectedNode];
-                  if (!node) {
-                    return nodes;
-                  }
                   const openNodes = new Set(nodes);
                   if (open) {
                     openNodes.add(nodePathKey(node));

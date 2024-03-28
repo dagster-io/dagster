@@ -111,8 +111,19 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
         resource_id_to_key_mapping: Dict[ResourceId, str],
     ):
         ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
+
+        if isinstance(resource, IOManagerDefinition):
+            input_config_schema = resource.input_config_schema
+            output_config_schema = resource.output_config_schema
+        else:
+            input_config_schema = None
+            output_config_schema = None
         IOManagerDefinition.__init__(
-            self, resource_fn=self.resource_fn, config_schema=resource.config_schema
+            self,
+            resource_fn=self.resource_fn,
+            config_schema=resource.config_schema,
+            input_config_schema=input_config_schema,
+            output_config_schema=output_config_schema,
         )
 
 

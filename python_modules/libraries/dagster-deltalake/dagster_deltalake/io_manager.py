@@ -159,8 +159,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
 
     @staticmethod
     @abstractmethod
-    def type_handlers() -> Sequence[DbTypeHandler]:
-        ...
+    def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
     def default_load_type() -> Optional[Type]:

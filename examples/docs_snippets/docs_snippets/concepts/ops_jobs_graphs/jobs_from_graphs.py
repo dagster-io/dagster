@@ -5,8 +5,7 @@ from dagster import graph, op, ConfigurableResource
 
 
 class Server(ConfigurableResource):
-    def ping_server(self):
-        ...
+    def ping_server(self): ...
 
 
 @op

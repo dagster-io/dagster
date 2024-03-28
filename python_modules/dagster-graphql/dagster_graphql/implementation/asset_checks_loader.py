@@ -6,12 +6,11 @@ from dagster import (
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import RepositorySelector
-from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
@@ -125,7 +124,7 @@ class AssetChecksLoader:
             self._context.instance, check_keys=all_check_keys
         )
 
-        asset_graph = ExternalAssetGraph.from_workspace(self._context)
+        asset_graph = self._context.asset_graph
         graphene_checks: Mapping[AssetKey, AssetChecksOrErrorUnion] = {}
         for asset_key in self._asset_keys:
             if asset_key in errors:
@@ -136,7 +135,7 @@ class AssetChecksLoader:
                     can_execute_individually = (
                         GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
                         if len(
-                            asset_graph.get_required_asset_and_check_keys(external_check.key) or []
+                            asset_graph.get_execution_set_asset_and_check_keys(external_check.key)
                         )
                         <= 1
                         # NOTE: once we support multi checks, we'll need to add a case for

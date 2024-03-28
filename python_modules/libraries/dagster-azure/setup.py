@@ -28,11 +28,13 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_azure_tests*"]),
     include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         "azure-core<2.0.0,>=1.7.0",
         "azure-identity<2.0.0,>=1.7.0",

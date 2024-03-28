@@ -85,8 +85,7 @@ def deprecated(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -97,8 +96,7 @@ def deprecated(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated(
@@ -199,8 +197,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -211,8 +208,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated_param(
@@ -311,8 +307,7 @@ def experimental(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -322,8 +317,7 @@ def experimental(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def experimental(
@@ -408,8 +402,7 @@ def experimental_param(
     param: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -419,8 +412,7 @@ def experimental_param(
     param: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def experimental_param(

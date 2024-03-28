@@ -7,8 +7,8 @@ from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
-from dagster._core.host_representation import ExternalSensor, ExternalTargetData
-from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 

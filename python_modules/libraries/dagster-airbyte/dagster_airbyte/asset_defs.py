@@ -644,9 +644,9 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             # display in the UI
             self._partially_initialized_airbyte_instance = airbyte_resource_def
             # The processed copy is used to query the Airbyte instance
-            self._airbyte_instance: (
-                AirbyteResource
-            ) = self._partially_initialized_airbyte_instance.process_config_and_initialize()
+            self._airbyte_instance: AirbyteResource = (
+                self._partially_initialized_airbyte_instance.process_config_and_initialize()
+            )
         else:
             self._partially_initialized_airbyte_instance = airbyte_resource_def(
                 build_init_resource_context()
@@ -774,8 +774,8 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 check.invariant(
                     len(state_files) <= 1,
-                    "More than one state file found for connection {} in {}, specify a workspace_id"
-                    " to disambiguate".format(connection_name, connection_dir),
+                    f"More than one state file found for connection {connection_name} in {connection_dir}, specify a workspace_id"
+                    " to disambiguate",
                 )
                 state_file = state_files[0]
 

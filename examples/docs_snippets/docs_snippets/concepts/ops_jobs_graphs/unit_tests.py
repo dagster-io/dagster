@@ -179,8 +179,7 @@ class Client:
     def __init__(self, api_key):
         self._api_key = api_key
 
-    def query(self, body):
-        ...
+    def query(self, body): ...
 
 
 class MyClientResource(ConfigurableResource):
@@ -411,18 +410,15 @@ from dagster import asset, materialize_to_memory, ConfigurableResource
 import mock
 
 
-class MyServiceResource(ConfigurableResource):
-    ...
+class MyServiceResource(ConfigurableResource): ...
 
 
 @asset
-def asset_requires_service(service: MyServiceResource):
-    ...
+def asset_requires_service(service: MyServiceResource): ...
 
 
 @asset
-def other_asset_requires_service(service: MyServiceResource):
-    ...
+def other_asset_requires_service(service: MyServiceResource): ...
 
 
 def test_assets_require_service():

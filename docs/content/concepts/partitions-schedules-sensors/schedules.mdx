@@ -45,8 +45,7 @@ Here's a simple schedule that runs a job every day, at midnight:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job
-def my_job():
-    ...
+def my_job(): ...
 
 
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
@@ -109,8 +108,7 @@ from dagster import build_schedule_from_partitioned_job, job
 
 
 @job(config=my_partitioned_config)
-def do_stuff_partitioned():
-    ...
+def do_stuff_partitioned(): ...
 
 
 do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
@@ -130,8 +128,7 @@ from dagster import (
 
 
 @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-def hourly_asset():
-    ...
+def hourly_asset(): ...
 
 
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
@@ -264,8 +261,7 @@ class DateFormatter(ConfigurableResource):
         return dt.strftime(self.format)
 
 @job
-def process_data():
-    ...
+def process_data(): ...
 
 @schedule(job=process_data, cron_schedule="* * * * *")
 def process_data_schedule(
@@ -296,11 +292,13 @@ Schedules must be started for them to run. Schedules can be started and stopped:
 
 - In the Dagster UI using the **Schedules** tab:
 
+  <!-- ![Schedules tab in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/schedules-tab-toggle.png) -->
+
   <Image
   alt="Schedules tab in the Dagster UI"
-  src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
-  width={1164}
-  height={280}
+  src="/images/concepts/partitions-schedules-sensors/schedules/schedules-tab-toggle.png"
+  width={1920}
+  height={512}
   />
 
 - Using the CLI:

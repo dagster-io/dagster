@@ -371,8 +371,7 @@ def test_multi_asset_sensor_invocation_resources() -> None:
 def test_multi_asset_sensor_with_source_assets() -> None:
     # upstream_asset1 exists in another repository
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"))
-    def upstream_asset1():
-        ...
+    def upstream_asset1(): ...
 
     upstream_asset1_source = SourceAsset(
         key=upstream_asset1.key,
@@ -380,8 +379,7 @@ def test_multi_asset_sensor_with_source_assets() -> None:
     )
 
     @asset()
-    def downstream_asset(upstream_asset1):
-        ...
+    def downstream_asset(upstream_asset1): ...
 
     @multi_asset_sensor(
         monitored_assets=[
@@ -622,6 +620,7 @@ def test_validated_partitions():
         assert run_request.run_config == {}
         assert run_request.tags.get(PARTITION_NAME_TAG) == "foo"
         assert run_request.tags.get("yay") == "yay!"
+        assert run_request.tags.get("dagster/sensor_name") == "valid_req_sensor"
 
 
 def test_partitioned_config_run_request():
@@ -681,11 +680,11 @@ def test_partitioned_config_run_request():
 
 
 def test_asset_selection_run_request_partition_key():
-    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    @sensor(asset_selection=AssetSelection.assets("a_asset"))
     def valid_req_sensor():
         return RunRequest(partition_key="a")
 
-    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    @sensor(asset_selection=AssetSelection.assets("a_asset"))
     def invalid_req_sensor():
         return RunRequest(partition_key="b")
 
@@ -956,8 +955,8 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert context.assets_defs_by_key[AssetKey("asset_a")] == two_assets
-        assert context.assets_defs_by_key[AssetKey("asset_b")] == two_assets
+        assert context.assets_defs_by_key[AssetKey("asset_a")].keys == two_assets.keys
+        assert context.assets_defs_by_key[AssetKey("asset_b")].keys == two_assets.keys
         assert len(context.assets_defs_by_key) == 2
 
     @repository

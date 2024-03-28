@@ -337,8 +337,7 @@ class BaseMultiPartitionMapping(ABC):
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-    ) -> Sequence[DimensionDependency]:
-        ...
+    ) -> Sequence[DimensionDependency]: ...
 
     def get_partitions_def(
         self, partitions_def: PartitionsDefinition, dimension_name: Optional[str]
@@ -376,9 +375,9 @@ class BaseMultiPartitionMapping(ABC):
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
         # partition keys in b_partitions_def that are dependencies of that partition
-        dep_b_keys_by_a_dim_and_key: Dict[
-            Optional[str], Dict[Optional[str], List[str]]
-        ] = defaultdict(lambda: defaultdict(list))
+        dep_b_keys_by_a_dim_and_key: Dict[Optional[str], Dict[Optional[str], List[str]]] = (
+            defaultdict(lambda: defaultdict(list))
+        )
         required_but_nonexistent_upstream_partitions = set()
 
         b_dimension_partitions_def_by_name: Dict[Optional[str], PartitionsDefinition] = (
@@ -700,7 +699,7 @@ class MultiPartitionMapping(
                 }
             )
 
-            MultiPartitionsMapping(
+            MultiPartitionMapping(
                 {
                     "abc": DimensionPartitionMapping(
                         dimension_name="123",
@@ -733,7 +732,7 @@ class MultiPartitionMapping(
                 }
             )
 
-            MultiPartitionsMapping(
+            MultiPartitionMapping(
                 {
                     "daily": DimensionPartitionMapping(
                         dimension_name="daily",
@@ -889,10 +888,11 @@ class StaticPartitionMapping(
                 self._inverse_mapping[downstream_key].add(upstream_key)
 
     @cached_method
-    def _check_upstream(self, *, upstream_partitions_def: PartitionsDefinition):
+    def _check_upstream(self, *, upstream_partitions_def: StaticPartitionsDefinition):
         """Validate that the mapping from upstream to downstream is only defined on upstream keys."""
-        check.inst(
+        check.inst_param(
             upstream_partitions_def,
+            "upstream_partitions_def",
             StaticPartitionsDefinition,
             "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
         )
@@ -904,10 +904,11 @@ class StaticPartitionMapping(
             )
 
     @cached_method
-    def _check_downstream(self, *, downstream_partitions_def: PartitionsDefinition):
+    def _check_downstream(self, *, downstream_partitions_def: StaticPartitionsDefinition):
         """Validate that the mapping from upstream to downstream only maps to downstream keys."""
-        check.inst(
+        check.inst_param(
             downstream_partitions_def,
+            "downstream_partitions_def",
             StaticPartitionsDefinition,
             "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
         )
@@ -922,8 +923,8 @@ class StaticPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
-        upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_def: StaticPartitionsDefinition,
+        downstream_partitions_def: StaticPartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
@@ -939,7 +940,7 @@ class StaticPartitionMapping(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_def: StaticPartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:

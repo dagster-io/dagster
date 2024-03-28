@@ -75,8 +75,7 @@ from dagster import Definitions, define_asset_job, asset
 
 
 @asset
-def some_asset():
-    ...
+def some_asset(): ...
 
 
 the_job = define_asset_job("the_job", selection="*")

@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: TestRetryExecution.test_pipeline_reexecution_info_query[0]
   list([
     'sum_sq_op',

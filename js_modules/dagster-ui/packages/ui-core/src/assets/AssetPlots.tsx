@@ -1,4 +1,4 @@
-import {Box, ButtonGroup, Spinner, Subheading} from '@dagster-io/ui-components';
+import {Box, ButtonGroup, SpinnerWithText} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
@@ -20,35 +20,15 @@ export const AssetPlots = ({assetKey, assetHasDefinedPartitions, params, setPara
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const activeItems = useMemo(() => new Set([xAxis]), [xAxis]);
 
-  if (loading) {
-    return (
-      <Box>
+  return (
+    <>
+      {assetHasDefinedPartitions ? (
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
           border="bottom"
           padding={{vertical: 16, left: 24, right: 12}}
           style={{marginBottom: -1}}
         >
-          <Subheading>Asset plots</Subheading>
-        </Box>
-        <Box padding={{vertical: 48}}>
-          <Spinner purpose="page" />
-        </Box>
-      </Box>
-    );
-  }
-
-  return (
-    <Box>
-      <Box
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        border="bottom"
-        padding={{vertical: 16, left: 24, right: 12}}
-        style={{marginBottom: -1}}
-      >
-        <Subheading>Asset plots</Subheading>
-
-        {assetHasDefinedPartitions ? (
           <div style={{margin: '-6px 0 '}}>
             <ButtonGroup
               activeItems={activeItems}
@@ -65,9 +45,15 @@ export const AssetPlots = ({assetKey, assetHasDefinedPartitions, params, setPara
               }
             />
           </div>
-        ) : null}
-      </Box>
-      <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} />
-    </Box>
+        </Box>
+      ) : null}
+      {loading ? (
+        <Box padding={{vertical: 48}} flex={{direction: 'row', justifyContent: 'center'}}>
+          <SpinnerWithText label="Loading plots…" />
+        </Box>
+      ) : (
+        <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} />
+      )}
+    </>
   );
 };

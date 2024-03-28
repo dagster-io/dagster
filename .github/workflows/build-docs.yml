@@ -30,17 +30,16 @@ jobs:
 
       - name: Checkout master/release branch
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-'))
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get PR fetch depth
         if: ${{ github.event.pull_request }}
         run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
 
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         if: ${{ github.event.pull_request }}
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Get changed docs files for PR comment
@@ -78,7 +77,7 @@ jobs:
       # Deploy to Vercel Production on push to docs-prod branch
       - name: Checkout docs-prod branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/docs-prod'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25

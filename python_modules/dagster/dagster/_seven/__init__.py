@@ -1,4 +1,5 @@
 """Internal py2/3 compatibility library. A little more than six."""
+
 import inspect
 import os
 import shlex
