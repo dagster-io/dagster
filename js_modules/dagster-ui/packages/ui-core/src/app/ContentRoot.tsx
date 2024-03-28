@@ -8,7 +8,7 @@ import {AssetsOverview} from '../assets/AssetsOverview';
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
 const AutomationRoot = lazy(() => import('../automation/AutomationRoot'));
-const FallthroughRoot = lazy(() => import('./BaseFallthroughRoot'));
+const FallthroughRoot = lazy(() => import('./FallthroughRoot'));
 const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
