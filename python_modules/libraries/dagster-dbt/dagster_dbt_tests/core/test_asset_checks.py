@@ -21,6 +21,8 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtT
 
 from ..dbt_projects import test_asset_checks_path
 
+pytest.importorskip("dbt.version", "1.6")
+
 dagster_dbt_translator_with_checks = DagsterDbtTranslator(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
 )
