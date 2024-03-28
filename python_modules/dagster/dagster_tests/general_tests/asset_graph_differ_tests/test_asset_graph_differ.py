@@ -130,7 +130,7 @@ def test_new_asset_connected(instance):
     )
 
     assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
-    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.INPUTS]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.DEPENDENCIES]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
@@ -158,7 +158,7 @@ def test_change_inputs(instance):
         },
     )
 
-    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.INPUTS]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.DEPENDENCIES]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
@@ -174,7 +174,7 @@ def test_multiple_changes_for_one_asset(instance):
 
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [
         ChangeReason.CODE_VERSION,
-        ChangeReason.INPUTS,
+        ChangeReason.DEPENDENCIES,
     ]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
@@ -215,7 +215,7 @@ def test_large_asset_graph(instance):
 
     for i in range(6, 1000):
         key = AssetKey(f"asset_{i}")
-        assert differ.get_changes_for_asset(key) == [ChangeReason.INPUTS]
+        assert differ.get_changes_for_asset(key) == [ChangeReason.DEPENDENCIES]
 
     for i in range(6):
         key = AssetKey(f"asset_{i}")
@@ -237,7 +237,7 @@ def test_multiple_code_locations(instance):
 
     # if the code_versions_asset_graph were in the diff computation, ChangeReason.CODE_VERSION would be in the list
     assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
-    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.INPUTS]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.DEPENDENCIES]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
@@ -292,10 +292,12 @@ def test_change_partition_mapping(instance):
         },
     )
     assert len(differ.get_changes_for_asset(AssetKey("daily_upstream"))) == 0
-    assert differ.get_changes_for_asset(AssetKey("daily_downstream")) == [ChangeReason.INPUTS]
+    assert differ.get_changes_for_asset(AssetKey("daily_downstream")) == [ChangeReason.DEPENDENCIES]
     assert len(differ.get_changes_for_asset(AssetKey("static_upstream"))) == 0
-    assert differ.get_changes_for_asset(AssetKey("static_downstream")) == [ChangeReason.INPUTS]
+    assert differ.get_changes_for_asset(AssetKey("static_downstream")) == [
+        ChangeReason.DEPENDENCIES
+    ]
     assert len(differ.get_changes_for_asset(AssetKey("multi_partitioned_upstream"))) == 0
     assert differ.get_changes_for_asset(AssetKey("multi_partitioned_downstream")) == [
-        ChangeReason.INPUTS
+        ChangeReason.DEPENDENCIES
     ]
