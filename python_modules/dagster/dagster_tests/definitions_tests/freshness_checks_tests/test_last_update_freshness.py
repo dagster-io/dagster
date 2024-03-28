@@ -24,46 +24,46 @@ def test_params() -> None:
         pass
 
     result = build_last_update_freshness_checks(
-        assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
+        assets=[my_asset], time_window_size=datetime.timedelta(minutes=10)
     )
     assert len(result) == 1
     check = result[0]
     assert next(iter(check.check_keys)).asset_key == my_asset.key
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
+            "dagster/time_window_size": 600,
         }
     }
 
     result = build_last_update_freshness_checks(
         assets=[my_asset],
-        freshness_cron="0 0 * * *",
-        lower_bound_delta=datetime.timedelta(minutes=10),
+        upper_bound_cron="0 0 * * *",
+        time_window_size=datetime.timedelta(minutes=10),
     )
     check = result[0]
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
-            "dagster/freshness_cron": "0 0 * * *",
-            "dagster/freshness_cron_timezone": "UTC",
+            "dagster/time_window_size": 600,
+            "dagster/upper_bound_cron": "0 0 * * *",
+            "dagster/upper_bound_cron_timezone": "UTC",
         }
     }
 
     result = build_last_update_freshness_checks(
-        assets=[my_asset.key], lower_bound_delta=datetime.timedelta(minutes=10)
+        assets=[my_asset.key], time_window_size=datetime.timedelta(minutes=10)
     )
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == my_asset.key
 
     src_asset = SourceAsset("source_asset")
     result = build_last_update_freshness_checks(
-        assets=[src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
+        assets=[src_asset], time_window_size=datetime.timedelta(minutes=10)
     )
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == src_asset.key
 
     result = build_last_update_freshness_checks(
-        assets=[my_asset, src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
+        assets=[my_asset, src_asset], time_window_size=datetime.timedelta(minutes=10)
     )
 
     assert len(result) == 2
@@ -71,14 +71,14 @@ def test_params() -> None:
 
     with pytest.raises(Exception, match="Found duplicate assets"):
         build_last_update_freshness_checks(
-            assets=[my_asset, my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
+            assets=[my_asset, my_asset], time_window_size=datetime.timedelta(minutes=10)
         )
 
     result = build_last_update_freshness_checks(
         assets=[my_asset],
-        lower_bound_delta=datetime.timedelta(minutes=10),
-        freshness_cron="0 0 * * *",
-        freshness_cron_timezone="UTC",
+        time_window_size=datetime.timedelta(minutes=10),
+        upper_bound_cron="0 0 * * *",
+        upper_bound_cron_timezone="UTC",
     )
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == my_asset.key
@@ -99,14 +99,14 @@ def test_different_event_types(
         pass
 
     start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
-    lower_bound_delta = datetime.timedelta(minutes=10)
+    time_window_size = datetime.timedelta(minutes=10)
 
-    with pendulum_freeze_time(start_time.subtract(minutes=(lower_bound_delta.seconds // 60) - 1)):
+    with pendulum_freeze_time(start_time.subtract(minutes=(time_window_size.seconds // 60) - 1)):
         add_new_event(instance, my_asset.key, is_materialization=use_materialization)
     with pendulum_freeze_time(start_time):
         freshness_checks = build_last_update_freshness_checks(
             assets=[my_asset],
-            lower_bound_delta=lower_bound_delta,
+            time_window_size=time_window_size,
         )
         assert_check_result(my_asset, instance, freshness_checks, AssetCheckSeverity.WARN, True)
 
@@ -122,15 +122,15 @@ def test_check_result_cron_non_partitioned(
         pass
 
     start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
-    freshness_cron = "0 0 * * *"  # Every day at midnight.
-    freshness_cron_timezone = "UTC"
-    lower_bound_delta = datetime.timedelta(minutes=10)
+    upper_bound_cron = "0 0 * * *"  # Every day at midnight.
+    upper_bound_cron_timezone = "UTC"
+    time_window_size = datetime.timedelta(minutes=10)
 
     freshness_checks = build_last_update_freshness_checks(
         assets=[my_asset],
-        freshness_cron=freshness_cron,
-        lower_bound_delta=lower_bound_delta,
-        freshness_cron_timezone=freshness_cron_timezone,
+        upper_bound_cron=upper_bound_cron,
+        time_window_size=time_window_size,
+        upper_bound_cron_timezone=upper_bound_cron_timezone,
     )
 
     freeze_datetime = start_time
@@ -194,11 +194,11 @@ def test_check_result_lag_only(
         pass
 
     start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
-    lower_bound_delta = datetime.timedelta(minutes=10)
+    time_window_size = datetime.timedelta(minutes=10)
 
     freshness_checks = build_last_update_freshness_checks(
         assets=[my_asset],
-        lower_bound_delta=lower_bound_delta,
+        time_window_size=time_window_size,
     )
 
     freeze_datetime = start_time

@@ -29,11 +29,11 @@ from ..decorators import sensor
 from ..run_request import RunRequest
 from ..sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
 from .utils import (
-    DEFAULT_FRESHNESS_CRON_TIMEZONE,
-    FRESHNESS_CRON_METADATA_KEY,
-    FRESHNESS_CRON_TIMEZONE_METADATA_KEY,
+    DEFAULT_UPPER_BOUND_CRON_TIMEZONE,
     FRESHNESS_PARAMS_METADATA_KEY,
-    LOWER_BOUND_DELTA_METADATA_KEY,
+    TIME_WINDOW_SIZE_METADATA_KEY,
+    UPPER_BOUND_CRON_METADATA_KEY,
+    UPPER_BOUND_CRON_TIMEZONE_METADATA_KEY,
     ensure_freshness_checks,
     ensure_no_duplicate_asset_checks,
 )
@@ -164,7 +164,7 @@ def should_run_again(
     if not prev_evaluation_timestamp:
         return True
 
-    timezone = get_freshness_cron_timezone(metadata) or DEFAULT_FRESHNESS_CRON_TIMEZONE
+    timezone = get_freshness_cron_timezone(metadata) or DEFAULT_UPPER_BOUND_CRON_TIMEZONE
     current_time = pendulum.from_timestamp(current_timestamp, tz=timezone)
     prev_evaluation_time = pendulum.from_timestamp(prev_evaluation_timestamp, tz=timezone)
 
@@ -186,13 +186,13 @@ def get_metadata(check_spec: AssetCheckSpec) -> Mapping[str, Any]:
 
 
 def get_freshness_cron(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(FRESHNESS_CRON_METADATA_KEY)
+    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(UPPER_BOUND_CRON_METADATA_KEY)
 
 
 def get_freshness_cron_timezone(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(FRESHNESS_CRON_TIMEZONE_METADATA_KEY)
+    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(UPPER_BOUND_CRON_TIMEZONE_METADATA_KEY)
 
 
 def get_lower_bound_delta(metadata: Mapping[str, Any]) -> Optional[datetime.timedelta]:
-    float_delta: float = metadata[FRESHNESS_PARAMS_METADATA_KEY].get(LOWER_BOUND_DELTA_METADATA_KEY)
+    float_delta: float = metadata[FRESHNESS_PARAMS_METADATA_KEY].get(TIME_WINDOW_SIZE_METADATA_KEY)
     return datetime.timedelta(seconds=float_delta) if float_delta else None

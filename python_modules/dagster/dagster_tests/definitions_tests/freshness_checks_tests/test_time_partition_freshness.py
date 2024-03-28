@@ -40,35 +40,37 @@ def test_params() -> None:
         pass
 
     result = build_time_partition_freshness_checks(
-        assets=[my_partitioned_asset], freshness_cron="0 0 * * *"
+        assets=[my_partitioned_asset], upper_bound_cron="0 0 * * *"
     )
     assert len(result) == 1
     check = result[0]
     assert next(iter(check.check_keys)).asset_key == my_partitioned_asset.key
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/freshness_cron": "0 0 * * *",
-            "dagster/freshness_cron_timezone": "UTC",
+            "dagster/upper_bound_cron": "0 0 * * *",
+            "dagster/upper_bound_cron_timezone": "UTC",
         }
     }
 
     result = build_time_partition_freshness_checks(
-        assets=[my_partitioned_asset.key], freshness_cron="0 0 * * *", freshness_cron_timezone="UTC"
+        assets=[my_partitioned_asset.key],
+        upper_bound_cron="0 0 * * *",
+        upper_bound_cron_timezone="UTC",
     )
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == my_partitioned_asset.key
 
     src_asset = SourceAsset("source_asset")
     result = build_time_partition_freshness_checks(
-        assets=[src_asset], freshness_cron="0 0 * * *", freshness_cron_timezone="UTC"
+        assets=[src_asset], upper_bound_cron="0 0 * * *", upper_bound_cron_timezone="UTC"
     )
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == src_asset.key
 
     result = build_time_partition_freshness_checks(
         assets=[my_partitioned_asset, src_asset],
-        freshness_cron="0 0 * * *",
-        freshness_cron_timezone="UTC",
+        upper_bound_cron="0 0 * * *",
+        upper_bound_cron_timezone="UTC",
     )
     assert len(result) == 2
     assert {next(iter(checks_def.check_keys)).asset_key for checks_def in result} == {
@@ -79,8 +81,8 @@ def test_params() -> None:
     with pytest.raises(Exception, match="Found duplicate assets"):
         build_time_partition_freshness_checks(
             assets=[my_partitioned_asset, my_partitioned_asset],
-            freshness_cron="0 0 * * *",
-            freshness_cron_timezone="UTC",
+            upper_bound_cron="0 0 * * *",
+            upper_bound_cron_timezone="UTC",
         )
 
     @multi_asset(
@@ -97,35 +99,35 @@ def test_params() -> None:
         pass
 
     result = build_time_partition_freshness_checks(
-        assets=[my_multi_asset], freshness_cron="0 0 * * *", freshness_cron_timezone="UTC"
+        assets=[my_multi_asset], upper_bound_cron="0 0 * * *", upper_bound_cron_timezone="UTC"
     )
     assert len(result) == 2
     assert {next(iter(checks_def.check_keys)).asset_key for checks_def in result} == set(
         my_multi_asset.keys
     )
 
-    with pytest.raises(Exception, match="freshness_cron must be a valid cron string."):
+    with pytest.raises(Exception, match="upper_bound_cron must be a valid cron string."):
         build_time_partition_freshness_checks(
-            assets=[my_multi_asset], freshness_cron="0 0 * * * *", freshness_cron_timezone="UTC"
+            assets=[my_multi_asset], upper_bound_cron="0 0 * * * *", upper_bound_cron_timezone="UTC"
         )
 
     with pytest.raises(Exception, match="Found duplicate assets"):
         build_time_partition_freshness_checks(
             assets=[my_multi_asset, my_multi_asset],
-            freshness_cron="0 0 * * *",
-            freshness_cron_timezone="UTC",
+            upper_bound_cron="0 0 * * *",
+            upper_bound_cron_timezone="UTC",
         )
 
     with pytest.raises(Exception, match="Found duplicate assets"):
         build_time_partition_freshness_checks(
             assets=[my_multi_asset, my_partitioned_asset],
-            freshness_cron="0 0 * * *",
-            freshness_cron_timezone="UTC",
+            upper_bound_cron="0 0 * * *",
+            upper_bound_cron_timezone="UTC",
         )
 
     coercible_key = "blah"
     result = build_time_partition_freshness_checks(
-        assets=[coercible_key], freshness_cron="0 0 * * *", freshness_cron_timezone="UTC"
+        assets=[coercible_key], upper_bound_cron="0 0 * * *", upper_bound_cron_timezone="UTC"
     )
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == AssetKey.from_coercible(coercible_key)
@@ -133,13 +135,13 @@ def test_params() -> None:
     with pytest.raises(Exception, match="Found duplicate assets"):
         build_time_partition_freshness_checks(
             assets=[coercible_key, coercible_key],
-            freshness_cron="0 0 * * *",
-            freshness_cron_timezone="UTC",
+            upper_bound_cron="0 0 * * *",
+            upper_bound_cron_timezone="UTC",
         )
 
     regular_asset_key = AssetKey("regular_asset_key")
     result = build_time_partition_freshness_checks(
-        assets=[regular_asset_key], freshness_cron="0 0 * * *", freshness_cron_timezone="UTC"
+        assets=[regular_asset_key], upper_bound_cron="0 0 * * *", upper_bound_cron_timezone="UTC"
     )
     assert len(result) == 1
     assert next(iter(result[0].check_keys)).asset_key == regular_asset_key
@@ -147,8 +149,8 @@ def test_params() -> None:
     with pytest.raises(Exception, match="Found duplicate assets"):
         build_time_partition_freshness_checks(
             assets=[regular_asset_key, regular_asset_key],
-            freshness_cron="0 0 * * *",
-            freshness_cron_timezone="UTC",
+            upper_bound_cron="0 0 * * *",
+            upper_bound_cron_timezone="UTC",
         )
 
 
@@ -169,8 +171,8 @@ def test_result_cron_param(
 
     freshness_checks = build_time_partition_freshness_checks(
         assets=[my_asset],
-        freshness_cron="0 9 * * *",  # 09:00 UTC
-        freshness_cron_timezone="UTC",
+        upper_bound_cron="0 9 * * *",  # 09:00 UTC
+        upper_bound_cron_timezone="UTC",
     )
 
     freeze_datetime = start_time
@@ -263,7 +265,9 @@ def test_invalid_runtime_assets(
         pass
 
     asset_checks = build_time_partition_freshness_checks(
-        assets=[non_partitioned_asset], freshness_cron="0 9 * * *", freshness_cron_timezone="UTC"
+        assets=[non_partitioned_asset],
+        upper_bound_cron="0 9 * * *",
+        upper_bound_cron_timezone="UTC",
     )
 
     with pytest.raises(CheckError, match="Asset is not time-window partitioned."):
@@ -280,7 +284,9 @@ def test_invalid_runtime_assets(
         pass
 
     asset_checks = build_time_partition_freshness_checks(
-        assets=[static_partitioned_asset], freshness_cron="0 9 * * *", freshness_cron_timezone="UTC"
+        assets=[static_partitioned_asset],
+        upper_bound_cron="0 9 * * *",
+        upper_bound_cron_timezone="UTC",
     )
 
     with pytest.raises(CheckError, match="Asset is not time-window partitioned."):
@@ -307,8 +313,8 @@ def test_observations(
 
     freshness_checks = build_time_partition_freshness_checks(
         assets=[my_asset],
-        freshness_cron="0 9 * * *",
-        freshness_cron_timezone="UTC",  # 09:00 UTC
+        upper_bound_cron="0 9 * * *",
+        upper_bound_cron_timezone="UTC",  # 09:00 UTC
     )
 
     with pendulum_freeze_time(pendulum.datetime(2021, 1, 3, 1, 0, 0, tz="UTC")):
@@ -349,8 +355,8 @@ def test_differing_timezones(
 
     freshness_checks = build_time_partition_freshness_checks(
         assets=[my_chicago_asset],
-        freshness_cron="0 9 * * *",
-        freshness_cron_timezone="America/Los_Angeles",  # 09:00 Los Angeles time
+        upper_bound_cron="0 9 * * *",
+        upper_bound_cron_timezone="America/Los_Angeles",  # 09:00 Los Angeles time
     )
 
     # Start in a neutral hour in all timezones, such that the cron is on the same tick for all, and add a new event. expect the check to pass.

@@ -1,5 +1,5 @@
 import datetime
-from typing import Callable, Iterator, Optional, Sequence, Union, cast
+from typing import Callable, Iterator, Optional, Sequence, Tuple, Union, cast
 
 import pendulum
 
@@ -10,7 +10,9 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import (
@@ -23,10 +25,10 @@ from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
 
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
-DEFAULT_FRESHNESS_CRON_TIMEZONE = "UTC"
-LOWER_BOUND_DELTA_METADATA_KEY = "dagster/lower_bound_delta"
-FRESHNESS_CRON_METADATA_KEY = "dagster/freshness_cron"
-FRESHNESS_CRON_TIMEZONE_METADATA_KEY = "dagster/freshness_cron_timezone"
+DEFAULT_UPPER_BOUND_CRON_TIMEZONE = "UTC"
+TIME_WINDOW_SIZE_METADATA_KEY = "dagster/time_window_size"
+UPPER_BOUND_CRON_METADATA_KEY = "dagster/upper_bound_cron"
+UPPER_BOUND_CRON_TIMEZONE_METADATA_KEY = "dagster/upper_bound_cron_timezone"
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
 
@@ -143,7 +145,7 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
         return cast(float, value)
 
 
-def get_last_updated_timestamp(record: Optional[EventLogRecord]) -> Optional[float]:
+def get_arrival_timestamp(record: Optional[EventLogRecord]) -> Optional[float]:
     if record is None:
         return None
     if record.asset_materialization is not None:
@@ -167,48 +169,54 @@ def ensure_freshness_checks(checks: Sequence[AssetChecksDefinition]) -> None:
             )
 
 
-def get_last_update_time_lower_bound(
-    freshness_cron: Optional[str],
+def get_time_window(
+    upper_bound_cron: Optional[str],
     current_timestamp: float,
-    lower_bound_delta: datetime.timedelta,
-    freshness_cron_timezone: str,
-) -> datetime.datetime:
-    """Get the lower bound of the last_update_time for the given cron schedule."""
+    upper_bound_cron_timezone: str,
+    time_window_size: Optional[datetime.timedelta],
+) -> Tuple[Optional[datetime.datetime], datetime.datetime]:
+    """Get the time window we expect the asset to arrive in given the provided parameters, as well
+    as the most recently completed partition key.
+    """
     current_time_in_freshness_tz = pendulum.from_timestamp(
-        current_timestamp, tz=freshness_cron_timezone
+        current_timestamp, tz=upper_bound_cron_timezone
     )
-    if freshness_cron:
-        return (
-            check.not_none(
-                get_latest_completed_cron_tick(
-                    freshness_cron=freshness_cron,
-                    current_time=current_time_in_freshness_tz,
-                    timezone=freshness_cron_timezone,
-                )
+    # If an upper bound cron is provided, then the upper bound of the time window is the most recent
+    # tick of the cron schedule. Otherwise, the upper bound is the current time.
+    upper_bound = (
+        check.not_none(
+            get_latest_completed_cron_tick(
+                cron=upper_bound_cron,
+                current_time=current_time_in_freshness_tz,
+                timezone=upper_bound_cron_timezone,
             )
-            - lower_bound_delta
         )
-    else:
-        return current_time_in_freshness_tz - lower_bound_delta
+        if upper_bound_cron
+        else current_time_in_freshness_tz
+    )
+    lower_bound = (
+        upper_bound - time_window_size if time_window_size else None
+    )  # lower bound is implicitly the start of the latest completed partition
+    return lower_bound, upper_bound
 
 
-def get_latest_complete_partition_key(
-    freshness_cron: Optional[str],
+def get_latest_completed_partition_key(
+    upper_bound_cron: Optional[str],
     current_timestamp: float,
-    freshness_cron_timezone: str,
+    upper_bound_cron_timezone: str,
     partitions_def: Optional[TimeWindowPartitionsDefinition],
 ) -> Optional[str]:
     """Get the latest complete partition key for the given cron schedule."""
     if not partitions_def:
         return None
     current_time_in_freshness_tz = pendulum.from_timestamp(
-        current_timestamp, tz=freshness_cron_timezone
+        current_timestamp, tz=upper_bound_cron_timezone
     )
     latest_cron_tick_time = check.not_none(
         get_latest_completed_cron_tick(
-            freshness_cron=freshness_cron,
+            cron=upper_bound_cron,
             current_time=current_time_in_freshness_tz,
-            timezone=freshness_cron_timezone,
+            timezone=upper_bound_cron_timezone,
         )
     )
     latest_cron_tick_time_in_partitions_def_tz = pendulum.from_timestamp(
@@ -222,18 +230,19 @@ def get_latest_complete_partition_key(
 
 def build_freshness_check(
     asset_key: AssetKey,
-    freshness_cron: Optional[str],
-    freshness_cron_timezone: str,
+    upper_bound_cron: Optional[str],
+    upper_bound_cron_timezone: str,
     severity: AssetCheckSeverity,
-    lower_bound_delta: datetime.timedelta,
+    fail_on_late_arrival: bool,
+    time_window_size: datetime.timedelta,
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]],
 ) -> AssetChecksDefinition:
     params_metadata = {}
-    if freshness_cron:
-        params_metadata[FRESHNESS_CRON_METADATA_KEY] = freshness_cron
-        params_metadata[FRESHNESS_CRON_TIMEZONE_METADATA_KEY] = freshness_cron_timezone
-    if lower_bound_delta:
-        params_metadata[LOWER_BOUND_DELTA_METADATA_KEY] = lower_bound_delta.total_seconds()
+    if upper_bound_cron:
+        params_metadata[UPPER_BOUND_CRON_METADATA_KEY] = upper_bound_cron
+        params_metadata[UPPER_BOUND_CRON_TIMEZONE_METADATA_KEY] = upper_bound_cron_timezone
+    if time_window_size:
+        params_metadata[TIME_WINDOW_SIZE_METADATA_KEY] = time_window_size.total_seconds()
 
     @asset_check(
         asset=asset_key,
@@ -258,33 +267,40 @@ def build_freshness_check(
             "Expected partitions_def to be time-windowed.",
         )
 
-        last_update_time_lower_bound = get_last_update_time_lower_bound(
-            freshness_cron=freshness_cron,
-            freshness_cron_timezone=freshness_cron_timezone,
+        lower_bound, upper_bound = get_time_window(
+            upper_bound_cron=upper_bound_cron,
+            upper_bound_cron_timezone=upper_bound_cron_timezone,
             current_timestamp=current_timestamp,
-            lower_bound_delta=lower_bound_delta,
+            time_window_size=time_window_size,
         )
-        expected_partition_key = get_latest_complete_partition_key(
-            freshness_cron=freshness_cron,
+        expected_partition_key = get_latest_completed_partition_key(
+            upper_bound_cron=upper_bound_cron,
             current_timestamp=current_timestamp,
-            freshness_cron_timezone=freshness_cron_timezone,
+            upper_bound_cron_timezone=upper_bound_cron_timezone,
             partitions_def=partitions_def,
         )
         latest_record = retrieve_latest_record(
             instance=context.instance, asset_key=asset_key, partition_key=expected_partition_key
         )
-        update_timestamp = get_last_updated_timestamp(latest_record)
-        passed = (
-            update_timestamp is not None
-            and update_timestamp >= last_update_time_lower_bound.timestamp()
+        arrival_timestamp = get_arrival_timestamp(latest_record)
+        lower_bound_timestamp = (
+            lower_bound.timestamp() if lower_bound else 0
+        )  # Indicating that we expect it to be trivial if not derived
+        is_late = arrival_timestamp is not None and arrival_timestamp > upper_bound.timestamp()
+        passed = arrival_timestamp is not None and (
+            upper_bound.timestamp() >= arrival_timestamp >= lower_bound_timestamp
+            if fail_on_late_arrival
+            else arrival_timestamp >= lower_bound_timestamp
         )
 
         return AssetCheckResult(
             passed=passed,
-            description=get_description_for_freshness_check(
+            description=get_description_for_check_result(
                 passed,
-                update_timestamp,
-                last_update_time_lower_bound,
+                arrival_timestamp,
+                upper_bound,
+                lower_bound,
+                is_late,
                 current_timestamp,
                 expected_partition_key,
             ),
@@ -294,61 +310,80 @@ def build_freshness_check(
     return the_check
 
 
-def get_description_for_freshness_check(
+def get_description_for_check_result(
     passed: bool,
-    update_timestamp: Optional[float],
-    last_update_time_lower_bound: datetime.datetime,
+    arrival_timestamp: Optional[float],
+    upper_bound: datetime.datetime,
+    lower_bound: Optional[datetime.datetime],
+    is_late: bool,
     current_timestamp: float,
     expected_partition_key: Optional[str],
 ) -> str:
     check.invariant(
-        (passed and update_timestamp is not None) or not passed,
+        (passed and arrival_timestamp is not None) or not passed,
         "Should not be possible for check to pass without a record.",
     )
-    update_time_delta_str = (
-        pendulum.duration(seconds=current_timestamp - update_timestamp).in_words()
-        if update_timestamp
+    descriptor = f"partition {expected_partition_key}" if expected_partition_key else "asset"
+    duration_since_upper_bound = pendulum.duration(
+        seconds=current_timestamp - upper_bound.timestamp()
+    )
+    duration_since_lower_bound = (
+        pendulum.duration(seconds=current_timestamp - lower_bound.timestamp())
+        if lower_bound
         else None
     )
-    last_update_time_lower_bound_delta_str = pendulum.duration(
-        seconds=current_timestamp - last_update_time_lower_bound.timestamp()
-    ).in_words()
-    return (
-        f"Partition {expected_partition_key} is fresh. Expected a record for the partition within the last {last_update_time_lower_bound_delta_str}, and found one last updated {update_time_delta_str} ago."
-        if passed and expected_partition_key
-        else f"Partition {expected_partition_key} is overdue. Expected a record for the partition within the last {last_update_time_lower_bound_delta_str}."
-        if not passed and expected_partition_key
-        else f"Asset is fresh. Expected a record within the last {last_update_time_lower_bound_delta_str}, and found one last updated {update_time_delta_str} ago."
-        if passed and update_timestamp
-        else f"Asset is overdue. Expected a record within the last {last_update_time_lower_bound_delta_str}."
+    expected_by = f"{duration_since_upper_bound.in_words()} ago" + (
+        f" (and no earlier than {duration_since_lower_bound.in_words()} ago)"
+        if duration_since_lower_bound
+        else ""
     )
+    arrival_result = (
+        f"arrived {pendulum.duration(seconds=current_timestamp - arrival_timestamp).in_words()} ago"
+        if arrival_timestamp
+        else "has not arrived"
+    )
+
+    check_result_implication = (
+        "The check passed, since it arrived on time"
+        if passed and not is_late
+        else "The check passed, since despite it being overdue, the asset has since arrived."
+        if passed and is_late
+        else "The check failed, since the asset has not arrived."
+        if not arrival_timestamp
+        else "The check failed, since the asset arrived late."
+    )
+    return f"The most recent record for the {descriptor} {arrival_result}, and was expected {expected_by}. {check_result_implication}"
 
 
 def build_freshness_checks_for_assets(
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
-    freshness_cron: Optional[str],
-    freshness_cron_timezone: str,
+    upper_bound_cron: Optional[str],
+    upper_bound_cron_timezone: str,
     severity: AssetCheckSeverity,
+    fail_on_late_arrival: bool = False,
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]] = None,
-    lower_bound_delta: datetime.timedelta = datetime.timedelta(minutes=0),
+    time_window_size: datetime.timedelta = datetime.timedelta(minutes=0),
 ) -> Sequence[AssetChecksDefinition]:
     ensure_no_duplicate_assets(assets)
-    freshness_cron = check.opt_str_param(freshness_cron, "freshness_cron")
+    upper_bound_cron = check.opt_str_param(upper_bound_cron, "upper_bound_cron")
     check.invariant(
-        is_valid_cron_string(freshness_cron) if freshness_cron else True,
-        "freshness_cron must be a valid cron string.",
+        is_valid_cron_string(upper_bound_cron) if upper_bound_cron else True,
+        "upper_bound_cron must be a valid cron string.",
     )
     severity = check.inst_param(severity, "severity", AssetCheckSeverity)
-    freshness_cron_timezone = check.str_param(freshness_cron_timezone, "freshness_cron_timezone")
-    lower_bound_delta = check.inst_param(lower_bound_delta, "lower_bound_delta", datetime.timedelta)
+    upper_bound_cron_timezone = check.str_param(
+        upper_bound_cron_timezone, "upper_bound_cron_timezone"
+    )
+    time_window_size = check.inst_param(time_window_size, "time_window_size", datetime.timedelta)
 
     return [
         build_freshness_check(
             asset_key=asset_key,
-            freshness_cron=freshness_cron,
-            freshness_cron_timezone=freshness_cron_timezone,
+            upper_bound_cron=upper_bound_cron,
+            upper_bound_cron_timezone=upper_bound_cron_timezone,
             severity=severity,
-            lower_bound_delta=lower_bound_delta,
+            fail_on_late_arrival=fail_on_late_arrival,
+            time_window_size=time_window_size,
             asset_property_enforcement_lambda=asset_property_enforcement_lambda,
         )
         for asset in assets
