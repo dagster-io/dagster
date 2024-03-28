@@ -127,7 +127,6 @@ def items(config: ItemsConfig, snowflake_resource: SnowflakeResource):
             conn=conn,
             df=result,
             table_name="items",
-            schema=snowflake_resource.schema,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
@@ -140,7 +139,7 @@ def comments(snowflake_resource: SnowflakeResource):
     table_name = "comments"
     item_type = "comment"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY(
+    create_table = CREATE_UPDATE_TABLE_QUERY.format(
         table_name=table_name,
         item_type=item_type,
     )
@@ -155,7 +154,7 @@ def stories(snowflake_resource: SnowflakeResource):
     table_name = "stories"
     item_type = "story"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY(
+    create_table = CREATE_UPDATE_TABLE_QUERY.format(
         table_name=table_name,
         item_type=item_type,
     )
@@ -432,7 +431,6 @@ def items(
             conn=conn,
             df=result,
             table_name="items",
-            schema=snowflake_resource.schema,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
