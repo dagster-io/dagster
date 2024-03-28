@@ -89,13 +89,6 @@ export const AssetChecks = ({
     );
   }, [data]);
 
-  const {AssetChecksBanner} = useContext(AssetFeatureContext);
-
-  const [didDismissAssetChecksBanner, setDidDismissAssetChecksBanner] = useStateWithStorage(
-    'asset-checks-experimental-banner',
-    (json) => !!json,
-  );
-
   const [searchValue, setSearchValue] = React.useState('');
 
   const filteredChecks = React.useMemo(() => {
@@ -170,15 +163,6 @@ export const AssetChecks = ({
 
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
-      {didDismissAssetChecksBanner ? null : (
-        <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
-          <AssetChecksBanner
-            onClose={() => {
-              setDidDismissAssetChecksBanner(true);
-            }}
-          />
-        </Box>
-      )}
       <Box flex={{direction: 'row', grow: 1}} style={{position: 'relative'}}>
         <Box flex={{direction: 'column'}} style={{minWidth: 294, width: '20%'}} border="right">
           <Box
