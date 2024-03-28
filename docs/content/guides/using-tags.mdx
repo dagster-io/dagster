@@ -1,11 +1,13 @@
 ---
-title: "Using tags to attach metadata | Dagster Docs"
-description: "Attach metadata to various Dagster definitions by using tags."
+title: "Using tags in your Dagster project | Dagster Docs"
+description: "Use tags to easily find objects and runs in your Dagster project."
 ---
 
-# Using tags to attach metadata
+# Using tags in your Dagster project
 
-Tags allow you to attach metadata to assets, ops, jobs, and job runs. By the end of this guide, you'll understand what tags are, how they work in Dagster, and how to apply them in your code.
+Over time, your Dagster project may grow to include a large number of Dagster definitions. Applying **tags** to assets, ops, jobs, and job runs can make them easier to find.
+
+By the end of this guide, you'll understand what tags are, how they work in Dagster, and how to apply them in your code.
 
 ---
 
@@ -18,6 +20,8 @@ Tags are key/value pairs of strings that can be applied to assets, ops, jobs, an
 def leads():
     ...
 ```
+
+Tags are helpful when you need to find specific items in your Dagster project. For example, tags can be used as a filter when looking at the **Asset catalog** in the Dagster UI, allowing you to only see specific assets.
 
 ### Tag keys
 
