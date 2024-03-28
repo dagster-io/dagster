@@ -1,19 +1,19 @@
-from dagster import DailyPartitionsDefinition, SourceAsset, materialize
+from dagster import materialize
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.backfills.single_run_backfill_io_manager import (
+    daily_partition,
     MyIOManager,
     events,
+    raw_events,
 )
 
 
 def test_io_manager():
-    raw_events = SourceAsset("raw_events", partitions_def=events.partitions_def)
-
     assert materialize(
-        [events],
+        [events, raw_events],
         tags={
             ASSET_PARTITION_RANGE_START_TAG: "2020-01-02",
             ASSET_PARTITION_RANGE_END_TAG: "2020-01-04",

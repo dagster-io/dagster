@@ -21,8 +21,13 @@ class MyIOManager(IOManager):
         return overwrite_data_in_datetime_range(start_datetime, end_datetime, obj)
 
 
+daily_partition = DailyPartitionsDefinition(start_date="2020-01-01")
+
+raw_events = SourceAsset("raw_events", partitions_def=daily_partition)
+
+
 @asset(
-    partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+    partitions_def=daily_partition,
     backfill_policy=BackfillPolicy.single_run(),
 )
 def events(context: AssetExecutionContext, raw_events):
@@ -30,15 +35,16 @@ def events(context: AssetExecutionContext, raw_events):
     return output_data
 
 
-raw_events = SourceAsset("raw_events", partitions_def=events.partitions_def)
-
 # end_marker
 
 
-def compute_events_from_raw_events(*args): ...
+def compute_events_from_raw_events(*args):
+    ...
 
 
-def read_data_in_datetime_range(*args): ...
+def read_data_in_datetime_range(*args):
+    ...
 
 
-def overwrite_data_in_datetime_range(*args): ...
+def overwrite_data_in_datetime_range(*args):
+    ...
