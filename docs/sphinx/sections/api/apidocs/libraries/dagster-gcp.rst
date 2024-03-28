@@ -41,6 +41,12 @@ BigQuery Ops
 
 .. autofunction:: import_gcs_paths_to_bq
 
+
+Data Freshness 
+^^^^^^^^^^^^^^
+
+.. autofunction:: fetch_last_updated_timestamps
+
 Other
 ^^^^^^^
 
