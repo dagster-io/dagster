@@ -9,10 +9,6 @@ from dagster import (
 from . import assets
 from .graphs_and_ops import layover_breakdown_2022, us_assets
 
-airline_job = define_asset_job(
-    "airline_job", AssetSelection.assets("passenger_flights").downstream()
-)
-
 
 defs = Definitions(
     assets=[

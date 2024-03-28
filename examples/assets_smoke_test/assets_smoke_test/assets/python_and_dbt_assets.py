@@ -1,18 +1,14 @@
 from dagster import (
-    Definitions,
-    EnvVar,
     SourceAsset,
     TableSchema,
     asset,
-    load_assets_from_current_module,
 )
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._utils import file_relative_path
 from dagster_dbt import DbtCliResource, dbt_assets
-from dagster_snowflake_pandas import SnowflakePandasIOManager
 from pandas import DataFrame
 
-DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
+DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 dbt_resource = DbtCliResource(project_dir=DBT_PROJECT_DIR)
 dbt_parse_invocation = dbt_resource.cli(["parse"]).wait()
 dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
@@ -47,16 +43,4 @@ def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
-defs = Definitions(
-    assets=load_assets_from_current_module(),
-    resources={
-        "io_manager": SnowflakePandasIOManager(
-            account=EnvVar("SNOWFLAKE_ACCOUNT"),
-            user=EnvVar("SNOWFLAKE_USER"),
-            password=EnvVar("SNOWFLAKE_PASSWORD"),
-            database=EnvVar("SNOWFLAKE_DATABASE"),
-            warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
-        ),
-        "dbt": dbt_resource,
-    },
-)
+
