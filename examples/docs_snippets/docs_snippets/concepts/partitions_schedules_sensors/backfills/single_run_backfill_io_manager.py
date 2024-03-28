@@ -6,6 +6,7 @@ from dagster import (
     InputContext,
     IOManager,
     OutputContext,
+    SourceAsset,
     asset,
 )
 
@@ -28,6 +29,8 @@ def events(context: AssetExecutionContext, raw_events):
     output_data = compute_events_from_raw_events(raw_events)
     return output_data
 
+
+raw_events = SourceAsset("raw_events", partitions_def=events.partitions_def)
 
 # end_marker
 
