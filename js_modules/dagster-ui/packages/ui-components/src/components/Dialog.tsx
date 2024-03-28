@@ -24,9 +24,9 @@ export const Dialog = (props: Props) => {
   return (
     <BlueprintDialog
       {...rest}
-      portalClassName="dagster-portal"
+      portalClassName={`dagster-portal${props.portalClassName ? ` ${props.portalClassName}` : ''}`}
       backdropClassName="dagster-backdrop"
-      className="dagster-dialog"
+      className={`dagster-dialog${props.className ? ` ${props.className}` : ''}`}
     >
       {title ? <DialogHeader icon={icon} label={title} /> : null}
       <ErrorBoundary region="dialog">{children}</ErrorBoundary>

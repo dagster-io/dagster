@@ -14,7 +14,7 @@ Starting with `taxi_trips_file`, the asset code should currently look like this:
 @asset
 def taxi_trips_file():
     """
-        The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+      The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
     """
     month_to_fetch = '2023-03'
     raw_trips = requests.get(
@@ -39,7 +39,7 @@ To add the partition to the asset:
 
    ```python
    @asset(
-     partitions_def=monthly_partition
+       partitions_def=monthly_partition
    )
    ```
 
@@ -47,7 +47,7 @@ To add the partition to the asset:
 
    ```python
    @asset(
-     partitions_def=monthly_partition
+       partitions_def=monthly_partition
    )
    def taxi_trips_file(context):
    ```
@@ -58,21 +58,21 @@ To add the partition to the asset:
 
    ```python
    @asset(
-     partitions_def=monthly_partition
+       partitions_def=monthly_partition
    )
    def taxi_trips_file(context):
-     partition_date_str = context.asset_partition_key_for_output()
+       partition_date_str = context.asset_partition_key_for_output()
    ```
 
 5. In the NYC OpenData source system, the taxi trip files are structured in a `YYYY-MM` format. However, `context.asset_partition_key_for_output()` supplies the materializing partition’s date as a string in the `YYYY-MM-DD` format. Slice the string to make it match the format expected by our source system and replace our existing declaration of the `month_to_fetch` variable:
 
    ```python
    @asset(
-     partitions_def=monthly_partition
+       partitions_def=monthly_partition
    )
    def taxi_trips_file(context):
-     partition_date_str = context.asset_partition_key_for_output()
-     month_to_fetch = partition_date_str[:-3]
+       partition_date_str = context.asset_partition_key_for_output()
+       month_to_fetch = partition_date_str[:-3]
    ```
 
 After following the steps above, the `taxi_trips_file` asset should look similar to the code snippet below:
@@ -81,7 +81,7 @@ After following the steps above, the `taxi_trips_file` asset should look similar
 from ..partitions import monthly_partition
 
 @asset(
-  partitions_def=monthly_partition
+    partitions_def=monthly_partition
 )
 def taxi_trips_file(context):
   """

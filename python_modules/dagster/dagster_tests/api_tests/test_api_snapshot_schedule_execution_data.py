@@ -9,7 +9,7 @@ from dagster._api.snapshot_schedule import (
 )
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation.external_data import ExternalScheduleExecutionErrorData
+from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs

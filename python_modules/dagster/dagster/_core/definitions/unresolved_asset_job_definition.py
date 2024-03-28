@@ -1,15 +1,14 @@
-from collections import defaultdict
 from datetime import datetime
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
+from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 
-from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
 from .metadata import RawMetadataValue
 from .policy import RetryPolicy
@@ -24,7 +23,7 @@ if TYPE_CHECKING:
         PartitionsDefinition,
         ResourceDefinition,
     )
-    from dagster._core.definitions.asset_graph import InternalAssetGraph
+    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
     from dagster._core.definitions.run_config import RunConfig
 
@@ -176,68 +175,26 @@ class UnresolvedAssetJobDefinition(
 
     def resolve(
         self,
-        asset_graph: "InternalAssetGraph",
+        asset_graph: "AssetGraph",
         default_executor_def: Optional["ExecutorDefinition"] = None,
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
-        assets = asset_graph.assets
-        source_assets = asset_graph.source_assets
-        selected_asset_keys = self.selection.resolve(asset_graph)
-        if asset_graph.includes_materializable_and_source_assets(selected_asset_keys):
+        try:
+            job_asset_graph = get_asset_graph_for_job(asset_graph, self.selection)
+        except DagsterInvalidDefinitionError as e:
             raise DagsterInvalidDefinitionError(
-                f"Asset selection for job '{self.name}' specified both regular assets and source "
-                "assets. This is not currently supported. Selections must be all regular "
-                "assets or all source assets.",
-            )
+                f'Error resolving selection for asset job "{self.name}": {e}'
+            ) from e
 
-        selected_asset_checks = self.selection.resolve_checks(asset_graph)
-
-        asset_keys_by_partitions_def = defaultdict(set)
-        for asset_key in selected_asset_keys:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
-            if partitions_def is not None:
-                asset_keys_by_partitions_def[partitions_def].add(asset_key)
-
-        if len(asset_keys_by_partitions_def) > 1:
-            keys_by_partitions_def_str = "\n".join(
-                f"{partitions_def}: {asset_keys}"
-                for partitions_def, asset_keys in asset_keys_by_partitions_def.items()
-            )
-            raise DagsterInvalidDefinitionError(
-                f"Multiple partitioned assets exist in assets job '{self.name}'. Selected assets"
-                " must have the same partitions definitions, but the selected assets have"
-                f" different partitions definitions: \n{keys_by_partitions_def_str}"
-            )
-
-        inferred_partitions_def = (
-            next(iter(asset_keys_by_partitions_def.keys()))
-            if asset_keys_by_partitions_def
-            else None
-        )
-        if (
-            inferred_partitions_def
-            and self.partitions_def != inferred_partitions_def
-            and self.partitions_def is not None
-        ):
-            raise DagsterInvalidDefinitionError(
-                f"Job '{self.name}' received a partitions_def of {self.partitions_def}, but the"
-                f" selected assets {next(iter(asset_keys_by_partitions_def.values()))} have a"
-                f" non-matching partitions_def of {inferred_partitions_def}"
-            )
-
-        return build_asset_selection_job(
-            name=self.name,
-            assets=assets,
-            asset_checks=asset_graph.asset_checks,
+        return build_asset_job(
+            self.name,
+            asset_graph=job_asset_graph,
             config=self.config,
-            source_assets=source_assets,
             description=self.description,
             tags=self.tags,
             metadata=self.metadata,
-            asset_selection=selected_asset_keys,
-            asset_check_selection=selected_asset_checks,
-            partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
+            partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,

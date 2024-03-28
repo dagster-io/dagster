@@ -10,7 +10,7 @@ import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {
   LogsRowStructuredFragment,
-  LogsRowStructuredFragment_AssetCheckEvaluationEvent_,
+  LogsRowStructuredFragment_AssetCheckEvaluationEvent,
 } from './types/LogsRow.types';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
@@ -26,7 +26,7 @@ import {
   MetadataEntries,
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
@@ -451,7 +451,7 @@ const AssetCheckEvaluationContent = ({
   node,
   eventType,
 }: {
-  node: LogsRowStructuredFragment_AssetCheckEvaluationEvent_;
+  node: LogsRowStructuredFragment_AssetCheckEvaluationEvent;
   eventType: string;
 }) => {
   const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;

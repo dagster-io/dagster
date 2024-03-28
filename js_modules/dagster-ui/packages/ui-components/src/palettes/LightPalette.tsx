@@ -91,8 +91,8 @@ export const LightPalette = {
   [ColorName.LineageEdgeHighlighted]: CoreColors.Gray400,
   [ColorName.LineageGroupNodeBackground]: CoreColors.Gray10,
   [ColorName.LineageGroupNodeBackgroundHover]: CoreColors.Gray50,
-  [ColorName.LineageGroupNodeBorder]: CoreColors.Gray50,
-  [ColorName.LineageGroupNodeBorderHover]: CoreColors.Gray50,
+  [ColorName.LineageGroupNodeBorder]: TranslucentColors.Gray25,
+  [ColorName.LineageGroupNodeBorderHover]: TranslucentColors.Gray25,
   [ColorName.LineageGroupBackground]: TranslucentColors.LightWash,
   [ColorName.LineageNodeBackground]: CoreColors.Gray50,
   [ColorName.LineageNodeBackgroundHover]: CoreColors.Gray100,
@@ -127,4 +127,7 @@ export const LightPalette = {
   [ColorName.DataVizVioletAlt]: DataVizColors.Violet300,
   [ColorName.DataVizYellow]: DataVizColors.Yellow200,
   [ColorName.DataVizYellowAlt]: DataVizColors.Yellow300,
+
+  //Gradients
+  [ColorName.BlueGradient]: `linear-gradient(${CoreColors.Gray10}, ${TranslucentColors.Blue10} 100%)`,
 };

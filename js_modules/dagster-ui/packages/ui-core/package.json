@@ -43,7 +43,7 @@
     "codemirror": "^5.65.2",
     "color": "^3.0.0",
     "cronstrue": "^1.84.0",
-    "dagre": "^0.8.5",
+    "dagre": "dagster-io/dagre#0.8.5",
     "date-fns": "^2.28.0",
     "dayjs": "^1.11.7",
     "deepmerge": "^4.2.2",
@@ -69,7 +69,7 @@
     "strip-markdown": "^6.0.0",
     "subscriptions-transport-ws": "^0.9.15",
     "worker-loader": "^3.0.8",
-    "yaml": "2.2.2"
+    "yaml": "2.4.0"
   },
   "devDependencies": {
     "@apollo/client": "3.7.13",
@@ -88,10 +88,10 @@
     "@blueprintjs/select": "^4.9.12",
     "@dagster-io/eslint-config": "workspace:*",
     "@dagster-io/ui-components": "workspace:*",
-    "@graphql-codegen/add": "^3.2.3",
-    "@graphql-codegen/cli": "^2.16.3",
-    "@graphql-codegen/near-operation-file-preset": "^2.5.0",
-    "@graphql-codegen/typescript-operations": "^2.5.12",
+    "@graphql-codegen/add": "^5.0.2",
+    "@graphql-codegen/cli": "^5.0.2",
+    "@graphql-codegen/near-operation-file-preset": "^3.0.0",
+    "@graphql-codegen/typescript-operations": "^4.2.0",
     "@graphql-eslint/eslint-plugin": "^3.18.0",
     "@graphql-tools/mock": "^8.5.0",
     "@graphql-tools/schema": "^8.3.1",

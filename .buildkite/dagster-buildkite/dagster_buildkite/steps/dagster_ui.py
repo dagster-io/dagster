@@ -28,6 +28,7 @@ def build_dagster_ui_components_steps() -> List[CommandStep]:
         CommandStepBuilder(":typescript: dagster-ui-components")
         .run(
             "cd js_modules/dagster-ui/packages/ui-components",
+            "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .on_test_image(AvailablePythonVersion.get_default())
@@ -57,6 +58,7 @@ def build_dagster_ui_core_steps() -> List[CommandStep]:
         CommandStepBuilder(":typescript: dagster-ui-core")
         .run(
             "cd js_modules/dagster-ui",
+            "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .on_test_image(AvailablePythonVersion.get_default())

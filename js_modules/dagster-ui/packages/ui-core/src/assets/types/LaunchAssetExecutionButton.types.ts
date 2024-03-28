@@ -1236,6 +1236,7 @@ export type LaunchAssetLoaderQuery = {
           };
     } | null;
   }>;
+  assetNodeAdditionalRequiredKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   assetNodeDefinitionCollisions: Array<{
     __typename: 'AssetNodeDefinitionCollision';
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -1863,9 +1864,9 @@ export type LaunchAssetLoaderJobQuery = {
 };
 
 export type LaunchAssetLoaderResourceQueryVariables = Types.Exact<{
-  pipelineName: Types.Scalars['String'];
-  repositoryLocationName: Types.Scalars['String'];
-  repositoryName: Types.Scalars['String'];
+  pipelineName: Types.Scalars['String']['input'];
+  repositoryLocationName: Types.Scalars['String']['input'];
+  repositoryName: Types.Scalars['String']['input'];
 }>;
 
 export type LaunchAssetLoaderResourceQuery = {

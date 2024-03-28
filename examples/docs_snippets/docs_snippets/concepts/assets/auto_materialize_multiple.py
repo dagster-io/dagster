@@ -7,13 +7,11 @@ from dagster import (
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(deps=[asset1])
-def asset2():
-    ...
+def asset2(): ...
 
 
 defs = Definitions(

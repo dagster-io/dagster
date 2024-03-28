@@ -1,5 +1,7 @@
-import functools
+import dataclasses
 import json
+from dataclasses import dataclass
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Mapping,
@@ -23,10 +25,10 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .asset_graph import AssetGraph
+from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
-    from .asset_condition import (
+    from .asset_condition.asset_condition import (
         AssetConditionEvaluation,
         AssetConditionEvaluationState,
         AssetConditionSnapshot,
@@ -66,7 +68,8 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
         "last_observe_request_timestamp_by_asset_key": ObserveRequestTimestampSerializer
     }
 )
-class AssetDaemonCursor(NamedTuple):
+@dataclass(frozen=True)
+class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
     Attributes:
@@ -88,8 +91,7 @@ class AssetDaemonCursor(NamedTuple):
             last_observe_request_timestamp_by_asset_key={},
         )
 
-    @property
-    @functools.lru_cache(maxsize=1)
+    @cached_property
     def previous_evaluation_state_by_key(
         self,
     ) -> Mapping[AssetKey, "AssetConditionEvaluationState"]:
@@ -119,7 +121,8 @@ class AssetDaemonCursor(NamedTuple):
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         evaluation_state: Sequence["AssetConditionEvaluationState"],
     ) -> "AssetDaemonCursor":
-        return self._replace(
+        return dataclasses.replace(
+            self,
             evaluation_id=evaluation_id,
             previous_evaluation_state=evaluation_state,
             last_observe_request_timestamp_by_asset_key={
@@ -145,7 +148,7 @@ def get_backcompat_asset_condition_evaluation_state(
     handled_root_subset: Optional[AssetSubset],
 ) -> "AssetConditionEvaluationState":
     """Generates an AssetDaemonCursor from information available on the old cursor format."""
-    from dagster._core.definitions.asset_condition import (
+    from dagster._core.definitions.asset_condition.asset_condition import (
         AssetConditionEvaluationState,
         RuleCondition,
     )
@@ -165,12 +168,12 @@ def get_backcompat_asset_condition_evaluation_state(
 
 
 def backcompat_deserialize_asset_daemon_cursor_str(
-    cursor_str: str, asset_graph: Optional[AssetGraph], default_evaluation_id: int
+    cursor_str: str, asset_graph: Optional[BaseAssetGraph], default_evaluation_id: int
 ) -> AssetDaemonCursor:
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
     """
-    from .asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
+    from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
     from .auto_materialize_rule_evaluation import (
         deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
     )
@@ -196,7 +199,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     partition_subsets_by_asset_key = {}
     for key_str, serialized_str in data.get("handled_root_partitions_by_asset_key", {}).items():
         asset_key = AssetKey.from_user_string(key_str)
-        partitions_def = asset_graph.get_partitions_def(asset_key) if asset_graph else None
+        partitions_def = asset_graph.get(asset_key).partitions_def if asset_graph else None
         if not partitions_def:
             continue
         try:
@@ -218,7 +221,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     latest_evaluation_by_asset_key = {}
     for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
         key = AssetKey.from_user_string(key_str)
-        partitions_def = asset_graph.get_partitions_def(key) if asset_graph else None
+        partitions_def = asset_graph.get(key).partitions_def if asset_graph else None
 
         evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
             serialized_evaluation, partitions_def
@@ -228,7 +231,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
 
     previous_evaluation_state = []
     cursor_keys = (
-        asset_graph.auto_materialize_policies_by_key.keys()
+        asset_graph.materializable_asset_keys
         if asset_graph
         else latest_evaluation_by_asset_key.keys()
     )
@@ -236,7 +239,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
         latest_evaluation_result = latest_evaluation_by_asset_key.get(asset_key)
         # create a placeholder evaluation result if we don't have one
         if not latest_evaluation_result:
-            partitions_def = asset_graph.get_partitions_def(asset_key) if asset_graph else None
+            partitions_def = asset_graph.get(asset_key).partitions_def if asset_graph else None
             latest_evaluation_result = AssetConditionEvaluation(
                 condition_snapshot=AssetConditionSnapshot("", "", ""),
                 true_subset=AssetSubset.empty(asset_key, partitions_def),
@@ -269,7 +272,7 @@ class LegacyAssetDaemonCursorWrapper(NamedTuple):
 
     serialized_cursor: str
 
-    def get_asset_daemon_cursor(self, asset_graph: Optional[AssetGraph]) -> AssetDaemonCursor:
+    def get_asset_daemon_cursor(self, asset_graph: Optional[BaseAssetGraph]) -> AssetDaemonCursor:
         return backcompat_deserialize_asset_daemon_cursor_str(
             self.serialized_cursor, asset_graph, 0
         )

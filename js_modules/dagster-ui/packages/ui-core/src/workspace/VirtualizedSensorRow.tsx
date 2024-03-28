@@ -24,13 +24,18 @@ import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
+import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
 import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorTargetList} from '../sensors/SensorTargetList';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+} from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
-const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1.5fr 120px 1fr 76px 120px 148px 180px';
-const TEMPLATE_COLUMNS = '1.5fr 120px 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS = '1.5fr 150px 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
 
 interface SensorRowProps {
   name: string;
@@ -55,23 +60,43 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     height,
   } = props;
 
-  const [querySensor, queryResult] = useLazyQuery<SingleSensorQuery, SingleSensorQueryVariables>(
-    SINGLE_SENSOR_QUERY,
-    {
-      variables: {
-        selector: {
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-          sensorName: name,
-        },
+  const [querySensor, sensorQueryResult] = useLazyQuery<
+    SingleSensorQuery,
+    SingleSensorQueryVariables
+  >(SINGLE_SENSOR_QUERY, {
+    variables: {
+      selector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        sensorName: name,
       },
     },
+  });
+
+  const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
+    SensorAssetSelectionQuery,
+    SensorAssetSelectionQueryVariables
+  >(SENSOR_ASSET_SELECTIONS_QUERY, {
+    variables: {
+      sensorSelector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        sensorName: name,
+      },
+    },
+  });
+
+  useDelayedRowQuery(
+    React.useCallback(() => {
+      querySensor();
+      querySensorAssetSelection();
+    }, [querySensor, querySensorAssetSelection]),
   );
 
-  useDelayedRowQuery(querySensor);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(sensorQueryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(sensorAssetSelectionQueryResult, FIFTEEN_SECONDS);
 
-  const {data} = queryResult;
+  const {data} = sensorQueryResult;
 
   const sensorData = React.useMemo(() => {
     if (data?.sensorOrError.__typename !== 'Sensor') {
@@ -146,19 +171,28 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           </Box>
         </RowCell>
         <RowCell>
-          {sensorInfo ? (
-            sensorInfo.description ? (
-              <Tooltip content={sensorInfo.description}>
+          <div>
+            {sensorInfo ? (
+              sensorInfo.description ? (
+                <Tooltip content={sensorInfo.description}>
+                  <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
+                </Tooltip>
+              ) : (
                 <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
-              </Tooltip>
-            ) : (
-              <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
-            )
-          ) : null}
+              )
+            ) : null}
+          </div>
         </RowCell>
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            <SensorTargetList targets={sensorData?.targets} repoAddress={repoAddress} />
+            {sensorData ? (
+              <SensorTargetList
+                targets={sensorData.targets}
+                repoAddress={repoAddress}
+                selectionQueryResult={sensorAssetSelectionQueryResult}
+                sensorType={sensorData.sensorType}
+              />
+            ) : null}
           </Box>
         </RowCell>
         <RowCell>
@@ -175,7 +209,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               {humanizeSensorInterval(sensorData.minIntervalSeconds)}
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -184,7 +218,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               <TickStatusTag tick={tick} />
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -197,7 +231,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               showSummary={false}
             />
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
       </RowGrid>
@@ -250,10 +284,11 @@ export const SENSOR_TYPE_META: Record<
     icon: 'asset',
     description: 'Asset sensors instigate runs when a materialization occurs',
   },
-  [SensorType.AUTOMATION_POLICY]: {
-    name: 'Automation',
-    icon: 'hourglass',
-    description: 'Automation policy sensors react to defined automation policy conditions',
+  [SensorType.AUTO_MATERIALIZE]: {
+    name: 'Auto-materialize',
+    icon: 'materialization',
+    description:
+      'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
   },
   [SensorType.FRESHNESS_POLICY]: {
     name: 'Freshness policy',

@@ -1,0 +1,8 @@
+
+# start_set_alerts
+dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
+# end_set_alerts
+
+# start_view_alerts
+dagster-cloud deployment alert-policies list
+# end_view_alerts

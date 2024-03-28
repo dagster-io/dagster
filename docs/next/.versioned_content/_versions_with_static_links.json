@@ -418,5 +418,45 @@
   {
     "url": "https://release-1-6-3.dagster.dagster-docs.io/",
     "version": "1.6.3"
+  },
+  {
+    "url": "https://release-1-6-4.dagster.dagster-docs.io/",
+    "version": "1.6.4"
+  },
+  {
+    "url": "https://release-1-6-5.dagster.dagster-docs.io/",
+    "version": "1.6.5"
+  },
+  {
+    "url": "https://release-1-6-6.dagster.dagster-docs.io/",
+    "version": "1.6.6"
+  },
+  {
+    "url": "https://release-1-6-7.dagster.dagster-docs.io/",
+    "version": "1.6.7"
+  },
+  {
+    "url": "https://release-1-6-8.dagster.dagster-docs.io/",
+    "version": "1.6.8"
+  },
+  {
+    "url": "https://release-1-6-9.dagster.dagster-docs.io/",
+    "version": "1.6.9"
+  },
+  {
+    "url": "https://release-1-6-10.dagster.dagster-docs.io/",
+    "version": "1.6.10"
+  },
+  {
+    "url": "https://release-1-6-11.dagster.dagster-docs.io/",
+    "version": "1.6.11"
+  },
+  {
+    "url": "https://release-1-6-12.dagster.dagster-docs.io/",
+    "version": "1.6.12"
+  },
+  {
+    "url": "https://release-1-6-13.dagster.dagster-docs.io/",
+    "version": "1.6.13"
   }
 ]

@@ -10,7 +10,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.backfills.single_run_ba
 
 
 def test_io_manager():
-    # raw_events = SourceAsset("raw_events", partitions_def=events.partitions_def)
+    raw_events = SourceAsset("raw_events", partitions_def=events.partitions_def)
 
     assert materialize(
         [events],

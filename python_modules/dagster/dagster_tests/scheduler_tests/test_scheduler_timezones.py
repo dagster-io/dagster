@@ -2,8 +2,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pendulum
 import pytest
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone

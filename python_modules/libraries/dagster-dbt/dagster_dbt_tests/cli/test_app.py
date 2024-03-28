@@ -10,30 +10,19 @@ import pytest
 from dagster_dbt.cli.app import app
 from typer.testing import CliRunner
 
+from ..dbt_projects import test_jaffle_shop_path
+
 if TYPE_CHECKING:
     from dagster import Definitions
 
 
-test_dagster_metadata_dbt_project_path = (
-    Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_metadata").resolve()
-)
-
 runner = CliRunner()
 
 
-@pytest.fixture(name="disable_openblas_threading_affinity")
-def disable_openblas_threading_affinity_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENBLAS_MAIN_FREE", "1")
-    monkeypatch.setenv("GOTOBLAS_MAIN_FREE", "1")
-
-
 @pytest.fixture(name="dbt_project_dir")
-def dbt_project_dir_fixture(tmp_path: Path, disable_openblas_threading_affinity) -> Path:
-    dbt_project_dir = tmp_path.joinpath("test_dagster_metadata")
-    shutil.copytree(
-        src=test_dagster_metadata_dbt_project_path,
-        dst=dbt_project_dir,
-    )
+def dbt_project_dir_fixture(tmp_path: Path) -> Path:
+    dbt_project_dir = tmp_path.joinpath("test_jaffle_shop")
+    shutil.copytree(src=test_jaffle_shop_path, dst=dbt_project_dir)
 
     return dbt_project_dir
 
@@ -89,10 +78,7 @@ def _update_dbt_project_path(
 ) -> Path:
     if use_dbt_project_package_data_dir:
         dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
-        shutil.copytree(
-            src=test_dagster_metadata_dbt_project_path,
-            dst=dbt_project_dir,
-        )
+        shutil.copytree(src=test_jaffle_shop_path, dst=dbt_project_dir)
 
     return dbt_project_dir
 

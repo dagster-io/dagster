@@ -12,11 +12,10 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 const SEARCH_THRESHOLD = 10;
 
-export const CodeLocationsPage = () => {
+export const CodeLocationsPageContent = () => {
   useTrackPageView();
   useDocumentTitle('Code locations');
 
-  const {pageTitle} = React.useContext(InstancePageContext);
   const {locationEntries, loading} = React.useContext(WorkspaceContext);
 
   const [searchValue, setSearchValue] = React.useState('');
@@ -42,8 +41,7 @@ export const CodeLocationsPage = () => {
   };
 
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="locations" />} />
+    <>
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
@@ -70,6 +68,16 @@ export const CodeLocationsPage = () => {
         codeLocations={filtered}
         searchValue={searchValue}
       />
+    </>
+  );
+};
+
+export const CodeLocationsPage = () => {
+  const {pageTitle} = React.useContext(InstancePageContext);
+  return (
+    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="locations" />} />
+      <CodeLocationsPageContent />
     </Box>
   );
 };

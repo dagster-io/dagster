@@ -97,9 +97,8 @@ def _execute_run_command_body(
         f"Run with id '{run_id}' not found for run execution.",
     )
 
-    check.inst(
+    check.not_none(
         dagster_run.job_code_origin,
-        JobPythonOrigin,
         f"Run with id '{run_id}' does not include an origin.",
     )
 
@@ -193,9 +192,8 @@ def _resume_run_command_body(
         instance.get_run_by_id(run_id),  # type: ignore
         f"Run with id '{run_id}' not found for run execution.",
     )
-    check.inst(
+    check.not_none(
         dagster_run.job_code_origin,
-        JobPythonOrigin,
         f"Run with id '{run_id}' does not include an origin.",
     )
 
@@ -328,7 +326,10 @@ def execute_step_command(input_json, compressed_input_json):
         args = deserialize_value(input_json, ExecuteStepArgs)
 
         with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
-            dagster_run = instance.get_run_by_id(args.run_id)
+            dagster_run = check.not_none(
+                instance.get_run_by_id(args.run_id),
+                f"Run with id '{args.run_id}' not found for step execution",
+            )
 
             buff = []
 
@@ -353,14 +354,8 @@ def _execute_step_command_body(
         else None
     )
     try:
-        check.inst(
-            dagster_run,
-            DagsterRun,
-            f"Run with id '{args.run_id}' not found for step execution",
-        )
-        check.inst(
+        check.not_none(
             dagster_run.job_code_origin,
-            JobPythonOrigin,
             f"Run with id '{args.run_id}' does not include an origin.",
         )
 

@@ -5,11 +5,11 @@ import {Suggest as BlueprintSuggest, SuggestProps, isCreateNewItem} from '@bluep
 import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {List as _List} from 'react-virtualized';
-import {createGlobalStyle} from 'styled-components';
+import styled, {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
+import {Icon, IconName, IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 
 // todo: react-virtualized needs updated types to work with React 18. For now lets any type.
@@ -57,6 +57,7 @@ const VISIBLE_ITEMS = 7.5;
 interface Props<T> extends React.PropsWithChildren<SuggestProps<T>> {
   itemHeight?: number;
   menuWidth?: number;
+  icon?: IconName;
 }
 
 export const Suggest = <T,>(props: Props<T>) => {
@@ -65,6 +66,7 @@ export const Suggest = <T,>(props: Props<T>) => {
     itemHeight = MENU_ITEM_HEIGHT,
     menuWidth = MENU_WIDTH,
     noResults,
+    icon,
     ...rest
   } = props;
 
@@ -80,7 +82,7 @@ export const Suggest = <T,>(props: Props<T>) => {
     className: 'dagster-suggest-input',
   };
 
-  return (
+  const suggest = (
     <BlueprintSuggest<T>
       {...rest}
       inputProps={inputProps as any}
@@ -122,4 +124,33 @@ export const Suggest = <T,>(props: Props<T>) => {
       popoverProps={allPopoverProps}
     />
   );
+
+  if (icon) {
+    return (
+      <SuggestWithIconWrapper>
+        <div>
+          <Icon name={icon} />
+        </div>
+        {suggest}
+      </SuggestWithIconWrapper>
+    );
+  }
+  return suggest;
 };
+
+const SuggestWithIconWrapper = styled.div`
+  position: relative;
+  > :first-child {
+    position: absolute;
+    left: 8px;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  &&& input {
+    padding-left: 28px;
+  }
+`;

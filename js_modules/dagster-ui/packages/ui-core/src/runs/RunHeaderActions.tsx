@@ -92,14 +92,14 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
               >
                 <MenuItem
                   text="Download debug file"
-                  icon={<Icon name="download_for_offline" />}
+                  icon="download_for_offline"
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
               {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
                 <MenuItem
                   text="Free concurrency slots"
-                  icon={<Icon name="lock" />}
+                  icon="lock"
                   onClick={freeConcurrencySlots}
                 />
               ) : null}

@@ -111,8 +111,7 @@ def test_config_annotation_no_config_schema_err() -> None:
     ):
 
         @configured(MyResource, config_schema={"simplified_param": str})
-        def my_resource_simplified(config_in: MyResourceSimplifiedConfig):
-            ...
+        def my_resource_simplified(config_in: MyResourceSimplifiedConfig): ...
 
 
 def test_config_annotation_extra_param_err() -> None:
@@ -129,8 +128,7 @@ def test_config_annotation_extra_param_err() -> None:
     ):
 
         @configured(MyResource)
-        def my_resource_simplified(config_in: MyResourceSimplifiedConfig, useless_param: str):
-            ...
+        def my_resource_simplified(config_in: MyResourceSimplifiedConfig, useless_param: str): ...
 
 
 def test_factory_resource_pattern_noargs() -> None:

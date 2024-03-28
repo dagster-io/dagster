@@ -19,7 +19,6 @@ import {
   TextInput,
   isHelpContextEqual,
 } from '@dagster-io/ui-components';
-import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -53,6 +52,7 @@ import {
   PreviewConfigQuery,
   PreviewConfigQueryVariables,
 } from './types/LaunchpadSession.types';
+import {mergeYaml, sanitizeConfigYamlString} from './yamlUtils';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {
   IExecutionSession,
@@ -282,14 +282,9 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       return false;
     }
     try {
-      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(rootDefaultYaml));
-
-      const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
-      const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
-
       return (
-        yaml.stringify(currentUserConfig, {sortMapEntries: true}) !==
-        yaml.stringify(updatedRunConfigData, {sortMapEntries: true})
+        mergeYaml(rootDefaultYaml, currentSession.runConfigYaml, {sortMapEntries: true}) !==
+        mergeYaml({}, currentSession.runConfigYaml, {sortMapEntries: true})
       );
     } catch (err) {
       return false;
@@ -299,10 +294,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
     try {
-      const runConfigData = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
-      const updatedRunConfigData = merge(config, runConfigData);
-      const runConfigYaml = yaml.stringify(updatedRunConfigData);
-      onSaveSession({runConfigYaml});
+      onSaveSession({runConfigYaml: mergeYaml(config, currentSession.runConfigYaml)});
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
     }
@@ -310,13 +302,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const onExpandDefaults = () => {
     if (rootDefaultYaml) {
-      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(rootDefaultYaml));
-
-      const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
-      const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
-      const mergedYaml = yaml.stringify(updatedRunConfigData);
-
-      onSaveSession({runConfigYaml: mergedYaml});
+      onSaveSession({runConfigYaml: mergeYaml(rootDefaultYaml, currentSession.runConfigYaml)});
     }
   };
 
@@ -520,12 +506,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
           body: <PythonErrorInfo error={partition.runConfigOrError} />,
         });
       } else {
-        runConfigYaml = yaml.stringify(
-          merge(
-            yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml)),
-            yaml.parse(sanitizeConfigYamlString(partition.runConfigOrError.yaml)),
-          ),
-        );
+        runConfigYaml = mergeYaml(currentSession.runConfigYaml, partition.runConfigOrError.yaml);
       }
 
       const solidSelection = sessionSolidSelection || partition.solidSelection;
@@ -893,8 +874,6 @@ const deletePropertyPath = (obj: any, path: string) => {
     delete obj[lastKey];
   }
 };
-
-const sanitizeConfigYamlString = (yamlString: string) => (yamlString || '').trim() || '{}';
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(

@@ -164,8 +164,7 @@ from dagster import build_schedule_from_partitioned_job, job
 
 
 @job(config=my_partitioned_config)
-def do_stuff_partitioned():
-    ...
+def do_stuff_partitioned(): ...
 
 
 do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(

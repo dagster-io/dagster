@@ -29,16 +29,16 @@ from dagster._serdes.serdes import (
     deserialize_value,
     whitelist_for_serdes,
 )
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .partition import PartitionsDefinition, SerializedPartitionsSubset
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition import AssetSubsetWithMetadata
-
-    from .asset_condition import (
+    from .asset_condition.asset_condition import (
         AssetConditionEvaluation,
         AssetConditionEvaluationWithRunIds,
         AssetConditionSnapshot,
+        AssetSubsetWithMetadata,
     )
 
 
@@ -148,7 +148,7 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
     """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
     objects into the new AssetConditionEvaluationWithRunIds objects.
     """
-    from .asset_condition import AssetConditionEvaluationWithRunIds
+    from .asset_condition.asset_condition import AssetConditionEvaluationWithRunIds
 
     class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
         @property
@@ -213,10 +213,10 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
     ) -> "AssetConditionSnapshot":
-        from .asset_condition import AssetConditionSnapshot, RuleCondition
+        from .asset_condition.asset_condition import AssetConditionSnapshot, RuleCondition
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
-        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
 
         return AssetConditionSnapshot(
             class_name=RuleCondition.__name__,
@@ -233,7 +233,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         is_partitioned: bool,
         rule_snapshot: AutoMaterializeRuleSnapshot,
     ) -> "AssetConditionEvaluation":
-        from .asset_condition import (
+        from .asset_condition.asset_condition import (
             AssetConditionEvaluation,
             AssetSubsetWithMetadata,
             HistoricalAllPartitionsSubsetSentinel,
@@ -252,9 +252,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
         true_subset = AssetSubset.empty(asset_key, self.partitions_def)
         for _, serialized in partition_subsets_by_condition:
-            true_subset = (
-                self.deserialize_serialized_partitions_subset_or_none(asset_key, serialized)
-                | true_subset
+            true_subset |= self.deserialize_serialized_partitions_subset_or_none(
+                asset_key, serialized
             )
 
         return AssetConditionEvaluation(
@@ -279,7 +278,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
     ) -> Optional["AssetConditionEvaluation"]:
-        from .asset_condition import (
+        from .asset_condition.asset_condition import (
             AssetConditionEvaluation,
             AssetConditionSnapshot,
             HistoricalAllPartitionsSubsetSentinel,
@@ -320,7 +319,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             )
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
             for e in child_evaluations:
-                true_subset = e.true_subset | true_subset
+                true_subset |= e.true_subset
             evaluation = AssetConditionEvaluation(
                 condition_snapshot=decision_type_snapshot,
                 true_subset=true_subset,
@@ -372,7 +371,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
-        from .asset_condition import (
+        from .asset_condition.asset_condition import (
             AndAssetCondition,
             AssetConditionEvaluation,
             AssetConditionSnapshot,
@@ -439,7 +438,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
         # all AssetSubsets generated here are created using the current partitions_def, so they
         # will be valid
-        true_subset = materialize_evaluation.true_subset.as_valid
+        true_subset = materialize_evaluation.true_subset.as_valid(self.partitions_def)
         if not_skip_evaluation:
             true_subset -= not_skip_evaluation.child_evaluations[0].true_subset
         if not_discard_evaluation:
@@ -533,30 +532,24 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class FreshnessAutoMaterializeCondition(NamedTuple):
-    ...
+class FreshnessAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class DownstreamFreshnessAutoMaterializeCondition(NamedTuple):
-    ...
+class DownstreamFreshnessAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class ParentMaterializedAutoMaterializeCondition(NamedTuple):
-    ...
+class ParentMaterializedAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class MissingAutoMaterializeCondition(NamedTuple):
-    ...
+class MissingAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class ParentOutdatedAutoMaterializeCondition(NamedTuple):
-    ...
+class ParentOutdatedAutoMaterializeCondition(NamedTuple): ...
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple):
-    ...
+class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple): ...

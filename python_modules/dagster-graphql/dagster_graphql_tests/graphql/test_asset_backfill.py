@@ -15,7 +15,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
     GqlResult,
@@ -23,6 +23,8 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     main_repo_location_name,
 )
+
+ensure_dagster_tests_import()
 from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
     root_assets_different_partitions_same_downstream,
 )
@@ -113,12 +115,10 @@ def get_repo() -> RepositoryDefinition:
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(partitions_def=partitions_def)
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset()
     def asset3():
@@ -132,12 +132,10 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2(asset1):
-        ...
+    def asset2(asset1): ...
 
     return Definitions(assets=[asset1, asset2]).get_repository_def()
 
@@ -571,12 +569,10 @@ def test_launch_asset_backfill_with_non_partitioned_asset():
 
 def get_daily_hourly_repo() -> RepositoryDefinition:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-    def hourly():
-        ...
+    def hourly(): ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
-    def daily(hourly):
-        ...
+    def daily(hourly): ...
 
     return Definitions(assets=[hourly, daily]).get_repository_def()
 
@@ -607,12 +603,12 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
             asset_graph = repo.asset_graph
             assert target_subset == AssetGraphSubset(
                 partitions_subsets_by_asset_key={
-                    AssetKey("hourly"): asset_graph.get_partitions_def(
+                    AssetKey("hourly"): asset_graph.get(
                         AssetKey("hourly")
-                    ).subset_with_partition_keys(hourly_partitions),
-                    AssetKey("daily"): asset_graph.get_partitions_def(
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
                 },
             )
 
@@ -633,16 +629,13 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
 
 def get_daily_two_hourly_repo() -> RepositoryDefinition:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-    def hourly1():
-        ...
+    def hourly1(): ...
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-    def hourly2():
-        ...
+    def hourly2(): ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
-    def daily(hourly1, hourly2):
-        ...
+    def daily(hourly1, hourly2): ...
 
     return Definitions(assets=[hourly1, hourly2, daily]).get_repository_def()
 
@@ -675,31 +668,28 @@ def test_launch_asset_backfill_with_two_anchor_assets():
             asset_graph = repo.asset_graph
             assert target_subset == AssetGraphSubset(
                 partitions_subsets_by_asset_key={
-                    AssetKey("hourly1"): asset_graph.get_partitions_def(
+                    AssetKey("hourly1"): asset_graph.get(
                         AssetKey("hourly1")
-                    ).subset_with_partition_keys(hourly_partitions),
-                    AssetKey("hourly2"): asset_graph.get_partitions_def(
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    AssetKey("hourly2"): asset_graph.get(
                         AssetKey("hourly2")
-                    ).subset_with_partition_keys(hourly_partitions),
-                    AssetKey("daily"): asset_graph.get_partitions_def(
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),
+                    AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),
                 },
             )
 
 
 def get_daily_hourly_non_partitioned_repo() -> RepositoryDefinition:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-    def hourly():
-        ...
+    def hourly(): ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
-    def daily(hourly):
-        ...
+    def daily(hourly): ...
 
     @asset
-    def non_partitioned(hourly):
-        ...
+    def non_partitioned(hourly): ...
 
     return Definitions(assets=[hourly, daily, non_partitioned]).get_repository_def()
 
@@ -734,13 +724,13 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                 non_partitioned_asset_keys={AssetKey("non_partitioned")},
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): (
-                        asset_graph.get_partitions_def(AssetKey("hourly"))
-                        .empty_subset()
+                        asset_graph.get(AssetKey("hourly"))
+                        .partitions_def.empty_subset()
                         .with_partition_keys(hourly_partitions)
                     ),
                     AssetKey("daily"): (
-                        asset_graph.get_partitions_def(AssetKey("daily"))
-                        .empty_subset()
+                        asset_graph.get(AssetKey("daily"))
+                        .partitions_def.empty_subset()
                         .with_partition_keys(["2020-01-02", "2020-01-03"])
                     ),
                 },
@@ -882,6 +872,42 @@ def test_asset_backfill_preview_static_partitioned():
 
             assert target_asset_partitions[2]["assetKey"] == {"path": ["asset3"]}
             assert target_asset_partitions[2]["partitions"] is None
+
+
+def test_asset_backfill_error_raised_upon_invalid_params_provided():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_daily_hourly_non_partitioned_repo", instance
+        ) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": {"path": ["hourly"]},
+                                "partitions": {
+                                    "range": {
+                                        "start": "2024-01-01-00:00",
+                                        "end": "2024-01-01-01:00",
+                                    }
+                                },
+                            }
+                        ],
+                        "assetSelection": [{"path": ["hourly"]}],
+                    }
+                },
+            )
+            assert launch_backfill_result.data
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "partitions_by_assets cannot be used together with asset_selection, selector, or partitionNames"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
 
 
 def _get_backfill_data(

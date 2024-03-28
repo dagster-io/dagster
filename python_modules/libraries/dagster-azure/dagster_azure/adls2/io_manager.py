@@ -74,12 +74,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return True
 
     def _uri_for_path(self, path: UPath, protocol: str = "abfss://") -> str:
-        return "{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}".format(
-            protocol=protocol,
-            filesystem=self.file_system_client.file_system_name,
-            account=self.file_system_client.account_name,
-            key=path.as_posix(),
-        )
+        return f"{protocol}{self.file_system_client.file_system_name}@{self.file_system_client.account_name}.dfs.core.windows.net/{path.as_posix()}"
 
     @contextmanager
     def _acquire_lease(self, client: Any, is_rm: bool = False) -> Iterator[str]:

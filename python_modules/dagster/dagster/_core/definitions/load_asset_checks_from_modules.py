@@ -1,23 +1,29 @@
 import inspect
 from importlib import import_module
 from types import ModuleType
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, Optional, Sequence, cast
 
 import dagster._check as check
+from dagster._core.definitions.assets import AssetsDefinition
 
-from .asset_checks import AssetChecksDefinition
-from .events import (
+from .asset_checks import AssetChecksDefinition, has_only_asset_checks
+from .asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from .load_assets_from_modules import find_modules_in_package, find_objects_in_module_of_types
+from .load_assets_from_modules import (
+    find_modules_in_package,
+    find_objects_in_module_of_types,
+    prefix_assets,
+)
 
 
 def _checks_from_modules(modules: Iterable[ModuleType]) -> Sequence[AssetChecksDefinition]:
     checks = []
     for module in modules:
-        for c in find_objects_in_module_of_types(module, AssetChecksDefinition):
-            checks.append(c)
+        for c in find_objects_in_module_of_types(module, AssetsDefinition):
+            if has_only_asset_checks(c):
+                checks.append(cast(AssetChecksDefinition, c))
     return checks
 
 
@@ -26,13 +32,11 @@ def _checks_with_attributes(
     asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[AssetChecksDefinition]:
     modified_checks = []
-    for c in checks_defs:
-        modified_checks.append(
-            c.with_attributes(
-                asset_key_prefix=asset_key_prefix,
-            )
-        )
-    return modified_checks
+    if asset_key_prefix:
+        modified_checks, _ = prefix_assets(checks_defs, asset_key_prefix, [], None)
+        return cast(Sequence[AssetChecksDefinition], modified_checks)
+    else:
+        return checks_defs
 
 
 def load_asset_checks_from_modules(
@@ -55,7 +59,6 @@ def load_asset_checks_from_modules(
     asset_key_prefix = check_opt_coercible_to_asset_key_prefix_param(
         asset_key_prefix, "asset_key_prefix"
     )
-
     return _checks_with_attributes(_checks_from_modules(modules), asset_key_prefix=asset_key_prefix)
 
 

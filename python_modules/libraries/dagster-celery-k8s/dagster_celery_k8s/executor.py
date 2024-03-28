@@ -20,7 +20,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
@@ -308,13 +308,11 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         api_client = DagsterKubernetesClient.production_client()
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
-        dagster_run = instance.get_run_by_id(execute_step_args.run_id)
-
-        check.inst(
-            dagster_run,
-            DagsterRun,
+        dagster_run = check.not_none(
+            instance.get_run_by_id(execute_step_args.run_id),
             f"Could not load run {execute_step_args.run_id}",
         )
+
         step_key = execute_step_args.step_keys_to_execute[0]
 
         celery_worker_name = self.request.hostname
@@ -367,9 +365,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             "dagster/run-id": execute_step_args.run_id,
         }
         if dagster_run.external_job_origin:
-            labels[
-                "dagster/code-location"
-            ] = dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            labels["dagster/code-location"] = (
+                dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+            )
         job = construct_dagster_k8s_job(
             job_config,
             args,
@@ -418,8 +416,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             if e.reason == "Conflict":
                 # There is an existing job with the same name so proceed and see if the existing job succeeded
                 instance.report_engine_event(
-                    "Did not create Kubernetes job {} for step {} since job name already "
-                    "exists, proceeding with existing job.".format(job_name, step_key),
+                    f"Did not create Kubernetes job {job_name} for step {step_key} since job name already "
+                    "exists, proceeding with existing job.",
                     dagster_run,
                     EngineEventData(
                         {
@@ -433,8 +431,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 )
             else:
                 instance.report_engine_event(
-                    "Encountered unexpected error while creating Kubernetes job {} for step {}, "
-                    "exiting.".format(job_name, step_key),
+                    f"Encountered unexpected error while creating Kubernetes job {job_name} for step {step_key}, "
+                    "exiting.",
                     dagster_run,
                     EngineEventData(
                         {
@@ -485,8 +483,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             kubernetes.client.rest.ApiException,
         ):
             instance.report_engine_event(
-                "Encountered unexpected error while waiting on Kubernetes job {} for step {}, "
-                "exiting.".format(job_name, step_key),
+                f"Encountered unexpected error while waiting on Kubernetes job {job_name} for step {step_key}, "
+                "exiting.",
                 dagster_run,
                 EngineEventData(
                     {
@@ -503,8 +501,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             pod_names = api_client.get_pod_names_in_job(job_name, namespace=job_namespace)
         except kubernetes.client.rest.ApiException:
             instance.report_engine_event(
-                "Encountered unexpected error retreiving Pods for Kubernetes job {} for step {}, "
-                "exiting.".format(job_name, step_key),
+                f"Encountered unexpected error retreiving Pods for Kubernetes job {job_name} for step {step_key}, "
+                "exiting.",
                 dagster_run,
                 EngineEventData(
                     {
@@ -534,10 +532,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 logs += raw_logs.split("\n")
             except kubernetes.client.exceptions.ApiException:
                 instance.report_engine_event(
-                    "Encountered unexpected error while fetching pod logs for Kubernetes job {}, "
-                    "Pod name {} for step {}. Will attempt to continue with other pods.".format(
-                        job_name, pod_name, step_key
-                    ),
+                    f"Encountered unexpected error while fetching pod logs for Kubernetes job {job_name}, "
+                    f"Pod name {pod_name} for step {step_key}. Will attempt to continue with other pods.",
                     dagster_run,
                     EngineEventData(
                         {

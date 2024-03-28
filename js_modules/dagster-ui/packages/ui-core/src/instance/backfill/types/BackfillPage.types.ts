@@ -3,7 +3,7 @@
 import * as Types from '../../../graphql/types';
 
 export type BackfillStatusesByAssetQueryVariables = Types.Exact<{
-  backfillId: Types.Scalars['String'];
+  backfillId: Types.Scalars['String']['input'];
 }>;
 
 export type BackfillStatusesByAssetQuery = {
@@ -140,7 +140,7 @@ export type PartitionBackfillFragment = {
 };
 
 export type BackfillPartitionsForAssetKeyQueryVariables = Types.Exact<{
-  backfillId: Types.Scalars['String'];
+  backfillId: Types.Scalars['String']['input'];
   assetKey: Types.AssetKeyInput;
 }>;
 

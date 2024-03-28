@@ -15,7 +15,7 @@ export type AssetGroupAndLocationQuery = {
         definition: {
           __typename: 'AssetNode';
           id: string;
-          groupName: string | null;
+          groupName: string;
           repository: {
             __typename: 'Repository';
             id: string;

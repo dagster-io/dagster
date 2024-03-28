@@ -20,6 +20,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {PipelineSelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
@@ -171,10 +172,12 @@ export const ROOT_WORKSPACE_QUERY = gql`
       status
     }
     sensorType
+    ...SensorSwitchFragment
   }
 
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
 `;
 
 /**

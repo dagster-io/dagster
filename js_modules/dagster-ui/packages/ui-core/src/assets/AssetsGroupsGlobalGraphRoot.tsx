@@ -12,11 +12,12 @@ import {
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
@@ -30,21 +31,30 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   const history = useHistory();
 
   const [filters, setFilters] = useQueryPersistedState<{
-    groups: AssetGroupSelector[];
-    computeKindTags: string[];
+    groups?: AssetGroupSelector[];
+    computeKindTags?: string[];
+    changedInBranch?: ChangeReason[];
+    tags?: DefinitionTag[];
+    owners?: AssetOwner[];
   }>({
-    encode: ({groups, computeKindTags}) => ({
-      groups: groups.length ? JSON.stringify(groups) : undefined,
-      computeKindTags: computeKindTags.length ? JSON.stringify(computeKindTags) : undefined,
+    encode: ({groups, computeKindTags, changedInBranch, tags, owners}) => ({
+      groups: groups?.length ? JSON.stringify(groups) : undefined,
+      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
+      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+      tags: tags?.length ? JSON.stringify(tags) : undefined,
+      owners: owners?.length ? JSON.stringify(owners) : undefined,
     }),
     decode: (qs) => ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
       computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
+      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
+      tags: qs.tags ? JSON.parse(qs.tags) : [],
+      owners: qs.owners ? JSON.parse(qs.owners) : [],
     }),
   });
 
   useDocumentTitle(`Global Asset Lineage`);
-  const trace = useStartTrace('GlobalAssetGraph');
+  const trace = usePageLoadTrace('GlobalAssetGraph');
 
   const onChangeExplorerPath = useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
@@ -83,11 +93,28 @@ export const AssetsGroupsGlobalGraphRoot = () => {
           }
         }
 
+        if (filters.changedInBranch?.length) {
+          if (node.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))) {
+            return false;
+          }
+          return true;
+        }
+        if (filters.owners?.length) {
+          if (!doesFilterArrayMatchValueArray(filters.owners, node?.owners ?? [])) {
+            return true;
+          }
+        }
+        if (filters.tags?.length) {
+          if (!doesFilterArrayMatchValueArray(filters.tags, node?.tags ?? [])) {
+            return true;
+          }
+        }
+
         return false;
       },
     };
     return options;
-  }, [filters.groups, visibleRepos]);
+  }, [filters, visibleRepos]);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>

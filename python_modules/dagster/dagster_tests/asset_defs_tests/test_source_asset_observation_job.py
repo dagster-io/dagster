@@ -92,24 +92,6 @@ def test_partitioned_observable_source_asset():
         )
 
 
-def test_mixed_source_asset_observation_job():
-    @observable_source_asset
-    def foo(_context) -> DataVersion:
-        return DataVersion("alpha")
-
-    @asset(deps=["foo"])
-    def bar(context):
-        return 1
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match=r"specified both regular assets and source assets"
-    ):
-        Definitions(
-            assets=[foo, bar],
-            jobs=[define_asset_job("mixed_job", [foo, bar])],
-        ).get_all_job_defs()
-
-
 @pytest.mark.parametrize(
     "is_valid,resource_defs",
     [(True, {"bar": ResourceDefinition.hardcoded_resource("bar")}), (False, {})],

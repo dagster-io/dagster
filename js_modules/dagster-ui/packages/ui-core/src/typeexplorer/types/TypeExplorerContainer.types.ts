@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type TypeExplorerContainerQueryVariables = Types.Exact<{
   pipelineSelector: Types.PipelineSelector;
-  dagsterTypeName: Types.Scalars['String'];
+  dagsterTypeName: Types.Scalars['String']['input'];
 }>;
 
 export type TypeExplorerContainerQuery = {
@@ -96,6 +96,20 @@ export type TypeExplorerContainerQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -144,6 +158,12 @@ export type TypeExplorerContainerQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }

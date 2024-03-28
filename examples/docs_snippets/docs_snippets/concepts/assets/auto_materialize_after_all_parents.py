@@ -6,5 +6,4 @@ wait_for_all_parents_policy = AutoMaterializePolicy.eager().with_rules(
 
 
 @asset(auto_materialize_policy=wait_for_all_parents_policy)
-def asset1(upstream1, upstream2):
-    ...
+def asset1(upstream1, upstream2): ...

@@ -55,7 +55,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         connection: TableConnection,
     ):
         """Stores pyarrow types in Delta table."""
-        metadata = context.metadata or {}
+        metadata = context.definition_metadata or {}
         resource_config = context.resource_config or {}
         reader, delta_params = self.to_arrow(obj=obj)
         delta_schema = Schema.from_pyarrow(reader.schema)

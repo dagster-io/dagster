@@ -169,11 +169,7 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                webserver_host=webserver_host,
-                query_string=LAUNCH_PIPELINE_MUTATION,
-                variables=json.dumps(variables),
-            )
+            f"http://{webserver_host}:3000/graphql?query={LAUNCH_PIPELINE_MUTATION}&variables={json.dumps(variables)}"
         ).json()
 
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
@@ -198,11 +194,7 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                webserver_host=webserver_host,
-                query_string=LAUNCH_PIPELINE_MUTATION,
-                variables=json.dumps(variables),
-            )
+            f"http://{webserver_host}:3000/graphql?query={LAUNCH_PIPELINE_MUTATION}&variables={json.dumps(variables)}"
         ).json()
 
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
@@ -226,11 +218,7 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                webserver_host=webserver_host,
-                query_string=LAUNCH_PIPELINE_MUTATION,
-                variables=json.dumps(variables),
-            )
+            f"http://{webserver_host}:3000/graphql?query={LAUNCH_PIPELINE_MUTATION}&variables={json.dumps(variables)}"
         ).json()
 
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"

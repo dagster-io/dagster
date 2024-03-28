@@ -6,5 +6,4 @@ allow_missing_parents_policy = AutoMaterializePolicy.eager().without_rules(
 
 
 @asset(auto_materialize_policy=allow_missing_parents_policy)
-def asset1(upstream1, upstream2):
-    ...
+def asset1(upstream1, upstream2): ...

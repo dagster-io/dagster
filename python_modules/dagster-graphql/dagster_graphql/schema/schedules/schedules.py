@@ -3,7 +3,7 @@ from typing import List, Optional
 import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
-from dagster._core.host_representation import ExternalSchedule
+from dagster._core.remote_representation import ExternalSchedule
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 

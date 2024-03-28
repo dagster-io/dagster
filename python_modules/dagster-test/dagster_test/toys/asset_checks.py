@@ -2,9 +2,11 @@ import random
 import time
 
 from dagster import (
+    AssetCheckKey,
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetSelection,
@@ -143,9 +145,13 @@ def random_fail_check_on_partitioned_asset():
     check_specs=[AssetCheckSpec("my_check", asset="multi_asset_piece_1")],
     can_subset=True,
 )
-def multi_asset_1_and_2(context):
+def multi_asset_1_and_2(context: AssetExecutionContext):
     if AssetKey("multi_asset_piece_1") in context.selected_asset_keys:
         yield Output(1, output_name="one")
+    if (
+        AssetCheckKey(AssetKey("multi_asset_piece_1"), "my_check")
+        in context.selected_asset_check_keys
+    ):
         yield AssetCheckResult(passed=True, metadata={"foo": "bar"})
     if AssetKey("multi_asset_piece_2") in context.selected_asset_keys:
         yield Output(1, output_name="two")
@@ -366,6 +372,7 @@ def graph_multi_asset_2_check_1(staged_asset):
             description="A always passes.",
         ),
     ],
+    can_subset=True,
 )
 def many_tests_graph_multi_asset():
     staged_asset = create_staged_asset()

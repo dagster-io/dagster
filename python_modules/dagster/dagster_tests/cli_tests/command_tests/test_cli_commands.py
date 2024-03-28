@@ -688,7 +688,7 @@ def valid_job_python_origin_target_cli_args():
             "-a",
             "bar",
             "-d",
-            os.path.dirname(__file__),
+            os.path.join(os.path.dirname(__file__), "..", "..", ".."),
             "-j",
             "qux",
         ],

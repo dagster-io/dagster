@@ -1,12 +1,13 @@
 import json
 import logging
 import threading
+import traceback
 from contextlib import ExitStack
 from typing import IO, Any, List, Mapping, Optional, Sequence
 
 from dagster import _seven
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DAGSTER_META_KEY
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.utils import coerce_valid_log_level
@@ -60,7 +61,13 @@ class CapturedLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         self._has_logged = True
-        self._write_stream.write(_seven.json.dumps(record.__dict__) + "\n")
+
+        record_dict = record.__dict__
+        exc_info = record_dict.get("exc_info")
+        if exc_info:
+            record_dict["exc_info"] = "".join(traceback.format_exception(*exc_info))
+
+        self._write_stream.write(_seven.json.dumps(record_dict) + "\n")
 
 
 class InstigationLogger(logging.Logger):
@@ -110,12 +117,12 @@ class InstigationLogger(logging.Logger):
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
 
-    def _annotate_record(self, record) -> logging.LogRecord:
+    def _annotate_record(self, record: logging.LogRecord) -> logging.LogRecord:
         if self._repository_name and self._name:
             message = record.getMessage()
             setattr(
                 record,
-                DAGSTER_META_KEY,
+                LOG_RECORD_METADATA_ATTR,
                 {
                     "repository_name": self._repository_name,
                     "name": self._name,

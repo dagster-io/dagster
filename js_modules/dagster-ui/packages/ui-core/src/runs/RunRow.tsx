@@ -17,6 +17,7 @@ import styled from 'styled-components';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {CreatedByTagCell} from './CreatedByTag';
+import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
@@ -27,7 +28,7 @@ import {RunTableRunFragment} from './types/RunTable.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {PipelineTag} from '../graphql/types';
+import {PipelineTag, RunStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -35,6 +36,7 @@ import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForR
 
 export const RunRow = ({
   run,
+  hasCheckboxColumn,
   canTerminateOrDelete,
   onAddTag,
   checked,
@@ -45,6 +47,7 @@ export const RunRow = ({
   hideCreatedBy,
 }: {
   run: RunTableRunFragment;
+  hasCheckboxColumn: boolean;
   canTerminateOrDelete: boolean;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
@@ -97,6 +100,7 @@ export const RunRow = ({
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
   const [showRunTags, setShowRunTags] = React.useState(false);
+  const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const tagsToShow = React.useMemo(() => {
@@ -141,8 +145,12 @@ export const RunRow = ({
         setIsHovered(false);
       }}
     >
-      {canTerminateOrDelete ? (
-        <td>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</td>
+      {hasCheckboxColumn ? (
+        <td>
+          {canTerminateOrDelete ? (
+            <>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</>
+          ) : null}
+        </td>
       ) : null}
       <td>
         <Link to={`/runs/${run.id}`}>
@@ -181,6 +189,18 @@ export const RunRow = ({
                   style={{margin: '-4px', padding: '4px'}}
                 >
                   View all tags ({allTagsWithPinned.length})
+                </ButtonLink>
+              </Caption>
+            ) : null}
+            {run.status === RunStatus.QUEUED ? (
+              <Caption>
+                <ButtonLink
+                  onClick={() => {
+                    setShowQueueCriteria(true);
+                  }}
+                  color={Colors.textLight()}
+                >
+                  View queue criteria
                 </ButtonLink>
               </Caption>
             ) : null}
@@ -245,6 +265,11 @@ export const RunRow = ({
           </Button>
         </DialogFooter>
       </Dialog>
+      <QueuedRunCriteriaDialog
+        run={run}
+        isOpen={showQueueCriteria}
+        onClose={() => setShowQueueCriteria(false)}
+      />
     </Row>
   );
 };

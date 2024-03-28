@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Optional, Sequence
 import dagster._check as check
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import ExternalSensorExecutionErrorData
-from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
 from dagster._grpc.types import SensorExecutionArgs
 from dagster._serdes import deserialize_value

@@ -1,7 +1,5 @@
 import datetime
-import itertools
 import logging
-import os
 import time
 from collections import defaultdict
 from typing import (
@@ -34,14 +32,14 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
-from .asset_condition_evaluation_context import (
+from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
+from .asset_condition.asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
 from .asset_daemon_cursor import AssetDaemonCursor
-from .asset_graph import AssetGraph
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
+from .base_asset_graph import BaseAssetGraph
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import PartitionsDefinition, ScheduleType
 
@@ -51,12 +49,12 @@ if TYPE_CHECKING:
 
 
 def get_implicit_auto_materialize_policy(
-    asset_key: AssetKey, asset_graph: AssetGraph
+    asset_key: AssetKey, asset_graph: BaseAssetGraph
 ) -> Optional[AutoMaterializePolicy]:
     """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
-    auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
+    auto_materialize_policy = asset_graph.get(asset_key).auto_materialize_policy
     if auto_materialize_policy is None:
-        time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
+        time_partitions_def = get_time_partitions_def(asset_graph.get(asset_key).partitions_def)
         if time_partitions_def is None:
             max_materializations_per_minute = None
         elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
@@ -85,7 +83,7 @@ class AssetDaemonContext:
         self,
         evaluation_id: int,
         instance: "DagsterInstance",
-        asset_graph: AssetGraph,
+        asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
         materialize_run_tags: Optional[Mapping[str, str]],
         observe_run_tags: Optional[Mapping[str, str]],
@@ -110,12 +108,12 @@ class AssetDaemonContext:
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
 
-        self._verbose_log_fn = (
-            self._logger.info if os.getenv("ASSET_DAEMON_VERBOSE_LOGS") else self._logger.debug
-        )
-
         # cache data before the tick starts
         self.prefetch()
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -130,7 +128,7 @@ class AssetDaemonContext:
         return self._cursor
 
     @property
-    def asset_graph(self) -> AssetGraph:
+    def asset_graph(self) -> BaseAssetGraph:
         return self.instance_queryer.asset_graph
 
     @property
@@ -142,15 +140,13 @@ class AssetDaemonContext:
         return {
             parent
             for asset_key in self.auto_materialize_asset_keys
-            for parent in self.asset_graph.get_parents(asset_key)
+            for parent in self.asset_graph.get(asset_key).parent_keys
         } | self.auto_materialize_asset_keys
 
     @property
     def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
         return [
-            key
-            for key in self.auto_materialize_asset_keys_and_parents
-            if not self.asset_graph.is_source(key)
+            key for key in self.auto_materialize_asset_keys_and_parents if self.asset_graph.has(key)
         ]
 
     @property
@@ -193,7 +189,7 @@ class AssetDaemonContext:
         """
         # convert the legacy AutoMaterializePolicy to an Evaluator
         asset_condition = check.not_none(
-            self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
+            self.asset_graph.get(asset_key).auto_materialize_policy
         ).to_asset_condition()
 
         asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
@@ -230,14 +226,14 @@ class AssetDaemonContext:
         num_checked_assets = 0
         num_auto_materialize_asset_keys = len(self.auto_materialize_asset_keys)
 
-        for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
+        for asset_key in self.asset_graph.toposorted_asset_keys:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.auto_materialize_asset_keys:
                 continue
 
             num_checked_assets = num_checked_assets + 1
             start_time = time.time()
-            self._verbose_log_fn(
+            self._logger.debug(
                 "Evaluating asset"
                 f" {asset_key.to_user_string()} ({num_checked_assets}/{num_auto_materialize_asset_keys})"
             )
@@ -270,8 +266,9 @@ class AssetDaemonContext:
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
             # materialize all of them
-            if num_requested > 0:
-                for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
+            execution_set_keys = self.asset_graph.get(asset_key).execution_set_asset_keys
+            if len(execution_set_keys) > 1 and num_requested > 0:
+                for neighbor_key in execution_set_keys:
                     expected_data_time_mapping[neighbor_key] = expected_data_time
 
                     # make sure that the true_subset of the neighbor is accurate -- when it was
@@ -346,7 +343,7 @@ class AssetDaemonContext:
 
 def build_run_requests(
     asset_partitions: Iterable[AssetKeyPartitionKey],
-    asset_graph: AssetGraph,
+    asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     assets_to_reconcile_by_partitions_def_partition_key: Mapping[
@@ -355,7 +352,7 @@ def build_run_requests(
 
     for asset_partition in asset_partitions:
         assets_to_reconcile_by_partitions_def_partition_key[
-            asset_graph.get_partitions_def(asset_partition.asset_key), asset_partition.partition_key
+            asset_graph.get(asset_partition.asset_key).partitions_def, asset_partition.partition_key
         ].add(asset_partition.asset_key)
 
     run_requests = []
@@ -383,12 +380,17 @@ def build_run_requests(
                 )
             )
 
-    return run_requests
+    # We don't make public guarantees about sort order, but make an effort to provide a consistent
+    # ordering that puts earlier time partitions before later time partitions. Note that, with dates
+    # formatted like 12/7/2023, the run requests won't end up in time order. Sorting by converting
+    # to time windows seemed more risky from a perf perspective, so we didn't include it here, but
+    # it could make sense to actually benchmark that in the future.
+    return sorted(run_requests, key=lambda x: x.partition_key if x.partition_key else "")
 
 
 def build_run_requests_with_backfill_policies(
     asset_partitions: Iterable[AssetKeyPartitionKey],
-    asset_graph: AssetGraph,
+    asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
@@ -411,7 +413,7 @@ def build_run_requests_with_backfill_policies(
     # here we are grouping assets by their partitions def and partition keys selected.
     for asset_key, partition_keys in asset_partition_keys.items():
         assets_to_reconcile_by_partitions_def_partition_keys[
-            asset_graph.get_partitions_def(asset_key),
+            asset_graph.get(asset_key).partitions_def,
             frozenset(partition_keys) if partition_keys else None,
         ].add(asset_key)
 
@@ -429,7 +431,7 @@ def build_run_requests_with_backfill_policies(
             run_requests.append(RunRequest(asset_selection=list(asset_keys), tags=tags))
         else:
             backfill_policies = {
-                check.not_none(asset_graph.get_backfill_policy(asset_key))
+                check.not_none(asset_graph.get(asset_key).backfill_policy)
                 for asset_key in asset_keys
             }
             if len(backfill_policies) == 1:
@@ -448,7 +450,7 @@ def build_run_requests_with_backfill_policies(
             else:
                 # if backfill policies are different, we need to backfill them separately
                 for asset_key in asset_keys:
-                    backfill_policy = asset_graph.get_backfill_policy(asset_key)
+                    backfill_policy = asset_graph.get(asset_key).backfill_policy
                     run_requests.extend(
                         _build_run_requests_with_backfill_policy(
                             [asset_key],
@@ -497,6 +499,7 @@ def _build_run_requests_with_backfill_policy(
                         backfill_policy.max_partitions_per_run, "max_partitions_per_run"
                     ),
                     run_tags=tags,
+                    dynamic_partitions_store=dynamic_partitions_store,
                 )
             )
     return run_requests
@@ -508,11 +511,14 @@ def _build_run_requests_for_partition_key_range(
     partition_key_range: PartitionKeyRange,
     max_partitions_per_run: int,
     run_tags: Dict[str, str],
+    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     """Builds multiple run requests for the given partition key range. Each run request will have at most
     max_partitions_per_run partitions.
     """
-    partition_keys = partitions_def.get_partition_keys_in_range(partition_key_range)
+    partition_keys = partitions_def.get_partition_keys_in_range(
+        partition_key_range, dynamic_partitions_store=dynamic_partitions_store
+    )
     partition_range_start_index = partition_keys.index(partition_key_range.start)
     partition_range_end_index = partition_keys.index(partition_key_range.end)
 
@@ -551,14 +557,14 @@ def _build_run_request_for_partition_key_range(
 def get_auto_observe_run_requests(
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
     current_timestamp: float,
-    asset_graph: AssetGraph,
+    asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
     auto_observe_asset_keys: AbstractSet[AssetKey],
 ) -> Sequence[RunRequest]:
     assets_to_auto_observe: Set[AssetKey] = set()
     for asset_key in auto_observe_asset_keys:
         last_observe_request_timestamp = last_observe_request_timestamp_by_asset_key.get(asset_key)
-        auto_observe_interval_minutes = asset_graph.get_auto_observe_interval_minutes(asset_key)
+        auto_observe_interval_minutes = asset_graph.get(asset_key).auto_observe_interval_minutes
 
         if auto_observe_interval_minutes and (
             last_observe_request_timestamp is None
@@ -574,7 +580,7 @@ def get_auto_observe_run_requests(
     for repository_asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe):
         asset_keys_by_partitions_def = defaultdict(list)
         for asset_key in repository_asset_keys:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = asset_graph.get(asset_key).partitions_def
             asset_keys_by_partitions_def[partitions_def].append(asset_key)
         partitions_def_and_asset_key_groups.extend(asset_keys_by_partitions_def.values())
 

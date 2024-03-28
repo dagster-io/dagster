@@ -14,10 +14,10 @@ import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {isRunlessEvent} from './isRunlessEvent';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {RecentAssetEvents} from './useRecentAssetEvents';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
@@ -27,6 +27,7 @@ interface Props {
   liveData?: LiveDataForNode;
   isSourceAsset: boolean;
   stepKey: string;
+  recentEvents: RecentAssetEvents;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
@@ -39,13 +40,10 @@ export const AssetSidebarActivitySummary = ({
   isSourceAsset,
   liveData,
   stepKey,
+  recentEvents,
 }: Props) => {
-  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
-    useRecentAssetEvents(
-      asset.assetKey,
-      {},
-      {assetHasDefinedPartitions: !!asset.partitionDefinition},
-    );
+  const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
+    recentEvents;
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
@@ -121,6 +119,7 @@ export const AssetSidebarActivitySummary = ({
                   assetKey={asset.assetKey}
                   latest={displayedEvent}
                   liveData={liveData}
+                  definition={asset}
                 />
               </div>
             ) : loading ? (
@@ -196,7 +195,15 @@ export const AssetSidebarActivitySummary = ({
                     justifyContent: 'space-between',
                   }}
                 >
-                  <MiddleTruncate text={`${check.name}`} />
+                  <Link
+                    style={{display: 'flex', flex: 1, overflow: 'hidden'}}
+                    to={assetDetailsPathForAssetCheck({
+                      name: check.name,
+                      assetKey: asset.assetKey,
+                    })}
+                  >
+                    <MiddleTruncate text={check.name} />
+                  </Link>
                   {execution ? (
                     <AssetCheckStatusTag execution={execution} />
                   ) : (

@@ -8,7 +8,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    cast,
 )
 
 import dateutil
@@ -37,14 +36,8 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def input_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    # * can be present when sources are sharded tables
-    return dbt_resource_props["unique_id"].replace(".", "_").replace("*", "_star")
-
-
-def output_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    # hyphens are valid in dbt model names, but not in output names
-    return dbt_resource_props["unique_id"].split(".")[-1].replace("-", "_")
+def dagster_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
+    return dbt_resource_props["unique_id"].replace(".", "_").replace("-", "_").replace("*", "_star")
 
 
 def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -140,7 +133,7 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=output_name_fn(dbt_resource_props),
+                output_name=dagster_name_fn(dbt_resource_props),
                 metadata=metadata,
             )
         else:
@@ -189,7 +182,7 @@ def generate_events(
             manifest_json=manifest_json,
         ):
             yield check.inst(
-                cast(Union[AssetMaterialization, AssetObservation], event),
+                event,
                 (AssetMaterialization, AssetObservation),
             )
 
@@ -230,7 +223,7 @@ def generate_materializations(
             asset_key_prefix + info["unique_id"].split(".")
         ),
     ):
-        yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+        yield check.inst(event, AssetMaterialization)
 
 
 def select_unique_ids_from_manifest(
@@ -246,8 +239,13 @@ def select_unique_ids_from_manifest(
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
+    # NOTE: this was faster than calling `Manifest.from_dict`, so we are keeping this.
     class _DictShim(dict):
-        """Shim to enable hydrating a dictionary into a dot-accessible object."""
+        """Shim to enable hydrating a dictionary into a dot-accessible object. We need this because
+        dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries.
+
+        See https://stackoverflow.com/a/23689767.
+        """
 
         def __getattr__(self, item):
             ret = super().get(item)
@@ -255,7 +253,6 @@ def select_unique_ids_from_manifest(
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
     manifest = Manifest(
-        # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
         nodes={
             unique_id: _DictShim(info)
             for unique_id, info in manifest_json["nodes"].items()  # type: ignore
@@ -272,6 +269,16 @@ def select_unique_ids_from_manifest(
             unique_id: _DictShim(info)
             for unique_id, info in manifest_json["exposures"].items()  # type: ignore
         },
+        **(  # type: ignore
+            {
+                "semantic_models": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json.get("semantic_models", {}).items()
+                }
+            }
+            if manifest_json.get("semantic_models")
+            else {}
+        ),
     )
     child_map = manifest_json["child_map"]
 
@@ -301,4 +308,5 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["sources"],
         **manifest["exposures"],
         **manifest["metrics"],
+        **manifest.get("semantic_models", {}),
     }

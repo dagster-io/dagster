@@ -1,7 +1,7 @@
 from typing import List, Sequence
 
 import graphene
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     EnvVarConsumer,
 )
 

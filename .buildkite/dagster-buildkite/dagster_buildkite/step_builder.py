@@ -8,8 +8,8 @@ from .utils import CommandStep, safe_getenv
 
 DEFAULT_TIMEOUT_IN_MIN = 25
 
-DOCKER_PLUGIN = "docker#v3.7.0"
-ECR_PLUGIN = "ecr#v2.2.0"
+DOCKER_PLUGIN = "docker#v5.10.0"
+ECR_PLUGIN = "ecr#v2.7.0"
 
 
 AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID")
@@ -57,8 +57,8 @@ class CommandStepBuilder:
     def _base_docker_settings(self) -> Dict[str, object]:
         return {
             "shell": ["/bin/bash", "-xeuc"],
-            "always-pull": True,
             "mount-ssh-agent": True,
+            "mount-buildkite-agent": True,
         }
 
     def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "CommandStepBuilder":

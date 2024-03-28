@@ -71,7 +71,23 @@ export type SearchSecondaryQuery = {
           __typename: 'Asset';
           id: string;
           key: {__typename: 'AssetKey'; path: Array<string>};
-          definition: {__typename: 'AssetNode'; id: string} | null;
+          definition: {
+            __typename: 'AssetNode';
+            id: string;
+            computeKind: string | null;
+            groupName: string;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            repository: {
+              __typename: 'Repository';
+              id: string;
+              name: string;
+              location: {__typename: 'RepositoryLocation'; id: string; name: string};
+            };
+          } | null;
         }>;
       }
     | {__typename: 'PythonError'};

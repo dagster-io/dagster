@@ -78,19 +78,6 @@ mutation DeleteRun($runId: String!) {
 }
 """
 
-ALL_TAGS_QUERY = """
-{
-  runTagsOrError {
-    ... on RunTags {
-      tags {
-        key
-        values
-      }
-    }
-  }
-}
-"""
-
 ALL_TAG_KEYS_QUERY = """
 {
   runTagKeysOrError {
@@ -248,6 +235,7 @@ RUN_CONCURRENCY_QUERY = """
         runId
         status
         hasConcurrencyKeySlots
+        rootConcurrencyKeys
       }
     }
   }
@@ -351,12 +339,6 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         # check presence rather than set equality since we might have extra tags in cloud
         assert "fruit" in tag_keys
         assert "veggie" in tag_keys
-
-        all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
-        tags = all_tags_result.data["runTagsOrError"]["tags"]
-        tags_dict = {item["key"]: item["values"] for item in tags}
-        assert tags_dict["fruit"] == ["apple"]
-        assert tags_dict["veggie"] == ["carrot"]
 
         filtered_tags_result = execute_dagster_graphql(
             read_context, FILTERED_TAGS_QUERY, variables={"tagKeys": ["fruit"]}
@@ -473,7 +455,7 @@ def get_repo_at_time_2():
 
 
 def get_asset_repo():
-    @op
+    @op(tags={"dagster/concurrency_key": "foo"})
     def foo():
         yield AssetMaterialization(asset_key="foo", description="foo")
         yield Output(None)
@@ -886,6 +868,7 @@ def test_run_has_concurrency_slots():
                 assert not result.data["pipelineRunsOrError"]["results"][0][
                     "hasConcurrencyKeySlots"
                 ]
+                assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
 
             claim = instance.event_log_storage.claim_concurrency_slot(
                 "foo", run_id, "fake_step_key"
@@ -898,3 +881,4 @@ def test_run_has_concurrency_slots():
                 assert len(result.data["pipelineRunsOrError"]["results"]) == 1
                 assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
                 assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]
+                assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]

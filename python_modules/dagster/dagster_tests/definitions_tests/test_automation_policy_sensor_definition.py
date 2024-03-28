@@ -1,16 +1,16 @@
 import pytest
 from dagster import AssetSelection, DefaultSensorStatus, build_sensor_context
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 
 
 @pytest.mark.parametrize(
-    "selection", [AssetSelection.all(), AssetSelection.keys("asset1", "asset2")]
+    "selection", [AssetSelection.all(), AssetSelection.assets("asset1", "asset2")]
 )
 def test_constructor(selection):
     tags = {"apple": "banana", "orange": "kiwi"}
-    automation_sensor = AutomationPolicySensorDefinition(
+    automation_sensor = AutoMaterializeSensorDefinition(
         "foo",
         asset_selection=selection,
         run_tags=tags,

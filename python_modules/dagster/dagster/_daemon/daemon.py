@@ -5,6 +5,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager, ExitStack
+from enum import Enum
 from threading import Event
 from typing import TYPE_CHECKING, Any, Generator, Generic, Mapping, Optional, TypeVar, Union
 
@@ -46,8 +47,12 @@ def get_telemetry_daemon_session_id() -> str:
     return _telemetry_daemon_session_id
 
 
-# DaemonIterator = Iterator[Union[None, SerializableErrorInfo]]
-DaemonIterator: TypeAlias = Generator[Union[None, SerializableErrorInfo], None, None]
+class SpanMarker(Enum):
+    START_SPAN = "START_SPAN"
+    END_SPAN = "END_SPAN"
+
+
+DaemonIterator: TypeAlias = Generator[Union[None, SerializableErrorInfo, SpanMarker], None, None]
 
 TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
 
@@ -106,8 +111,8 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
 
                     try:
-                        result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
-                        if result:
+                        result = next(daemon_generator)
+                        if isinstance(result, SerializableErrorInfo):
                             self._errors.appendleft((result, pendulum.now("UTC")))
                     except StopIteration:
                         self._logger.error(
@@ -221,20 +226,21 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
     ) -> DaemonIterator:
         while True:
             start_time = time.time()
+            yield SpanMarker.START_SPAN
             try:
                 yield from self.run_iteration(workspace_process_context)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
                 self._logger.error("Caught error:\n%s", error_info)
                 yield error_info
+            yield SpanMarker.END_SPAN
             while time.time() - start_time < self.interval_seconds:
                 shutdown_event.wait(0.5)
                 yield None
             yield None
 
     @abstractmethod
-    def run_iteration(self, workspace_process_context: TContext) -> DaemonIterator:
-        ...
+    def run_iteration(self, workspace_process_context: TContext) -> DaemonIterator: ...
 
 
 class SchedulerDaemon(DagsterDaemon):

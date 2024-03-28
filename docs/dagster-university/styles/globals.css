@@ -38,6 +38,7 @@ main {
   margin: 0 auto;
   flex-grow: 1;
   font-size: 16px;
+  padding-bottom: 32px;
 }
 
 .codeBlock code[class*='language-'],

@@ -33,6 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
@@ -42,6 +43,7 @@ setup(
         "orjson",
         "requests",
         "rich",
+        "sqlglot[rs]",
         "typer>=0.9.0",
         "packaging",
     ],

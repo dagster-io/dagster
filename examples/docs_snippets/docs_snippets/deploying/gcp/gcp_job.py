@@ -20,5 +20,4 @@ from dagster import job
         }
     },
 )
-def gcs_job():
-    ...
+def gcs_job(): ...

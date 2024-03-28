@@ -77,6 +77,17 @@ export const GlobalPopoverStyle = createGlobalStyle`
     fill-opacity: 0.7;
   }
 
+  .dagster-popover.bp4-dark .bp4-popover2-arrow {
+    z-index: 9;
+    &:before {
+      display: none;
+    }
+  }
+
+  .dagster-popover.bp4-dark a {
+    color: inherit;
+  }
+
   .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
   .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
     background-color: ${Colors.tooltipBackground()};
