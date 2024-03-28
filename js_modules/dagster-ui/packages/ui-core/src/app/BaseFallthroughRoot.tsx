@@ -6,7 +6,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
 
-export const FallthroughRoot = () => {
+export const BaseFallthroughRoot = () => {
   return (
     <Switch>
       <Route path="*">
@@ -87,4 +87,4 @@ const FinalRedirectOrLoadingRoot = () => {
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
-export default FallthroughRoot;
+export default BaseFallthroughRoot;

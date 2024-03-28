@@ -15,16 +15,12 @@ type AComponentWithProps<Props = Record<string, never>> =
   | React.MemoExoticComponent<(props: Props) => React.ReactNode>;
 
 type InjectedComponentContextType = {
-  AppTopNavRightOfLogo: AComponentFromComponent<typeof AppTopNavRightOfLogo> | null;
+  AppTopNavRightOfLogo?: AComponentFromComponent<typeof AppTopNavRightOfLogo> | null;
   OverviewPageAlerts?: AComponentWithProps | null;
   UserPreferences?: AComponentFromComponent<typeof UserPreferences> | null;
-  AssetsOverview: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
+  AssetsOverview?: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
 };
-export const InjectedComponentContext = React.createContext<InjectedComponentContextType>({
-  AppTopNavRightOfLogo: null,
-  OverviewPageAlerts: null,
-  AssetsOverview: null,
-});
+export const InjectedComponentContext = React.createContext<InjectedComponentContextType>({});
 
 export function componentStub<TComponentKey extends keyof InjectedComponentContextType>(
   component: TComponentKey,
