@@ -141,16 +141,10 @@ export const RecentUpdatesTimeline = ({
                           const left = (100 * (parseInt(timestamp) - startTimestamp)) / range;
                           const leftInner = (100 * (left - bucket.start)) / bucketRange;
                           return (
-                            <div
+                            <InnerTick
                               key={timestamp}
                               style={{
                                 left: `${leftInner}%`,
-                                width: '1px',
-                                backgroundColor: Colors.accentGreen(),
-                                top: 0,
-                                bottom: 0,
-                                position: 'absolute',
-                                opacity: 0.5,
                               }}
                             />
                           );
@@ -246,4 +240,13 @@ const Tick = styled.div`
 
 const TickWrapper = styled.div`
   position: absolute;
+`;
+
+const InnerTick = styled.div`
+  width: 1px;
+  background-color: ${Colors.accentGreen()};
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  opacity: 0.5;
 `;
