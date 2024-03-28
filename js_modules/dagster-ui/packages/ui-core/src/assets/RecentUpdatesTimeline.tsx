@@ -52,19 +52,19 @@ export const RecentUpdatesTimeline = ({
       return [];
     }
     const firstPassBucketsArray: Array<{
-      number: number;
+      index: number;
       materializations: typeof materializations;
     }> = new Array(buckets);
 
     materializations.forEach((materialization) => {
-      const bucketNumber = Math.floor(
+      const bucketIndex = Math.floor(
         ((parseInt(materialization.timestamp) - startTimestamp) / range) * (buckets - 1),
       );
-      firstPassBucketsArray[bucketNumber] = firstPassBucketsArray[bucketNumber] || {
-        number: bucketNumber,
+      firstPassBucketsArray[bucketIndex] = firstPassBucketsArray[bucketIndex] || {
+        index: bucketIndex,
         materializations: [] as typeof materializations,
       };
-      firstPassBucketsArray[bucketNumber]!.materializations.push(materialization);
+      firstPassBucketsArray[bucketIndex]!.materializations.push(materialization);
     });
 
     const secondPassBucketsArray: Array<{
@@ -75,14 +75,14 @@ export const RecentUpdatesTimeline = ({
 
     firstPassBucketsArray.forEach((bucket) => {
       const lastBucket = secondPassBucketsArray[secondPassBucketsArray.length - 1];
-      if (!lastBucket || lastBucket.end !== bucket.number - 1) {
+      if (!lastBucket || lastBucket.end !== bucket.index) {
         secondPassBucketsArray.push({
-          start: bucket.number,
-          end: bucket.number,
+          start: bucket.index,
+          end: bucket.index + 1,
           materializations: bucket.materializations,
         });
       } else {
-        lastBucket.end = bucket.number;
+        lastBucket.end = bucket.index + 1;
         lastBucket.materializations = [...lastBucket.materializations, ...bucket.materializations];
       }
     });
@@ -123,7 +123,7 @@ export const RecentUpdatesTimeline = ({
       <Box border="all" padding={6 as any} style={{height: 32}}>
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
           {bucketedMaterializations.map((bucket) => {
-            const width = bucket.end - bucket.start + 1;
+            const width = bucket.end - bucket.start;
             return (
               <>
                 <TickWrapper
@@ -156,8 +156,9 @@ export const RecentUpdatesTimeline = ({
                     <>
                       <Tick>
                         {bucket.materializations.map(({timestamp}) => {
-                          const bucketRange = Math.max(bucket.end - bucket.start, 1);
-                          const left = (100 * (parseInt(timestamp) - startTimestamp)) / range;
+                          const bucketRange = bucket.end - bucket.start;
+                          const percent = (parseInt(timestamp) - startTimestamp) / range;
+                          const left = percent * (buckets - 1);
                           const leftInner = (100 * (left - bucket.start)) / bucketRange;
                           return (
                             <InnerTick
@@ -257,10 +258,18 @@ const Tick = styled.div`
 `;
 
 const TickText = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
   display: grid;
   place-content: center;
   color: transparent;
+  background: none;
+  user-select: none;
   &:hover {
+    user-select: initial;
     color: ${Colors.textLight()};
   }
 `;
