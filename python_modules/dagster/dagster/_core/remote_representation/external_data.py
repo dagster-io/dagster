@@ -230,9 +230,11 @@ class ExternalRepositoryData(IHaveNew):
         check.failed("Could not find sensor data named " + name)
 
 
-@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
+@whitelist_for_serdes(
+    storage_name="ExternalPresetData", storage_field_names={"op_selection": "solid_selection"}
+)
 @record_custom
-class ExternalPresetData(IHaveNew):
+class PresetSnap(IHaveNew):
     name: str
     run_config: Mapping[str, object]
     op_selection: Optional[Sequence[str]]
@@ -272,7 +274,7 @@ class ExternalPresetData(IHaveNew):
 class ExternalJobData:
     name: str
     job_snapshot: JobSnapshot
-    active_presets: Sequence[ExternalPresetData]
+    active_presets: Sequence["PresetSnap"]
     parent_job_snapshot: Optional[JobSnapshot]
 
 
@@ -315,7 +317,7 @@ class NestedResource(NamedTuple):
 class ExternalJobRef:
     name: str
     snapshot_id: str
-    active_presets: Sequence[ExternalPresetData]
+    active_presets: Sequence["PresetSnap"]
     parent_snapshot_id: Optional[str]
 
 
@@ -413,9 +415,9 @@ class ScheduleSnap(IHaveNew):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="ExternalScheduleExecutionErrorData")
 @record
-class ExternalScheduleExecutionErrorData:
+class ScheduleExecutionErrorSnap:
     error: Optional[SerializableErrorInfo]
 
 
@@ -430,9 +432,9 @@ class TargetSnap:
     op_selection: Optional[Sequence[str]]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="ExternalSensorMetadata")
 @record
-class ExternalSensorMetadata:
+class SensorMetadataSnap:
     """Stores additional sensor metadata which is available in the Dagster UI."""
 
     asset_keys: Optional[Sequence[AssetKey]]
@@ -452,7 +454,7 @@ class SensorSnap(IHaveNew):
     min_interval: Optional[int]
     description: Optional[str]
     target_dict: Mapping[str, TargetSnap]
-    metadata: Optional[ExternalSensorMetadata]
+    metadata: Optional[SensorMetadataSnap]
     default_status: Optional[DefaultSensorStatus]
     sensor_type: Optional[SensorType]
     asset_selection: Optional[AssetSelection]
@@ -468,7 +470,7 @@ class SensorSnap(IHaveNew):
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
         target_dict: Optional[Mapping[str, TargetSnap]] = None,
-        metadata: Optional[ExternalSensorMetadata] = None,
+        metadata: Optional[SensorMetadataSnap] = None,
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
         asset_selection: Optional[AssetSelection] = None,
@@ -567,7 +569,7 @@ class SensorSnap(IHaveNew):
             target_dict=target_dict,
             min_interval=sensor_def.minimum_interval_seconds,
             description=sensor_def.description,
-            metadata=ExternalSensorMetadata(asset_keys=asset_keys),
+            metadata=SensorMetadataSnap(asset_keys=asset_keys),
             default_status=sensor_def.default_status,
             sensor_type=sensor_def.sensor_type,
             asset_selection=serializable_asset_selection,
@@ -580,21 +582,21 @@ class SensorSnap(IHaveNew):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="ExternalRepositoryErrorData")
 @record
-class ExternalRepositoryErrorData:
+class RepositoryErrorSnap:
     error: Optional[SerializableErrorInfo]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="ExternalSensorExecutionErrorData")
 @record
-class ExternalSensorExecutionErrorData:
+class SensorExecutionErrorSnap:
     error: Optional[SerializableErrorInfo]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="ExternalExecutionParamsData")
 @record_custom
-class ExternalExecutionParamsData(IHaveNew):
+class ExecutionParamsSnap(IHaveNew):
     run_config: Mapping[str, object]
     tags: Mapping[str, str]
 
@@ -610,9 +612,9 @@ class ExternalExecutionParamsData(IHaveNew):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="ExternalExecutionParamsErrorData")
 @record
-class ExternalExecutionParamsErrorData:
+class ExecutionParamsErrorSnap:
     error: Optional[SerializableErrorInfo]
 
 
@@ -1818,13 +1820,13 @@ def job_name_for_external_partition_set_name(name: str) -> str:
     return name[:job_name_len]
 
 
-def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[ExternalPresetData]:
+def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[PresetSnap]:
     check.inst_param(job_def, "job_def", JobDefinition)
     if job_def.run_config is None:
         return []
     else:
         return [
-            ExternalPresetData(
+            PresetSnap(
                 name=DEFAULT_PRESET_NAME,
                 run_config=job_def.run_config,
                 op_selection=None,

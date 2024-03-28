@@ -9,7 +9,7 @@ from dagster._api.snapshot_sensor import (
 )
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
-from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
+from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import SensorExecutionArgs
 from dagster._serdes import deserialize_value
@@ -112,7 +112,7 @@ def test_external_sensor_deserialize_error(instance):
                     )
                 )
             )
-            assert isinstance(result, ExternalSensorExecutionErrorData)
+            assert isinstance(result, SensorExecutionErrorSnap)
 
 
 def test_external_sensor_raises_dagster_error(instance):
