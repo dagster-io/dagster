@@ -302,7 +302,7 @@ def test_materialize_asset_and_checks(
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
         dbt_commands,
-        selection=AssetSelection.keys(AssetKey(["customers"])),
+        selection=AssetSelection.assets(AssetKey(["customers"])),
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -346,7 +346,7 @@ def test_materialize_asset_no_checks(
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
         dbt_commands,
-        selection=AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+        selection=AssetSelection.assets(AssetKey(["customers"])).without_checks(),
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -362,8 +362,8 @@ def test_materialize_checks_no_asset(
         test_asset_checks_manifest,
         dbt_commands,
         selection=(
-            AssetSelection.keys(AssetKey(["customers"]))
-            - AssetSelection.keys(AssetKey(["customers"])).without_checks()
+            AssetSelection.assets(AssetKey(["customers"]))
+            - AssetSelection.assets(AssetKey(["customers"])).without_checks()
         ),
     )
     assert result.success

@@ -309,7 +309,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         """
         check.inst_param(context, "context", OutputContext)
         metadata = context.definition_metadata
-        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore  # (possible none)
+        path = check.str_param(metadata.get("path"), "metadata.path")
 
         filepath = self._get_path(path)
 
@@ -329,7 +329,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         """Unpickle the file from a given file path and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
         metadata = context.upstream_output.definition_metadata  # type: ignore  # (possible none)
-        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore  # (possible none)
+        path = check.str_param(metadata.get("path"), "metadata.path")
         filepath = self._get_path(path)
         context.log.debug(f"Loading file from: {filepath}")
 

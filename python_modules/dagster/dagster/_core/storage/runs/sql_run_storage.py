@@ -40,7 +40,7 @@ from dagster._core.events import (
     RunFailureReason,
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
     JobSnapshot,
@@ -923,8 +923,8 @@ class SqlRunStorage(RunStorage):
                 )
 
     # Migrating run history
-    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalJobOrigin) -> None:
-        new_label = job_origin.external_repository_origin.get_label()
+    def replace_job_origin(self, run: DagsterRun, job_origin: RemoteJobOrigin) -> None:
+        new_label = job_origin.repository_origin.get_label()
         with self.connect() as conn:
             conn.execute(
                 RunsTable.update()

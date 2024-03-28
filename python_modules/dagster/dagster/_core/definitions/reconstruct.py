@@ -670,8 +670,8 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a JobDefinition (or JobDefinition for legacy"
-        " code). Received a {type}".format(str=pointer.describe(), type=type(target))
+        f"CodePointer ({pointer.describe()}) must resolve to a JobDefinition (or JobDefinition for legacy"
+        f" code). Received a {type(target)}"
     )
 
 

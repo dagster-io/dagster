@@ -2,7 +2,7 @@ import hashlib
 import re
 from typing import Any, Mapping
 
-from dagster._core.remote_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation.origin import RemoteJobOrigin
 
 from .tasks import DagsterEcsTaskDefinitionConfig
 
@@ -21,11 +21,11 @@ def _get_family_hash(name):
 
 def get_task_definition_family(
     prefix: str,
-    job_origin: ExternalJobOrigin,
+    job_origin: RemoteJobOrigin,
 ) -> str:
     job_name = job_origin.job_name
-    repo_name = job_origin.external_repository_origin.repository_name
-    location_name = job_origin.external_repository_origin.code_location_origin.location_name
+    repo_name = job_origin.repository_origin.repository_name
+    location_name = job_origin.repository_origin.code_location_origin.location_name
 
     assert len(prefix) < 32
 

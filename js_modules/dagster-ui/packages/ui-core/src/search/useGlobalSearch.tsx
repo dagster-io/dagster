@@ -15,7 +15,8 @@ import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {Tag, buildTagString} from '../ui/tagAsString';
+import {DefinitionTag} from '../graphql/types';
+import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -31,7 +32,7 @@ export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   })}`;
 };
 
-export const linkToAssetTableWithTagFilter = (tag: Tag) => {
+export const linkToAssetTableWithTagFilter = (tag: DefinitionTag) => {
   return `/assets?${qs.stringify({
     tags: JSON.stringify([tag]),
   })}`;

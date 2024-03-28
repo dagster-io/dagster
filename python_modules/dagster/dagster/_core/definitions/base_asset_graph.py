@@ -252,9 +252,13 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @cached_property
     def root_materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Materializable asset keys that have no materializable parents."""
-        from .asset_selection import AssetSelection
+        from .asset_selection import KeysAssetSelection
 
-        return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
+        return (
+            KeysAssetSelection(selected_keys=list(self.materializable_asset_keys))
+            .roots()
+            .resolve(self)
+        )
 
     @cached_property
     def root_executable_asset_keys(self) -> AbstractSet[AssetKey]:

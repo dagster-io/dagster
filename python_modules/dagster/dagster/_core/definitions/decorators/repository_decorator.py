@@ -185,9 +185,9 @@ class _Repository:
             repository_data = repository_definitions
         else:
             raise DagsterInvalidDefinitionError(
-                "Bad return value of type {type_} from repository construction function: must "
+                f"Bad return value of type {type(repository_definitions)} from repository construction function: must "
                 "return list, dict, or RepositoryData. See the @repository decorator docstring for "
-                "details and examples".format(type_=type(repository_definitions)),
+                "details and examples",
             )
 
         if isinstance(repository_definitions, list) and repository_data is None:

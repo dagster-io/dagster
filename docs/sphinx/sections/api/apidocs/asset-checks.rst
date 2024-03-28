@@ -1,6 +1,6 @@
 .. currentmodule:: dagster
 
-Asset Checks (Experimental)
+Asset Checks
 ===========================
 
 Dagster allows you to define and execute checks on your software-defined assets. Each asset check verifies some property of a data asset, e.g. that is has no null values in a particular column.

@@ -207,10 +207,8 @@ def _run_in_subprocess(
 
             if not dagster_run:
                 raise DagsterRunNotFoundError(
-                    "gRPC server could not load run {run_id} in order to execute it. Make sure that"
-                    " the gRPC server has access to your run storage.".format(
-                        run_id=execute_run_args.run_id
-                    ),
+                    f"gRPC server could not load run {execute_run_args.run_id} in order to execute it. Make sure that"
+                    " the gRPC server has access to your run storage.",
                     invalid_run_id=execute_run_args.run_id,
                 )
 

@@ -85,9 +85,6 @@ USER_EDITABLE_SYSTEM_TAGS = [
 ]
 
 
-TAG_NO_VALUE = "__dagster_no_value"
-
-
 class TagType(Enum):
     # Custom tag provided by a user
     USER_PROVIDED = "USER_PROVIDED"

@@ -134,9 +134,7 @@ def create_and_launch_partition_backfill(
 
         if len(matches) != 1:
             raise DagsterInvariantViolationError(
-                "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
-                    num=len(matches), partition_set_name=partition_set_name
-                )
+                f"Partition set names must be unique: found {len(matches)} matches for {partition_set_name}"
             )
         external_partition_set = next(iter(matches))
 

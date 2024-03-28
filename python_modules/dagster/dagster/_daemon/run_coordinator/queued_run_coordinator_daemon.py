@@ -208,9 +208,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             # Possibly under 0 if runs were launched without queuing
             if max_runs_to_launch <= 0:
                 self._logger.info(
-                    "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
-                        len(in_progress_run_records), max_concurrent_runs
-                    )
+                    f"{len(in_progress_run_records)} runs are currently in progress. Maximum is {max_concurrent_runs}, won't launch more."
                 )
                 return []
 

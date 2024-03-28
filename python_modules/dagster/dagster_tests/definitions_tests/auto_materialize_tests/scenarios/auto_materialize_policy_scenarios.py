@@ -300,9 +300,9 @@ auto_materialize_policy_scenarios = {
             assets=lazy_assets_nothing_dep,
             unevaluated_runs=[run(["asset1"])],
             expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
-            asset_selection=AssetSelection.keys("asset2", "asset3"),
+            asset_selection=AssetSelection.assets("asset2", "asset3"),
         ),
-        asset_selection=AssetSelection.keys("asset2", "asset3"),
+        asset_selection=AssetSelection.assets("asset2", "asset3"),
         unevaluated_runs=[run(["asset2", "asset3"], failed_asset_keys=["asset2", "asset3"])],
         # should not run again
         expected_run_requests=[],
@@ -440,7 +440,7 @@ auto_materialize_policy_scenarios = {
                 AutoMaterializePolicy.eager(),
             ),
         ],
-        asset_selection=AssetSelection.keys("asset4"),
+        asset_selection=AssetSelection.assets("asset4"),
         unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
         expected_run_requests=[],
         expected_evaluations=[
@@ -473,14 +473,14 @@ auto_materialize_policy_scenarios = {
     ),
     "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
-        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
+        asset_selection=AssetSelection.assets("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1, minute=5),
         expected_run_requests=[],
     ),
     "time_partitioned_after_partitioned_upstream_materialized": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
-        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
+        asset_selection=AssetSelection.assets("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[run(["unpartitioned_root_a"])],
         current_time=create_pendulum_time(year=2013, month=1, day=5, hour=1, minute=5),
         expected_run_requests=[
@@ -489,7 +489,7 @@ auto_materialize_policy_scenarios = {
     ),
     "time_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
-        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
+        asset_selection=AssetSelection.assets("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[
             run(["unpartitioned_root_a"]),
             run(["time_partitioned"], partition_key="2013-01-05-00:00"),
@@ -503,7 +503,7 @@ auto_materialize_policy_scenarios = {
     ),
     "time_partitioned_after_partitioned_upstream_rematerialized2": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
-        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
+        asset_selection=AssetSelection.assets("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[
             run(["unpartitioned_root_a"]),
             run(["unpartitioned_root_b"]),
@@ -525,7 +525,7 @@ auto_materialize_policy_scenarios = {
     ),
     "static_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
         assets=static_partitioned_eager_after_non_partitioned,
-        asset_selection=AssetSelection.keys("static_partitioned"),
+        asset_selection=AssetSelection.assets("static_partitioned"),
         unevaluated_runs=[
             run(["unpartitioned"]),
             run(["static_partitioned"], partition_key="a"),
@@ -541,13 +541,13 @@ auto_materialize_policy_scenarios = {
     ),
     "waiting_on_parents_materialize_condition": AssetReconciliationScenario(
         assets=lopsided_vee,
-        asset_selection=AssetSelection.keys("C", "D"),
+        asset_selection=AssetSelection.assets("C", "D"),
         cursor_from=AssetReconciliationScenario(
             assets=lopsided_vee,
-            asset_selection=AssetSelection.keys("C", "D"),
+            asset_selection=AssetSelection.assets("C", "D"),
             cursor_from=AssetReconciliationScenario(
                 assets=lopsided_vee,
-                asset_selection=AssetSelection.keys("C", "D"),
+                asset_selection=AssetSelection.assets("C", "D"),
                 unevaluated_runs=[
                     run(["root1", "root2", "A", "B", "C", "D"]),
                     run(["root1", "root2"]),
@@ -658,27 +658,27 @@ auto_materialize_policy_scenarios = {
     ),
     "no_auto_materialize_policy_to_missing_lazy": AssetReconciliationScenario(
         assets=non_auto_to_lazy,
-        asset_selection=AssetSelection.keys("auto"),
+        asset_selection=AssetSelection.assets("auto"),
         unevaluated_runs=[run(["non_auto"])],
         evaluation_delta=datetime.timedelta(minutes=55),
         expected_run_requests=[run_request(["auto"])],
     ),
     "no_auto_materialize_policy_to_lazy": AssetReconciliationScenario(
         assets=non_auto_to_lazy,
-        asset_selection=AssetSelection.keys("auto"),
+        asset_selection=AssetSelection.assets("auto"),
         unevaluated_runs=[run(["non_auto", "auto"]), run(["non_auto"])],
         between_runs_delta=datetime.timedelta(minutes=55),
         expected_run_requests=[run_request(["auto"])],
     ),
     "test_allow_missing_parent": AssetReconciliationScenario(
         assets=partitioned_to_unpartitioned_allow_missing_parent,
-        asset_selection=AssetSelection.keys("unpartitioned1", "unpartitioned2"),
+        asset_selection=AssetSelection.assets("unpartitioned1", "unpartitioned2"),
         unevaluated_runs=[run(["partitioned"], partition_key="a")],
         expected_run_requests=[run_request(["unpartitioned1", "unpartitioned2"])],
     ),
     "test_allow_missing_parent2": AssetReconciliationScenario(
         assets=partitioned_to_unpartitioned_allow_missing_parent,
-        asset_selection=AssetSelection.keys("unpartitioned1", "unpartitioned2"),
+        asset_selection=AssetSelection.assets("unpartitioned1", "unpartitioned2"),
         unevaluated_runs=[
             run(["partitioned"], partition_key="a"),
             run(["unpartitioned1"]),
@@ -687,7 +687,7 @@ auto_materialize_policy_scenarios = {
     ),
     "test_dont_allow_outdated_unpartitioned_parent": AssetReconciliationScenario(
         assets=two_partitioned_to_three_unpartitioned,
-        asset_selection=AssetSelection.keys("unpartitioned3"),
+        asset_selection=AssetSelection.assets("unpartitioned3"),
         unevaluated_runs=[
             # fully backfill
             run(["partitioned1", "partitioned2"], partition_key="a"),
@@ -958,10 +958,10 @@ auto_materialize_policy_scenarios = {
     ),
     "skipped_subset_unpartitioned": AssetReconciliationScenario(
         assets=vee,
-        asset_selection=AssetSelection.keys("C"),
+        asset_selection=AssetSelection.assets("C"),
         cursor_from=AssetReconciliationScenario(
             assets=vee,
-            asset_selection=AssetSelection.keys("C"),
+            asset_selection=AssetSelection.assets("C"),
             unevaluated_runs=[run(["A"])],
             # C must wait for B to be materialized
             expected_run_requests=[],
@@ -972,10 +972,10 @@ auto_materialize_policy_scenarios = {
     ),
     "skipped_on_last_tick_subset_partitioned": AssetReconciliationScenario(
         assets=partitioned_vee,
-        asset_selection=AssetSelection.keys("C"),
+        asset_selection=AssetSelection.assets("C"),
         cursor_from=AssetReconciliationScenario(
             assets=partitioned_vee,
-            asset_selection=AssetSelection.keys("C"),
+            asset_selection=AssetSelection.assets("C"),
             unevaluated_runs=[
                 run(["A"], partition_key="a"),
                 run(["A"], partition_key="b"),
@@ -989,10 +989,10 @@ auto_materialize_policy_scenarios = {
     ),
     "skipped_on_last_tick_subset_partitioned2": AssetReconciliationScenario(
         assets=partitioned_vee,
-        asset_selection=AssetSelection.keys("C"),
+        asset_selection=AssetSelection.assets("C"),
         cursor_from=AssetReconciliationScenario(
             assets=partitioned_vee,
-            asset_selection=AssetSelection.keys("C"),
+            asset_selection=AssetSelection.assets("C"),
             unevaluated_runs=[
                 run(["A"], partition_key="a"),
                 run(["A"], partition_key="b"),

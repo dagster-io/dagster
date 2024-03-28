@@ -86,7 +86,7 @@ def get_base_asset_jobs(
             # For now, to preserve behavior keep all orphaned asset checks (where the target check
             # has no corresponding executable definition) in all base jobs. When checks support
             # partitions, they should only go in the corresponding partitioned job.
-            selection = AssetSelection.keys(*executable_asset_keys) | AssetSelection.checks(
+            selection = AssetSelection.assets(*executable_asset_keys) | AssetSelection.checks(
                 *asset_graph.orphan_asset_check_keys
             )
             jobs.append(
@@ -343,11 +343,12 @@ def _subset_assets_defs(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "
                 f"contains asset keys {sorted(list(asset.keys))} and check keys "
                 f"{sorted(list(asset.check_keys))}, but "
-                f"attempted to select only {sorted(list(selected_subset))}. "
+                f"attempted to select only assets {sorted(list(selected_subset))} and checks "
+                f"{sorted(list(selected_check_subset))}. "
                 "This AssetsDefinition does not support subsetting. Please select all "
-                "asset keys produced by this asset.\n\nIf using an AssetSelection, you may "
+                "asset and check keys produced by this asset.\n\nIf using an AssetSelection, you may "
                 "use required_multi_asset_neighbors() to select any remaining assets, for "
-                "example:\nAssetSelection.keys('my_asset').required_multi_asset_neighbors()"
+                "example:\nAssetSelection.assets('my_asset').required_multi_asset_neighbors()"
             )
 
     return (

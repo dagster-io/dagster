@@ -83,10 +83,10 @@ def _check_node_defs_arg(
             continue
         elif callable(node_def):
             raise DagsterInvalidDefinitionError(
-                """You have passed a lambda or function {func} into {name} that is
+                f"""You have passed a lambda or function {node_def.__name__} into {graph_name} that is
                 not a node. You have likely forgetten to annotate this function with
                 the @op or @graph decorators.'
-                """.format(name=graph_name, func=node_def.__name__)
+                """
             )
         else:
             raise DagsterInvalidDefinitionError(f"Invalid item in node list: {node_def!r}")

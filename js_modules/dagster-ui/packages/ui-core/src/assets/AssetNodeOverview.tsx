@@ -180,10 +180,6 @@ export const AssetNodeOverview = ({
 
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
-      <AttributeAndValue label="Key">
-        <MiddleTruncate text={displayNameForAssetKey(assetNode.assetKey)} />
-      </AttributeAndValue>
-
       <AttributeAndValue label="Group">
         <Tag icon="asset_group">
           <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${assetNode.groupName}`)}>
@@ -232,7 +228,7 @@ export const AssetNodeOverview = ({
         {assetNode.tags && assetNode.tags.length > 0 && (
           <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
             {assetNode.tags.map((tag, idx) => (
-              <Tag key={idx}>{buildTagString({key: tag.key, value: tag.value})}</Tag>
+              <Tag key={idx}>{buildTagString(tag)}</Tag>
             ))}
           </Box>
         )}
@@ -402,6 +398,7 @@ export const AssetNodeOverview = ({
           )}
           <LargeCollapsibleSection header="Metadata" icon="view_list">
             <AssetEventMetadataEntriesTable
+              assetKey={assetNode.assetKey}
               showHeader
               showTimestamps
               showFilter
@@ -409,6 +406,7 @@ export const AssetNodeOverview = ({
               observations={[]}
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
+              assetHasDefinedPartitions={!!assetNode.partitionDefinition}
               event={materialization || observation || null}
               emptyState={
                 <SectionEmptyState

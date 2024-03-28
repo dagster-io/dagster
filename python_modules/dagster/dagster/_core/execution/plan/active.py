@@ -550,8 +550,8 @@ class ActiveExecution:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure."""
         if step_key in self._in_flight:
             job_context.log.error(
-                "Step {key} finished without success or failure event. Downstream steps will not"
-                " execute.".format(key=step_key)
+                f"Step {step_key} finished without success or failure event. Downstream steps will not"
+                " execute."
             )
             self.mark_unknown_state(step_key)
 

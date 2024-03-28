@@ -709,10 +709,7 @@ def get_code_location_from_workspace(
 
     if workspace.has_code_location_error(provided_location_name):
         raise click.UsageError(
-            'Error loading location "{provided_location_name}": {error_str}'.format(
-                provided_location_name=provided_location_name,
-                error_str=str(workspace.get_code_location_error(provided_location_name)),
-            )
+            f'Error loading location "{provided_location_name}": {workspace.get_code_location_error(provided_location_name)!s}'
         )
 
     return workspace.get_code_location(provided_location_name)

@@ -220,9 +220,7 @@ def validate_selector_config(
     )
 
     if child_evaluate_value_result.success:
-        return EvaluateValueResult.for_value(  # type: ignore
-            {field_name: child_evaluate_value_result.value}
-        )
+        return EvaluateValueResult.for_value({field_name: child_evaluate_value_result.value})
     else:
         return child_evaluate_value_result
 
@@ -300,7 +298,7 @@ def _validate_shape_config(
     if errors:
         return EvaluateValueResult.for_errors(errors)
     else:
-        return EvaluateValueResult.for_value(config_value)  # type: ignore
+        return EvaluateValueResult.for_value(config_value)
 
 
 def validate_permissive_shape_config(

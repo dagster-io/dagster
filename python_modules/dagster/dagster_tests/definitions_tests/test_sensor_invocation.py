@@ -680,11 +680,11 @@ def test_partitioned_config_run_request():
 
 
 def test_asset_selection_run_request_partition_key():
-    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    @sensor(asset_selection=AssetSelection.assets("a_asset"))
     def valid_req_sensor():
         return RunRequest(partition_key="a")
 
-    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    @sensor(asset_selection=AssetSelection.assets("a_asset"))
     def invalid_req_sensor():
         return RunRequest(partition_key="b")
 

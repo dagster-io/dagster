@@ -1219,7 +1219,7 @@ def define_sensors():
 
     auto_materialize_sensor = AutoMaterializeSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.keys("fresh_diamond_bottom"),
+        asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
     )
 
     return [

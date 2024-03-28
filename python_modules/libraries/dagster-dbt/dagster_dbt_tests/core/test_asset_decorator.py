@@ -23,7 +23,6 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.storage.tags import TAG_NO_VALUE
 from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
@@ -623,10 +622,7 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 
-    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {
-        "foo": TAG_NO_VALUE,
-        "bar-baz": TAG_NO_VALUE,
-    }
+    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {"foo": "", "bar-baz": ""}
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
         assert my_dbt_assets.tags_by_key[asset_key] == {}
 

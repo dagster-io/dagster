@@ -1484,7 +1484,7 @@ def test_empty_asset_job():
     def b(a):
         pass
 
-    empty_selection = AssetSelection.keys("a", "b") - AssetSelection.keys("a", "b")
+    empty_selection = AssetSelection.assets("a", "b") - AssetSelection.assets("a", "b")
     assert empty_selection.resolve([a, b]) == set()
 
     empty_job = define_asset_job("empty_job", selection=empty_selection).resolve(
@@ -2422,7 +2422,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\] and check keys \[\], but"
                 r" attempted to "
-                r"select only \[AssetKey\(\['a'\]\)\]",
+                r"select only assets \[AssetKey\(\['a'\]\)\] and checks \[\]",
             ),
         ),
     ],

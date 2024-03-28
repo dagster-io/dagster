@@ -85,23 +85,16 @@ class InvokedNodeOutputHandle:
 
     def __iter__(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            'Attempted to iterate over an {cls}. This object represents the output "{out}" '
-            'from the op/graph "{node}". Consider defining multiple Outs if you seek to pass '
-            "different parts of this output to different op/graph.".format(
-                cls=self.__class__.__name__, out=self.output_name, node=self.node_name
-            )
+            f'Attempted to iterate over an {self.__class__.__name__}. This object represents the output "{self.output_name}" '
+            f'from the op/graph "{self.node_name}". Consider defining multiple Outs if you seek to pass '
+            "different parts of this output to different op/graph."
         )
 
     def __getitem__(self, idx: object) -> NoReturn:
         raise DagsterInvariantViolationError(
-            'Attempted to index in to an {cls}. This object represents the output "{out}" '
-            "from the {described_node}. Consider defining multiple Outs if you seek to pass "
-            "different parts of this output to different {node_type}s.".format(
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-                node_type=self.node_type,
-            )
+            f'Attempted to index in to an {self.__class__.__name__}. This object represents the output "{self.output_name}" '
+            f"from the {self.describe_node()}. Consider defining multiple Outs if you seek to pass "
+            f"different parts of this output to different {self.node_type}s."
         )
 
     def describe_node(self) -> str:
@@ -109,28 +102,16 @@ class InvokedNodeOutputHandle:
 
     def alias(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call alias method for {cls}. This object "
-            'represents the output "{out}" from the already invoked {described_node}. Consider '
-            "checking the location of parentheses.".format(
-                source=current_context().source,
-                name=current_context().name,
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-            )
+            f"In {current_context().source} {current_context().name}, attempted to call alias method for {self.__class__.__name__}. This object "
+            f'represents the output "{self.output_name}" from the already invoked {self.describe_node()}. Consider '
+            "checking the location of parentheses."
         )
 
     def with_hooks(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call hook method for {cls}. This object "
-            'represents the output "{out}" from the already invoked {described_node}. Consider '
-            "checking the location of parentheses.".format(
-                source=current_context().source,
-                name=current_context().name,
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-            )
+            f"In {current_context().source} {current_context().name}, attempted to call hook method for {self.__class__.__name__}. This object "
+            f'represents the output "{self.output_name}" from the already invoked {self.describe_node()}. Consider '
+            "checking the location of parentheses."
         )
 
 
@@ -255,9 +236,7 @@ class InProgressCompositionContext:
 
         if self._invocations.get(node_name):
             raise DagsterInvalidDefinitionError(
-                "{source} {name} invoked the same node ({node_name}) twice without aliasing.".format(
-                    source=self.source, name=self.name, node_name=node_name
-                )
+                f"{self.source} {self.name} invoked the same node ({node_name}) twice without aliasing."
             )
 
         self._invocations[node_name] = InvokedNode(
@@ -445,28 +424,16 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         for idx, output_node in enumerate(args):
             if idx >= len(self.node_def.input_defs):
                 raise DagsterInvalidDefinitionError(
-                    "In {source} {name}, received too many inputs for "
-                    "invocation {node_name}. Only {def_num} defined, received {arg_num}".format(
-                        source=current_context().source,
-                        name=current_context().name,
-                        node_name=node_name,
-                        def_num=len(self.node_def.input_defs),
-                        arg_num=len(args),
-                    )
+                    f"In {current_context().source} {current_context().name}, received too many inputs for "
+                    f"invocation {node_name}. Only {len(self.node_def.input_defs)} defined, received {len(args)}"
                 )
 
             input_name = self.node_def.resolve_input_name_at_position(idx)
             if input_name is None:
                 raise DagsterInvalidDefinitionError(
-                    "In {source} {name}, could not resolve input based on position at "
-                    "index {idx} for invocation {node_name}. Use keyword args instead, "
-                    "available inputs are: {inputs}".format(
-                        idx=idx,
-                        source=current_context().source,
-                        name=current_context().name,
-                        node_name=node_name,
-                        inputs=list(map(lambda inp: inp.name, self.node_def.input_defs)),
-                    )
+                    f"In {current_context().source} {current_context().name}, could not resolve input based on position at "
+                    f"index {idx} for invocation {node_name}. Use keyword args instead, "
+                    f"available inputs are: {list(map(lambda inp: inp.name, self.node_def.input_defs))}"
                 )
 
             self._process_argument_node(
@@ -563,37 +530,20 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                     input_bindings[input_name].append(fanned_in_node)
                 else:
                     raise DagsterInvalidDefinitionError(
-                        "In {source} {name}, received a list containing an invalid type "
-                        'at index {idx} for input "{input_name}" {arg_desc} in '
-                        "{node_type} invocation {node_name}. Lists can only contain the "
+                        f"In {current_context().source} {current_context().name}, received a list containing an invalid type "
+                        f'at index {idx} for input "{input_name}" {arg_desc} in '
+                        f"{self.node_def.node_type_str} invocation {node_name}. Lists can only contain the "
                         "output from previous op invocations or input mappings, "
-                        "received {type}".format(
-                            source=current_context().source,
-                            name=current_context().name,
-                            arg_desc=arg_desc,
-                            input_name=input_name,
-                            node_type=self.node_def.node_type_str,
-                            node_name=node_name,
-                            idx=idx,
-                            type=type(output_node),
-                        )
+                        f"received {type(output_node)}"
                     )
 
         elif is_named_tuple_instance(output_node) and all(
             map(lambda item: isinstance(item, InvokedNodeOutputHandle), output_node)
         ):
             raise DagsterInvalidDefinitionError(
-                "In {source} {name}, received a tuple of multiple outputs for "
-                'input "{input_name}" {arg_desc} in {node_type} invocation {node_name}. '
-                "Must pass individual output, available from tuple: {options}".format(
-                    source=current_context().source,
-                    name=current_context().name,
-                    arg_desc=arg_desc,
-                    input_name=input_name,
-                    node_name=node_name,
-                    node_type=self.node_def.node_type_str,
-                    options=output_node._fields,
-                )
+                f"In {current_context().source} {current_context().name}, received a tuple of multiple outputs for "
+                f'input "{input_name}" {arg_desc} in {self.node_def.node_type_str} invocation {node_name}. '
+                f"Must pass individual output, available from tuple: {output_node._fields}"
             )
         elif isinstance(output_node, InvokedNodeDynamicOutputWrapper):
             raise DagsterInvalidDefinitionError(
@@ -604,33 +554,17 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
         elif isinstance(output_node, (NodeDefinition, PendingNodeInvocation)):
             raise DagsterInvalidDefinitionError(
-                "In {source} {name}, received an un-invoked {described_node} "
+                f"In {current_context().source} {current_context().name}, received an un-invoked {output_node.describe_node()} "
                 " for input "
-                '"{input_name}" {arg_desc} in {node_type} invocation "{node_name}". '
-                "Did you forget parentheses?".format(
-                    source=current_context().source,
-                    described_node=output_node.describe_node(),
-                    name=current_context().name,
-                    arg_desc=arg_desc,
-                    input_name=input_name,
-                    node_name=node_name,
-                    node_type=output_node.describe_node(),
-                )
+                f'"{input_name}" {arg_desc} in {output_node.describe_node()} invocation "{node_name}". '
+                "Did you forget parentheses?"
             )
         else:
             raise DagsterInvalidDefinitionError(
-                "In {source} {name}, received invalid type {type} for input "
-                '"{input_name}" {arg_desc} in {node_type} invocation "{node_name}". '
+                f"In {current_context().source} {current_context().name}, received invalid type {type(output_node)} for input "
+                f'"{input_name}" {arg_desc} in {self.node_def.node_type_str} invocation "{node_name}". '
                 "Must pass the output from previous node invocations or inputs to the "
-                "composition function as inputs when invoking nodes during composition.".format(
-                    source=current_context().source,
-                    name=current_context().name,
-                    type=type(output_node),
-                    arg_desc=arg_desc,
-                    input_name=input_name,
-                    node_name=node_name,
-                    node_type=self.node_def.node_type_str,
-                )
+                "composition function as inputs when invoking nodes during composition."
             )
 
     @public
@@ -830,52 +764,32 @@ class InvokedNodeDynamicOutputWrapper:
 
     def __iter__(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            'Attempted to iterate over an {cls}. This object represents the dynamic output "{out}" '
-            'from the {described_node}. Use the "map" method on this object to create '
+            f'Attempted to iterate over an {self.__class__.__name__}. This object represents the dynamic output "{self.output_name}" '
+            f'from the {self.describe_node()}. Use the "map" method on this object to create '
             "downstream dependencies that will be cloned for each DynamicOut "
-            "that is resolved at runtime.".format(
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-            )
+            "that is resolved at runtime."
         )
 
     def __getitem__(self, idx) -> NoReturn:
         raise DagsterInvariantViolationError(
-            'Attempted to index in to an {cls}. This object represents the dynamic out "{out}" '
-            'from the {described_node}. Use the "map" method on this object to create '
+            f'Attempted to index in to an {self.__class__.__name__}. This object represents the dynamic out "{self.output_name}" '
+            f'from the {self.describe_node()}. Use the "map" method on this object to create '
             "downstream dependencies that will be cloned for each DynamicOut "
-            "that is resolved at runtime.".format(
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-            )
+            "that is resolved at runtime."
         )
 
     def alias(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call alias method for {cls}. This object represents"
-            ' the dynamic out "{out}" from the already invoked {described_node}. Consider checking'
-            " the location of parentheses.".format(
-                source=current_context().source,
-                name=current_context().name,
-                cls=self.__class__.__name__,
-                described_node=self.describe_node(),
-                out=self.output_name,
-            )
+            f"In {current_context().source} {current_context().name}, attempted to call alias method for {self.__class__.__name__}. This object represents"
+            f' the dynamic out "{self.output_name}" from the already invoked {self.describe_node()}. Consider checking'
+            " the location of parentheses."
         )
 
     def with_hooks(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call hook method for {cls}. This object represents"
-            ' the dynamic out "{out}" from the already invoked {described_node}. Consider checking'
-            " the location of parentheses.".format(
-                source=current_context().source,
-                name=current_context().name,
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-            )
+            f"In {current_context().source} {current_context().name}, attempted to call hook method for {self.__class__.__name__}. This object represents"
+            f' the dynamic out "{self.output_name}" from the already invoked {self.describe_node()}. Consider checking'
+            " the location of parentheses."
         )
 
 
