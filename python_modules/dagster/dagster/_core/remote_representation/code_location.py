@@ -854,7 +854,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
-            job_origin=external_job.get_external_origin(),
+            job_origin=external_job.get_remote_origin(),
             run_config=run_config,
             job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
@@ -881,7 +881,7 @@ class GrpcServerCodeLocation(CodeLocation):
         job_handle = JobHandle(selector.job_name, external_repository.handle)
         subset = sync_get_external_job_subset_grpc(
             self.client,
-            job_handle.get_external_origin(),
+            job_handle.get_remote_origin(),
             include_parent_snapshot=False,
             op_selection=selector.op_selection,
             asset_selection=selector.asset_selection,

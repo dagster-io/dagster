@@ -101,7 +101,7 @@ def run_migrate_command(from_label, **kwargs):
         with get_external_job_from_kwargs(
             instance, version=dagster_version, kwargs=kwargs
         ) as external_job:
-            new_job_origin = external_job.get_external_origin()
+            new_job_origin = external_job.get_remote_origin()
             job_name = external_job.name
             to_label = new_job_origin.repository_origin.get_label()
 

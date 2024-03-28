@@ -577,7 +577,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
         cid = CompoundID(
-            external_origin_id=instigator_state.instigator_origin_id,
+            remote_origin_id=instigator_state.instigator_origin_id,
             selector_id=instigator_state.selector_id,
         )
         super().__init__(

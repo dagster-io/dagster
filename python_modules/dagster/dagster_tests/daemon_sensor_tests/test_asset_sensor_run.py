@@ -31,7 +31,7 @@ def test_monitor_source_asset_sensor(executor):
 
             evaluate_sensors(workspace_ctx, executor)
 
-            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            ticks = instance.get_ticks(the_sensor.get_remote_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -46,7 +46,7 @@ def test_monitor_source_asset_sensor(executor):
 
             evaluate_sensors(workspace_ctx, executor)
 
-            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            ticks = instance.get_ticks(the_sensor.get_remote_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],

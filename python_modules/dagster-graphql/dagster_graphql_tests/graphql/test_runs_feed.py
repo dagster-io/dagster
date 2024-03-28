@@ -878,7 +878,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         repository = code_location.get_repository("test_repo")
 
         partition_set_origin = RemotePartitionSetOrigin(
-            repository_origin=repository.get_external_origin(),
+            repository_origin=repository.get_remote_origin(),
             partition_set_name="foo_partition",
         )
         for _ in range(3):
@@ -890,7 +890,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             _create_run_for_backfill(graphql_context, backfill_id, job_name="foo")
 
         partition_set_origin = RemotePartitionSetOrigin(
-            repository_origin=repository.get_external_origin(),
+            repository_origin=repository.get_remote_origin(),
             partition_set_name="bar_partition",
         )
         for _ in range(3):

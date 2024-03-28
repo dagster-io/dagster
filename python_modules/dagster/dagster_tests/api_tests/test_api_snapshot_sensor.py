@@ -31,7 +31,7 @@ def test_external_sensor_grpc(instance):
 
 def test_external_sensor_grpc_fallback_to_streaming(instance):
     with get_bar_repo_handle(instance) as repository_handle:
-        origin = repository_handle.get_external_origin()
+        origin = repository_handle.get_remote_origin()
         with ephemeral_grpc_api_client(
             origin.code_location_origin.loadable_target_origin
         ) as api_client:
@@ -95,7 +95,7 @@ def test_external_sensor_client_timeout(instance, timeout: int, env_var_default_
 
 def test_external_sensor_deserialize_error(instance):
     with get_bar_repo_handle(instance) as repository_handle:
-        origin = repository_handle.get_external_origin()
+        origin = repository_handle.get_remote_origin()
         with ephemeral_grpc_api_client(
             origin.code_location_origin.loadable_target_origin
         ) as api_client:

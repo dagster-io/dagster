@@ -109,7 +109,7 @@ class GrapheneSensor(graphene.ObjectType):
 
         super().__init__(
             name=external_sensor.name,
-            jobOriginId=external_sensor.get_external_origin_id(),
+            jobOriginId=external_sensor.get_remote_origin_id(),
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
             targets=[GrapheneTarget(target) for target in external_sensor.get_targets()],
@@ -248,12 +248,12 @@ class GrapheneStopSensorMutation(graphene.Mutation):
     ):
         if id:
             cid = CompoundID.from_string(id)
-            sensor_origin_id = cid.external_origin_id
+            sensor_origin_id = cid.remote_origin_id
             sensor_selector_id = cid.selector_id
         elif job_origin_id and CompoundID.is_valid_string(job_origin_id):
             # cross-push handle if InstigationState.id being passed through as origin id
             cid = CompoundID.from_string(job_origin_id)
-            sensor_origin_id = cid.external_origin_id
+            sensor_origin_id = cid.remote_origin_id
             sensor_selector_id = cid.selector_id
         elif job_origin_id is None or job_selector_id is None:
             raise DagsterInvariantViolationError("Must specify id or jobOriginId and jobSelectorId")
