@@ -4,6 +4,7 @@ import {
   Colors,
   Icon,
   Popover,
+  Spinner,
   Subtitle2,
   Tag,
   useViewport,
@@ -29,9 +30,11 @@ const BUCKETS = 100;
 export const RecentUpdatesTimeline = ({
   assetKey,
   materializations,
+  loading,
 }: {
   assetKey: AssetKey;
   materializations: ReturnType<typeof useRecentAssetEvents>['materializations'];
+  loading: boolean;
 }) => {
   const {containerProps, viewport} = useViewport();
   const widthAvailablePerTick = viewport.width / BUCKETS;
@@ -40,8 +43,8 @@ export const RecentUpdatesTimeline = ({
 
   const buckets = Math.floor(viewport.width / tickWidth);
 
-  const endTimestamp = parseInt(materializations[0]!.timestamp);
-  const startTimestamp = parseInt(materializations[materializations.length - 1]!.timestamp);
+  const endTimestamp = parseInt(materializations[0]?.timestamp ?? '0');
+  const startTimestamp = parseInt(materializations[materializations.length - 1]?.timestamp ?? '0');
   const range = endTimestamp - startTimestamp;
 
   const bucketedMaterializations = useMemo(() => {
@@ -88,6 +91,24 @@ export const RecentUpdatesTimeline = ({
   }, [viewport.width, buckets, materializations, startTimestamp, range]);
 
   const formatDateTime = useFormatDateTime();
+
+  if (loading) {
+    return (
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+        <Subtitle2>Recent updates</Subtitle2>
+        <Spinner purpose="body-text" />
+      </Box>
+    );
+  }
+
+  if (!materializations.length) {
+    return (
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+        <Subtitle2>Recent updates</Subtitle2>
+        <Caption color={Colors.textLight()}>No materialization events found</Caption>
+      </Box>
+    );
+  }
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>

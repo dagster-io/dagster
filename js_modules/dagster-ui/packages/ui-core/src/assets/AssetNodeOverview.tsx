@@ -102,7 +102,7 @@ export const AssetNodeOverview = ({
   );
   const {UserDisplay} = useLaunchPadHooks();
 
-  const {materializations} = useRecentAssetEvents(
+  const {materializations, loading: materializationsLoading} = useRecentAssetEvents(
     assetNode.isPartitioned ? undefined : assetNode.assetKey,
     {},
     {assetHasDefinedPartitions: false},
@@ -141,9 +141,11 @@ export const AssetNodeOverview = ({
           </Box>
         ) : undefined}
       </Box>
-      {materializations.length ? (
-        <RecentUpdatesTimeline materializations={materializations} assetKey={assetNode.assetKey} />
-      ) : null}
+      <RecentUpdatesTimeline
+        materializations={materializations}
+        assetKey={assetNode.assetKey}
+        loading={materializationsLoading}
+      />
     </Box>
   );
 
