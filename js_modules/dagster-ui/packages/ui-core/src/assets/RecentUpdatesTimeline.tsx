@@ -149,13 +149,11 @@ export const RecentUpdatesTimeline = ({
                             />
                           );
                         })}
-                        <span
-                          style={{position: 'absolute', left: 0, right: 0, textAlign: 'center'}}
-                        >
+                        <TickText>
                           {bucket.materializations.length > 1
                             ? bucket.materializations.length
                             : null}
-                        </span>
+                        </TickText>
                       </Tick>
                     </>
                   </Popover>
@@ -229,6 +227,10 @@ const Tick = styled.div`
   background-color: ${Colors.backgroundGreen()};
   cursor: pointer;
   border-radius: 2px;
+
+`;
+
+const TickText = styled.div`
   display: grid;
   place-content: center;
   color: transparent;
@@ -253,4 +255,5 @@ const InnerTick = styled.div`
   bottom: 0;
   position: absolute;
   opacity: 0.5;
+  pointer-events: none;
 `;
