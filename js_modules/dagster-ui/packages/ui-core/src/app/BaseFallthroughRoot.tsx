@@ -84,7 +84,3 @@ const FinalRedirectOrLoadingRoot = () => {
 
   return <Redirect to="/locations" />;
 };
-
-// Imported via React.lazy, which requires a default export.
-// eslint-disable-next-line import/no-default-export
-export default BaseFallthroughRoot;
