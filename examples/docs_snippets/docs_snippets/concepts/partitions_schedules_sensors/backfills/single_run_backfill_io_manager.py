@@ -5,7 +5,7 @@ from dagster import (
     DailyPartitionsDefinition,
     InputContext,
     IOManager,
-    OutputContext
+    OutputContext,
     asset,
 )
 
