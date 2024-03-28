@@ -6,7 +6,14 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildResourceRequirement,
+  buildWorkspace,
+  buildWorkspaceLocationEntry,
 } from '../../graphql/types';
+import {ROOT_WORKSPACE_QUERY} from '../../workspace/WorkspaceContext';
+import {
+  RootWorkspaceQuery,
+  RootWorkspaceQueryVariables,
+} from '../../workspace/types/WorkspaceContext.types';
 import {ASSET_VIEW_DEFINITION_QUERY} from '../AssetView';
 import {buildQueryMock} from '../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {
@@ -142,6 +149,34 @@ export const AssetViewDefinitionSDA = buildQueryMock<
         targetingInstigators: [],
         owners: [],
       }),
+    }),
+  },
+});
+
+export const RootWorkspaceWithOneLocation = buildQueryMock<
+  RootWorkspaceQuery,
+  RootWorkspaceQueryVariables
+>({
+  query: ROOT_WORKSPACE_QUERY,
+  variables: {},
+  data: {
+    workspaceOrError: buildWorkspace({
+      locationEntries: [
+        buildWorkspaceLocationEntry({
+          locationOrLoadError: buildRepositoryLocation({
+            repositories: [
+              buildRepository({
+                id: '4d0b1967471d9a4682ccc97d12c1c508d0d9c2e1',
+                name: 'repo',
+                location: buildRepositoryLocation({
+                  id: 'test.py',
+                  name: 'test.py',
+                }),
+              }),
+            ],
+          }),
+        }),
+      ],
     }),
   },
 });
