@@ -22,6 +22,7 @@ from polars.testing.parametric import dataframes
             pl.UInt32,  # These get casted to int in deltalake whenever it fits
             pl.UInt64,  # These get casted to int in deltalake whenever it fits
             pl.Datetime("ns", None),  # These get casted to datetime('ms')
+            pl.Decimal,  # Delta-RS decimal handling parsing in transaction log is partially broken see #todo(ion): uncomment once arrow-rs fixes upstream parser: https://github.com/apache/arrow-rs/issues/5549
         ],
         min_size=5,
         allow_infinities=False,

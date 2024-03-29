@@ -12,7 +12,7 @@ from dagster_polars_tests.utils import get_saved_path
 
 # allowed_dtypes=[pl.List(inner) for inner in
 # list(pl.TEMPORAL_DTYPES | pl.FLOAT_DTYPES | pl.INTEGER_DTYPES) + [pl.Boolean, pl.Utf8]]
-@given(df=dataframes(excluded_dtypes=[pl.Categorical], min_size=5))
+@given(df=dataframes(excluded_dtypes=[pl.Categorical, pl.Decimal], min_size=5))
 @settings(max_examples=100, deadline=None)
 def test_polars_parquet_io_manager_read_write(
     session_polars_parquet_io_manager: PolarsParquetIOManager, df: pl.DataFrame
@@ -36,7 +36,7 @@ def test_polars_parquet_io_manager_read_write(
 
 # allowed_dtypes=[pl.List(inner) for inner in
 # list(pl.TEMPORAL_DTYPES | pl.FLOAT_DTYPES | pl.INTEGER_DTYPES) + [pl.Boolean, pl.Utf8]]
-@given(df=dataframes(excluded_dtypes=[pl.Categorical], min_size=5))
+@given(df=dataframes(excluded_dtypes=[pl.Categorical, pl.Decimal], min_size=5))
 @settings(max_examples=100, deadline=None)
 def test_polars_parquet_io_manager_read_write_full_lazy(
     session_polars_parquet_io_manager: PolarsParquetIOManager, df: pl.DataFrame

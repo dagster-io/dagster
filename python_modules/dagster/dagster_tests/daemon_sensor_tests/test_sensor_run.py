@@ -1433,7 +1433,7 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
                 [run.run_id],
             )
 
-            assert f"Run {run.run_id} created successfully but failed to launch:" in caplog.text
+            assert f"Run {run.run_id} created successfully but failed to launch" in caplog.text
 
             assert "The entire purpose of this is to throw on launch" in caplog.text
 

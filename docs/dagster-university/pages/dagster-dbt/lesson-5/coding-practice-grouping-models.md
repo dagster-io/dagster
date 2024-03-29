@@ -35,7 +35,6 @@ Override the `get_group_name` method in your `CustomizedDagsterDbtTranslator` to
 The method you built should look similar to the following code. Click **View answer** to view it.
 
 ```python {% obfuscated="true" %}
-@classmethod
-def get_group_name(cls, dbt_resource_props):
+def get_group_name(self, dbt_resource_props):
     return dbt_resource_props["fqn"][1]
 ```

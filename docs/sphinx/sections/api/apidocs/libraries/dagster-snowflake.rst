@@ -32,6 +32,11 @@ Resource
 .. autoclass:: SnowflakeConnection
   :members:
 
+Data Freshness 
+==============
+
+.. autofunction:: fetch_last_updated_timestamps
+
 Ops
 ===
 .. autofunction:: snowflake_op_for_query

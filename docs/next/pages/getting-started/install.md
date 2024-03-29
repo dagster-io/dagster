@@ -34,7 +34,7 @@ To install the latest stable version of the core Dagster packages in your curren
 pip install dagster dagster-webserver
 ```
 
-**Using a Mac with an M1 or M2 chip**? Some users have reported installation errors due to missing wheels for arm64 Macs when installing the `grpcio` package. You can avoid these errors by installing `dagster` using our pre-built wheel of the `grpcio` package for M1 and M2 machines:
+**Using a Mac with an Apple silicon chip**? Some users have reported installation errors due to missing wheels for arm64 Macs when installing the `grpcio` package. You can avoid these errors by installing `dagster` using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines:
 
 ```bash
 pip install dagster dagster-webserver --find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels
@@ -56,7 +56,7 @@ To install Dagster and the Dagster webserver/UI into an existing [Poetry](https:
 poetry add dagster dagster-webserver
 ```
 
-**Using a Mac with an M1 or M2 chip**? Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. You can avoid these errors by installing `dagster` using our pre-built wheel of the `grpcio` package for M1 and M2 machines:
+**Using a Mac with an Apple silicon chip**? Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. You can avoid these errors by installing `dagster` using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines:
 
 ```bash
 poetry source add grpcio https://github.com/dagster-io/build-grpcio/wiki/Wheels

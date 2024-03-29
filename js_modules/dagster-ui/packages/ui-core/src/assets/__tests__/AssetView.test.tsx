@@ -22,12 +22,14 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {AssetView} from '../AssetView';
 import {
   AssetViewDefinitionNonSDA,
   AssetViewDefinitionSDA,
   AssetViewDefinitionSourceAsset,
   LatestMaterializationTimestamp,
+  RootWorkspaceWithOneLocation,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -57,6 +59,7 @@ describe('AssetView', () => {
     return (
       <MockedProvider
         mocks={[
+          RootWorkspaceWithOneLocation,
           AssetViewDefinitionSDA,
           AssetViewDefinitionNonSDA,
           AssetViewDefinitionSourceAsset,
@@ -72,11 +75,13 @@ describe('AssetView', () => {
           }),
         ]}
       >
-        <AssetLiveDataProvider>
-          <MemoryRouter initialEntries={[path]}>
-            <AssetView assetKey={assetKey} headerBreadcrumbs={[]} />
-          </MemoryRouter>
-        </AssetLiveDataProvider>
+        <WorkspaceProvider>
+          <AssetLiveDataProvider>
+            <MemoryRouter initialEntries={[path]}>
+              <AssetView assetKey={assetKey} headerBreadcrumbs={[]} />
+            </MemoryRouter>
+          </AssetLiveDataProvider>
+        </WorkspaceProvider>
       </MockedProvider>
     );
   };

@@ -2,7 +2,9 @@
     config(
         meta={
             'dagster': {
-                'asset_key': ['customers']
+                'ref': {
+                    'name': 'customers',
+                },
             }
         }
     )
