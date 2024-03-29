@@ -24,18 +24,17 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
+const INNER_TICK_WIDTH = 1;
 const MIN_TICK_WIDTH = 5;
-const BUCKETS = 100;
+const BUCKETS = 50;
 
-export const RecentUpdatesTimeline = ({
-  assetKey,
-  materializations,
-  loading,
-}: {
+type Props = {
   assetKey: AssetKey;
   materializations: ReturnType<typeof useRecentAssetEvents>['materializations'];
   loading: boolean;
-}) => {
+};
+
+export const RecentUpdatesTimeline = ({assetKey, materializations, loading}: Props) => {
   const {containerProps, viewport} = useViewport();
   const widthAvailablePerTick = viewport.width / BUCKETS;
 
@@ -58,8 +57,9 @@ export const RecentUpdatesTimeline = ({
     if (!viewport.width) {
       return [];
     }
-    const firstPassBucketsArray: Array<{
-      index: number;
+    const bucketsArr: Array<{
+      start: number;
+      end: number;
       materializations: typeof materializations;
     }> = new Array(buckets);
 
@@ -68,34 +68,15 @@ export const RecentUpdatesTimeline = ({
         Math.floor((parseInt(materialization.timestamp) - startTimestamp) / bucketTimeRange),
         buckets - 1,
       );
-      firstPassBucketsArray[bucketIndex] = firstPassBucketsArray[bucketIndex] || {
-        index: bucketIndex,
+      bucketsArr[bucketIndex] = bucketsArr[bucketIndex] || {
+        start: bucketIndex,
+        end: bucketIndex + 1,
         materializations: [] as typeof materializations,
       };
-      firstPassBucketsArray[bucketIndex]!.materializations.push(materialization);
+      bucketsArr[bucketIndex]!.materializations.push(materialization);
     });
 
-    const secondPassBucketsArray: Array<{
-      start: number;
-      end: number;
-      materializations: typeof materializations;
-    }> = [];
-
-    firstPassBucketsArray.forEach((bucket) => {
-      const lastBucket = secondPassBucketsArray[secondPassBucketsArray.length - 1];
-      if (!lastBucket || lastBucket.end !== bucket.index) {
-        secondPassBucketsArray.push({
-          start: bucket.index,
-          end: bucket.index + 1,
-          materializations: bucket.materializations,
-        });
-      } else {
-        lastBucket.end = bucket.index + 1;
-        lastBucket.materializations = [...lastBucket.materializations, ...bucket.materializations];
-      }
-    });
-
-    return secondPassBucketsArray;
+    return bucketsArr;
   }, [viewport.width, buckets, sortedMaterializations, startTimestamp, bucketTimeRange]);
 
   const formatDateTime = useFormatDateTime();
@@ -111,7 +92,7 @@ export const RecentUpdatesTimeline = ({
 
   if (!materializations.length) {
     return (
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      <Box flex={{direction: 'column', gap: 8}}>
         <Subtitle2>Recent updates</Subtitle2>
         <Caption color={Colors.textLight()}>No materialization events found</Caption>
       </Box>
@@ -145,7 +126,7 @@ export const RecentUpdatesTimeline = ({
                     content={
                       <Box flex={{direction: 'column', gap: 8}}>
                         <Box padding={8} border="bottom">
-                          <Subtitle2>Materializations</Subtitle2>
+                          <Subtitle2>Updates</Subtitle2>
                         </Box>
                         <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
                           {bucket.materializations
@@ -174,16 +155,13 @@ export const RecentUpdatesTimeline = ({
                             <InnerTick
                               key={timestamp}
                               style={{
-                                left: `min(calc(100% - 1px), ${percent}%`,
+                                // Make sure there's enough room to see the last tick.
+                                left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
                               }}
                             />
                           );
                         })}
-                        <TickText>
-                          {bucket.materializations.length > 1
-                            ? bucket.materializations.length
-                            : null}
-                        </TickText>
+                        <TickText>{bucket.materializations.length}</TickText>
                       </Tick>
                     </>
                   </Popover>
@@ -293,11 +271,10 @@ const TickWrapper = styled.div`
 `;
 
 const InnerTick = styled.div`
-  width: 1px;
+  width: ${INNER_TICK_WIDTH}px;
   background-color: ${Colors.accentGreen()};
   top: 0;
   bottom: 0;
   position: absolute;
-  opacity: 0.5;
   pointer-events: none;
 `;
