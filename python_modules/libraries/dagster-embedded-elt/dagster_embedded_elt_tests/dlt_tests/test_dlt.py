@@ -13,9 +13,7 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_rule import MaterializeOnCronRule
 from dagster._core.definitions.materialize import materialize
-from dagster_embedded_elt.dlt.asset_decorator import dlt_assets
-from dagster_embedded_elt.dlt.resource import DagsterDltResource
-from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
+from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt.extract.resource import DltResource
 
 from .dlt_test_sources.duckdb_with_transformer import pipeline

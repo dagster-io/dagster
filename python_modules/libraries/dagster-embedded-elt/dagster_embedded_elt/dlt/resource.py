@@ -7,7 +7,7 @@ from dagster import (
     MaterializeResult,
     OpExecutionContext,
 )
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dlt.common.pipeline import LoadInfo
 from dlt.extract.resource import DltResource
 
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 from .constants import META_KEY_PIPELINE, META_KEY_SOURCE
 
 
+@experimental
 class DagsterDltResource(ConfigurableResource):
     def _cast_load_info_metadata(self, mapping: Mapping[Any, Any]) -> Mapping[Any, Any]:
         """Converts pendulum DateTime and Timezone values in a mapping to strings.
