@@ -10,6 +10,8 @@ from dagster_dbt import (
 )
 from dagster_dbt.asset_decorator import dbt_assets
 
+pytest.importorskip("dbt.version", "1.6")
+
 dagster_dbt_translator_with_checks = DagsterDbtTranslator(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
 )
