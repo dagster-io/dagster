@@ -282,6 +282,19 @@
             ]
           },
           {
+            "title": "Metadata & tags",
+            "children": [
+              {
+                "title": "Tags",
+                "path": "/concepts/metadata-tags/tags"
+              },
+              {
+                "title": "Op job metadata",
+                "path": "/concepts/metadata-tags/op-job-metadata"
+              }
+            ]
+          },
+          {
             "title": "I/O management",
             "children": [
               {
