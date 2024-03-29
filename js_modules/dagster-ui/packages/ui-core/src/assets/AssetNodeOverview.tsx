@@ -526,30 +526,51 @@ export const AssetNodeOverviewNonSDA = ({
 }: {
   assetKey: AssetKey;
   lastMaterialization: {timestamp: string; runId: string} | null | undefined;
-}) => (
-  <AssetNodeOverviewContainer
-    left={
-      <LargeCollapsibleSection header="Status" icon="status">
-        {lastMaterialization ? (
-          <MaterializationTag assetKey={assetKey} event={lastMaterialization} stepKey={null} />
-        ) : (
-          <Caption color={Colors.textLighter()}>Never materialized</Caption>
-        )}
-      </LargeCollapsibleSection>
-    }
-    right={
-      <LargeCollapsibleSection header="Definition" icon="info">
-        <Box flex={{direction: 'column', gap: 12}}>
-          <NonIdealState
-            description="This asset doesn't have a software definition in any of your code locations."
-            icon="materialization"
-            title=""
-          />
-        </Box>
-      </LargeCollapsibleSection>
-    }
-  />
-);
+}) => {
+  const {materializations, loading} = useRecentAssetEvents(
+    assetKey,
+    {},
+    {assetHasDefinedPartitions: false},
+  );
+
+  return (
+    <AssetNodeOverviewContainer
+      left={
+        <LargeCollapsibleSection header="Status" icon="status">
+          <Box flex={{direction: 'column', gap: 16}}>
+            <div>
+              {lastMaterialization ? (
+                <MaterializationTag
+                  assetKey={assetKey}
+                  event={lastMaterialization}
+                  stepKey={null}
+                />
+              ) : (
+                <Caption color={Colors.textLighter()}>Never materialized</Caption>
+              )}
+            </div>
+            <RecentUpdatesTimeline
+              materializations={materializations}
+              assetKey={assetKey}
+              loading={loading}
+            />
+          </Box>
+        </LargeCollapsibleSection>
+      }
+      right={
+        <LargeCollapsibleSection header="Definition" icon="info">
+          <Box flex={{direction: 'column', gap: 12}}>
+            <NonIdealState
+              description="This asset doesn't have a software definition in any of your code locations."
+              icon="materialization"
+              title=""
+            />
+          </Box>
+        </LargeCollapsibleSection>
+      }
+    />
+  );
+};
 
 export const AssetNodeOverviewLoading = () => (
   <AssetNodeOverviewContainer
