@@ -120,7 +120,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
         "merge_behavior": Field(
             DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
             is_required=False,
-            default_value=K8sConfigMergeBehavior.SHALLOW.value,
+            default_value=K8sConfigMergeBehavior.DEEP.value,
             description=(
                 "How raw k8s config set on this op should be merged with any raw k8s config set on"
                 " the code location that launched the op. By default, the value is SHALLOW, meaning"
@@ -161,7 +161,7 @@ def execute_k8s_job(
     job_metadata: Optional[Dict[str, Any]] = None,
     job_spec_config: Optional[Dict[str, Any]] = None,
     k8s_job_name: Optional[str] = None,
-    merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.SHALLOW,
+    merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
 
@@ -233,10 +233,10 @@ def execute_k8s_job(
             already exist in the cluster.
         merge_behavior (Optional[K8sConfigMergeBehavior]): How raw k8s config set on this op should
             be merged with any raw k8s config set on the code location that launched the op. By
-            default, the value is K8sConfigMergeBehavior.SHALLOW, meaning that the two dictionaries
-            are shallowly merged - any shared values in the dictionaries will be replaced by the
-            values set on this op. Setting it to DEEP will recursively merge the two dictionaries,
-            appending list fields together andmerging dictionary fields.
+            default, the value is K8sConfigMergeBehavior.DEEP, meaning that the two dictionaries
+            are recursively merged, appending list fields together and merging dictionary fields.
+            Setting it to SHALLOW will make the dictionaries shallowly merged - any shared values
+            in the dictionaries will be replaced by the values set on this op.
     """
     run_container_context = K8sContainerContext.create_for_run(
         context.dagster_run,
@@ -286,18 +286,6 @@ def execute_k8s_job(
     k8s_job_config = DagsterK8sJobConfig(
         job_image=image,
         dagster_home=None,
-        image_pull_policy=container_context.image_pull_policy,
-        image_pull_secrets=container_context.image_pull_secrets,
-        service_account_name=container_context.service_account_name,
-        instance_config_map=None,
-        postgres_password_secret=None,
-        env_config_maps=container_context.env_config_maps,
-        env_secrets=container_context.env_secrets,
-        env_vars=container_context.env_vars,
-        volume_mounts=container_context.volume_mounts,
-        volumes=container_context.volumes,
-        labels=container_context.labels,
-        resources=container_context.resources,
     )
 
     job_name = k8s_job_name or get_k8s_job_name(
@@ -449,6 +437,6 @@ def k8s_job_op(context):
     if "merge_behavior" in context.op_config:
         merge_behavior = K8sConfigMergeBehavior(context.op_config.pop("merge_behavior"))
     else:
-        merge_behavior = K8sConfigMergeBehavior.SHALLOW
+        merge_behavior = K8sConfigMergeBehavior.DEEP
 
     execute_k8s_job(context, merge_behavior=merge_behavior, **context.op_config)

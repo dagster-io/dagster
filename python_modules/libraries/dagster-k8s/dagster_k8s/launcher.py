@@ -256,7 +256,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     "name": "DAGSTER_RUN_JOB_NAME",
                     "value": job_origin.job_name,
                 },
-                *container_context.env,
             ],
         )
 
