@@ -265,15 +265,15 @@ class DagsterRun(
         "_DagsterRun",
         [
             ("job_name", PublicAttr[str]),
-            ("run_id", str),
-            ("run_config", Mapping[str, object]),
+            ("run_id", PublicAttr[str]),
+            ("run_config", PublicAttr[Mapping[str, object]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("status", DagsterRunStatus),
-            ("tags", Mapping[str, str]),
+            ("tags", PublicAttr[Mapping[str, str]]),
             ("root_run_id", Optional[str]),
             ("parent_run_id", Optional[str]),
             ("job_snapshot_id", Optional[str]),
@@ -287,6 +287,13 @@ class DagsterRun(
 ):
     """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
+
+    Attributes:
+        job_name (str): The name of the job executed in this run
+        run_id (str): The ID of the run
+        run_config (Mapping[str, object]): The config for the run
+        tags (Mapping[str, str]): The tags applied to the run
+
     """
 
     def __new__(
