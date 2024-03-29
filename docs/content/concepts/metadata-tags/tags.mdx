@@ -25,8 +25,7 @@ Tags are key/value pairs of strings that can be applied to assets, ops, jobs, an
 
 ```python file=/guides/tags.py startafter=start_asset_tags endbefore=end_asset_tags
 @asset(tags={"domain": "marketing", "pii": "true"})
-def leads():
-    ...
+def leads(): ...
 ```
 
 Tags are helpful when you need to find specific items in your Dagster project. For example, tags can be used as a filter when looking at the **Asset catalog** in the Dagster UI, allowing you to only see specific assets.
@@ -58,8 +57,7 @@ Tags are useful for organizing assets non-hierarchical ways. Unlike asset groups
 
 ```python file=/guides/tags.py startafter=start_asset_tags endbefore=end_asset_tags
 @asset(tags={"domain": "marketing", "pii": "true"})
-def leads():
-    ...
+def leads(): ...
 ```
 
 Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, <PyObject object="AssetOut" />, and <PyObject object="graph_asset" decorator />.
