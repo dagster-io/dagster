@@ -168,9 +168,9 @@ def add_all_upstream_keys(
         if required.get(key):
             return
         required[key] = True
-        asset_node = all_asset_nodes[key].external_asset_node
-        for dep in asset_node.dependencies:
-            append_key_and_upstream(dep.upstream_asset_key)
+        asset_node = all_asset_nodes[key].asset_node_snap
+        for dep in asset_node.parent_edges:
+            append_key_and_upstream(dep.parent_asset_key)
 
     for asset_key in requested_asset_keys:
         append_key_and_upstream(asset_key)

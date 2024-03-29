@@ -305,7 +305,7 @@ def test_dagster_definitions():
 
     def the_assert(external_repo: ExternalRepository):
         assert external_repo.name == "__repository__"
-        assert len(external_repo.get_external_asset_nodes()) == 1
+        assert len(external_repo.get_asset_node_snaps()) == 1
         executed["yes"] = True
 
     assert successfully_load_repository_via_cli(cli_args, the_assert)

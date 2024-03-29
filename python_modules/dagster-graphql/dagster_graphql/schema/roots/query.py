@@ -882,10 +882,10 @@ class GrapheneQuery(graphene.ObjectType):
             repo_sel = RepositorySelector.from_graphql_input(group)
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_nodes()
+            asset_node_snaps = repo.get_asset_node_snaps()
             asset_checks_loader = AssetChecksLoader(
                 context=graphene_info.context,
-                asset_keys=[node.asset_key for node in external_asset_nodes],
+                asset_keys=[node.asset_key for node in asset_node_snaps],
             )
             results = (
                 [
@@ -896,10 +896,10 @@ class GrapheneQuery(graphene.ObjectType):
                         asset_checks_loader=asset_checks_loader,
                         dynamic_partitions_loader=dynamic_partitions_loader,
                     )
-                    for asset_node in external_asset_nodes
+                    for asset_node in asset_node_snaps
                     if asset_node.group_name == group_name
                 ]
-                if external_asset_nodes
+                if asset_node_snaps
                 else []
             )
         elif pipeline is not None:
@@ -907,10 +907,10 @@ class GrapheneQuery(graphene.ObjectType):
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_nodes(job_name)
+            asset_node_snaps = repo.get_asset_node_snaps(job_name)
             asset_checks_loader = AssetChecksLoader(
                 context=graphene_info.context,
-                asset_keys=[node.asset_key for node in external_asset_nodes],
+                asset_keys=[node.asset_key for node in asset_node_snaps],
             )
             results = (
                 [
@@ -921,9 +921,9 @@ class GrapheneQuery(graphene.ObjectType):
                         asset_checks_loader=asset_checks_loader,
                         dynamic_partitions_loader=dynamic_partitions_loader,
                     )
-                    for asset_node in external_asset_nodes
+                    for asset_node in asset_node_snaps
                 ]
-                if external_asset_nodes
+                if asset_node_snaps
                 else []
             )
         else:
@@ -967,7 +967,7 @@ class GrapheneQuery(graphene.ObjectType):
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
-                node.external_asset_node,
+                node.asset_node_snap,
                 asset_checks_loader=asset_checks_loader,
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
@@ -1070,7 +1070,7 @@ class GrapheneQuery(graphene.ObjectType):
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            node.external_asset_node.asset_key: node.external_asset_node.op_names
+            node.asset_node_snap.asset_key: node.asset_node_snap.op_names
             for node in results
             if node.assetKey in asset_keys
         }

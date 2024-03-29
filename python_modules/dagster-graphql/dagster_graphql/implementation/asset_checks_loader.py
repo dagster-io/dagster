@@ -57,9 +57,9 @@ class AssetChecksLoader:
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
             location = self._context.get_code_location(repo_sel.location_name)
             repo = location.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_checks(job_name=job_name)
-            for external_asset_node in external_asset_nodes:
-                yield (location, repo, external_asset_node)
+            external_asset_checks = repo.get_external_asset_checks(job_name=job_name)
+            for external_asset_check in external_asset_checks:
+                yield (location, repo, external_asset_check)
 
     def _fetch_checks(
         self, limit_per_asset: Optional[int], pipeline: Optional[GraphenePipelineSelector]

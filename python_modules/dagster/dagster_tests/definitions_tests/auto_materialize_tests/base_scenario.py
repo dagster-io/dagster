@@ -156,7 +156,7 @@ class AssetReconciliationScenario(
             ),
             ("expected_evaluations", Optional[Sequence[AssetEvaluationSpec]]),
             ("requires_respect_materialization_data_versions", bool),
-            ("supports_with_external_asset_graph", bool),
+            ("supports_with_remote_asset_graph", bool),
             ("expected_error_message", Optional[str]),
         ],
     )
@@ -182,7 +182,7 @@ class AssetReconciliationScenario(
         ] = None,
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
-        supports_with_external_asset_graph: bool = True,
+        supports_with_remote_asset_graph: bool = True,
         expected_error_message: Optional[str] = None,
     ) -> "AssetReconciliationScenario":
         # For scenarios with no auto-materialize policies, we infer auto-materialize policies
@@ -220,7 +220,7 @@ class AssetReconciliationScenario(
             code_locations=code_locations,
             expected_evaluations=expected_evaluations,
             requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
-            supports_with_external_asset_graph=supports_with_external_asset_graph,
+            supports_with_remote_asset_graph=supports_with_remote_asset_graph,
             expected_error_message=expected_error_message,
         )
 
@@ -246,7 +246,7 @@ class AssetReconciliationScenario(
         self,
         instance,
         scenario_name=None,
-        with_external_asset_graph=False,
+        with_remote_asset_graph=False,
         respect_materialization_data_versions=False,
     ):
         if (
@@ -332,7 +332,7 @@ class AssetReconciliationScenario(
                 ) = self.cursor_from.do_sensor_scenario(
                     instance,
                     scenario_name=scenario_name,
-                    with_external_asset_graph=with_external_asset_graph,
+                    with_remote_asset_graph=with_remote_asset_graph,
                 )
                 for run_request in run_requests:
                     instance.create_run_for_job(
@@ -376,7 +376,7 @@ class AssetReconciliationScenario(
             test_time += self.evaluation_delta
         with pendulum_freeze_time(test_time):
             # get asset_graph
-            if not with_external_asset_graph:
+            if not with_remote_asset_graph:
                 asset_graph = repo.asset_graph
             else:
                 assert scenario_name is not None, "scenario_name must be provided for daemon runs"

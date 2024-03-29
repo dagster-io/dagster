@@ -111,8 +111,10 @@ def test_repository_data_can_reload_without_restarting(
     request_context = workspace_process_context.create_request_context()
     code_location = request_context.get_code_location("test")
     repo = code_location.get_repository("bar_repo")
-    assert repo.has_external_job("foo_4")
+
+    assert repo.has_external_job("foo_5")
+    assert not repo.has_external_job("foo_4")
     assert not repo.has_external_job("foo_3")
 
-    external_job = repo.get_full_external_job("foo_4")
-    assert external_job.has_node_invocation("do_something_4")
+    external_job = repo.get_full_external_job("foo_5")
+    assert external_job.has_node_invocation("do_something_5")

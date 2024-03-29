@@ -9,8 +9,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
     from dagster._core.remote_representation.external_data import (
+        AssetNodeSnap,
         ExternalAssetCheck,
-        ExternalAssetNode,
     )
     from dagster._core.remote_representation.handle import RepositoryHandle
 
@@ -70,19 +70,17 @@ class IWorkspace(ABC):
             for code_location in code_locations
             for repo in code_location.get_repositories().values()
         )
-        repo_handle_external_asset_nodes: Sequence[
-            Tuple["RepositoryHandle", "ExternalAssetNode"]
-        ] = []
+        repo_handle_asset_node_snaps: Sequence[Tuple["RepositoryHandle", "AssetNodeSnap"]] = []
         asset_checks: Sequence["ExternalAssetCheck"] = []
 
         for repo in repos:
-            for external_asset_node in repo.get_external_asset_nodes():
-                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
+            for asset_node_snap in repo.get_asset_node_snaps():
+                repo_handle_asset_node_snaps.append((repo.handle, asset_node_snap))
 
             asset_checks.extend(repo.get_external_asset_checks())
 
-        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
+        return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
+            repo_handle_asset_node_snaps=repo_handle_asset_node_snaps,
             external_asset_checks=asset_checks,
         )
 

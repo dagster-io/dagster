@@ -914,7 +914,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         handle = self._external_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
-        return bool(repository.get_external_asset_nodes(self._external_job.name))
+        return bool(repository.get_asset_node_snaps(self._external_job.name))
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from ..external import GrapheneRepository

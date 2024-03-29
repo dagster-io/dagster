@@ -41,7 +41,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalAssetNode
+from dagster._core.remote_representation.external_data import AssetNodeSnap
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
@@ -132,10 +132,10 @@ def repository_iter(
 
 def asset_node_iter(
     graphene_info: "ResolveInfo",
-) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
+) -> Iterator[Tuple[CodeLocation, ExternalRepository, AssetNodeSnap]]:
     for location, repository in repository_iter(graphene_info.context):
-        for external_asset_node in repository.get_external_asset_nodes():
-            yield location, repository, external_asset_node
+        for asset_node_snap in repository.get_asset_node_snaps():
+            yield location, repository, asset_node_snap
 
 
 def get_additional_required_keys(
@@ -145,16 +145,15 @@ def get_additional_required_keys(
 
     # the set of atomic execution ids that any of the input asset keys are a part of
     required_execution_set_identifiers = {
-        asset_nodes_by_key[asset_key].external_asset_node.execution_set_identifier
+        asset_nodes_by_key[asset_key].asset_node_snap.execution_set_identifier
         for asset_key in asset_keys
     } - {None}
 
     # the set of all asset keys that are part of the required execution sets
     required_asset_keys = {
-        asset_node.external_asset_node.asset_key
+        asset_node.asset_node_snap.asset_key
         for asset_node in asset_nodes_by_key.values()
-        if asset_node.external_asset_node.execution_set_identifier
-        in required_execution_set_identifiers
+        if asset_node.asset_node_snap.execution_set_identifier in required_execution_set_identifiers
     }
 
     return list(required_asset_keys - asset_keys)
@@ -168,16 +167,16 @@ def get_asset_node_definition_collisions(
 
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
-    for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
-        if external_asset_node.asset_key in asset_keys:
+    for repo_loc, repo, asset_node_snap in asset_node_iter(graphene_info):
+        if asset_node_snap.asset_key in asset_keys:
             is_defined = (
-                external_asset_node.node_definition_name
-                or external_asset_node.graph_name
-                or external_asset_node.op_name
+                asset_node_snap.node_definition_name
+                or asset_node_snap.graph_name
+                or asset_node_snap.op_name
             )
             if not is_defined:
                 continue
-            repos[external_asset_node.asset_key].append(
+            repos[asset_node_snap.asset_key].append(
                 GrapheneRepository(
                     workspace_context=graphene_info.context,
                     repository=repo,
@@ -216,22 +215,22 @@ def get_asset_nodes_by_asset_key(
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
 
     asset_nodes_by_asset_key: Dict[
-        AssetKey, Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]
+        AssetKey, Tuple[CodeLocation, ExternalRepository, AssetNodeSnap]
     ] = {}
-    for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
+    for repo_loc, repo, asset_node_snap in asset_node_iter(graphene_info):
         _, _, preexisting_asset_node = asset_nodes_by_asset_key.get(
-            external_asset_node.asset_key, (None, None, None)
+            asset_node_snap.asset_key, (None, None, None)
         )
         # If an asset node is already in the dict, we only overwrite it if that preexisting node is
         # not executable in some manner (i.e. it is a source asset that is not an observable)
         if preexisting_asset_node is None or (
             preexisting_asset_node.is_source and not preexisting_asset_node.is_observable
         ):
-            if asset_keys is None or external_asset_node.asset_key in asset_keys:
-                asset_nodes_by_asset_key[external_asset_node.asset_key] = (
+            if asset_keys is None or asset_node_snap.asset_key in asset_keys:
+                asset_nodes_by_asset_key[asset_node_snap.asset_key] = (
                     repo_loc,
                     repo,
-                    external_asset_node,
+                    asset_node_snap,
                 )
 
     asset_checks_loader = AssetChecksLoader(
@@ -241,10 +240,10 @@ def get_asset_nodes_by_asset_key(
     base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return {
-        external_asset_node.asset_key: GrapheneAssetNode(
+        asset_node_snap.asset_key: GrapheneAssetNode(
             repo_loc,
             repo,
-            external_asset_node,
+            asset_node_snap,
             asset_checks_loader=asset_checks_loader,
             depended_by_loader=depended_by_loader,
             stale_status_loader=stale_status_loader,
@@ -259,7 +258,7 @@ def get_asset_nodes_by_asset_key(
             if base_deployment_context is not None
             else None,
         )
-        for repo_loc, repo, external_asset_node in asset_nodes_by_asset_key.values()
+        for repo_loc, repo, asset_node_snap in asset_nodes_by_asset_key.values()
     }
 
 

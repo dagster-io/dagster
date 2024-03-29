@@ -13,9 +13,9 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.remote_representation.external_data import (
-    ExternalAssetDependedBy,
-    ExternalAssetDependency,
-    ExternalAssetNode,
+    AssetChildEdgeSnap,
+    AssetNodeSnap,
+    AssetParentEdgeSnap,
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.storage.dagster_run import RunRecord, RunsFilter
@@ -236,8 +236,8 @@ class CrossRepoAssetDependedByLoader:
     def _build_cross_repo_deps(
         self,
     ) -> Tuple[
-        Dict[AssetKey, ExternalAssetNode],
-        Dict[Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]],
+        Dict[AssetKey, AssetNodeSnap],
+        Dict[Tuple[str, str], Dict[AssetKey, List[AssetChildEdgeSnap]]],
     ]:
         """For asset X, find all "sink assets" and define them as ExternalAssetNodes. A "sink asset" is
         any asset that depends on X and exists in other repository. This enables displaying cross-repo
@@ -249,7 +249,7 @@ class CrossRepoAssetDependedByLoader:
         source asset location are returned.
         """
         depended_by_assets_by_location_by_source_asset: Dict[
-            AssetKey, Dict[Tuple[str, str], List[ExternalAssetDependedBy]]
+            AssetKey, Dict[Tuple[str, str], List[AssetChildEdgeSnap]]
         ] = defaultdict(lambda: defaultdict(list))
 
         # A mapping containing all derived (non-source) assets and their location
@@ -260,21 +260,19 @@ class CrossRepoAssetDependedByLoader:
         for location in self._context.code_locations:
             repositories = location.get_repositories()
             for repo_name, external_repo in repositories.items():
-                asset_nodes = external_repo.get_external_asset_nodes()
+                asset_nodes = external_repo.get_asset_node_snaps()
                 for asset_node in asset_nodes:
                     location_tuple = (location.name, repo_name)
                     if not asset_node.op_name:  # is source asset
                         depended_by_assets_by_location_by_source_asset[asset_node.asset_key][
                             location_tuple
-                        ].extend(asset_node.depended_by)
+                        ].extend(asset_node.child_edges)
                     else:  # derived asset
                         map_derived_asset_to_location[asset_node.asset_key] = location_tuple
 
-        sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
-        external_asset_deps: Dict[
-            Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]
-        ] = defaultdict(
-            lambda: defaultdict(list)
+        sink_assets: Dict[AssetKey, AssetNodeSnap] = {}
+        external_asset_deps: Dict[Tuple[str, str], Dict[AssetKey, List[AssetChildEdgeSnap]]] = (
+            defaultdict(lambda: defaultdict(list))
         )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
 
         for (
@@ -306,28 +304,28 @@ class CrossRepoAssetDependedByLoader:
                 # no output or partition definition data) and no job_names. The Dagster UI displays
                 # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
                 # are defined as ExternalAssetNodes with no definition data.
-                sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
-                    asset_key=asset.downstream_asset_key,
-                    dependencies=[
-                        ExternalAssetDependency(
-                            upstream_asset_key=source_asset,
+                sink_assets[asset.child_asset_key] = AssetNodeSnap(
+                    asset_key=asset.child_asset_key,
+                    parent_edges=[
+                        AssetParentEdgeSnap(
+                            parent_asset_key=source_asset,
                             input_name=asset.input_name,
                             output_name=asset.output_name,
                         )
                     ],
-                    depended_by=[],
+                    child_edges=[],
                     execution_type=AssetExecutionType.UNEXECUTABLE,
                 )
 
         return sink_assets, external_asset_deps
 
-    def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
+    def get_sink_asset(self, asset_key: AssetKey) -> AssetNodeSnap:
         sink_assets, _ = self._build_cross_repo_deps()
         return sink_assets[asset_key]
 
     def get_cross_repo_dependent_assets(
         self, repository_location_name: str, repository_name: str, asset_key: AssetKey
-    ) -> Sequence[ExternalAssetDependedBy]:
+    ) -> Sequence[AssetChildEdgeSnap]:
         _, external_asset_deps = self._build_cross_repo_deps()
         return external_asset_deps.get((repository_location_name, repository_name), {}).get(
             asset_key, []

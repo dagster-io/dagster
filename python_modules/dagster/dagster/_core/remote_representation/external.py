@@ -54,9 +54,9 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
     DEFAULT_MODE_NAME,
+    AssetNodeSnap,
     EnvVarConsumer,
     ExternalAssetCheck,
-    ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
     ExternalPresetData,
@@ -121,7 +121,7 @@ class ExternalRepository:
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        self._asset_jobs: Dict[str, List[ExternalAssetNode]] = {}
+        self._asset_jobs: Dict[str, List[AssetNodeSnap]] = {}
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
                 self._asset_jobs.setdefault(job_name, []).append(asset_node)
@@ -345,16 +345,14 @@ class ExternalRepository:
         """
         return self.get_remote_origin().get_id()
 
-    def get_external_asset_nodes(
-        self, job_name: Optional[str] = None
-    ) -> Sequence[ExternalAssetNode]:
+    def get_asset_node_snaps(self, job_name: Optional[str] = None) -> Sequence[AssetNodeSnap]:
         return (
             self.external_repository_data.external_asset_graph_data
             if job_name is None
             else self._asset_jobs.get(job_name, [])
         )
 
-    def get_external_asset_node(self, asset_key: AssetKey) -> Optional[ExternalAssetNode]:
+    def get_asset_node_snap(self, asset_key: AssetKey) -> Optional[AssetNodeSnap]:
         matching = [
             asset_node
             for asset_node in self.external_repository_data.external_asset_graph_data
@@ -378,9 +376,9 @@ class ExternalRepository:
         """Returns a repository scoped RemoteAssetGraph."""
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
-        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=[
-                (self.handle, asset_node) for asset_node in self.get_external_asset_nodes()
+        return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
+            repo_handle_asset_node_snaps=[
+                (self.handle, asset_node) for asset_node in self.get_asset_node_snaps()
             ],
             external_asset_checks=self.get_external_asset_checks(),
         )

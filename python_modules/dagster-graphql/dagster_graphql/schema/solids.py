@@ -430,7 +430,7 @@ class ISolidDefinitionMixin:
             ext_repo = location.get_repository(repo_handle.repository_name)
             nodes = [
                 node
-                for node in ext_repo.get_external_asset_nodes()
+                for node in ext_repo.get_asset_node_snaps()
                 if node.op_name == self.solid_def_name
             ]
             asset_checks_loader = AssetChecksLoader(

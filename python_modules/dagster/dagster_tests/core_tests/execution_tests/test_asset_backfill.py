@@ -55,7 +55,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.remote_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.remote_representation.external_data import asset_node_snaps_from_repo
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -533,7 +533,7 @@ def get_asset_graph(
             for assets_def in assets
             for dep_key in assets_def.dependency_keys
         )
-        return external_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
+        return remote_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
 
 
 def execute_asset_backfill_iteration_consume_generator(
@@ -699,22 +699,22 @@ def _requested_asset_partitions_in_run_request(
     return requested_asset_partitions
 
 
-def external_asset_graph_from_assets_by_repo_name(
+def remote_asset_graph_from_assets_by_repo_name(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
 ) -> RemoteAssetGraph:
-    from_repository_handles_and_external_asset_nodes = []
+    from_repository_handles_and_asset_node_snaps = []
 
     for repo_name, assets in assets_by_repo_name.items():
         repo = Definitions(assets=assets).get_repository_def()
 
-        external_asset_nodes = external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph)
+        asset_node_snaps = asset_node_snaps_from_repo(repo)
         repo_handle = MagicMock(repository_name=repo_name)
-        from_repository_handles_and_external_asset_nodes.extend(
-            [(repo_handle, asset_node) for asset_node in external_asset_nodes]
+        from_repository_handles_and_asset_node_snaps.extend(
+            [(repo_handle, asset_node) for asset_node in asset_node_snaps]
         )
 
-    return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-        from_repository_handles_and_external_asset_nodes, external_asset_checks=[]
+    return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
+        from_repository_handles_and_asset_node_snaps, external_asset_checks=[]
     )
 
 
@@ -803,9 +803,7 @@ def test_serialization(static_serialization, time_window_serialization):
     def static_asset():
         return 1
 
-    asset_graph = external_asset_graph_from_assets_by_repo_name(
-        {"repo": [daily_asset, static_asset]}
-    )
+    asset_graph = remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph) is True
     assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True
@@ -813,18 +811,14 @@ def test_serialization(static_serialization, time_window_serialization):
     daily_asset._partitions_def = static_partitions  # noqa: SLF001
     static_asset._partitions_def = time_window_partitions  # noqa: SLF001
 
-    asset_graph = external_asset_graph_from_assets_by_repo_name(
-        {"repo": [daily_asset, static_asset]}
-    )
+    asset_graph = remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph) is False
     assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is False
 
     static_asset._partitions_def = StaticPartitionsDefinition(keys + ["x"])  # noqa: SLF001
 
-    asset_graph = external_asset_graph_from_assets_by_repo_name(
-        {"repo": [daily_asset, static_asset]}
-    )
+    asset_graph = remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True
 
