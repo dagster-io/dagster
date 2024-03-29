@@ -14,12 +14,9 @@ class ErrorCapture:
         exc_info: ExceptionInfo,
         logger: Optional[logging.Logger] = None,
         log_message: Optional[str] = None,
-        append_error_info_to_log_message: bool = False,
     ) -> SerializableErrorInfo:
         error_info = serializable_error_info_from_exc_info(exc_info)
         if logger and log_message:
-            if append_error_info_to_log_message:
-                log_message += f": {error_info}"
             logger.exception(log_message)
         return error_info
 

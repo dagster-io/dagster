@@ -59,7 +59,6 @@ def execute_backfill_jobs(
                 sys.exc_info(),
                 logger=logger,
                 log_message=f"Backfill failed for {backfill.backfill_id}",
-                append_error_info_to_log_message=True,
             )
             instance.update_backfill(
                 backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)

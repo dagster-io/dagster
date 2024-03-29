@@ -198,7 +198,6 @@ def execute_run_monitoring_iteration(
                 exc_info=sys.exc_info(),
                 logger=logger,
                 log_message=f"Hit error while monitoring run {run_record.dagster_run.run_id}",
-                append_error_info_to_log_message=True,
             )
         else:
             yield

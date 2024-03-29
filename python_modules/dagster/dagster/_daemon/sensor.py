@@ -574,7 +574,6 @@ def _submit_run_request(
             exc_info=sys.exc_info(),
             logger=logger,
             log_message=f"Run {run.run_id} created successfully but failed to launch",
-            append_error_info_to_log_message=True,
         )
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
