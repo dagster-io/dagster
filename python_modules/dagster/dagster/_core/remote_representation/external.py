@@ -54,9 +54,9 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
     DEFAULT_MODE_NAME,
+    AssetCheckSnap,
     AssetNodeSnap,
     EnvVarConsumer,
-    ExternalAssetCheck,
     ExternalJobData,
     ExternalJobRef,
     ExternalPresetData,
@@ -126,10 +126,10 @@ class ExternalRepository:
             for job_name in asset_node.job_names:
                 self._asset_jobs.setdefault(job_name, []).append(asset_node)
 
-        self._asset_check_jobs: Dict[str, List[ExternalAssetCheck]] = {}
-        for asset_check in external_repository_data.external_asset_checks or []:
-            for job_name in asset_check.job_names:
-                self._asset_check_jobs.setdefault(job_name, []).append(asset_check)
+        self._asset_check_jobs: Dict[str, List[AssetCheckSnap]] = {}
+        for asset_check_snap in external_repository_data.external_asset_checks or []:
+            for job_name in asset_check_snap.job_names:
+                self._asset_check_jobs.setdefault(job_name, []).append(asset_check_snap)
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
@@ -360,9 +360,7 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
-    def get_external_asset_checks(
-        self, job_name: Optional[str] = None
-    ) -> Sequence[ExternalAssetCheck]:
+    def get_asset_check_snaps(self, job_name: Optional[str] = None) -> Sequence[AssetCheckSnap]:
         if job_name:
             return self._asset_check_jobs.get(job_name, [])
         else:
@@ -380,7 +378,7 @@ class ExternalRepository:
             repo_handle_asset_node_snaps=[
                 (self.handle, asset_node) for asset_node in self.get_asset_node_snaps()
             ],
-            external_asset_checks=self.get_external_asset_checks(),
+            asset_check_snaps=self.get_asset_check_snaps(),
         )
 
 

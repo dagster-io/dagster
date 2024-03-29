@@ -10,7 +10,7 @@ from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
+from dagster._core.remote_representation.external_data import AssetCheckSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
@@ -49,7 +49,7 @@ class AssetChecksLoader:
 
     def _get_external_checks(
         self, pipeline: Optional[GraphenePipelineSelector]
-    ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
+    ) -> Iterator[Tuple[CodeLocation, ExternalRepository, AssetCheckSnap]]:
         if pipeline is None:
             yield from asset_checks_iter(self._context)
         else:
@@ -57,7 +57,7 @@ class AssetChecksLoader:
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
             location = self._context.get_code_location(repo_sel.location_name)
             repo = location.get_repository(repo_sel.repository_name)
-            external_asset_checks = repo.get_external_asset_checks(job_name=job_name)
+            external_asset_checks = repo.get_asset_check_snaps(job_name=job_name)
             for external_asset_check in external_asset_checks:
                 yield (location, repo, external_asset_check)
 
@@ -86,7 +86,7 @@ class AssetChecksLoader:
                 f"Unexpected asset check support status {asset_check_support}",
             )
 
-        external_checks_by_asset_key: Mapping[AssetKey, List[ExternalAssetCheck]] = {}
+        external_checks_by_asset_key: Mapping[AssetKey, List[AssetCheckSnap]] = {}
         errors: Mapping[AssetKey, GrapheneAssetCheckNeedsUserCodeUpgrade] = {}
 
         for location, _, external_check in self._get_external_checks(pipeline=pipeline):

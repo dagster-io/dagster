@@ -121,7 +121,7 @@ class ExternalRepositoryData(
             ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
-            ("external_asset_checks", Optional[Sequence["ExternalAssetCheck"]]),
+            ("external_asset_checks", Optional[Sequence["AssetCheckSnap"]]),
             ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
         ],
@@ -137,7 +137,7 @@ class ExternalRepositoryData(
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
-        external_asset_checks: Optional[Sequence["ExternalAssetCheck"]] = None,
+        external_asset_checks: Optional[Sequence["AssetCheckSnap"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
@@ -174,7 +174,7 @@ class ExternalRepositoryData(
             external_asset_checks=check.opt_nullable_sequence_param(
                 external_asset_checks,
                 "external_asset_checks",
-                of_type=ExternalAssetCheck,
+                of_type=AssetCheckSnap,
             ),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             utilized_env_vars=check.opt_nullable_mapping_param(
@@ -1186,10 +1186,13 @@ class ExternalResourceData(
         )
 
 
-@whitelist_for_serdes(storage_field_names={"execution_set_identifier": "atomic_execution_unit_id"})
-class ExternalAssetCheck(
+@whitelist_for_serdes(
+    storage_name="ExternalAssetCheck",
+    storage_field_names={"execution_set_identifier": "atomic_execution_unit_id"},
+)
+class AssetCheckSnap(
     NamedTuple(
-        "_ExternalAssetCheck",
+        "_AssetCheckSnap",
         [
             ("name", str),
             ("asset_key", AssetKey),
@@ -1209,7 +1212,7 @@ class ExternalAssetCheck(
         execution_set_identifier: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
     ):
-        return super(ExternalAssetCheck, cls).__new__(
+        return super(AssetCheckSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
@@ -1564,7 +1567,7 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
-        external_asset_checks=external_asset_checks_from_defs(jobs),
+        external_asset_checks=asset_check_snaps_from_repo(repository_def),
         metadata=repository_def.metadata,
         utilized_env_vars={
             env_var: [
@@ -1576,13 +1579,11 @@ def external_repository_data_from_def(
     )
 
 
-def external_asset_checks_from_defs(
-    job_defs: Sequence[JobDefinition],
-) -> Sequence[ExternalAssetCheck]:
+def asset_check_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetCheckSnap]:
     nodes_by_check_key: Dict[AssetCheckKey, List[AssetsDefinition]] = {}
     job_names_by_check_key: Dict[AssetCheckKey, List[str]] = {}
 
-    for job_def in job_defs:
+    for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
         for asset_def in asset_layer.assets_defs_by_node_handle.values():
             for spec in asset_def.check_specs:
@@ -1608,7 +1609,7 @@ def external_asset_checks_from_defs(
 
         spec = first_node.get_spec_for_check_key(check_key)
         external_checks.append(
-            ExternalAssetCheck(
+            AssetCheckSnap(
                 name=check_key.name,
                 asset_key=check_key.asset_key,
                 description=spec.description,

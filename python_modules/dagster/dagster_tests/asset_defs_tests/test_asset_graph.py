@@ -40,8 +40,8 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external_data import (
+    asset_check_snaps_from_repo,
     asset_node_snaps_from_repo,
-    external_asset_checks_from_defs,
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
@@ -55,7 +55,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
     asset_node_snaps = asset_node_snaps_from_repo(repo)
     return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
         [(MagicMock(), asset_node) for asset_node in asset_node_snaps],
-        external_asset_checks=external_asset_checks_from_defs(repo.get_all_jobs()),
+        asset_check_snaps=asset_check_snaps_from_repo(repo),
     )
 
 

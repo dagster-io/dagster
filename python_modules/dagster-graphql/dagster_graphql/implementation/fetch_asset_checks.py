@@ -6,7 +6,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
+from dagster._core.remote_representation.external_data import AssetCheckSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 def asset_checks_iter(
     context: WorkspaceRequestContext,
-) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
+) -> Iterator[Tuple[CodeLocation, ExternalRepository, AssetCheckSnap]]:
     for location, repository in repository_iter(context):
         for external_check in repository.external_repository_data.external_asset_checks or []:
             yield (location, repository, external_check)

@@ -35,8 +35,8 @@ from .partition_mapping import PartitionMapping
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import (
+        AssetCheckSnap,
         AssetNodeSnap,
-        ExternalAssetCheck,
     )
     from dagster._core.selector.subset_selector import DependencyGraph
 
@@ -219,7 +219,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, RemoteAssetNode],
-        asset_checks_by_key: Mapping[AssetCheckKey, "ExternalAssetCheck"],
+        asset_checks_by_key: Mapping[AssetCheckKey, "AssetCheckSnap"],
         asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[AssetKeyOrCheckKey]],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
@@ -230,17 +230,17 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def from_repository_handles_and_asset_node_snaps(
         cls,
         repo_handle_asset_node_snaps: Sequence[Tuple[RepositoryHandle, "AssetNodeSnap"]],
-        external_asset_checks: Sequence["ExternalAssetCheck"],
+        asset_check_snaps: Sequence["AssetCheckSnap"],
     ) -> "RemoteAssetGraph":
         _warn_on_duplicate_nodes(repo_handle_asset_node_snaps)
 
         # Build an index of execution sets by key. An execution set is a set of assets and checks
-        # that must be executed together. AssetNodeSnaps and ExternalAssetChecks already have an
+        # that must be executed together. AssetNodeSnaps and AssetCheckSnaps already have an
         # optional execution_set_identifier set. A null execution_set_identifier indicates that the
         # node or check can be executed independently.
         execution_sets_by_key = _build_execution_set_index(
             (node for _, node in repo_handle_asset_node_snaps),
-            external_asset_checks,
+            asset_check_snaps,
         )
 
         # Index all (RepositoryHandle, AssetNodeSnap) pairs by their asset key, then use this to
@@ -264,7 +264,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         dep_graph: DependencyGraph[AssetKey] = {"upstream": upstream, "downstream": downstream}
 
         check_keys_by_asset_key: Dict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
-        for c in external_asset_checks:
+        for c in asset_check_snaps:
             check_keys_by_asset_key[c.asset_key].add(c.key)
 
         # Build the set of RemoteAssetNodes in topological order so that each node can hold
@@ -281,10 +281,10 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
             for key, repo_node_pairs in repo_node_pairs_by_key.items()
         }
 
-        # Build the set of ExternalAssetChecks, indexed by key. Also the index of execution units for
+        # Build the set of AssetCheckSnaps, indexed by key. Also the index of execution units for
         # each asset check key.
-        asset_checks_by_key: Dict[AssetCheckKey, "ExternalAssetCheck"] = {}
-        for asset_check in external_asset_checks:
+        asset_checks_by_key: Dict[AssetCheckKey, "AssetCheckSnap"] = {}
+        for asset_check in asset_check_snaps:
             asset_checks_by_key[asset_check.key] = asset_check
         asset_check_execution_sets_by_key = {
             k: v for k, v in execution_sets_by_key.items() if isinstance(k, AssetCheckKey)
@@ -316,7 +316,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         return {k: node._priority_node_snap for k, node in self._asset_nodes_by_key.items()}  # noqa: SLF001
 
     @property
-    def asset_checks(self) -> Sequence["ExternalAssetCheck"]:
+    def asset_checks(self) -> Sequence["AssetCheckSnap"]:
         return list(dict.fromkeys(self._asset_checks_by_key.values()))
 
     @cached_property
@@ -469,11 +469,11 @@ def _warn_on_duplicates_within_subset(
 
 def _build_execution_set_index(
     asset_node_snaps: Iterable["AssetNodeSnap"],
-    external_asset_checks: Iterable["ExternalAssetCheck"],
+    asset_check_snaps: Iterable["AssetCheckSnap"],
 ) -> Mapping[AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]]:
     from dagster._core.remote_representation.external_data import AssetNodeSnap
 
-    all_items = [*asset_node_snaps, *external_asset_checks]
+    all_items = [*asset_node_snaps, *asset_check_snaps]
 
     execution_sets_by_id: Dict[str, Set[AssetKeyOrCheckKey]] = defaultdict(set)
     for item in all_items:
