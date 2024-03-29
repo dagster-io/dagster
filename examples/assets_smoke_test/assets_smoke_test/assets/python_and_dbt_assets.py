@@ -41,6 +41,3 @@ def country_stats(country_populations: DataFrame, continent_stats: DataFrame) ->
 @dbt_assets(manifest=dbt_manifest_path)
 def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
-
-
-
