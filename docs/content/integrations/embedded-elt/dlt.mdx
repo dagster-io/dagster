@@ -123,7 +123,7 @@ Ensure that these are defined in your environment.
 The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a _dlt_ pipeline runner. This can be shared across _dlt_ pipelines, and is a required parameter to our _dlt_ asset definition.
 
 ```python
-from dagster_embedded_elt.dlt.resource import DagsterDltResource
+from dagster_embedded_elt.dlt import DagsterDltResource
 
 dlt_resource = DagsterDltResource()
 ```
