@@ -106,11 +106,7 @@ export const AssetNodeOverview = ({
     materializations,
     observations,
     loading: materializationsLoading,
-  } = useRecentAssetEvents(
-    assetNode.isPartitioned ? undefined : assetNode.assetKey,
-    {},
-    {assetHasDefinedPartitions: false},
-  );
+  } = useRecentAssetEvents(assetNode.assetKey, {}, {assetHasDefinedPartitions: false});
 
   if (loading) {
     return <AssetNodeOverviewLoading />;
@@ -145,12 +141,14 @@ export const AssetNodeOverview = ({
           </Box>
         ) : undefined}
       </Box>
-      <RecentUpdatesTimeline
-        materializations={materializations}
-        observations={observations}
-        assetKey={assetNode.assetKey}
-        loading={materializationsLoading}
-      />
+      {assetNode.isPartitioned ? null : (
+        <RecentUpdatesTimeline
+          materializations={materializations}
+          observations={observations}
+          assetKey={assetNode.assetKey}
+          loading={materializationsLoading}
+        />
+      )}
     </Box>
   );
 
