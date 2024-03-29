@@ -73,7 +73,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import PrintFn, traced
+from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import (
@@ -1513,8 +1513,8 @@ class DagsterInstance(DynamicPartitionsStore):
             execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
         )
 
-        if run_id:
-            raise
+        if run_id and not is_uuid(run_id):
+            check.failed(f"run_id must be a valid UUID. Got {run_id}")
 
         if root_run_id or parent_run_id:
             check.invariant(
