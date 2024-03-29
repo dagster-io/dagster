@@ -23,6 +23,7 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._utils.cached_method import cached_method
 
 
 class DataFrameType(Enum):
@@ -62,6 +63,13 @@ class TemplateTypeHandlerTestSuite:
     def select_all_from_table(self, table_name) -> pd.DataFrame:
         raise NotImplementedError("All test suites must implement select_all_from_table")
 
+    def _setup_spark_session(self):
+        raise NotImplementedError("All PySpark test suites must implement _setup_spark_session")
+
+    @cached_method
+    def spark_session(self):
+        self._spark_session = self._setup_spark_session()
+
     def test_not_supported_type(self):
         @asset
         def not_supported() -> int:
@@ -78,11 +86,16 @@ class TemplateTypeHandlerTestSuite:
     @pytest.mark.skip
     def test_db_io_manager_with_ops(self):
         @op(out=Out(metadata={"schema": "a_df"}))
-        def a_df() -> pd.DataFrame:
-            return pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+        def a_df():
+            df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+            if self.df_format == DataFrameType.PANDAS:
+                return df
+            elif self.df_format == DataFrameType.PYSPARK:
+                spark = self.spark_session
+                return spark.createDataFrame(df)
 
         @op(out=Out(metadata={"schema": "add_one"}))
-        def add_one(df: pd.DataFrame) -> pd.DataFrame:
+        def add_one(df):
             return df + 1
 
         @graph
@@ -112,15 +125,20 @@ class TemplateTypeHandlerTestSuite:
             with self.temporary_table_name() as table_1, self.temporary_table_name() as table_2:
 
                 @asset(key_prefix=[self.schema], name=table_1)
-                def b_df() -> pd.DataFrame:
-                    return pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+                def b_df():
+                    df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
 
                 @asset(
                     key_prefix=[self.schema],
                     name=table_2,
                     ins={"df": AssetIn([self.schema, table_1])},
                 )
-                def b_plus_one(df: pd.DataFrame) -> pd.DataFrame:
+                def b_plus_one(df):
                     return df + 1
 
                 resource_defs = {"io_manager": io_manager}
@@ -137,15 +155,20 @@ class TemplateTypeHandlerTestSuite:
             with self.temporary_table_name() as table_1, self.temporary_table_name() as table_2:
 
                 @asset(key_prefix=[self.schema], name=table_1)
-                def b_df() -> pd.DataFrame:
-                    return pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+                def b_df():
+                    df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
 
                 @asset(
                     key_prefix=[self.schema],
                     ins={"df": AssetIn([self.schema, table_1], metadata={"columns": ["A"]})},
                     name=table_2,
                 )
-                def b_plus_one_columns(df: pd.DataFrame) -> pd.DataFrame:
+                def b_plus_one_columns(df):
                     return df + 1
 
                 resource_defs = {"io_manager": io_manager}
@@ -173,11 +196,11 @@ class TemplateTypeHandlerTestSuite:
                     config_schema={"value": str},
                     name=table_name,
                 )
-                def daily_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+                def daily_partitioned(context: AssetExecutionContext):
                     partition = pd.Timestamp(context.partition_key)
                     value = context.op_execution_context.op_config["value"]
 
-                    return pd.DataFrame(
+                    df = pd.DataFrame(
                         {
                             "TIME": [partition, partition, partition],
                             "A": [value, value, value],
@@ -185,15 +208,24 @@ class TemplateTypeHandlerTestSuite:
                         }
                     )
 
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
+
                 @asset(
                     partitions_def=partitions_def,
                     key_prefix=[self.schema],
                     ins={"df": AssetIn([self.schema, table_name])},
                     io_manager_key="fs_io",
                 )
-                def downstream_partitioned(df: pd.DataFrame) -> None:
+                def downstream_partitioned(df) -> None:
                     # assert that we only get the expected number of rows
-                    assert len(df.index) == 3
+                    if self.df_format == DataFrameType.PANDAS:
+                        assert len(df.index) == 3
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        assert df.count() == 3
 
                 resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
                 to_materialize = [daily_partitioned, downstream_partitioned]
@@ -257,16 +289,21 @@ class TemplateTypeHandlerTestSuite:
                     config_schema={"value": str},
                     name=table_name,
                 )
-                def static_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+                def static_partitioned(context: AssetExecutionContext):
                     partition = context.partition_key
                     value = context.op_execution_context.op_config["value"]
-                    return pd.DataFrame(
+                    df = pd.DataFrame(
                         {
                             "COLOR": [partition, partition, partition],
                             "A": [value, value, value],
                             "B": [4, 5, 6],
                         }
                     )
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
 
                 @asset(
                     partitions_def=partitions_def,
@@ -274,9 +311,12 @@ class TemplateTypeHandlerTestSuite:
                     ins={"df": AssetIn([self.schema, table_name])},
                     io_manager_key="fs_io",
                 )
-                def downstream_partitioned(df: pd.DataFrame) -> None:
+                def downstream_partitioned(df) -> None:
                     # assert that we only get the expected number of rows
-                    assert len(df.index) == 3
+                    if self.df_format == DataFrameType.PANDAS:
+                        assert len(df.index) == 3
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        assert df.count() == 3
 
                 resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
                 to_materialize = [static_partitioned, downstream_partitioned]
@@ -345,17 +385,22 @@ class TemplateTypeHandlerTestSuite:
                     config_schema={"value": str},
                     name=table_name,
                 )
-                def multi_partitioned(context) -> pd.DataFrame:
+                def multi_partitioned(context):
                     partition = context.partition_key.keys_by_dimension
                     value = context.op_execution_context.op_config["value"]
                     partition_time = pd.Timestamp(partition["TIME"])
-                    return pd.DataFrame(
+                    df = pd.DataFrame(
                         {
                             "COLOR": [partition["COLOR"], partition["COLOR"], partition["COLOR"]],
                             "TIME": [partition_time, partition_time, partition_time],
                             "A": [value, value, value],
                         }
                     )
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
 
                 @asset(
                     partitions_def=partitions_def,
@@ -363,9 +408,12 @@ class TemplateTypeHandlerTestSuite:
                     ins={"df": AssetIn([self.schema, table_name])},
                     io_manager_key="fs_io",
                 )
-                def downstream_partitioned(df: pd.DataFrame) -> None:
+                def downstream_partitioned(df) -> None:
                     # assert that we only get the expected number of rows
-                    assert len(df.index) == 3
+                    if self.df_format == DataFrameType.PANDAS:
+                        assert len(df.index) == 3
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        assert df.count() == 3
 
                 resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
                 to_materialize = [multi_partitioned, downstream_partitioned]
@@ -452,15 +500,20 @@ class TemplateTypeHandlerTestSuite:
                     config_schema={"value": str},
                     name=table_name,
                 )
-                def dynamic_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+                def dynamic_partitioned(context: AssetExecutionContext):
                     partition = context.partition_key
                     value = context.op_execution_context.op_config["value"]
-                    return pd.DataFrame(
+                    df = pd.DataFrame(
                         {
                             "FRUIT": [partition, partition, partition],
                             "A": [value, value, value],
                         }
                     )
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
 
                 @asset(
                     partitions_def=partitions_def,
@@ -468,9 +521,12 @@ class TemplateTypeHandlerTestSuite:
                     ins={"df": AssetIn([self.schema, table_name])},
                     io_manager_key="fs_io",
                 )
-                def downstream_partitioned(df: pd.DataFrame) -> None:
+                def downstream_partitioned(df) -> None:
                     # assert that we only get the expected number of rows
-                    assert len(df.index) == 3
+                    if self.df_format == DataFrameType.PANDAS:
+                        assert len(df.index) == 3
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        assert df.count() == 3
 
                 resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
                 to_materialize = [dynamic_partitioned, downstream_partitioned]
@@ -551,9 +607,7 @@ class TemplateTypeHandlerTestSuite:
                     config_schema={"value": str, "last_partition_key": str},
                     name=table_name,
                 )
-                def self_dependent_asset(
-                    context: AssetExecutionContext, self_dependent_asset: pd.DataFrame
-                ) -> pd.DataFrame:
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
                     if not self_dependent_asset.empty:
                         assert len(self_dependent_asset.index) == 3
                         # snowflake pandas i/o manager automatically converts column names to lowercase, so
@@ -570,7 +624,7 @@ class TemplateTypeHandlerTestSuite:
 
                     partition = pd.Timestamp(context.partition_key)
                     value = context.op_execution_context.op_config["value"]
-                    return pd.DataFrame(
+                    df = pd.DataFrame(
                         {
                             "TIME": [partition, partition, partition],
                             "A": [value, value, value],
@@ -578,15 +632,24 @@ class TemplateTypeHandlerTestSuite:
                         }
                     )
 
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
+
                 @asset(
                     partitions_def=partitions_def,
                     key_prefix=[self.schema],
                     ins={"df": AssetIn([self.schema, table_name])},
                     io_manager_key="fs_io",
                 )
-                def downstream_partitioned(df: pd.DataFrame) -> None:
+                def downstream_partitioned(df) -> None:
                     # assert that we only get the expected number of rows
-                    assert len(df.index) == 3
+                    if self.df_format == DataFrameType.PANDAS:
+                        assert len(df.index) == 3
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        assert df.count() == 3
 
                 resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
                 to_materialize = [self_dependent_asset, downstream_partitioned]
@@ -637,7 +700,7 @@ class TemplateTypeHandlerTestSuite:
                     name=table_name,
                 )
                 def illegal_column_name(context: AssetExecutionContext):
-                    return pd.DataFrame(
+                    df = pd.DataFrame(
                         {
                             "5foo": [1, 2, 3],  # columns that start with numbers need to be quoted
                             "column with a space": [1, 2, 3],
@@ -645,6 +708,12 @@ class TemplateTypeHandlerTestSuite:
                             "by": [1, 2, 3],  # reserved
                         }
                     )
+
+                    if self.df_format == DataFrameType.PANDAS:
+                        return df
+                    elif self.df_format == DataFrameType.PYSPARK:
+                        spark = self.spark_session
+                        return spark.createDataFrame(df)
 
                 resource_defs = {"io_manager": io_manager}
                 res = materialize(
