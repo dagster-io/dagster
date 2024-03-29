@@ -24,7 +24,7 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
-const MIN_TICK_WIDTH = 10;
+const MIN_TICK_WIDTH = 5;
 const BUCKETS = 100;
 
 export const RecentUpdatesTimeline = ({
