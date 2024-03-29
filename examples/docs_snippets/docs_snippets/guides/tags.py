@@ -4,8 +4,7 @@ from dagster import asset, define_asset_job, graph, job, op, to_job
 
 
 @asset(tags={"domain": "marketing", "pii": "true"})
-def leads():
-    ...
+def leads(): ...
 
 
 # end_asset_tags
@@ -20,8 +19,7 @@ asset_job = define_asset_job(
 
 
 @op
-def send_email():
-    ...
+def send_email(): ...
 
 
 # start_op_job_tags
