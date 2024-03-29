@@ -1,10 +1,11 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql} from '@apollo/client';
 import uniq from 'lodash/uniq';
-import {useMemo} from 'react';
+import React, {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
-import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {AssetEventsQuery} from './types/useRecentAssetEvents.types';
+import {buildAsset, buildMaterializationEvent} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 /**
@@ -38,24 +39,25 @@ export function useRecentAssetEvents(
 
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
-  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
-    ASSET_EVENTS_QUERY,
-    {
-      skip: !assetKey,
-      fetchPolicy: 'cache-and-network',
-      variables: loadUsingPartitionKeys
-        ? {
-            assetKey: {path: assetKey?.path ?? []},
-            before,
-            partitionInLast: 120,
-          }
-        : {
-            assetKey: {path: assetKey?.path ?? []},
-            before,
-            limit: 100,
-          },
-    },
-  );
+  const {data, loading, refetch} = React.useMemo(() => {
+    return {
+      data: {
+        assetOrError: buildAsset({
+          assetMaterializations: [
+            buildMaterializationEvent({
+              timestamp: '1',
+            }),
+            buildMaterializationEvent({
+              timestamp: '2',
+            }),
+          ],
+        }),
+        __typename: 'Query',
+      },
+      loading: false,
+      refetch: () => {},
+    } as {data: AssetEventsQuery; loading: boolean; refetch: any};
+  }, []);
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
