@@ -155,11 +155,7 @@ def test_example_pipeline_subselection():
     )
     assert res.success
 
-    asset_materializations = [
-        event
-        for event in res.events_for_node("example_pipeline_assets")
-        if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
+    asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 1
 
     found_asset_keys = [
