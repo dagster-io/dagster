@@ -20,6 +20,7 @@ import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
+import {TimestampMetadataEntry} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
@@ -28,13 +29,21 @@ const INNER_TICK_WIDTH = 1;
 const MIN_TICK_WIDTH = 5;
 const BUCKETS = 50;
 
+type MaterializationType = ReturnType<typeof useRecentAssetEvents>['materializations'][0];
+type ObservationType = ReturnType<typeof useRecentAssetEvents>['observations'][0];
 type Props = {
   assetKey: AssetKey;
-  materializations: ReturnType<typeof useRecentAssetEvents>['materializations'];
+  materializations?: MaterializationType[];
+  observations?: ObservationType[];
   loading: boolean;
 };
 
-export const RecentUpdatesTimeline = ({assetKey, materializations, loading}: Props) => {
+export const RecentUpdatesTimeline = ({
+  assetKey,
+  observations,
+  materializations,
+  loading,
+}: Props) => {
   const {containerProps, viewport} = useViewport();
   const widthAvailablePerTick = viewport.width / BUCKETS;
 
@@ -43,8 +52,33 @@ export const RecentUpdatesTimeline = ({assetKey, materializations, loading}: Pro
   const buckets = Math.floor(viewport.width / tickWidth);
 
   const sortedMaterializations = useMemo(() => {
-    return [...materializations].sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp));
-  }, [materializations]);
+    if (!materializations && observations) {
+      const seenTimestamps = new Set();
+      return observations
+        .map((obs) => {
+          const lastUpdated = obs.metadataEntries.find(
+            (entry) =>
+              entry.__typename === 'TimestampMetadataEntry' &&
+              entry.label === 'dagster/last_updated_timestamp',
+          );
+          const ts = (lastUpdated as TimestampMetadataEntry).timestamp;
+
+          if (!seenTimestamps.has(ts)) {
+            seenTimestamps.add(ts);
+            return {
+              ...obs,
+              timestamp: `${ts}`,
+              obsTimestamp: obs.timestamp,
+            };
+          }
+          return null;
+        })
+        .filter((o) => o) as ObservationType[];
+    }
+    return [...(materializations ?? [])].sort(
+      (a, b) => parseInt(a.timestamp) - parseInt(b.timestamp),
+    );
+  }, [materializations, observations]);
 
   const startTimestamp = parseInt(sortedMaterializations[0]?.timestamp ?? '0');
   const endTimestamp = parseInt(
@@ -60,7 +94,7 @@ export const RecentUpdatesTimeline = ({assetKey, materializations, loading}: Pro
     const bucketsArr: Array<{
       start: number;
       end: number;
-      materializations: typeof materializations;
+      materializations: (MaterializationType | ObservationType)[];
     }> = new Array(buckets);
 
     sortedMaterializations.forEach((materialization) => {
@@ -71,7 +105,7 @@ export const RecentUpdatesTimeline = ({assetKey, materializations, loading}: Pro
       bucketsArr[bucketIndex] = bucketsArr[bucketIndex] || {
         start: bucketIndex,
         end: bucketIndex + 1,
-        materializations: [] as typeof materializations,
+        materializations: [],
       };
       bucketsArr[bucketIndex]!.materializations.push(materialization);
     });
@@ -90,7 +124,7 @@ export const RecentUpdatesTimeline = ({assetKey, materializations, loading}: Pro
     );
   }
 
-  if (!materializations.length) {
+  if (!materializations?.length) {
     return (
       <Box flex={{direction: 'column', gap: 8}}>
         <Subtitle2>Recent updates</Subtitle2>
@@ -186,7 +220,7 @@ const AssetUpdate = ({
   event,
 }: {
   assetKey: AssetKey;
-  event: ReturnType<typeof useRecentAssetEvents>['materializations'][0];
+  event: MaterializationType | ObservationType;
 }) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
   return (

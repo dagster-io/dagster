@@ -102,7 +102,11 @@ export const AssetNodeOverview = ({
   );
   const {UserDisplay} = useLaunchPadHooks();
 
-  const {materializations, loading: materializationsLoading} = useRecentAssetEvents(
+  const {
+    materializations,
+    observations,
+    loading: materializationsLoading,
+  } = useRecentAssetEvents(
     assetNode.isPartitioned ? undefined : assetNode.assetKey,
     {},
     {assetHasDefinedPartitions: false},
@@ -143,6 +147,7 @@ export const AssetNodeOverview = ({
       </Box>
       <RecentUpdatesTimeline
         materializations={materializations}
+        observations={observations}
         assetKey={assetNode.assetKey}
         loading={materializationsLoading}
       />
@@ -527,7 +532,7 @@ export const AssetNodeOverviewNonSDA = ({
   assetKey: AssetKey;
   lastMaterialization: {timestamp: string; runId: string} | null | undefined;
 }) => {
-  const {materializations, loading} = useRecentAssetEvents(
+  const {materializations, observations, loading} = useRecentAssetEvents(
     assetKey,
     {},
     {assetHasDefinedPartitions: false},
@@ -551,6 +556,7 @@ export const AssetNodeOverviewNonSDA = ({
             </div>
             <RecentUpdatesTimeline
               materializations={materializations}
+              observations={observations}
               assetKey={assetKey}
               loading={loading}
             />
