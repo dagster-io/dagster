@@ -24,7 +24,7 @@ from dagster_graphql import DagsterGraphQLClient
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-EARLIEST_TESTED_RELEASE = os.getenv("EARLIEST_TESTED_RELEASE")
+EARLIEST_TESTED_RELEASE = os.getenv("EARLIEST_TESTED_RELEASE", "0.12.8")
 MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"
 
 pytest_plugins = ["dagster_test.fixtures"]
@@ -48,7 +48,7 @@ def get_library_version(version: str) -> str:
 
 
 def is_0_release(release: str) -> bool:
-    """Returns true if on < 1.0 release of dagster, false otherwise."""
+    """Returns true if on version <1.0, false otherwise."""
     if release == "current_branch":
         return False
     version = packaging.version.parse(release)
@@ -56,8 +56,8 @@ def is_0_release(release: str) -> bool:
 
 
 def infer_user_code_definitions_files(release: str) -> str:
-    """Returns `repo.py` if on source or version >=1.0, `legacy_repo.py` otherwise."""
-    if release == "current_branch":
+    """Returns `repo.py` if on version >=1.0, `legacy_repo.py` otherwise."""
+    if release == DAGSTER_CURRENT_BRANCH:
         return "repo.py"
     else:
         version = packaging.version.parse(release)
@@ -65,10 +65,10 @@ def infer_user_code_definitions_files(release: str) -> str:
 
 
 def infer_webserver_package(release: str) -> str:
-    """Returns `dagster-webserver` if on source or version >=1.3.14 (first dagster-webserver
+    """Returns `dagster-webserver` if on version >=1.3.14 (first dagster-webserver
     release), `dagit` otherwise.
     """
-    if release == "current_branch":
+    if release == DAGSTER_CURRENT_BRANCH:
         return "dagster-webserver"
     else:
         if not EARLIEST_TESTED_RELEASE:
@@ -281,7 +281,6 @@ def graphql_client(
             webserver_version=webserver_version,
             user_code_version=release_test_map["user_code"],
         ):
-            print("INSIDE DOCKER SERVICE")
             check_webserver_connection(webserver_host, webserver_package, retrying_requests)
             yield DagsterGraphQLClient(webserver_host, port_number=3000)
 
@@ -304,6 +303,10 @@ def test_backcompat_deployed_pipeline_subset(
 
 def test_backcompat_deployed_job(graphql_client: DagsterGraphQLClient):
     assert_runs_and_exists(graphql_client, "the_job")
+
+
+def test_backcompat_deployed_asset_job(graphql_client: DagsterGraphQLClient):
+    assert_runs_and_exists(graphql_client, "asset_job")
 
 
 def test_backcompat_deployed_job_subset(graphql_client: DagsterGraphQLClient):

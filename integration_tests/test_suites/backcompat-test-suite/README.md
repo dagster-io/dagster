@@ -26,12 +26,10 @@ in the test logs. If you download those logs you can search for some stdout and 
 
 ## Running tests locally
 
-In order to run, the `EARLIEST_TESTED_RELEASE` environment variable needs to be set.
-
-- Set `EARLIEST_TESTED_RELEASE` to match the earliest release to test:
+Set the `EARLIEST_TESTED_RELEASE` environment variable to control the oldest release to test against. If not set, it defaults to 0.12.8.
 
 ```bash
-export EARLIEST_TESTED_RELEASE="0.12.8"
+export EARLIEST_TESTED_RELEASE="0.13.2"
 ```
 
 If you are on MacOS, ensure you have docker running
