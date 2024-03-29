@@ -165,7 +165,7 @@ Using the <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />, you c
 
 ## Using asset check results
 
-In this section, we'll show you how to augment your code to customize how check results display in the Dagster UI.
+In this section, we'll show various modifications to asset checks.
 
 ### Setting severity
 
@@ -236,6 +236,41 @@ defs = Definitions(
 ```
 
 There are a variety of types supported via the <PyObject object="MetadataValue" /> class. You can view the metadata on the **Checks** tab of the **Asset details** page.
+
+### Blocking downstream assets
+
+To block downstream assets from executing when checks fail, set the `blocking` argument to `True` in the <PyObject object="asset_check" /> decorator. In the following example, `check_upstream_asset` will block `downstream_asset` from executing.
+
+```python file=/concepts/assets/asset_checks/blocking.py
+from dagster import AssetCheckResult, Definitions, asset, asset_check
+
+
+@asset
+def upstream_asset():
+    pass
+
+
+@asset_check(asset=upstream_asset, blocking=True)
+def check_upstream_asset():
+    return AssetCheckResult(passed=False)
+
+
+@asset(deps=[upstream_asset])
+def downstream_asset():
+    pass
+
+
+defs = Definitions(
+    assets=[upstream_asset, downstream_asset], asset_checks=[check_upstream_asset]
+)
+```
+
+When the `blocking` toggle is enabled, downstream assets will wait to execute until the check completes. If the check returns a failing <PyObject object="AssetCheckResult" /> or raises an exception, downstream assets will not execute. If the <PyObject object="AssetCheckSeverity"/> is set to `WARN` instead of `ERROR`, the downstreams will still execute.
+
+Limitations:
+
+- `blocking` is currently only supported with `@asset_check`. For checks defined in the same op as assets, you can explicitly raise an exception to block downstream execution.
+- Assets with an <PyObject object="AutoMaterializePolicy" /> currently do not respect blocking asset checks, and will execute even if a blocking check on an upstream asset failed.
 
 ---
 
