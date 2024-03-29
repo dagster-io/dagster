@@ -6,6 +6,7 @@ from dagster import (
     ConfigurableResource,
     MaterializeResult,
     OpExecutionContext,
+    _check as check,
 )
 from dagster._annotations import experimental, public
 from dlt.common.pipeline import LoadInfo
@@ -48,7 +49,7 @@ class DagsterDltResource(ConfigurableResource):
         return {k: _recursive_cast(v) for k, v in mapping.items()}
 
     def extract_resource_metadata(
-        self, resource: Optional[DltResource], load_info: LoadInfo
+        self, resource: DltResource, load_info: LoadInfo
     ) -> Mapping[str, Any]:
         """Helper method to extract dlt resource metadata from load info dict.
 
@@ -73,9 +74,6 @@ class DagsterDltResource(ConfigurableResource):
 
         # shared metadata that is displayed for all assets
         base_metadata = {k: v for k, v in load_info_dict.items() if k in dlt_base_metadata_types}
-
-        if resource is None:
-            return base_metadata
 
         # job metadata for specific target `resource.table_name`
         base_metadata["jobs"] = [
@@ -117,7 +115,7 @@ class DagsterDltResource(ConfigurableResource):
             )
 
         asset_key_dlt_source_resource_mapping = {
-            asset_key: asset_metadata.get(META_KEY_RESOURCE)
+            asset_key: check.inst(asset_metadata.get(META_KEY_RESOURCE), DltResource)
             for (asset_key, asset_metadata) in metadata_by_key.items()
         }
 
