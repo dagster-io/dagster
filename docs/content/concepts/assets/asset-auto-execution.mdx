@@ -200,3 +200,35 @@ def source_file():
 )
 def asset1(): ...
 ```
+
+### Auto-materialize sensors
+
+You can break up the evaluation of your auto-materialization policies into multiple [sensors](/concepts/partitions-schedules-sensors/sensors), which can be turned on and off independently and run at different intervals. Additionally, an error during the evaluation of one sensor will not affect the execution of another sensor.
+
+How to enable auto-materialize sensors depends on whether you're using Dagster Cloud or Dagster Open Source:
+
+- **Dagster Cloud**: Use the [Dagster Cloud UI or the dagster-cloud CLI](/dagster-cloud/managing-deployments/managing-deployments#configuring-deployment-settings) to set `auto_materialize.use_sensors` to `true` in your deployment settings.
+- **Dagster Open Source**: Add the following to your instance's `dagster.yaml` file:
+
+```yaml
+auto_materialize:
+  use_sensors: true
+```
+
+Once auto-materialize sensors are enabled, a sensor called `default_auto_materialize_sensor` will be created for each code location that has at least one asset with an <PyObject object="AutoMaterializePolicy" /> or [observable source asset](/concepts/assets/asset-observations#observable-source-assets) with `auto_observe_interval_minutes` set, targeting each of those assets or observable source assets. Auto-materialize sensors can be enabled or disabled from the Sensors tab in the Dagster UI, like any other sensor.
+
+The default execution interval for auto-materialize sensors is every 30 seconds. You can further customize the mapping of assets to auto-materialize sensors, or the interval at which an auto-materialize sensor runs, by creating <PyObject object="AutoMaterializeSensorDefinition" />s in code. For example, the following auto-materialize sensor targets every eligible asset in its code location, and runs every 15 minutes:
+
+```python file=/concepts/assets/auto_materialize_sensor.py
+from dagster import AssetSelection, AutoMaterializeSensorDefinition, Definitions
+
+my_custom_auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    "my_custom_auto_materialize_sensor",
+    asset_selection=AssetSelection.all(include_sources=True),
+    minimum_interval_seconds=60 * 15,
+)
+
+defs = Definitions(sensors=[my_custom_auto_materialize_sensor])
+```
+
+Each asset can only be part of one <PyObject object="AutoMaterializeSensorDefinition" /> - an exception will be raised if two <PyObject object="AutoMaterializeSensorDefinition" />s attempt to target the same asset. A sensor called `default_auto_materialize_sensor` will be created if there are any assets not targeted by an <PyObject object="AutoMaterializeSensorDefinition" /> in code, targeting those assets.

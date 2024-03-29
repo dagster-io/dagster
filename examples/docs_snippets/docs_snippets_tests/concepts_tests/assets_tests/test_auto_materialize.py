@@ -4,6 +4,7 @@ from docs_snippets.concepts.assets import (
     auto_materialize_lazy,
     auto_materialize_lazy_transitive,
     auto_materialize_observable_source_asset,
+    auto_materialize_sensor,
     auto_materialize_time_partitions,
 )
 
@@ -28,3 +29,11 @@ def test_auto_materialize_observable_source_asset():
 
 def test_auto_materialize_time_partitions():
     Definitions(assets=load_assets_from_modules([auto_materialize_time_partitions]))
+
+
+def test_auto_materialize_sensor():
+    assert auto_materialize_sensor.defs
+    assert (
+        auto_materialize_sensor.my_custom_auto_materialize_sensor.name
+        == "my_custom_auto_materialize_sensor"
+    )
