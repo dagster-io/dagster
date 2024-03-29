@@ -128,7 +128,7 @@ class AssetCheckSpec(
         """Returns a string uniquely identifying the asset check, that uses only the characters
         allowed in a Python identifier.
         """
-        return f"{self.asset_key.to_python_identifier()}_{self.name}"
+        return f"{self.asset_key.to_python_identifier()}_{self.name}".replace(".", "_")
 
     @property
     def key(self) -> AssetCheckKey:
