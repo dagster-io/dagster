@@ -54,7 +54,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.utils import ErrorCapture
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
@@ -226,7 +226,7 @@ class SensorLaunchContext(AbstractContextManager):
 
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
         if exception_value and not isinstance(exception_value, GeneratorExit):
-            error_info = ErrorCapture.on_exception(exc_info=sys.exc_info())
+            error_info = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
             self.update_state(TickStatus.FAILURE, error=error_info)
 
         self._write()
@@ -471,7 +471,7 @@ def _process_tick_generator(
             )
 
     except Exception:
-        error_info = ErrorCapture.on_exception(
+        error_info = DaemonErrorCapture.on_exception(
             exc_info=sys.exc_info(),
             logger=logger,
             log_message=f"Sensor daemon caught an error for sensor {external_sensor.name}",
@@ -570,7 +570,7 @@ def _submit_run_request(
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
         logger.info(f"Completed launch of run {run.run_id} for {external_sensor.name}")
     except Exception:
-        error_info = ErrorCapture.on_exception(
+        error_info = DaemonErrorCapture.on_exception(
             exc_info=sys.exc_info(),
             logger=logger,
             log_message=f"Run {run.run_id} created successfully but failed to launch",

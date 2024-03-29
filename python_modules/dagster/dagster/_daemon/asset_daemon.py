@@ -62,7 +62,7 @@ from dagster._core.utils import InheritContextThreadPoolExecutor, make_new_run_i
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
 from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_tick
-from dagster._daemon.utils import ErrorCapture
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import (
@@ -269,7 +269,7 @@ class AutoMaterializeLaunchContext:
                         "Unable to reach the code server. Auto-materialization will resume once the code server is available."
                     ) from exception_value
                 except:
-                    error_data = ErrorCapture.on_exception(sys.exc_info())
+                    error_data = DaemonErrorCapture.on_exception(sys.exc_info())
                     self.update_state(
                         TickStatus.FAILURE,
                         error=error_data,
@@ -277,7 +277,7 @@ class AutoMaterializeLaunchContext:
                         failure_count=self._tick.failure_count,
                     )
             else:
-                error_data = ErrorCapture.on_exception(sys.exc_info())
+                error_data = DaemonErrorCapture.on_exception(sys.exc_info())
                 self.update_state(
                     TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
                 )
@@ -822,7 +822,7 @@ class AssetDaemon(DagsterDaemon):
                     is_retry=(retry_tick is not None),
                 )
         except Exception:
-            error_info = ErrorCapture.on_exception(
+            error_info = DaemonErrorCapture.on_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
                 log_message="Auto-materialize daemon caught an error",

@@ -8,7 +8,7 @@ from dagster._utils.error import (
 )
 
 
-class ErrorCapture:
+class DaemonErrorCapture:
     @staticmethod
     def default_on_exception(
         exc_info: ExceptionInfo,
