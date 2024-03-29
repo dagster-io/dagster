@@ -204,6 +204,7 @@ export const RecentUpdatesTimeline = ({
               </>
             );
           })}
+          <TickLines />
         </div>
       </Box>
       <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
@@ -313,4 +314,20 @@ const InnerTick = styled.div`
   position: absolute;
   pointer-events: none;
   border-radius: 1px;
+`;
+
+const TickLines = styled.div`
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  top: -6px;
+  background: repeating-linear-gradient(
+    to right,
+    ${Colors.keylineDefault} 0,
+    ${Colors.keylineDefault} 2px,
+    /* color and width of the line */ transparent 2px,
+    transparent 5% /* spacing between lines */
+  );
 `;
