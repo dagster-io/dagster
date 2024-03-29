@@ -1,13 +1,21 @@
 ---
-title: "Using tags in your Dagster project | Dagster Docs"
+title: "Tags | Dagster Docs"
 description: "Use tags to easily find objects and runs in your Dagster project."
 ---
 
-# Using tags in your Dagster project
+# Tags
 
 Over time, your Dagster project may grow to include a large number of Dagster definitions. Applying **tags** to assets, ops, jobs, and job runs can make them easier to find.
 
-By the end of this guide, you'll understand what tags are, how they work in Dagster, and how to apply them in your code.
+---
+
+## Benefits
+
+Using tags helps you:
+
+- Organize definitions in your Dagster project
+- Improve filtering in the Dagster UI, making it easier to focus on specific items
+- Customize [run execution](#customizing-run-execution), including run concurrency and priority
 
 ---
 
@@ -95,9 +103,9 @@ my_second_job_with_tags = email_graph.to_job(tags={"domain": "marketing"})
 </TabItem>
 </TabGroup>
 
-#### System tags
+#### System run tags
 
-In some cases, Dagster will automatically add tags to job runs:
+In some cases, Dagster will automatically add tags to runs:
 
 | Tag                     | Description                         |
 | ----------------------- | ----------------------------------- |
@@ -109,9 +117,11 @@ In some cases, Dagster will automatically add tags to job runs:
 | `dagster/parent_run_id` | The parent run of a re-executed run |
 | `dagster/image`         | The Docker image tag                |
 
-#### Using tags to affect run execution
+---
 
-Some features of Dagster are controlled using the tags attached to a run. Some examples include:
+## Customizing run execution
+
+While tags are primarily used for labeling and organization, some run execution features are controlled using run tags:
 
 - [Customizing Kubernetes config](/deployment/guides/kubernetes/customizing-your-deployment)
 - [Specifying Celery config](/deployment/guides/kubernetes/deploying-with-helm-advanced#configuring-celery-queues)
