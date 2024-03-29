@@ -24,7 +24,7 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
-const MIN_TICK_WIDTH = 5;
+const MIN_TICK_WIDTH = 10;
 const BUCKETS = 100;
 
 export const RecentUpdatesTimeline = ({
@@ -43,9 +43,16 @@ export const RecentUpdatesTimeline = ({
 
   const buckets = Math.floor(viewport.width / tickWidth);
 
-  const endTimestamp = parseInt(materializations[0]?.timestamp ?? '0');
-  const startTimestamp = parseInt(materializations[materializations.length - 1]?.timestamp ?? '0');
-  const range = endTimestamp - startTimestamp;
+  const sortedMaterializations = useMemo(() => {
+    return [...materializations].sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp));
+  }, [materializations]);
+
+  const startTimestamp = parseInt(sortedMaterializations[0]?.timestamp ?? '0');
+  const endTimestamp = parseInt(
+    sortedMaterializations[sortedMaterializations.length - 1]?.timestamp ?? '0',
+  );
+  const timeRange = endTimestamp - startTimestamp;
+  const bucketTimeRange = timeRange / buckets;
 
   const bucketedMaterializations = useMemo(() => {
     if (!viewport.width) {
@@ -56,9 +63,10 @@ export const RecentUpdatesTimeline = ({
       materializations: typeof materializations;
     }> = new Array(buckets);
 
-    materializations.forEach((materialization) => {
-      const bucketIndex = Math.floor(
-        ((parseInt(materialization.timestamp) - startTimestamp) / range) * (buckets - 1),
+    sortedMaterializations.forEach((materialization) => {
+      const bucketIndex = Math.min(
+        Math.floor((parseInt(materialization.timestamp) - startTimestamp) / bucketTimeRange),
+        buckets - 1,
       );
       firstPassBucketsArray[bucketIndex] = firstPassBucketsArray[bucketIndex] || {
         index: bucketIndex,
@@ -88,7 +96,7 @@ export const RecentUpdatesTimeline = ({
     });
 
     return secondPassBucketsArray;
-  }, [viewport.width, buckets, materializations, startTimestamp, range]);
+  }, [viewport.width, buckets, sortedMaterializations, startTimestamp, bucketTimeRange]);
 
   const formatDateTime = useFormatDateTime();
 
@@ -120,7 +128,7 @@ export const RecentUpdatesTimeline = ({
             : `Showing all ${materializations.length} updates`}
         </Caption>
       </Box>
-      <Box border="all" padding={6 as any} style={{height: 32}}>
+      <Box border="all" padding={6 as any} style={{height: 32, overflow: 'hidden'}}>
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
           {bucketedMaterializations.map((bucket) => {
             const width = bucket.end - bucket.start;
@@ -129,8 +137,8 @@ export const RecentUpdatesTimeline = ({
                 <TickWrapper
                   key={bucket.start}
                   style={{
-                    left: bucket.start * tickWidth,
-                    width: width * tickWidth,
+                    left: (100 * bucket.start) / buckets + '%',
+                    width: (100 * width) / buckets + '%',
                   }}
                 >
                   <Popover
@@ -156,15 +164,17 @@ export const RecentUpdatesTimeline = ({
                     <>
                       <Tick>
                         {bucket.materializations.map(({timestamp}) => {
-                          const bucketRange = bucket.end - bucket.start;
-                          const percent = (parseInt(timestamp) - startTimestamp) / range;
-                          const left = percent * (buckets - 1);
-                          const leftInner = (100 * (left - bucket.start)) / bucketRange;
+                          const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
+                          const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
+                          const percent =
+                            (100 * (parseInt(timestamp) - bucketStartTime)) /
+                            (bucketEndTimestamp - bucketStartTime);
+
                           return (
                             <InnerTick
                               key={timestamp}
                               style={{
-                                left: `${leftInner}%`,
+                                left: `${percent === 100 ? `calc(100% - 1px)` : percent + '%'}`,
                               }}
                             />
                           );
