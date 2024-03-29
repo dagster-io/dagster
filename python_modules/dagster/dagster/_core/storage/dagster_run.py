@@ -287,6 +287,13 @@ class DagsterRun(
 ):
     """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
+
+    Attributes:
+        job_name (str): The name of the job executed in this run
+        run_id (str): The ID of the run
+        run_config (Mapping[str, object]): The config for the run
+        tags (Mapping[str, str]): The tags applied to the run
+
     """
 
     def __new__(
