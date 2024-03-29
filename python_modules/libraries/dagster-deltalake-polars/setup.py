@@ -37,8 +37,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.6.13",
-        "dagster-deltalake==0.22.13",
+        "dagster==1.6.14",
+        "dagster-deltalake==0.22.14",
         "polars[pyarrow]",
     ],
     zip_safe=False,
