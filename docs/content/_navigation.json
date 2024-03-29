@@ -279,6 +279,7 @@
           },
           {
             "title": "Metadata & tags",
+            "path": "/concepts/metadata-tags",
             "children": [
               {
                 "title": "Tags",
