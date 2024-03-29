@@ -456,6 +456,10 @@ def _type_check_output(
         )
 
 
+def _store_asset_status_events():
+    return os.getenv("DAGSTER_STORE_ASSET_STATUS_EVENTS")
+
+
 def core_dagster_event_sequence_for_step(
     step_context: StepExecutionContext,
 ) -> Iterator[DagsterEvent]:
@@ -470,6 +474,10 @@ def core_dagster_event_sequence_for_step(
         yield DagsterEvent.step_restarted_event(step_context, step_context.previous_attempt_count)
     else:
         yield DagsterEvent.step_start_event(step_context)
+        # TODO Give multi-asset ops the ability to selectively yield these when e.g. specific
+        # models actually start within an op
+        if _store_asset_status_events():
+            yield from DagsterEvent.asset_materialization_start_events(step_context)
 
     inputs = {}
 

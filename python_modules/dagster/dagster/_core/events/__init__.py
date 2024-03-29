@@ -88,6 +88,9 @@ EventSpecificData = Union[
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
+    "AssetMaterializationStartedData",
+    "AssetMaterializationSkippedData",
+    "AssetMaterializationFailedData",
 ]
 
 
@@ -121,6 +124,10 @@ class DagsterEventType(str, Enum):
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
+
+    ASSET_MATERIALIZATION_STARTED = "ASSET_MATERIALIZATION_STARTED"
+    ASSET_MATERIALIZATION_SKIPPED = "ASSET_MATERIALIZATION_SKIPPED"
+    ASSET_MATERIALIZATION_FAILED = "ASSET_MATERIALIZATION_FAILED"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -969,6 +976,53 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def asset_materialization_start_events(step_context: IStepContext):
+        batch_id = generate_event_batch_id()
+        asset_keys = step_context.asset_keys
+        last_index = len(asset_keys) - 1
+        for i, asset_key in enumerate(asset_keys):
+            batch_metadata = DagsterEventBatchMetadata(batch_id, i == last_index)
+            yield DagsterEvent.from_step(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_STARTED,
+                step_context=step_context,
+                message="",
+                event_specific_data=AssetMaterializationStartedData(asset_key=asset_key),
+                batch_metadata=batch_metadata,
+            )
+
+    @staticmethod
+    def asset_materialization_skipped_events(step_context: IStepContext):
+        batch_id = generate_event_batch_id()
+        asset_keys = step_context.asset_keys
+        last_index = len(asset_keys) - 1
+        for i, asset_key in enumerate(asset_keys):
+            batch_metadata = DagsterEventBatchMetadata(batch_id, i == last_index)
+            yield DagsterEvent.from_step(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_STARTED,
+                step_context=step_context,
+                message="",
+                event_specific_data=AssetMaterializationStartedData(asset_key=asset_key),
+                batch_metadata=batch_metadata,
+            )
+
+    @staticmethod
+    def asset_materialization_failed_events(
+        step_context: IStepContext, materialized_asset_keys: AbstractSet[AssetKey]
+    ):
+        batch_id = generate_event_batch_id()
+        asset_keys = step_context.asset_keys - materialized_asset_keys
+        last_index = len(asset_keys) - 1
+        for i, asset_key in enumerate(asset_keys):
+            batch_metadata = DagsterEventBatchMetadata(batch_id, i == last_index)
+            yield DagsterEvent.from_step(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_FAILED,
+                step_context=step_context,
+                message="",
+                event_specific_data=AssetMaterializationFailedData(asset_key=asset_key),
+                batch_metadata=batch_metadata,
+            )
+
+    @staticmethod
     def step_restarted_event(step_context: IStepContext, previous_attempts: int) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_RESTARTED,
@@ -1537,6 +1591,39 @@ class AssetObservationData(
             asset_observation=check.inst_param(
                 asset_observation, "asset_observation", AssetObservation
             ),
+        )
+
+
+@whitelist_for_serdes
+class AssetMaterializationStartedData(
+    NamedTuple("_AssetMaterializationStartedData", [("asset_key", AssetKey)])
+):
+    def __new__(cls, asset_key: AssetKey):
+        return super(AssetMaterializationStartedData, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+        )
+
+
+@whitelist_for_serdes
+class AssetMaterializationSkippedData(
+    NamedTuple("_AssetMaterializationSkippedData", [("asset_key", AssetKey)])
+):
+    def __new__(cls, asset_key: AssetKey):
+        return super(AssetMaterializationSkippedData, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+        )
+
+
+@whitelist_for_serdes
+class AssetMaterializationFailedData(
+    NamedTuple("_AssetMaterializationFailedData", [("asset_key", AssetKey)])
+):
+    def __new__(cls, asset_key: AssetKey):
+        return super(AssetMaterializationFailedData, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
         )
 
 
