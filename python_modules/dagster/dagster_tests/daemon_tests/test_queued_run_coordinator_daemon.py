@@ -819,21 +819,22 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def test_key_limit_with_priority(
         self, workspace_context, daemon, job_handle, instance, run_coordinator_config
     ):
+        lo_pri_run_id, hi_pri_run_id = [make_new_run_id() for _ in range(2)]
         self.create_queued_run(
             instance,
             job_handle,
-            run_id="low-priority",
+            run_id=lo_pri_run_id,
             tags={"test": "value", PRIORITY_TAG: "-100"},
         )
         self.create_queued_run(
             instance,
             job_handle,
-            run_id="high-priority",
+            run_id=hi_pri_run_id,
             tags={"test": "value", PRIORITY_TAG: "100"},
         )
 
         list(daemon.run_iteration(workspace_context))
-        assert self.get_run_ids(instance.run_launcher.queue()) == ["high-priority"]
+        assert self.get_run_ids(instance.run_launcher.queue()) == [hi_pri_run_id]
 
     @pytest.mark.parametrize(
         "run_coordinator_config",
