@@ -141,6 +141,8 @@ def main(
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')
 
+    cmd.append("--config-settings editable_mode=compat")
+
     p = subprocess.Popen(
         " ".join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
     )
