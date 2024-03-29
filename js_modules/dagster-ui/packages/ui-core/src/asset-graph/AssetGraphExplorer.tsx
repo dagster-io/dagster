@@ -703,6 +703,7 @@ const AssetGraphExplorerWithData = ({
       identifier="asset-graph-explorer"
       firstInitialPercent={70}
       firstMinSize={400}
+      secondMinSize={400}
       first={
         <ErrorBoundary region="graph">
           {graphQueryItems.length === 0 ? (
@@ -876,6 +877,7 @@ const AssetGraphExplorerWithData = ({
         identifier="explorer-wrapper"
         firstMinSize={300}
         firstInitialPercent={0}
+        secondMinSize={400}
         first={
           showSidebar ? (
             <AssetGraphExplorerSidebar
