@@ -200,7 +200,7 @@ class ReOriginatedExternalJobForTest(ExternalJob):
             ),
         )
 
-    def get_external_origin(self) -> RemoteJobOrigin:
+    def get_remote_origin(self) -> RemoteJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
@@ -235,7 +235,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
             external_schedule.handle.repository_handle,
         )
 
-    def get_external_origin(self):
+    def get_remote_origin(self):
         """Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.

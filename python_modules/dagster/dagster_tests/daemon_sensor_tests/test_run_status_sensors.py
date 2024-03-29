@@ -138,7 +138,7 @@ def test_run_status_sensor(
         instance.start_sensor(started_sensor)
 
         state = instance.get_instigator_state(
-            started_sensor.get_external_origin_id(), started_sensor.selector_id
+            started_sensor.get_remote_origin_id(), started_sensor.selector_id
         )
         assert (
             cast(SensorInstigatorData, check.not_none(state).instigator_data).sensor_type
@@ -148,7 +148,7 @@ def test_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -165,7 +165,7 @@ def test_run_status_sensor(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -179,7 +179,7 @@ def test_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -190,7 +190,7 @@ def test_run_status_sensor(
         )
 
         ticks = instance.get_ticks(
-            started_sensor.get_external_origin_id(), started_sensor.selector_id
+            started_sensor.get_remote_origin_id(), started_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -204,7 +204,7 @@ def test_run_status_sensor(
         external_job = external_repo.get_full_external_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -220,7 +220,7 @@ def test_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -231,7 +231,7 @@ def test_run_status_sensor(
         )
 
         ticks = instance.get_ticks(
-            started_sensor.get_external_origin_id(), started_sensor.selector_id
+            started_sensor.get_remote_origin_id(), started_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -259,7 +259,7 @@ def test_run_failure_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -276,7 +276,7 @@ def test_run_failure_sensor(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -290,7 +290,7 @@ def test_run_failure_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -317,7 +317,7 @@ def test_run_failure_sensor_that_fails(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -334,7 +334,7 @@ def test_run_failure_sensor_that_fails(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -348,7 +348,7 @@ def test_run_failure_sensor_that_fails(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -366,7 +366,7 @@ def test_run_failure_sensor_that_fails(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -391,7 +391,7 @@ def test_run_failure_sensor_filtered(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -408,7 +408,7 @@ def test_run_failure_sensor_filtered(
         external_job = external_repo.get_full_external_job("failure_job_2")
         run = instance.create_run_for_job(
             failure_job_2,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -422,7 +422,7 @@ def test_run_failure_sensor_filtered(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -439,7 +439,7 @@ def test_run_failure_sensor_filtered(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -454,7 +454,7 @@ def test_run_failure_sensor_filtered(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -516,7 +516,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 1
                 validate_tick(
@@ -534,7 +534,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 # start run 1
                 run1 = instance.create_run_for_job(
                     hanging_job,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run1.run_id, workspace_context.create_request_context())
@@ -542,7 +542,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 # start run 2
                 run2 = instance.create_run_for_job(
                     hanging_job,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run2.run_id, workspace_context.create_request_context())
@@ -560,7 +560,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 2
                 validate_tick(
@@ -585,7 +585,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 3
                 validate_tick(
@@ -616,7 +616,7 @@ def test_run_failure_sensor_empty_run_records(
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 1
                 validate_tick(
@@ -657,7 +657,7 @@ def test_run_failure_sensor_empty_run_records(
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 2
                 validate_tick(
@@ -708,7 +708,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -730,7 +730,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_job_origin=external_another_job.get_external_origin(),
+                external_job_origin=external_another_job.get_remote_origin(),
                 job_code_origin=external_another_job.get_python_origin(),
             )
 
@@ -743,7 +743,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
         with pendulum_freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],
@@ -793,7 +793,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -815,7 +815,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
             dagster_run = instance.create_run_for_job(
                 another_failure_job,
-                external_job_origin=external_another_job.get_external_origin(),
+                external_job_origin=external_another_job.get_remote_origin(),
                 job_code_origin=external_another_job.get_python_origin(),
             )
 
@@ -828,7 +828,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
         with pendulum_freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],
@@ -882,7 +882,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 1
@@ -906,7 +906,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -921,7 +921,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 2
@@ -979,7 +979,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 1
@@ -1003,7 +1003,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1018,7 +1018,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
 
@@ -1050,7 +1050,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_job_origin=external_another_success_job.get_external_origin(),
+                external_job_origin=external_another_success_job.get_remote_origin(),
                 job_code_origin=external_another_success_job.get_python_origin(),
             )
 
@@ -1065,7 +1065,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
 
@@ -1122,7 +1122,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 1
@@ -1146,7 +1146,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1161,7 +1161,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 2
@@ -1182,7 +1182,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1197,7 +1197,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 3
@@ -1226,7 +1226,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -1243,7 +1243,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1256,7 +1256,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 2
             validate_tick(
@@ -1288,7 +1288,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             assert instance.get_runs_count() == 0
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -1305,7 +1305,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1320,7 +1320,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             wait_for_all_runs_to_finish(instance)
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 2
             validate_tick(
@@ -1343,7 +1343,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             assert len(run_request_runs) == 1
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 3
             validate_tick(
@@ -1371,7 +1371,7 @@ def test_partitioned_job_run_status_sensor(
         assert instance.get_runs_count() == 0
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1388,7 +1388,7 @@ def test_partitioned_job_run_status_sensor(
         external_job = external_repo.get_full_external_job("daily_partitioned_job")
         run = instance.create_run_for_job(
             daily_partitioned_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
             tags={"dagster/partition": "2022-08-01"},
         )
@@ -1406,7 +1406,7 @@ def test_partitioned_job_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -1440,7 +1440,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                    cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
                 )
                 assert len(ticks) == 1
                 validate_tick(
@@ -1457,7 +1457,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 external_job = the_other_repo.get_full_external_job("the_job")
                 run = the_other_instance.create_run_for_job(
                     the_job,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 the_other_instance.submit_run(
@@ -1472,7 +1472,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                    cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
                 )
                 assert len(ticks) == 2
                 # the_pipeline was run in another instance, so the cross_repo_sensor should not trigger
@@ -1501,7 +1501,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                instance_sensor.get_external_origin_id(), instance_sensor.selector_id
+                instance_sensor.get_remote_origin_id(), instance_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -1518,7 +1518,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1531,7 +1531,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                instance_sensor.get_external_origin_id(), instance_sensor.selector_id
+                instance_sensor.get_remote_origin_id(), instance_sensor.selector_id
             )
             assert len(ticks) == 2
             validate_tick(
@@ -1556,7 +1556,7 @@ def test_logging_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1572,7 +1572,7 @@ def test_logging_run_status_sensor(
         external_job = external_repo.get_full_external_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1586,7 +1586,7 @@ def test_logging_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(

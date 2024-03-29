@@ -304,7 +304,7 @@ class GraphenePartitionSet(graphene.ObjectType):
         )
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_partition_set.get_external_origin_id()
+        return self._external_partition_set.get_remote_origin_id()
 
     @capture_error
     def resolve_partitionsOrError(
@@ -342,7 +342,7 @@ class GraphenePartitionSet(graphene.ObjectType):
         )
 
     def resolve_repositoryOrigin(self, _):
-        origin = self._external_partition_set.get_external_origin().repository_origin
+        origin = self._external_partition_set.get_remote_origin().repository_origin
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_backfills(

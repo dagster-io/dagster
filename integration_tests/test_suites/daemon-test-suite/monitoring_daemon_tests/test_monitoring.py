@@ -131,7 +131,7 @@ def test_docker_monitoring():
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
 
@@ -218,7 +218,7 @@ def test_docker_monitoring_run_out_of_attempts():
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
 

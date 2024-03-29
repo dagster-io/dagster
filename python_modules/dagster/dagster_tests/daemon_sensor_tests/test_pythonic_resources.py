@@ -438,14 +438,14 @@ def test_resources(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == base_run_count
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -455,7 +455,7 @@ def test_resources(
         assert instance.get_runs_count() == base_run_count + 1
         run = instance.get_runs()[0]
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         assert ticks[0].run_keys == ["foo"]
@@ -502,13 +502,13 @@ def test_resources_freshness_policy_sensor(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -524,7 +524,7 @@ def test_resources_freshness_policy_sensor(
 
     with pendulum_freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -578,13 +578,13 @@ def test_resources_run_status_sensor(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -601,7 +601,7 @@ def test_resources_run_status_sensor(
 
     with pendulum_freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -660,13 +660,13 @@ def test_resources_run_failure_sensor(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -683,7 +683,7 @@ def test_resources_run_failure_sensor(
 
     with pendulum_freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 

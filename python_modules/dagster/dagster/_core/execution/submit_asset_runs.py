@@ -168,7 +168,7 @@ def _create_asset_run(
                     root_run_id=None,
                     parent_run_id=None,
                     status=DagsterRunStatus.NOT_STARTED,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                     asset_selection=frozenset(run_request.asset_selection),
                     asset_check_selection=None,

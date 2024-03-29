@@ -88,7 +88,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def create_run(self, instance, job_handle, **kwargs):
         create_run_for_test(
             instance,
-            external_job_origin=job_handle.get_external_origin(),
+            external_job_origin=job_handle.get_remote_origin(),
             job_code_origin=job_handle.get_python_origin(),
             job_name="foo",
             **kwargs,
@@ -97,7 +97,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def create_queued_run(self, instance, job_handle, **kwargs):
         run = create_run_for_test(
             instance,
-            external_job_origin=job_handle.get_external_origin(),
+            external_job_origin=job_handle.get_remote_origin(),
             job_code_origin=job_handle.get_python_origin(),
             job_name="foo",
             status=DagsterRunStatus.NOT_STARTED,
@@ -131,7 +131,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         )
         run = create_run_for_test(
             instance,
-            external_job_origin=subset_job.get_external_origin(),
+            external_job_origin=subset_job.get_remote_origin(),
             job_code_origin=subset_job.get_python_origin(),
             job_name=subset_job.name,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,

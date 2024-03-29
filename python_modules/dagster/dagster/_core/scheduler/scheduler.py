@@ -79,7 +79,7 @@ class Scheduler(abc.ABC):
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
         stored_state = instance.get_instigator_state(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         computed_state = external_schedule.get_current_instigator_state(stored_state)
         if computed_state.is_running:
@@ -92,7 +92,7 @@ class Scheduler(abc.ABC):
 
         if not stored_state:
             started_state = InstigatorState(
-                external_schedule.get_external_origin(),
+                external_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
                 new_instigator_data,
@@ -135,7 +135,7 @@ class Scheduler(abc.ABC):
         if not stored_state:
             assert external_schedule
             stopped_state = InstigatorState(
-                external_schedule.get_external_origin(),
+                external_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(
@@ -169,7 +169,7 @@ class Scheduler(abc.ABC):
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
         stored_state = instance.get_instigator_state(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         new_instigator_data = ScheduleInstigatorData(
             external_schedule.cron_schedule,
@@ -180,7 +180,7 @@ class Scheduler(abc.ABC):
         if not stored_state:
             reset_state = instance.add_instigator_state(
                 state=InstigatorState(
-                    external_schedule.get_external_origin(),
+                    external_schedule.get_remote_origin(),
                     InstigatorType.SCHEDULE,
                     new_status,
                     new_instigator_data,

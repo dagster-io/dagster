@@ -69,7 +69,7 @@ class RepositoryScopedBatchLoader:
 
         if data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(
-                repository_origin_id=self._repository.get_external_origin_id(),
+                repository_origin_id=self._repository.get_remote_origin_id(),
                 repository_selector_id=self._repository.selector_id,
                 instigator_type=InstigatorType.SCHEDULE,
             )
@@ -78,7 +78,7 @@ class RepositoryScopedBatchLoader:
 
         elif data_type == RepositoryDataType.SENSOR_STATES:
             sensor_states = self._instance.all_instigator_state(
-                repository_origin_id=self._repository.get_external_origin_id(),
+                repository_origin_id=self._repository.get_remote_origin_id(),
                 repository_selector_id=self._repository.selector_id,
                 instigator_type=InstigatorType.SENSOR,
             )
@@ -92,12 +92,12 @@ class RepositoryScopedBatchLoader:
                 ]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
                 for schedule in self._repository.get_external_schedules():
-                    fetched[schedule.get_external_origin_id()] = list(
+                    fetched[schedule.get_remote_origin_id()] = list(
                         ticks_by_selector.get(schedule.selector_id, [])
                     )
             else:
                 for schedule in self._repository.get_external_schedules():
-                    origin_id = schedule.get_external_origin_id()
+                    origin_id = schedule.get_remote_origin_id()
                     fetched[origin_id] = list(
                         self._instance.get_ticks(origin_id, schedule.selector_id, limit=limit)
                     )
@@ -109,12 +109,12 @@ class RepositoryScopedBatchLoader:
                 ]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
                 for sensor in self._repository.get_external_sensors():
-                    fetched[sensor.get_external_origin_id()] = list(
+                    fetched[sensor.get_remote_origin_id()] = list(
                         ticks_by_selector.get(sensor.selector_id, [])
                     )
             else:
                 for sensor in self._repository.get_external_sensors():
-                    origin_id = sensor.get_external_origin_id()
+                    origin_id = sensor.get_remote_origin_id()
                     fetched[origin_id] = list(
                         self._instance.get_ticks(origin_id, sensor.selector_id, limit=limit)
                     )

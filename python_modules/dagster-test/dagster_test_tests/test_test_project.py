@@ -14,4 +14,4 @@ def test_reoriginated_external_job():
             reoriginated_pipeline = ReOriginatedExternalJobForTest(external_pipeline)
 
             assert reoriginated_pipeline.get_python_origin()
-            assert reoriginated_pipeline.get_external_origin()
+            assert reoriginated_pipeline.get_remote_origin()

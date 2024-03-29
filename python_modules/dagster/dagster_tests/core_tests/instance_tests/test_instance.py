@@ -312,7 +312,7 @@ def test_submit_run():
                 instance=instance,
                 job_name=external_job.name,
                 run_id="foo-bar",
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 

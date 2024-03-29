@@ -56,7 +56,7 @@ def stop_schedule(
     instance = graphene_info.context.instance
 
     external_schedules = {
-        job.get_external_origin_id(): job
+        job.get_remote_origin_id(): job
         for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
         for job in repository.get_external_schedules()
@@ -126,7 +126,7 @@ def get_schedules_or_error(
     batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     external_schedules = repository.get_external_schedules()
     schedule_states = graphene_info.context.instance.all_instigator_state(
-        repository_origin_id=repository.get_external_origin_id(),
+        repository_origin_id=repository.get_remote_origin_id(),
         repository_selector_id=repository_selector.selector_id,
         instigator_type=InstigatorType.SCHEDULE,
         instigator_statuses=instigator_statuses,
@@ -170,7 +170,7 @@ def get_schedules_for_pipeline(
             continue
 
         schedule_state = graphene_info.context.instance.get_instigator_state(
-            external_schedule.get_external_origin_id(),
+            external_schedule.get_remote_origin_id(),
             external_schedule.selector_id,
         )
         results.append(GrapheneSchedule(external_schedule, schedule_state))
@@ -196,7 +196,7 @@ def get_schedule_or_error(
     external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
 
     schedule_state = graphene_info.context.instance.get_instigator_state(
-        external_schedule.get_external_origin_id(), external_schedule.selector_id
+        external_schedule.get_remote_origin_id(), external_schedule.selector_id
     )
     return GrapheneSchedule(external_schedule, schedule_state)
 

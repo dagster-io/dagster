@@ -465,7 +465,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
             run = create_run_for_test(
                 k8s_instance,
                 job_name="bar",
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
             list(

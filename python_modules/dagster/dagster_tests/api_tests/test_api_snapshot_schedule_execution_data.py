@@ -53,7 +53,7 @@ def test_external_schedule_client_timeout(instance, env_var_default_val: Optiona
 def test_external_schedule_execution_data_api_grpc_fallback_to_streaming():
     with instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
-            origin = repository_handle.get_external_origin()
+            origin = repository_handle.get_remote_origin()
             with ephemeral_grpc_api_client(
                 origin.code_location_origin.loadable_target_origin
             ) as api_client:
@@ -97,7 +97,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
 def test_external_schedule_execution_deserialize_error():
     with instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
-            origin = repository_handle.get_external_origin()
+            origin = repository_handle.get_remote_origin()
             with ephemeral_grpc_api_client(
                 origin.code_location_origin.loadable_target_origin
             ) as api_client:

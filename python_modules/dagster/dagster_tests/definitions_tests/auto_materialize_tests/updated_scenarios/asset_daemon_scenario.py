@@ -226,7 +226,7 @@ class AssetDaemonScenarioState(ScenarioState):
             if sensor:
                 auto_materialize_instigator_state = check.not_none(
                     self.instance.get_instigator_state(
-                        sensor.get_external_origin_id(), sensor.selector_id
+                        sensor.get_remote_origin_id(), sensor.selector_id
                     )
                 )
                 new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(

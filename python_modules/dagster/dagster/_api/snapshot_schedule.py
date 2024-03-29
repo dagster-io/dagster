@@ -24,7 +24,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
 ) -> ScheduleExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
-    origin = repository_handle.get_external_origin()
+    origin = repository_handle.get_remote_origin()
     with ephemeral_grpc_api_client(
         origin.code_location_origin.loadable_target_origin
     ) as api_client:
@@ -52,7 +52,7 @@ def sync_get_external_schedule_execution_data_grpc(
     check.str_param(schedule_name, "schedule_name")
     check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
-    origin = repository_handle.get_external_origin()
+    origin = repository_handle.get_remote_origin()
     result = deserialize_value(
         api_client.external_schedule_execution(
             external_schedule_execution_args=ExternalScheduleExecutionArgs(

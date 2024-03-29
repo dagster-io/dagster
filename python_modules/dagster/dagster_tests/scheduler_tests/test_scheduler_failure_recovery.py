@@ -106,7 +106,7 @@ def test_failure_recovery_before_run_created(
         assert scheduler_process.exitcode != 0
 
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
@@ -131,7 +131,7 @@ def test_failure_recovery_before_run_created(
         )
 
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -176,7 +176,7 @@ def test_failure_recovery_after_run_created(
         assert scheduler_process.exitcode != 0
 
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
@@ -220,7 +220,7 @@ def test_failure_recovery_after_run_created(
         validate_run_exists(instance.get_runs()[0], initial_datetime)
 
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -271,7 +271,7 @@ def test_failure_recovery_after_tick_success(
         validate_run_exists(instance.get_runs()[0], initial_datetime)
 
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
 
@@ -303,7 +303,7 @@ def test_failure_recovery_after_tick_success(
         validate_run_exists(instance.get_runs()[0], initial_datetime)
 
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -350,7 +350,7 @@ def test_failure_recovery_between_multi_runs(
         validate_run_exists(instance.get_runs()[0], initial_datetime)
 
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
 
@@ -366,7 +366,7 @@ def test_failure_recovery_between_multi_runs(
         assert instance.get_runs_count() == 2
         validate_run_exists(instance.get_runs()[0], initial_datetime)
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 1
         validate_tick(

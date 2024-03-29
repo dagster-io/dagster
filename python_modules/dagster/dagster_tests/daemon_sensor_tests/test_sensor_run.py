@@ -998,7 +998,7 @@ def validate_tick(
     expected_error=None,
 ):
     tick_data = tick.tick_data
-    assert tick_data.instigator_origin_id == external_sensor.get_external_origin_id()
+    assert tick_data.instigator_origin_id == external_sensor.get_remote_origin_id()
     assert tick_data.instigator_name == external_sensor.name
     assert tick_data.instigator_type == InstigatorType.SENSOR
     assert tick_data.status == expected_status, tick_data.error
@@ -1067,7 +1067,7 @@ def test_ignore_auto_materialize_sensor(instance, workspace_context, external_re
         assert external_sensor
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
@@ -1078,7 +1078,7 @@ def test_ignore_auto_materialize_sensor(instance, workspace_context, external_re
         evaluate_sensors(workspace_context, executor)
         # No ticks because of the sensor type
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -1093,14 +1093,14 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -1108,7 +1108,7 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1127,7 +1127,7 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
         run = instance.get_runs()[0]
         validate_run_started(run)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -1157,7 +1157,7 @@ def test_sensors_keyed_on_selector_not_origin(
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
 
-        existing_origin = external_sensor.get_external_origin()
+        existing_origin = external_sensor.get_remote_origin()
 
         code_location_origin = existing_origin.repository_origin.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
@@ -1186,7 +1186,7 @@ def test_sensors_keyed_on_selector_not_origin(
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
 
@@ -1205,7 +1205,7 @@ def test_bad_load_sensor_repository(
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
 
-        valid_origin = external_sensor.get_external_origin()
+        valid_origin = external_sensor.get_remote_origin()
 
         # Swap out a new repository name
         invalid_repo_origin = RemoteInstigatorOrigin(
@@ -1240,7 +1240,7 @@ def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
 
-        valid_origin = external_sensor.get_external_origin()
+        valid_origin = external_sensor.get_remote_origin()
 
         # Swap out a new repository name
         invalid_repo_origin = RemoteInstigatorOrigin(
@@ -1272,20 +1272,20 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
         external_sensor = external_repo.get_external_sensor("error_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
 
         state = instance.get_instigator_state(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert state.instigator_data is None
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -1293,7 +1293,7 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1312,7 +1312,7 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
 
         # Tick updated the sensor's last tick time, but not its cursor (due to the failure)
         state = instance.get_instigator_state(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert state.instigator_data.sensor_type == SensorType.STANDARD
         assert state.instigator_data.cursor is None
@@ -1335,21 +1335,21 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
         external_sensor = external_repo.get_external_sensor("wrong_config_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
 
@@ -1372,7 +1372,7 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
         evaluate_sensors(workspace_context, executor)
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -1406,14 +1406,14 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
             external_sensor = external_repo.get_external_sensor("always_on_sensor")
             instance.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_external_origin(),
+                    external_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
                 )
             )
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 0
 
@@ -1422,7 +1422,7 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -1456,14 +1456,14 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -1473,7 +1473,7 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1490,7 +1490,7 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         evaluate_sensors(workspace_context, executor)
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -1522,7 +1522,7 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
     with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         assert len(ticks) == 3
@@ -1542,19 +1542,19 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
         external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(ticks[0], external_sensor, freeze_datetime, TickStatus.SKIPPED)
@@ -1564,7 +1564,7 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
     with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         # no additional tick created after 30 seconds
         assert len(ticks) == 1
@@ -1574,7 +1574,7 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
     with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -1626,7 +1626,7 @@ def test_custom_interval_sensor_with_offset(
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -1635,7 +1635,7 @@ def test_custom_interval_sensor_with_offset(
         # create a tick
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
 
@@ -1643,7 +1643,7 @@ def test_custom_interval_sensor_with_offset(
         # advanced
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
 
@@ -1660,7 +1660,7 @@ def test_custom_interval_sensor_with_offset(
 
         assert pendulum.now() == freeze_datetime.add(seconds=65)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
         assert sum(sleeps) == 65
@@ -1673,7 +1673,7 @@ def test_sensor_start_stop(executor, instance, workspace_context, external_repo)
     )
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("always_on_sensor")
-        external_origin_id = external_sensor.get_external_origin_id()
+        external_origin_id = external_sensor.get_remote_origin_id()
         instance.start_sensor(external_sensor)
 
         assert instance.get_runs_count() == 0
@@ -1733,7 +1733,7 @@ def test_large_sensor(executor, instance, workspace_context, external_repo):
         instance.start_sensor(external_sensor)
         evaluate_sensors(workspace_context, executor, timeout=300)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1754,7 +1754,7 @@ def test_many_request_sensor(executor, submit_executor, instance, workspace_cont
         instance.start_sensor(external_sensor)
         evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1777,9 +1777,7 @@ def test_cursor_sensor(executor, instance, workspace_context, external_repo):
         instance.start_sensor(run_sensor)
         evaluate_sensors(workspace_context, executor)
 
-        skip_ticks = instance.get_ticks(
-            skip_sensor.get_external_origin_id(), skip_sensor.selector_id
-        )
+        skip_ticks = instance.get_ticks(skip_sensor.get_remote_origin_id(), skip_sensor.selector_id)
         assert len(skip_ticks) == 1
         validate_tick(
             skip_ticks[0],
@@ -1789,7 +1787,7 @@ def test_cursor_sensor(executor, instance, workspace_context, external_repo):
         )
         assert skip_ticks[0].cursor == "1"
 
-        run_ticks = instance.get_ticks(run_sensor.get_external_origin_id(), run_sensor.selector_id)
+        run_ticks = instance.get_ticks(run_sensor.get_remote_origin_id(), run_sensor.selector_id)
         assert len(run_ticks) == 1
         validate_tick(
             run_ticks[0],
@@ -1803,9 +1801,7 @@ def test_cursor_sensor(executor, instance, workspace_context, external_repo):
     with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
 
-        skip_ticks = instance.get_ticks(
-            skip_sensor.get_external_origin_id(), skip_sensor.selector_id
-        )
+        skip_ticks = instance.get_ticks(skip_sensor.get_remote_origin_id(), skip_sensor.selector_id)
         assert len(skip_ticks) == 2
         validate_tick(
             skip_ticks[0],
@@ -1815,7 +1811,7 @@ def test_cursor_sensor(executor, instance, workspace_context, external_repo):
         )
         assert skip_ticks[0].cursor == "2"
 
-        run_ticks = instance.get_ticks(run_sensor.get_external_origin_id(), run_sensor.selector_id)
+        run_ticks = instance.get_ticks(run_sensor.get_remote_origin_id(), run_sensor.selector_id)
         assert len(run_ticks) == 2
         validate_tick(
             run_ticks[0],
@@ -1833,7 +1829,7 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
     )
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("run_request_asset_selection_sensor")
-        external_origin_id = external_sensor.get_external_origin_id()
+        external_origin_id = external_sensor.get_remote_origin_id()
         instance.start_sensor(external_sensor)
 
         assert instance.get_runs_count() == 0
@@ -1872,7 +1868,7 @@ def test_run_request_check_selection_only_sensor(
     )
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("run_request_check_only_sensor")
-        external_origin_id = external_sensor.get_external_origin_id()
+        external_origin_id = external_sensor.get_remote_origin_id()
         instance.start_sensor(external_sensor)
 
         assert instance.get_runs_count() == 0
@@ -1971,7 +1967,7 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, e
     )
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("targets_asset_selection_sensor")
-        external_origin_id = external_sensor.get_external_origin_id()
+        external_origin_id = external_sensor.get_remote_origin_id()
         instance.start_sensor(external_sensor)
 
         assert instance.get_runs_count() == 0
@@ -2019,7 +2015,7 @@ def test_partitioned_asset_selection_sensor(executor, instance, workspace_contex
     )
     with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("partitioned_asset_selection_sensor")
-        external_origin_id = external_sensor.get_external_origin_id()
+        external_origin_id = external_sensor.get_remote_origin_id()
         instance.start_sensor(external_sensor)
 
         assert instance.get_runs_count() == 0
@@ -2062,7 +2058,7 @@ def test_asset_sensor(executor, instance, workspace_context, external_repo):
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(foo_sensor.get_external_origin_id(), foo_sensor.selector_id)
+        ticks = instance.get_ticks(foo_sensor.get_remote_origin_id(), foo_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2078,7 +2074,7 @@ def test_asset_sensor(executor, instance, workspace_context, external_repo):
 
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(foo_sensor.get_external_origin_id(), foo_sensor.selector_id)
+        ticks = instance.get_ticks(foo_sensor.get_remote_origin_id(), foo_sensor.selector_id)
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
@@ -2103,7 +2099,7 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+        ticks = instance.get_ticks(job_sensor.get_remote_origin_id(), job_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2120,7 +2116,7 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
 
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+        ticks = instance.get_ticks(job_sensor.get_remote_origin_id(), job_sensor.selector_id)
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
@@ -2151,7 +2147,7 @@ def test_asset_sensor_not_triggered_on_observation(
         # observation should not fire the asset sensor
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(foo_sensor.get_external_origin_id(), foo_sensor.selector_id)
+        ticks = instance.get_ticks(foo_sensor.get_remote_origin_id(), foo_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2167,7 +2163,7 @@ def test_asset_sensor_not_triggered_on_observation(
 
         # materialization should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(foo_sensor.get_external_origin_id(), foo_sensor.selector_id)
+        ticks = instance.get_ticks(foo_sensor.get_remote_origin_id(), foo_sensor.selector_id)
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
@@ -2193,7 +2189,7 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
+            a_and_b_sensor.get_remote_origin_id(), a_and_b_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -2212,7 +2208,7 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
 
         # sensor should not fire
         ticks = instance.get_ticks(
-            a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
+            a_and_b_sensor.get_remote_origin_id(), a_and_b_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -2231,7 +2227,7 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
+            a_and_b_sensor.get_remote_origin_id(), a_and_b_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -2258,7 +2254,7 @@ def test_asset_selection_sensor(executor, instance, workspace_context, external_
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            asset_selection_sensor.get_external_origin_id(), asset_selection_sensor.selector_id
+            asset_selection_sensor.get_remote_origin_id(), asset_selection_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -2285,7 +2281,7 @@ def test_multi_asset_sensor_targets_asset_selection(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            multi_asset_sensor_targets_asset_selection.get_external_origin_id(),
+            multi_asset_sensor_targets_asset_selection.get_remote_origin_id(),
             multi_asset_sensor_targets_asset_selection.selector_id,
         )
         assert len(ticks) == 1
@@ -2305,7 +2301,7 @@ def test_multi_asset_sensor_targets_asset_selection(
 
         # sensor should not fire
         ticks = instance.get_ticks(
-            multi_asset_sensor_targets_asset_selection.get_external_origin_id(),
+            multi_asset_sensor_targets_asset_selection.get_remote_origin_id(),
             multi_asset_sensor_targets_asset_selection.selector_id,
         )
         assert len(ticks) == 2
@@ -2325,7 +2321,7 @@ def test_multi_asset_sensor_targets_asset_selection(
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            multi_asset_sensor_targets_asset_selection.get_external_origin_id(),
+            multi_asset_sensor_targets_asset_selection.get_remote_origin_id(),
             multi_asset_sensor_targets_asset_selection.selector_id,
         )
         assert len(ticks) == 3
@@ -2354,7 +2350,7 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            backlog_sensor.get_external_origin_id(), backlog_sensor.selector_id
+            backlog_sensor.get_remote_origin_id(), backlog_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -2372,7 +2368,7 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         # sensor should not fire
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            backlog_sensor.get_external_origin_id(), backlog_sensor.selector_id
+            backlog_sensor.get_remote_origin_id(), backlog_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -2391,7 +2387,7 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            backlog_sensor.get_external_origin_id(), backlog_sensor.selector_id
+            backlog_sensor.get_remote_origin_id(), backlog_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -2419,9 +2415,7 @@ def test_multi_asset_sensor_w_no_cursor_update(
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
-        )
+        ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2436,9 +2430,7 @@ def test_multi_asset_sensor_w_no_cursor_update(
         materialize([asset_a], instance=instance)
 
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(
-            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
-        )
+        ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
@@ -2460,9 +2452,7 @@ def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_conte
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
-        )
+        ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2489,9 +2479,7 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_conte
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
-        )
+        ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2514,9 +2502,7 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_conte
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
-        )
+        ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
         assert len(ticks) == 2
         validate_tick(ticks[0], cursor_sensor, freeze_datetime, TickStatus.SKIPPED)
 
@@ -2532,9 +2518,7 @@ def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context,
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
-        )
+        ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2557,9 +2541,7 @@ def test_cursor_update_sensor_result_multi_asset_sensor(
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(
-            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
-        )
+        ticks = instance.get_ticks(cursor_sensor.get_remote_origin_id(), cursor_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2581,7 +2563,7 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+        ticks = instance.get_ticks(job_sensor.get_remote_origin_id(), job_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2599,7 +2581,7 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
     with pendulum_freeze_time(freeze_datetime):
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
-        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+        ticks = instance.get_ticks(job_sensor.get_remote_origin_id(), job_sensor.selector_id)
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
@@ -2625,7 +2607,7 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+        ticks = instance.get_ticks(job_sensor.get_remote_origin_id(), job_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2650,7 +2632,7 @@ def test_bad_run_request_mismatch(executor, instance, workspace_context, externa
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+        ticks = instance.get_ticks(job_sensor.get_remote_origin_id(), job_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2674,7 +2656,7 @@ def test_bad_run_request_unspecified(executor, instance, workspace_context, exte
 
         evaluate_sensors(workspace_context, executor)
 
-        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+        ticks = instance.get_ticks(job_sensor.get_remote_origin_id(), job_sensor.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -2705,8 +2687,8 @@ def test_status_in_code_sensor(executor, instance):
             running_sensor = external_repo.get_external_sensor("always_running_sensor")
             not_running_sensor = external_repo.get_external_sensor("never_running_sensor")
 
-            always_running_origin = running_sensor.get_external_origin()
-            never_running_origin = not_running_sensor.get_external_origin()
+            always_running_origin = running_sensor.get_remote_origin()
+            never_running_origin = not_running_sensor.get_remote_origin()
 
             assert instance.get_runs_count() == 0
             assert (
@@ -2736,7 +2718,7 @@ def test_status_in_code_sensor(executor, instance):
             assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
             ticks = instance.get_ticks(
-                running_sensor.get_external_origin_id(), running_sensor.selector_id
+                running_sensor.get_remote_origin_id(), running_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -2798,7 +2780,7 @@ def test_status_in_code_sensor(executor, instance):
             run = instance.get_runs()[0]
             validate_run_started(run)
             ticks = instance.get_ticks(
-                running_sensor.get_external_origin_id(), running_sensor.selector_id
+                running_sensor.get_remote_origin_id(), running_sensor.selector_id
             )
             assert len(ticks) == 3
 
@@ -2833,14 +2815,14 @@ def test_run_request_list_sensor(executor, instance, workspace_context, external
         external_sensor = external_repo.get_external_sensor("request_list_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -2848,7 +2830,7 @@ def test_run_request_list_sensor(executor, instance, workspace_context, external
 
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
 
@@ -2862,13 +2844,13 @@ def test_sensor_purge(executor, instance, workspace_context, external_repo):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -2876,7 +2858,7 @@ def test_sensor_purge(executor, instance, workspace_context, external_repo):
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         freeze_datetime = freeze_datetime.add(days=6)
@@ -2885,7 +2867,7 @@ def test_sensor_purge(executor, instance, workspace_context, external_repo):
         # create another tick
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -2895,7 +2877,7 @@ def test_sensor_purge(executor, instance, workspace_context, external_repo):
         # create another tick, but the first tick should be purged
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -2916,13 +2898,13 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
             instance.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_external_origin(),
+                    external_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
                 )
             )
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 0
 
@@ -2930,7 +2912,7 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
             evaluate_sensors(purge_ws_ctx, executor)
 
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 1
             freeze_datetime = freeze_datetime.add(days=8)
@@ -2940,7 +2922,7 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
             # default purge day offset is 7
             evaluate_sensors(purge_ws_ctx, executor)
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 2
 
@@ -2950,7 +2932,7 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
             # create another tick, but the first tick should be purged
             evaluate_sensors(purge_ws_ctx, executor)
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 2
 
@@ -2987,7 +2969,7 @@ def test_repository_namespacing(executor):
         status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
         running_sensor = status_in_code_repo.get_external_sensor("always_running_sensor")
         instance.stop_sensor(
-            running_sensor.get_external_origin_id(), running_sensor.selector_id, running_sensor
+            running_sensor.get_remote_origin_id(), running_sensor.selector_id, running_sensor
         )
 
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
@@ -2997,14 +2979,14 @@ def test_repository_namespacing(executor):
             instance.start_sensor(external_sensor)
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 0
 
             instance.start_sensor(other_sensor)
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(
-                other_sensor.get_external_origin_id(), other_sensor.selector_id
+                other_sensor.get_remote_origin_id(), other_sensor.selector_id
             )
             assert len(ticks) == 0
 
@@ -3015,13 +2997,13 @@ def test_repository_namespacing(executor):
             assert instance.get_runs_count() == 2  # both copies of the sensor
 
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
             ticks = instance.get_ticks(
-                other_sensor.get_external_origin_id(), other_sensor.selector_id
+                other_sensor.get_remote_origin_id(), other_sensor.selector_id
             )
             assert len(ticks) == 1
 
@@ -3031,7 +3013,7 @@ def test_repository_namespacing(executor):
             evaluate_sensors(full_workspace_context, executor)
             assert instance.get_runs_count() == 2  # still 2
             ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 2
 
@@ -3046,22 +3028,18 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     external_sensor = external_repo.get_external_sensor("logging_sensor")
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(),
+            external_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
     assert instance.get_runs_count() == 0
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 1
     tick = ticks[0]
     assert tick.log_key == [
@@ -3089,23 +3067,19 @@ def test_sensor_logging_on_tick_failure(
     external_sensor = external_repo.get_external_sensor("logging_fail_tick_sensor")
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(),
+            external_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
 
     assert instance.get_runs_count() == 0
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
 
     assert len(ticks) == 1
 
@@ -3138,22 +3112,18 @@ def test_add_dynamic_partitions_sensor(
     external_sensor = external_repo.get_external_sensor("add_dynamic_partitions_sensor")
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(),
+            external_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
     assert set(instance.get_dynamic_partitions("quux")) == set(["baz", "foo"])
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
 
     assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
     assert (
@@ -3178,14 +3148,12 @@ def test_add_delete_skip_dynamic_partitions(
     )
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(),
+            external_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 0
 
     freeze_datetime = to_timezone(
@@ -3205,7 +3173,7 @@ def test_add_delete_skip_dynamic_partitions(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
@@ -3239,7 +3207,7 @@ def test_add_delete_skip_dynamic_partitions(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -3273,21 +3241,17 @@ def test_error_on_deleted_dynamic_partitions_run_request(
     )
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(),
+            external_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 1
     validate_tick(
         ticks[0],
@@ -3313,21 +3277,17 @@ def test_multipartitions_with_dynamic_dims_run_request_sensor(
     external_sensor = external_repo.get_external_sensor(sensor_name)
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(),
+            external_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 1
 
     if is_expected_success:
@@ -3357,21 +3317,17 @@ def test_multipartition_asset_with_static_time_dimensions_run_requests_sensor(
     )
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(),
+            external_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
     )
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 0
 
     evaluate_sensors(workspace_context, executor)
 
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
+    ticks = instance.get_ticks(external_sensor.get_remote_origin_id(), external_sensor.selector_id)
     assert len(ticks) == 1
 
     validate_tick(
@@ -3412,14 +3368,14 @@ def test_stale_request_context(instance, workspace_context, external_repo):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -3438,7 +3394,7 @@ def test_stale_request_context(instance, workspace_context, external_repo):
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -3474,7 +3430,7 @@ def test_stale_request_context(instance, workspace_context, external_repo):
         wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -3519,7 +3475,7 @@ def test_start_tick_sensor(executor, instance, workspace_context, external_repo)
     freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum_freeze_time(freeze_datetime):
         instance.stop_sensor(
-            start_skip_sensor.get_external_origin_id(),
+            start_skip_sensor.get_remote_origin_id(),
             start_skip_sensor.selector_id,
             start_skip_sensor,
         )
@@ -3540,5 +3496,5 @@ def test_start_tick_sensor(executor, instance, workspace_context, external_repo)
 
 
 def _get_last_tick(instance, sensor):
-    ticks = instance.get_ticks(sensor.get_external_origin_id(), sensor.selector_id)
+    ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
     return ticks[0]

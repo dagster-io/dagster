@@ -109,7 +109,7 @@ class GrapheneSensor(graphene.ObjectType):
 
         super().__init__(
             name=external_sensor.name,
-            jobOriginId=external_sensor.get_external_origin_id(),
+            jobOriginId=external_sensor.get_remote_origin_id(),
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
             targets=[GrapheneTarget(target) for target in external_sensor.get_targets()],
@@ -126,7 +126,7 @@ class GrapheneSensor(graphene.ObjectType):
         )
 
     def resolve_id(self, _):
-        return self._external_sensor.get_external_origin_id()
+        return self._external_sensor.get_remote_origin_id()
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
         default_sensor_status = self._external_sensor.default_status

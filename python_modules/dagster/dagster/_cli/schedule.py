@@ -32,11 +32,11 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     errors = debug_info.errors
     external_schedules = external_repository.get_external_schedules()
     schedule_states = instance.all_instigator_state(
-        external_repository.get_external_origin_id(),
+        external_repository.get_remote_origin_id(),
         external_repository.selector_id,
         InstigatorType.SCHEDULE,
     )
-    external_schedules_dict = {s.get_external_origin_id(): s for s in external_schedules}
+    external_schedules_dict = {s.get_remote_origin_id(): s for s in external_schedules}
     schedule_states_dict = {s.instigator_origin_id: s for s in schedule_states}
 
     external_schedule_origin_ids = set(external_schedules_dict.keys())
@@ -180,7 +180,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             stored_schedules_by_origin_id = {
                 stored_schedule_state.instigator_origin_id: stored_schedule_state
                 for stored_schedule_state in instance.all_instigator_state(
-                    external_repo.get_external_origin_id(),
+                    external_repo.get_remote_origin_id(),
                     external_repo.selector_id,
                     instigator_type=InstigatorType.SCHEDULE,
                 )
@@ -190,7 +190,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
             for external_schedule in repo_schedules:
                 schedule_state = external_schedule.get_current_instigator_state(
-                    stored_schedules_by_origin_id.get(external_schedule.get_external_origin_id())
+                    stored_schedules_by_origin_id.get(external_schedule.get_remote_origin_id())
                 )
 
                 if running_filter and not schedule_state.is_running:
@@ -281,7 +281,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
             try:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 instance.stop_schedule(
-                    external_schedule.get_external_origin_id(),
+                    external_schedule.get_remote_origin_id(),
                     external_schedule.selector_id,
                     external_schedule,
                 )
@@ -322,7 +322,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
 
             logs_path = os.path.join(
                 instance.logs_path_for_schedule(
-                    external_repo.get_external_schedule(schedule_name).get_external_origin_id()
+                    external_repo.get_external_schedule(schedule_name).get_remote_origin_id()
                 )
             )
 
@@ -382,7 +382,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
             if all_running_flag:
                 for schedule_state in instance.all_instigator_state(
-                    external_repo.get_external_origin_id(),
+                    external_repo.get_remote_origin_id(),
                     external_repo.selector_id,
                     InstigatorType.SCHEDULE,
                 ):
@@ -404,7 +404,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 schedule_state = instance.get_instigator_state(
-                    external_schedule.get_external_origin_id(),
+                    external_schedule.get_remote_origin_id(),
                     external_schedule.selector_id,
                 )
                 if schedule_state is not None and schedule_state.status != InstigatorStatus.RUNNING:

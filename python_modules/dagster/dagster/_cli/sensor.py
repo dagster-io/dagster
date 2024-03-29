@@ -38,7 +38,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         external_repository.get_origin_id(), external_repository.selector_id, InstigatorType.SENSOR
     )
     external_sensors = external_repository.get_external_sensors()
-    external_sensors_dict = {s.get_external_origin_id(): s for s in external_sensors}
+    external_sensors_dict = {s.get_remote_origin_id(): s for s in external_sensors}
     sensor_states_dict = {s.instigator_origin_id: s for s in sensor_states}
 
     external_sensor_origin_ids = set(external_sensors_dict.keys())
@@ -141,7 +141,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             stored_sensors_by_origin_id = {
                 stored_sensor_state.instigator_origin_id: stored_sensor_state
                 for stored_sensor_state in instance.all_instigator_state(
-                    external_repo.get_external_origin_id(),
+                    external_repo.get_remote_origin_id(),
                     external_repo.selector_id,
                     instigator_type=InstigatorType.SENSOR,
                 )
@@ -151,7 +151,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
             for external_sensor in repo_sensors:
                 sensor_state = external_sensor.get_current_instigator_state(
-                    stored_sensors_by_origin_id.get(external_sensor.get_external_origin_id())
+                    stored_sensors_by_origin_id.get(external_sensor.get_remote_origin_id())
                 )
 
                 if running_filter and not sensor_state.is_running:
@@ -225,7 +225,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
             try:
                 external_sensor = external_repo.get_external_sensor(sensor_name)
                 instance.stop_sensor(
-                    external_sensor.get_external_origin_id(),
+                    external_sensor.get_remote_origin_id(),
                     external_sensor.selector_id,
                     external_sensor,
                 )
@@ -348,12 +348,12 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             check_repo_and_scheduler(external_repo, instance)
             external_sensor = external_repo.get_external_sensor(sensor_name)
             job_state = instance.get_instigator_state(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
+                external_sensor.get_remote_origin_id(), external_sensor.selector_id
             )
             if not job_state:
                 instance.add_instigator_state(
                     InstigatorState(
-                        external_sensor.get_external_origin(),
+                        external_sensor.get_remote_origin(),
                         InstigatorType.SENSOR,
                         InstigatorStatus.STOPPED,
                         SensorInstigatorData(

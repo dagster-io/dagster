@@ -37,7 +37,7 @@ def test_external_partition_names_deserialize_error_grpc(instance: DagsterInstan
         api_client = code_location.client
 
         repository_handle = code_location.get_repository("bar_repo").handle
-        repository_origin = repository_handle.get_external_origin()
+        repository_origin = repository_handle.get_remote_origin()
 
         result = deserialize_value(
             api_client.external_partition_names(
@@ -85,7 +85,7 @@ def test_external_partition_config_deserialize_error_grpc(instance: DagsterInsta
         result = deserialize_value(
             api_client.external_partition_config(
                 partition_args=PartitionArgs(
-                    repository_origin=repository_handle.get_external_origin(),
+                    repository_origin=repository_handle.get_remote_origin(),
                     partition_set_name="foo",
                     partition_name="bar",
                     instance_ref=instance.get_ref(),
@@ -111,7 +111,7 @@ def test_external_partitions_tags_grpc(instance: DagsterInstance):
 def test_external_partitions_tags_deserialize_error_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         repository_handle = code_location.get_repository("bar_repo").handle
-        repository_origin = repository_handle.get_external_origin()
+        repository_origin = repository_handle.get_remote_origin()
 
         api_client = code_location.client
 
@@ -157,7 +157,7 @@ def test_external_partition_set_execution_params_deserialize_error_grpc(instance
     with get_bar_repo_code_location(instance) as code_location:
         repository_handle = code_location.get_repository("bar_repo").handle
 
-        repository_origin = repository_handle.get_external_origin()
+        repository_origin = repository_handle.get_remote_origin()
 
         api_client = code_location.client
 

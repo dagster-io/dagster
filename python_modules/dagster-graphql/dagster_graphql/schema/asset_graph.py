@@ -943,7 +943,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 continue
 
             sensor_state = graphene_info.context.instance.get_instigator_state(
-                external_sensor.get_external_origin_id(),
+                external_sensor.get_remote_origin_id(),
                 external_sensor.selector_id,
             )
             results.append(GrapheneSensor(external_sensor, self._external_repository, sensor_state))
@@ -951,7 +951,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         for external_schedule in external_schedules:
             if external_schedule.job_name in job_names:
                 schedule_state = graphene_info.context.instance.get_instigator_state(
-                    external_schedule.get_external_origin_id(),
+                    external_schedule.get_remote_origin_id(),
                     external_schedule.selector_id,
                 )
                 results.append(GrapheneSchedule(external_schedule, schedule_state))
@@ -987,7 +987,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return None
 
             return get_current_evaluation_id(
-                graphene_info.context.instance, external_sensor.get_external_origin()
+                graphene_info.context.instance, external_sensor.get_remote_origin()
             )
         else:
             return get_current_evaluation_id(graphene_info.context.instance, None)

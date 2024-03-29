@@ -221,7 +221,7 @@ def _create_run(
     )
     run = instance.create_run_for_job(
         job_def=job_def,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run = instance.get_run_by_id(run.run_id)

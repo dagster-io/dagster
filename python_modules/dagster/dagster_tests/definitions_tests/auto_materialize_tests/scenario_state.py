@@ -337,7 +337,7 @@ class ScenarioState:
 
     def stop_sensor(self, sensor_name: str) -> Self:
         with self._get_external_sensor(sensor_name) as sensor:
-            self.instance.stop_sensor(sensor.get_external_origin_id(), sensor.selector_id, sensor)
+            self.instance.stop_sensor(sensor.get_remote_origin_id(), sensor.selector_id, sensor)
         return self
 
     @contextmanager

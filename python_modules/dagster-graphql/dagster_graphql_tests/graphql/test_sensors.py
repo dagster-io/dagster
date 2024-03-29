@@ -993,12 +993,12 @@ def test_sensor_next_ticks(graphql_context: WorkspaceRequestContext):
     # test default sensor with no tick
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_error_sensor.get_external_origin(),
+            external_error_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
@@ -1072,7 +1072,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     # turn the sensor on
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 
@@ -1200,7 +1200,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     # turn the sensor on
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 
@@ -1211,7 +1211,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     # create a started tick
     started_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
-            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_origin_id=external_sensor.get_remote_origin().get_id(),
             instigator_name=sensor_name,
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.STARTED,
@@ -1223,7 +1223,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     # create a skipped tick
     skipped_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
-            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_origin_id=external_sensor.get_remote_origin().get_id(),
             instigator_name=sensor_name,
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.SKIPPED,
@@ -1235,7 +1235,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     # create a failed tick
     failed_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
-            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_origin_id=external_sensor.get_remote_origin().get_id(),
             instigator_name=sensor_name,
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.FAILURE,
@@ -1368,7 +1368,7 @@ def test_sensor_tick_logs(graphql_context: WorkspaceRequestContext):
     # turn the sensor on
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 
@@ -1404,7 +1404,7 @@ def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceReq
     # turn the sensor on
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 

@@ -137,7 +137,7 @@ class _ScheduleLaunchContext(AbstractContextManager):
             if day_offset <= 0:
                 continue
             self._instance.purge_ticks(
-                self._external_schedule.get_external_origin_id(),
+                self._external_schedule.get_remote_origin_id(),
                 selector_id=self._external_schedule.selector_id,
                 before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
                 tick_statuses=list(statuses),
@@ -318,7 +318,7 @@ def launch_scheduled_runs(
             if not schedule_state:
                 assert external_schedule.default_status == DefaultScheduleStatus.RUNNING
                 schedule_state = InstigatorState(
-                    external_schedule.get_external_origin(),
+                    external_schedule.get_remote_origin(),
                     InstigatorType.SCHEDULE,
                     InstigatorStatus.DECLARED_IN_CODE,
                     ScheduleInstigatorData(
@@ -486,7 +486,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
 
-    instigator_origin_id = external_schedule.get_external_origin_id()
+    instigator_origin_id = external_schedule.get_remote_origin_id()
     ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
     latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
@@ -689,7 +689,7 @@ def _submit_run_request(
     debug_crash_flags,
 ) -> SubmitRunRequestResult:
     instance = workspace_process_context.instance
-    schedule_origin = external_schedule.get_external_origin()
+    schedule_origin = external_schedule.get_remote_origin()
 
     run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
     if run:
@@ -760,7 +760,7 @@ def _get_code_location_for_schedule(
     workspace_process_context: IWorkspaceProcessContext,
     external_schedule: ExternalSchedule,
 ) -> CodeLocation:
-    schedule_origin = external_schedule.get_external_origin()
+    schedule_origin = external_schedule.get_remote_origin()
     return workspace_process_context.create_request_context().get_code_location(
         schedule_origin.repository_origin.code_location_origin.location_name
     )
@@ -893,7 +893,7 @@ def _get_existing_run_for_request(
             matching_runs.append(run)
         # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
         elif (
-            external_schedule.get_external_origin().repository_origin.get_selector_id()
+            external_schedule.get_remote_origin().repository_origin.get_selector_id()
             == run.external_job_origin.repository_origin.get_selector_id()
         ):
             matching_runs.append(run)
@@ -962,7 +962,7 @@ def _create_scheduler_run(
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None

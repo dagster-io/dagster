@@ -13,7 +13,7 @@ def create_run(instance: DagsterInstance, external_job: ExternalJob, **kwargs: A
     job_args = merge_dicts(
         {
             "job_name": "foo_job",
-            "external_job_origin": external_job.get_external_origin(),
+            "external_job_origin": external_job.get_remote_origin(),
             "job_code_origin": external_job.get_python_origin(),
         },
         kwargs,

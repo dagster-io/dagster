@@ -281,7 +281,7 @@ def other_external_job(other_workspace: WorkspaceRequestContext) -> ExternalJob:
 def run(instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob) -> DagsterRun:
     return instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -292,7 +292,7 @@ def other_run(
 ) -> DagsterRun:
     return instance.create_run_for_job(
         job,
-        external_job_origin=other_external_job.get_external_origin(),
+        external_job_origin=other_external_job.get_remote_origin(),
         job_code_origin=other_external_job.get_python_origin(),
     )
 
@@ -304,7 +304,7 @@ def launch_run(
     def _launch_run(instance: DagsterInstance) -> None:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, workspace)
@@ -358,7 +358,7 @@ def custom_run(
 ) -> DagsterRun:
     return custom_instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -571,7 +571,7 @@ def launch_run_with_container_context(
 
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=python_origin,
         )
         instance.launch_run(run.run_id, workspace)

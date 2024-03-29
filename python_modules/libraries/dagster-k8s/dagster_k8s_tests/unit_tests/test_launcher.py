@@ -191,7 +191,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.register_instance(instance)
@@ -255,7 +255,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -274,7 +274,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -360,7 +360,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
                 tags=run_tags,
             )
@@ -454,7 +454,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 tags=tags,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
@@ -534,7 +534,7 @@ def test_raise_on_error(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
@@ -595,7 +595,7 @@ def test_no_postgres(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
@@ -662,14 +662,14 @@ def test_check_run_health(kubeconfig_file):
             started_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.STARTED,
             )
             finished_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.FAILURE,
             )
@@ -783,7 +783,7 @@ def test_get_run_worker_debug_info(kubeconfig_file):
             started_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.STARTING,
             )

@@ -64,7 +64,7 @@ def test_launch_docker_no_network(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.launch_run(run.run_id, workspace)
@@ -148,7 +148,7 @@ def test_launch_docker_image_on_job_config(aws_env):
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.launch_run(run.run_id, workspace)
@@ -214,7 +214,7 @@ def test_terminate_launched_docker_run(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
@@ -281,7 +281,7 @@ def test_launch_docker_invalid_image(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
@@ -414,7 +414,7 @@ def _test_launch(
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
 
