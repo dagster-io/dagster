@@ -61,12 +61,12 @@ from .external_data import (
     ExternalJobRef,
     ExternalPresetData,
     ExternalRepositoryData,
-    ExternalResourceData,
-    ExternalResourceValue,
     ExternalSensorMetadata,
     NestedResource,
     PartitionSetSnap,
     ResourceJobUsageEntry,
+    ResourceSnap,
+    ResourceValueSnap,
     ScheduleSnap,
     SensorSnap,
     TargetSnap,
@@ -640,9 +640,9 @@ class ExternalExecutionPlan:
 class ExternalResource:
     """Represents a top-level resource in a repository, e.g. one passed through the Definitions API."""
 
-    def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
+    def __init__(self, external_resource_data: ResourceSnap, handle: RepositoryHandle):
         self._external_resource_data = check.inst_param(
-            external_resource_data, "external_resource_data", ExternalResourceData
+            external_resource_data, "external_resource_data", ResourceSnap
         )
         self._handle = InstigatorHandle(
             self._external_resource_data.name, check.inst_param(handle, "handle", RepositoryHandle)
@@ -661,7 +661,7 @@ class ExternalResource:
         return self._external_resource_data.config_field_snaps
 
     @property
-    def configured_values(self) -> Dict[str, ExternalResourceValue]:
+    def configured_values(self) -> Dict[str, ResourceValueSnap]:
         return self._external_resource_data.configured_values
 
     @property

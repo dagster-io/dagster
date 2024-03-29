@@ -5,10 +5,10 @@ import graphene
 from dagster._core.definitions.selector import ResourceSelector
 from dagster._core.remote_representation.external import ExternalRepository, ExternalResource
 from dagster._core.remote_representation.external_data import (
-    ExternalResourceConfigEnvVar,
-    ExternalResourceValue,
     NestedResourceType,
+    ResourceConfigEnvVarSnap,
     ResourceJobUsageEntry,
+    ResourceValueSnap,
 )
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
@@ -43,11 +43,11 @@ class GrapheneConfiguredValue(graphene.ObjectType):
     class Meta:
         name = "ConfiguredValue"
 
-    def __init__(self, key: str, external_resource_value: ExternalResourceValue):
+    def __init__(self, key: str, external_resource_value: ResourceValueSnap):
         super().__init__()
 
         self.key = key
-        if isinstance(external_resource_value, ExternalResourceConfigEnvVar):
+        if isinstance(external_resource_value, ResourceConfigEnvVarSnap):
             self.type = GrapheneConfiguredValueType.ENV_VAR
             self.value = external_resource_value.name
         else:

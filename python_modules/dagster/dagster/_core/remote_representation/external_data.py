@@ -26,7 +26,7 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import Final, Self
+from typing_extensions import Final, Self, TypeAlias
 
 from dagster import (
     StaticPartitionsDefinition,
@@ -120,7 +120,7 @@ class ExternalRepositoryData(
             ("external_asset_graph_data", Sequence["AssetNodeSnap"]),
             ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
-            ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
+            ("external_resource_data", Optional[Sequence["ResourceSnap"]]),
             ("external_asset_checks", Optional[Sequence["AssetCheckSnap"]]),
             ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
@@ -136,7 +136,7 @@ class ExternalRepositoryData(
         external_asset_graph_data: Optional[Sequence["AssetNodeSnap"]] = None,
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
-        external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
+        external_resource_data: Optional[Sequence["ResourceSnap"]] = None,
         external_asset_checks: Optional[Sequence["AssetCheckSnap"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
@@ -169,7 +169,7 @@ class ExternalRepositoryData(
                 external_job_refs, "external_job_refs", of_type=ExternalJobRef
             ),
             external_resource_data=check.opt_nullable_sequence_param(
-                external_resource_data, "external_resource_data", of_type=ExternalResourceData
+                external_resource_data, "external_resource_data", of_type=ResourceSnap
             ),
             external_asset_checks=check.opt_nullable_sequence_param(
                 external_asset_checks,
@@ -1069,12 +1069,12 @@ class AssetChildEdgeSnap(NamedTuple):
     output_name: Optional[str] = None
 
 
-@whitelist_for_serdes
-class ExternalResourceConfigEnvVar(NamedTuple):
+@whitelist_for_serdes(storage_name="ExternalResourceConfigEnvVar")
+class ResourceConfigEnvVarSnap(NamedTuple):
     name: str
 
 
-ExternalResourceValue = Union[str, ExternalResourceConfigEnvVar]
+ResourceValueSnap: TypeAlias = Union[str, ResourceConfigEnvVarSnap]
 
 
 UNKNOWN_RESOURCE_TYPE = "Unknown"
@@ -1088,14 +1088,14 @@ class ResourceJobUsageEntry(NamedTuple):
     node_handles: List[NodeHandle]
 
 
-@whitelist_for_serdes
-class ExternalResourceData(
+@whitelist_for_serdes(storage_name="ExternalResourceData")
+class ResourceSnap(
     NamedTuple(
-        "_ExternalResourceData",
+        "_ResourceSnap",
         [
             ("name", str),
             ("resource_snapshot", ResourceDefSnap),
-            ("configured_values", Dict[str, ExternalResourceValue]),
+            ("configured_values", Dict[str, ResourceValueSnap]),
             ("config_field_snaps", List[ConfigFieldSnap]),
             ("config_schema_snap", ConfigSchemaSnapshot),
             ("nested_resources", Dict[str, NestedResource]),
@@ -1119,7 +1119,7 @@ class ExternalResourceData(
         cls,
         name: str,
         resource_snapshot: ResourceDefSnap,
-        configured_values: Mapping[str, ExternalResourceValue],
+        configured_values: Mapping[str, ResourceValueSnap],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
         nested_resources: Optional[Mapping[str, NestedResource]] = None,
@@ -1132,7 +1132,7 @@ class ExternalResourceData(
         schedules_using: Optional[Sequence[str]] = None,
         sensors_using: Optional[Sequence[str]] = None,
     ):
-        return super(ExternalResourceData, cls).__new__(
+        return super(ResourceSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             resource_snapshot=check.inst_param(
@@ -1143,7 +1143,7 @@ class ExternalResourceData(
                     configured_values,
                     "configured_values",
                     key_type=str,
-                    value_type=(str, ExternalResourceConfigEnvVar),
+                    value_type=(str, ResourceConfigEnvVarSnap),
                 )
             ),
             config_field_snaps=check.list_param(
@@ -1183,6 +1183,104 @@ class ExternalResourceData(
             sensors_using=list(
                 check.opt_sequence_param(sensors_using, "sensors_using", of_type=str)
             ),
+        )
+
+    @classmethod
+    def from_def(
+        cls,
+        resource_def: ResourceDefinition,
+        name: str,
+        nested_resources: Mapping[str, NestedResource],
+        parent_resources: Mapping[str, str],
+        resource_asset_usage_map: Mapping[str, List[AssetKey]],
+        resource_job_usage_map: "ResourceJobUsageMap",
+        resource_schedule_usage_map: Mapping[str, List[str]],
+        resource_sensor_usage_map: Mapping[str, List[str]],
+    ) -> Self:
+        check.inst_param(resource_def, "resource_def", ResourceDefinition)
+
+        # Once values on a resource object are bound, the config schema for those fields is no
+        # longer visible. We walk up the list of parent schemas to find the base, unconfigured
+        # schema so we can display all fields in the UI.
+        unconfigured_config_schema = resource_def.config_schema
+        while (
+            isinstance(unconfigured_config_schema, ConfiguredDefinitionConfigSchema)
+            and unconfigured_config_schema.parent_def.config_schema
+        ):
+            unconfigured_config_schema = unconfigured_config_schema.parent_def.config_schema
+
+        config_type = check.not_none(unconfigured_config_schema.config_type)
+        unconfigured_config_type_snap = snap_from_config_type(config_type)
+
+        config_schema_default = cast(
+            Mapping[str, Any],
+            (
+                json.loads(resource_def.config_schema.default_value_as_json_str)
+                if resource_def.config_schema.default_provided
+                else {}
+            ),
+        )
+
+        # Right now, .configured sets the default value of the top-level Field
+        # we parse the JSON and break it out into defaults for each individual nested Field
+        # for display in the UI
+        configured_values = {
+            k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
+        }
+
+        resource_type_def = resource_def
+        if isinstance(resource_type_def, ResourceWithKeyMapping):
+            resource_type_def = resource_type_def.wrapped_resource
+
+        # use the resource function name as the resource type if it's a function resource
+        # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)
+        if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
+            original_resource_fn = (
+                resource_type_def._hardcoded_resource_type  # noqa: SLF001
+                if resource_type_def._hardcoded_resource_type  # noqa: SLF001
+                else resource_type_def.resource_fn
+            )
+            module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
+            resource_type = f"{module_name}.{original_resource_fn.__name__}"
+        # if it's a Pythonic resource, get the underlying Pythonic class name
+        elif isinstance(
+            resource_type_def,
+            (
+                ConfigurableResourceFactoryResourceDefinition,
+                ConfigurableIOManagerFactoryResourceDefinition,
+            ),
+        ):
+            resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
+        else:
+            resource_type = _get_class_name(type(resource_type_def))
+
+        dagster_maintained = (
+            resource_type_def._is_dagster_maintained()  # noqa: SLF001
+            if type(resource_type_def)
+            in (
+                ResourceDefinition,
+                IOManagerDefinition,
+                ConfigurableResourceFactoryResourceDefinition,
+                ConfigurableIOManagerFactoryResourceDefinition,
+            )
+            else False
+        )
+
+        return cls(
+            name=name,
+            resource_snapshot=build_resource_def_snap(name, resource_def),
+            configured_values=configured_values,
+            config_field_snaps=unconfigured_config_type_snap.fields or [],
+            config_schema_snap=config_type.get_schema_snapshot(),
+            nested_resources=nested_resources,
+            parent_resources=parent_resources,
+            is_top_level=True,
+            asset_keys_using=resource_asset_usage_map.get(name, []),
+            job_ops_using=resource_job_usage_map.get(name, []),
+            schedules_using=resource_schedule_usage_map.get(name, []),
+            sensors_using=resource_sensor_usage_map.get(name, []),
+            resource_type=resource_type,
+            dagster_maintained=dagster_maintained,
         )
 
 
@@ -1425,7 +1523,7 @@ class AssetNodeSnap(
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
 
-ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
+ResourceJobUsageMap: TypeAlias = Dict[str, List[ResourceJobUsageEntry]]
 
 
 class NodeHandleResourceUse(NamedTuple):
@@ -1553,9 +1651,9 @@ def external_repository_data_from_def(
         external_job_refs=job_refs,
         external_resource_data=sorted(
             [
-                external_resource_data_from_def(
-                    res_name,
+                ResourceSnap.from_def(
                     res_data,
+                    res_name,
                     nested_resource_map[res_name],
                     inverted_nested_resources_map[res_name],
                     resource_asset_usage_map,
@@ -1773,9 +1871,9 @@ def external_job_ref_from_def(job_def: JobDefinition) -> ExternalJobRef:
     )
 
 
-def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
+def external_resource_value_from_raw(v: Any) -> ResourceValueSnap:
     if isinstance(v, dict) and set(v.keys()) == {"env"}:
-        return ExternalResourceConfigEnvVar(name=v["env"])
+        return ResourceConfigEnvVarSnap(name=v["env"])
     return json.dumps(v)
 
 
@@ -1825,103 +1923,6 @@ def _get_nested_resources(
 def _get_class_name(cls: Type) -> str:
     """Returns the fully qualified class name of the given class."""
     return str(cls)[8:-2]
-
-
-def external_resource_data_from_def(
-    name: str,
-    resource_def: ResourceDefinition,
-    nested_resources: Mapping[str, NestedResource],
-    parent_resources: Mapping[str, str],
-    resource_asset_usage_map: Mapping[str, List[AssetKey]],
-    resource_job_usage_map: ResourceJobUsageMap,
-    resource_schedule_usage_map: Mapping[str, List[str]],
-    resource_sensor_usage_map: Mapping[str, List[str]],
-) -> ExternalResourceData:
-    check.inst_param(resource_def, "resource_def", ResourceDefinition)
-
-    # Once values on a resource object are bound, the config schema for those fields is no
-    # longer visible. We walk up the list of parent schemas to find the base, unconfigured
-    # schema so we can display all fields in the UI.
-    unconfigured_config_schema = resource_def.config_schema
-    while (
-        isinstance(unconfigured_config_schema, ConfiguredDefinitionConfigSchema)
-        and unconfigured_config_schema.parent_def.config_schema
-    ):
-        unconfigured_config_schema = unconfigured_config_schema.parent_def.config_schema
-
-    config_type = check.not_none(unconfigured_config_schema.config_type)
-    unconfigured_config_type_snap = snap_from_config_type(config_type)
-
-    config_schema_default = cast(
-        Mapping[str, Any],
-        (
-            json.loads(resource_def.config_schema.default_value_as_json_str)
-            if resource_def.config_schema.default_provided
-            else {}
-        ),
-    )
-
-    # Right now, .configured sets the default value of the top-level Field
-    # we parse the JSON and break it out into defaults for each individual nested Field
-    # for display in the UI
-    configured_values = {
-        k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
-    }
-
-    resource_type_def = resource_def
-    if isinstance(resource_type_def, ResourceWithKeyMapping):
-        resource_type_def = resource_type_def.wrapped_resource
-
-    # use the resource function name as the resource type if it's a function resource
-    # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)
-    if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
-        original_resource_fn = (
-            resource_type_def._hardcoded_resource_type  # noqa: SLF001
-            if resource_type_def._hardcoded_resource_type  # noqa: SLF001
-            else resource_type_def.resource_fn
-        )
-        module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
-        resource_type = f"{module_name}.{original_resource_fn.__name__}"
-    # if it's a Pythonic resource, get the underlying Pythonic class name
-    elif isinstance(
-        resource_type_def,
-        (
-            ConfigurableResourceFactoryResourceDefinition,
-            ConfigurableIOManagerFactoryResourceDefinition,
-        ),
-    ):
-        resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
-    else:
-        resource_type = _get_class_name(type(resource_type_def))
-
-    dagster_maintained = (
-        resource_type_def._is_dagster_maintained()  # noqa: SLF001
-        if type(resource_type_def)
-        in (
-            ResourceDefinition,
-            IOManagerDefinition,
-            ConfigurableResourceFactoryResourceDefinition,
-            ConfigurableIOManagerFactoryResourceDefinition,
-        )
-        else False
-    )
-
-    return ExternalResourceData(
-        name=name,
-        resource_snapshot=build_resource_def_snap(name, resource_def),
-        configured_values=configured_values,
-        config_field_snaps=unconfigured_config_type_snap.fields or [],
-        config_schema_snap=config_type.get_schema_snapshot(),
-        nested_resources=nested_resources,
-        parent_resources=parent_resources,
-        is_top_level=True,
-        asset_keys_using=resource_asset_usage_map.get(name, []),
-        job_ops_using=resource_job_usage_map.get(name, []),
-        schedules_using=resource_schedule_usage_map.get(name, []),
-        sensors_using=resource_sensor_usage_map.get(name, []),
-        resource_type=resource_type,
-        dagster_maintained=dagster_maintained,
-    )
 
 
 def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ScheduleSnap:
