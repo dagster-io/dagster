@@ -1964,8 +1964,8 @@ class TestEventLogStorage:
             if not storage.has_instance:
                 storage.register_instance(created_instance)
 
-            one_run_id = "one_run_id"
-            two_run_id = "two_run_id"
+            one_run_id = make_new_run_id()
+            two_run_id = make_new_run_id()
             events_one, _ = _synthesize_events(
                 lambda: one_asset_op(), run_id=one_run_id, instance=created_instance
             )
@@ -1991,7 +1991,7 @@ class TestEventLogStorage:
                     assert not storage.has_asset_key(AssetKey("asset_1"))
                     assert log_count == len(storage.get_logs_for_run(one_run_id))
 
-                    one_run_id = "one_run_id_2"
+                    one_run_id = make_new_run_id()
                     events_one, _ = _synthesize_events(
                         lambda: one_asset_op(),
                         run_id=one_run_id,
@@ -2022,8 +2022,8 @@ class TestEventLogStorage:
                 assert len(asset_keys) == 1
                 migrate_asset_key_data(storage)
 
-                two_first_run_id = "first"
-                two_second_run_id = "second"
+                two_first_run_id = make_new_run_id()
+                two_second_run_id = make_new_run_id()
                 events_two, _ = _synthesize_events(
                     lambda: two_asset_ops(),
                     run_id=two_first_run_id,
