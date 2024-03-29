@@ -301,3 +301,14 @@ def test_change_partition_mapping(instance):
     assert differ.get_changes_for_asset(AssetKey("multi_partitioned_downstream")) == [
         ChangeReason.DEPENDENCIES
     ]
+
+
+def test_change_tags(instance):
+    differ = get_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="tags_asset_graph",
+        base_code_locations=["tags_asset_graph"],
+        branch_code_location_to_definitions={"tags_asset_graph": "branch_deployment_change_tags"},
+    )
+    assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.TAGS]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.TAGS]

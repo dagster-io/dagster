@@ -745,6 +745,7 @@ export enum ChangeReason {
   DEPENDENCIES = 'DEPENDENCIES',
   NEW = 'NEW',
   PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
+  TAGS = 'TAGS',
 }
 
 export type ClaimedConcurrencySlot = {

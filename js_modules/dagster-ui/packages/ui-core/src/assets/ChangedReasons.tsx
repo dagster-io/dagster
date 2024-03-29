@@ -62,6 +62,8 @@ export const ChangedReasonsPopover = ({
         return 'has changed dependencies';
       case ChangeReason.PARTITIONS_DEFINITION:
         return 'has a changed partition definition';
+      case ChangeReason.TAGS:
+        return 'has changed tags';
     }
   }
   return (
