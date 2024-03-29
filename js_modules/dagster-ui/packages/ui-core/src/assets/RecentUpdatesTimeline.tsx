@@ -166,15 +166,15 @@ export const RecentUpdatesTimeline = ({
                         {bucket.materializations.map(({timestamp}) => {
                           const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
                           const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
+                          const bucketRange = bucketEndTimestamp - bucketStartTime;
                           const percent =
-                            (100 * (parseInt(timestamp) - bucketStartTime)) /
-                            (bucketEndTimestamp - bucketStartTime);
+                            (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
 
                           return (
                             <InnerTick
                               key={timestamp}
                               style={{
-                                left: `${percent === 100 ? `calc(100% - 1px)` : percent + '%'}`,
+                                left: `min(calc(100% - 1px), ${percent}%`,
                               }}
                             />
                           );
