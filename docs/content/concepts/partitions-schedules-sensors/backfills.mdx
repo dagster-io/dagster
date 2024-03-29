@@ -58,7 +58,14 @@ To get this behavior, you need to:
 
   Which property to use depends on whether it's most convenient for you to operate on start/end datetime objects, start/end partition keys, or a list of partition keys.
 
-For example:
+**If you're using an [I/O manager](/concepts/io-management/io-managers)**, you'll also need to make sure that the I/O manager is using these methods. **Note**: File system I/O managers do not support single-run backfills, but Dagster's built-in database I/O managers - like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb) - include this functionality out of the box.
+
+Use the following tabs to check out examples both with and without I/O managers.
+
+<TabGroup>
+<TabItem name="Without I/O managers">
+
+#### Without I/O managers
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py startafter=start_marker endbefore=end_marker
 from dagster import (
@@ -84,10 +91,22 @@ def events(context: AssetExecutionContext):
     overwrite_data_in_datetime_range(start_datetime, end_datetime, output_data)
 ```
 
-If you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O managers, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box. **Note**: This doesn't apply to file system I/O managers.
+</TabItem>
+<TabItem name="With I/O managers">
+
+#### With I/O managers
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster import InputContext, IOManager, OutputContext
+from dagster import (
+    AssetExecutionContext,
+    BackfillPolicy,
+    DailyPartitionsDefinition,
+    InputContext,
+    IOManager,
+    OutputContext,
+    SourceAsset,
+    asset,
+)
 
 
 class MyIOManager(IOManager):
@@ -98,7 +117,24 @@ class MyIOManager(IOManager):
     def handle_output(self, context: OutputContext, obj):
         start_datetime, end_datetime = context.asset_partitions_time_window
         return overwrite_data_in_datetime_range(start_datetime, end_datetime, obj)
+
+
+daily_partition = DailyPartitionsDefinition(start_date="2020-01-01")
+
+raw_events = SourceAsset("raw_events", partitions_def=daily_partition)
+
+
+@asset(
+    partitions_def=daily_partition,
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def events(context: AssetExecutionContext, raw_events):
+    output_data = compute_events_from_raw_events(raw_events)
+    return output_data
 ```
+
+</TabItem>
+</TabGroup>
 
 ---
 
