@@ -315,3 +315,16 @@ def test_change_tags(instance):
     assert differ.get_changes_for_asset(AssetKey("fruits")) == [ChangeReason.TAGS]
     assert differ.get_changes_for_asset(AssetKey("letters")) == [ChangeReason.TAGS]
     assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0
+
+
+def test_change_metadata(instance):
+    differ = get_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="metadata_asset_graph",
+        base_code_locations=["metadata_asset_graph"],
+        branch_code_location_to_definitions={
+            "metadata_asset_graph": "branch_deployment_change_metadata"
+        },
+    )
+    assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.METADATA]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.METADATA]

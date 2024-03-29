@@ -64,6 +64,8 @@ export const ChangedReasonsPopover = ({
         return 'has a changed partition definition';
       case ChangeReason.TAGS:
         return 'has changed tags';
+      case ChangeReason.METADATA:
+        return 'has changed metadata'
     }
   }
   return (
