@@ -24,7 +24,7 @@ This guide focuses on how to work with Fivetran connectors using Dagster's [soft
 
 ## Fivetran connectors and Dagster Software-defined Assets
 
-A [Fivetran connector](https://fivetran.com/docs/getting-started/core-concepts) defines a series of schemas and tables which are synced between a source and a destination. During a sync, data is retrieved from the source and written to the destination as one or more tables. Dagster represents each of the replicas generated in the destination as a Software-Aefined Asset. This enables you to easily:
+A [Fivetran connector](https://fivetran.com/docs/getting-started/core-concepts) defines a series of schemas and tables which are synced between a source and a destination. During a sync, data is retrieved from the source and written to the destination as one or more tables. Dagster represents each of the replicas generated in the destination as a Software-Defined Asset. This enables you to easily:
 
 - Visualize the schemas and tables involved in a Fivetran connector and execute a sync from Dagster
 - Define downstream computations which depend on replicas produced by Fivetran
