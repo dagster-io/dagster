@@ -25,7 +25,7 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
-const INNER_TICK_WIDTH = 1;
+const INNER_TICK_WIDTH = 4;
 const MIN_TICK_WIDTH = 5;
 const BUCKETS = 50;
 
@@ -156,7 +156,25 @@ export const RecentUpdatesTimeline = ({
                     width: (100 * width) / buckets + '%',
                   }}
                 >
+                  {bucket.materializations.map(({timestamp}) => {
+                    const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
+                    const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
+                    const bucketRange = bucketEndTimestamp - bucketStartTime;
+                    const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
+
+                    return (
+                      <InnerTick
+                        key={timestamp}
+                        style={{
+                          // Make sure there's enough room to see the last tick.
+                          left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
+                        }}
+                      />
+                    );
+                  })}
                   <Popover
+                    position="top"
+                    interactionKind="hover"
                     content={
                       <Box flex={{direction: 'column', gap: 8}}>
                         <Box padding={8} border="bottom">
@@ -178,23 +196,6 @@ export const RecentUpdatesTimeline = ({
                   >
                     <>
                       <Tick>
-                        {bucket.materializations.map(({timestamp}) => {
-                          const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
-                          const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
-                          const bucketRange = bucketEndTimestamp - bucketStartTime;
-                          const percent =
-                            (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
-
-                          return (
-                            <InnerTick
-                              key={timestamp}
-                              style={{
-                                // Make sure there's enough room to see the last tick.
-                                left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
-                              }}
-                            />
-                          );
-                        })}
                         <TickText>{bucket.materializations.length}</TickText>
                       </Tick>
                     </>
@@ -311,4 +312,5 @@ const InnerTick = styled.div`
   bottom: 0;
   position: absolute;
   pointer-events: none;
+  border-radius: 1px;
 `;
