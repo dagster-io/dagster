@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 import dagster._check as check
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
+from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
 from dagster._grpc.types import SensorExecutionArgs
@@ -80,10 +80,10 @@ def sync_get_external_sensor_execution_data_grpc(
                 last_sensor_start_time=last_sensor_start_time,
             ),
         ),
-        (SensorExecutionData, ExternalSensorExecutionErrorData),
+        (SensorExecutionData, SensorExecutionErrorSnap),
     )
 
-    if isinstance(result, ExternalSensorExecutionErrorData):
+    if isinstance(result, SensorExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result

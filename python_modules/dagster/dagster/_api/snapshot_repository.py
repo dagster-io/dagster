@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation.external_data import (
     ExternalRepositoryData,
-    ExternalRepositoryErrorData,
+    RepositoryErrorSnap,
 )
 from dagster._serdes import deserialize_value
 
@@ -38,10 +38,10 @@ def sync_get_streaming_external_repositories_data_grpc(
                     for chunk in external_repository_chunks
                 ]
             ),
-            (ExternalRepositoryData, ExternalRepositoryErrorData),
+            (ExternalRepositoryData, RepositoryErrorSnap),
         )
 
-        if isinstance(result, ExternalRepositoryErrorData):
+        if isinstance(result, RepositoryErrorSnap):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
 
         repo_datas[repository_name] = result

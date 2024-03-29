@@ -59,15 +59,15 @@ from .external_data import (
     EnvVarConsumer,
     ExternalJobData,
     ExternalJobRef,
-    ExternalPresetData,
     ExternalRepositoryData,
-    ExternalSensorMetadata,
     NestedResource,
     PartitionSetSnap,
+    PresetSnap,
     ResourceJobUsageEntry,
     ResourceSnap,
     ResourceValueSnap,
     ScheduleSnap,
+    SensorMetadataSnap,
     SensorSnap,
     TargetSnap,
 )
@@ -492,7 +492,7 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
-    def active_presets(self) -> Sequence[ExternalPresetData]:
+    def active_presets(self) -> Sequence[PresetSnap]:
         return list(self._active_preset_dict.values())
 
     @property
@@ -507,7 +507,7 @@ class ExternalJob(RepresentedJob):
         check.str_param(preset_name, "preset_name")
         return preset_name in self._active_preset_dict
 
-    def get_preset(self, preset_name: str) -> ExternalPresetData:
+    def get_preset(self, preset_name: str) -> PresetSnap:
         check.str_param(preset_name, "preset_name")
         return self._active_preset_dict[preset_name]
 
@@ -973,7 +973,7 @@ class ExternalSensor:
             )
 
     @property
-    def metadata(self) -> Optional[ExternalSensorMetadata]:
+    def metadata(self) -> Optional[SensorMetadataSnap]:
         return self._external_sensor_data.metadata
 
     @property

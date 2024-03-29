@@ -52,8 +52,8 @@ from dagster._core.remote_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
-    ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionErrorData,
+    ScheduleExecutionErrorSnap,
+    SensorExecutionErrorSnap,
     job_name_for_external_partition_set_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
@@ -303,7 +303,7 @@ def get_external_schedule_execution(
     scheduled_execution_timestamp: Optional[float],
     scheduled_execution_timezone: Optional[str],
     log_key: Optional[Sequence[str]],
-) -> Union["ScheduleExecutionData", ExternalScheduleExecutionErrorData]:
+) -> Union["ScheduleExecutionData", ScheduleExecutionErrorSnap]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
     try:
@@ -342,9 +342,7 @@ def get_external_schedule_execution(
             ):
                 return schedule_def.evaluate_tick(schedule_context)
     except Exception:
-        return ExternalScheduleExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+        return ScheduleExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
 
 
 def get_external_sensor_execution(
@@ -357,7 +355,7 @@ def get_external_sensor_execution(
     cursor: Optional[str],
     log_key: Optional[Sequence[str]],
     last_sensor_start_timestamp: Optional[float],
-) -> Union["SensorExecutionData", ExternalSensorExecutionErrorData]:
+) -> Union["SensorExecutionData", SensorExecutionErrorSnap]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
     try:
@@ -393,9 +391,7 @@ def get_external_sensor_execution(
             ):
                 return sensor_def.evaluate_tick(sensor_context)
     except Exception:
-        return ExternalSensorExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+        return SensorExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
 
 
 def _partitions_def_contains_dynamic_partitions_def(partitions_def: PartitionsDefinition) -> bool:

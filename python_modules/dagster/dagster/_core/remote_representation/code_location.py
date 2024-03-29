@@ -43,8 +43,8 @@ from dagster._core.remote_representation.external import (
 )
 from dagster._core.remote_representation.external_data import (
     ExternalPartitionNamesData,
-    ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionErrorData,
+    ScheduleExecutionErrorSnap,
+    SensorExecutionErrorSnap,
     external_partition_set_name_for_job_name,
     external_repository_data_from_def,
 )
@@ -523,7 +523,7 @@ class InProcessCodeLocation(CodeLocation):
             scheduled_execution_timezone=scheduled_execution_time.timezone.name,  # type: ignore
             log_key=log_key,
         )
-        if isinstance(result, ExternalScheduleExecutionErrorData):
+        if isinstance(result, ScheduleExecutionErrorSnap):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
 
         return result
@@ -550,7 +550,7 @@ class InProcessCodeLocation(CodeLocation):
             log_key,
             last_sensor_start_time,
         )
-        if isinstance(result, ExternalSensorExecutionErrorData):
+        if isinstance(result, SensorExecutionErrorSnap):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
 
         return result

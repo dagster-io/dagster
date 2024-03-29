@@ -5,7 +5,7 @@ import graphene
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
-from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME, PresetSnap
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.storage.dagster_run import (
     DagsterRunStatsSnapshot,
@@ -856,7 +856,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
     def __init__(self, active_preset_data, pipeline_name):
         super().__init__()
         self._active_preset_data = check.inst_param(
-            active_preset_data, "active_preset_data", ExternalPresetData
+            active_preset_data, "active_preset_data", PresetSnap
         )
         self._job_name = check.str_param(pipeline_name, "pipeline_name")
 

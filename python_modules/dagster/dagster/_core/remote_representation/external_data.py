@@ -302,7 +302,7 @@ class ExternalJobData(
         [
             ("name", str),
             ("job_snapshot", JobSnapshot),
-            ("active_presets", Sequence["ExternalPresetData"]),
+            ("active_presets", Sequence["PresetSnap"]),
             ("parent_job_snapshot", Optional[JobSnapshot]),
         ],
     )
@@ -311,7 +311,7 @@ class ExternalJobData(
         cls,
         name: str,
         job_snapshot: JobSnapshot,
-        active_presets: Sequence["ExternalPresetData"],
+        active_presets: Sequence["PresetSnap"],
         parent_job_snapshot: Optional[JobSnapshot],
     ):
         return super(ExternalJobData, cls).__new__(
@@ -322,7 +322,7 @@ class ExternalJobData(
                 parent_job_snapshot, "parent_job_snapshot", JobSnapshot
             ),
             active_presets=check.sequence_param(
-                active_presets, "active_presets", of_type=ExternalPresetData
+                active_presets, "active_presets", of_type=PresetSnap
             ),
         )
 
@@ -357,7 +357,7 @@ class ExternalJobRef(
         [
             ("name", str),
             ("snapshot_id", str),
-            ("active_presets", Sequence["ExternalPresetData"]),
+            ("active_presets", Sequence["PresetSnap"]),
             ("parent_snapshot_id", Optional[str]),
         ],
     )
@@ -366,7 +366,7 @@ class ExternalJobRef(
         cls,
         name: str,
         snapshot_id: str,
-        active_presets: Sequence["ExternalPresetData"],
+        active_presets: Sequence["PresetSnap"],
         parent_snapshot_id: Optional[str],
     ):
         return super(ExternalJobRef, cls).__new__(
@@ -374,16 +374,18 @@ class ExternalJobRef(
             name=check.str_param(name, "name"),
             snapshot_id=check.str_param(snapshot_id, "snapshot_id"),
             active_presets=check.sequence_param(
-                active_presets, "active_presets", of_type=ExternalPresetData
+                active_presets, "active_presets", of_type=PresetSnap
             ),
             parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),
         )
 
 
-@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
-class ExternalPresetData(
+@whitelist_for_serdes(
+    storage_name="ExternalPresetData", storage_field_names={"op_selection": "solid_selection"}
+)
+class PresetSnap(
     NamedTuple(
-        "_ExternalPresetData",
+        "_PresetSnap",
         [
             ("name", str),
             ("run_config", Mapping[str, object]),
@@ -401,7 +403,7 @@ class ExternalPresetData(
         mode: str,
         tags: Mapping[str, str],
     ):
-        return super(ExternalPresetData, cls).__new__(
+        return super(PresetSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
@@ -487,12 +489,12 @@ class ScheduleSnap(
         )
 
 
-@whitelist_for_serdes
-class ExternalScheduleExecutionErrorData(
-    NamedTuple("_ExternalScheduleExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+@whitelist_for_serdes(storage_name="ExternalScheduleExecutionErrorData")
+class ScheduleExecutionErrorSnap(
+    NamedTuple("_ScheduleExecutionErrorSnap", [("error", Optional[SerializableErrorInfo])])
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalScheduleExecutionErrorData, cls).__new__(
+        return super(ScheduleExecutionErrorSnap, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
@@ -517,14 +519,14 @@ class TargetSnap(
         )
 
 
-@whitelist_for_serdes
-class ExternalSensorMetadata(
-    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[Sequence[AssetKey]])])
+@whitelist_for_serdes(storage_name="ExternalSensorMetadata")
+class SensorMetadataSnap(
+    NamedTuple("_SensorMetadataSnap", [("asset_keys", Optional[Sequence[AssetKey]])])
 ):
     """Stores additional sensor metadata which is available in the Dagster UI."""
 
     def __new__(cls, asset_keys: Optional[Sequence[AssetKey]] = None):
-        return super(ExternalSensorMetadata, cls).__new__(
+        return super(SensorMetadataSnap, cls).__new__(
             cls,
             asset_keys=check.opt_nullable_sequence_param(
                 asset_keys, "asset_keys", of_type=AssetKey
@@ -548,7 +550,7 @@ class SensorSnap(
             ("min_interval", Optional[int]),
             ("description", Optional[str]),
             ("target_dict", Mapping[str, TargetSnap]),
-            ("metadata", Optional[ExternalSensorMetadata]),
+            ("metadata", Optional[SensorMetadataSnap]),
             ("default_status", Optional[DefaultSensorStatus]),
             ("sensor_type", Optional[SensorType]),
             ("asset_selection", Optional[AssetSelection]),
@@ -565,7 +567,7 @@ class SensorSnap(
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
         target_dict: Optional[Mapping[str, TargetSnap]] = None,
-        metadata: Optional[ExternalSensorMetadata] = None,
+        metadata: Optional[SensorMetadataSnap] = None,
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
         asset_selection: Optional[AssetSelection] = None,
@@ -602,7 +604,7 @@ class SensorSnap(
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
             target_dict=check.opt_mapping_param(target_dict, "target_dict", str, TargetSnap),
-            metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
+            metadata=check.opt_inst_param(metadata, "metadata", SensorMetadataSnap),
             # Leave default_status as None if it's STOPPED to maintain stable back-compat IDs
             default_status=(
                 DefaultSensorStatus.RUNNING
@@ -655,7 +657,7 @@ class SensorSnap(
             target_dict=target_dict,
             min_interval=sensor_def.minimum_interval_seconds,
             description=sensor_def.description,
-            metadata=ExternalSensorMetadata(asset_keys=asset_keys),
+            metadata=SensorMetadataSnap(asset_keys=asset_keys),
             default_status=sensor_def.default_status,
             sensor_type=sensor_def.sensor_type,
             asset_selection=serializable_asset_selection,
@@ -667,32 +669,32 @@ class SensorSnap(
         )
 
 
-@whitelist_for_serdes
-class ExternalRepositoryErrorData(
-    NamedTuple("_ExternalRepositoryErrorData", [("error", Optional[SerializableErrorInfo])])
+@whitelist_for_serdes(storage_name="ExternalRepositoryErrorData")
+class RepositoryErrorSnap(
+    NamedTuple("_RepositoryErrorSnap", [("error", Optional[SerializableErrorInfo])])
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalRepositoryErrorData, cls).__new__(
+        return super(RepositoryErrorSnap, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
-@whitelist_for_serdes
-class ExternalSensorExecutionErrorData(
-    NamedTuple("_ExternalSensorExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+@whitelist_for_serdes(storage_name="ExternalSensorExecutionErrorData")
+class SensorExecutionErrorSnap(
+    NamedTuple("_SensorExecutionErrorSnap", [("error", Optional[SerializableErrorInfo])])
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalSensorExecutionErrorData, cls).__new__(
+        return super(SensorExecutionErrorSnap, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
-@whitelist_for_serdes
-class ExternalExecutionParamsData(
+@whitelist_for_serdes(storage_name="ExternalExecutionParamsData")
+class ExecutionParamsSnap(
     NamedTuple(
-        "_ExternalExecutionParamsData",
+        "_ExecutionParamsSnap",
         [("run_config", Mapping[str, object]), ("tags", Mapping[str, str])],
     )
 ):
@@ -701,19 +703,19 @@ class ExternalExecutionParamsData(
         run_config: Optional[Mapping[str, object]] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
-        return super(ExternalExecutionParamsData, cls).__new__(
+        return super(ExecutionParamsSnap, cls).__new__(
             cls,
             run_config=check.opt_mapping_param(run_config, "run_config"),
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
-@whitelist_for_serdes
-class ExternalExecutionParamsErrorData(
-    NamedTuple("_ExternalExecutionParamsErrorData", [("error", Optional[SerializableErrorInfo])])
+@whitelist_for_serdes(storage_name="ExternalExecutionParamsErrorData")
+class ExecutionParamsErrorSnap(
+    NamedTuple("_ExecutionParamsErrorSnap", [("error", Optional[SerializableErrorInfo])])
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalExecutionParamsErrorData, cls).__new__(
+        return super(ExecutionParamsErrorSnap, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
@@ -2057,13 +2059,13 @@ def job_name_for_external_partition_set_name(name: str) -> str:
     return name[:job_name_len]
 
 
-def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[ExternalPresetData]:
+def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[PresetSnap]:
     check.inst_param(job_def, "job_def", JobDefinition)
     if job_def.run_config is None:
         return []
     else:
         return [
-            ExternalPresetData(
+            PresetSnap(
                 name=DEFAULT_PRESET_NAME,
                 run_config=job_def.run_config,
                 op_selection=None,

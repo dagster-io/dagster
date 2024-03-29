@@ -48,9 +48,9 @@ from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environ
 from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
     ExternalPartitionExecutionErrorData,
-    ExternalRepositoryErrorData,
-    ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionErrorData,
+    RepositoryErrorSnap,
+    ScheduleExecutionErrorSnap,
+    SensorExecutionErrorSnap,
     external_job_data_from_def,
     external_repository_data_from_def,
 )
@@ -771,7 +771,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             return serialize_value(
-                ExternalRepositoryErrorData(serializable_error_info_from_exc_info(sys.exc_info()))
+                RepositoryErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
     def ExternalRepository(
@@ -875,9 +875,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             return serialize_value(
-                ExternalScheduleExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
+                ScheduleExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
     def _external_sensor_execution(self, request: api_pb2.ExternalSensorExecutionRequest) -> str:
@@ -902,9 +900,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             return serialize_value(
-                ExternalSensorExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
+                SensorExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
     @retrieve_metrics()
