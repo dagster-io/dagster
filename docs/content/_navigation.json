@@ -274,10 +274,6 @@
               {
                 "title": "Job execution",
                 "path": "/concepts/ops-jobs-graphs/job-execution"
-              },
-              {
-                "title": "Op job metadata",
-                "path": "/concepts/ops-jobs-graphs/metadata-tags"
               }
             ]
           },
@@ -1067,10 +1063,6 @@
           {
             "title": "Structuring your project",
             "path": "/guides/dagster/recommended-project-structure"
-          },
-          {
-            "title": "Using tags in your project",
-            "path": "/guides/using-tags"
           },
           {
             "title": "Building machine learning pipelines",
