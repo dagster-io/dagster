@@ -2,7 +2,7 @@ import datetime
 from typing import AbstractSet, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import deprecated
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
@@ -25,7 +25,12 @@ class FreshnessMinutes(NamedTuple):
     lag_minutes: float
 
 
-@experimental
+@deprecated(
+    breaking_version="1.8",
+    additional_warn_text="For monitoring freshness, use freshness checks instead. "
+    "For lazy auto-materialize, using FreshnessPolicys is still recommended - a substitute will be "
+    "provided before it's removed.",
+)
 @whitelist_for_serdes
 class FreshnessPolicy(
     NamedTuple(

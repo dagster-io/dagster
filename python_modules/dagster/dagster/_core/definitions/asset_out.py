@@ -65,8 +65,8 @@ class AssetOut(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
         code_version (Optional[str]): The version of the code that generates this asset.
-        freshness_policy (Optional[FreshnessPolicy]): A policy which indicates how up to date this
-            asset is intended to be.
+        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
+            to date this asset is intended to be.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
