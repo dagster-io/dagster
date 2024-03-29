@@ -258,7 +258,7 @@ const Tick = styled.div`
   top: 0;
   bottom: 0;
   overflow: hidden;
-  background-color: ${Colors.backgroundGreen()};
+  background-color: transparent;
   cursor: pointer;
   border-radius: 2px;
   &:hover {
