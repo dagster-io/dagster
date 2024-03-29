@@ -1020,11 +1020,11 @@ class ExternalPartitionSet:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
-        return self._external_partition_set_data.external_partitions_data is not None
+        return self._external_partition_set_data.partitions is not None
 
     def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
         check.invariant(self.has_partition_name_data())
         partitions = (
-            self._external_partition_set_data.external_partitions_data.get_partitions_definition()  # type: ignore
+            self._external_partition_set_data.partitions.get_partitions_definition()  # type: ignore
         )
         return partitions.get_partition_keys(dynamic_partitions_store=instance)

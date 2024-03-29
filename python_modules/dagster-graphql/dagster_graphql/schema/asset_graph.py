@@ -26,11 +26,11 @@ from dagster._core.remote_representation import CodeLocation, ExternalRepository
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
 from dagster._core.remote_representation.external_data import (
     AssetNodeSnap,
-    ExternalDynamicPartitionsDefinitionData,
-    ExternalMultiPartitionsDefinitionData,
-    ExternalPartitionsDefinitionData,
-    ExternalStaticPartitionsDefinitionData,
-    ExternalTimeWindowPartitionsDefinitionData,
+    DynamicPartitionsSnap,
+    MultiPartitionsSnap,
+    PartitionsSnap,
+    StaticPartitionsSnap,
+    TimeWindowPartitionsSnap,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.utils import is_valid_email
@@ -460,63 +460,55 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def get_partition_keys(
         self,
-        partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
+        partitions_snap: Optional[PartitionsSnap] = None,
         start_idx: Optional[int] = None,
         end_idx: Optional[int] = None,
     ) -> Sequence[str]:
         # TODO: Add functionality for dynamic partitions definition
         # Accepts an optional start_idx and end_idx to fetch a subset of time window partition keys
 
-        check.opt_inst_param(
-            partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
-        )
+        check.opt_inst_param(partitions_snap, "partitions_snap", PartitionsSnap)
         check.opt_int_param(start_idx, "start_idx")
         check.opt_int_param(end_idx, "end_idx")
 
         if not self._dynamic_partitions_loader:
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
-        partitions_def_data = (
-            self._asset_node_snap.partitions_def_data
-            if not partitions_def_data
-            else partitions_def_data
+        partitions_snap = (
+            self._asset_node_snap.partitions if not partitions_snap else partitions_snap
         )
-        if partitions_def_data:
+        if partitions_snap:
             if isinstance(
-                partitions_def_data,
+                partitions_snap,
                 (
-                    ExternalStaticPartitionsDefinitionData,
-                    ExternalTimeWindowPartitionsDefinitionData,
-                    ExternalMultiPartitionsDefinitionData,
+                    StaticPartitionsSnap,
+                    TimeWindowPartitionsSnap,
+                    MultiPartitionsSnap,
                 ),
             ):
-                if (
-                    start_idx
-                    and end_idx
-                    and isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData)
-                ):
-                    return partitions_def_data.get_partitions_definition().get_partition_keys_between_indexes(
+                if start_idx and end_idx and isinstance(partitions_snap, TimeWindowPartitionsSnap):
+                    return partitions_snap.get_partitions_definition().get_partition_keys_between_indexes(
                         start_idx, end_idx
                     )
                 else:
-                    return partitions_def_data.get_partitions_definition().get_partition_keys(
+                    return partitions_snap.get_partitions_definition().get_partition_keys(
                         dynamic_partitions_store=self._dynamic_partitions_loader
                     )
-            elif isinstance(partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+            elif isinstance(partitions_snap, DynamicPartitionsSnap):
                 return self._dynamic_partitions_loader.get_dynamic_partitions(
-                    partitions_def_name=partitions_def_data.name
+                    partitions_def_name=partitions_snap.name
                 )
             else:
                 raise DagsterInvariantViolationError(
-                    f"Unsupported partition definition type {partitions_def_data}"
+                    f"Unsupported partition definition type {partitions_snap}"
                 )
         return []
 
     def is_multipartitioned(self) -> bool:
-        external_multipartitions_def = self._asset_node_snap.partitions_def_data
+        external_multipartitions_def = self._asset_node_snap.partitions
 
         return external_multipartitions_def is not None and isinstance(
-            external_multipartitions_def, ExternalMultiPartitionsDefinitionData
+            external_multipartitions_def, MultiPartitionsSnap
         )
 
     def get_required_resource_keys(
@@ -1010,7 +1002,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self.is_source_asset()
 
     def resolve_isPartitioned(self, _graphene_info: ResolveInfo) -> bool:
-        return self._asset_node_snap.partitions_def_data is not None
+        return self._asset_node_snap.partitions is not None
 
     def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
         return self._asset_node_snap.is_observable
@@ -1104,8 +1096,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
         partitions_def = (
-            self._asset_node_snap.partitions_def_data.get_partitions_definition()
-            if self._asset_node_snap.partitions_def_data
+            self._asset_node_snap.partitions.get_partitions_definition()
+            if self._asset_node_snap.partitions
             else None
         )
 
@@ -1131,8 +1123,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_partitionStats(
         self, graphene_info: ResolveInfo
     ) -> Optional[GraphenePartitionStats]:
-        partitions_def_data = self._asset_node_snap.partitions_def_data
-        if partitions_def_data:
+        partitions_snap = self._asset_node_snap.partitions
+        if partitions_snap:
             asset_key = self._asset_node_snap.asset_key
 
             if not self._dynamic_partitions_loader:
@@ -1147,8 +1139,8 @@ class GrapheneAssetNode(graphene.ObjectType):
                 asset_key,
                 self._dynamic_partitions_loader,
                 (
-                    self._asset_node_snap.partitions_def_data.get_partitions_definition()
-                    if self._asset_node_snap.partitions_def_data
+                    self._asset_node_snap.partitions.get_partitions_definition()
+                    if self._asset_node_snap.partitions
                     else None
                 ),
             )
@@ -1174,7 +1166,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
             return GraphenePartitionStats(
                 numMaterialized=num_materialized_and_not_failed_or_in_progress,
-                numPartitions=partitions_def_data.get_partitions_definition().get_num_partitions(
+                numPartitions=partitions_snap.get_partitions_definition().get_num_partitions(
                     dynamic_partitions_store=self._dynamic_partitions_loader
                 ),
                 numFailed=num_failed_and_not_in_progress,
@@ -1225,7 +1217,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         # time partitions. StartIdx is inclusive, endIdx is exclusive.
         # For non time partition definitions, these arguments will be ignored
         # and the full list of partition keys will be returned.
-        if not self._asset_node_snap.partitions_def_data:
+        if not self._asset_node_snap.partitions:
             return []
 
         if self.is_multipartitioned():
@@ -1233,25 +1225,25 @@ class GrapheneAssetNode(graphene.ObjectType):
                 GrapheneDimensionPartitionKeys(
                     name=dimension.name,
                     partition_keys=self.get_partition_keys(
-                        dimension.external_partitions_def_data,
+                        dimension.partitions,
                         startIdx,
                         endIdx,
                     ),
                     type=GraphenePartitionDefinitionType.from_partition_def_data(
-                        dimension.external_partitions_def_data
+                        dimension.partitions
                     ),
                 )
                 for dimension in cast(
-                    ExternalMultiPartitionsDefinitionData,
-                    self._asset_node_snap.partitions_def_data,
-                ).external_partition_dimension_definitions
+                    MultiPartitionsSnap,
+                    self._asset_node_snap.partitions,
+                ).partition_dimensions
             ]
 
         return [
             GrapheneDimensionPartitionKeys(
                 name="default",
                 type=GraphenePartitionDefinitionType.from_partition_def_data(
-                    self._asset_node_snap.partitions_def_data
+                    self._asset_node_snap.partitions
                 ),
                 partition_keys=self.get_partition_keys(start_idx=startIdx, end_idx=endIdx),
             )
@@ -1263,9 +1255,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_partitionDefinition(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GraphenePartitionDefinition]:
-        partitions_def_data = self._asset_node_snap.partitions_def_data
-        if partitions_def_data:
-            return GraphenePartitionDefinition(partitions_def_data)
+        partitions_snap = self._asset_node_snap.partitions
+        if partitions_snap:
+            return GraphenePartitionDefinition(partitions_snap)
         return None
 
     def resolve_repository(self, graphene_info: ResolveInfo) -> "GrapheneRepository":
@@ -1303,12 +1295,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         return None
 
     def _get_partitions_def(self) -> PartitionsDefinition:
-        if not self._asset_node_snap.partitions_def_data:
+        if not self._asset_node_snap.partitions:
             check.failed("Asset node has no partitions definition")
-        return self._asset_node_snap.partitions_def_data.get_partitions_definition()
+        return self._asset_node_snap.partitions.get_partitions_definition()
 
     def _validate_partitions_existence(self) -> None:
-        if not self._asset_node_snap.partitions_def_data:
+        if not self._asset_node_snap.partitions:
             check.failed("Asset node has no partitions definition")
 
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:

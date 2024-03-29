@@ -9,8 +9,8 @@ from dagster._core.remote_representation import (
     RepositoryHandle,
 )
 from dagster._core.remote_representation.external_data import (
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
+    PartitionExecutionErrorSnap,
+    PartitionNamesSnap,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
@@ -129,7 +129,7 @@ def get_partition_config(
         graphene_info.context.instance,
     )
 
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
@@ -152,7 +152,7 @@ def get_partition_tags(
         repository_handle, partition_set_name, partition_name, graphene_info.context.instance
     )
 
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return GraphenePartitionTags(
@@ -179,7 +179,7 @@ def get_partitions(
     result = graphene_info.context.get_external_partition_names(
         partition_set, instance=graphene_info.context.instance
     )
-    assert isinstance(result, ExternalPartitionNamesData)
+    assert isinstance(result, PartitionNamesSnap)
 
     partition_names = _apply_cursor_limit_reverse(result.partition_names, cursor, limit, reverse)
 
@@ -240,7 +240,7 @@ def get_partition_set_partition_statuses(
         external_partition_set, graphene_info.context.instance
     )
 
-    if isinstance(names_result, ExternalPartitionExecutionErrorData):
+    if isinstance(names_result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(names_result.error)
 
     return partition_statuses_from_run_partition_data(
@@ -320,7 +320,7 @@ def get_partition_set_partition_runs(
     result = graphene_info.context.get_external_partition_names(
         partition_set, instance=graphene_info.context.instance
     )
-    assert isinstance(result, ExternalPartitionNamesData)
+    assert isinstance(result, PartitionNamesSnap)
     run_records = graphene_info.context.instance.get_run_records(
         RunsFilter(tags={PARTITION_SET_TAG: partition_set.name})
     )

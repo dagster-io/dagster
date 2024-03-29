@@ -57,11 +57,11 @@ from .workspace import (
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation import (
-        ExternalPartitionConfigData,
-        ExternalPartitionExecutionErrorData,
-        ExternalPartitionNamesData,
-        ExternalPartitionSetExecutionParamData,
-        ExternalPartitionTagsData,
+        PartitionConfigSnap,
+        PartitionExecutionErrorSnap,
+        PartitionNamesSnap,
+        PartitionSetExecutionParamSnap,
+        PartitionTagsSnap,
     )
 
 T = TypeVar("T")
@@ -255,7 +255,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(
             repository_handle.location_name
         ).get_external_partition_config(
@@ -271,7 +271,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(repository_handle.location_name).get_external_partition_tags(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
@@ -281,7 +281,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_external_partition_names(
         self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
-    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionNamesSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(
             external_partition_set.repository_handle.location_name
         ).get_external_partition_names(external_partition_set, instance=instance)
@@ -292,7 +292,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         partition_set_name: str,
         partition_names: Sequence[str],
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionSetExecutionParamSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(
             repository_handle.location_name
         ).get_external_partition_set_execution_param_data(

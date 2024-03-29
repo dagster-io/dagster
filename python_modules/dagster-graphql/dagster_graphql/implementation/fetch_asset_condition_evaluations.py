@@ -49,8 +49,8 @@ def _get_graphene_records_from_evaluations(
     for asset_key in asset_keys:
         asset_node = nodes.get(asset_key)
         partitions_defs[asset_key] = (
-            asset_node.asset_node_snap.partitions_def_data.get_partitions_definition()
-            if asset_node and asset_node.asset_node_snap.partitions_def_data
+            asset_node.asset_node_snap.partitions.get_partitions_definition()
+            if asset_node and asset_node.asset_node_snap.partitions
             else None
         )
 
@@ -81,8 +81,8 @@ def fetch_asset_condition_evaluation_record_for_partition(
     )
     asset_node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key)
     partitions_def = (
-        asset_node.asset_node_snap.partitions_def_data.get_partitions_definition()
-        if asset_node and asset_node.asset_node_snap.partitions_def_data
+        asset_node.asset_node_snap.partitions.get_partitions_definition()
+        if asset_node and asset_node.asset_node_snap.partitions
         else None
     )
     return GrapheneAssetConditionEvaluation(

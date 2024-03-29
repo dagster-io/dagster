@@ -44,8 +44,8 @@ from dagster._core.remote_representation import (
     RepositoryHandle,
 )
 from dagster._core.remote_representation.external_data import (
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
+    PartitionNamesSnap,
+    PartitionSetExecutionParamSnap,
 )
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
@@ -716,7 +716,7 @@ def _execute_backfill_command_at_location(
             f"Failure fetching partition names: {error_info.message}",
             serialized_error_info=error_info,
         ) from e
-    if not isinstance(partition_names_or_error, ExternalPartitionNamesData):
+    if not isinstance(partition_names_or_error, PartitionNamesSnap):
         raise DagsterBackfillFailedError(
             f"Failure fetching partition names: {partition_names_or_error.error}"
         )
@@ -762,7 +762,7 @@ def _execute_backfill_command_at_location(
             )
             raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
 
-        assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
+        assert isinstance(partition_execution_data, PartitionSetExecutionParamSnap)
 
         for partition_data in partition_execution_data.partition_data:
             dagster_run = create_backfill_run(

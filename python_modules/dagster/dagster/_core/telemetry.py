@@ -460,8 +460,8 @@ def hash_name(name: str) -> str:
 
 def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
     from dagster._core.remote_representation.external_data import (
-        ExternalDynamicPartitionsDefinitionData,
-        ExternalMultiPartitionsDefinitionData,
+        DynamicPartitionsSnap,
+        MultiPartitionsSnap,
     )
 
     num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
@@ -490,13 +490,13 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_assets_with_code_versions_in_repo = 0
 
     for asset in asset_node_snaps:
-        if asset.partitions_def_data:
+        if asset.partitions:
             num_partitioned_assets_in_repo += 1
 
-            if isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+            if isinstance(asset.partitions, DynamicPartitionsSnap):
                 num_dynamic_partitioned_assets_in_repo += 1
 
-            if isinstance(asset.partitions_def_data, ExternalMultiPartitionsDefinitionData):
+            if isinstance(asset.partitions, MultiPartitionsSnap):
                 num_multi_partitioned_assets_in_repo += 1
 
         if asset.freshness_policy is not None:

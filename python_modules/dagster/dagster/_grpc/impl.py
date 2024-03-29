@@ -46,15 +46,15 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_representation import external_job_data_from_def
 from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionExecutionParamData,
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
+    PartitionConfigSnap,
+    PartitionExecutionErrorSnap,
+    PartitionExecutionParamSnap,
+    PartitionNamesSnap,
+    PartitionSetExecutionParamSnap,
+    PartitionTagsSnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
-    job_name_for_external_partition_set_name,
+    job_name_for_partition_set_snap_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import (
@@ -409,7 +409,7 @@ def _get_job_partitions_and_config_for_partition_set_name(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
 ) -> Tuple[JobDefinition, PartitionsDefinition, PartitionedConfig]:
-    job_name = job_name_for_external_partition_set_name(partition_set_name)
+    job_name = job_name_for_partition_set_snap_name(partition_set_name)
     job_def = repo_def.get_job(job_name)
     assert job_def.partitions_def and job_def.partitioned_config, (
         f"Job {job_def.name} corresponding to external partition set {partition_set_name} does not"
@@ -423,7 +423,7 @@ def get_partition_config(
     partition_set_name: str,
     partition_key: str,
     instance_ref: Optional[InstanceRef] = None,
-) -> Union[ExternalPartitionConfigData, ExternalPartitionExecutionErrorData]:
+) -> Union[PartitionConfigSnap, PartitionExecutionErrorSnap]:
     try:
         (
             _,
@@ -443,17 +443,15 @@ def get_partition_config(
                     partition_key, dynamic_partitions_store=instance
                 )
                 run_config = partitioned_config.get_run_config_for_partition_key(partition_key)
-                return ExternalPartitionConfigData(name=partition_key, run_config=run_config)
+                return PartitionConfigSnap(name=partition_key, run_config=run_config)
     except Exception:
-        return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+        return PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
 
 
 def get_partition_names(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
-) -> Union[ExternalPartitionNamesData, ExternalPartitionExecutionErrorData]:
+) -> Union[PartitionNamesSnap, PartitionExecutionErrorSnap]:
     try:
         (
             job_def,
@@ -468,11 +466,9 @@ def get_partition_names(
                 f" partitioned config on job '{job_def.name}'"
             ),
         ):
-            return ExternalPartitionNamesData(partition_names=partitions_def.get_partition_keys())
+            return PartitionNamesSnap(partition_names=partitions_def.get_partition_keys())
     except Exception:
-        return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+        return PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
 
 
 def get_partition_tags(
@@ -505,12 +501,10 @@ def get_partition_tags(
                 tags = partitioned_config.get_tags_for_partition_key(
                     partition_name, job_name=job_def.name
                 )
-                return ExternalPartitionTagsData(name=partition_name, tags=tags)
+                return PartitionTagsSnap(name=partition_name, tags=tags)
 
     except Exception:
-        return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+        return PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
 
 
 def get_external_execution_plan_snapshot(
@@ -548,7 +542,7 @@ def get_partition_set_execution_param_data(
     partition_set_name: str,
     partition_names: Sequence[str],
     instance_ref: Optional[InstanceRef] = None,
-) -> Union[ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData]:
+) -> Union[PartitionSetExecutionParamSnap, PartitionExecutionErrorSnap]:
     (
         job_def,
         partitions_def,
@@ -583,19 +577,17 @@ def get_partition_set_execution_param_data(
                     tags = partitioned_config.get_tags_for_partition_key(key, job_name=job_def.name)
 
                 partition_data.append(
-                    ExternalPartitionExecutionParamData(
+                    PartitionExecutionParamSnap(
                         name=key,
                         tags=tags,
                         run_config=run_config,
                     )
                 )
 
-            return ExternalPartitionSetExecutionParamData(partition_data=partition_data)
+            return PartitionSetExecutionParamSnap(partition_data=partition_data)
 
     except Exception:
-        return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+        return PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
 
 
 def get_notebook_data(notebook_path):

@@ -99,12 +99,12 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def is_partitioned(self) -> bool:
-        return self._priority_node_snap.partitions_def_data is not None
+        return self._priority_node_snap.partitions is not None
 
     @cached_property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        external_def = self._priority_node_snap.partitions_def_data
-        return external_def.get_partitions_definition() if external_def else None
+        partitions_snap = self._priority_node_snap.partitions
+        return partitions_snap.get_partitions_definition() if partitions_snap else None
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
@@ -376,27 +376,26 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
             # create a mapping from job name to the partitions def of that job
             partitions_def_by_job_name = {}
             for (
-                external_partition_set_data
+                partition_set_snap
             ) in external_repo.external_repository_data.external_partition_set_datas:
-                if external_partition_set_data.external_partitions_data is None:
+                if partition_set_snap.partitions is None:
                     partitions_def = None
                 else:
-                    partitions_def = external_partition_set_data.external_partitions_data.get_partitions_definition()
-                partitions_def_by_job_name[external_partition_set_data.job_name] = partitions_def
+                    partitions_def = partition_set_snap.partitions.get_partitions_definition()
+                partitions_def_by_job_name[partition_set_snap.job_name] = partitions_def
             # add any jobs that don't have a partitions def
             for external_job in external_repo.get_all_external_jobs():
                 job_name = external_job.external_job_data.name
                 if job_name not in partitions_def_by_job_name:
                     partitions_def_by_job_name[job_name] = None
             # find the job that matches the expected partitions definition
-            for job_name, external_partitions_def in partitions_def_by_job_name.items():
+            for job_name, partitions_snap in partitions_def_by_job_name.items():
                 asset_keys_for_job = self.asset_keys_for_job(job_name)
                 if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                     continue
                 if (
                     # unpartitioned observable assets may be materialized in any job
-                    target_partitions_def is None
-                    or external_partitions_def == target_partitions_def
+                    target_partitions_def is None or partitions_snap == target_partitions_def
                 ) and all(asset_key in asset_keys_for_job for asset_key in asset_keys):
                     return job_name
         else:

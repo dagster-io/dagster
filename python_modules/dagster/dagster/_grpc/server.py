@@ -47,7 +47,7 @@ from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
-    ExternalPartitionExecutionErrorData,
+    PartitionExecutionErrorSnap,
     RepositoryErrorSnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
@@ -621,9 +621,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             serialized_response = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
+                PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
         return api_pb2.ExternalPartitionNamesReply(
@@ -660,9 +658,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
+                PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
@@ -685,9 +681,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
+                PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
         return api_pb2.ExternalPartitionConfigReply(
@@ -714,9 +708,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
+                PartitionExecutionErrorSnap(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
         return api_pb2.ExternalPartitionTagsReply(

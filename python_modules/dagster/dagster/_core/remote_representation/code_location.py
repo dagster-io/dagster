@@ -42,11 +42,11 @@ from dagster._core.remote_representation.external import (
     ExternalRepository,
 )
 from dagster._core.remote_representation.external_data import (
-    ExternalPartitionNamesData,
+    PartitionNamesSnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
-    external_partition_set_name_for_job_name,
     external_repository_data_from_def,
+    partition_set_snap_name_for_job_name,
 )
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
@@ -74,10 +74,10 @@ if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
     from dagster._core.remote_representation import (
-        ExternalPartitionConfigData,
-        ExternalPartitionExecutionErrorData,
-        ExternalPartitionSetExecutionParamData,
-        ExternalPartitionTagsData,
+        PartitionConfigSnap,
+        PartitionExecutionErrorSnap,
+        PartitionSetExecutionParamSnap,
+        PartitionTagsSnap,
     )
 
 
@@ -177,7 +177,7 @@ class CodeLocation(AbstractContextManager):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
         pass
 
     @abstractmethod
@@ -187,13 +187,13 @@ class CodeLocation(AbstractContextManager):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
         pass
 
     @abstractmethod
     def get_external_partition_names(
         self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
-    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionNamesSnap", "PartitionExecutionErrorSnap"]:
         pass
 
     @abstractmethod
@@ -203,7 +203,7 @@ class CodeLocation(AbstractContextManager):
         partition_set_name: str,
         partition_names: Sequence[str],
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionSetExecutionParamSnap", "PartitionExecutionErrorSnap"]:
         pass
 
     @abstractmethod
@@ -237,17 +237,13 @@ class CodeLocation(AbstractContextManager):
         external_repository_data = self.get_repository(
             external_job.repository_handle.repository_name
         ).external_repository_data
-        external_partition_set_name = external_partition_set_name_for_job_name(external_job.name)
+        external_partition_set_name = partition_set_snap_name_for_job_name(external_job.name)
 
         if external_repository_data.has_external_partition_set_data(external_partition_set_name):
-            external_partitions_def_data = external_repository_data.get_external_partition_set_data(
+            partitions_snap = external_repository_data.get_external_partition_set_data(
                 external_partition_set_name
-            ).external_partitions_data
-            return (
-                external_partitions_def_data.get_partitions_definition()
-                if external_partitions_def_data
-                else None
-            )
+            ).partitions
+            return partitions_snap.get_partitions_definition() if partitions_snap else None
 
         return None
 
@@ -453,7 +449,7 @@ class InProcessCodeLocation(CodeLocation):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -471,7 +467,7 @@ class InProcessCodeLocation(CodeLocation):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -486,13 +482,13 @@ class InProcessCodeLocation(CodeLocation):
 
     def get_external_partition_names(
         self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
-    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionNamesSnap", "PartitionExecutionErrorSnap"]:
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
         # Prefer to return the names without calling out to user code if the
         # partition set allows it
         if external_partition_set.has_partition_name_data():
-            return ExternalPartitionNamesData(
+            return PartitionNamesSnap(
                 partition_names=external_partition_set.get_partition_names(instance)
             )
 
@@ -561,7 +557,7 @@ class InProcessCodeLocation(CodeLocation):
         partition_set_name: str,
         partition_names: Sequence[str],
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionSetExecutionParamSnap", "PartitionExecutionErrorSnap"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.sequence_param(partition_names, "partition_names", of_type=str)
@@ -844,7 +840,7 @@ class GrpcServerCodeLocation(CodeLocation):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> "ExternalPartitionConfigData":
+    ) -> "PartitionConfigSnap":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -859,7 +855,7 @@ class GrpcServerCodeLocation(CodeLocation):
         partition_set_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> "ExternalPartitionTagsData":
+    ) -> "PartitionTagsSnap":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -870,13 +866,13 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_external_partition_names(
         self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
-    ) -> "ExternalPartitionNamesData":
+    ) -> "PartitionNamesSnap":
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
         # Prefer to return the names without calling out to user code if the
         # partition set allows it
         if external_partition_set.has_partition_name_data():
-            return ExternalPartitionNamesData(
+            return PartitionNamesSnap(
                 partition_names=external_partition_set.get_partition_names(instance=instance)
             )
 
@@ -938,7 +934,7 @@ class GrpcServerCodeLocation(CodeLocation):
         partition_set_name: str,
         partition_names: Sequence[str],
         instance: DagsterInstance,
-    ) -> "ExternalPartitionSetExecutionParamData":
+    ) -> "PartitionSetExecutionParamSnap":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.sequence_param(partition_names, "partition_names", of_type=str)

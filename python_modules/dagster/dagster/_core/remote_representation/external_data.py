@@ -721,16 +721,32 @@ class ExecutionParamsErrorSnap(
         )
 
 
-class ExternalPartitionsDefinitionData(ABC):
+class PartitionsSnap(ABC):
+    @classmethod
+    def from_def(cls, partitions_def: PartitionsDefinition) -> "PartitionsSnap":
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            return TimeWindowPartitionsSnap.from_def(partitions_def)
+        elif isinstance(partitions_def, StaticPartitionsDefinition):
+            return StaticPartitionsSnap.from_def(partitions_def)
+        elif isinstance(partitions_def, MultiPartitionsDefinition):
+            return MultiPartitionsSnap.from_def(partitions_def)
+        elif isinstance(partitions_def, DynamicPartitionsDefinition):
+            return DynamicPartitionsSnap.from_def(partitions_def)
+        else:
+            raise DagsterInvalidDefinitionError(
+                "Only static, time window, multi-dimensional partitions, and dynamic partitions"
+                " definitions with a name parameter are currently supported."
+            )
+
     @abstractmethod
     def get_partitions_definition(self) -> PartitionsDefinition: ...
 
 
-@whitelist_for_serdes
-class ExternalTimeWindowPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
+@whitelist_for_serdes(storage_name="ExternalTimeWindowPartitionsDefinitionData")
+class TimeWindowPartitionsSnap(
+    PartitionsSnap,
     NamedTuple(
-        "_ExternalTimeWindowPartitionsDefinitionData",
+        "_TimeWindowPartitionsSnap",
         [
             ("start", float),
             ("timezone", Optional[str]),
@@ -762,7 +778,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
     ):
-        return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
+        return super(TimeWindowPartitionsSnap, cls).__new__(
             cls,
             schedule_type=check.opt_inst_param(schedule_type, "schedule_type", ScheduleType),
             start=check.float_param(start, "start"),
@@ -774,6 +790,22 @@ class ExternalTimeWindowPartitionsDefinitionData(
             hour_offset=check.opt_int_param(hour_offset, "hour_offset"),
             day_offset=check.opt_int_param(day_offset, "day_offset"),
             cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
+        )
+
+    @classmethod
+    def from_def(cls, partitions_def: TimeWindowPartitionsDefinition) -> Self:
+        check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
+        return cls(
+            cron_schedule=partitions_def.cron_schedule,
+            start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
+            end=(
+                pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp()
+                if partitions_def.end
+                else None
+            ),
+            timezone=partitions_def.timezone,
+            fmt=partitions_def.fmt,
+            end_offset=partitions_def.end_offset,
         )
 
     def get_partitions_definition(self):
@@ -801,7 +833,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             )
 
 
-def _dedup_partition_keys(keys: Sequence[str]):
+def _dedup_partition_keys(keys: Sequence[str]) -> Sequence[str]:
     # Use both a set and a list here to preserve lookup performance in case of large inputs. (We
     # can't just use a set because we need to preserve ordering.)
     seen_keys: Set[str] = set()
@@ -813,15 +845,20 @@ def _dedup_partition_keys(keys: Sequence[str]):
     return new_keys
 
 
-@whitelist_for_serdes
-class ExternalStaticPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
-    NamedTuple("_ExternalStaticPartitionsDefinitionData", [("partition_keys", Sequence[str])]),
+@whitelist_for_serdes(storage_name="ExternalStaticPartitionsDefinitionData")
+class StaticPartitionsSnap(
+    PartitionsSnap,
+    NamedTuple("_StaticPartitionsSnap", [("partition_keys", Sequence[str])]),
 ):
     def __new__(cls, partition_keys: Sequence[str]):
-        return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
+        return super(StaticPartitionsSnap, cls).__new__(
             cls, partition_keys=check.sequence_param(partition_keys, "partition_keys", str)
         )
+
+    @classmethod
+    def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:
+        check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
+        return cls(partition_keys=partitions_def.get_partition_keys())
 
     def get_partitions_definition(self):
         # v1.4 made `StaticPartitionsDefinition` error if given duplicate keys. This caused
@@ -831,68 +868,101 @@ class ExternalStaticPartitionsDefinitionData(
         return StaticPartitionsDefinition(keys)
 
 
-@whitelist_for_serdes
-class ExternalPartitionDimensionDefinition(
+@whitelist_for_serdes(
+    storage_name="ExternalPartitionDimensionDefinition",
+    storage_field_names={"partitions": "external_partitions_def_data"},
+)
+class PartitionDimensionSnap(
     NamedTuple(
-        "_ExternalPartitionDimensionDefinition",
+        "_PartitionDimensionSnap",
         [
             ("name", str),
-            ("external_partitions_def_data", ExternalPartitionsDefinitionData),
+            ("partitions", PartitionsSnap),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        external_partitions_def_data: ExternalPartitionsDefinitionData,
+        partitions: PartitionsSnap,
     ):
-        return super(ExternalPartitionDimensionDefinition, cls).__new__(
+        return super(PartitionDimensionSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            external_partitions_def_data=check.inst_param(
-                external_partitions_def_data,
-                "external_partitions_def_data",
-                ExternalPartitionsDefinitionData,
+            partitions=check.inst_param(
+                partitions,
+                "partitions",
+                PartitionsSnap,
             ),
         )
 
 
-@whitelist_for_serdes
-class ExternalMultiPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
+@whitelist_for_serdes(
+    storage_name="ExternalMultiPartitionsDefinitionData",
+    storage_field_names={"partition_dimensions": "external_partition_dimension_definitions"},
+)
+class MultiPartitionsSnap(
+    PartitionsSnap,
     NamedTuple(
-        "_ExternalMultiPartitionsDefinitionData",
+        "_MultiPartitionsSnap",
         [
             (
-                "external_partition_dimension_definitions",
-                Sequence[ExternalPartitionDimensionDefinition],
+                "partition_dimensions",
+                Sequence[PartitionDimensionSnap],
             )
         ],
     ),
 ):
+    @classmethod
+    def from_def(cls, partitions_def: MultiPartitionsDefinition) -> Self:
+        check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
+
+        return cls(
+            partition_dimensions=[
+                PartitionDimensionSnap(
+                    dimension.name,
+                    PartitionsSnap.from_def(dimension.partitions_def),
+                )
+                for dimension in partitions_def.partitions_defs
+            ]
+        )
+
     def get_partitions_definition(self):
         return MultiPartitionsDefinition(
             {
                 partition_dimension.name: (
-                    partition_dimension.external_partitions_def_data.get_partitions_definition()
+                    partition_dimension.partitions.get_partitions_definition()
                 )
-                for partition_dimension in self.external_partition_dimension_definitions
+                for partition_dimension in self.partition_dimensions
             }
         )
 
 
-@whitelist_for_serdes
-class ExternalDynamicPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
-    NamedTuple("_ExternalDynamicPartitionsDefinitionData", [("name", str)]),
+@whitelist_for_serdes(storage_name="ExternalDynamicPartitionsDefinitionData")
+class DynamicPartitionsSnap(
+    PartitionsSnap,
+    NamedTuple("_DynamicPartitionsSnap", [("name", str)]),
 ):
+    @classmethod
+    def from_def(cls, partitions_def: DynamicPartitionsDefinition) -> Self:
+        check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
+        if partitions_def.name is None:
+            raise DagsterInvalidDefinitionError(
+                "Dagster does not support dynamic partitions definitions without a name parameter."
+            )
+        return cls(name=partitions_def.name)
+
     def get_partitions_definition(self):
         return DynamicPartitionsDefinition(name=self.name)
 
 
 @whitelist_for_serdes(
     storage_name="ExternalPartitionSetData",
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+        "partitions": "external_partitions_data",
+    },
 )
 class PartitionSetSnap(
     NamedTuple(
@@ -902,7 +972,7 @@ class PartitionSetSnap(
             ("job_name", str),
             ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
-            ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
+            ("partitions", Optional[PartitionsSnap]),
         ],
     )
 ):
@@ -912,7 +982,7 @@ class PartitionSetSnap(
         job_name: str,
         op_selection: Optional[Sequence[str]],
         mode: Optional[str],
-        external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
+        partitions: Optional[PartitionsSnap] = None,
     ):
         return super(PartitionSetSnap, cls).__new__(
             cls,
@@ -920,10 +990,10 @@ class PartitionSetSnap(
             job_name=check.str_param(job_name, "job_name"),
             op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
             mode=check.opt_str_param(mode, "mode"),
-            external_partitions_data=check.opt_inst_param(
-                external_partitions_data,
-                "external_partitions_data",
-                ExternalPartitionsDefinitionData,
+            partitions=check.opt_inst_param(
+                partitions,
+                "partitions",
+                PartitionsSnap,
             ),
         )
 
@@ -932,78 +1002,72 @@ class PartitionSetSnap(
         check.inst_param(job_def, "job_def", JobDefinition)
         partitions_def = check.not_none(job_def.partitions_def)
 
-        partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
+        partitions_snap: Optional[PartitionsSnap] = None
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            partitions_def_data = external_time_window_partitions_definition_from_def(
-                partitions_def
-            )
+            partitions_snap = TimeWindowPartitionsSnap.from_def(partitions_def)
         elif isinstance(partitions_def, StaticPartitionsDefinition):
-            partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
+            partitions_snap = StaticPartitionsSnap.from_def(partitions_def)
         elif (
             isinstance(partitions_def, DynamicPartitionsDefinition)
             and partitions_def.name is not None
         ):
-            partitions_def_data = external_dynamic_partitions_definition_from_def(partitions_def)
+            partitions_snap = DynamicPartitionsSnap.from_def(partitions_def)
         elif isinstance(partitions_def, MultiPartitionsDefinition):
-            partitions_def_data = external_multi_partitions_definition_from_def(partitions_def)
+            partitions_snap = MultiPartitionsSnap.from_def(partitions_def)
         else:
-            partitions_def_data = None
+            partitions_snap = None
 
         return cls(
-            name=external_partition_set_name_for_job_name(job_def.name),
+            name=partition_set_snap_name_for_job_name(job_def.name),
             job_name=job_def.name,
             op_selection=None,
             mode=DEFAULT_MODE_NAME,
-            external_partitions_data=partitions_def_data,
+            partitions=partitions_snap,
         )
 
 
-@whitelist_for_serdes
-class ExternalPartitionNamesData(
-    NamedTuple("_ExternalPartitionNamesData", [("partition_names", Sequence[str])])
-):
+@whitelist_for_serdes(storage_name="ExternalPartitionNamesData")
+class PartitionNamesSnap(NamedTuple("_PartitionNamesSnap", [("partition_names", Sequence[str])])):
     def __new__(cls, partition_names: Optional[Sequence[str]] = None):
-        return super(ExternalPartitionNamesData, cls).__new__(
+        return super(PartitionNamesSnap, cls).__new__(
             cls,
             partition_names=check.opt_sequence_param(partition_names, "partition_names", str),
         )
 
 
-@whitelist_for_serdes
-class ExternalPartitionConfigData(
-    NamedTuple(
-        "_ExternalPartitionConfigData", [("name", str), ("run_config", Mapping[str, object])]
-    )
+@whitelist_for_serdes(storage_name="ExternalPartitionConfigData")
+class PartitionConfigSnap(
+    NamedTuple("_PartitionConfigSnap", [("name", str), ("run_config", Mapping[str, object])])
 ):
     def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
-        return super(ExternalPartitionConfigData, cls).__new__(
+        return super(PartitionConfigSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             run_config=check.opt_mapping_param(run_config, "run_config"),
         )
 
 
-@whitelist_for_serdes
-class ExternalPartitionTagsData(
+@whitelist_for_serdes(storage_name="ExternalPartitionTagsData")
+class PartitionTagsSnap(
     NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Mapping[str, object])])
 ):
     def __new__(cls, name: str, tags: Optional[Mapping[str, str]] = None):
-        return super(ExternalPartitionTagsData, cls).__new__(
+        return super(PartitionTagsSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             tags=check.opt_mapping_param(tags, "tags"),
         )
 
 
-@whitelist_for_serdes
-class ExternalPartitionExecutionParamData(
+@whitelist_for_serdes(storage_name="ExternalPartitionExecutionParamData")
+class PartitionExecutionParamSnap(
     NamedTuple(
-        "_ExternalPartitionExecutionParamData",
+        "_PartitionExecutionParamSnap",
         [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
     )
 ):
     def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):
-        return super(ExternalPartitionExecutionParamData, cls).__new__(
+        return super(PartitionExecutionParamSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             tags=check.mapping_param(tags, "tags"),
@@ -1011,28 +1075,28 @@ class ExternalPartitionExecutionParamData(
         )
 
 
-@whitelist_for_serdes
-class ExternalPartitionSetExecutionParamData(
+@whitelist_for_serdes(storage_name="ExternalPartitionSetExecutionParamData")
+class PartitionSetExecutionParamSnap(
     NamedTuple(
-        "_ExternalPartitionSetExecutionParamData",
-        [("partition_data", Sequence[ExternalPartitionExecutionParamData])],
+        "_PartitionSetExecutionParamSnap",
+        [("partition_data", Sequence[PartitionExecutionParamSnap])],
     )
 ):
-    def __new__(cls, partition_data: Sequence[ExternalPartitionExecutionParamData]):
-        return super(ExternalPartitionSetExecutionParamData, cls).__new__(
+    def __new__(cls, partition_data: Sequence[PartitionExecutionParamSnap]):
+        return super(PartitionSetExecutionParamSnap, cls).__new__(
             cls,
             partition_data=check.sequence_param(
-                partition_data, "partition_data", of_type=ExternalPartitionExecutionParamData
+                partition_data, "partition_data", of_type=PartitionExecutionParamSnap
             ),
         )
 
 
-@whitelist_for_serdes
-class ExternalPartitionExecutionErrorData(
-    NamedTuple("_ExternalPartitionExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+@whitelist_for_serdes(storage_name="ExternalPartitionExecutionErrorData")
+class PartitionExecutionErrorSnap(
+    NamedTuple("_PartitionExecutionErrorSnap", [("error", Optional[SerializableErrorInfo])])
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalPartitionExecutionErrorData, cls).__new__(
+        return super(PartitionExecutionErrorSnap, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
@@ -1335,6 +1399,7 @@ class AssetCheckSnap(
         "parent_edges": "dependencies",
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
+        "partitions": "partitions_def_data",
     },
     field_serializers={"metadata": MetadataFieldSerializer},
 )
@@ -1356,7 +1421,7 @@ class AssetNodeSnap(
             # the op
             ("op_description", Optional[str]),
             ("job_names", Sequence[str]),
-            ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
+            ("partitions", Optional[PartitionsSnap]),
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
             ("metadata", Mapping[str, MetadataValue]),
@@ -1396,7 +1461,7 @@ class AssetNodeSnap(
         graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
-        partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
+        partitions: Optional[PartitionsSnap] = None,
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
@@ -1476,9 +1541,7 @@ class AssetNodeSnap(
                 op_description or output_description, "op_description"
             ),
             job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
-            partitions_def_data=check.opt_inst_param(
-                partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
-            ),
+            partitions=check.opt_inst_param(partitions, "partitions", PartitionsSnap),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
             metadata=metadata,
@@ -1690,7 +1753,7 @@ def asset_check_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetChe
                 nodes_by_check_key.setdefault(spec.key, []).append(asset_def)
                 job_names_by_check_key.setdefault(spec.key, []).append(job_def.name)
 
-    external_checks = []
+    asset_check_snaps = []
     for check_key, nodes in nodes_by_check_key.items():
         first_node = nodes[0]
         # The same check may appear multiple times in different jobs, but it should come from the
@@ -1708,7 +1771,7 @@ def asset_check_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetChe
             execution_set_identifier = first_node.unique_id if not first_node.can_subset else None
 
         spec = first_node.get_spec_for_check_key(check_key)
-        external_checks.append(
+        asset_check_snaps.append(
             AssetCheckSnap(
                 name=check_key.name,
                 asset_key=check_key.asset_key,
@@ -1718,7 +1781,7 @@ def asset_check_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetChe
             )
         )
 
-    return sorted(external_checks, key=lambda check: (check.asset_key, check.name))
+    return sorted(asset_check_snaps, key=lambda check: (check.asset_key, check.name))
 
 
 def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNodeSnap]:
@@ -1826,8 +1889,8 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 graph_name=graph_name,
                 op_description=asset_node.description,
                 job_names=job_names,
-                partitions_def_data=(
-                    external_partitions_definition_from_def(asset_node.partitions_def)
+                partitions=(
+                    PartitionsSnap.from_def(asset_node.partitions_def)
                     if asset_node.partitions_def
                     else None
                 ),
@@ -1927,135 +1990,15 @@ def _get_class_name(cls: Type) -> str:
     return str(cls)[8:-2]
 
 
-def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ScheduleSnap:
-    check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
-    return ScheduleSnap(
-        name=schedule_def.name,
-        cron_schedule=schedule_def.cron_schedule,
-        job_name=schedule_def.job_name,
-        op_selection=schedule_def._target.op_selection,  # noqa: SLF001
-        mode=DEFAULT_MODE_NAME,
-        environment_vars=schedule_def.environment_vars,
-        partition_set_name=None,
-        execution_timezone=schedule_def.execution_timezone,
-        description=schedule_def.description,
-        default_status=schedule_def.default_status,
-    )
+PARTITION_SET_SNAP_NAME_SUFFIX: Final = "_partition_set"
 
 
-def external_partitions_definition_from_def(
-    partitions_def: PartitionsDefinition,
-) -> ExternalPartitionsDefinitionData:
-    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-        return external_time_window_partitions_definition_from_def(partitions_def)
-    elif isinstance(partitions_def, StaticPartitionsDefinition):
-        return external_static_partitions_definition_from_def(partitions_def)
-    elif isinstance(partitions_def, MultiPartitionsDefinition):
-        return external_multi_partitions_definition_from_def(partitions_def)
-    elif isinstance(partitions_def, DynamicPartitionsDefinition):
-        return external_dynamic_partitions_definition_from_def(partitions_def)
-    else:
-        raise DagsterInvalidDefinitionError(
-            "Only static, time window, multi-dimensional partitions, and dynamic partitions"
-            " definitions with a name parameter are currently supported."
-        )
+def partition_set_snap_name_for_job_name(job_name) -> str:
+    return f"{job_name}{PARTITION_SET_SNAP_NAME_SUFFIX}"
 
 
-def external_time_window_partitions_definition_from_def(
-    partitions_def: TimeWindowPartitionsDefinition,
-) -> ExternalTimeWindowPartitionsDefinitionData:
-    check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
-    return ExternalTimeWindowPartitionsDefinitionData(
-        cron_schedule=partitions_def.cron_schedule,
-        start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
-        end=(
-            pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp()
-            if partitions_def.end
-            else None
-        ),
-        timezone=partitions_def.timezone,
-        fmt=partitions_def.fmt,
-        end_offset=partitions_def.end_offset,
-    )
-
-
-def external_static_partitions_definition_from_def(
-    partitions_def: StaticPartitionsDefinition,
-) -> ExternalStaticPartitionsDefinitionData:
-    check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
-    return ExternalStaticPartitionsDefinitionData(
-        partition_keys=partitions_def.get_partition_keys()
-    )
-
-
-def external_multi_partitions_definition_from_def(
-    partitions_def: MultiPartitionsDefinition,
-) -> ExternalMultiPartitionsDefinitionData:
-    check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
-
-    return ExternalMultiPartitionsDefinitionData(
-        external_partition_dimension_definitions=[
-            ExternalPartitionDimensionDefinition(
-                dimension.name,
-                external_partitions_definition_from_def(dimension.partitions_def),
-            )
-            for dimension in partitions_def.partitions_defs
-        ]
-    )
-
-
-def external_dynamic_partitions_definition_from_def(
-    partitions_def: DynamicPartitionsDefinition,
-) -> ExternalDynamicPartitionsDefinitionData:
-    check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
-    if partitions_def.name is None:
-        raise DagsterInvalidDefinitionError(
-            "Dagster does not support dynamic partitions definitions without a name parameter."
-        )
-    return ExternalDynamicPartitionsDefinitionData(name=partitions_def.name)
-
-
-def external_partition_set_data_from_def(
-    job_def: JobDefinition,
-) -> Optional[PartitionSetSnap]:
-    check.inst_param(job_def, "job_def", JobDefinition)
-
-    partitions_def = job_def.partitions_def
-    if partitions_def is None:
-        return None
-
-    partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
-    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-        partitions_def_data = external_time_window_partitions_definition_from_def(partitions_def)
-    elif isinstance(partitions_def, StaticPartitionsDefinition):
-        partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
-    elif (
-        isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name is not None
-    ):
-        partitions_def_data = external_dynamic_partitions_definition_from_def(partitions_def)
-    elif isinstance(partitions_def, MultiPartitionsDefinition):
-        partitions_def_data = external_multi_partitions_definition_from_def(partitions_def)
-    else:
-        partitions_def_data = None
-
-    return PartitionSetSnap(
-        name=external_partition_set_name_for_job_name(job_def.name),
-        job_name=job_def.name,
-        op_selection=None,
-        mode=DEFAULT_MODE_NAME,
-        external_partitions_data=partitions_def_data,
-    )
-
-
-EXTERNAL_PARTITION_SET_NAME_SUFFIX: Final = "_partition_set"
-
-
-def external_partition_set_name_for_job_name(job_name) -> str:
-    return f"{job_name}{EXTERNAL_PARTITION_SET_NAME_SUFFIX}"
-
-
-def job_name_for_external_partition_set_name(name: str) -> str:
-    job_name_len = len(name) - len(EXTERNAL_PARTITION_SET_NAME_SUFFIX)
+def job_name_for_partition_set_snap_name(name: str) -> str:
+    job_name_len = len(name) - len(PARTITION_SET_SNAP_NAME_SUFFIX)
     return name[:job_name_len]
 
 

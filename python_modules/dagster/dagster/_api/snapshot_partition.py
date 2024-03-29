@@ -4,11 +4,11 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external_data import (
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
+    PartitionConfigSnap,
+    PartitionExecutionErrorSnap,
+    PartitionNamesSnap,
+    PartitionSetExecutionParamSnap,
+    PartitionTagsSnap,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 def sync_get_external_partition_names_grpc(
     api_client: "DagsterGrpcClient", repository_handle: RepositoryHandle, partition_set_name: str
-) -> ExternalPartitionNamesData:
+) -> PartitionNamesSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
@@ -34,9 +34,9 @@ def sync_get_external_partition_names_grpc(
                 partition_set_name=partition_set_name,
             ),
         ),
-        (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
+        (PartitionNamesSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result
@@ -48,7 +48,7 @@ def sync_get_external_partition_config_grpc(
     partition_set_name: str,
     partition_name: str,
     instance: DagsterInstance,
-) -> ExternalPartitionConfigData:
+) -> PartitionConfigSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
@@ -65,9 +65,9 @@ def sync_get_external_partition_config_grpc(
                 instance_ref=instance.get_ref(),
             ),
         ),
-        (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
+        (PartitionConfigSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result
@@ -79,7 +79,7 @@ def sync_get_external_partition_tags_grpc(
     partition_set_name: str,
     partition_name: str,
     instance: DagsterInstance,
-) -> ExternalPartitionTagsData:
+) -> PartitionTagsSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
@@ -97,9 +97,9 @@ def sync_get_external_partition_tags_grpc(
                 instance_ref=instance.get_ref(),
             ),
         ),
-        (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
+        (PartitionTagsSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result
@@ -111,7 +111,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     partition_set_name: str,
     partition_names: Sequence[str],
     instance: DagsterInstance,
-) -> ExternalPartitionSetExecutionParamData:
+) -> PartitionSetExecutionParamSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
@@ -130,9 +130,9 @@ def sync_get_external_partition_set_execution_param_data_grpc(
                 instance_ref=instance.get_ref(),
             ),
         ),
-        (ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),
+        (PartitionSetExecutionParamSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result

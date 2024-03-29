@@ -10,11 +10,11 @@ from dagster._api.snapshot_partition import (
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
+    PartitionConfigSnap,
+    PartitionExecutionErrorSnap,
+    PartitionNamesSnap,
+    PartitionSetExecutionParamSnap,
+    PartitionTagsSnap,
 )
 from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
 from dagster._serdes import deserialize_value
@@ -28,7 +28,7 @@ def test_external_partition_names_grpc(instance: DagsterInstance):
         data = sync_get_external_partition_names_grpc(
             code_location.client, repository_handle, "baz_partition_set"
         )
-        assert isinstance(data, ExternalPartitionNamesData)
+        assert isinstance(data, PartitionNamesSnap)
         assert data.partition_names == list(string.ascii_lowercase)
 
 
@@ -47,7 +47,7 @@ def test_external_partition_names_deserialize_error_grpc(instance: DagsterInstan
                 )._replace(repository_origin="INVALID"),
             )
         )
-        assert isinstance(result, ExternalPartitionExecutionErrorData)
+        assert isinstance(result, PartitionExecutionErrorSnap)
 
 
 def test_external_partitions_config_grpc(instance: DagsterInstance):
@@ -57,7 +57,7 @@ def test_external_partitions_config_grpc(instance: DagsterInstance):
         data = sync_get_external_partition_config_grpc(
             code_location.client, repository_handle, "baz_partition_set", "c", instance
         )
-        assert isinstance(data, ExternalPartitionConfigData)
+        assert isinstance(data, PartitionConfigSnap)
         assert data.run_config
         assert data.run_config["ops"]["do_input"]["inputs"]["x"]["value"] == "c"  # type: ignore
 
@@ -93,7 +93,7 @@ def test_external_partition_config_deserialize_error_grpc(instance: DagsterInsta
             )
         )
 
-        assert isinstance(result, ExternalPartitionExecutionErrorData)
+        assert isinstance(result, PartitionExecutionErrorSnap)
 
 
 def test_external_partitions_tags_grpc(instance: DagsterInstance):
@@ -103,7 +103,7 @@ def test_external_partitions_tags_grpc(instance: DagsterInstance):
         data = sync_get_external_partition_tags_grpc(
             code_location.client, repository_handle, "baz_partition_set", "c", instance=instance
         )
-        assert isinstance(data, ExternalPartitionTagsData)
+        assert isinstance(data, PartitionTagsSnap)
         assert data.tags
         assert data.tags["foo"] == "bar"
 
@@ -125,7 +125,7 @@ def test_external_partitions_tags_deserialize_error_grpc(instance: DagsterInstan
                 )._replace(repository_origin="INVALID"),
             )
         )
-        assert isinstance(result, ExternalPartitionExecutionErrorData)
+        assert isinstance(result, PartitionExecutionErrorSnap)
 
 
 def test_external_partitions_tags_error_grpc(instance: DagsterInstance):
@@ -149,7 +149,7 @@ def test_external_partition_set_execution_params_grpc(instance: DagsterInstance)
             ["a", "b", "c"],
             instance=instance,
         )
-        assert isinstance(data, ExternalPartitionSetExecutionParamData)
+        assert isinstance(data, PartitionSetExecutionParamSnap)
         assert len(data.partition_data) == 3
 
 
@@ -172,7 +172,7 @@ def test_external_partition_set_execution_params_deserialize_error_grpc(instance
             )
         )
 
-        assert isinstance(result, ExternalPartitionExecutionErrorData)
+        assert isinstance(result, PartitionExecutionErrorSnap)
 
 
 def test_dynamic_partition_set_grpc(instance: DagsterInstance):
@@ -187,7 +187,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
             ["a", "b", "c"],
             instance=instance,
         )
-        assert isinstance(data, ExternalPartitionSetExecutionParamData)
+        assert isinstance(data, PartitionSetExecutionParamSnap)
         assert len(data.partition_data) == 3
 
         data = sync_get_external_partition_config_grpc(
@@ -197,7 +197,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
             "a",
             instance,
         )
-        assert isinstance(data, ExternalPartitionConfigData)
+        assert isinstance(data, PartitionConfigSnap)
         assert data.name == "a"
         assert data.run_config == {}
 
@@ -208,7 +208,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
             "a",
             instance,
         )
-        assert isinstance(data, ExternalPartitionTagsData)
+        assert isinstance(data, PartitionTagsSnap)
         assert data.tags
         assert data.tags["dagster/partition"] == "a"
 
@@ -219,7 +219,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
             ["nonexistent_partition"],
             instance=instance,
         )
-        assert isinstance(data, ExternalPartitionSetExecutionParamData)
+        assert isinstance(data, PartitionSetExecutionParamSnap)
         assert data.partition_data == []
 
         with pytest.raises(DagsterUserCodeProcessError, match="Could not find a partition"):

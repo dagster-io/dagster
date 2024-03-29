@@ -5,11 +5,11 @@ import graphene
 from dagster import MultiPartitionsDefinition
 from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import (
-    ExternalDynamicPartitionsDefinitionData,
-    ExternalMultiPartitionsDefinitionData,
-    ExternalPartitionsDefinitionData,
-    ExternalStaticPartitionsDefinitionData,
-    ExternalTimeWindowPartitionsDefinitionData,
+    DynamicPartitionsSnap,
+    MultiPartitionsSnap,
+    PartitionsSnap,
+    StaticPartitionsSnap,
+    TimeWindowPartitionsSnap,
 )
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -392,14 +392,14 @@ class GraphenePartitionDefinitionType(graphene.Enum):
 
     @classmethod
     def from_partition_def_data(cls, partition_def_data):
-        check.inst_param(partition_def_data, "partition_def_data", ExternalPartitionsDefinitionData)
-        if isinstance(partition_def_data, ExternalStaticPartitionsDefinitionData):
+        check.inst_param(partition_def_data, "partition_def_data", PartitionsSnap)
+        if isinstance(partition_def_data, StaticPartitionsSnap):
             return GraphenePartitionDefinitionType.STATIC
-        elif isinstance(partition_def_data, ExternalTimeWindowPartitionsDefinitionData):
+        elif isinstance(partition_def_data, TimeWindowPartitionsSnap):
             return GraphenePartitionDefinitionType.TIME_WINDOW
-        elif isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData):
+        elif isinstance(partition_def_data, MultiPartitionsSnap):
             return GraphenePartitionDefinitionType.MULTIPARTITIONED
-        elif isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData):
+        elif isinstance(partition_def_data, DynamicPartitionsSnap):
             return GraphenePartitionDefinitionType.DYNAMIC
         else:
             check.failed(
@@ -433,26 +433,24 @@ class GraphenePartitionDefinition(graphene.ObjectType):
             [
                 GrapheneDimensionDefinitionType(
                     name=dim.name,
-                    description=str(dim.external_partitions_def_data.get_partitions_definition()),
-                    type=GraphenePartitionDefinitionType.from_partition_def_data(
-                        dim.external_partitions_def_data
-                    ),
+                    description=str(dim.partitions.get_partitions_definition()),
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(dim.partitions),
                     isPrimaryDimension=dim.name
                     == cast(
                         MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
                     ).primary_dimension.name,
                     dynamicPartitionsDefinitionName=(
-                        dim.external_partitions_def_data.name
+                        dim.partitions.name
                         if isinstance(
-                            dim.external_partitions_def_data,
-                            ExternalDynamicPartitionsDefinitionData,
+                            dim.partitions,
+                            DynamicPartitionsSnap,
                         )
                         else None
                     ),
                 )
-                for dim in partition_def_data.external_partition_dimension_definitions
+                for dim in partition_def_data.partition_dimensions
             ]
-            if isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData)
+            if isinstance(partition_def_data, MultiPartitionsSnap)
             else [
                 GrapheneDimensionDefinitionType(
                     name="default",
@@ -463,21 +461,21 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     isPrimaryDimension=True,
                     dynamicPartitionsDefinitionName=(
                         partition_def_data.name
-                        if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                        if isinstance(partition_def_data, DynamicPartitionsSnap)
                         else None
                     ),
                 )
             ]
         )
 
-    def __init__(self, partition_def_data: ExternalPartitionsDefinitionData):
+    def __init__(self, partition_def_data: PartitionsSnap):
         self._partition_def_data = partition_def_data
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
             name=(
                 partition_def_data.name
-                if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                if isinstance(partition_def_data, DynamicPartitionsSnap)
                 else None
             ),
         )

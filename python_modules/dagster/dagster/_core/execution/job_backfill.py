@@ -14,8 +14,8 @@ from dagster._core.remote_representation import (
     ExternalPartitionSet,
 )
 from dagster._core.remote_representation.external_data import (
-    ExternalPartitionExecutionParamData,
-    ExternalPartitionSetExecutionParamData,
+    PartitionExecutionParamSnap,
+    PartitionSetExecutionParamSnap,
 )
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -198,7 +198,7 @@ def submit_backfill_runs(
         external_repo.handle, partition_set_name, partition_names, instance
     )
 
-    assert isinstance(result, ExternalPartitionSetExecutionParamData)
+    assert isinstance(result, PartitionSetExecutionParamSnap)
     if backfill_job.asset_selection:
         # need to make another call to the user code location to properly subset
         # for an asset selection
@@ -240,7 +240,7 @@ def create_backfill_run(
     external_pipeline: ExternalJob,
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,
-    partition_data: ExternalPartitionExecutionParamData,
+    partition_data: PartitionExecutionParamSnap,
 ) -> Optional[DagsterRun]:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 

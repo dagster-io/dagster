@@ -74,7 +74,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepSuccessDat
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.remote_representation.external_data import (
-    external_partitions_definition_from_def,
+    PartitionsSnap,
 )
 from dagster._core.remote_representation.origin import (
     InProcessCodeLocationOrigin,
@@ -2699,7 +2699,7 @@ class TestEventLogStorage:
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
         partitions_subset = (
-            external_partitions_definition_from_def(partitions_def)
+            PartitionsSnap.from_def(partitions_def)
             .get_partitions_definition()
             .subset_with_partition_keys(
                 partitions_def.get_partition_keys_in_range(
@@ -2760,7 +2760,7 @@ class TestEventLogStorage:
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
         partitions_subset = (
-            external_partitions_definition_from_def(partitions_def)
+            PartitionsSnap.from_def(partitions_def)
             .get_partitions_definition()
             .subset_with_partition_keys(
                 partitions_def.get_partition_keys_in_range(
@@ -2941,7 +2941,7 @@ class TestEventLogStorage:
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
         partitions_subset = (
-            external_partitions_definition_from_def(partitions_def)
+            PartitionsSnap.from_def(partitions_def)
             .get_partitions_definition()
             .subset_with_partition_keys(
                 partitions_def.get_partition_keys_in_range(
