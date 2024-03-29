@@ -106,7 +106,11 @@ export const AssetNodeOverview = ({
     materializations,
     observations,
     loading: materializationsLoading,
-  } = useRecentAssetEvents(assetNode.assetKey, {}, {assetHasDefinedPartitions: false});
+  } = useRecentAssetEvents(
+    assetNode.isPartitioned ? undefined : assetNode.assetKey,
+    {},
+    {assetHasDefinedPartitions: false},
+  );
 
   if (loading) {
     return <AssetNodeOverviewLoading />;
