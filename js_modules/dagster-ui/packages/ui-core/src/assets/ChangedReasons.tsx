@@ -31,7 +31,7 @@ export const ChangedReasonsTag = ({
       <BaseTag
         fillColor={Colors.backgroundCyan()}
         textColor={Colors.textCyan()}
-        label={changedReasons.includes(ChangeReason.NEW) ? 'New in branch' : 'Modified in branch'}
+        label={changedReasons.includes(ChangeReason.NEW) ? 'New in branch' : 'Changed in branch'}
         icon={<Icon name="new_in_branch" color={Colors.accentCyan()} />}
       />
     </ChangedReasonsPopover>
@@ -57,11 +57,11 @@ export const ChangedReasonsPopover = ({
       case ChangeReason.NEW:
         return '';
       case ChangeReason.CODE_VERSION:
-        return 'has a modified code version';
+        return 'has a changed code version';
       case ChangeReason.INPUTS:
-        return 'has modified dependencies';
+        return 'has changed dependencies';
       case ChangeReason.PARTITIONS_DEFINITION:
-        return 'has a modified partition definition';
+        return 'has a changed partition definition';
     }
   }
   return (
