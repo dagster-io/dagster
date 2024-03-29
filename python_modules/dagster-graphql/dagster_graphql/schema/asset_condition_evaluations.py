@@ -3,7 +3,7 @@ import itertools
 from typing import Optional, Sequence, Union
 
 import graphene
-from dagster._core.definitions.asset_condition import AssetConditionEvaluation
+from dagster._core.definitions.asset_condition.asset_condition import AssetConditionEvaluation
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset

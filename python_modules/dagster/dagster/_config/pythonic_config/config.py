@@ -238,13 +238,21 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                     **nested_values,
                     discriminator_key: discriminated_value,
                 }
+
+            # If the passed value matches the name of an expected Enum value, convert it to the value
+            elif (
+                field
+                and safe_is_subclass(field.annotation, Enum)
+                and value in field.annotation.__members__
+                and value not in [member.value for member in field.annotation]
+            ):
+                modified_data[key] = field.annotation.__members__[value].value
+            elif field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
+                modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
+                    value
+                )
             else:
-                if field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
-                    modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
-                        value
-                    )
-                else:
-                    modified_data[key] = value
+                modified_data[key] = value
 
         for key, field in model_fields(self).items():
             if field.is_required() and key not in modified_data:

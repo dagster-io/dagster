@@ -8,7 +8,6 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Dict,
-    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -20,7 +19,7 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
@@ -36,12 +35,12 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalJob, ExternalSensor
-from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
+from dagster._core.remote_representation.external_data import ExternalTargetData
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -63,11 +62,12 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from pendulum.datetime import DateTime
 
+    from dagster._daemon.daemon import DaemonIterator
+
+
 MIN_INTERVAL_LOOP_TIME = 5
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
-
-TDaemonGenerator: TypeAlias = Iterator[Optional[SerializableErrorInfo]]
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -241,9 +241,6 @@ class SensorLaunchContext(AbstractContextManager):
             )
 
 
-VERBOSE_LOGS_INTERVAL = 60
-
-
 def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
@@ -251,40 +248,34 @@ def execute_sensor_iteration_loop(
     until: Optional[float] = None,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> TDaemonGenerator:
+) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
+    from dagster._daemon.daemon import SpanMarker
+
     sensor_tick_futures: Dict[str, Future] = {}
-    last_verbose_time = None
     while True:
         start_time = pendulum.now("UTC").timestamp()
         if until and start_time >= until:
             # provide a way of organically ending the loop to support test environment
             break
 
-        # occasionally enable verbose logging (doing it always would be too much)
-        verbose_logs_iteration = (
-            last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
-        )
+        yield SpanMarker.START_SPAN
         yield from execute_sensor_iteration(
             workspace_process_context,
             logger,
             threadpool_executor=threadpool_executor,
             submit_threadpool_executor=submit_threadpool_executor,
             sensor_tick_futures=sensor_tick_futures,
-            log_verbose_checks=verbose_logs_iteration,
         )
         # Yield to check for heartbeats in case there were no yields within
         # execute_sensor_iteration
-        yield None
+        yield SpanMarker.END_SPAN
 
         end_time = pendulum.now("UTC").timestamp()
-
-        if verbose_logs_iteration:
-            last_verbose_time = end_time
 
         loop_duration = end_time - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
@@ -299,7 +290,6 @@ def execute_sensor_iteration(
     threadpool_executor: Optional[ThreadPoolExecutor],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
-    log_verbose_checks: bool = True,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
@@ -336,54 +326,8 @@ def execute_sensor_iteration(
                         all_sensor_states.get(selector_id)
                     ).is_running:
                         sensors[selector_id] = sensor
-        elif location_entry.load_error and log_verbose_checks:
-            logger.warning(
-                f"Could not load location {location_entry.origin.location_name} to check for"
-                f" sensors due to the following error: {location_entry.load_error}"
-            )
-
-    if log_verbose_checks:
-        unloadable_sensor_states = {
-            selector_id: sensor_state
-            for selector_id, sensor_state in all_sensor_states.items()
-            if selector_id not in sensors and sensor_state.status == InstigatorStatus.RUNNING
-        }
-
-        for sensor_state in unloadable_sensor_states.values():
-            sensor_name = sensor_state.origin.instigator_name
-            code_location_origin = (
-                sensor_state.origin.external_repository_origin.code_location_origin
-            )
-
-            location_name = code_location_origin.location_name
-            repo_name = sensor_state.origin.external_repository_origin.repository_name
-            if (
-                location_name not in workspace_snapshot
-                or not workspace_snapshot[location_name].code_location
-            ):
-                logger.warning(
-                    f"Sensor {sensor_name} was started from a location "
-                    f"{location_name} that can no longer be found in the workspace. "
-                    "You can turn off this sensor in the Dagster UI from the Status tab."
-                )
-            elif not check.not_none(  # checked above
-                workspace_snapshot[location_name].code_location
-            ).has_repository(repo_name):
-                logger.warning(
-                    f"Could not find repository {repo_name} in location {location_name} to "
-                    + f"run sensor {sensor_name}. If this repository no longer exists, you can "
-                    + "turn off the sensor in the Dagster UI from the Status tab.",
-                )
-            else:
-                logger.warning(
-                    f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
-                    "sensor no longer exists, you can turn it off in the Dagster UI from the "
-                    "Status tab.",
-                )
 
     if not sensors:
-        if log_verbose_checks:
-            logger.debug("Not checking for any runs since no sensors have been started.")
         yield
         return
 
@@ -593,10 +537,11 @@ def _submit_run_request(
     code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
-        repository_name=sensor_origin.external_repository_origin.repository_name,
+        repository_name=sensor_origin.repository_origin.repository_name,
         job_name=target_data.job_name,
         op_selection=target_data.op_selection,
         asset_selection=run_request.asset_selection,
+        asset_check_selection=run_request.asset_check_keys,
     )
     external_job = code_location.get_external_job(job_subset_selector)
     run = _get_or_create_sensor_run(
@@ -634,7 +579,7 @@ def _get_code_location_for_sensor(
 ) -> CodeLocation:
     sensor_origin = external_sensor.get_external_origin()
     return workspace_process_context.create_request_context().get_code_location(
-        sensor_origin.external_repository_origin.code_location_origin.location_name
+        sensor_origin.repository_origin.code_location_origin.location_name
     )
 
 
@@ -967,8 +912,8 @@ def _fetch_existing_runs(
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
             run.external_job_origin is not None
-            and run.external_job_origin.external_repository_origin.get_selector_id()
-            == external_sensor.get_external_origin().external_repository_origin.get_selector_id()
+            and run.external_job_origin.repository_origin.get_selector_id()
+            == external_sensor.get_external_origin().repository_origin.get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):
             valid_runs.append(run)
@@ -1037,7 +982,9 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    job_tags = validate_tags(external_job.tags or {}, allow_reserved_tags=False)
+    job_tags = normalize_tags(
+        external_job.tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
+    ).tags
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
         # this gets applied in the sensor definition too, but we apply it here for backcompat
@@ -1077,6 +1024,8 @@ def _create_sensor_run(
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
-        asset_check_selection=None,
+        asset_check_selection=(
+            frozenset(run_request.asset_check_keys) if run_request.asset_check_keys else None
+        ),
         asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
     )

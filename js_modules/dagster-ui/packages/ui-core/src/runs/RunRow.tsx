@@ -17,6 +17,7 @@ import styled from 'styled-components';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {CreatedByTagCell} from './CreatedByTag';
+import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
@@ -27,7 +28,7 @@ import {RunTableRunFragment} from './types/RunTable.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {PipelineTag} from '../graphql/types';
+import {PipelineTag, RunStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -99,6 +100,7 @@ export const RunRow = ({
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
   const [showRunTags, setShowRunTags] = React.useState(false);
+  const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const tagsToShow = React.useMemo(() => {
@@ -190,6 +192,18 @@ export const RunRow = ({
                 </ButtonLink>
               </Caption>
             ) : null}
+            {run.status === RunStatus.QUEUED ? (
+              <Caption>
+                <ButtonLink
+                  onClick={() => {
+                    setShowQueueCriteria(true);
+                  }}
+                  color={Colors.textLight()}
+                >
+                  View queue criteria
+                </ButtonLink>
+              </Caption>
+            ) : null}
           </Box>
         </Box>
         {isHovered && allTagsWithPinned.length ? (
@@ -251,6 +265,11 @@ export const RunRow = ({
           </Button>
         </DialogFooter>
       </Dialog>
+      <QueuedRunCriteriaDialog
+        run={run}
+        isOpen={showQueueCriteria}
+        onClose={() => setShowQueueCriteria(false)}
+      />
     </Row>
   );
 };

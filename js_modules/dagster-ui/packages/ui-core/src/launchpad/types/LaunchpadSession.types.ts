@@ -4,8 +4,8 @@ import * as Types from '../../graphql/types';
 
 export type PreviewConfigQueryVariables = Types.Exact<{
   pipeline: Types.PipelineSelector;
-  runConfigData: Types.Scalars['RunConfigData'];
-  mode: Types.Scalars['String'];
+  runConfigData: Types.Scalars['RunConfigData']['input'];
+  mode: Types.Scalars['String']['input'];
 }>;
 
 export type PreviewConfigQuery = {
@@ -121,7 +121,7 @@ export type PreviewConfigQuery = {
 
 export type PipelineExecutionConfigSchemaQueryVariables = Types.Exact<{
   selector: Types.PipelineSelector;
-  mode?: Types.InputMaybe<Types.Scalars['String']>;
+  mode?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type PipelineExecutionConfigSchemaQuery = {
@@ -214,22 +214,22 @@ export type PipelineExecutionConfigSchemaQuery = {
       };
 };
 
-export type LaunchpadSessionRunConfigSchemaFragment_InvalidSubsetError_ = {
+export type LaunchpadSessionRunConfigSchemaFragment_InvalidSubsetError = {
   __typename: 'InvalidSubsetError';
 };
 
-export type LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError_ = {
+export type LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError = {
   __typename: 'ModeNotFoundError';
   message: string;
 };
 
-export type LaunchpadSessionRunConfigSchemaFragment_PipelineNotFoundError_ = {
+export type LaunchpadSessionRunConfigSchemaFragment_PipelineNotFoundError = {
   __typename: 'PipelineNotFoundError';
 };
 
-export type LaunchpadSessionRunConfigSchemaFragment_PythonError_ = {__typename: 'PythonError'};
+export type LaunchpadSessionRunConfigSchemaFragment_PythonError = {__typename: 'PythonError'};
 
-export type LaunchpadSessionRunConfigSchemaFragment_RunConfigSchema_ = {
+export type LaunchpadSessionRunConfigSchemaFragment_RunConfigSchema = {
   __typename: 'RunConfigSchema';
   rootDefaultYaml: string;
   rootConfigType:
@@ -308,11 +308,11 @@ export type LaunchpadSessionRunConfigSchemaFragment_RunConfigSchema_ = {
 };
 
 export type LaunchpadSessionRunConfigSchemaFragment =
-  | LaunchpadSessionRunConfigSchemaFragment_InvalidSubsetError_
-  | LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError_
-  | LaunchpadSessionRunConfigSchemaFragment_PipelineNotFoundError_
-  | LaunchpadSessionRunConfigSchemaFragment_PythonError_
-  | LaunchpadSessionRunConfigSchemaFragment_RunConfigSchema_;
+  | LaunchpadSessionRunConfigSchemaFragment_InvalidSubsetError
+  | LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError
+  | LaunchpadSessionRunConfigSchemaFragment_PipelineNotFoundError
+  | LaunchpadSessionRunConfigSchemaFragment_PythonError
+  | LaunchpadSessionRunConfigSchemaFragment_RunConfigSchema;
 
 export type LaunchpadSessionModeNotFoundFragment = {
   __typename: 'ModeNotFoundError';

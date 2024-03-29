@@ -67,14 +67,14 @@ export type InstanceConcurrencyLimitsQuery = {
 };
 
 export type SetConcurrencyLimitMutationVariables = Types.Exact<{
-  concurrencyKey: Types.Scalars['String'];
-  limit: Types.Scalars['Int'];
+  concurrencyKey: Types.Scalars['String']['input'];
+  limit: Types.Scalars['Int']['input'];
 }>;
 
 export type SetConcurrencyLimitMutation = {__typename: 'Mutation'; setConcurrencyLimit: boolean};
 
 export type DeleteConcurrencyLimitMutationVariables = Types.Exact<{
-  concurrencyKey: Types.Scalars['String'];
+  concurrencyKey: Types.Scalars['String']['input'];
 }>;
 
 export type DeleteConcurrencyLimitMutation = {
@@ -83,14 +83,14 @@ export type DeleteConcurrencyLimitMutation = {
 };
 
 export type FreeConcurrencySlotsMutationVariables = Types.Exact<{
-  runId: Types.Scalars['String'];
-  stepKey?: Types.InputMaybe<Types.Scalars['String']>;
+  runId: Types.Scalars['String']['input'];
+  stepKey?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type FreeConcurrencySlotsMutation = {__typename: 'Mutation'; freeConcurrencySlots: boolean};
 
 export type ConcurrencyKeyDetailsQueryVariables = Types.Exact<{
-  concurrencyKey: Types.Scalars['String'];
+  concurrencyKey: Types.Scalars['String']['input'];
 }>;
 
 export type ConcurrencyKeyDetailsQuery = {
@@ -117,7 +117,7 @@ export type ConcurrencyKeyDetailsQuery = {
 
 export type RunsForConcurrencyKeyQueryVariables = Types.Exact<{
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type RunsForConcurrencyKeyQuery = {

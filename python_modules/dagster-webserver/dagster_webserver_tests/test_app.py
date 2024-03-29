@@ -152,7 +152,7 @@ def test_successful_host_dagster_ui_from_workspace():
                 log_level="warning",
             )
 
-        assert server_call.called_with(mock.ANY, host="127.0.0.1", port=2343, log_level="warning")
+        server_call.assert_called_with(mock.ANY, host="127.0.0.1", port=2343, log_level="warning")
 
 
 @pytest.fixture
@@ -185,7 +185,7 @@ def test_host_dagster_webserver_choose_port(mock_is_port_in_use, mock_find_free_
                 log_level="warning",
             )
 
-        assert server_call.called_with(
+        server_call.assert_called_with(
             mock.ANY, host="127.0.0.1", port=DEFAULT_WEBSERVER_PORT, log_level="warning"
         )
 
@@ -201,7 +201,7 @@ def test_host_dagster_webserver_choose_port(mock_is_port_in_use, mock_find_free_
                 log_level="warning",
             )
 
-        assert server_call.called_with(mock.ANY, host="127.0.0.1", port=1234, log_level="warning")
+        server_call.assert_called_with(mock.ANY, host="127.0.0.1", port=1234, log_level="warning")
 
 
 def test_successful_host_dagster_ui_from_multiple_workspace_files():

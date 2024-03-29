@@ -2,14 +2,17 @@ from typing import TYPE_CHECKING, List, Sequence, Union, cast
 
 import dagster._check as check
 import pendulum
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
-from dagster._core.errors import DagsterError, DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterError,
+    DagsterInvariantViolationError,
+    DagsterUserCodeProcessError,
+)
 from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
-from dagster._core.host_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils import utc_datetime_from_timestamp
@@ -42,7 +45,7 @@ def get_asset_backfill_preview(
 ) -> Sequence["GrapheneAssetPartitions"]:
     from ...schema.backfill import GrapheneAssetPartitions
 
-    asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+    asset_graph = graphene_info.context.asset_graph
 
     check.invariant(backfill_preview_params.get("assetSelection") is not None)
     check.invariant(backfill_preview_params.get("partitionNames") is not None)
@@ -60,7 +63,7 @@ def get_asset_backfill_preview(
     asset_partitions = []
 
     for asset_key in asset_backfill_data.get_targeted_asset_keys_topological_order(asset_graph):
-        if asset_graph.get_partitions_def(asset_key):
+        if asset_graph.get(asset_key).partitions_def:
             partitions_subset = asset_backfill_data.target_subset.partitions_subsets_by_asset_key[
                 asset_key
             ]
@@ -95,17 +98,13 @@ def create_and_launch_partition_backfill(
 
     partitions_by_assets = backfill_params.get("partitionsByAssets")
 
-    check.invariant(
-        (
-            asset_selection is None
-            and backfill_params.get("selector") is None
-            and backfill_params.get("partitionNames") is None
-            if partitions_by_assets
-            else True
-        ),
-        "partitions_by_assets cannot be used together with asset_selection, selector, or"
-        " partitionNames",
-    )
+    if (
+        asset_selection or backfill_params.get("selector") or backfill_params.get("partitionNames")
+    ) and partitions_by_assets:
+        raise DagsterInvariantViolationError(
+            "partitions_by_assets cannot be used together with asset_selection, selector, or"
+            " partitionNames"
+        )
 
     tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}
 
@@ -133,12 +132,10 @@ def create_and_launch_partition_backfill(
         if not matches:
             return GraphenePartitionSetNotFoundError(partition_set_name)
 
-        check.invariant(
-            len(matches) == 1,
-            "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
-                num=len(matches), partition_set_name=partition_set_name
-            ),
-        )
+        if len(matches) != 1:
+            raise DagsterInvariantViolationError(
+                f"Partition set names must be unique: found {len(matches)} matches for {partition_set_name}"
+            )
         external_partition_set = next(iter(matches))
 
         if backfill_params.get("allPartitions"):
@@ -198,7 +195,7 @@ def create_and_launch_partition_backfill(
         if backfill_params.get("fromFailure"):
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
-        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
 
         assert_permission_for_asset_graph(
             graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
@@ -227,7 +224,7 @@ def create_and_launch_partition_backfill(
         if backfill_params.get("fromFailure"):
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
-        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
         assert_permission_for_asset_graph(
             graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
         )
@@ -265,7 +262,7 @@ def cancel_partition_backfill(
         check.failed(f"No backfill found for id: {backfill_id}")
 
     if backfill.is_asset_backfill:
-        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
         assert_permission_for_asset_graph(
             graphene_info,
             asset_graph,

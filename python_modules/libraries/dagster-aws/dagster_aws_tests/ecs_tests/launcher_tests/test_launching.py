@@ -323,7 +323,7 @@ def test_task_definition_registration(
 
 
 @pytest.mark.skip(
-    "This remains occassionally flaky on older versions of Python. See"
+    "This remains occasionally flaky on older versions of Python. See"
     " https://github.com/dagster-io/dagster/pull/11290 "
     "https://linear.app/elementl/issue/CLOUD-2093/re-enable-flaky-ecs-task-registration-race-condition-tests"
 )
@@ -367,6 +367,9 @@ def test_reuse_task_definition(instance, ecs):
                 "secrets": secrets,
                 "environment": environment,
                 "command": ["echo", "HELLO"],
+                "healthCheck": {
+                    "command": ["HELLO"],
+                },
             },
             {
                 "image": "other_image",
@@ -478,6 +481,31 @@ def test_reuse_task_definition(instance, ecs):
     # Changed command fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["command"] = ["echo", "GOODBYE"]
+    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
+    # Changed linuxParameters fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["linuxParameters"] = {
+        "capabilities": {"add": ["SYS_PTRACE"]},
+        "initProcessEnabled": True,
+    }
+    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
+    # Changed healthCheck fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["healthCheck"] = {
+        "command": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 0,
+    }
     assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
@@ -687,6 +715,11 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
 
     repository_credentials = "fake-secret-arn"
 
+    linux_parameters = {
+        "capabilities": {"add": ["SYS_PTRACE"]},
+        "initProcessEnabled": True,
+    }
+
     # You can provide a family or a task definition ARN
     with instance_cm(
         {
@@ -700,6 +733,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
                 "mount_points": mount_points,
                 "volumes": volumes,
                 "repository_credentials": repository_credentials,
+                "linux_parameters": linux_parameters,
             },
             "container_name": container_name,
         }
@@ -745,6 +779,8 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
             container_definition["repositoryCredentials"]["credentialsParameter"]
             == repository_credentials
         )
+
+        assert container_definition["linuxParameters"] == linux_parameters
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,

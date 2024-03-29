@@ -277,8 +277,7 @@ Op-based jobs are defined using the <PyObject object="job" decorator /> decorato
         }
     }
 )
-def tag_concurrency_job():
-    ...
+def tag_concurrency_job(): ...
 ```
 
 </TabItem>
@@ -370,8 +369,7 @@ In this example, using the <PyObject module="dagster" object="multiprocess_execu
         }
     }
 )
-def tag_concurrency_job():
-    ...
+def tag_concurrency_job(): ...
 ```
 
 </TabItem>
@@ -404,13 +402,11 @@ For example, to globally limit the number of running ops touching Redshift to tw
 
 ```python file=/deploying/concurrency_limits/concurrency_limits.py startafter=start_global_concurrency endbefore=end_global_concurrency
 @op(tags={"dagster/concurrency_key": "redshift"})
-def my_redshift_op():
-    ...
+def my_redshift_op(): ...
 
 
 @asset(op_tags={"dagster/concurrency_key": "redshift"})
-def my_redshift_table():
-    ...
+def my_redshift_table(): ...
 ```
 
 To specify limits on the number of ops/assets tagged with a particular concurrency key, you can either use the `dagster` CLI command or the Dagster UI:
@@ -443,8 +439,7 @@ By default, slots will be allocated to op / asset execution on a first-in-first-
 
 ```python startafter=start_marker_priority endbefore=end_marker_priority file=/deploying/concurrency_limits/concurrency_limits.py
 @job(tags={"dagster/priority": "3"})
-def important_job():
-    ...
+def important_job(): ...
 
 
 @schedule(
@@ -453,21 +448,18 @@ def important_job():
     execution_timezone="US/Central",
     tags={"dagster/priority": "-1"},
 )
-def less_important_schedule(_):
-    ...
+def less_important_schedule(_): ...
 ```
 
 Priority can also be assigned based on the priority tag of the op/asset definition.
 
 ```python file=/deploying/concurrency_limits/concurrency_limits.py startafter=start_global_concurrency_priority endbefore=end_global_concurrency_priority
 @op(tags={"dagster/concurrency_key": "foo", "dagster/priority": "3"})
-def my_op():
-    ...
+def my_op(): ...
 
 
 @asset(op_tags={"dagster/concurrency_key": "foo", "dagster/priority": "3"})
-def my_asset():
-    ...
+def my_asset(): ...
 ```
 
 When the priority tag is set on both the run and the asset/op definition, the step priority will be the sum of the two values.

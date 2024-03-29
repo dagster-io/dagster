@@ -2,7 +2,7 @@ import abc
 from typing import Mapping, Optional, Sequence, Set
 
 from dagster import AssetKey
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.run_request import InstigatorType

@@ -2,7 +2,6 @@
 # pyright: reportOptionalMemberAccess=none
 
 # start
-import pandas as pd
 from dagster_snowflake import SnowflakeResource
 
 from dagster import Definitions, EnvVar, asset
@@ -12,16 +11,17 @@ from dagster import Definitions, EnvVar, asset
 
 
 @asset
-def small_petals(snowflake: SnowflakeResource) -> pd.DataFrame:
+def small_petals(snowflake: SnowflakeResource):
+    query = """
+        create or replace table iris.small_petals as (
+            SELECT * 
+            FROM iris.iris_dataset
+            WHERE species = 'petal_length_cm' < 1 AND 'petal_width_cm' < 1
+        );
+    """
+
     with snowflake.get_connection() as conn:
-        return (
-            conn.cursor()
-            .execute(
-                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
-                " 'petal_width_cm' < 1"
-            )
-            .fetch_pandas_all()
-        )
+        conn.cursor.execute(query)
 
 
 defs = Definitions(

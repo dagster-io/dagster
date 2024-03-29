@@ -1,25 +1,52 @@
+import tempfile
+
 import pytest
-from dagster._core.test_utils import create_test_daemon_workspace_context
+from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
-from dagster._utils.test.postgres_instance import postgres_instance_for_test
 
 from .utils import workspace_load_target
 
 
 @pytest.fixture
 def instance():
-    with postgres_instance_for_test(
-        __file__,
-        "test-postgres-db-docker",
-        overrides={
-            "run_coordinator": {
-                "module": "dagster.core.test_utils",
-                "class": "MockedRunCoordinator",
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "run_coordinator": {
+                    "module": "dagster.core.test_utils",
+                    "class": "MockedRunCoordinator",
+                },
+                "event_log_storage": {
+                    "module": "dagster._core.storage.event_log",
+                    "class": "ConsolidatedSqliteEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "run_retries": {"enabled": True},
             },
-            "run_retries": {"enabled": True},
-        },
-    ) as instance:
-        yield instance
+            temp_dir=temp_dir,
+        ) as instance:
+            yield instance
+
+
+@pytest.fixture
+def instance_no_retry_on_asset_or_op_failure():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "run_coordinator": {
+                    "module": "dagster.core.test_utils",
+                    "class": "MockedRunCoordinator",
+                },
+                "event_log_storage": {
+                    "module": "dagster._core.storage.event_log",
+                    "class": "ConsolidatedSqliteEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "run_retries": {"enabled": True, "retry_on_asset_or_op_failure": False},
+            },
+            temp_dir=temp_dir,
+        ) as instance:
+            yield instance
 
 
 @pytest.fixture

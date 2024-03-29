@@ -1,0 +1,13 @@
+# alert_policies.yaml
+
+alert_policies:
+  - name: "ms-teams-alert-policy"
+    description: "An alert policy to send a Microsoft Teams webhook during job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "AGENT_UNAVAILABLE"
+    notification_service:
+      microsoft_teams:
+        webhook_url: "https://yourdomain.webhook.office.com/..."

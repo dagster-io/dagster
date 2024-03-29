@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type TickLogEventsQueryVariables = Types.Exact<{
   instigationSelector: Types.InstigationSelector;
-  tickId: Types.Scalars['Int'];
+  tickId: Types.Scalars['Int']['input'];
 }>;
 
 export type TickLogEventsQuery = {

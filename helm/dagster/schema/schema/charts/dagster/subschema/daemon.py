@@ -29,12 +29,18 @@ class TagConcurrencyLimit(BaseModel):
         extra = Extra.forbid
 
 
+class BlockOpConcurrencyLimitedRuns(BaseModel):
+    enabled: bool
+    opConcurrencySlotBuffer: int
+
+
 class QueuedRunCoordinatorConfig(BaseModel):
     maxConcurrentRuns: Optional[IntSource]
     tagConcurrencyLimits: Optional[List[TagConcurrencyLimit]]
     dequeueIntervalSeconds: Optional[IntSource]
     dequeueNumWorkers: Optional[IntSource]
     dequeueUseThreads: Optional[bool]
+    blockOpConcurrencyLimitedRuns: Optional[BlockOpConcurrencyLimitedRuns]
 
     class Config:
         extra = Extra.forbid

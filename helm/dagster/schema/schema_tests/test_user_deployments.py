@@ -881,6 +881,60 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
 
 
 @pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_annotations(template: HelmTemplate, include_config_in_launched_runs: bool):
+    name = "foo"
+
+    annotations = {"my-annotation-key": "my-annotation-val"}
+
+    deployment = UserDeployment.construct(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        annotations=annotations,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "image_pull_policy": "Always",
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    },
+                    "pod_template_spec_metadata": {
+                        "annotations": annotations,
+                    },
+                },
+            }
+        }
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
 def test_user_deployment_resources(template: HelmTemplate, include_config_in_launched_runs: bool):
     name = "foo"
 

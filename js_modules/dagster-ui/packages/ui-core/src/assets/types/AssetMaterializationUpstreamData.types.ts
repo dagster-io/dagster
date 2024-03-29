@@ -21,7 +21,7 @@ export type MaterializationUpstreamDataVersionFragment = {
 
 export type AssetMaterializationUpstreamQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  timestamp: Types.Scalars['String'];
+  timestamp: Types.Scalars['String']['input'];
 }>;
 
 export type AssetMaterializationUpstreamQuery = {

@@ -133,6 +133,9 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
     AutoMaterializeRule as AutoMaterializeRule,
 )
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition as AutoMaterializeSensorDefinition,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
 from dagster._core.definitions.config import ConfigMapping as ConfigMapping
@@ -144,6 +147,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check as asset_check,
+    multi_asset_check as multi_asset_check,
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
@@ -169,6 +173,7 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     sensor as sensor,
 )
 from dagster._core.definitions.decorators.source_asset_decorator import (
+    multi_observable_source_asset as multi_observable_source_asset,
     observable_source_asset as observable_source_asset,
 )
 from dagster._core.definitions.definitions_class import (
@@ -204,6 +209,15 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.external_asset import (
     external_asset_from_spec as external_asset_from_spec,
     external_assets_from_specs as external_assets_from_specs,
+)
+from dagster._core.definitions.freshness_checks.non_partitioned import (
+    build_freshness_checks_for_non_partitioned_assets as build_freshness_checks_for_non_partitioned_assets,
+)
+from dagster._core.definitions.freshness_checks.sensor import (
+    build_sensor_for_freshness_checks as build_sensor_for_freshness_checks,
+)
+from dagster._core.definitions.freshness_checks.time_window_partitioned import (
+    build_freshness_checks_for_time_window_partitioned_assets as build_freshness_checks_for_time_window_partitioned_assets,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy_sensor_definition import (
@@ -256,9 +270,11 @@ from dagster._core.definitions.metadata import (
     NullMetadataValue as NullMetadataValue,
     PathMetadataValue as PathMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
+    TableColumnLineageMetadataValue as TableColumnLineageMetadataValue,
     TableMetadataValue as TableMetadataValue,
     TableSchemaMetadataValue as TableSchemaMetadataValue,
     TextMetadataValue as TextMetadataValue,
+    TimestampMetadataValue as TimestampMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
 from dagster._core.definitions.metadata.table import (
@@ -356,6 +372,9 @@ from dagster._core.definitions.schedule_definition import (
     ScheduleEvaluationContext as ScheduleEvaluationContext,
     build_schedule_context as build_schedule_context,
 )
+from dagster._core.definitions.schema_change_checks import (
+    build_column_schema_change_checks as build_column_schema_change_checks,
+)
 from dagster._core.definitions.selector import (
     CodeLocationSelector as CodeLocationSelector,
     JobSelector as JobSelector,
@@ -445,6 +464,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.execution.build_resources import build_resources as build_resources
 from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext as AssetCheckExecutionContext,
     AssetExecutionContext as AssetExecutionContext,
     OpExecutionContext as OpExecutionContext,
 )

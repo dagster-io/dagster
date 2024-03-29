@@ -1,0 +1,62 @@
+{
+  /// Autofix violations on-save.
+  // https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff
+  // Set this to be the path to your ruff executable, e.g.
+  //
+  // ```bash
+  // which ruff
+  // ```
+  //
+  "ruff.path": [],
+
+  // Set this to be the path to your python interpreter, e.g.
+  //
+  // ```bash
+  // pyenv which python
+  // ```
+  //
+  "ruff.interpreter": [],
+
+  // Format code on-save.
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  /// Configure linting.
+  // https://code.visualstudio.com/docs/python/linting#_general-linting-settings
+  "python.linting.enabled": true,
+  "python.linting.lintOnSave": true,
+  "python.linting.pylintEnabled": false,
+  "python.linting.mypyEnabled": true,
+
+  /// Configure code analysis.
+  // https://code.visualstudio.com/docs/python/settings-reference#_code-analysis-settings
+  "python.languageServer": "Pylance",
+  "python.analysis.indexing": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.inlayHints.functionReturnTypes": false,
+
+  /// Configuration for front-end.
+  // https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint
+  "[javascript][typescript][typescriptreact]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports.eslint": "explicit",
+      "source.removeUnusedImports": "explicit"
+    }
+  },
+  "[json][jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  }
+}

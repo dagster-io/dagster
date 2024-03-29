@@ -11,7 +11,7 @@ export type BackfillTerminationDialogBackfillFragment = {
 };
 
 export type CancelBackfillMutationVariables = Types.Exact<{
-  backfillId: Types.Scalars['String'];
+  backfillId: Types.Scalars['String']['input'];
 }>;
 
 export type CancelBackfillMutation = {

@@ -58,11 +58,41 @@ def test_dagster_dev_command_workspace():
                     dev_process.communicate()
 
 
+def test_dagster_dev_command_loads_toys():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with environ({"DAGSTER_HOME": ""}):
+            with new_cwd(tempdir):
+                dagit_port = find_free_port()
+                dev_process = subprocess.Popen(
+                    [
+                        "dagster",
+                        "dev",
+                        "-m",
+                        "dagster_test.toys.repo",
+                        "--dagit-port",
+                        str(dagit_port),
+                        "--log-level",
+                        "debug",
+                    ],
+                    cwd=tempdir,
+                )
+                try:
+                    _wait_for_dagit_running(dagit_port)
+                finally:
+                    dev_process.send_signal(signal.SIGINT)
+                    dev_process.communicate()
+
+
 # E2E test that spins up "dagster dev", accesses dagit,
 # and waits for a schedule run to launch
 def test_dagster_dev_command_no_dagster_home():
     with tempfile.TemporaryDirectory() as tempdir:
-        with environ({"DAGSTER_HOME": ""}):
+        with environ(
+            {
+                "DAGSTER_HOME": "",  # unset dagster home
+                "CHECK_DAGSTER_DEV": "1",  # trigger target user code to check for DAGSTER_DEV env var
+            }
+        ):
             with new_cwd(tempdir):
                 dagster_yaml = {
                     "run_coordinator": {
@@ -172,7 +202,6 @@ def test_dagster_dev_command_grpc_port():
 
             client = DagsterGrpcClient(port=grpc_port, host="localhost")
             wait_for_grpc_server(grpc_process, client, subprocess_args)
-
             dev_process = subprocess.Popen(
                 [
                     "dagster",

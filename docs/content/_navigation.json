@@ -10,8 +10,8 @@
         "path": "/getting-started/what-why-dagster"
       },
       {
-        "title": "Hello, Dagster!",
-        "path": "/getting-started/hello-dagster"
+        "title": "Quickstart",
+        "path": "/getting-started/quickstart"
       },
       {
         "title": "Installation",
@@ -54,11 +54,7 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
-        "title": "Part 6: Using Dagster to save your data",
-        "path": "/tutorial/saving-your-data"
-      },
-      {
-        "title": "Part 7: Connecting to external services",
+        "title": "Part 6: Connecting to external services",
         "path": "/tutorial/connecting-to-external-services"
       },
       {
@@ -100,8 +96,18 @@
             "path": "/concepts/assets/asset-selection-syntax"
           },
           {
-            "title": "Asset checks (Experimental)",
-            "path": "/concepts/assets/asset-checks"
+            "title": "Asset checks",
+            "path": "/concepts/assets/asset-checks",
+            "children": [
+              {
+                "title": "Defining & executing checks",
+                "path": "/concepts/assets/asset-checks/define-execute-asset-checks"
+              },
+              {
+                "title": "Checking data freshness",
+                "path": "/concepts/assets/asset-checks/checking-for-data-freshness"
+              }
+            ]
           },
           {
             "title": "External assets (Experimental)",
@@ -592,7 +598,32 @@
               },
               {
                 "title": "Alerts",
-                "path": "/dagster-cloud/managing-deployments/setting-up-alerts"
+                "children": [
+                  {
+                    "title": "Overview",
+                    "path": "/dagster-cloud/managing-deployments/alerts"
+                  },
+                  {
+                    "title": "Managing alerts in the UI",
+                    "path": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui"
+                  },
+                  {
+                    "title": "Managing alerts with the CLI",
+                    "path": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli"
+                  },
+                  {
+                    "title": "Email",
+                    "path": "/dagster-cloud/managing-deployments/alerts/email"
+                  },
+                  {
+                    "title": "Microsoft Teams",
+                    "path": "/dagster-cloud/managing-deployments/alerts/microsoft-teams"
+                  },
+                  {
+                    "title": "Slack",
+                    "path": "/dagster-cloud/managing-deployments/alerts/slack"
+                  }
+                ]
               },
               {
                 "title": "Environment variables & secrets",
@@ -646,7 +677,7 @@
             ]
           },
           {
-            "title":  "Best practices",
+            "title": "Best practices",
             "path": "/dagster-cloud/best-practices",
             "children": [
               {
@@ -841,6 +872,10 @@
         ]
       },
       {
+        "title": "OpenAI",
+        "path": "/integrations/openai"
+      },
+      {
         "title": "Pandas",
         "path": "/integrations/pandas"
       },
@@ -857,8 +892,17 @@
         "path": "/integrations/snowflake",
         "children": [
           {
-            "title": "Snowflake + Dagster tutorial",
-            "path": "/integrations/snowflake/using-snowflake-with-dagster"
+            "title": "Snowflake & Dagster tutorials",
+            "children": [
+              {
+                "title": "With resources",
+                "path": "/integrations/snowflake/using-snowflake-with-dagster"
+              },
+              {
+                "title": "With I/O managers",
+                "path": "/integrations/snowflake/using-snowflake-with-dagster-io-managers"
+              }
+            ]
           },
           {
             "title": "Reference",
@@ -1148,7 +1192,7 @@
             "path": "/_apidocs/dynamic"
           },
           {
-            "title": "Asset checks (Experimental)",
+            "title": "Asset checks",
             "path": "/_apidocs/asset-checks"
           },
           {
@@ -1319,6 +1363,10 @@
           {
             "title": "Papertrail (dagster-papertrail)",
             "path": "/_apidocs/libraries/dagster-papertrail"
+          },
+          {
+            "title": "Polars (dagster-polars)",
+            "path": "/_apidocs/libraries/dagster-polars"
           },
           {
             "title": "PostgreSQL (dagster-postgres)",

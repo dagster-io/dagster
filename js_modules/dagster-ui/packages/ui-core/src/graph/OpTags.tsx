@@ -616,6 +616,25 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
   );
 });
 
+export const TagIcon = React.memo(({label}: {label: string}) => {
+  const known = KNOWN_TAGS[coerceToStandardLabel(label) as keyof typeof KNOWN_TAGS];
+  const color = known?.color || null;
+  const reversed = known && 'reversed' in known ? known.reversed : false;
+  if (known && 'icon' in known) {
+    return (
+      <OpTagIconWrapper
+        role="img"
+        $size={16}
+        $img={known.icon.src}
+        $color={reversed ? Colors.accentPrimary() : color}
+        $rotation={null}
+        aria-label={label}
+      />
+    );
+  }
+  return null;
+});
+
 const OpTagIconWrapper = styled(IconWrapper)`
   mask-size: contain;
   mask-repeat: no-repeat;

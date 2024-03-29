@@ -15,7 +15,6 @@ import sys
 import tempfile
 import threading
 import time
-from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
 from signal import Signals
@@ -270,18 +269,15 @@ def hash_collection(
 
 
 @overload
-def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]:
-    ...
+def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]: ...
 
 
 @overload
-def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]:
-    ...
+def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]: ...
 
 
 @overload
-def make_hashable(value: Any) -> Any:
-    ...
+def make_hashable(value: Any) -> Any: ...
 
 
 def make_hashable(value: Any) -> Any:
@@ -642,7 +638,7 @@ def dict_without_keys(ddict, *keys):
 class Counter:
     def __init__(self):
         self._lock = threading.Lock()
-        self._counts = OrderedDict()
+        self._counts = {}
         super(Counter, self).__init__()
 
     def increment(self, key: str):
@@ -655,7 +651,10 @@ class Counter:
         return copy
 
 
-traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
+traced_counter: contextvars.ContextVar[Optional[Counter]] = contextvars.ContextVar(
+    "traced_counts",
+    default=None,
+)
 
 T_Callable = TypeVar("T_Callable", bound=Callable)
 
@@ -719,8 +718,7 @@ def normalize_to_repository(
     definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[True] = ...,
-) -> "RepositoryDefinition":
-    ...
+) -> "RepositoryDefinition": ...
 
 
 @overload
@@ -728,8 +726,7 @@ def normalize_to_repository(
     definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[False] = ...,
-) -> Optional["RepositoryDefinition"]:
-    ...
+) -> Optional["RepositoryDefinition"]: ...
 
 
 def normalize_to_repository(

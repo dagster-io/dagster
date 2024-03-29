@@ -2,6 +2,7 @@ import calendar
 import datetime
 import functools
 import math
+import re
 from typing import Iterator, Optional, Sequence, Union
 
 import pendulum
@@ -20,6 +21,10 @@ from dagster._seven.compat.pendulum import (
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
+
+CRON_RANGES = ((0, 59), (0, 23), (1, 31), (1, 12), (0, 7), (0, 59))
+CRON_STEP_SEARCH_REGEX = re.compile(r"^([^-]+)-([^-/]+)(/(\d+))?$")
+INT_REGEX = re.compile(r"^\d+$")
 
 
 class CroniterShim(_croniter):
@@ -630,6 +635,49 @@ def _timezone_aware_cron_iter(
             )
 
 
+def _has_out_of_range_cron_interval_str(cron_string: str):
+    assert CroniterShim.is_valid(cron_string)
+    try:
+        for i, cron_part in enumerate(cron_string.lower().split()):
+            expr_parts = cron_part.split(",")
+            while len(expr_parts) > 0:
+                expr = expr_parts.pop()
+                t = re.sub(
+                    r"^\*(\/.+)$", r"%d-%d\1" % (CRON_RANGES[i][0], CRON_RANGES[i][1]), str(expr)
+                )
+                m = CRON_STEP_SEARCH_REGEX.search(t)
+                if not m:
+                    # try normalizing "{start}/{step}" to "{start}-{max}/{step}".
+                    t = re.sub(r"^(.+)\/(.+)$", r"\1-%d/\2" % (CRON_RANGES[i][1]), str(expr))
+                    m = CRON_STEP_SEARCH_REGEX.search(t)
+                if m:
+                    (low, high, step) = m.group(1), m.group(2), m.group(4) or 1
+                    if i == 2 and high == "l":
+                        high = "31"
+                    if not INT_REGEX.search(low) or not INT_REGEX.search(high):
+                        continue
+                    low, high, step = map(int, [low, high, step])
+                    if step > high:
+                        return True
+    except:
+        pass
+    return False
+
+
+def has_out_of_range_cron_interval(cron_schedule: Union[str, Sequence[str]]):
+    """Utility function to detect cron schedules like '*/90 * * * *', which are valid cron schedules
+    but which evaluate to once every hour, not once every 90 minutes as might be expected.  This is
+    useful to detect so that we can issue warnings or some other kind of feedback to the user.  This
+    function does not detect cases where the step does not divide cleanly in the range, which is
+    another case that might cause some surprising behavior (e.g. '*/7 * * * *').
+    """
+    return (
+        _has_out_of_range_cron_interval_str(cron_schedule)
+        if isinstance(cron_schedule, str)
+        else any(_has_out_of_range_cron_interval_str(s) for s in cron_schedule)
+    )
+
+
 def cron_string_iterator(
     start_timestamp: float,
     cron_string: str,
@@ -853,3 +901,17 @@ def schedule_execution_time_iterator(
             for i, next_date in enumerate(next_dates):
                 if next_date == earliest_next_date:
                     next_dates[i] = next(iterators[i])
+
+
+def get_latest_completed_cron_tick(
+    freshness_cron: Optional[str], current_time: datetime.datetime, timezone: Optional[str]
+) -> Optional[datetime.datetime]:
+    if not freshness_cron:
+        return None
+
+    cron_iter = reverse_cron_string_iterator(
+        end_timestamp=current_time.timestamp(),
+        cron_string=freshness_cron,
+        execution_timezone=timezone,
+    )
+    return pendulum.instance(next(cron_iter))

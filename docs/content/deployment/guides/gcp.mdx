@@ -61,8 +61,7 @@ from dagster import job
         }
     },
 )
-def gcs_job():
-    ...
+def gcs_job(): ...
 ```
 
 With this in place, your job runs will store outputs on GCS in the location `gs://<bucket>/dagster/storage/<job run id>/files/<op name>.compute`.

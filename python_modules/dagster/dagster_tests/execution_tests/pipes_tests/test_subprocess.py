@@ -589,8 +589,7 @@ def test_run_in_op():
 
 
 def test_pipes_expected_materialization():
-    def script_fn():
-        ...
+    def script_fn(): ...
 
     @asset
     def missing_mat_result(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
@@ -662,8 +661,7 @@ def test_bad_user_message():
     def script_fn():
         from dagster_pipes import open_dagster_pipes
 
-        class Cursed:
-            ...
+        class Cursed: ...
 
         with open_dagster_pipes() as pipes:
             pipes.report_custom_message(Cursed())

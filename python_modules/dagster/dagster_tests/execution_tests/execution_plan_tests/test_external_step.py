@@ -414,6 +414,20 @@ def test_asset_check_step_launcher():
             assert DagsterEventType.STEP_FAILURE not in event_types
 
 
+def test_asset_check_step_launcher_job():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with instance_for_test() as instance:
+            with execute_job(
+                reconstructable(define_asset_check_job),
+                run_config=make_run_config(tmpdir, "no_base"),
+                instance=instance,
+            ) as result:
+                assert result.success
+                check_evals = result.get_asset_check_evaluations()
+                assert len(check_evals) == 1
+                assert check_evals[0].passed
+
+
 @pytest.mark.parametrize("resource_set", ["external", "internal_and_external"])
 def test_job(resource_set):
     if resource_set == "external":

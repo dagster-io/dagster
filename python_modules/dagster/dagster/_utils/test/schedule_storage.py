@@ -5,7 +5,7 @@ import pendulum
 import pytest
 
 from dagster import StaticPartitionsDefinition
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
@@ -13,9 +13,9 @@ from dagster._core.definitions.asset_condition import (
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.host_representation import (
-    ExternalRepositoryOrigin,
+from dagster._core.remote_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -70,7 +70,7 @@ class TestScheduleStorage:
 
     @staticmethod
     def fake_repo_target():
-        return ExternalRepositoryOrigin(
+        return RemoteRepositoryOrigin(
             ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"

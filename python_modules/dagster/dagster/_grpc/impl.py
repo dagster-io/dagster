@@ -41,8 +41,10 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
-from dagster._core.host_representation import external_job_data_from_def
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_representation import external_job_data_from_def
+from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -54,8 +56,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
     job_name_for_external_partition_set_name,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
@@ -206,10 +207,8 @@ def _run_in_subprocess(
 
             if not dagster_run:
                 raise DagsterRunNotFoundError(
-                    "gRPC server could not load run {run_id} in order to execute it. Make sure that"
-                    " the gRPC server has access to your run storage.".format(
-                        run_id=execute_run_args.run_id
-                    ),
+                    f"gRPC server could not load run {execute_run_args.run_id} in order to execute it. Make sure that"
+                    " the gRPC server has access to your run storage.",
                     invalid_run_id=execute_run_args.run_id,
                 )
 
@@ -278,6 +277,7 @@ def get_external_pipeline_subset_result(
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
     asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
+    include_parent_snapshot: bool,
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
@@ -286,7 +286,9 @@ def get_external_pipeline_subset_result(
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
         )
-        external_job_data = external_job_data_from_def(definition)
+        external_job_data = external_job_data_from_def(
+            definition, include_parent_snapshot=include_parent_snapshot
+        )
         return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
     except Exception:
         return ExternalJobSubsetResult(
@@ -347,6 +349,7 @@ def get_external_schedule_execution(
 
 def get_external_sensor_execution(
     repo_def: RepositoryDefinition,
+    code_location_origin: CodeLocationOrigin,
     instance_ref: Optional[InstanceRef],
     sensor_name: str,
     last_tick_completion_timestamp: Optional[float],
@@ -380,6 +383,7 @@ def get_external_sensor_execution(
             sensor_name=sensor_name,
             resources=resources_to_build,
             last_sensor_start_time=last_sensor_start_timestamp,
+            code_location_origin=code_location_origin,
         ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,

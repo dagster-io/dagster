@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, ContextManager, Iterator, Mapping, Optional, Sequence
+from typing import Any, ContextManager, Iterator, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import sqlalchemy as db
@@ -8,7 +8,7 @@ import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS
+from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, BATCH_WRITABLE_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -173,6 +173,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event (EventLogEntry): The event to store.
         """
         check.inst_param(event, "event", EventLogEntry)
+
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
             result = conn.execute(
@@ -202,10 +203,31 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags(event, event_id)
+            self.store_asset_event_tags([event], [event_id])
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
+
+    def store_event_batch(self, events: Sequence[EventLogEntry]) -> None:
+        check.sequence_param(events, "event", of_type=EventLogEntry)
+
+        check.invariant(
+            all(event.get_dagster_event().event_type in BATCH_WRITABLE_EVENTS for event in events),
+            f"{BATCH_WRITABLE_EVENTS} are the only currently supported events for batch writes.",
+        )
+
+        insert_event_statement = self.prepare_insert_event_batch(events)
+        with self._connect() as conn:
+            result = conn.execute(insert_event_statement.returning(SqlEventLogStorageTable.c.id))
+            event_ids = [cast(int, row[0]) for row in result.fetchall()]
+
+        # We only update the asset table with the last event
+        self.store_asset_event(events[-1], event_ids[-1])
+
+        if any((event_id is None for event_id in event_ids)):
+            raise DagsterInvariantViolationError("Cannot store asset event tags for null event id.")
+
+        self.store_asset_event_tags(events, event_ids)
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)

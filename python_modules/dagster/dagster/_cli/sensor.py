@@ -15,8 +15,8 @@ from dagster._cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.host_representation import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalRepository
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -289,20 +289,14 @@ def execute_preview_command(
                 except Exception:
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     print_fn(
-                        "Failed to resolve sensor for {sensor_name} : {error_info}".format(
-                            sensor_name=external_sensor.name,
-                            error_info=error_info.to_string(),
-                        )
+                        f"Failed to resolve sensor for {external_sensor.name} : {error_info.to_string()}"
                     )
                     return
 
                 if not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
-                            "Sensor returned false for {sensor_name}, skipping: {skip_message}".format(
-                                sensor_name=external_sensor.name,
-                                skip_message=sensor_runtime_data.skip_message,
-                            )
+                            f"Sensor returned false for {external_sensor.name}, skipping: {sensor_runtime_data.skip_message}"
                         )
                     else:
                         print_fn(f"Sensor returned false for {external_sensor.name}, skipping")

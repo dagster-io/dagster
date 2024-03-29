@@ -7,8 +7,8 @@ import boto3
 import moto
 import pytest
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -477,6 +477,9 @@ def container_context_config(configured_secret: Secret) -> Mapping[str, Any]:
             ],
             "run_ecs_tags": [{"key": "ABC", "value": "DEF"}],  # with value
             "repository_credentials": "fake-secret-arn",
+            "server_health_check": {
+                "command": ["HELLO"],
+            },
         },
     }
 
@@ -501,6 +504,7 @@ def other_container_context_config(other_configured_secret):
             "server_resources": {
                 "cpu": "2048",
                 "memory": "4096",
+                "replica_count": 2,
             },
             "task_role_arn": "other-task-role",
             "execution_role_arn": "other-fake-execution-role",
@@ -539,6 +543,13 @@ def other_container_context_config(other_configured_secret):
                 }
             ],
             "repository_credentials": "fake-secret-arn",
+            "server_health_check": {
+                "command": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 0,
+            },
         },
     }
 

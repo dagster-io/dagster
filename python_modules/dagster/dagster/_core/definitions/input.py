@@ -114,7 +114,7 @@ class InputDefinition:
         self._name = check_valid_name(name, allow_list=["config"])
 
         self._type_not_set = dagster_type is None
-        self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
+        self._dagster_type = resolve_dagster_type(dagster_type)
 
         self._description = check.opt_str_param(description, "description")
 

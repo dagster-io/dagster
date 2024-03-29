@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: jaffle_shop
+    schema: main
+    tables:
+      - name: raw_customers
+        meta:
+          dagster:
+            asset_key: ["raw_source_customers"]

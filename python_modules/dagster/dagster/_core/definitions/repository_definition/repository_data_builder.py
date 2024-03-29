@@ -23,14 +23,15 @@ from dagster._config.pythonic_config import (
     ResourceWithKeyMapping,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
-from dagster._core.definitions.assets_job import (
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
 )
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
@@ -49,6 +50,7 @@ from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import AssetKey
 
 
@@ -106,7 +108,7 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
 
 def _resolve_unresolved_job_def_lambda(
     unresolved_job_def: UnresolvedAssetJobDefinition,
-    asset_graph: InternalAssetGraph,
+    asset_graph: AssetGraph,
     default_executor_def: Optional[ExecutorDefinition],
     top_level_resources: Optional[Mapping[str, ResourceDefinition]],
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
@@ -161,6 +163,7 @@ def build_caching_repository_data_from_list(
     sensors: Dict[str, SensorDefinition] = {}
     assets_defs: List[AssetsDefinition] = []
     asset_keys: Set[AssetKey] = set()
+    asset_check_keys: Set["AssetCheckKey"] = set()
     source_assets: List[SourceAsset] = []
     asset_checks_defs: List[AssetChecksDefinition] = []
     for definition in repository_definitions:
@@ -216,35 +219,42 @@ def build_caching_repository_data_from_list(
                 )
             # we can only resolve these once we have all assets
             unresolved_jobs[definition.name] = definition
+        elif isinstance(definition, AssetChecksDefinition):
+            for key in definition.check_keys:
+                if key in asset_check_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
+            asset_check_keys.update(definition.check_keys)
+            asset_checks_defs.append(definition)
         elif isinstance(definition, AssetsDefinition):
             for key in definition.keys:
                 if key in asset_keys:
                     raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
+            for key in definition.check_keys:
+                if key in asset_check_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
 
             asset_keys.update(definition.keys)
+            asset_check_keys.update(definition.check_keys)
             assets_defs.append(definition)
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
-        elif isinstance(definition, AssetChecksDefinition):
-            asset_checks_defs.append(definition)
+            asset_keys.add(definition.key)
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
-    if assets_defs or source_assets or asset_checks_defs:
+    asset_graph = AssetGraph.from_assets([*assets_defs, *asset_checks_defs, *source_assets])
+    source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
+    assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
+    asset_checks_defs_by_key = {
+        key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
+    }
+    if assets_defs or asset_checks_defs or source_assets:
         for job_def in get_base_asset_jobs(
-            assets=assets_defs,
-            source_assets=source_assets,
+            asset_graph=asset_graph,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
-            asset_checks=asset_checks_defs,
         ):
             jobs[job_def.name] = job_def
-
-        source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
-        assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
-    else:
-        source_assets_by_key = {}
-        assets_defs_by_key = {}
 
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():
@@ -261,9 +271,6 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, jobs, target
             )
 
-    asset_graph = AssetGraph.from_assets(
-        [*assets_defs, *source_assets], asset_checks=asset_checks_defs
-    )
     _validate_auto_materialize_sensors(sensors.values(), asset_graph)
 
     if unresolved_partitioned_asset_schedules:
@@ -318,6 +325,7 @@ def build_caching_repository_data_from_list(
         sensors=sensors,
         source_assets_by_key=source_assets_by_key,
         assets_defs_by_key=assets_defs_by_key,
+        asset_checks_defs_by_key=asset_checks_defs_by_key,
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
         resource_key_mapping=resource_key_mapping or {},
@@ -380,6 +388,7 @@ def build_caching_repository_data_from_dict(
         **repository_definitions,
         source_assets_by_key={},
         assets_defs_by_key={},
+        asset_checks_defs_by_key={},
         top_level_resources={},
         utilized_env_vars={},
         resource_key_mapping={},
@@ -450,7 +459,7 @@ def _process_and_validate_target(
 
 
 def _validate_auto_materialize_sensors(
-    sensors: Iterable[SensorDefinition], asset_graph: AssetGraph
+    sensors: Iterable[SensorDefinition], asset_graph: BaseAssetGraph
 ) -> None:
     """Raises an error if two or more automation policy sensors target the same asset."""
     sensor_names_by_asset_key: Dict[AssetKey, str] = {}

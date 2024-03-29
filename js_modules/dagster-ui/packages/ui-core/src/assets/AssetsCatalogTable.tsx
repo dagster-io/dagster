@@ -1,13 +1,9 @@
-import {QueryResult, gql, useQuery} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup, TextInput} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 
-import {
-  AssetGroupSuggest,
-  buildAssetGroupSelector,
-  useAssetGroupSelectorsForAssets,
-} from './AssetGroupSuggest';
+import {buildAssetGroupSelector, useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -21,63 +17,112 @@ import {
 } from './types/AssetsCatalogTable.types';
 import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
+import {useConstantCallback} from '../hooks/useConstantCallback';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useStartTrace} from '../performance';
+import {PageLoadTrace} from '../performance';
+import {useFilters} from '../ui/Filters';
+import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
+import {
+  doesFilterArrayMatchValueArray,
+  useAssetTagFilter,
+  useAssetTagsForAssets,
+} from '../ui/Filters/useAssetTagFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
+import {
+  useAssetKindTagsForAssets,
+  useComputeKindTagFilter,
+} from '../ui/Filters/useComputeKindTagFilter';
+import {FilterObject} from '../ui/Filters/useFilter';
 import {LoadingSpinner} from '../ui/Loading';
-
 type Asset = AssetTableFragment;
 
-function useAllAssets(groupSelector?: AssetGroupSelector): {
-  query: QueryResult<AssetCatalogTableQuery, any> | QueryResult<AssetCatalogGroupTableQuery, any>;
-  assets: Asset[] | undefined;
-  error: PythonErrorFragment | undefined;
-} {
-  const assetsQuery = useQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>(
-    ASSET_CATALOG_TABLE_QUERY,
-    {
-      skip: !!groupSelector,
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-  const groupQuery = useQuery<AssetCatalogGroupTableQuery, AssetCatalogGroupTableQueryVariables>(
-    ASSET_CATALOG_GROUP_TABLE_QUERY,
-    {
-      skip: !groupSelector,
+let globalTableCache: AssetCatalogTableQuery;
+const groupTableCache = new Map();
+
+export function useAllAssets(groupSelector?: AssetGroupSelector) {
+  const client = useApolloClient();
+  const [{error, assets}, setErrorAndAssets] = React.useState<{
+    error: PythonErrorFragment | undefined;
+    assets: Asset[] | undefined;
+  }>({error: undefined, assets: undefined});
+
+  const assetsQuery = useConstantCallback(async () => {
+    function onData(queryData: typeof data) {
+      const assetsOrError = queryData?.assetsOrError;
+      setErrorAndAssets({
+        error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
+        assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
+      });
+    }
+    if (globalTableCache) {
+      onData(globalTableCache);
+    }
+    const {data} = await client.query<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
+      query: ASSET_CATALOG_TABLE_QUERY,
+      fetchPolicy: 'no-cache',
+    });
+    globalTableCache = data;
+    onData(data);
+  });
+
+  const groupQuery = React.useCallback(async () => {
+    if (!groupSelector) {
+      return;
+    }
+    function onData(queryData: typeof data) {
+      setErrorAndAssets({
+        error: undefined,
+        assets: queryData.assetNodes?.map(definitionToAssetTableFragment),
+      });
+    }
+    const cacheKey = JSON.stringify(groupSelector);
+    if (groupTableCache.has(cacheKey)) {
+      onData(groupTableCache.get(cacheKey));
+    }
+    const {data} = await client.query<
+      AssetCatalogGroupTableQuery,
+      AssetCatalogGroupTableQueryVariables
+    >({
+      query: ASSET_CATALOG_GROUP_TABLE_QUERY,
       variables: {group: groupSelector},
-      notifyOnNetworkStatusChange: true,
-    },
-  );
+      fetchPolicy: 'no-cache',
+    });
+    groupTableCache.set(cacheKey, data);
+    onData(data);
+  }, [groupSelector, client]);
 
   return React.useMemo(() => {
-    if (groupSelector) {
-      const assetNodes = groupQuery.data?.assetNodes;
-      return {
-        query: groupQuery,
-        error: undefined,
-        assets: assetNodes?.map(definitionToAssetTableFragment),
-      };
-    }
-
-    const assetsOrError = assetsQuery.data?.assetsOrError;
     return {
-      query: assetsQuery,
-      error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
-      assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
+      assets,
+      error,
+      query: groupSelector ? groupQuery : assetsQuery,
     };
-  }, [assetsQuery, groupQuery, groupSelector]);
+  }, [assets, assetsQuery, error, groupQuery, groupSelector]);
 }
 
 interface AssetCatalogTableProps {
   prefixPath: string[];
   setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
-  trace?: ReturnType<typeof useStartTrace>;
+  trace?: PageLoadTrace;
 }
+
+type FilterType = {
+  groups: AssetGroupSelector[];
+  computeKindTags: string[];
+  changedInBranch: ChangeReason[];
+  owners: AssetOwner[];
+  tags: DefinitionTag[];
+};
+
+const emptyArray: any[] = [];
 
 export const AssetsCatalogTable = ({
   prefixPath,
@@ -87,10 +132,22 @@ export const AssetsCatalogTable = ({
 }: AssetCatalogTableProps) => {
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
-  const [searchGroups, setSearchGroups] = useQueryPersistedState<AssetGroupSelector[]>({
-    queryKey: 'g',
-    decode: (qs) => (qs.groups ? JSON.parse(qs.groups) : []),
-    encode: (groups) => ({groups: groups.length ? JSON.stringify(groups) : undefined}),
+
+  const [filters, setFilters] = useQueryPersistedState<FilterType>({
+    encode: ({groups, computeKindTags, changedInBranch, owners, tags}) => ({
+      groups: groups?.length ? JSON.stringify(groups) : undefined,
+      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
+      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+      owners: owners?.length ? JSON.stringify(owners) : undefined,
+      tags: tags?.length ? JSON.stringify(tags) : undefined,
+    }),
+    decode: (qs) => ({
+      groups: qs.groups ? JSON.parse(qs.groups) : [],
+      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
+      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
+      owners: qs.owners ? JSON.parse(qs.owners) : [],
+      tags: qs.tags ? JSON.parse(qs.tags) : [],
+    }),
   });
 
   const searchPath = (search || '')
@@ -99,16 +156,49 @@ export const AssetsCatalogTable = ({
     .trim();
 
   const {assets, query, error} = useAllAssets(groupSelector);
-  const assetGroupOptions = useAssetGroupSelectorsForAssets(assets);
-  const pathMatches = useAssetSearch(searchPath, assets || []);
+  const pathMatches = useAssetSearch(
+    searchPath,
+    assets ?? (emptyArray as NonNullable<typeof assets>),
+  );
 
   const filtered = React.useMemo(
     () =>
-      pathMatches.filter(
-        (a) =>
-          !searchGroups.length || searchGroups.some((g) => isEqual(buildAssetGroupSelector(a), g)),
-      ),
-    [pathMatches, searchGroups],
+      pathMatches.filter((a) => {
+        if (filters.groups?.length) {
+          if (!filters.groups.some((g) => isEqual(buildAssetGroupSelector(a), g))) {
+            return false;
+          }
+        }
+
+        if (filters.computeKindTags?.length) {
+          if (!filters.computeKindTags.includes(a.definition?.computeKind ?? '')) {
+            return false;
+          }
+        }
+
+        if (filters.changedInBranch?.length) {
+          if (
+            !a.definition?.changedReasons.find((reason) =>
+              filters.changedInBranch!.includes(reason),
+            )
+          ) {
+            return false;
+          }
+        }
+
+        if (filters.owners?.length) {
+          if (!doesFilterArrayMatchValueArray(filters.owners, a?.definition?.owners ?? [])) {
+            return false;
+          }
+        }
+        if (filters.tags?.length) {
+          if (!doesFilterArrayMatchValueArray(filters.tags, a.definition?.tags ?? [])) {
+            return false;
+          }
+        }
+        return true;
+      }),
+    [filters, pathMatches],
   );
 
   const {displayPathForAsset, displayed} =
@@ -116,7 +206,11 @@ export const AssetsCatalogTable = ({
       ? buildFlatProps(filtered, prefixPath)
       : buildNamespaceProps(filtered, prefixPath);
 
-  const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
+  const refreshState = useRefreshAtInterval({
+    refresh: query,
+    intervalMs: FIFTEEN_SECONDS,
+    leading: true,
+  });
 
   const loaded = !!assets;
   React.useEffect(() => {
@@ -124,6 +218,60 @@ export const AssetsCatalogTable = ({
       trace?.endTrace();
     }
   }, [loaded, trace]);
+
+  const {setComputeKindTags, setGroupFilters, setChangedInBranch, setOwners, setAssetTags} =
+    React.useMemo(() => {
+      function makeSetter<T extends keyof FilterType>(field: T) {
+        return (value: FilterType[T]) => {
+          setFilters?.((filters) => ({
+            ...filters,
+            [field]: value,
+          }));
+        };
+      }
+      return {
+        setComputeKindTags: makeSetter('computeKindTags'),
+        setGroupFilters: makeSetter('groups'),
+        setChangedInBranch: makeSetter('changedInBranch'),
+        setOwners: makeSetter('owners'),
+        setAssetTags: makeSetter('tags'),
+      };
+    }, [setFilters]);
+
+  const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
+  const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
+  const allAssetOwners = useAssetOwnersForAssets(pathMatches);
+
+  const groupsFilter = useAssetGroupFilter({
+    assetGroups: allAssetGroupOptions,
+    visibleAssetGroups: filters.groups,
+    setGroupFilters,
+  });
+  const changedInBranchFilter = useChangedFilter({
+    changedInBranch: filters.changedInBranch,
+    setChangedInBranch,
+  });
+  const computeKindFilter = useComputeKindTagFilter({
+    allComputeKindTags,
+    computeKindTags: filters.computeKindTags,
+    setComputeKindTags,
+  });
+  const ownersFilter = useAssetOwnerFilter({
+    allAssetOwners,
+    owners: filters.owners,
+    setOwners,
+  });
+  const tagsFilter = useAssetTagFilter({
+    allAssetTags: useAssetTagsForAssets(pathMatches),
+    tags: filters.tags,
+    setTags: setAssetTags,
+  });
+  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter, tagsFilter];
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (isBranchDeployment) {
+    uiFilters.push(changedInBranchFilter);
+  }
+  const {button, activeFiltersJsx} = useFilters({filters: uiFilters});
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {
@@ -151,6 +299,14 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
+      isFiltered={
+        !!(
+          filters.changedInBranch?.length ||
+          filters.computeKindTags?.length ||
+          filters.groups?.length ||
+          filters.owners?.length
+        )
+      }
       actionBarComponents={
         <>
           <ButtonGroup<AssetViewType>
@@ -166,6 +322,7 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
+          {button}
           <TextInput
             value={search || ''}
             style={{width: '30vw', minWidth: 150, maxWidth: 400}}
@@ -176,21 +333,24 @@ export const AssetsCatalogTable = ({
             }
             onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
-          {!groupSelector ? (
-            <AssetGroupSuggest
-              assetGroups={assetGroupOptions}
-              value={searchGroups}
-              onChange={setSearchGroups}
-            />
-          ) : undefined}
         </>
+      }
+      belowActionBarComponents={
+        activeFiltersJsx.length ? (
+          <Box
+            border="top-and-bottom"
+            padding={12}
+            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+          >
+            {activeFiltersJsx}
+          </Box>
+        ) : null
       }
       refreshState={refreshState}
       prefixPath={prefixPath || []}
       searchPath={searchPath}
-      searchGroups={searchGroups}
       displayPathForAsset={displayPathForAsset}
-      requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
+      requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY, fetchPolicy: 'no-cache'}]}
     />
   );
 };

@@ -161,6 +161,19 @@ run_retries:
       </li>
     </ul>
   </ReferenceTableItem>
+  <ReferenceTableItem propertyName="run_retries.retry_on_asset_or_op_failure">
+    Whether to retry runs that failed due to assets or ops in the run failing.
+    Set this to false if you only want to retry failures that occur due to the
+    run worker crashing or unexpectedly terminating, and instead rely on op or
+    asset-level retry policies to retry assert or op failures. Setting this
+    field to false will only change retry behavior for runs on dagster version
+    1.6.7 or greater.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>0</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
 </ReferenceTable>
 
 ### SSO default role

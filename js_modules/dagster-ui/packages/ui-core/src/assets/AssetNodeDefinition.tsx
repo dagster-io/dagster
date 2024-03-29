@@ -335,6 +335,18 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     jobNames
     isSource
     isExecutable
+    tags {
+      key
+      value
+    }
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     autoMaterializePolicy {
       policyType
       rules {

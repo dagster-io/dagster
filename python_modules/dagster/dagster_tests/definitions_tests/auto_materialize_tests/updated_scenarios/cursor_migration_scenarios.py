@@ -7,27 +7,24 @@ from dagster_tests.definitions_tests.auto_materialize_tests.updated_scenarios.cr
     get_cron_policy,
 )
 
-from ..asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetRuleEvaluationSpec,
-    day_partition_key,
-    hour_partition_key,
-)
 from ..base_scenario import (
     run_request,
 )
-from .asset_daemon_scenario_states import (
+from ..scenario_specs import (
     daily_partitions_def,
+    day_partition_key,
+    hour_partition_key,
     hourly_partitions_def,
     one_asset,
     three_assets_in_sequence,
     time_partitions_start_str,
 )
+from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 
 cursor_migration_scenarios = [
     AssetDaemonScenario(
         id="one_asset_daily_partitions_never_materialized_respect_discards_migrate_after_discard",
-        initial_state=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
+        initial_spec=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=30, hours=4)
         .with_all_eager(),
@@ -60,7 +57,7 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_daily_partitions_two_years_never_materialized_migrate_after_run_requested",
-        initial_state=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
+        initial_spec=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(years=2, hours=4)
         .with_all_eager(),
@@ -80,7 +77,7 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="partitioned_non_root_asset_missing_after_migrate",
-        initial_state=three_assets_in_sequence.with_asset_properties(
+        initial_spec=three_assets_in_sequence.with_asset_properties(
             partitions_def=daily_partitions_def
         )
         .with_current_time(time_partitions_start_str)
@@ -114,7 +111,7 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned_migrate",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
@@ -143,7 +140,7 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_partitioned_migrate",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=hourly_partitions_def,
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule),
         )

@@ -140,6 +140,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         namespace=exc_cfg.get("job_namespace"),  # type: ignore
         resources=exc_cfg.get("resources"),  # type: ignore
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
+        security_context=exc_cfg.get("security_context"),  # type: ignore
         # step_k8s_config feeds into the run_k8s_config field because it is merged
         # with any configuration for the run that was set on the run launcher or code location
         run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(exc_cfg.get("step_k8s_config", {})),
@@ -273,9 +274,9 @@ class K8sStepHandler(StepHandler):
             "dagster/run-id": step_handler_context.execute_step_args.run_id,
         }
         if run.external_job_origin:
-            labels[
-                "dagster/code-location"
-            ] = run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            labels["dagster/code-location"] = (
+                run.external_job_origin.repository_origin.code_location_origin.location_name
+            )
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,

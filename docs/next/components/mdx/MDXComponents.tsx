@@ -22,8 +22,11 @@ import 'react-medium-image-zoom/dist/styles.css';
 import {RenderedDAG} from './RenderedDAG';
 import EnvVarsBenefits from './includes/EnvVarsBenefits.mdx';
 import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
+import ExperimentalCallout from './includes/ExperimentalCallout.mdx';
 import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
+import ApplicableCloudPlan from './includes/dagster-cloud/ApplicableCloudPlan.mdx';
+import ApplicableDagsterProduct from './includes/dagster-cloud/ApplicableDagsterProduct.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
 import ScimSupportedFeatures from './includes/dagster-cloud/ScimSupportedFeatures.mdx';
@@ -803,9 +806,12 @@ export default {
   DagsterVersion,
   DagsterDevTabs,
   StructuredEventLogs,
+  ExperimentalCallout,
   RawComputeLogs,
   AddGitlabVariable,
   AddGitubRepositorySecret,
+  ApplicableCloudPlan,
+  ApplicableDagsterProduct,
   GenerateAgentToken,
   ScimSupportedFeatures,
   BDCreateConfigureAgent,

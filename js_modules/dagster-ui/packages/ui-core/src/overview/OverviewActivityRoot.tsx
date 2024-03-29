@@ -1,8 +1,9 @@
-import {Box, Heading, JoinedButtons, PageHeader} from '@dagster-io/ui-components';
+import {Box, JoinedButtons} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {OverviewAssetsRoot} from './OverviewAssetsRoot';
+import {OverviewPageHeader} from './OverviewPageHeader';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 import {useTrackPageView} from '../app/analytics';
@@ -16,10 +17,7 @@ export const OverviewActivityRoot = () => {
 
   const header = React.useCallback(
     ({refreshState}: {refreshState: React.ComponentProps<typeof OverviewTabs>['refreshState']}) => (
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="activity" refreshState={refreshState} />}
-      />
+      <OverviewPageHeader tab="activity" refreshState={refreshState} />
     ),
     [],
   );

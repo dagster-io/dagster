@@ -1,4 +1,4 @@
-import {pathHorizontalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
@@ -44,7 +44,7 @@ export function isHiddenAssetGroupJob(jobName: string) {
 //
 export type GraphId = string;
 export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
-export const fromGraphID = (graphId: GraphId): AssetNodeKeyFragment => ({
+export const fromGraphId = (graphId: GraphId): AssetNodeKeyFragment => ({
   path: JSON.parse(graphId),
   __typename: 'AssetKey',
 });
@@ -129,7 +129,13 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = pathHorizontalDiagonal({
+export const buildSVGPathHorizontal = pathHorizontalDiagonal({
+  source: (s: any) => s.source,
+  target: (s: any) => s.target,
+  x: (s: any) => s.x,
+  y: (s: any) => s.y,
+});
+export const buildSVGPathVertical = pathVerticalDiagonal({
   source: (s: any) => s.source,
   target: (s: any) => s.target,
   x: (s: any) => s.x,
@@ -260,7 +266,7 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
 
-export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:[^@:]+$/.test(str);
+export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:.+$/.test(str);
 
 export const groupIdForNode = (node: GraphNode) =>
   [
@@ -275,7 +281,7 @@ export const groupIdForNode = (node: GraphNode) =>
 export const getUpstreamNodes = memoize(
   (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
     const upstream = Object.keys(graphData.upstream[toGraphId(assetKey)] || {});
-    const currentUpstream = upstream.map((graphId) => fromGraphID(graphId));
+    const currentUpstream = upstream.map((graphId) => fromGraphId(graphId));
     return [
       assetKey,
       ...currentUpstream,

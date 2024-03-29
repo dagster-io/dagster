@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     Dict,
     List,
     Mapping,
@@ -28,30 +29,16 @@ from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    FieldSerializer,
+    UnknownSerdesValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+)
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import StepHandleUnion
-
-
-@whitelist_for_serdes
-class StepOutputVersionData(NamedTuple):
-    step_output_handle: StepOutputHandle
-    version: str
-
-    @staticmethod
-    def get_version_list_from_dict(
-        step_output_versions: Mapping[StepOutputHandle, str],
-    ) -> Sequence["StepOutputVersionData"]:
-        return [
-            StepOutputVersionData(step_output_handle=step_output_handle, version=version)
-            for step_output_handle, version in step_output_versions.items()
-        ]
-
-    @staticmethod
-    def get_version_dict_from_list(
-        step_output_versions: Sequence["StepOutputVersionData"],
-    ) -> Mapping[StepOutputHandle, str]:
-        return {data.step_output_handle: data.version for data in step_output_versions}
 
 
 @whitelist_for_serdes
@@ -87,7 +74,42 @@ class PastExecutionState(
         return cast(Optional[PastExecutionState], self.parent_state)
 
 
-@whitelist_for_serdes
+# Previously, step_output_versions was stored as a list of StepOutputVersionData objects. It
+# would have to be converted to a dict for use. The sole purpose of the `StepOutputVersion` objects
+# was to make the dict key-value pairs serializable. Using a custom field serializer allows us to
+# avoid this extra complexity.
+class StepOutputVersionSerializer(FieldSerializer):
+    def pack(
+        self, value: Mapping[StepOutputHandle, str], whitelist_map: WhitelistMap, descent_path: str
+    ) -> Sequence[Dict[str, Any]]:
+        return [
+            {
+                "__class__": "StepOutputVersionData",  # this class no longer exists
+                "step_output_handle": pack_value(
+                    k, whitelist_map, f"{descent_path}.{k.step_key}/{k.output_name}"
+                ),
+                "version": v,
+            }
+            for k, v in value.items()
+        ]
+
+    def unpack(
+        self,
+        value: Sequence[UnknownSerdesValue],
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ) -> Mapping[StepOutputHandle, str]:
+        mapping: Dict[StepOutputHandle, str] = {}
+        for unknown_serdes_value in value:
+            item = unknown_serdes_value.value
+            step_output_handle = cast(StepOutputHandle, item["step_output_handle"])
+            version = cast(str, item["version"])
+            mapping[step_output_handle] = version
+            context.clear_ignored_unknown_values(unknown_serdes_value)
+        return mapping
+
+
+@whitelist_for_serdes(field_serializers={"step_output_versions": StepOutputVersionSerializer})
 class KnownExecutionState(
     NamedTuple(
         "_KnownExecutionState",
@@ -97,7 +119,7 @@ class KnownExecutionState(
             # step_key -> output_name -> mapping_keys
             ("dynamic_mappings", Mapping[str, Mapping[str, Optional[Sequence[str]]]]),
             # step_output_handle -> version
-            ("step_output_versions", Sequence[StepOutputVersionData]),
+            ("step_output_versions", Mapping[StepOutputHandle, str]),
             ("ready_outputs", Set[StepOutputHandle]),
             ("parent_state", Optional[PastExecutionState]),
         ],
@@ -112,7 +134,7 @@ class KnownExecutionState(
         cls,
         previous_retry_attempts: Optional[Mapping[str, int]] = None,
         dynamic_mappings: Optional[Mapping[str, Mapping[str, Optional[Sequence[str]]]]] = None,
-        step_output_versions: Optional[Sequence[StepOutputVersionData]] = None,
+        step_output_versions: Optional[Mapping[StepOutputHandle, str]] = None,
         ready_outputs: Optional[Set[StepOutputHandle]] = None,
         parent_state: Optional[PastExecutionState] = None,
     ):
@@ -134,8 +156,10 @@ class KnownExecutionState(
                 value_type=int,
             ),
             dynamic_mappings,
-            check.opt_sequence_param(
-                step_output_versions, "step_output_versions", of_type=StepOutputVersionData
+            check.opt_mapping_param(
+                step_output_versions,
+                "step_output_versions",
+                key_type=StepOutputHandle,
             ),
             check.opt_set_param(ready_outputs, "ready_outputs", StepOutputHandle),
             check.opt_inst_param(parent_state, "parent_state", PastExecutionState),
@@ -216,7 +240,7 @@ def _derive_state_of_past_run(
 ) -> Tuple[
     Sequence[str], Mapping[str, Mapping[str, Optional[Sequence[str]]]], Set[StepOutputHandle]
 ]:
-    from dagster._core.host_representation import ExternalExecutionPlan
+    from dagster._core.remote_representation import ExternalExecutionPlan
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_inst_param(parent_run, "parent_run", DagsterRun)

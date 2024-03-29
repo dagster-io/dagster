@@ -1,9 +1,9 @@
 ---
-title: "Dagster + Fivetran | Dagster Docs"
+title: "Using Dagster with Fivetran"
 description: Integrate your Fivetran connectors into Dagster.
 ---
 
-# Dagster + Fivetran
+# Using Fivetran with Dagster
 
 Dagster can orchestrate your Fivetran connectors, making it easy to chain a Fivetran sync with upstream or downstream steps in your workflow.
 
@@ -22,7 +22,7 @@ This guide focuses on how to work with Fivetran connectors using Dagster's [soft
 
 ---
 
-## Fivetran connectors and Dagster Software-Defined Assets
+## Fivetran connectors and Dagster Software-Aefined Assets
 
 A [Fivetran connector](https://fivetran.com/docs/getting-started/core-concepts) defines a series of schemas and tables which are synced between a source and a destination. During a sync, data is retrieved from the source and written to the destination as one or more tables. Dagster represents each of the replicas generated in the destination as a Software-Aefined Asset. This enables you to easily:
 
@@ -45,18 +45,18 @@ You'll also want to set up [a Fivetran instance](https://fivetran.com/docs/getti
 
 ---
 
-## Step 1: Connect to Fivetran
+## Step 1: Connecting to Fivetran
 
-The first step in using Fivetran with Dagster is to tell Dagster how to connect to your Fivetran instance. To do this, you'll use a Fivetran [resource](/concepts/resources), which contains the credentials needed to access your Fivetran instance.
+The first step in using Fivetran with Dagster is to tell Dagster how to connect to your Fivetran instance using a Fivetran [resource](/concepts/resources). This resource contains the credentials needed to access your Fivetran instance.
 
-In this example, our credentials are supplied as environment variables. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
+We will supply our credentials as environment variables. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
 
 ```bash
 export FIVETRAN_API_KEY=...
 export FIVETRAN_API_SECRET=...
 ```
 
-Next, we'll tell Dagster to use the environment variables to authorize the Fivetran resource:
+Then, we can instruct Dagster to authorize the Fivetran resource using the environment variables:
 
 ```python startafter=start_define_instance endbefore=end_define_instance file=/integrations/fivetran/fivetran.py dedent=4
 from dagster_fivetran import FivetranResource
@@ -73,18 +73,19 @@ For more information on the additional configuration options available for the F
 
 ---
 
-## Step 2: Load Fivetran asset definitions into Dagster
+## Step 2: Loading Fivetran asset definitions into Dagster
 
-Dagster can automatically generate asset definitions from your Fivetran project, getting you up and running quickly! You can [load asset definitions from a Fivetran instance via API](#loading-fivetran-asset-definitions-from-a-fivetran-instance) at initialization time.
+The easiest way to get started using Fivetran with Dagster is to have Dagster automatically generate asset defintions from your Fivetran project. You can [load asset definitions from a Fivetran instance via API](#loading-fivetran-asset-definitions-from-a-fivetran-instance), at initialization time.
 
-However, you can also [manually-build asset definitions](#manually-building-fivetran-asset-definitions) on a per-connector basis.
+You can also [manually-build asset definitions](#manually-building-fivetran-asset-definitions) on a per-connector basis.
 
 <TabGroup>
-<TabItem name="Loading Fivetran asset definitions">
 
-### Loading Fivetran asset definitions
+<TabItem name="Loading from Fivetran instance">
 
-To load Fivetran assets into Dagster from your Fivetran instance, we'll use the Fivetran resource from Step 1. Here, the Fivetran instance is treated as the source of truth:
+### Loading Fivetran asset definitions from a Fivetran instance
+
+To load Fivetran assets into Dagster from your Fivetran instance, you'll need to supply the Fivetran resource that we defined above in Step 1. Here, the Fivetran instance is treated as the source of truth.
 
 ```python startafter=start_load_assets_from_fivetran_instance endbefore=end_load_assets_from_fivetran_instance file=/integrations/fivetran/fivetran.py dedent=4
 from dagster_fivetran import load_assets_from_fivetran_instance
@@ -93,20 +94,18 @@ from dagster_fivetran import load_assets_from_fivetran_instance
 fivetran_assets = load_assets_from_fivetran_instance(fivetran_instance)
 ```
 
-The `load_assets_from_fivetran_instance` function retrieves all of the connectors defined in the Fivetran interface, creating a Dagster asset for each generated table. Each connector has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connector.
+The `load_assets_from_fivetran_instance` function retrieves all of the connectors you have defined in the Fivetran interface, creating a Dagster asset for each generated table. Each connector has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connector.
 
 </TabItem>
 <TabItem name="Manually building assets">
 
 ### Manually building Fivetran asset definitions
 
-Asset definitions can also be manually built instead of Dagster automatically generating them from a Fivetran instance.
-
-First, determine the Connector IDs for each of the connectors you want to build assets for. In the Fivetrain UI, the **connector ID** can be found on a connector's **Setup** page:
+Instead of having Dagster automatically create the asset defintions for your Fivetran instance, you can opt to individually build them. First, determine the Connector IDs for each of the connectors you would like to build assets for. The **connector ID** can be found on the **Setup** page for each connector in the Fivetran UI:
 
 <center>
   <Image
-    alt="Screenshot of the Fivetran UI in a browser, showing the connector ID in the Settings page"
+    alt="Screenshot of the Fivetran UI in a browser, showing the connector ID in the settings page."
     src="/images/integrations/fivetran/fivetran_connector_id.png"
     width={772}
     height={500}
@@ -126,9 +125,9 @@ fivetran_assets = build_fivetran_assets(
 
 #### Adding a resource
 
-Manually-built Fivetran assets require a `fivetran_resource`, which defines how to connect and interact with the Fivetran instance.
+Manually-built Fivetran assets require a `fivetran_resource`, which defines how to connect and interact with your Fivetran instance.
 
-Add the Fivetran resource to the Fivetran assets by doing the following:
+We can add the Fivetran resource we configured above to our Fivetran assets by doing the following:
 
 ```python startafter=start_fivetran_manual_config endbefore=end_fivetran_manual_config file=/integrations/fivetran/fivetran.py dedent=4
 from dagster_fivetran import build_fivetran_assets
@@ -150,18 +149,16 @@ fivetran_assets = with_resources(
 
 ---
 
-## Step 3: Add downstream assets
+## Step 3: Adding downstream assets
 
 <Note>
-  <strong>Looking to orchestrate Fivetran with dbt?</strong> Check out our{" "}
+  Looking to orchestrate Fivetran with dbt? Check out our{" "}
   <a href="/integrations/dbt">dbt integration docs</a>.
 </Note>
 
-Once the Fivetran assets are loaded into Dagster, you can create assets that depend on them. These can be other assets pulled in from external sources such as [dbt](/integrations/dbt) or assets defined in Python code.
+Once your Fivetran assets are loaded into Dagster, you can create assets which depend on them. These can be other assets pulled in from external sources such as [dbt](/integrations/dbt) or assets defined in Python code.
 
-In this example, we're using a Fivetran connector that stores data in the `public.survey_responses` table in Snowflake. The corresponding asset key is `public/survey_responses`.
-
-TODO: We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
+In this case, we have a Fivetran connector that stores data in the `public.survey_responses` table in Snowflake. The corresponding asset key is `public/survey_responses`. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
 
 ```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/fivetran/fivetran.py dedent=8
 import json
@@ -207,7 +204,7 @@ def survey_responses_file(survey_responses):
 # only run the airbyte syncs necessary to materialize survey_responses_file
 my_upstream_job = define_asset_job(
     "my_upstream_job",
-    AssetSelection.keys("survey_responses_file")
+    AssetSelection.assets(survey_responses_file)
     .upstream()  # all upstream assets (in this case, just the survey_responses Fivetran asset)
     .required_multi_asset_neighbors(),  # all Fivetran assets linked to the same connection
 )
@@ -221,9 +218,9 @@ defs = Definitions(
 
 ---
 
-## Step 4: Schedule Fivetran syncs
+## Step 4: Scheduling Fivetran syncs
 
-Now that the Fivetran assets are fully set up, we can define a job that runs some or all of the assets on a schedule and triggers the underlying Fivetran sync:
+Once you have Fivetran assets, you can define a job that runs some or all of these assets on a schedule and triggers the underlying Fivetran sync:
 
 ```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/fivetran/fivetran.py dedent=4
 from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance

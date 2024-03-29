@@ -5,7 +5,7 @@ import string
 import uuid
 import warnings
 from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from contextvars import copy_context
 from typing import (
     AbstractSet,
@@ -20,6 +20,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import WeakSet
 
 import toposort as toposort_
 from typing_extensions import Final
@@ -153,14 +154,11 @@ class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
         super().__init__(max_workers, thread_name_prefix, initializer, initargs)
         # The default threadpool class doesn't track the futures it creates,
         # so if we want to be able to count the number of running futures, we need to do it ourselves.
-        self._all_futures = []
+        self._tracked_futures: WeakSet[Future] = WeakSet()
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, fn, *args, **kwargs) -> Future:
         new_future = super().submit(fn, *args, **kwargs)
-        self._all_futures = [
-            future for future in self._all_futures if not future.done()
-        ]  # clean up done futures
-        self._all_futures.append(new_future)
+        self._tracked_futures.add(new_future)
         return new_future
 
     @property
@@ -168,11 +166,12 @@ class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
         return self._max_workers
 
     @property
+    def weak_tracked_futures_count(self) -> int:
+        return len(self._tracked_futures)
+
+    @property
     def num_running_futures(self) -> int:
-        return (
-            len([future for future in self._all_futures if not future.done()])
-            - self.num_queued_futures
-        )
+        return sum(1 for f in self._tracked_futures if not f.done()) - self.num_queued_futures
 
     @property
     def num_queued_futures(self) -> int:

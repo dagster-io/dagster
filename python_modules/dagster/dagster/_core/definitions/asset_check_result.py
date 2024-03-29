@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
 
 
-@experimental
 class AssetCheckResult(
     NamedTuple(
         "_AssetCheckResult",
@@ -30,6 +29,7 @@ class AssetCheckResult(
             ("check_name", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("severity", PublicAttr[AssetCheckSeverity]),
+            ("description", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -48,7 +48,8 @@ class AssetCheckResult(
             list, and one of the data classes returned by a MetadataValue static method.
         severity (AssetCheckSeverity):
             Severity of the check. Defaults to ERROR.
-
+        description (Optional[str]):
+            A text description of the result of the check evaluation.
     """
 
     def __new__(
@@ -59,6 +60,7 @@ class AssetCheckResult(
         check_name: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
+        description: Optional[str] = None,
     ):
         normalized_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -70,16 +72,24 @@ class AssetCheckResult(
             passed=check.bool_param(passed, "passed"),
             metadata=normalized_metadata,
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
+            description=check.opt_str_param(description, "description"),
         )
 
     def to_asset_check_evaluation(
         self, step_context: "StepExecutionContext"
     ) -> AssetCheckEvaluation:
         spec_check_names_by_asset_key = (
-            step_context.job_def.asset_layer.get_check_names_by_asset_key_for_node_handle(
+            step_context.job_def.asset_layer.check_names_by_asset_key_by_node_handle.get(
                 step_context.node_handle.root
             )
         )
+
+        if not spec_check_names_by_asset_key:
+            raise DagsterInvariantViolationError(
+                "Received unexpected AssetCheckResult. No AssetCheckSpecs were found for this step."
+                "You may need to set `check_specs` on the asset decorator, or you may be emitting an "
+                "AssetCheckResult that isn't in the subset passed in `context.selected_asset_check_keys`."
+            )
 
         asset_keys_with_specs = spec_check_names_by_asset_key.keys()
 
@@ -126,7 +136,12 @@ class AssetCheckResult(
             resolved_check_name = next(iter(check_names_with_specs))
 
         input_asset_info = step_context.get_input_asset_version_info(resolved_asset_key)
-        if input_asset_info is not None:
+        from dagster._core.events import DagsterEventType
+
+        if (
+            input_asset_info is not None
+            and input_asset_info.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ):
             target_materialization_data = AssetCheckEvaluationTargetMaterializationData(
                 run_id=input_asset_info.run_id,
                 storage_id=input_asset_info.storage_id,
@@ -142,6 +157,7 @@ class AssetCheckResult(
             metadata=self.metadata,
             target_materialization_data=target_materialization_data,
             severity=self.severity,
+            description=self.description,
         )
 
     def get_spec_python_identifier(

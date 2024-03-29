@@ -1,5 +1,6 @@
 import {Tab, Tabs} from '@dagster-io/ui-components';
 import qs from 'qs';
+import {useMemo} from 'react';
 
 import {AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
@@ -37,7 +38,7 @@ export const DEFAULT_ASSET_TAB_ORDER = [
   'definition',
   'lineage',
   'automation',
-];
+] as const;
 
 export type AssetTabConfigInput = {
   definition: AssetViewDefinitionNodeFragment | null;
@@ -54,66 +55,67 @@ export type AssetTabConfig = {
 
 export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringify(params)}`;
 
-export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, AssetTabConfig> => {
+export const buildAssetTabMap = (input: AssetTabConfigInput) => {
   const {definition, params} = input;
-  const experimental = featureEnabled(FeatureFlag.flagUseNewAutomationPage);
+  const flagUseNewOverviewPage = featureEnabled(FeatureFlag.flagUseNewOverviewPage);
 
   return {
     overview: {
       id: 'overview',
       title: 'Overview',
       to: buildAssetViewParams({...params, view: 'overview'}),
-      hidden: !experimental,
-    },
+      hidden: !flagUseNewOverviewPage,
+    } as AssetTabConfig,
     partitions: {
       id: 'partitions',
       title: 'Partitions',
       to: buildAssetViewParams({...params, view: 'partitions'}),
       hidden: !definition?.partitionDefinition || definition?.isSource,
-    },
+    } as AssetTabConfig,
     checks: {
       id: 'checks',
       title: 'Checks',
       to: buildAssetViewParams({...params, view: 'checks'}),
-      hidden: !definition?.hasAssetChecks,
-    },
+    } as AssetTabConfig,
     events: {
       id: 'events',
       title: 'Events',
       to: buildAssetViewParams({...params, view: 'events', partition: undefined}),
-    },
+    } as AssetTabConfig,
     plots: {
       id: 'plots',
       title: 'Plots',
       to: buildAssetViewParams({...params, view: 'plots'}),
-    },
+      hidden: flagUseNewOverviewPage,
+    } as AssetTabConfig,
     definition: {
       id: 'definition',
       title: 'Definition',
       to: buildAssetViewParams({...params, view: 'definition'}),
       disabled: !definition,
-      hidden: experimental,
-    },
+      hidden: flagUseNewOverviewPage,
+    } as AssetTabConfig,
     lineage: {
       id: 'lineage',
       title: 'Lineage',
       to: buildAssetViewParams({...params, view: 'lineage'}),
       disabled: !definition,
-      hidden: experimental,
-    },
+    } as AssetTabConfig,
     automation: {
       id: 'automation',
       title: 'Automation',
       to: buildAssetViewParams({...params, view: 'automation'}),
       disabled: !definition,
       hidden: !definition?.autoMaterializePolicy,
-    },
+    } as AssetTabConfig,
   };
 };
 
-export const buildAssetTabs = (input: AssetTabConfigInput): AssetTabConfig[] => {
-  const tabConfigs = buildAssetTabMap(input);
-  return DEFAULT_ASSET_TAB_ORDER.map((tabId) => tabConfigs[tabId]).filter(
-    (tab): tab is AssetTabConfig => !!tab && !tab.hidden,
-  );
+export const useAssetTabs = (input: AssetTabConfigInput): AssetTabConfig[] => {
+  return useMemo(() => {
+    const tabConfigs = buildAssetTabMap(input);
+    return DEFAULT_ASSET_TAB_ORDER.map((tabId) => tabConfigs[tabId]).filter(
+      (tab) => !!tab && !tab.hidden,
+    );
+  }, [input]);
 };

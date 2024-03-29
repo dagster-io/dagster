@@ -5,8 +5,8 @@ import * as Types from '../../graphql/types';
 export type RunTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
   terminatedFilter: Types.RunsFilter;
-  tickCursor?: Types.InputMaybe<Types.Scalars['Float']>;
-  ticksUntil?: Types.InputMaybe<Types.Scalars['Float']>;
+  tickCursor?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  ticksUntil?: Types.InputMaybe<Types.Scalars['Float']['input']>;
 }>;
 
 export type RunTimelineQuery = {

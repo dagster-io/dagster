@@ -100,7 +100,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         # defer for perf
-        from dagster._core.host_representation.code_location import (
+        from dagster._core.remote_representation.code_location import (
             GrpcServerCodeLocation,
         )
 
@@ -115,7 +115,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         external_job_origin = check.not_none(run.external_job_origin)
         code_location = context.workspace.get_code_location(
-            external_job_origin.external_repository_origin.code_location_origin.location_name
+            external_job_origin.repository_origin.code_location_origin.location_name
         )
 
         check.inst(

@@ -14,9 +14,8 @@ import remark from 'remark';
 import mdx from 'remark-mdx';
 import visit from 'unist-util-visit';
 
-import FeedbackModal from '../components/FeedbackModal';
 import MDXComponents from '../components/mdx/MDXComponents';
-import {MDXData, UnversionedMDXRenderer} from '../components/mdx/MDXRenderer';
+import MDXRenderer, {MDXData} from '../components/mdx/MDXRenderer';
 
 // The next-mdx-remote types are outdated.
 const components: MdxRemote.Components = MDXComponents as any;
@@ -31,16 +30,6 @@ type Props = {
 };
 
 export default function MdxPage(props: Props) {
-  const [isFeedbackOpen, setOpenFeedback] = React.useState<boolean>(false);
-
-  const closeFeedback = () => {
-    setOpenFeedback(false);
-  };
-
-  const toggleFeedback = () => {
-    setOpenFeedback(!isFeedbackOpen);
-  };
-
   const router = useRouter();
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
@@ -49,12 +38,7 @@ export default function MdxPage(props: Props) {
     return <Shimmer />;
   }
 
-  return (
-    <>
-      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
-      <UnversionedMDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
-    </>
-  );
+  return <MDXRenderer data={props.data} />;
 }
 
 // Travel the tree to get the headings

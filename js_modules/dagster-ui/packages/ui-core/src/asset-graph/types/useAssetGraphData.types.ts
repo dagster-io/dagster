@@ -12,8 +12,9 @@ export type AssetGraphQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    groupName: string | null;
+    groupName: string;
     isExecutable: boolean;
+    changedReasons: Array<Types.ChangeReason>;
     hasMaterializePermission: boolean;
     graphName: string | null;
     jobNames: Array<string>;
@@ -24,6 +25,10 @@ export type AssetGraphQuery = {
     isPartitioned: boolean;
     isObservable: boolean;
     isSource: boolean;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -39,8 +44,9 @@ export type AssetGraphQuery = {
 export type AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
+  groupName: string;
   isExecutable: boolean;
+  changedReasons: Array<Types.ChangeReason>;
   hasMaterializePermission: boolean;
   graphName: string | null;
   jobNames: Array<string>;
@@ -51,6 +57,10 @@ export type AssetNodeForGraphQueryFragment = {
   isPartitioned: boolean;
   isObservable: boolean;
   isSource: boolean;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   repository: {
     __typename: 'Repository';
     id: string;

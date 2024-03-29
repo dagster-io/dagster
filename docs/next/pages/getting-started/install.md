@@ -16,6 +16,8 @@ python --version
 pip --version
 ```
 
+Refer to the [Releases guide](/about/releases#python-version-support) for more info about how Dagster handles support for Python versions.
+
 ---
 
 ## Installing Dagster into an existing Python environment

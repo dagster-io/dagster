@@ -94,8 +94,7 @@ from dagster import graph, op, ConfigurableResource, OpExecutionContext
 
 
 class MyApi(ConfigurableResource):
-    def call(self):
-        ...
+    def call(self): ...
 
 
 @op
@@ -248,8 +247,7 @@ import mock
 class MyClient:
     ...
 
-    def query(self, body: str):
-        ...
+    def query(self, body: str): ...
 
 class MyClientResource(ConfigurableResource):
     username: str
@@ -412,18 +410,15 @@ from dagster import asset, materialize_to_memory, ConfigurableResource
 import mock
 
 
-class MyServiceResource(ConfigurableResource):
-    ...
+class MyServiceResource(ConfigurableResource): ...
 
 
 @asset
-def asset_requires_service(service: MyServiceResource):
-    ...
+def asset_requires_service(service: MyServiceResource): ...
 
 
 @asset
-def other_asset_requires_service(service: MyServiceResource):
-    ...
+def other_asset_requires_service(service: MyServiceResource): ...
 
 
 def test_assets_require_service():

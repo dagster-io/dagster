@@ -1,8 +1,8 @@
 from typing import Iterator
 
 import pytest
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.base import RunCoordinator
 from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator

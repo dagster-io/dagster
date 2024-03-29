@@ -21,7 +21,7 @@ console.log('Generating schema.graphql…');
 
 writeFileSync(TARGET_FILE, sdl);
 
-execSync(`yarn prettier --loglevel silent --write ${TARGET_FILE}`, {stdio: 'inherit'});
+execSync(`yarn prettier --log-level silent --write ${TARGET_FILE}`, {stdio: 'inherit'});
 
 // Write `possibleTypes.generated.json`, used in prod for `AppCache` and in tests for creating
 // a mocked schema.
