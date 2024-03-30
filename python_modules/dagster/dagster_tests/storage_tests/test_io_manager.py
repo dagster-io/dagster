@@ -48,6 +48,7 @@ from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_ma
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import make_new_run_id
 
 
 def test_io_manager_with_config():
@@ -379,7 +380,7 @@ def test_step_subset_with_custom_paths():
         for evt in events:
             assert not evt.is_failure
 
-        run_id = "my_run_id"
+        run_id = make_new_run_id()
         # when a path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations

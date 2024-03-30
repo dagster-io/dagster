@@ -1580,6 +1580,7 @@ class TestEventLogStorage:
             pytest.skip()
 
         asset_key = AssetKey(["path", "to", "asset_one"])
+        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
 
         events = []
 
@@ -1616,7 +1617,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="1",
+                    run_id=run_id_1,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1634,7 +1635,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="2",
+                    run_id=run_id_2,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1650,7 +1651,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="3",
+                    run_id=run_id_3,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1678,7 +1679,7 @@ class TestEventLogStorage:
                 DagsterEventType.RUN_SUCCESS,
                 DagsterEventType.RUN_SUCCESS,
             ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
 
             # use tz-naive cursor
             filtered_records = storage.get_event_records(
@@ -1695,7 +1696,7 @@ class TestEventLogStorage:
                 DagsterEventType.RUN_SUCCESS,
                 DagsterEventType.RUN_SUCCESS,
             ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
 
             # use invalid cursor
             with pytest.raises(
