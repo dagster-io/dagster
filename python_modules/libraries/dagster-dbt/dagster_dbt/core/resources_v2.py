@@ -56,8 +56,9 @@ from sqlglot import (
     MappingSchema,
     exp,
     parse_one,
+    to_table,
 )
-from sqlglot.expressions import table_name
+from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 from typing_extensions import Final, Literal
@@ -366,23 +367,30 @@ class DbtCliEventMessage:
             return {}
 
         # 1. Retrieve the current node's SQL file and its parents' column schemas.
-        sqlglot_mapping_schema = MappingSchema()
-        for relation_name, relation_metadata in self._event_history_metadata["parents"].items():
+        sql_dialect = manifest["metadata"]["adapter_type"]
+        sqlglot_mapping_schema = MappingSchema(dialect=sql_dialect)
+        for parent_relation_name, parent_relation_metadata in self._event_history_metadata[
+            "parents"
+        ].items():
             sqlglot_mapping_schema.add_table(
-                table=relation_name,
+                table=to_table(parent_relation_name, dialect=sql_dialect),
                 column_mapping={
                     column_name: column_metadata["data_type"]
-                    for column_name, column_metadata in relation_metadata["columns"].items()
+                    for column_name, column_metadata in parent_relation_metadata["columns"].items()
                 },
+                dialect=sql_dialect,
             )
 
-        dialect = manifest["metadata"]["adapter_type"]
         node_sql_path = target_path.joinpath(
             "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
         )
-        node_ast = parse_one(sql=node_sql_path.read_text()).expression
         optimized_node_ast = cast(
-            exp.Query, optimize(node_ast, schema=sqlglot_mapping_schema, dialect=dialect)
+            exp.Query,
+            optimize(
+                parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect).expression,
+                schema=sqlglot_mapping_schema,
+                dialect=sql_dialect,
+            ),
         )
 
         # 2. Retrieve the column names from the current node.
@@ -395,9 +403,14 @@ class DbtCliEventMessage:
             parent_dbt_resource_props = (
                 manifest["sources"] if is_resource_type_source else manifest["nodes"]
             )[parent_unique_id]
-            relation_name = parent_dbt_resource_props["relation_name"]
+            parent_relation_name = normalize_table_name(
+                to_table(parent_dbt_resource_props["relation_name"], dialect=sql_dialect),
+                dialect=sql_dialect,
+            )
 
-            dbt_parent_resource_props_by_relation_name[relation_name] = parent_dbt_resource_props
+            dbt_parent_resource_props_by_relation_name[parent_relation_name] = (
+                parent_dbt_resource_props
+            )
 
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
         for column_name in column_names:
@@ -406,7 +419,7 @@ class DbtCliEventMessage:
                 column=column_name,
                 sql=optimized_node_ast,
                 schema=sqlglot_mapping_schema,
-                dialect=dialect,
+                dialect=sql_dialect,
             ).walk():
                 # Only the leaves of the lineage graph contain relevant information.
                 if sqlglot_lineage_node.downstream:
@@ -418,8 +431,8 @@ class DbtCliEventMessage:
                     continue
 
                 # Attempt to retrieve the table's associated asset key and column.
-                parent_column_name = exp.to_column(sqlglot_lineage_node.name).name
-                parent_relation_name = table_name(table, dialect=dialect, identify=True)
+                parent_column_name = exp.to_column(sqlglot_lineage_node.name).name.lower()
+                parent_relation_name = normalize_table_name(table, dialect=sql_dialect)
                 parent_resource_props = dbt_parent_resource_props_by_relation_name.get(
                     parent_relation_name
                 )
@@ -434,7 +447,7 @@ class DbtCliEventMessage:
                     )
                 )
 
-            deps_by_column[column_name] = column_deps
+            deps_by_column[column_name.lower()] = column_deps
 
         # 4. Render the lineage as metadata.
         with disable_dagster_warnings():
