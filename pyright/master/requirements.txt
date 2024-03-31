@@ -98,7 +98,6 @@ wordcloud  # (quickstart-*)
 # runtime, some of these versions have bugged or incomplete type annotations
 # that trigger type errors
 apache-airflow>2.7
-pendulum<3
 
 # This is a temporary pin due to version conflicts between dbt 1.6 and some higher-order
 # dependencies of other integration libs. It is not important that the pyright typechecking env support
