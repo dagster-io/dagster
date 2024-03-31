@@ -47,6 +47,12 @@ prettier:
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
 	':!:README.md'` --write
 
+install_core_python_modules:
+	python scripts/install_dev_python_modules.py -qqq --core-only
+
+install_core_python_modules_verbose:
+	python scripts/install_dev_python_modules.py --core-only
+
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -qqq
 
@@ -72,6 +78,10 @@ rebuild_ui_with_profiling: sanity_check
 	cd js_modules/dagster-ui/; yarn install && yarn build-with-profiling
 
 dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 rebuild_ui
+
+core_install: install_core_python_modules_verbose rebuild_ui
+
+core_install_quiet: install_core_python_modules rebuild_ui
 
 dev_install: install_dev_python_modules_verbose rebuild_ui
 
