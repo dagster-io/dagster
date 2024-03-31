@@ -759,7 +759,7 @@ def test_engine_events(
 
 def test_not_initialized():
     run_launcher = DefaultRunLauncher()
-    run_id = "dummy"
+    run_id = make_new_run_id()
 
     assert run_launcher.join() is None
     assert run_launcher.terminate(run_id) is False

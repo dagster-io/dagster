@@ -6,7 +6,9 @@ client = DagsterGraphQLClient("localhost", port_number=3000)
 
 # end_setup_marker
 
-RUN_ID = "foo"
+from dagster._core.utils import make_new_run_id
+
+RUN_ID = make_new_run_id()
 REPO_NAME = "bar"
 JOB_NAME = "baz"
 REPO_NAME = "quux"
