@@ -10,6 +10,7 @@ from contextlib import suppress
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -48,7 +49,7 @@ from dagster._core.definitions.metadata import (
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.adapters.base.impl import BaseAdapter
-from dbt.adapters.factory import FACTORY
+from dbt.adapters.factory import FACTORY, get_adapter
 from dbt.cli.context import make_context
 from dbt.cli.requires import preflight, profile, project
 from dbt.config import RuntimeConfig
@@ -86,6 +87,9 @@ from ..dbt_manifest import (
 )
 from ..errors import DagsterDbtCliRuntimeError
 from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
+
+if TYPE_CHECKING:
+    from dbt.adapters.sql import SQLAdapter
 
 logger = get_dagster_logger()
 
@@ -1029,6 +1033,26 @@ class DbtCliResource(ConfigurableResource):
         os.chdir(path=current_path)
         return adapter
 
+    def _initialize_adapter_2(self, args: Sequence[str]) -> Optional[BaseAdapter]:
+        profiles_dir = self.profiles_dir if self.profiles_dir else self.project_dir
+        config_args = RuntimeConfigArgs(
+            project_dir=self.project_dir,
+            profiles_dir=profiles_dir,
+            threads=None,
+            single_threaded=False,
+            profile=self.profile,
+            target=self.target,
+            vars={},
+        )
+
+        current_path = os.getcwd()
+        os.chdir(path=self.project_dir)
+        config = RuntimeConfig.from_args(config_args)
+        os.chdir(path=current_path)
+
+        adapter: SQLAdapter = get_adapter(config)  # type: ignore
+        return adapter
+
     @public
     def cli(
         self,
@@ -1249,7 +1273,8 @@ class DbtCliResource(ConfigurableResource):
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
-        adapter = self._initialize_adapter(args)
+        # adapter = self._initialize_adapter(args)
+        adapter = self._initialize_adapter_2(args)
 
         return DbtCliInvocation.run(
             args=args,
@@ -1405,3 +1430,14 @@ def get_dbt_resource_props_by_test_name(
         for unique_id, dbt_resource_props in manifest["nodes"].items()
         if unique_id.startswith("test")
     }
+
+
+@dataclass
+class RuntimeConfigArgs:
+    project_dir: str
+    profiles_dir: str
+    threads: Optional[int]
+    single_threaded: bool
+    profile: Optional[str]
+    target: Optional[str]
+    vars: Dict[str, str]
