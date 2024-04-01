@@ -506,7 +506,7 @@ class TestEventLogStorage:
         instance: DagsterInstance,
         storage: EventLogStorage,
     ):
-        runs = ["foo", "bar", "baz"]
+        runs = [make_new_run_id() for _ in range(3)]
         if instance:
             for run in runs:
                 create_run_for_test(instance, run_id=run)
@@ -616,14 +616,15 @@ class TestEventLogStorage:
         instance: DagsterInstance,
         storage: EventLogStorage,
     ):
-        with create_and_delete_test_runs(instance, ["other_run"]):
+        other_run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [other_run_id]):
             # two runs events to ensure pagination is not affected by other runs
             storage.store_event(create_test_event_log_record("A", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(0), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(0), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("B", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(1), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(1), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("C", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(2), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
             assert len(storage.get_logs_for_run(test_run_id)) == 4
