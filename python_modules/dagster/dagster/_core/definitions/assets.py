@@ -963,6 +963,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
     @property
+    def asset_and_check_keys(self) -> AbstractSet["AssetKeyOrCheckKey"]:
+        return set(self.keys).union(self.check_keys)
+
+    @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = {
             *(dep_key for key in self.keys for dep_key in self.asset_deps[key]),

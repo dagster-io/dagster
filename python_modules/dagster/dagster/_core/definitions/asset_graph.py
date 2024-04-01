@@ -156,11 +156,6 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._assets_defs_by_check_key = assets_defs_by_check_key
-        self._asset_nodes_by_check_key = {
-            check_key: asset
-            for asset in asset_nodes_by_key.values()
-            for check_key in asset.check_keys
-        }
 
     @staticmethod
     def normalize_assets(
@@ -255,10 +250,9 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         if isinstance(asset_or_check_key, AssetKey):
             return self.get(asset_or_check_key).execution_set_asset_and_check_keys
         else:  # AssetCheckKey
-            asset_node = self._asset_nodes_by_check_key[asset_or_check_key]
-            asset_unit_keys = asset_node.execution_set_asset_and_check_keys
+            assets_def = self._assets_defs_by_check_key[asset_or_check_key]
             return (
-                asset_unit_keys if asset_or_check_key in asset_unit_keys else {asset_or_check_key}
+                {asset_or_check_key} if assets_def.can_subset else assets_def.asset_and_check_keys
             )
 
     @cached_property
