@@ -285,8 +285,12 @@ def select_unique_ids_from_manifest(
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string
-    _set_flag_attr("INDIRECT_SELECTION", IndirectSelection.Eager)
-    _set_flag_attr("WARN_ERROR", True)
+    _set_flag_attrs(
+        {
+            "INDIRECT_SELECTION": IndirectSelection.Eager,
+            "WARN_ERROR": True,
+        }
+    )
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
@@ -312,11 +316,12 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
     }
 
 
-def _set_flag_attr(key, value):
+def _set_flag_attrs(kvs: Dict[str, Any]):
     from dbt.flags import get_flag_dict, set_flags
 
     new_flags = Namespace()
     for global_key, global_value in get_flag_dict().items():
         setattr(new_flags, global_key.upper(), global_value)
-    setattr(new_flags, key, value)
+    for key, value in kvs.items():
+        setattr(new_flags, key.upper(), value)
     set_flags(new_flags)
