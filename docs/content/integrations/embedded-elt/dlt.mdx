@@ -1,17 +1,27 @@
 ---
-title: "Dagster Embedded ELT: dlt"
+title: "dlt & Dagster | Dagster Docs"
 description: Ingest data with ease using Dagster and dlt
 ---
 
-## dlt
+# dlt & Dagster
 
-To get started with `dagster-embedded-elt` and _dlt_, first familiarize yourself with the quick [introduction to dlt](https://dlthub.com/docs/intro). When using the _dlt_ integration, you can either write your own sources, or use one of the many pre-made [verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) in the _dlt_ ecosystem.
+The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets. It offers many advanced features, such as:
 
-## Background
+- Handling connection secrets
+- Converting data into the structure required for a destination
+- Incremental updates and merges
 
-The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well structured data sets. It offers many advanced features, such as handling of connection secrets, converting data into the structure required for a destination, and incremental updates and merges. Additionally, _dlt_ provides a large collection of [verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations/), meaning there is a good chance you won't have to write any code, and can instead leverage the work of the community!
+Additionally, dlt provides a large collection of [verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations/), meaning there is a good chance you won't have to write any code, and can instead leverage the work of the community.
 
-The Dagster _dlt_ integration makes use of [multi-assets](/concepts/assets/multi-assets#multi-assets), a single definition that results in multiple assets. These assets are derived from the `DltSource`. Let's take a look at an example _dlt_ source definition. In this example we are defining a source that is comprised of two resources. Each of resources queries an API endpoint and yields the data that we wish to load into our data warehouse. The two _resources_ defined on this _source_ will map to Dagster assets.
+In this guide, we'll explain how the dlt integration works, how to set up a Dagster project for dlt, and how to use a pre-defined dlt source.
+
+---
+
+## How it works
+
+The Dagster dlt integration uses [multi-assets](/concepts/assets/multi-assets#multi-assets), a single definition that results in multiple assets. These assets are derived from the `DltSource`.
+
+The following is an example of a dlt source definition. Here, we defined a source made up of two resources:
 
 ```python
 @dlt.source
@@ -30,7 +40,9 @@ def example(api_key: str = dlt.secrets.value):
     return courses, users
 ```
 
-Next, we can define a _pipeline_ specifying how we would like to load this data.
+Each resource queries an API endpoint and yields the data that we wish to load into our data warehouse. The two resources defined on the source will map to Dagster assets.
+
+Next, we defined a dlt pipeline that specifies how we want the data to be loaded:
 
 ```python
 pipeline = dlt.pipeline(
@@ -38,49 +50,78 @@ pipeline = dlt.pipeline(
 )
 ```
 
-These are the two components required to load data using _dlt_, a _source_ and a _pipeline_. To integrate with Dagster, these will be the parameters to our multi-asset decorator.
+A dlt source and pipelinea are the two components required to load data using dlt. These will be the parameters of our multi-asset, which will integrate dlt and Dagster.
 
-Next, we will discuss how to setup your Dagster project for _dlt_, and walk through how you can leverage a pre-defined _verified source_.
+---
 
-## Tutorial
+## Prerequisites
 
-## 1. Configuring your Dagster project to support `dlt`
+To follow the steps in this guide, you'll need:
 
-You will need to define a location for the `dlt` code used for ingesting data. We recommend creating a `dlt_sources` directory at the root of your Dagster project, however, this code can reside anywhere within your Python project.
+- **To read the [dlt introduction](https://dlthub.com/docs/intro)**, if you've never worked with dlt before.
+- **To install the following libraries**:
+
+  ```bash
+  pip install dagster dagster-embedded-elt
+  ```
+
+  Refer to the [Dagster installation](/getting-started/install) guide for more info.
+
+---
+
+## Step 1: Configure your Dagster project to support dlt
+
+The first step is to define a location for the `dlt` code used for ingesting data. We recommend creating a `dlt_sources` directory at the root of your Dagster project, but this code can reside anywhere within your Python project.
+
+Run the following to create the `dlt_sources` directory:
 
 ```bash
 cd $DAGSTER_HOME && mkdir dlt_sources
 ```
 
-## 2. Initialize `dlt` ingestion code
+---
 
-In your `dlt_sources/` directory, you can write your own ingestion code following the [dlt tutorial](https://dlthub.com/docs/tutorial/load-data-from-an-api), or you can use a verified source. Here, we are going to demonstrate how you integrate the [GitHub source](https://dlthub.com/docs/dlt-ecosystem/verified-sources/github) provided by `dlt`.
+## Step 2: Initialize dlt ingestion code
 
-First, install the _dlt_ command line utility.
+In the `dlt_sources` directory, you can write your own ingestion code following the [dlt tutorial](https://dlthub.com/docs/tutorial/load-data-from-an-api) or you can use a verified source.
 
-```bash
-$ pip install dlt
-```
+In this example, we'll use the [GitHub source](https://dlthub.com/docs/dlt-ecosystem/verified-sources/github) provided by `dlt`.
 
-Then, create a location for your _dlt_ source code, and initialize the GitHub source.
+1. First, install the dlt command line utility by running:
 
-```bash
-$ cd dlt_sources/
+   ```bash
+   pip install dlt
+   ```
 
-$ dlt init github snowflake
-Looking up the init scripts in https://github.com/dlt-hub/verified-sources.git...
-Cloning and configuring a verified source github (Source that load github issues, pull requests and reactions for a specific repository via customizable graphql query. Loads events incrementally.)
-Do you want to proceed? [Y/n]: y
+2. Next, create a location for the dlt source code and initialize the GitHub source:
 
-Verified source github was added to your project!
-* See the usage examples and code snippets to copy from github_pipeline.py
-* Add credentials for snowflake and other secrets in ./.dlt/secrets.toml
-* requirements.txt was created. Install it with:
-pip3 install -r requirements.txt
-* Read https://dlthub.com/docs/walkthroughs/create-a-pipeline for more information
-```
+   ```bash
+   cd dlt_sources
 
-This has pulled down the code required to easily collect data from the GitHub API. It has also created a `requirements.txt` and a `.dlt/` configuration. In this case, we can remove these files, as we will be handling configuration with environment variables, and the requirements are to be defined in Dagster's dependencies specification.
+   dlt init github snowflake
+   ```
+
+   At which point you'll see the following in the command line:
+
+   ```bash
+   Looking up the init scripts in https://github.com/dlt-hub/verified-sources.git...
+   Cloning and configuring a verified source github (Source that load github issues, pull requests and reactions for a specific repository via customizable graphql query. Loads events incrementally.)
+   ```
+
+3. When prompted to proceed, enter `y`. You should see the following confirming that the GitHub source was added to the project:
+
+   ```bash
+   Verified source github was added to your project!
+   * See the usage examples and code snippets to copy from github_pipeline.py
+   * Add credentials for snowflake and other secrets in ./.dlt/secrets.toml
+   * requirements.txt was created. Install it with:
+   pip3 install -r requirements.txt
+   * Read https://dlthub.com/docs/walkthroughs/create-a-pipeline for more information
+   ```
+
+This pulled down the code required to easily collect data from the GitHub API. It also created a `requirements.txt` and a `.dlt/` configuration.
+
+In this case, we can remove these files, as we will be handling configuration with environment variables, and the requirements are to be defined in Dagster's dependencies specification.
 
 ```bash
 $ tree -a
@@ -100,11 +141,18 @@ $ tree -a
 └── requirements.txt   # can be removed
 ```
 
-## 3. Define environment variables required by `dlt`
+---
 
-This integration manages connections and secrets using environment variables as `dlt`. The `dlt` library is able to "magically" infer required environment variables used by its sources and resources. See [Secrets and Configs](https://dlthub.com/docs/general-usage/credentials/configuration) for more information.
+## Step 3: Define dlt environment variables
 
-In this example, the `github_reactions` source requires a GitHub access token, and the _snowflake_ destination requires database connection details. This results in the following required environment variables:
+This integration manages connections and secrets using environment variables as `dlt`. The `dlt` library can infer required environment variables used by its sources and resources. Refer to [dlt's Secrets and Configs](https://dlthub.com/docs/general-usage/credentials/configuration) documentation for more information.
+
+In the example we've been using:
+
+- The `github_reactions` source requires a GitHub access token
+- The Snowflake destination requires database connection details
+
+This results in the following required environment variables:
 
 ```bash
 SOURCES__GITHUB__ACCESS_TOKEN=""
@@ -116,11 +164,13 @@ DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
 DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
 ```
 
-Ensure that these are defined in your environment.
+Ensure that these variables are defined in your environment.
 
-## 4. Define a `DagsterDltResource`
+---
 
-The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a _dlt_ pipeline runner. This can be shared across _dlt_ pipelines, and is a required parameter to our _dlt_ asset definition.
+## Step 4: Define a DagsterDltResource
+
+The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a dlt pipeline runner. This can be shared across dlt pipelines and is a required parameter to our dlt asset definition.
 
 ```python
 from dagster_embedded_elt.dlt import DagsterDltResource
@@ -128,9 +178,11 @@ from dagster_embedded_elt.dlt import DagsterDltResource
 dlt_resource = DagsterDltResource()
 ```
 
-## 5. Create a `dlt_assets` definition for GitHub
+---
 
-The `dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we will use the `github_reactions` source and create a `dlt_pipeline` to ingest from Github to Snowflake.
+## Step 5: Create a dlt_assets definition for GitHub
+
+The `dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake:
 
 ```python
 @dlt_assets(
@@ -159,11 +211,17 @@ defs = Definitions(
 )
 ```
 
-And that's it! You should now have two assets that load data to corresponding Snowflake tables; One for issues, and the other for pull requests.
+And that's it! You should now have two assets that load data to corresponding Snowflake tables: one for issues and the other for pull requests.
 
-If you would like to see more real-world examples of using `dlt` in production, see how we're using it internally in [Dagster Open Platform](https://github.com/dagster-io/dagster-open-platform).
+---
 
-## Relevant APIs
+## What's next?
+
+Want to see more real-world examples of dlt in production? Check out how we use it internally at Dagster in [Dagster Open Platform](https://github.com/dagster-io/dagster-open-platform).
+
+---
+
+## APIs in this guide
 
 | Name                                                                         | Description                                                    |
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------- |
