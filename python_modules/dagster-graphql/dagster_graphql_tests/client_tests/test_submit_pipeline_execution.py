@@ -1,10 +1,11 @@
 import pytest
 from dagster import Config, DagsterInvalidDefinitionError, RunConfig
+from dagster._core.utils import make_new_run_id
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
 from .conftest import MockClient, python_client_test_suite
 
-EXPECTED_RUN_ID = "foo"
+EXPECTED_RUN_ID = make_new_run_id()
 
 launch_job_success_response = {
     "launchPipelineExecution": {

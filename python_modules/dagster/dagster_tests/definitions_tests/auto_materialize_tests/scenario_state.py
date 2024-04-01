@@ -47,6 +47,7 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 from typing_extensions import Self
@@ -259,6 +260,7 @@ class ScenarioState:
         )
 
     def with_in_progress_run_for_asset(self, asset_key: CoercibleToAssetKey) -> Self:
+        in_progress_run_id = make_new_run_id()
         with pendulum_freeze_time(self.current_time):
             asset_key = AssetKey.from_coercible(asset_key)
             job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
@@ -268,12 +270,12 @@ class ScenarioState:
             execution_plan = create_execution_plan(job_def, run_config={})
             self.instance.create_run_for_job(
                 job_def=job_def,
-                run_id="in_progress_run",
+                run_id=in_progress_run_id,
                 status=DagsterRunStatus.STARTED,
                 asset_selection=frozenset({AssetKey.from_coercible(asset_key)}),
                 execution_plan=execution_plan,
             )
-            assert self.instance.get_run_by_id("in_progress_run")
+            assert self.instance.get_run_by_id(in_progress_run_id)
         return self
 
     def with_runs(self, *run_requests: RunRequest) -> Self:
