@@ -385,9 +385,16 @@ def get_dbt_multi_asset_args(
     check_specs: Sequence[AssetCheckSpec] = []
 
     dbt_unique_id_and_resource_types_by_asset_key: Dict[AssetKey, Tuple[Set[str], Set[str]]] = {}
+    dbt_group_resource_props_by_group_name: Dict[str, Dict[str, Any]] = {
+        dbt_group_resource_props["name"]: dbt_group_resource_props
+        for dbt_group_resource_props in manifest["groups"].values()
+    }
 
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
+        dbt_group_resource_props = dbt_group_resource_props_by_group_name.get(
+            dbt_resource_props.get("group")
+        )
 
         output_name = dagster_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
@@ -409,6 +416,12 @@ def get_dbt_multi_asset_args(
                 DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
+            owners=dagster_dbt_translator.get_owners(
+                {
+                    **dbt_resource_props,
+                    **({"group": dbt_group_resource_props} if dbt_group_resource_props else {}),
+                }
+            ),
             tags=dagster_dbt_translator.get_tags(dbt_resource_props),
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
             code_version=default_code_version_fn(dbt_resource_props),

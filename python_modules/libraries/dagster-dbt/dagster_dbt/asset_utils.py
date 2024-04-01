@@ -447,6 +447,23 @@ def group_from_dbt_resource_props_fallback_to_directory(
     return fqn[1]
 
 
+def default_owners_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[Sequence[str]]:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    owners_config = dagster_metadata.get("owners")
+
+    if owners_config:
+        return owners_config
+
+    owner: Optional[str] = (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
+
+    if not owner:
+        return None
+
+    return [owner]
+
+
 def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
