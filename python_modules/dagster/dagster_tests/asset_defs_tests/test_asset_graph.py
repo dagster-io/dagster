@@ -23,7 +23,7 @@ from dagster import (
     op,
     repository,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -760,12 +760,14 @@ def test_required_assets_and_checks_by_key_check_decorator(
     @asset_check(asset=asset0)
     def check0(): ...
 
-    asset_graph = asset_graph_from_assets([asset0, check0])
+    @asset_check(asset=asset0)
+    def check1(): ...
+
+    asset_graph = asset_graph_from_assets([asset0, check0, check1])
     assert asset_graph.get_execution_set_asset_and_check_keys(asset0.key) == {asset0.key}
-    assert (
-        asset_graph.get_execution_set_asset_and_check_keys(next(iter(check0.check_keys)))
-        == check0.check_keys
-    )
+    assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check0.check_keys))) == {
+        AssetCheckKey(asset0.key, "check0")
+    }
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
@@ -786,10 +788,9 @@ def test_required_assets_and_checks_by_key_asset_decorator(
     for key in grouped_keys:
         assert asset_graph.get_execution_set_asset_and_check_keys(key) == set(grouped_keys)
 
-    assert (
-        asset_graph.get_execution_set_asset_and_check_keys(next(iter(check0.check_keys)))
-        == check0.check_keys
-    )
+    assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check0.check_keys))) == {
+        AssetCheckKey(asset0.key, "check0")
+    }
 
 
 def test_required_assets_and_checks_by_key_multi_asset(
