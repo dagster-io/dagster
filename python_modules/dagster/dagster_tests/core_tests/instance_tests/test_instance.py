@@ -780,3 +780,12 @@ def test_report_runless_asset_event():
             limit=1,
         )
         assert len(records) == 1
+
+
+def test_invalid_run_id():
+    with instance_for_test() as instance:
+        with pytest.raises(
+            CheckError,
+            match="run_id must be a valid UUID. Got invalid_run_id",
+        ):
+            create_run_for_test(instance, job_name="foo_job", run_id="invalid_run_id")
