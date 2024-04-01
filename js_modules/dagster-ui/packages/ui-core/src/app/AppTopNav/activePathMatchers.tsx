@@ -1,7 +1,7 @@
 import {ComponentProps} from 'react';
 import {NavLink} from 'react-router-dom';
 
-type MatcherFn = ComponentProps<typeof NavLink>['isActive'];
+type MatcherFn = NonNullable<ComponentProps<typeof NavLink>['isActive']>;
 
 export const assetsPathMatcher: MatcherFn = (_, currentLocation) => {
   const {pathname} = currentLocation;

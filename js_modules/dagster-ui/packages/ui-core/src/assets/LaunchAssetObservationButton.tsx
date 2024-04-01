@@ -1,6 +1,6 @@
 import {ApolloClient, useApolloClient} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useState} from 'react';
 
 import {
   AssetsInScope,
@@ -15,6 +15,7 @@ import {
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
@@ -42,10 +43,19 @@ export const LaunchAssetObservationButton = ({
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
-  const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});
+  const [state, setState] = useState<ObserveAssetsState>({type: 'none'});
   const client = useApolloClient();
 
   const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
+
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeMaterializeAction) {
+    return null;
+  }
+
   if (!scopeAssets.length) {
     return <></>;
   }
