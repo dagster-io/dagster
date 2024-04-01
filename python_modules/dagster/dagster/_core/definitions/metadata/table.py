@@ -316,7 +316,7 @@ class TableColumnLineage(
 
             check.invariant(
                 len(deps) == len(set((dep.asset_key, dep.column_name) for dep in deps)),
-                "The deps for column `{column}` must be unique by asset key and column name.",
+                f"The deps for column `{column}` must be unique by asset key and column name.",
             )
 
         return super(TableColumnLineage, cls).__new__(cls, deps_by_column=sorted_deps_by_column)
