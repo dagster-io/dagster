@@ -836,11 +836,11 @@
         "path": "/integrations/embedded-elt",
         "children": [
           {
-            "title": "dlt Integration",
+            "title": "dlt & Dagster",
             "path": "/integrations/embedded-elt/dlt"
           },
           {
-            "title": "Sling Integration",
+            "title": "Sling & Dagster",
             "path": "/integrations/embedded-elt/sling"
           }
         ]
