@@ -4,9 +4,9 @@ import React, {useContext} from 'react';
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {FeatureFlag, featureEnabled} from '../app/Flags';
-import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
+import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
 import {useFilters} from '../ui/Filters';
-import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
@@ -18,68 +18,46 @@ import {
 import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-type OptionalFilters =
-  | {
-      assetGroups?: null;
-      setGroupFilters?: null;
-      visibleAssetGroups?: null;
-      computeKindTags?: null;
-      setComputeKindTags?: null;
-      changedInBranch?: null;
-      setChangedInBranch?: null;
-      allAssetTags?: null;
-      assetTags?: null;
-      setAssetTags?: null;
-      allOwners?: null;
-      owners?: null;
-      setOwners: null;
-    }
-  | {
-      assetGroups?: AssetGroupSelector[];
-      visibleAssetGroups?: AssetGroupSelector[];
-      setGroupFilters?: (groups: AssetGroupSelector[]) => void;
-      computeKindTags?: string[];
-      setComputeKindTags?: (s: string[]) => void;
-      changedInBranch?: ChangeReason[];
-      setChangedInBranch?: (s: ChangeReason[]) => void;
-      assetTags?: DefinitionTag[];
-      setAssetTags?: (s: DefinitionTag[]) => void;
-      owners?: AssetOwner[];
-      setOwners?: (owners: AssetOwner[]) => void;
-    };
-
 type Props = {
   nodes: GraphNode[];
   clearExplorerPath: () => void;
   explorerPath: string;
   isGlobalGraph: boolean;
-} & OptionalFilters;
+  assetFilterState?: AssetFilterState;
+};
 
 export function useAssetGraphExplorerFilters({
   nodes,
   isGlobalGraph,
-  assetGroups,
-  visibleAssetGroups,
-  setGroupFilters,
-  computeKindTags,
-  setComputeKindTags,
   explorerPath,
   clearExplorerPath,
-  changedInBranch,
-  setChangedInBranch,
-  assetTags,
-  setAssetTags,
-  owners,
-  setOwners,
+  assetFilterState,
 }: Props) {
   const allAssetTags = useAssetTagsForAssets(nodes);
 
   const {allRepos} = useContext(WorkspaceContext);
 
-  const reposFilter = useCodeLocationFilter();
+  const {
+    filters: {changedInBranch, computeKindTags, repos, owners, groups, tags},
+    setAssetTags,
+    setChangedInBranch,
+    setComputeKindTags,
+    setGroups,
+    setOwners,
+    setRepos,
+  } = assetFilterState || ({filters: {}} as any);
+
+  const reposFilter = useCodeLocationFilter({repos, setRepos});
 
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
-  const groupsFilter = useAssetGroupFilter({visibleAssetGroups, assetGroups, setGroupFilters});
+
+  const allAssetGroups = useAssetGroupsForAssets(nodes);
+
+  const groupsFilter = useAssetGroupFilter({
+    assetGroups: groups,
+    allAssetGroups,
+    setGroups,
+  });
 
   const allComputeKindTags = useAssetKindTagsForAssets(nodes);
 
@@ -91,7 +69,7 @@ export function useAssetGraphExplorerFilters({
 
   const tagsFilter = useAssetTagFilter({
     allAssetTags,
-    tags: assetTags,
+    tags,
     setTags: setAssetTags,
   });
 
@@ -107,7 +85,7 @@ export function useAssetGraphExplorerFilters({
   if (allRepos.length > 1 && isGlobalGraph) {
     filters.push(reposFilter);
   }
-  if (assetGroups) {
+  if (allAssetGroups) {
     filters.push(groupsFilter);
   }
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
@@ -118,15 +96,9 @@ export function useAssetGraphExplorerFilters({
   ) {
     filters.push(changedFilter);
   }
-  if (setComputeKindTags) {
-    filters.push(kindTagsFilter);
-  }
-  if (setAssetTags) {
-    filters.push(tagsFilter);
-  }
-  if (setOwners) {
-    filters.push(ownerFilter);
-  }
+  filters.push(kindTagsFilter);
+  filters.push(tagsFilter);
+  filters.push(ownerFilter);
   const {button, activeFiltersJsx} = useFilters({filters});
   if (!filters.length) {
     return {button: null, activeFiltersJsx: null};

@@ -1,5 +1,6 @@
 import {Box, Checkbox, Icon, MenuItem, Suggest} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
+import memoize from 'lodash/memoize';
 import uniqBy from 'lodash/uniqBy';
 import {useMemo} from 'react';
 
@@ -115,12 +116,16 @@ export const AssetGroupSuggest = ({
   );
 };
 
-export function buildAssetGroupSelector(a: Asset) {
-  return a.definition && a.definition.groupName
-    ? {
-        groupName: a.definition.groupName,
-        repositoryName: a.definition.repository.name,
-        repositoryLocationName: a.definition.repository.location.name,
-      }
-    : null;
-}
+export const buildAssetGroupSelector = memoize(
+  (a: Asset) => {
+    return a.definition && a.definition.groupName
+      ? {
+          groupName: a.definition.groupName,
+          repositoryName: a.definition.repository.name,
+          repositoryLocationName: a.definition.repository.location.name,
+        }
+      : null;
+  },
+  (a: Asset) =>
+    `${a.definition?.groupName}@!${a.definition?.repository.name}@!${a.definition?.repository.location.name}`,
+);
