@@ -173,12 +173,12 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """Any: The parsed config specific to this op."""
         return self._step_execution_context.op_config
 
-    @public
     @property
     def dagster_run(self) -> DagsterRun:
-        """DagsterRun: The current pipeline run."""
+        """DagsterRun: The current run."""
         return self._step_execution_context.dagster_run
 
+    @public
     @property
     def run(self) -> DagsterRun:
         """DagsterRun: The current run."""
