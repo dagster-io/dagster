@@ -26,6 +26,7 @@ from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvari
 from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
+from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
@@ -738,6 +739,21 @@ def create_execution_plan(
     )
 
 
+def _get_run_failure_reason_from_step_failures(
+    step_failure_error_sources: AbstractSet[Optional[ErrorSource]],
+):
+    if all(
+        error_source in {None, ErrorSource.USER_CODE_ERROR}
+        for error_source in step_failure_error_sources
+    ):
+        return RunFailureReason.STEP_FAILURE
+
+    if all(error_source == ErrorSource.INTERRUPT for error_source in step_failure_error_sources):
+        return RunFailureReason.UNEXPECTED_TERMINATION
+
+    return RunFailureReason.FRAMEWORK_ERROR
+
+
 def job_execution_iterator(
     job_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
@@ -755,13 +771,17 @@ def job_execution_iterator(
     job_exception_info = None
     job_canceled_info = None
     failed_steps = []
+    failed_step_error_sources = set()
     generator_closed = False
     try:
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
                 failed_steps.append(event.step_key)
+                failed_step_error_sources.add(event.step_failure_data.error_source)
+
             elif event.is_resource_init_failure and event.step_key:
                 failed_steps.append(event.step_key)
+                failed_step_error_sources.add(None)  # no detailed reason tracking for init failures
 
             # Telemetry
             log_dagster_event(event, job_context)
@@ -825,10 +845,11 @@ def job_execution_iterator(
                 error_info=job_exception_info,
             )
         elif failed_steps:
+            failure_reason = _get_run_failure_reason_from_step_failures(failed_step_error_sources)
             event = DagsterEvent.job_failure(
                 job_context,
                 f"Steps failed: {failed_steps}.",
-                failure_reason=RunFailureReason.STEP_FAILURE,
+                failure_reason=failure_reason,
             )
         else:
             event = DagsterEvent.job_success(job_context)

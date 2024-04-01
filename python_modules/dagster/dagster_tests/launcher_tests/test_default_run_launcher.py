@@ -17,9 +17,13 @@ from dagster import (
 )
 from dagster._core.definitions import op
 from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.events import RunFailureReason
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import GRPC_INFO_TAG
+from dagster._core.storage.tags import (
+    GRPC_INFO_TAG,
+    RUN_FAILURE_REASON_TAG,
+)
 from dagster._core.test_utils import (
     environ,
     instance_for_test,
@@ -65,6 +69,16 @@ def exity_op(_):
 @job
 def exity_job():
     exity_op()
+
+
+@op
+def fail_op(_):
+    raise Exception("I have failed")
+
+
+@job
+def fail_job():
+    fail_op()
 
 
 @op
@@ -123,6 +137,7 @@ def nope():
         sleepy_job,
         slow_job,
         math_diamond,
+        fail_job,
     ]
 
 
@@ -399,7 +414,13 @@ def test_exity_run(
     assert failed_run
     assert failed_run.run_id == run_id
 
-    failed_run = poll_for_finished_run(instance, run_id, timeout=5)
+    failed_run = poll_for_finished_run(
+        instance,
+        run_id,
+        timeout=5,
+        run_tags={RUN_FAILURE_REASON_TAG: RunFailureReason.FRAMEWORK_ERROR.value},
+    )
+
     assert failed_run.status == DagsterRunStatus.FAILURE
 
     event_records = instance.all_logs(run_id)
@@ -409,6 +430,62 @@ def test_exity_run(
         event_records,
         "Execution of run for \"exity_job\" failed. Steps failed: ['exity_op']",
     )
+
+    assert failed_run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.FRAMEWORK_ERROR.value
+
+
+@pytest.mark.parametrize("run_config", run_configs())
+@pytest.mark.skipif(
+    _seven.IS_WINDOWS,
+    reason="Crashy jobs leave resources open on windows, causing filesystem contention",
+)
+def test_fail_run(
+    instance: DagsterInstance,
+    workspace: WorkspaceRequestContext,
+    run_config: Mapping[str, Any],
+):
+    external_job = (
+        workspace.get_code_location("test").get_repository("nope").get_full_external_job("fail_job")
+    )
+
+    run = instance.create_run_for_job(
+        job_def=fail_job,
+        run_config=run_config,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
+    )
+
+    run_id = run.run_id
+
+    run = instance.get_run_by_id(run_id)
+    assert run
+    assert run.status == DagsterRunStatus.NOT_STARTED
+
+    instance.launch_run(run.run_id, workspace)
+
+    failed_run = instance.get_run_by_id(run_id)
+
+    assert failed_run
+    assert failed_run.run_id == run_id
+
+    failed_run = poll_for_finished_run(
+        instance,
+        run_id,
+        timeout=5,
+        run_tags={RUN_FAILURE_REASON_TAG: RunFailureReason.STEP_FAILURE.value},
+    )
+
+    assert failed_run.status == DagsterRunStatus.FAILURE
+
+    event_records = instance.all_logs(run_id)
+
+    assert _message_exists(event_records, 'Execution of step "fail_op" failed.')
+    assert _message_exists(
+        event_records,
+        "Execution of run for \"fail_job\" failed. Steps failed: ['fail_op']",
+    )
+
+    assert failed_run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.STEP_FAILURE.value
 
 
 @pytest.mark.parametrize(
