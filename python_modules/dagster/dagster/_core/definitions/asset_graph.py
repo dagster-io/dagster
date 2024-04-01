@@ -1,7 +1,21 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    AbstractSet,
+    DefaultDict,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
+from dagster._core.declarative_scheduling.scheduling_policy import (
+    SYSTEM_METADATA_KEY_SCHEDULING_POLICY,
+    SchedulingPolicy,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
@@ -134,6 +148,10 @@ class AssetNode(BaseAssetNode):
             return {self.key}
         else:
             return {*self.assets_def.keys, *self.assets_def.check_keys}
+
+    @property
+    def scheduling_policy(self) -> Optional["SchedulingPolicy"]:
+        return self.metadata.get(SYSTEM_METADATA_KEY_SCHEDULING_POLICY)
 
     ##### ASSET GRAPH SPECIFIC INTERFACE
 
