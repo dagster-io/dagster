@@ -1,4 +1,5 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useContext} from 'react';
 
 import {
   executionDisabledMessageForAssets,
@@ -6,6 +7,7 @@ import {
 } from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
@@ -30,25 +32,31 @@ export const AssetActionMenu = (props: Props) => {
     ? executionDisabledMessageForAssets([definition])
     : 'Asset definition not found in a code location';
 
+  const {
+    featureContext: {canSeeMaterializeAction, canSeeWipeMaterializationAction},
+  } = useContext(CloudOSSContext);
+
   return (
     <>
       <Popover
         position="bottom-right"
         content={
           <Menu>
-            <Tooltip
-              content={disabledMessage || 'Shift+click to add configuration'}
-              placement="left"
-              display="block"
-              useDisabledButtonTooltipFix
-            >
-              <MenuItem
-                text="Materialize"
-                icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}
-                disabled={!!disabledMessage || loading}
-                onClick={(e) => onClick([{path}], e)}
-              />
-            </Tooltip>
+            {canSeeMaterializeAction ? (
+              <Tooltip
+                content={disabledMessage || 'Shift+click to add configuration'}
+                placement="left"
+                display="block"
+                useDisabledButtonTooltipFix
+              >
+                <MenuItem
+                  text="Materialize"
+                  icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}
+                  disabled={!!disabledMessage || loading}
+                  onClick={(e) => onClick([{path}], e)}
+                />
+              </Tooltip>
+            ) : null}
             <MenuLink
               text="Show in group"
               to={
@@ -77,13 +85,15 @@ export const AssetActionMenu = (props: Props) => {
               disabled={!definition}
               icon="graph_downstream"
             />
-            <MenuItem
-              text="Wipe materializations"
-              icon="delete"
-              disabled={!onWipe || !canWipeAssets}
-              intent="danger"
-              onClick={() => canWipeAssets && onWipe && onWipe([{path}])}
-            />
+            {canSeeWipeMaterializationAction ? (
+              <MenuItem
+                text="Wipe materializations"
+                icon="delete"
+                disabled={!onWipe || !canWipeAssets}
+                intent="danger"
+                onClick={() => canWipeAssets && onWipe && onWipe([{path}])}
+              />
+            ) : null}
           </Menu>
         }
       >
