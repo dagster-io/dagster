@@ -30,15 +30,14 @@ There are two main types of metadata in Dagster: definition and runtime. In code
 
 **Definition metadata** is information that's fixed or doesn't frequently change. For example, definition metadata could be:
 
-- A description of an asset
-- [Adding an asset to a group](/concepts/assets/software-defined-assets#grouping-assets)
-- Links to resources that are [attached to a job](/concepts/metadata-tags/op-job-metadata)
+- The columns an asset is expected to contain
+- A link to source file in Github that contains the code that defines the asset or job
 
 Refer to the [Attaching definition metadata](/concepts/assets/software-defined-assets#attaching-definition-metadata) section of the [Software-defined Assets](/concepts/assets/software-defined-assets) documentation for more information.
 
 ### Runtime metadata
 
-**Runtime** metadata is information that changes after an action occurs. This could be the date an asset was materialized, how many records were processed, how long an asset took to materialize, etc. Refer to the [Recording materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata) section of the [Software-defined Assets](/concepts/assets/software-defined-assets) documentation for more information.
+**Runtime** metadata is information that changes after an action occurs. This could be how many records were processed, how long an asset took to materialize, etc. Refer to the [Recording materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata) section of the [Software-defined Assets](/concepts/assets/software-defined-assets) documentation for more information.
 
 ---
 
