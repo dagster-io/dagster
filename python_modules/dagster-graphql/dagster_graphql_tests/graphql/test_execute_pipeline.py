@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
 from dagster_graphql.client.query import (
@@ -534,7 +535,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         ]
 
     def test_subscribe_bad_run_id(self, graphql_context: WorkspaceRequestContext):
-        run_id = "nope"
+        run_id = make_new_run_id()
         subscribe_results = execute_dagster_graphql_subscription(
             graphql_context, SUBSCRIPTION_QUERY, variables={"runId": run_id}
         )
@@ -546,7 +547,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             subscribe_result.data["pipelineRunLogs"]["__typename"]
             == "PipelineRunLogsSubscriptionFailure"
         )
-        assert subscribe_result.data["pipelineRunLogs"]["missingRunId"] == "nope"
+        assert subscribe_result.data["pipelineRunLogs"]["missingRunId"] == run_id
 
     def test_basic_sync_execution_no_config(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "no_config_job")

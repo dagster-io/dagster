@@ -15,6 +15,7 @@ from dagster._core.test_utils import (
     environ,
     instance_for_test,
 )
+from dagster._core.utils import make_new_run_id
 from dagster._serdes import serialize_value
 
 ensure_dagster_tests_import()
@@ -49,7 +50,6 @@ def test_execute_run():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -108,7 +108,6 @@ def test_execute_run_with_secrets_loader(capfd):
             run = create_run_for_test(
                 instance,
                 job_name="needs_env_var_job",
-                run_id="new_run",
                 job_code_origin=recon_job.get_python_origin(),
             )
 
@@ -143,7 +142,6 @@ def test_execute_run_with_secrets_loader(capfd):
         run = create_run_for_test(
             instance,
             job_name="needs_env_var_job",
-            run_id="new_run",
             job_code_origin=recon_job.get_python_origin(),
         )
 
@@ -185,7 +183,6 @@ def test_execute_run_fail_job():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -208,7 +205,6 @@ def test_execute_run_fail_job():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run_raise_on_error",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -232,9 +228,7 @@ def test_execute_run_fail_job():
             ) as _mock_job_execution_iterator:
                 _mock_job_execution_iterator.side_effect = Exception("Framework error")
 
-                run = create_run_for_test(
-                    instance, job_name="foo", run_id="new_run_framework_error"
-                )
+                run = create_run_for_test(instance, job_name="foo")
 
                 input_json_raise_on_failure = serialize_value(
                     ExecuteRunArgs(
@@ -259,13 +253,14 @@ def test_execute_run_cannot_load():
             }
         }
     ) as instance:
+        run_id = make_new_run_id()
         with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             input_json = serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
-                    run_id="FOOBAR",
+                    run_id=run_id,
                     instance_ref=instance.get_ref(),
                 )
             )
@@ -277,7 +272,7 @@ def test_execute_run_cannot_load():
 
             assert result.exit_code != 0
 
-            assert "Run with id 'FOOBAR' not found for run execution" in str(
+            assert f"Run with id '{run_id}' not found for run execution" in str(
                 result.exception
             ), f"no match, result: {result.stdout}"
 
@@ -310,7 +305,6 @@ def test_execute_step():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -347,7 +341,6 @@ def test_execute_step_print_serialized_events():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -412,7 +405,6 @@ def test_execute_step_with_secrets_loader():
             run = create_run_for_test(
                 instance,
                 job_name="needs_env_var_job",
-                run_id="new_run",
                 job_code_origin=recon_job.get_python_origin(),
             )
 
@@ -446,7 +438,6 @@ def test_execute_step_with_env():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -481,7 +472,6 @@ def test_execute_step_non_compressed():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -512,7 +502,6 @@ def test_execute_step_1():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -546,7 +535,6 @@ def test_execute_step_verify_step():
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
@@ -606,7 +594,6 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             run = create_run_for_test(
                 instance,
                 job_name="foo",
-                run_id="new_run",
                 job_code_origin=job_handle.get_python_origin(),
             )
 
