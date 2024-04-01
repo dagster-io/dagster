@@ -282,8 +282,9 @@ def _materialize_dbt_assets(
     dbt_commands: List[List[str]],
     selection: Optional[AssetSelection],
     expected_dbt_selection: Optional[Set[str]] = None,
+    dagster_dbt_translator=dagster_dbt_translator_with_checks,
 ) -> ExecuteInProcessResult:
-    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         for dbt_command in dbt_commands:
             cli_invocation = dbt.cli(dbt_command, context=context)
@@ -361,6 +362,24 @@ def test_materialize_asset_and_checks(
             "test.test_dagster_asset_checks.singular_test_with_no_meta_and_multiple_dependencies",
         ),
     }
+
+
+def test_materialize_asset_checks_disabled(
+    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+) -> None:
+    result = _materialize_dbt_assets(
+        test_asset_checks_manifest,
+        dbt_commands,
+        selection=AssetSelection.assets(AssetKey(["customers"])),
+        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
+        dagster_dbt_translator=dagster_dbt_translator_without_checks,
+    )
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 0
+    # observations above, plus observations for the check resuls. One extra because one test is a
+    # relationship test
+    assert len(result.get_asset_observation_events()) == 11
 
 
 def test_materialize_asset_no_checks(
