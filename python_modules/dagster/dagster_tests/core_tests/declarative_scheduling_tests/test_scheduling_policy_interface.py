@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from dagster import asset
+from dagster import AssetSpec, asset
 from dagster._core.declarative_scheduling.scheduling_policy import (
     SYSTEM_METADATA_KEY_SCHEDULING_POLICY,
     SchedulingPolicy,
@@ -21,7 +21,7 @@ def test_include_scheduling_policy_asset_decorator() -> None:
     assert defs.get_asset_graph().get(an_asset.key).scheduling_policy is scheduling_policy_1
 
 
-def test_include_scheduling_policy_multi_asset_decorator() -> None:
+def test_include_scheduling_policy_multi_asset_decorator_asset_out() -> None:
     scheduling_policy_1 = SchedulingPolicy()
     scheduling_policy_2 = SchedulingPolicy()
 
@@ -40,7 +40,33 @@ def test_include_scheduling_policy_multi_asset_decorator() -> None:
             ),
         }
     )
-    def _assets() -> Tuple: ...
+    def _assets() -> Tuple[None, None]: ...
+
+    defs = Definitions(assets=[_assets])
+    assert defs.get_asset_graph().get(asset_1_key).scheduling_policy is scheduling_policy_1
+    assert defs.get_asset_graph().get(asset_2_key).scheduling_policy is scheduling_policy_2
+
+
+def test_include_scheduling_policy_multi_asset_decorator_asset_spec() -> None:
+    scheduling_policy_1 = SchedulingPolicy()
+    scheduling_policy_2 = SchedulingPolicy()
+
+    asset_1_key = AssetKey(["asset_1"])
+    asset_2_key = AssetKey(["asset_2"])
+
+    @multi_asset(
+        specs=[
+            AssetSpec(
+                key=asset_1_key,
+                metadata={SYSTEM_METADATA_KEY_SCHEDULING_POLICY: scheduling_policy_1},
+            ),
+            AssetSpec(
+                key=asset_2_key,
+                metadata={SYSTEM_METADATA_KEY_SCHEDULING_POLICY: scheduling_policy_2},
+            ),
+        ]
+    )
+    def _assets() -> Tuple[None, None]: ...
 
     defs = Definitions(assets=[_assets])
     assert defs.get_asset_graph().get(asset_1_key).scheduling_policy is scheduling_policy_1
