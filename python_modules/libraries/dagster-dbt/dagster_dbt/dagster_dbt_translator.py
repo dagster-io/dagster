@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 from dagster import (
     AssetKey,
@@ -22,6 +22,7 @@ from .asset_utils import (
     default_freshness_policy_fn,
     default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props,
+    default_owners_from_dbt_resource_props,
 )
 
 
@@ -282,6 +283,38 @@ class DagsterDbtTranslator:
                         return "custom_group_prefix" + dbt_resource_props.get("config", {}).get("group")
         """
         return default_group_from_dbt_resource_props(dbt_resource_props)
+
+    @public
+    def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Optional[Sequence[str]]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster owners for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        This method can be overridden to provide custom owners for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[Sequence[str]]: A set of Dagster owners.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Optional[Sequence[str]]:
+                        return ["user@owner.com", "team:team@owner.com"]
+        """
+        return default_owners_from_dbt_resource_props(dbt_resource_props)
 
     @public
     def get_freshness_policy(
