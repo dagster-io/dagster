@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
-import React from 'react';
+import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -36,6 +36,7 @@ import {
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
@@ -189,6 +190,14 @@ export const LaunchAssetExecutionButton = ({
 
   const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
     React.useState<boolean>(false);
+
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeMaterializeAction) {
+    return null;
+  }
 
   const options = optionsForButton(scope);
   const firstOption = options[0]!;
