@@ -1,4 +1,5 @@
 import pytest
+from dagster_tests.cli_tests.command_tests.assets import fail_asset
 from mock import MagicMock
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -6,6 +7,7 @@ from dagster._core.definitions.events import AssetKey
 from docs_snippets.concepts.assets.asset_checks.asset_with_check import (
     defs as asset_with_check_defs,
 )
+from docs_snippets.concepts.assets.asset_checks.blocking import defs as blocking_defs
 from docs_snippets.concepts.assets.asset_checks.factory import (
     check_blobs,
     defs as factory_defs,
@@ -53,3 +55,10 @@ def test_factory_execute():
         m.execute.call_args_list[1][0][0]
         == "select * from orders where order_id is null"
     )
+
+
+def test_blocking_execute():
+    job_def = blocking_defs.get_implicit_global_asset_job_def()
+    result = job_def.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert len(result.get_asset_materialization_events()) == 1
