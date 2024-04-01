@@ -1006,9 +1006,10 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
-    def _initialize_adapter(self, args: Sequence[str]) -> Optional[BaseAdapter]:
+    def _initialize_adapter(self, args: Sequence[str]) -> BaseAdapter:
         # constructs a dummy set of flags, using the `run` command (ensures profile/project reqs get loaded)
-        set_from_args(Namespace(), None)
+        profiles_dir = self.profiles_dir if self.profiles_dir else self.project_dir
+        set_from_args(Namespace(profiles_dir=profiles_dir), None)
         flags = get_flags()
 
         profile = load_profile(self.project_dir, {}, self.profile, self.target)
@@ -1244,7 +1245,7 @@ class DbtCliResource(ConfigurableResource):
         try:
             adapter = self._initialize_adapter(args)
         except:
-            # defer runtime errors to the actual run command
+            # defer exceptions until they can be raised in the runtime context of the invocation
             adapter = None
 
         return DbtCliInvocation.run(

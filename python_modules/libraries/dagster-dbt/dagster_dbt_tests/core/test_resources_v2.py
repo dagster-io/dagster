@@ -436,3 +436,10 @@ def test_dbt_cli_op_execution(
 
     result = my_dbt_job_yield_events.execute_in_process(resources={"dbt": dbt})
     assert result.success
+
+
+def test_dbt_adapter(dbt: DbtCliResource) -> None:
+    assert dbt.cli(["compile"]).adapter
+    assert dbt.cli(["build"]).adapter
+    assert dbt.cli(["parse"]).adapter
+    assert dbt.cli(["source", "freshness"]).adapter
