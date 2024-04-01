@@ -404,7 +404,7 @@ def get_dbt_multi_asset_args(
             io_manager_key=io_manager_key,
             description=dagster_dbt_translator.get_description(dbt_resource_props),
             is_required=False,
-            metadata={  # type: ignore
+            metadata={
                 **dagster_dbt_translator.get_metadata(dbt_resource_props),
                 DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
