@@ -11,7 +11,6 @@ from .events import (
     CoercibleToAssetKey,
 )
 from .freshness_policy import FreshnessPolicy
-from .metadata import RawMetadataMapping
 from .utils import validate_definition_tags
 
 if TYPE_CHECKING:
@@ -110,7 +109,7 @@ class AssetSpec(
         *,
         deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         description: Optional[str] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
         skippable: bool = False,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
