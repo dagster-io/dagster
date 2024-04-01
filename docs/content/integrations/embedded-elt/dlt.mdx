@@ -87,13 +87,7 @@ In the `dlt_sources` directory, you can write your own ingestion code following 
 
 In this example, we'll use the [GitHub source](https://dlthub.com/docs/dlt-ecosystem/verified-sources/github) provided by `dlt`.
 
-1. First, install the dlt command line utility by running:
-
-   ```bash
-   pip install dlt
-   ```
-
-2. Next, create a location for the dlt source code and initialize the GitHub source:
+1. Create a location for the dlt source code and initialize the GitHub source:
 
    ```bash
    cd dlt_sources
@@ -108,7 +102,7 @@ In this example, we'll use the [GitHub source](https://dlthub.com/docs/dlt-ecosy
    Cloning and configuring a verified source github (Source that load github issues, pull requests and reactions for a specific repository via customizable graphql query. Loads events incrementally.)
    ```
 
-3. When prompted to proceed, enter `y`. You should see the following confirming that the GitHub source was added to the project:
+2. When prompted to proceed, enter `y`. You should see the following confirming that the GitHub source was added to the project:
 
    ```bash
    Verified source github was added to your project!
@@ -119,9 +113,7 @@ In this example, we'll use the [GitHub source](https://dlthub.com/docs/dlt-ecosy
    * Read https://dlthub.com/docs/walkthroughs/create-a-pipeline for more information
    ```
 
-This pulled down the code required to easily collect data from the GitHub API. It also created a `requirements.txt` and a `.dlt/` configuration.
-
-In this case, we can remove these files, as we will be handling configuration with environment variables, and the requirements are to be defined in Dagster's dependencies specification.
+This downloaded the code required to collect data from the GitHub API. It also created a `requirements.txt` and a `.dlt/` configuration directory. These files can be removed, as we will configure our pipelines through Dagster, however, you may still find it informative to reference.
 
 ```bash
 $ tree -a
@@ -154,23 +146,21 @@ In the example we've been using:
 
 This results in the following required environment variables:
 
-```bash
-SOURCES__GITHUB__ACCESS_TOKEN=""
-DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE=""
-DESTINATION__SNOWFLAKE__CREDENTIALS__PASSWORD=""
-DESTINATION__SNOWFLAKE__CREDENTIALS__USERNAME=""
-DESTINATION__SNOWFLAKE__CREDENTIALS__HOST=""
-DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
-DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
-```
+    SOURCES__GITHUB__ACCESS_TOKEN=""
+    DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE=""
+    DESTINATION__SNOWFLAKE__CREDENTIALS__PASSWORD=""
+    DESTINATION__SNOWFLAKE__CREDENTIALS__USERNAME=""
+    DESTINATION__SNOWFLAKE__CREDENTIALS__HOST=""
+    DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
+    DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
 
-Ensure that these variables are defined in your environment.
+Ensure that these variables are defined in your environment; either in your `.env` file when running locally, or in the Dagster deployment environment variables.
 
 ---
 
 ## Step 4: Define a DagsterDltResource
 
-The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a dlt pipeline runner. This can be shared across dlt pipelines and is a required parameter to our dlt asset definition.
+The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a dlt pipeline runner. This resource is shared across dlt pipelines; create an instance of this resource in the file in which you define resources. We will register the resource to our <PyObject module="dagster" object="Definitions" /> in a later step.
 
 ```python
 from dagster_embedded_elt.dlt import DagsterDltResource
@@ -182,9 +172,15 @@ dlt_resource = DagsterDltResource()
 
 ## Step 5: Create a dlt_assets definition for GitHub
 
-The `dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake:
+The `@dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and create a `dlt_pipeline` to ingest data from Github to Snowflake. In the file in which you define your assets, you can create create an instance of your `@dlt_assets` like so:
 
 ```python
+from dagster import AssetExecutionContext, Definitions
+from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
+from dlt import pipeline
+from dlt_sources.github import github_reactions
+
+
 @dlt_assets(
     dlt_source=github_reactions(
         "dagster-io", "dagster", max_items=250
@@ -197,10 +193,13 @@ The `dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In
     name="github",
     group_name="github",
 )
-def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
+def dagster_github_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
     yield from dlt.run(context=context)
+```
 
+In the file where you register your definitions, include the `dagster_github_assets` along with the `dlt_resource`.
 
+```python
 defs = Definitions(
     assets=[
         dagster_github_assets,
