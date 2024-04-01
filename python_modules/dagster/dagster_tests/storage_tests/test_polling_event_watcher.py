@@ -8,6 +8,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log import SqliteEventLogStorage, SqlPollingEventWatcher
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.utils import make_new_run_id
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
 
@@ -53,7 +54,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
             self._watcher.close()
 
 
-RUN_ID = "foo"
+RUN_ID = make_new_run_id()
 
 
 def create_event(count: int, run_id: str = RUN_ID):
