@@ -63,6 +63,80 @@ Branch Deployments aren't currently supported for use in Dagster Open Source.
 
 Output created from a branch deployment - such as a database, table, etc. - won't be automatically removed from storage once a branch is merged or closed. Refer to the [Best practices section](#best-practices) for info on how to handle this.
 
+### Change Tracking
+
+- Branch deployments can show which assets have been changed in the associated pull request
+- For each branch deployment, the assets will be compared to the assets in the main deployment and changes will be indicated in the asset graph
+- Filtering - can filter to show which assets have changed, or the assets with a particular type of change
+- What changes are detected?
+  - section for each change type - code version, dependencies, partitions definition, new, (tags, metadata once those branches land)
+  - covers what the change means, how to use it, anything else relevant
+- Tips and tricks - using the global asset graph to see all assets affected by a change
+
+Branch deployments have a feature called Change Tracking. Change Tracking makes it easy to see which assets in your pull request have changed by marking them in the UI.
+
+#### New assets
+
+Change Tracking will indicate if an asset is new in the Branch Deployment. INSERT IMAGE
+
+#### Code version changes
+
+Change Tracking will indicate if the `code_version` of an asset has changed. Change Tracking can detect added, removed, or updated code versions. For example, if the main branch contains `customers` with code version `v1`
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_main_deployment endbefore=end_main_deployment
+@asset(code_version="v1")
+def customers(): ...
+```
+
+And the pull request modifies `customers` and changes the code version to `v2`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_branch_deployment endbefore=end_branch_deployment
+@asset(code_version="v2")
+def customers(): ...
+```
+
+The Branch Deployment will mark `customers` as changed. INSERT IMAGE
+
+Some dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, including strategies for how to compute code versions automatically, see the code versions documentation LINK.
+
+<!-- TODO - question about code versions - are they set to the latest run id if not user specified? docs claim yes but i only see code versions in the ui for dbt assets -->
+
+#### Dependency changes
+
+Change Tracking will indicate if the set of upstream dependencies for an asset has changed. Change Tracking can detect added or removed upstream dependencies. For example, if the main branch contains `returns`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_main_deployment endbefore=end_main_deployment
+@asset(deps=[orders])
+def returns(): ...
+```
+
+And the pull request adds a new upstream dependency `customers`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_branch_deployment endbefore=end_branch_deployment
+@asset(deps=[orders, customers])
+def returns(): ...
+```
+
+The Branch Deployment will mark `returns` as having changed dependencies. Note that if an asset is marked as having changed dependencies, it means that either an upstream asset has been added or removed as a dependency. It does not mean that the upstream dependency has changed or that the upstream dependency has new data. TODO wording
+
+#### Partitions definition changes
+
+Change Tracking will indicate if the `PartitionsDefinition` of an asset has changed. Change Tracking can detect added, removed, or modified partitions definitions. For example, if the main branch contains `weekly_orders`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_main_deployment endbefore=end_main_deployment
+@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2024-01-01"))
+def weekly_orders(): ...
+```
+
+And the pull request updates the `WeeklyPartitionsDefinition` to include an additional year:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment
+@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))
+def weekly_orders(): ...
+```
+
+The Branch Deployment will mark `weekly_orders` as having a changed partitions definition. INSERT IMAGE
+
 ---
 
 ## Managing Branch Deployments
