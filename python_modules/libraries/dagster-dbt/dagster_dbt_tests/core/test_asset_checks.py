@@ -19,7 +19,10 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from ..dbt_projects import test_asset_checks_path
+from ..dbt_projects import (
+    test_asset_checks_path,
+    test_dbt_alias_path,
+)
 
 pytest.importorskip("dbt.version", "1.6")
 
@@ -526,3 +529,17 @@ def test_select_model_with_tests(
             "test.test_dagster_asset_checks.singular_test_with_no_meta_and_multiple_dependencies",
         ),
     }
+
+
+def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(
+        manifest=test_dbt_alias_manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_alias_path))},
+    )
+    assert result.success
