@@ -1,33 +1,57 @@
 ---
-title: "Dagster Embedded ELT: Sling"
+title: "Dagster & Sling"
 description: Replicate data across systems using the Sling integration
 ---
 
-## Sling
+# Dagster & Sling
 
-To get started with `dagster-embedded-elt` and Sling, first, familiarize yourself with <a href="https://docs.slingdata.io/sling-cli/run/configuration/replication">Sling's replication</a> configuration. The replication configuration is a YAML file that specifies the source and target connections, as well as which streams to sync from. The `dagtser-embedded-elt` integration uses this configuration to build the assets for both sources and destinations.
+Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
 
-The typical pattern for building an ELT pipeline with Sling has three steps:
+---
 
-1. First, define a <a href="https://docs.slingdata.io/sling-cli/run/configuration/replication"> `replication.yaml`</a> file that specifies the source and target connections, as well as which streams to sync from.
+## How it works
 
-2. Next, create a <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> and pass a list of <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> for each connection to the `connection` parameter, ensuring you name the resource using the same name given to the connection in the Sling configuration.
+The Dagster integration allows you to derive Dagster assets from a replication configuration file. The typical pattern for building an ELT pipeline with Sling has three steps:
 
-3. Use the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator /> decorator to define an asset that will run the Sling replication job and yield from the <PyObject module="dagster_embedded_elt.sling" object="SlingResource" method="replicate" /> method to run the sync.
+1. Define a Sling [`replication.yaml`](https://docs.slingdata.io/sling-cli/run/configuration/replication) file that specifies the source and target connections, as well as which streams to sync from.
 
-Each step is explained in detail below:
+2. Create a <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> and pass a list of <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> for each connection to the `connection` parameter, ensuring the resource uses the same name given to the connection in the Sling configuration.
+
+3. Use the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator /> decorator to define an asset that runs the Sling replication job and yields from the <PyObject module="dagster_embedded_elt.sling" object="SlingResource" method="replicate" /> method to run the sync.
+
+We'll walk you through each of these steps in this guide.
+
+---
+
+## Prerequisites
+
+To follow the steps in this guide:
+
+- **Familiarize yourself with [Sling's replication configuration](https://docs.slingdata.io/sling-cli/run/configuration/replication)**, if you've never worked with Sling before. The replication configuration is a YAML file that specifies the source and target connections, as well as which streams to sync from. The `dagtser-embedded-elt` integration uses this configuration to build assets for both sources and destinations.
+- **To install the following libraries**:
+
+  ```bash
+  pip install dagster dagster-embedded-elt
+  ```
+
+  Refer to the [Dagster installation](/getting-started/install) guide for more info.
 
 ---
 
 ## Step 1: Set up a Sling replication configuration
 
-Dagster's Sling integration is built around Sling's replication configuration. You may provide either a path to an existing `replication.yaml` file, or construct a dictionary that represents the configuration in Python.
+Dagster's Sling integration is built around Sling's replication configuration. You may provide either a path to an existing `replication.yaml` file or construct a dictionary that represents the configuration in Python. This configuration is passed to the Sling CLI to run the replication job.
 
-This configuration is passed to the Sling CLI to run the replication job.
+<TabGroup>
+<TabItem name="replication.yaml">
 
-Here's an example of a `replication.yaml` file:
+### replication.yaml
+
+This example creates a replication configuration in a `replication.yaml` file:
 
 ```yaml
+# replication.yaml
+
 SOURCE: MY_POSTGRES
 TARGET: MY_SNOWFLAKE
 
@@ -42,7 +66,12 @@ streams:
     object: "departments"
 ```
 
-Or in Python:
+</TabItem>
+<TabItem name="Python">
+
+### Python
+
+This example creates a replication configuration using Python:
 
 ```python file=/integrations/embedded_elt/replication_config.py
 replication_config = {
@@ -57,17 +86,14 @@ replication_config = {
 }
 ```
 
+</TabItem>
+</TabGroup>
+
 ---
 
 ## Step 2: Create a Sling resource
 
-Next, you will need to create a <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration.
-
-A <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> takes a `connections` parameter, where each <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> represents a connection to a source or target database. You may provide as many connections to the `SlingResource` as needed.
-
-The `name` parameter in the <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> should match the `SOURCE` and `TARGET` keys in the replication configuration.
-
-You may pass a connection string or arbitrary keyword arguments to the <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> to specify the connection details. See the <a href="https://docs.slingdata.io/connections/database-connections">Sling connections reference</a> for the specific connection types and parameters.
+Next, you'll create a <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration:
 
 ```python file=/integrations/embedded_elt/sling_connection_resources.py
 from dagster_embedded_elt.sling.resources import (
@@ -103,13 +129,19 @@ sling_resource = SlingResource(
 )
 ```
 
+A <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> takes a `connections` parameter, where each <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> represents a connection to a source or target database. You may provide as many connections to the `SlingResource` as needed.
+
+The `name` parameter in the <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> should match the `SOURCE` and `TARGET` keys in the replication configuration.
+
+You can pass a connection string or arbitrary keyword arguments to the <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> to specify the connection details. Refer to [Sling's connections reference](https://docs.slingdata.io/connections/database-connections) for the specific connection types and parameters.
+
 ---
 
 ## Step 3: Define the Sling assets
 
-Now you can define a Sling asset using the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator /> decorator. Dagster will read the replication configuration to produce assets.
+Next, define a Sling asset using the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator /> decorator. Dagster will read the replication configuration to produce assets.
 
-Each stream will render two assets, one for the source stream and one for the target destination. You may override how assets are named by passing in a custom <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" /> object.
+Each stream will render two assets, one for the source stream and one for the target destination. You can override how assets are named by passing in a custom <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" /> object.
 
 ```python file=/integrations/embedded_elt/sling_dagster_translator.py
 from dagster_embedded_elt.sling import (
@@ -140,15 +172,15 @@ defs = Definitions(
 )
 ```
 
-That's it! You should now be able to view your assets in the Dagster UI and run the replication job.
+That's it! You should now be able to view your assets in the [Dagster UI](/concepts/webserver/ui) and run the replication job.
 
 ---
 
 ## Examples
 
-### Example 1: Database to Database
+### Example 1: Database to database
 
-This is an example of how to setup a Sling sync between two databases such as Postgres and Snowflake:
+To set up a Sling sync between two databases, such as Postgres and Snowflake, you could do something like the following:
 
 ```python file=/integrations/embedded_elt/postgres_snowflake.py
 from dagster_embedded_elt.sling import (
@@ -202,11 +234,29 @@ def my_assets(context, sling: SlingResource):
     yield from sling.replicate(context=context)
 ```
 
-## Example 2: File to Database
+### Example 2: File to database
 
-This is an example of how to setup a Sling sync between a file in an object store and a database such as S3 and Snowflake:
+To set up a Sling sync between a file in an object store and a database, such as from Amazon S3 to Snowflake, you could do something like the following:
 
-```python startafter=start_storage_config endbefore=end_storage_config file=/integrations/embedded_elt/s3_snowflake.py
+```python file=/integrations/embedded_elt/s3_snowflake.py startafter=start_storage_config endbefore=end_storage_config
+from dagster_embedded_elt.sling import (
+    SlingConnectionResource,
+    SlingResource,
+    sling_assets,
+)
+
+from dagster import EnvVar
+
+target = SlingConnectionResource(
+    name="MY_SF",
+    type="snowflake",
+    host="hostname.snowflake",
+    user="username",
+    database="database",
+    password=EnvVar("SF_PASSWORD"),
+    role="role",
+)
+
 source = SlingConnectionResource(
     name="MY_S3",
     type="s3",
@@ -237,7 +287,7 @@ def my_assets(context, sling: SlingResource):
 
 ---
 
-## Relevant APIs
+## APIs in this guide
 
 | Name                                                                              | Description                                                                            |
 | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -245,3 +295,18 @@ def my_assets(context, sling: SlingResource):
 | <PyObject module="dagster_embedded_elt.sling" object="SlingResource" />           | The Sling resource used for handing credentials to databases and object stores         |
 | <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types                 |
 | <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> | A Sling connection resource for specifying database and storage connection credentials |
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Embedded ELT"
+    href="/integrations/embedded-elt"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dlt & Dagster"
+    href="/integrations/embedded-elt/dlt"
+  ></ArticleListItem>
+</ArticleList>
