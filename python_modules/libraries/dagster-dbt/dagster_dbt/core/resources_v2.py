@@ -1321,7 +1321,7 @@ def get_subset_selection_for_context(
 
     # note that this will always be true if checks are disabled
     if selected_checks_target_selected_assets and all_checks_included_for_selected_assets:
-        selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
+        selected_dbt_resources = selected_dbt_non_test_resources
         indirect_selection = None
         logger.info(
             "A dbt subsetted execution is being performed. Overriding default dbt selection"

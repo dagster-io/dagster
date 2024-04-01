@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Set
 
 import pytest
 from dagster import (
@@ -38,6 +38,12 @@ def dbt_commands(request):
 
 def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
+
+
+def _get_select_args(dbt_cli_invocation) -> Set[str]:
+    *_, dbt_select_flag, dbt_select_args = list(dbt_cli_invocation.process.args)
+    assert dbt_select_flag == "--select"
+    return set(dbt_select_args.split())
 
 
 @pytest.mark.parametrize(
@@ -271,11 +277,17 @@ def _materialize_dbt_assets(
     manifest: Dict[str, Any],
     dbt_commands: List[List[str]],
     selection: Optional[AssetSelection],
+    expected_dbt_selection: Optional[Set[str]] = None,
 ) -> ExecuteInProcessResult:
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         for dbt_command in dbt_commands:
-            yield from dbt.cli(dbt_command, context=context).stream()
+            cli_invocation = dbt.cli(dbt_command, context=context)
+            assert (
+                expected_dbt_selection is None
+                or _get_select_args(cli_invocation) == expected_dbt_selection
+            )
+            yield from cli_invocation.stream()
 
     result = materialize(
         [my_dbt_assets],
@@ -294,6 +306,7 @@ def test_materialize_no_selection(
         test_asset_checks_manifest,
         dbt_commands,
         selection=None,
+        expected_dbt_selection={"fqn:*"},
     )
     assert not result.success  # fail_tests_model fails
     assert len(result.get_asset_materialization_events()) == 10
@@ -308,6 +321,7 @@ def test_materialize_asset_and_checks(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])),
+        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -352,6 +366,7 @@ def test_materialize_asset_no_checks(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])).without_checks(),
+        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -370,6 +385,12 @@ def test_materialize_checks_no_asset(
             AssetSelection.assets(AssetKey(["customers"]))
             - AssetSelection.assets(AssetKey(["customers"])).without_checks()
         ),
+        expected_dbt_selection={
+            "fqn:test_dagster_asset_checks.not_null_customers_customer_id",
+            "fqn:test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
+            "fqn:test_dagster_asset_checks.singular_test_with_single_dependency",
+            "fqn:test_dagster_asset_checks.unique_customers_customer_id",
+        },
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 0
@@ -475,7 +496,9 @@ def test_select_model_with_tests(
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         for dbt_command in dbt_commands:
-            yield from dbt.cli(dbt_command, context=context).stream()
+            cli_invocation = dbt.cli(dbt_command, context=context)
+            assert _get_select_args(cli_invocation) == {selection}
+            yield from cli_invocation.stream()
 
     assert my_dbt_assets.keys == {AssetKey(["customers"])}
     assert my_dbt_assets.check_keys == {
