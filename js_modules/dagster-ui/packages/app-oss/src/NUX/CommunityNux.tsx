@@ -199,11 +199,17 @@ const RecaptchaIFrame = ({dismiss, newsletter, email}: RecaptchaIFrameProps) => 
     };
   }, [dismiss]);
 
+  const iframeSrc = new URL(`${window.location.protocol}${IFRAME_SRC}`);
+  iframeSrc.searchParams.append('email', email);
+  if (newsletter) {
+    iframeSrc.searchParams.append('newsletter', '1');
+  }
+
   return (
     <Box padding={32} flex={{justifyContent: 'center', alignItems: 'center'}}>
       {iframeLoaded ? null : <Spinner purpose="section" />}
       <iframe
-        src={`${IFRAME_SRC}?email=${email}${newsletter ? '&newsletter=1' : ''}`}
+        src={iframeSrc.toString()}
         width={width}
         height={height}
         style={{
