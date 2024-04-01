@@ -127,7 +127,7 @@ export function useStaticSetFilter<TValue>({
               value,
             }));
         }
-        if (allowMultipleSelections && results.length) {
+        if (allowMultipleSelections && results.length > 1) {
           return [
             {
               label: (
