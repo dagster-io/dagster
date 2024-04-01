@@ -740,6 +740,7 @@ def fetch_last_updated_timestamps(
         Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
     """
     check.invariant(len(tables) > 0, "Must provide at least one table name to query upon.")
+    tables = [table.upper() for table in tables]
     tables_str = ", ".join([f"'{table_name}'" for table_name in tables])
     fully_qualified_table_name = (
         f"{database}.information_schema.tables" if database else "information_schema.tables"
@@ -764,6 +765,6 @@ def fetch_last_updated_timestamps(
 
     for table_name in tables:
         if table_name not in last_updated_times:
-            raise ValueError(f"Table {table_name} does not exist in Snowflake.")
+            raise ValueError(f"Table {table_name} could not be found.")
 
     return last_updated_times
