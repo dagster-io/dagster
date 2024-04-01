@@ -41,9 +41,9 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 
 def _get_select_args(dbt_cli_invocation) -> Set[str]:
-    args = list(dbt_cli_invocation.process.args)
-    assert args[-2] == "--select"
-    return set(args[-1].split())
+    *_, dbt_select_flag, dbt_select_args = list(dbt_cli_invocation.process.args)
+    assert dbt_select_flag == "--select"
+    return set(dbt_select_args.split())
 
 
 @pytest.mark.parametrize(
@@ -283,8 +283,10 @@ def _materialize_dbt_assets(
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         for dbt_command in dbt_commands:
             cli_invocation = dbt.cli(dbt_command, context=context)
-            if expected_dbt_selection is not None:
-                assert _get_select_args(cli_invocation) == expected_dbt_selection
+            assert (
+                expected_dbt_selection is None
+                or _get_select_args(cli_invocation) == expected_dbt_selection
+            )
             yield from cli_invocation.stream()
 
     result = materialize(
