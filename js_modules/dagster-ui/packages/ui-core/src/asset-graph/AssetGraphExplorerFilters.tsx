@@ -26,6 +26,10 @@ type Props = {
   assetFilterState?: AssetFilterState;
 };
 
+const defaultState = {filters: {}} as Partial<AssetFilterState> & {
+  filters: Partial<AssetFilterState['filters']>;
+};
+
 export function useAssetGraphExplorerFilters({
   nodes,
   isGlobalGraph,
@@ -45,9 +49,9 @@ export function useAssetGraphExplorerFilters({
     setGroups,
     setOwners,
     setRepos,
-  } = assetFilterState || ({filters: {}} as any);
+  } = assetFilterState || defaultState;
 
-  const reposFilter = useCodeLocationFilter({repos, setRepos});
+  const reposFilter = useCodeLocationFilter(repos && setRepos ? {repos, setRepos} : undefined);
 
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
 
