@@ -31,7 +31,7 @@ class PythonPackage:
         return set(
             requirement
             for requirement in parse_requirements(self._install_requires)
-            if PythonPackages.get(requirement.name)
+            if PythonPackages.get(requirement.name)  # type: ignore[attr-defined]
         )
 
     @property
@@ -41,7 +41,7 @@ class PythonPackage:
             extras_require[extra] = set(
                 requirement
                 for requirement in parse_requirements(requirements)
-                if PythonPackages.get(requirement.name)
+                if PythonPackages.get(requirement.name)  # type: ignore[attr-defined]
             )
         return extras_require
 
@@ -82,7 +82,7 @@ class PythonPackages:
     @classmethod
     def walk_dependencies(cls, requirement: Requirement) -> Set[PythonPackage]:
         dependencies: Set[PythonPackage] = set()
-        dagster_package = cls.get(requirement.name)
+        dagster_package = cls.get(requirement.name)  # type: ignore[attr-defined]
 
         # Return early if it's not a dependency defined in our repo
         if not dagster_package:
