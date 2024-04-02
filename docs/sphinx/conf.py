@@ -140,6 +140,7 @@ autodoc_mock_imports = [
     "databricks_api",
     "databricks_cli",
     "datadog",
+    "dlt",
     "docker",
     "docker_image",
     "gevent",
