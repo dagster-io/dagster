@@ -678,6 +678,7 @@ def test_multipartitions_range_cartesian_single_key_in_secondary():
         MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
     ]
 
+
 def test_multipartitions_range_cartesian_single_key_in_primary():
     from dagster import PartitionKeyRange
 
@@ -730,4 +731,3 @@ def test_multipartitions_range_cartesian_multiple_keys_in_both_ranges():
         MultiPartitionKey({"a": "2024-01-03", "b": "3"}),
         MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
     ]
-
