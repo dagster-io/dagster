@@ -100,6 +100,10 @@ def materialize(
         assets=assets,
         resources=resources,
     )
+
+    # validate input asset graph and resources
+    defs.get_all_job_defs()
+
     return check.not_none(
         defs.get_job_def(EPHEMERAL_JOB_NAME),
         "This should always return a job",

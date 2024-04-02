@@ -718,14 +718,15 @@ def test_direct_asset_unsatified_resource():
     def asset1():
         pass
 
+    @repository
+    def my_repo():
+        return [asset1]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'a' required by op 'asset1' was not provided.",
     ):
-
-        @repository
-        def my_repo():
-            return [asset1]
+        my_repo.get_all_jobs()
 
 
 def test_direct_asset_unsatified_resource_transitive():
@@ -737,20 +738,25 @@ def test_direct_asset_unsatified_resource_transitive():
     def asset1():
         pass
 
+    @repository
+    def my_repo():
+        return [asset1]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'b' required by resource with key 'a' was not provided.",
     ):
-
-        @repository
-        def my_repo():
-            return [asset1]
+        my_repo.get_all_jobs()
 
 
 def test_source_asset_unsatisfied_resource():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
+
+    @repository
+    def the_repo():
+        return [SourceAsset("foo", io_manager_def=the_manager)]
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -759,10 +765,7 @@ def test_source_asset_unsatisfied_resource():
             " provided."
         ),
     ):
-
-        @repository
-        def the_repo():
-            return [SourceAsset("foo", io_manager_def=the_manager)]
+        the_repo.get_all_jobs()
 
 
 def test_source_asset_unsatisfied_resource_transitive():
@@ -774,20 +777,21 @@ def test_source_asset_unsatisfied_resource_transitive():
     def foo_resource():
         pass
 
+    @repository
+    def the_repo():
+        return [
+            SourceAsset(
+                "foo",
+                io_manager_def=the_manager,
+                resource_defs={"foo": foo_resource},
+            )
+        ]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'bar' required by resource with key 'foo' was not provided.",
     ):
-
-        @repository
-        def the_repo():
-            return [
-                SourceAsset(
-                    "foo",
-                    io_manager_def=the_manager,
-                    resource_defs={"foo": foo_resource},
-                )
-            ]
+        the_repo.get_all_jobs()
 
 
 def test_direct_asset_resource_conflicts():
@@ -799,14 +803,15 @@ def test_direct_asset_resource_conflicts():
     def second():
         pass
 
+    @repository
+    def the_repo():
+        return [first, second]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-
-        @repository
-        def the_repo():
-            return [first, second]
+        the_repo.get_all_jobs()
 
 
 def test_source_asset_resource_conflicts():
@@ -824,14 +829,15 @@ def test_source_asset_resource_conflicts():
         resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")},
     )
 
+    @repository
+    def the_repo():
+        return [the_asset, the_source]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-
-        @repository
-        def the_repo():
-            return [the_asset, the_source]
+        the_repo.get_all_jobs()
 
     other_source = SourceAsset(
         key=AssetKey("other_key"),
@@ -839,14 +845,15 @@ def test_source_asset_resource_conflicts():
         resource_defs={"foo": ResourceDefinition.hardcoded_resource("3")},
     )
 
+    @repository
+    def other_repo():
+        return [other_source, the_source]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-
-        @repository
-        def other_repo():
-            return [other_source, the_source]
+        other_repo.get_all_jobs()
 
 
 def test_assets_different_io_manager_defs():
