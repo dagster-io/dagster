@@ -75,18 +75,16 @@ Change Tracking will indicate if an asset is new in the Branch Deployment. <Imag
 
 Change Tracking will indicate if the `code_version` of an asset has changed. Change Tracking can detect added, removed, or updated code versions. For example, if the main branch contains `customers` with code version `v1`
 
-```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_main_deployment endbefore=end_main_deployment
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
 @asset(code_version="v1")
-def customers():
-    ...
+def customers(): ...
 ```
 
 And the pull request modifies `customers` and changes the code version to `v2`:
 
-```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_branch_deployment endbefore=end_branch_deployment
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(code_version="v2")
-def customers():
-    ...
+def customers(): ...
 ```
 
 The Branch Deployment will mark `customers` as changed. <Image src="/images/dagster-cloud/managing-deployments/change-tracking-code-version.png" width={1042} height={444} />
@@ -99,18 +97,16 @@ Some dagster integrations, like `dagster-dbt`, automatically compute code versio
 
 Change Tracking will indicate if the set of upstream dependencies for an asset has changed. Change Tracking can detect added or removed upstream dependencies. For example, if the main branch contains `returns`:
 
-```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_main_deployment endbefore=end_main_deployment
+```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
 @asset(deps=[orders])
-def returns():
-    ...
+def returns(): ...
 ```
 
 And the pull request adds a new upstream dependency `customers`:
 
-```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_branch_deployment endbefore=end_branch_deployment
+```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(deps=[orders, customers])
-def returns():
-    ...
+def returns(): ...
 ```
 
 The Branch Deployment will mark `returns` as having changed dependencies. <Image src="/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png" width={1154} height={490} />
@@ -121,18 +117,16 @@ Note that if an asset is marked as having changed dependencies, it means that ei
 
 Change Tracking will indicate if the `PartitionsDefinition` of an asset has changed. Change Tracking can detect added, removed, or modified partitions definitions. For example, if the main branch contains `weekly_orders`:
 
-```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_main_deployment endbefore=end_main_deployment
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
 @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2024-01-01"))
-def weekly_orders():
-    ...
+def weekly_orders(): ...
 ```
 
 And the pull request updates the `WeeklyPartitionsDefinition` to include an additional year:
 
-```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))
-def weekly_orders():
-    ...
+def weekly_orders(): ...
 ```
 
 The Branch Deployment will mark `weekly_orders` as having a changed partitions definition.
