@@ -33,14 +33,21 @@ class DagsterDltResource(ConfigurableResource):
             Mapping[Any, Any]: Metadata with pendulum DateTime and Timezone values casted to strings
 
         """
-        from pendulum import DateTime, Timezone  # type: ignore
+        from pendulum import DateTime
+
+        try:
+            from pendulum import Timezone  # type: ignore
+
+            casted_instance_types = (DateTime, Timezone)
+        except ImportError:
+            casted_instance_types = DateTime
 
         def _recursive_cast(value: Any):
             if isinstance(value, dict):
                 return {k: _recursive_cast(v) for k, v in value.items()}
             elif isinstance(value, list):
                 return [_recursive_cast(item) for item in value]
-            elif isinstance(value, (DateTime, Timezone)):
+            elif isinstance(value, casted_instance_types):
                 return str(value)
             else:
                 return value
