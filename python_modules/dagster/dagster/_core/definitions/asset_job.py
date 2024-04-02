@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -22,6 +23,7 @@ from dagster._core.definitions.asset_checks import has_only_asset_checks
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import AssetSelectionData
@@ -62,41 +64,83 @@ def is_base_asset_job_name(name: str) -> bool:
     return name.startswith(ASSET_BASE_JOB_PREFIX)
 
 
+def _build_partitioned_asset_job_lambda(
+    job_name: str,
+    asset_graph: AssetGraph,
+    partitions_def: PartitionsDefinition,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    executor_def: Optional[ExecutorDefinition],
+    logger_defs: Optional[Mapping[str, LoggerDefinition]],
+) -> Callable[[], JobDefinition]:
+    def build_asset_job_lambda() -> JobDefinition:
+        executable_asset_keys = asset_graph.executable_asset_keys & {
+            *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
+            *asset_graph.unpartitioned_asset_keys,
+        }
+        # For now, to preserve behavior keep all orphaned asset checks (where the target check
+        # has no corresponding executable definition) in all base jobs. When checks support
+        # partitions, they should only go in the corresponding partitioned job.
+        selection = AssetSelection.assets(*executable_asset_keys) | AssetSelection.checks(
+            *asset_graph.orphan_asset_check_keys
+        )
+        job_def = build_asset_job(
+            job_name,
+            asset_graph=get_asset_graph_for_job(asset_graph, selection),
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            partitions_def=partitions_def,
+        )
+        job_def.validate_resource_requirements_satisfied()
+
+        if logger_defs and not job_def.has_specified_loggers:
+            job_def = job_def.with_logger_defs(logger_defs)
+
+        return job_def
+
+    return build_asset_job_lambda
+
+
+def _build_global_asset_job_lambda(
+    asset_graph, executor_def, resource_defs, logger_defs
+) -> Callable[[], JobDefinition]:
+    def build_asset_job_lambda() -> JobDefinition:
+        job_def = build_asset_job(
+            name=ASSET_BASE_JOB_PREFIX,
+            asset_graph=asset_graph,
+            executor_def=executor_def,
+            resource_defs=resource_defs,
+        )
+        job_def.validate_resource_requirements_satisfied()
+        if logger_defs and not job_def.has_specified_loggers:
+            job_def = job_def.with_logger_defs(logger_defs)
+        return job_def
+
+    return build_asset_job_lambda
+
+
 def get_base_asset_jobs(
     asset_graph: AssetGraph,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
-) -> Sequence[JobDefinition]:
+    logger_defs: Optional[Mapping[str, LoggerDefinition]],
+) -> Mapping[str, Callable[[], JobDefinition]]:
     if len(asset_graph.all_partitions_defs) == 0:
-        return [
-            build_asset_job(
-                name=ASSET_BASE_JOB_PREFIX,
-                asset_graph=asset_graph,
-                executor_def=executor_def,
-                resource_defs=resource_defs,
+        return {
+            ASSET_BASE_JOB_PREFIX: _build_global_asset_job_lambda(
+                asset_graph, executor_def, resource_defs, logger_defs
             )
-        ]
+        }
     else:
-        jobs = []
+        jobs = {}
         for i, partitions_def in enumerate(asset_graph.all_partitions_defs):
-            executable_asset_keys = asset_graph.executable_asset_keys & {
-                *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
-                *asset_graph.unpartitioned_asset_keys,
-            }
-            # For now, to preserve behavior keep all orphaned asset checks (where the target check
-            # has no corresponding executable definition) in all base jobs. When checks support
-            # partitions, they should only go in the corresponding partitioned job.
-            selection = AssetSelection.assets(*executable_asset_keys) | AssetSelection.checks(
-                *asset_graph.orphan_asset_check_keys
-            )
-            jobs.append(
-                build_asset_job(
-                    f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    get_asset_graph_for_job(asset_graph, selection),
-                    resource_defs=resource_defs,
-                    executor_def=executor_def,
-                    partitions_def=partitions_def,
-                )
+            job_name = f"{ASSET_BASE_JOB_PREFIX}_{i}"
+            jobs[job_name] = _build_partitioned_asset_job_lambda(
+                f"{ASSET_BASE_JOB_PREFIX}_{i}",
+                asset_graph,
+                partitions_def,
+                resource_defs,
+                executor_def,
+                logger_defs,
             )
         return jobs
 

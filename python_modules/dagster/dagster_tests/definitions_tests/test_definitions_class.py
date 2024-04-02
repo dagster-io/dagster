@@ -693,7 +693,7 @@ def test_conflicting_asset_resource_defs():
             "provided to assets must match by reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset])
+        Definitions([the_asset, other_asset]).get_all_job_defs()
 
 
 def test_graph_backed_asset_resources():
@@ -731,7 +731,7 @@ def test_graph_backed_asset_resources():
             " reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset])
+        Definitions([the_asset, other_asset]).get_all_job_defs()
 
 
 def test_job_with_reserved_name():
@@ -766,4 +766,4 @@ def test_asset_cycle():
 
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
-        Definitions(assets=[a, b, c, s])
+        Definitions(assets=[a, b, c, s]).get_all_job_defs()
