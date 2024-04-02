@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Box, Colors, Icon, IconWrapper, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {useCallback, useContext, useMemo, useRef} from 'react';
+import {useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -10,10 +10,9 @@ import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {RepoAssetTableFragment} from './types/VirtualizedRepoAssetTable.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {AppContext} from '../app/AppContext';
 import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
+import {usePersistedExpansionState} from '../ui/usePersistedExpansionState';
 
 type Asset = RepoAssetTableFragment;
 
@@ -196,42 +195,6 @@ const ClickableRow = styled(Row)<{$open: boolean}>`
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
 `;
-
-const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
-
-/**
- * Use localStorage to persist the expanded/collapsed visual state of asset groups.
- */
-export const usePersistedExpansionState = (storageKey: string) => {
-  const {basePath} = useContext(AppContext);
-  const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
-    `${basePath}:dagster.${storageKey}`,
-    validateExpandedKeys,
-  );
-
-  const onToggle = useCallback(
-    (key: string) => {
-      setExpandedKeys((current) => {
-        const nextExpandedKeys = new Set(current || []);
-        if (nextExpandedKeys.has(key)) {
-          nextExpandedKeys.delete(key);
-        } else {
-          nextExpandedKeys.add(key);
-        }
-        return Array.from(nextExpandedKeys);
-      });
-    },
-    [setExpandedKeys],
-  );
-
-  return useMemo(
-    () => ({
-      expandedKeys,
-      onToggle,
-    }),
-    [expandedKeys, onToggle],
-  );
-};
 
 export const REPO_ASSET_TABLE_FRAGMENT = gql`
   fragment RepoAssetTableFragment on AssetNode {
