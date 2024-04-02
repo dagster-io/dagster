@@ -15,7 +15,7 @@ import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
-import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
+import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStaleFiltered} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
@@ -185,7 +185,7 @@ export const AssetNodeMinimal = ({
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   const isChanged = definition.changedReasons.length;
-  const isStale = isAssetStale(assetKey, liveData, 'upstream');
+  const isStale = isAssetStaleFiltered(assetKey, liveData, 'upstream');
 
   const queuedRuns = liveData?.unstartedRunIds.length;
   const inProgressRuns = liveData?.inProgressRunIds.length;
