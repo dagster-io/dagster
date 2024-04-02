@@ -32,12 +32,12 @@ class DagsterDbtTranslatorSettings:
 
     Args:
         enable_asset_checks (bool): Whether to load dbt tests as Dagster asset checks.
-            Defaults to False.
+            Defaults to True.
         enable_duplicate_source_asset_keys (bool): Whether to allow dbt sources with duplicate
             Dagster asset keys. Defaults to False.
     """
 
-    enable_asset_checks: bool = False
+    enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
 
 
