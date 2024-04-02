@@ -14,14 +14,13 @@ import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
-type StrippedDownDefinition = Pick<
-  AssetNode,
-  'changedReasons' | 'owners' | 'groupName' | 'tags'
-> & {
-  repository: Pick<AssetNode['repository'], 'name'> & {
-    location: Pick<AssetNode['repository']['location'], 'name'>;
-  };
-};
+type FilterableAssetDefinition = Partial<
+  Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'computeKind'> & {
+    repository: Pick<AssetNode['repository'], 'name'> & {
+      location: Pick<AssetNode['repository']['location'], 'name'>;
+    };
+  }
+>;
 
 export type AssetFilterType = {
   groups: AssetGroupSelector[];
@@ -57,56 +56,8 @@ export const useAssetDefinitionFilterState = () => {
   });
 
   const filterFn = useCallback(
-    (definition?: StrippedDownDefinition | null) => {
-      if (filters.repos?.length) {
-        if (
-          !filters.repos.some(
-            (repo) =>
-              repo.location === definition?.repository.location.name &&
-              repo.name === definition?.repository.name,
-          )
-        ) {
-          return false;
-        }
-      }
-      if (filters.groups?.length) {
-        if (!definition) {
-          return false;
-        }
-        const nodeGroup = buildAssetGroupSelector({definition});
-        if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
-          return false;
-        }
-      }
-
-      if (filters.changedInBranch?.length) {
-        if (
-          !definition ||
-          definition.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))
-        ) {
-          return false;
-        }
-      }
-      if (filters.owners?.length) {
-        if (
-          !filters.owners.some((owner) =>
-            definition?.owners.length
-              ? definition.owners.some((defOwner) => isEqual(defOwner, owner))
-              : false,
-          )
-        ) {
-          return false;
-        }
-      }
-      if (filters.tags?.length) {
-        if (!doesFilterArrayMatchValueArray(filters.tags, definition?.tags ?? [])) {
-          return false;
-        }
-      }
-
-      return true;
-    },
-    [filters.repos, filters.groups, filters.changedInBranch, filters.owners, filters.tags],
+    (node: FilterableAssetDefinition) => filterAssetDefinition(filters, node),
+    [filters],
   );
 
   const {setComputeKindTags, setGroups, setChangedInBranch, setOwners, setAssetTags, setRepos} =
@@ -143,3 +94,73 @@ export const useAssetDefinitionFilterState = () => {
 };
 
 export type AssetFilterState = ReturnType<typeof useAssetDefinitionFilterState>;
+
+export function filterAssetDefinition(
+  filters: Partial<AssetFilterState['filters']>,
+  definition?: FilterableAssetDefinition | null,
+) {
+  if (filters.repos?.length) {
+    if (
+      !definition ||
+      !definition.repository ||
+      !filters.repos.some(
+        (repo) =>
+          repo.location === definition?.repository?.location.name &&
+          repo.name === definition?.repository.name,
+      )
+    ) {
+      return false;
+    }
+  }
+  if (filters.groups?.length) {
+    if (!definition) {
+      return false;
+    }
+    const {groupName, repository} = definition;
+    if (!groupName || !repository) {
+      return false;
+    }
+    const nodeGroup = buildAssetGroupSelector({definition: {groupName, repository}});
+    if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
+      return false;
+    }
+  }
+
+  if (filters.computeKindTags?.length) {
+    if (
+      !definition?.computeKind?.length ||
+      !filters.computeKindTags.includes(definition.computeKind)
+    ) {
+      return false;
+    }
+  }
+
+  if (filters.changedInBranch?.length) {
+    if (
+      !definition?.changedReasons?.length ||
+      !definition.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))
+    ) {
+      return false;
+    }
+  }
+  if (filters.owners?.length) {
+    if (
+      !definition?.owners?.length ||
+      !filters.owners.some((owner) =>
+        definition.owners!.some((defOwner) => isEqual(defOwner, owner)),
+      )
+    ) {
+      return false;
+    }
+  }
+  if (filters.tags?.length) {
+    if (
+      !definition?.tags?.length ||
+      !doesFilterArrayMatchValueArray(filters.tags, definition.tags)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
