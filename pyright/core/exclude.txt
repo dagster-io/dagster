@@ -1,0 +1,7 @@
+### CHECKED SEPARATELY
+
+examples
+
+### NOT TYPE CHECKED
+
+helm

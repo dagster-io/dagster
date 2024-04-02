@@ -16,12 +16,14 @@ parser.add_argument(
     help="Additional packages (with optional version reqs) to pass to `pip install`",
 )
 parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
+parser.add_argument("--core-only", action="store_true", default=False)
 
 
 def main(
     quiet: bool,
     extra_packages: List[str],
     include_prebuilt_grpcio_wheel: Optional[bool],
+    full_env: bool,
 ) -> None:
     """Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -36,6 +38,7 @@ def main(
         *extra_packages,
     ]
 
+
     # Not all libs are supported on all Python versions. Consult `dagster_buildkite.steps.packages`
     # as the source of truth on which packages support which Python versions. The building of
     # `install_targets` below should use `sys.version_info` checks to reflect this.
@@ -47,52 +50,56 @@ def main(
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
         "-e python_modules/dagster-webserver",
-        "-e python_modules/dagit",
-        "-e python_modules/automation",
-        "-e python_modules/libraries/dagster-managed-elements",
-        "-e python_modules/libraries/dagster-airbyte",
-        "-e python_modules/libraries/dagster-aws[test]",
-        "-e python_modules/libraries/dagster-celery",
-        "-e python_modules/libraries/dagster-celery-docker",
-        "-e python_modules/libraries/dagster-dask[yarn,pbs,kube]",
-        "-e python_modules/libraries/dagster-databricks",
-        "-e python_modules/libraries/dagster-datadog",
-        "-e python_modules/libraries/dagster-datahub",
         "-e python_modules/libraries/dagster-dbt",
-        "-e python_modules/libraries/dagster-docker",
-        "-e python_modules/libraries/dagster-gcp",
-        "-e python_modules/libraries/dagster-gcp-pandas",
-        "-e python_modules/libraries/dagster-gcp-pyspark",
-        "-e python_modules/libraries/dagster-embedded-elt",
-        "-e python_modules/libraries/dagster-fivetran",
         "-e python_modules/libraries/dagster-k8s",
-        "-e python_modules/libraries/dagster-celery-k8s",
-        "-e python_modules/libraries/dagster-github",
-        "-e python_modules/libraries/dagster-mlflow",
-        "-e python_modules/libraries/dagster-mysql",
-        "-e python_modules/libraries/dagster-pagerduty",
-        "-e python_modules/libraries/dagster-pandas",
-        "-e python_modules/libraries/dagster-papertrail",
         "-e python_modules/libraries/dagster-postgres",
-        "-e python_modules/libraries/dagster-prometheus",
-        "-e python_modules/libraries/dagster-pyspark",
-        "-e python_modules/libraries/dagster-shell",
-        "-e python_modules/libraries/dagster-slack",
-        "-e python_modules/libraries/dagster-spark",
-        "-e python_modules/libraries/dagster-ssh",
-        "-e python_modules/libraries/dagster-twilio",
-        "-e python_modules/libraries/dagstermill",
-        "-e integration_tests/python_modules/dagster-k8s-test-infra",
-        "-e python_modules/libraries/dagster-azure",
-        "-e python_modules/libraries/dagster-msteams",
-        "-e python_modules/libraries/dagster-deltalake",
-        "-e python_modules/libraries/dagster-deltalake-pandas",
-        "-e python_modules/libraries/dagster-deltalake-polars",
-        "-e helm/dagster/schema[test]",
-        "-e .buildkite/dagster-buildkite",
+        "-e python_modules/automation",
     ]
 
-    if sys.version_info <= (3, 12):
+    if full_env:
+        install_targets += [
+            "-e python_modules/dagit",
+            "-e python_modules/libraries/dagster-managed-elements",
+            "-e python_modules/libraries/dagster-airbyte",
+            "-e python_modules/libraries/dagster-aws[test]",
+            "-e python_modules/libraries/dagster-celery",
+            "-e python_modules/libraries/dagster-celery-docker",
+            "-e python_modules/libraries/dagster-dask[yarn,pbs,kube]",
+            "-e python_modules/libraries/dagster-databricks",
+            "-e python_modules/libraries/dagster-datadog",
+            "-e python_modules/libraries/dagster-datahub",
+            "-e python_modules/libraries/dagster-docker",
+            "-e python_modules/libraries/dagster-gcp",
+            "-e python_modules/libraries/dagster-gcp-pandas",
+            "-e python_modules/libraries/dagster-gcp-pyspark",
+            "-e python_modules/libraries/dagster-embedded-elt",
+            "-e python_modules/libraries/dagster-fivetran",
+            "-e python_modules/libraries/dagster-celery-k8s",
+            "-e python_modules/libraries/dagster-github",
+            "-e python_modules/libraries/dagster-mlflow",
+            "-e python_modules/libraries/dagster-mysql",
+            "-e python_modules/libraries/dagster-pagerduty",
+            "-e python_modules/libraries/dagster-pandas",
+            "-e python_modules/libraries/dagster-papertrail",
+            "-e python_modules/libraries/dagster-prometheus",
+            "-e python_modules/libraries/dagster-pyspark",
+            "-e python_modules/libraries/dagster-shell",
+            "-e python_modules/libraries/dagster-slack",
+            "-e python_modules/libraries/dagster-spark",
+            "-e python_modules/libraries/dagster-ssh",
+            "-e python_modules/libraries/dagster-twilio",
+            "-e python_modules/libraries/dagstermill",
+            "-e integration_tests/python_modules/dagster-k8s-test-infra",
+            "-e python_modules/libraries/dagster-azure",
+            "-e python_modules/libraries/dagster-msteams",
+            "-e python_modules/libraries/dagster-deltalake",
+            "-e python_modules/libraries/dagster-deltalake-pandas",
+            "-e python_modules/libraries/dagster-deltalake-polars",
+            "-e helm/dagster/schema[test]",
+            "-e .buildkite/dagster-buildkite",
+        ]
+
+    if sys.version_info <= (3, 12) and full_env:
         install_targets += [
             "-e python_modules/libraries/dagster-duckdb",
             "-e python_modules/libraries/dagster-duckdb-pandas",
@@ -102,7 +109,7 @@ def main(
             "-e python_modules/libraries/dagster-airflow",
         ]
 
-    if sys.version_info > (3, 7):
+    if sys.version_info > (3, 7) and full_env:
         install_targets += [
             "-e python_modules/libraries/dagster-pandera",
             "-e python_modules/libraries/dagster-snowflake",
@@ -159,4 +166,5 @@ if __name__ == "__main__":
         quiet=args.quiet,
         extra_packages=args.packages,
         include_prebuilt_grpcio_wheel=args.include_prebuilt_grpcio_wheel,
+        full_env=not args.core_only,
     )

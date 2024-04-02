@@ -1,0 +1,30 @@
+### Requirements: core 
+#
+# This file defines the dependencies for the core pyright environment for the internal repo. This
+# is the environment that # pyright/pylance will use by default when running as a language server.
+#
+# Ideally, this would be the only pyright environment we need to define. This is not possible
+# because of dependency conflicts in between Dagster packages/examples. For ease of maintenance,
+# this file should maintain a complete list of Dagster packages, with packages excluded from the
+# enviroment commented out.
+#
+# NOTE: It is important that dagster-* dependencies of any package listed here are also listed.
+# e.g. if examples/foo depends on python_modules/libraries/dagster-foo, then dagster-foo must be
+# listed if examples/foo is listed.
+#
+# NOTE: Paths are relative to repo root.
+
+### HELM
+-e helm/dagster/schema
+
+### LIBRARIES
+
+-e python_modules/automation
+-e python_modules/dagster[pyright,test]
+-e python_modules/dagster-graphql
+-e python_modules/dagster-test
+-e python_modules/dagster-pipes
+-e python_modules/dagster-webserver
+-e python_modules/libraries/dagster-dbt/
+-e python_modules/libraries/dagster-k8s/
+-e python_modules/libraries/dagster-postgres/
