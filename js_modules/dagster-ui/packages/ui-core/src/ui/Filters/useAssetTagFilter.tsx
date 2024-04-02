@@ -18,7 +18,7 @@ export const useAssetTagFilter = ({
   tags?: null | DefinitionTag[];
   setTags?: null | ((s: DefinitionTag[]) => void);
 }) => {
-  const memoizedState = useMemo(() => tags?.map(memoizedDefinitionTag), [tags]);
+  const memoizedState = useMemo(() => tags?.map(buildDefinitionTag), [tags]);
   return useStaticSetFilter<DefinitionTag>({
     name: 'Tag',
     icon: 'tag',
@@ -44,14 +44,15 @@ export const useAssetTagFilter = ({
       setTags?.(Array.from(values));
     },
     matchType: 'all-of',
+    canSelectAll: false,
   });
 };
 
-const memoizedDefinitionTag = memoize(
+export const buildDefinitionTag = memoize(
   (tag: DefinitionTag) => {
     return tag;
   },
-  (tag) => JSON.stringify(tag),
+  (tag) => [tag.key, tag.value].join('|@-@|'),
 );
 
 export function useAssetTagsForAssets(
@@ -65,7 +66,7 @@ export function useAssetTagsForAssets(
             .flatMap((a) => a.definition?.tags.map((tag) => JSON.stringify(tag)) ?? [])
             .filter((o) => o),
         ),
-      ).map((jsonTag) => memoizedDefinitionTag(JSON.parse(jsonTag))),
+      ).map((jsonTag) => buildDefinitionTag(JSON.parse(jsonTag))),
     [assets],
   );
 }

@@ -28,6 +28,7 @@ type Args<TValue> = {
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
   selectAllText?: React.ReactNode;
+  canSelectAll?: boolean;
   menuWidth?: number | string;
   closeOnSelect?: boolean;
 };
@@ -55,6 +56,7 @@ export function useStaticSetFilter<TValue>({
   matchType = 'any-of',
   closeOnSelect = false,
   selectAllText,
+  canSelectAll = true,
 }: Args<TValue>): StaticSetFilter<TValue> {
   const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
 
@@ -127,7 +129,7 @@ export function useStaticSetFilter<TValue>({
               value,
             }));
         }
-        if (allowMultipleSelections && results.length > 1) {
+        if (allowMultipleSelections && results.length > 1 && canSelectAll) {
           return [
             {
               label: (
