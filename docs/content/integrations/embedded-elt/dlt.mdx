@@ -11,7 +11,7 @@ The [data load tool (dlt)](https://dlthub.com/) open-source library defines a st
 - Converting data into the structure required for a destination
 - Incremental updates and merges
 
-Additionally, dlt provides a large collection of [verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations/), meaning there is a good chance you won't have to write any code, and can instead leverage the work of the community.
+dlt also provides a large collection of [pre-built, verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations/), allowing you to write less code (if any!) by leveraging the work of the dlt community.
 
 In this guide, we'll explain how the dlt integration works, how to set up a Dagster project for dlt, and how to use a pre-defined dlt source.
 
@@ -21,7 +21,7 @@ In this guide, we'll explain how the dlt integration works, how to set up a Dags
 
 The Dagster dlt integration uses [multi-assets](/concepts/assets/multi-assets), a single definition that results in multiple assets. These assets are derived from the `DltSource`.
 
-The following is an example of a dlt source definition. Here, we defined a source made up of two resources:
+The following is an example of a dlt source definition where a source is made up of two resources:
 
 ```python
 @dlt.source
@@ -59,13 +59,13 @@ A dlt source and pipelinea are the two components required to load data using dl
 To follow the steps in this guide, you'll need:
 
 - **To read the [dlt introduction](https://dlthub.com/docs/intro)**, if you've never worked with dlt before.
-- **To install the following libraries**:
+- **[To install](/getting-started/install) the following libraries**:
 
   ```bash
   pip install dagster dagster-embedded-elt
   ```
 
-  Refer to the [Dagster installation](/getting-started/install) guide for more info.
+  Installing `dagster-embedded-elt` will also install the `dlt` package.
 
 ---
 
@@ -83,11 +83,11 @@ cd $DAGSTER_HOME && mkdir dlt_sources
 
 ## Step 2: Initialize dlt ingestion code
 
-In the `dlt_sources` directory, you can write your own ingestion code following the [dlt tutorial](https://dlthub.com/docs/tutorial/load-data-from-an-api) or you can use a verified source.
+In the `dlt_sources` directory, you can write ingestion code following the [dlt tutorial](https://dlthub.com/docs/tutorial/load-data-from-an-api) or you can use a verified source.
 
-In this example, we'll use the [GitHub source](https://dlthub.com/docs/dlt-ecosystem/verified-sources/github) provided by `dlt`.
+In this example, we'll use the [GitHub source](https://dlthub.com/docs/dlt-ecosystem/verified-sources/github) provided by dlt.
 
-1. Create a location for the dlt source code and initialize the GitHub source:
+1. Run the following to create a location for the dlt source code and initialize the GitHub source:
 
    ```bash
    cd dlt_sources
@@ -146,21 +146,23 @@ In the example we've been using:
 
 This results in the following required environment variables:
 
-    SOURCES__GITHUB__ACCESS_TOKEN=""
-    DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE=""
-    DESTINATION__SNOWFLAKE__CREDENTIALS__PASSWORD=""
-    DESTINATION__SNOWFLAKE__CREDENTIALS__USERNAME=""
-    DESTINATION__SNOWFLAKE__CREDENTIALS__HOST=""
-    DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
-    DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
+```bash
+SOURCES__GITHUB__ACCESS_TOKEN=""
+DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE=""
+DESTINATION__SNOWFLAKE__CREDENTIALS__PASSWORD=""
+DESTINATION__SNOWFLAKE__CREDENTIALS__USERNAME=""
+DESTINATION__SNOWFLAKE__CREDENTIALS__HOST=""
+DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
+DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
+```
 
-Ensure that these variables are defined in your environment; either in your `.env` file when running locally, or in the Dagster deployment environment variables.
+Ensure that these variables are defined in your environment, either in your `.env` file when running locally or in the [Dagster deployment's environment variables](/guides/dagster/using-environment-variables-and-secrets).
 
 ---
 
 ## Step 4: Define a DagsterDltResource
 
-The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a dlt pipeline runner. This resource is shared across dlt pipelines. We will register the resource to our <PyObject module="dagster" object="Definitions" /> in a later step.
+Next, we'll define a <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" />, which provides a wrapper of a dlt pipeline runner. Use the following to define the resource, which can be shared across all dlt pipelines:
 
 ```python
 from dagster_embedded_elt.dlt import DagsterDltResource
@@ -168,11 +170,15 @@ from dagster_embedded_elt.dlt import DagsterDltResource
 dlt_resource = DagsterDltResource()
 ```
 
+We'll add the resource to our <PyObject module="dagster" object="Definitions" /> in a later step.
+
 ---
 
 ## Step 5: Create a dlt_assets definition for GitHub
 
-The `@dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and create a `dlt_pipeline` to ingest data from Github to Snowflake. In the file in which you define your Dagster assets, you can create create an instance of your `@dlt_assets` like so:
+The <PyObject object="dlt_assets" module="dagster_embedded_elt.dlt" decorator /> decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake.
+
+In the same file containing your Dagster assets, you can create an instance of your <PyObject object="dlt_assets" module="dagster_embedded_elt.dlt" decorator /> by doing something like the following:
 
 ```python
 from dagster import AssetExecutionContext, Definitions
@@ -197,7 +203,11 @@ def dagster_github_assets(context: AssetExecutionContext, dlt: DagsterDltResourc
     yield from dlt.run(context=context)
 ```
 
-In the file where you register your definitions, include the `dagster_github_assets` along with the `dlt_resource`.
+---
+
+## Step 6: Create the Definitions object
+
+The last step is to include the assets and resource in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
 ```python
 defs = Definitions(
