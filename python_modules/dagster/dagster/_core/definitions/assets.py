@@ -1532,7 +1532,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @cached_property
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
-        return non_secure_md5_hash_str((json.dumps(sorted(self.keys))).encode("utf-8"))
+        return non_secure_md5_hash_str(
+            (json.dumps(sorted(self.keys) + sorted(self.check_keys))).encode("utf-8")
+        )
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()
