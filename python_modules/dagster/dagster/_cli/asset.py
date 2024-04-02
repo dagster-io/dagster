@@ -34,7 +34,7 @@ def asset_cli():
 @python_origin_target_argument
 @click.option("--select", help="Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
-@python_job_config_argument("launch")
+@python_job_config_argument("materialize")
 @click.option(
     "--config-json",
     type=click.STRING,

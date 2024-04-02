@@ -431,7 +431,7 @@ def do_execute_command(
     ),
 )
 @job_target_argument
-@python_job_config_argument("materialize")
+@python_job_config_argument("launch")
 @click.option(
     "--config-json",
     type=click.STRING,
