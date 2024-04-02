@@ -61,6 +61,8 @@ height={1010}
 
 - **Description**: The **Asset catalog** page lists all [assets](/concepts/assets/software-defined-assets) in your Dagster deployment, which can be filtered by asset key and/or [asset group](/concepts/assets/software-defined-assets#grouping-assets). Clicking an asset opens the [**Asset details** page](#asset-details) for that asset. You can also navigate to the [Global asset lineage](#global-asset-lineage) page, reload definitions, and materialize assets.
 
+  **If using Dagster Cloud Pro**, you have the option to use a new version of this page. Click the **Asset catalog (Cloud Pro)** tab for more information.
+
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
 <!-- ![The Asset Catalog page in the Dagster UI](/images/concepts/webserver/asset-catalog.png) -->
@@ -68,8 +70,36 @@ height={1010}
 <Image
 alt="The Asset Catalog page in the Dagster UI"
 src="/images/concepts/webserver/asset-catalog.png"
-width={3572}
-height={1944}
+width={2640}
+height={1514}
+/>
+
+</TabItem>
+<TabItem name="Asset catalog (Cloud Pro)">
+
+### Asset catalog (Cloud Pro)
+
+<Note>A Dagster Cloud Pro plan is required to use this feature.</Note>
+
+- **Description**: This **experimental** version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, code location, etc. On this page, you can:
+
+  - View all [assets](/concepts/assets/software-defined-assets) in your Dagster deployment
+  - View [details](#asset-details) about a specific asset by clicking on it
+  - Search assets by asset key, group, compute kind, code location, etc.
+  - Access the [Global asset lineage](#global-asset-lineage)
+  - Reload definitions
+
+- **Accessed by:**
+  1. Enabling the **Use new asset overview page** setting in your [user settings](/concepts/webserver/ui-user-settings)
+  2. Clicking **Assets** in the top navigation
+
+<!-- ![The Asset Catalog page in the Dagster UI](/images/concepts/webserver/asset-catalog-cloud-pro.png) -->
+
+<Image
+alt="The Asset Catalog page in the Dagster UI"
+src="/images/concepts/webserver/asset-catalog-cloud-pro.png"
+width={1911}
+height={1049}
 />
 
 </TabItem>
@@ -95,8 +125,8 @@ height={1944}
 <Image
 alt="The Global asset lineage page in the Dagster UI"
 src="/images/concepts/webserver/global-asset-lineage.png"
-width={3574}
-height={1944}
+width={2640}
+height={1514}
 />
 
 </TabItem>
@@ -104,13 +134,16 @@ height={1944}
 
 ### Asset details
 
-- **Description**: The **Asset details** page contains details about a single asset. On this page, you can:
+- **Description**: The **Asset details** page contains details about a single asset. Use the tabs on this page to view detailed information about the asset:
 
-  - View the asset's **Event** (materialization) history
-  - View any **Plots** associated with the asset
-  - View the asset's **Definition**
-  - View the asset's **Lineage** in the [**Global asset lineage** page](#global-asset-lineage)
-  - Materialize the asset
+  - **Partitions** - The asset's partitions, including their materialization status, metadata, and run information
+  - **Events** - The asset's materialization history
+  - **Checks** - The [Asset checks](/concepts/assets/asset-checks) defined for the asset
+  - **Plots** - Any plots associated with the asset
+  - **Definition** - Information about the asset such as its description, resources, config, type, etc.
+  - **Lineage** - The asset's lineage in the [**Global asset lineage** page](#global-asset-lineage)
+  - **Automation** - The [Auto-materialize policies](/concepts/assets/asset-auto-execution) associated with the asset
+  - **Insights** - **Cloud only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster Cloud Insights](/dagster-cloud/insights) documentation for more information.
 
 - **Accessed by**: Clicking an asset in the [**Asset catalog**](#asset-catalog)
 
@@ -119,8 +152,8 @@ height={1944}
 <Image
 alt="The Asset Details page in the Dagster UI"
 src="/images/concepts/webserver/asset-details.png"
-width={3062}
-height={1628}
+width={2640}
+height={1514}
 />
 
 </TabItem>
