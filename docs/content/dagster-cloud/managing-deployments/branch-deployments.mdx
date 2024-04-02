@@ -69,7 +69,7 @@ When a Branch Deployment is deployed, it compares the asset definitions in the b
 
 #### New assets
 
-Change Tracking will indicate if an asset is new in the Branch Deployment. INSERT IMAGE
+Change Tracking will indicate if an asset is new in the Branch Deployment. <Image src="/images/dagster-cloud/managing-deployments/change-tracking-new.png" width={764} height={308} />
 
 #### Code version changes
 
@@ -89,7 +89,7 @@ def customers():
     ...
 ```
 
-The Branch Deployment will mark `customers` as changed. INSERT IMAGE
+The Branch Deployment will mark `customers` as changed. <Image src="/images/dagster-cloud/managing-deployments/change-tracking-code-version.png" width={1042} height={444} />
 
 Some dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, including strategies for how to compute code versions automatically, see the code versions documentation LINK.
 
@@ -113,7 +113,9 @@ def returns():
     ...
 ```
 
-The Branch Deployment will mark `returns` as having changed dependencies. Note that if an asset is marked as having changed dependencies, it means that either an upstream asset has been added or removed as a dependency. It does not mean that the upstream dependency has changed or that the upstream dependency has new data. TODO wording
+The Branch Deployment will mark `returns` as having changed dependencies. <Image src="/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png" width={1154} height={490} />
+
+Note that if an asset is marked as having changed dependencies, it means that either an upstream asset has been added or removed as a dependency. It does not mean that the upstream dependency has changed or that the upstream dependency has new data. TODO wording
 
 #### Partitions definition changes
 
@@ -133,11 +135,17 @@ def weekly_orders():
     ...
 ```
 
-The Branch Deployment will mark `weekly_orders` as having a changed partitions definition. INSERT IMAGE
+The Branch Deployment will mark `weekly_orders` as having a changed partitions definition.
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-partitions.png"
+width={1154}
+height={490}
+/>
 
 #### Filtering changed assets
 
-In the Asset Catalog, Asset Graph, and Global Asset Graph, you can apply filters to show the new and changed assets in the Branch Deployment. This filtering can be useful for understanding which assets will be impacted by code changes and should be tested.
+In the Asset Catalog, Asset Graph, and Global Asset Graph, you can apply filters to show the new and changed assets in the Branch Deployment. This filtering can be useful for understanding which assets will be impacted by code changes.
 
 ---
 
