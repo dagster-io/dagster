@@ -153,18 +153,19 @@ autodoc_mock_imports = [
     "mysql",
     "oauth2client",
     "orjson",
+    "pandas_gbq",
     "pandera",
+    "polars",
     "prometheus_client",
     "psycopg2",
     "pypd",
+    "sentry_sdk",
     "slack_sdk",
     "snowflake",
     "sshtunnel",
     "toposort",
     "twilio",
-    "polars",
     "wandb",
-    "pandas_gbq",
 ]
 
 autodoc_typehints = "none"
