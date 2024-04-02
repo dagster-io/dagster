@@ -936,7 +936,7 @@ class TestRunStorage:
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete")
 
-        run_id = "some_run_id"
+        run_id = make_new_run_id()
         run = DagsterRun(run_id=run_id, job_name="a_pipeline", tags={"foo": "bar"})
 
         storage.add_run(run)
@@ -949,7 +949,7 @@ class TestRunStorage:
         assert dict(storage.get_run_tags(tag_keys=["foo"])) == {}
 
     def test_write_conflicting_run_id(self, storage: RunStorage):
-        double_run_id = "double_run_id"
+        double_run_id = make_new_run_id()
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         run = DagsterRun(run_id=double_run_id, job_name=job_def.name)

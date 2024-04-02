@@ -209,6 +209,31 @@ def scope_custom_group_name_dagster_dbt_translator():
     # end_custom_group_name_dagster_dbt_translator
 
 
+def scope_custom_owners_dagster_dbt_translator():
+    # start_custom_owners_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional, Sequence
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_owners(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[Sequence[str]]:
+            return ["owner@company.com", "team:data@company.com"]
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_owners_dagster_dbt_translator
+
+
 def scope_custom_description_dagster_dbt_translator():
     # start_custom_description_dagster_dbt_translator
     import textwrap

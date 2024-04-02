@@ -51,15 +51,15 @@ def test_submit_run(instance: DagsterInstance, coodinator: DefaultRunCoordinator
             .get_full_external_job("foo")
         )
 
-        run = _create_run(instance, external_job, run_id="foo-1")
+        run = _create_run(instance, external_job)
         returned_run = coodinator.submit_run(SubmitRunContext(run, workspace))
-        assert returned_run.run_id == "foo-1"
+        assert returned_run.run_id == run.run_id
         assert returned_run.status == DagsterRunStatus.STARTING
 
         assert len(instance.run_launcher.queue()) == 1  # type: ignore
-        assert instance.run_launcher.queue()[0].run_id == "foo-1"  # type: ignore
+        assert instance.run_launcher.queue()[0].run_id == run.run_id  # type: ignore
         assert instance.run_launcher.queue()[0].status == DagsterRunStatus.STARTING  # type: ignore
-        assert instance.get_run_by_id("foo-1")
+        assert instance.get_run_by_id(run.run_id)
 
 
 def test_submit_run_checks_status(instance: DagsterInstance, coodinator: DefaultRunCoordinator):
@@ -70,7 +70,7 @@ def test_submit_run_checks_status(instance: DagsterInstance, coodinator: Default
             .get_full_external_job("foo")
         )
 
-        run = _create_run(instance, external_job, run_id="foo-1", status=DagsterRunStatus.STARTED)
+        run = _create_run(instance, external_job, status=DagsterRunStatus.STARTED)
         coodinator.submit_run(SubmitRunContext(run, workspace))
 
         # assert that runs not in a NOT_STARTED state are not launched

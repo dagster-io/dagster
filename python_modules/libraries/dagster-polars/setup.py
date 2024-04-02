@@ -37,7 +37,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "polars>=0.20.0,<0.20.17",
+        "polars>=0.20.0",
         "pyarrow>=8.0.0",
         "typing-extensions>=4.7.0",
         "universal_pathlib>=0.1.4",

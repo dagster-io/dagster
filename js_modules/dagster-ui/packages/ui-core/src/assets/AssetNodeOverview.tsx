@@ -32,6 +32,7 @@ import {AutomaterializePolicyTag} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {MaterializationTag} from './MaterializationTag';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {RecentUpdatesTimeline} from './RecentUpdatesTimeline';
 import {SimpleStakeholderAssetStatus} from './SimpleStakeholderAssetStatus';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {AssetChecksStatusSummary} from './asset-checks/AssetChecksStatusSummary';
@@ -41,6 +42,7 @@ import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPat
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {useLatestPartitionEvents} from './useLatestPartitionEvents';
+import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
@@ -100,6 +102,16 @@ export const AssetNodeOverview = ({
   );
   const {UserDisplay} = useLaunchPadHooks();
 
+  const {
+    materializations,
+    observations,
+    loading: materializationsLoading,
+  } = useRecentAssetEvents(
+    assetNode.isPartitioned ? undefined : assetNode.assetKey,
+    {},
+    {assetHasDefinedPartitions: false},
+  );
+
   if (loading) {
     return <AssetNodeOverviewLoading />;
   }
@@ -111,26 +123,36 @@ export const AssetNodeOverview = ({
   });
 
   const renderStatusSection = () => (
-    <Box flex={{direction: 'row'}}>
-      <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-        <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
-        <Box flex={{gap: 8, alignItems: 'center'}}>
-          {liveData ? (
-            <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
-          ) : (
-            <NoValue />
-          )}
-          {assetNode && assetNode.freshnessPolicy && (
-            <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
-          )}
-        </Box>
-      </Box>
-      {liveData?.assetChecks.length ? (
+    <Box flex={{direction: 'column', gap: 16}}>
+      <Box flex={{direction: 'row'}}>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Check results</Subtitle2>
-          <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
+          <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
+          <Box flex={{gap: 8, alignItems: 'center'}}>
+            {liveData ? (
+              <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
+            ) : (
+              <NoValue />
+            )}
+            {assetNode && assetNode.freshnessPolicy && (
+              <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
+            )}
+          </Box>
         </Box>
-      ) : undefined}
+        {liveData?.assetChecks.length ? (
+          <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+            <Subtitle2>Check results</Subtitle2>
+            <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
+          </Box>
+        ) : undefined}
+      </Box>
+      {assetNode.isPartitioned ? null : (
+        <RecentUpdatesTimeline
+          materializations={materializations}
+          observations={observations}
+          assetKey={assetNode.assetKey}
+          loading={materializationsLoading}
+        />
+      )}
     </Box>
   );
 
@@ -511,30 +533,52 @@ export const AssetNodeOverviewNonSDA = ({
 }: {
   assetKey: AssetKey;
   lastMaterialization: {timestamp: string; runId: string} | null | undefined;
-}) => (
-  <AssetNodeOverviewContainer
-    left={
-      <LargeCollapsibleSection header="Status" icon="status">
-        {lastMaterialization ? (
-          <MaterializationTag assetKey={assetKey} event={lastMaterialization} stepKey={null} />
-        ) : (
-          <Caption color={Colors.textLighter()}>Never materialized</Caption>
-        )}
-      </LargeCollapsibleSection>
-    }
-    right={
-      <LargeCollapsibleSection header="Definition" icon="info">
-        <Box flex={{direction: 'column', gap: 12}}>
-          <NonIdealState
-            description="This asset doesn't have a software definition in any of your code locations."
-            icon="materialization"
-            title=""
-          />
-        </Box>
-      </LargeCollapsibleSection>
-    }
-  />
-);
+}) => {
+  const {materializations, observations, loading} = useRecentAssetEvents(
+    assetKey,
+    {},
+    {assetHasDefinedPartitions: false},
+  );
+
+  return (
+    <AssetNodeOverviewContainer
+      left={
+        <LargeCollapsibleSection header="Status" icon="status">
+          <Box flex={{direction: 'column', gap: 16}}>
+            <div>
+              {lastMaterialization ? (
+                <MaterializationTag
+                  assetKey={assetKey}
+                  event={lastMaterialization}
+                  stepKey={null}
+                />
+              ) : (
+                <Caption color={Colors.textLighter()}>Never materialized</Caption>
+              )}
+            </div>
+            <RecentUpdatesTimeline
+              materializations={materializations}
+              observations={observations}
+              assetKey={assetKey}
+              loading={loading}
+            />
+          </Box>
+        </LargeCollapsibleSection>
+      }
+      right={
+        <LargeCollapsibleSection header="Definition" icon="info">
+          <Box flex={{direction: 'column', gap: 12}}>
+            <NonIdealState
+              description="This asset doesn't have a software definition in any of your code locations."
+              icon="materialization"
+              title=""
+            />
+          </Box>
+        </LargeCollapsibleSection>
+      }
+    />
+  );
+};
 
 export const AssetNodeOverviewLoading = () => (
   <AssetNodeOverviewContainer

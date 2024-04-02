@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Set
 
 import pytest
 from dagster import (
@@ -19,12 +19,18 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from ..dbt_projects import test_asset_checks_path
+from ..dbt_projects import (
+    test_asset_checks_path,
+    test_dbt_alias_path,
+)
 
 pytest.importorskip("dbt.version", "1.6")
 
 dagster_dbt_translator_with_checks = DagsterDbtTranslator(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+)
+dagster_dbt_translator_without_checks = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
 )
 
 
@@ -37,11 +43,21 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
+def _get_select_args(dbt_cli_invocation) -> Set[str]:
+    *_, dbt_select_flag, dbt_select_args = list(dbt_cli_invocation.process.args)
+    assert dbt_select_flag == "--select"
+    return set(dbt_select_args.split())
+
+
 @pytest.mark.parametrize(
     "assets_def_fn",
     [
-        lambda manifest: load_assets_from_dbt_manifest(manifest=manifest)[0],
-        lambda manifest: dbt_assets(manifest=manifest)(my_dbt_assets),
+        lambda manifest: load_assets_from_dbt_manifest(
+            manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_without_checks
+        )[0],
+        lambda manifest: dbt_assets(
+            manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_without_checks
+        )(my_dbt_assets),
     ],
     ids=["load_assets_from_dbt_manifest", "@dbt_assets"],
 )
@@ -71,25 +87,22 @@ def test_without_asset_checks(
     "assets_def_fn",
     [
         pytest.param(
-            lambda manifest: load_assets_from_dbt_manifest(
-                manifest=manifest,
-                dagster_dbt_translator=dagster_dbt_translator_with_checks,
-            )[0],
+            lambda manifest: load_assets_from_dbt_manifest(manifest=manifest)[0],
             marks=pytest.mark.xfail(
                 reason="load_assets_from_dbt_manifest is not passing down the translator properly."
             ),
         ),
         lambda manifest: dbt_assets(
-            manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks
+            manifest=manifest,
         )(my_dbt_assets),
     ],
     ids=["load_assets_from_dbt_manifest", "@dbt_assets"],
 )
-def test_with_asset_checks(
+def test_asset_checks_enabled_by_default(
     test_asset_checks_manifest: Dict[str, Any],
     assets_def_fn: Callable[[Dict[str, Any]], AssetsDefinition],
 ) -> None:
-    # dbt tests are present, and are modeled as Dagster asset checks
+    # dbt tests are present, and are modeled as Dagster asset checks when no settings are passed in
     assets_def = assets_def_fn(test_asset_checks_manifest)
 
     assert any(
@@ -247,32 +260,39 @@ def test_enable_asset_checks_with_custom_translator() -> None:
             super().__init__(*args, **kwargs)
 
     no_pass_through_no_super_translator = CustomDagsterDbtTranslatorWithInitNoSuper("test")
-    assert not no_pass_through_no_super_translator.settings.enable_asset_checks
+    assert no_pass_through_no_super_translator.settings.enable_asset_checks
 
     no_pass_through_with_super_translator = CustomDagsterDbtTranslatorWithInitWithSuper("test")
-    assert not no_pass_through_with_super_translator.settings.enable_asset_checks
+    assert no_pass_through_with_super_translator.settings.enable_asset_checks
 
     custom_translator = CustomDagsterDbtTranslator(
-        settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
     )
-    assert custom_translator.settings.enable_asset_checks
+    assert not custom_translator.settings.enable_asset_checks
 
     pass_through_translator = CustomDagsterDbtTranslatorWithPassThrough(
         "test",
-        settings=DagsterDbtTranslatorSettings(enable_asset_checks=True),
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=False),
     )
-    assert pass_through_translator.settings.enable_asset_checks
+    assert not pass_through_translator.settings.enable_asset_checks
 
 
 def _materialize_dbt_assets(
     manifest: Dict[str, Any],
     dbt_commands: List[List[str]],
     selection: Optional[AssetSelection],
+    expected_dbt_selection: Optional[Set[str]] = None,
+    dagster_dbt_translator=dagster_dbt_translator_with_checks,
 ) -> ExecuteInProcessResult:
-    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         for dbt_command in dbt_commands:
-            yield from dbt.cli(dbt_command, context=context).stream()
+            cli_invocation = dbt.cli(dbt_command, context=context)
+            assert (
+                expected_dbt_selection is None
+                or _get_select_args(cli_invocation) == expected_dbt_selection
+            )
+            yield from cli_invocation.stream()
 
     result = materialize(
         [my_dbt_assets],
@@ -291,6 +311,7 @@ def test_materialize_no_selection(
         test_asset_checks_manifest,
         dbt_commands,
         selection=None,
+        expected_dbt_selection={"fqn:*"},
     )
     assert not result.success  # fail_tests_model fails
     assert len(result.get_asset_materialization_events()) == 10
@@ -305,6 +326,7 @@ def test_materialize_asset_and_checks(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])),
+        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -342,6 +364,24 @@ def test_materialize_asset_and_checks(
     }
 
 
+def test_materialize_asset_checks_disabled(
+    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+) -> None:
+    result = _materialize_dbt_assets(
+        test_asset_checks_manifest,
+        dbt_commands,
+        selection=AssetSelection.assets(AssetKey(["customers"])),
+        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
+        dagster_dbt_translator=dagster_dbt_translator_without_checks,
+    )
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 0
+    # observations above, plus observations for the check resuls. One extra because one test is a
+    # relationship test
+    assert len(result.get_asset_observation_events()) == 11
+
+
 def test_materialize_asset_no_checks(
     test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
 ) -> None:
@@ -349,6 +389,7 @@ def test_materialize_asset_no_checks(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])).without_checks(),
+        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -367,6 +408,12 @@ def test_materialize_checks_no_asset(
             AssetSelection.assets(AssetKey(["customers"]))
             - AssetSelection.assets(AssetKey(["customers"])).without_checks()
         ),
+        expected_dbt_selection={
+            "fqn:test_dagster_asset_checks.not_null_customers_customer_id",
+            "fqn:test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
+            "fqn:test_dagster_asset_checks.singular_test_with_single_dependency",
+            "fqn:test_dagster_asset_checks.unique_customers_customer_id",
+        },
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 0
@@ -467,12 +514,14 @@ def test_select_model_with_tests(
 ):
     @dbt_assets(
         manifest=test_asset_checks_manifest,
-        dagster_dbt_translator=dagster_dbt_translator_with_checks,
         select=selection,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         for dbt_command in dbt_commands:
-            yield from dbt.cli(dbt_command, context=context).stream()
+            cli_invocation = dbt.cli(dbt_command, context=context)
+            assert _get_select_args(cli_invocation) == {selection}
+            yield from cli_invocation.stream()
 
     assert my_dbt_assets.keys == {AssetKey(["customers"])}
     assert my_dbt_assets.check_keys == {
@@ -526,3 +575,17 @@ def test_select_model_with_tests(
             "test.test_dagster_asset_checks.singular_test_with_no_meta_and_multiple_dependencies",
         ),
     }
+
+
+def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(
+        manifest=test_dbt_alias_manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_alias_path))},
+    )
+    assert result.success

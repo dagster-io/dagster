@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Union
+from typing import Any, Iterator, Mapping, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -6,16 +6,16 @@ from dagster import (
     ConfigurableResource,
     MaterializeResult,
     OpExecutionContext,
+    _check as check,
 )
 from dagster._annotations import experimental, public
 from dlt.common.pipeline import LoadInfo
 from dlt.extract.resource import DltResource
+from dlt.extract.source import DltSource
+from dlt.pipeline.pipeline import Pipeline
 
-if TYPE_CHECKING:
-    from dlt.extract.source import DltSource
-    from dlt.pipeline.pipeline import Pipeline
-
-from .constants import META_KEY_PIPELINE, META_KEY_SOURCE
+from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
+from .translator import DagsterDltTranslator
 
 
 @experimental
@@ -103,38 +103,38 @@ class DagsterDltResource(ConfigurableResource):
         metadata_by_key = context.assets_def.metadata_by_key
         first_asset_metadata = next(iter(metadata_by_key.values()))
 
-        dlt_source: Optional[DltSource] = first_asset_metadata.get(META_KEY_SOURCE)
-        dlt_pipeline: Optional[Pipeline] = first_asset_metadata.get(META_KEY_PIPELINE)
-
-        if not dlt_source or not dlt_pipeline:
-            raise Exception(
-                "%s and %s must be defined on AssetSpec metadata",
-                META_KEY_SOURCE,
-                META_KEY_PIPELINE,
-            )
-
-        # Mapping of asset keys to dlt resources
-        asset_key_dlt_source_resource_mapping = zip(
-            context.selected_asset_keys, dlt_source.resources.values()
+        dlt_source = check.inst(first_asset_metadata.get(META_KEY_SOURCE), DltSource)
+        dlt_pipeline = check.inst(first_asset_metadata.get(META_KEY_PIPELINE), Pipeline)
+        dagster_dlt_translator = check.inst(
+            first_asset_metadata.get(META_KEY_TRANSLATOR), DagsterDltTranslator
         )
+
+        asset_key_dlt_source_resource_mapping = {
+            dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
+            for dlt_source_resource in dlt_source.resources.values()
+        }
 
         # Filter sources by asset key sub-selection
         if context.is_subset:
-            asset_key_dlt_source_resource_mapping = [
-                (asset_key, dlt_source_resource)
-                for (asset_key, dlt_source_resource) in asset_key_dlt_source_resource_mapping
+            asset_key_dlt_source_resource_mapping = {
+                asset_key: asset_dlt_source_resource
+                for (
+                    asset_key,
+                    asset_dlt_source_resource,
+                ) in asset_key_dlt_source_resource_mapping.items()
                 if asset_key in context.selected_asset_keys
-            ]
+            }
             dlt_source = dlt_source.with_resources(
                 *[
                     dlt_source_resource.name
-                    for (_, dlt_source_resource) in asset_key_dlt_source_resource_mapping
+                    for dlt_source_resource in asset_key_dlt_source_resource_mapping.values()
+                    if dlt_source_resource
                 ]
             )
 
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 
-        for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping:
+        for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(dlt_source_resource, load_info)
             if isinstance(context, AssetExecutionContext):
                 yield MaterializeResult(asset_key=asset_key, metadata=metadata)

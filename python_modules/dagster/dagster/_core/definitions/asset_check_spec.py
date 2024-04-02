@@ -62,7 +62,10 @@ class AssetCheckSpec(
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
             ("additional_deps", PublicAttr[Optional[Iterable["AssetDep"]]]),
-            ("blocking", PublicAttr[bool]),
+            (
+                "blocking",  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
+                bool,
+            ),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
         ],
     )
@@ -83,10 +86,6 @@ class AssetCheckSpec(
             the asset specified by `asset`. For example, the check may test that `asset` has
             matching data with an asset in `additional_deps`. This field holds both `additional_deps`
             and `additional_ins` passed to @asset_check.
-        blocking (bool): When enabled, runs that include this check and any downstream assets that
-            depend on `asset` will wait for this check to complete before starting the downstream
-            assets. If the check fails with severity `AssetCheckSeverity.ERROR`, then the downstream
-            assets won't execute.
         metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
     """
 
@@ -129,7 +128,7 @@ class AssetCheckSpec(
         """Returns a string uniquely identifying the asset check, that uses only the characters
         allowed in a Python identifier.
         """
-        return f"{self.asset_key.to_python_identifier()}_{self.name}"
+        return f"{self.asset_key.to_python_identifier()}_{self.name}".replace(".", "_")
 
     @property
     def key(self) -> AssetCheckKey:

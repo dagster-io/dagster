@@ -274,10 +274,20 @@
               {
                 "title": "Job execution",
                 "path": "/concepts/ops-jobs-graphs/job-execution"
+              }
+            ]
+          },
+          {
+            "title": "Metadata & tags",
+            "path": "/concepts/metadata-tags",
+            "children": [
+              {
+                "title": "Tags",
+                "path": "/concepts/metadata-tags/tags"
               },
               {
-                "title": "Job metadata & tags",
-                "path": "/concepts/ops-jobs-graphs/metadata-tags"
+                "title": "Op job metadata",
+                "path": "/concepts/metadata-tags/op-job-metadata"
               }
             ]
           },

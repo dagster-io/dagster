@@ -225,11 +225,44 @@ def build_dbt_asset_selection(
             # of them (dbt-related or otherwise)
             foo_and_downstream_selection = foo_selection.downstream()
 
+        Building an asset selection on a dbt assets definition with an existing selection:
+
+        .. code-block:: python
+
+            from dagster_dbt import dbt_assets, build_dbt_asset_selection
+
+            @dbt_assets(
+                manifest=...
+                select="bar+",
+            )
+            def bar_plus_dbt_assets():
+                ...
+
+            # Select the dbt assets that are in the intersection of having the tag "foo" and being
+            # in the existing selection "bar+".
+            bar_plus_and_foo_selection = build_dbt_asset_selection(
+                [bar_plus_dbt_assets],
+                dbt_select="tag:foo"
+            )
+
+            # Furthermore, select all assets downstream (dbt-related or otherwise).
+            bar_plus_and_foo_and_downstream_selection = bar_plus_and_foo_selection.downstream()
+
     """
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
+    [dbt_assets_definition] = dbt_assets
+
+    dbt_assets_select = dbt_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
+    dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY)
+
     from .dbt_manifest_asset_selection import DbtManifestAssetSelection
 
     return DbtManifestAssetSelection.build(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        select=dbt_assets_select,
+        exclude=dbt_assets_exclude,
+    ) & DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
@@ -445,6 +478,23 @@ def group_from_dbt_resource_props_fallback_to_directory(
     if len(fqn) < 3:
         return None
     return fqn[1]
+
+
+def default_owners_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[Sequence[str]]:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    owners_config = dagster_metadata.get("owners")
+
+    if owners_config:
+        return owners_config
+
+    owner: Optional[str] = (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
+
+    if not owner:
+        return None
+
+    return [owner]
 
 
 def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:

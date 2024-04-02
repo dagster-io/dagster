@@ -157,8 +157,6 @@ export const AssetChecks = ({
   const lastExecution = selectedCheck.executionForLatestMaterialization;
   const targetMaterialization = lastExecution?.evaluation?.targetMaterialization;
 
-  console.log({lastExecution});
-
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
       <Box flex={{direction: 'row', grow: 1}} style={{position: 'relative'}}>

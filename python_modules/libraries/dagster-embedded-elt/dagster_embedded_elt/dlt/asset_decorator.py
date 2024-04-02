@@ -8,7 +8,7 @@ from dagster import (
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
-from .constants import META_KEY_PIPELINE, META_KEY_SOURCE
+from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from .translator import DagsterDltTranslator
 
 
@@ -85,9 +85,10 @@ def dlt_assets(
                 auto_materialize_policy=dlt_dagster_translator.get_auto_materialize_policy(
                     dlt_source_resource
                 ),
-                metadata={  # type: ignore - source / translator are included in metadata for use in `.run()`
+                metadata={
                     META_KEY_SOURCE: dlt_source,
                     META_KEY_PIPELINE: dlt_pipeline,
+                    META_KEY_TRANSLATOR: dlt_dagster_translator,
                 },
             )
             for dlt_source_resource in dlt_source.resources.values()

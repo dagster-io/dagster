@@ -15,6 +15,7 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
 from datetime import timezone
 from enum import Enum
 from signal import Signals
@@ -771,3 +772,11 @@ def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> I
                 break
             else:
                 time.sleep(0.01)
+
+
+def is_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+        return True
+    except ValueError:
+        return False

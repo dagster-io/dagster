@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.6.14 (core) / 0.22.14 (libraries)
+
+### Bugfixes
+
+- [dagster-dbt] Fixed some issues with building column lineage metadata.
+
 # 1.6.13 (core) / 0.22.13 (libraries)
 
 ### Bugfixes
