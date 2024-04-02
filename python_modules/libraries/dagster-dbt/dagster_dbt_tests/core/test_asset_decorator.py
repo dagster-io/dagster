@@ -245,7 +245,11 @@ def test_io_manager_key(
     expected_io_manager_key = DEFAULT_IO_MANAGER_KEY if io_manager_key is None else io_manager_key
 
     for output_def in my_dbt_assets.node_def.output_defs:
-        assert output_def.io_manager_key == expected_io_manager_key
+        if output_def.name in my_dbt_assets.keys_by_output_name:
+            assert output_def.io_manager_key == expected_io_manager_key
+        else:  # asset checks don't use io managers
+            assert output_def.name in my_dbt_assets.check_specs_by_output_name
+            assert output_def.io_manager_key == DEFAULT_IO_MANAGER_KEY
 
 
 @pytest.mark.parametrize(
