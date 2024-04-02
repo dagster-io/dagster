@@ -151,8 +151,14 @@ def test_example_pipeline_subselection():
     res = materialize(
         [example_pipeline_assets],
         resources={"dlt_pipeline_resource": DagsterDltResource()},
-        selection=[AssetKey(["dlt_pipeline_repos"])],
+        selection=[AssetKey(["dlt_pipeline_repo_issues"])],
     )
     assert res.success
-    materialization_events = res.get_asset_materialization_events()
-    assert len(materialization_events) == 1
+
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 1
+
+    found_asset_keys = [
+        mat.event_specific_data.materialization.asset_key for mat in asset_materializations
+    ]
+    assert found_asset_keys == [AssetKey(["dlt_pipeline_repo_issues"])]
