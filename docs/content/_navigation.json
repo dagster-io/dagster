@@ -1311,6 +1311,10 @@
             "path": "/_apidocs/libraries/dagster-duckdb-polars"
           },
           {
+            "title": "Embedded ELT (dagster-embedded-elt)",
+            "path": "/_apidocs/libraries/dagster-embedded-elt"
+          },
+          {
             "title": "Fivetran (dagster-fivetran)",
             "path": "/_apidocs/libraries/dagster-fivetran"
           },
