@@ -22,6 +22,7 @@ from dagster_dbt.core.resources_v2 import DbtCliResource
 from dbt.version import __version__ as dbt_version
 from packaging import version
 from pytest_mock import MockFixture
+from sqlglot import Dialect
 
 from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
 
@@ -156,16 +157,39 @@ def test_exception_column_lineage(
         "--select select_star_customers",
     ],
 )
+@pytest.mark.parametrize(
+    "sql_dialect",
+    [
+        "bigquery",
+        "clickhouse",
+        "databricks",
+        "duckdb",
+        "redshift",
+        "snowflake",
+        "trino",
+    ],
+)
 def test_column_lineage(
-    test_metadata_manifest: Dict[str, Any], asset_key_selection: Optional[AssetKey]
+    test_metadata_manifest: Dict[str, Any],
+    sql_dialect: str,
+    asset_key_selection: Optional[AssetKey],
 ) -> None:
-    @dbt_assets(manifest=test_metadata_manifest)
+    # Simulate the parsing of the SQL into a different dialect.
+    assert Dialect.get_or_raise(sql_dialect)
+
+    manifest = test_metadata_manifest.copy()
+    manifest["metadata"]["adapter_type"] = sql_dialect
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+
+    @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
     result = materialize(
         [my_dbt_assets],
-        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+        resources={"dbt": dbt},
         selection=asset_key_selection and AssetSelection.assets(asset_key_selection),
     )
     assert result.success
@@ -326,6 +350,11 @@ def test_column_lineage(
                         asset_key=AssetKey(["customers"]), column_name="customer_lifetime_value"
                     )
                 ],
+            }
+        ),
+        AssetKey(["count_star_customers"]): TableColumnLineage(
+            deps_by_column={
+                "count_star": [],
             }
         ),
     }

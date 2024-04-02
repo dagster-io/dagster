@@ -11,7 +11,6 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
-from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
@@ -85,7 +84,7 @@ class AssetOut(
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,

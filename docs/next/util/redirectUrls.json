@@ -759,5 +759,10 @@
     "source": "/getting-started/hello-dagster",
     "destination": "/getting-started/quickstart",
     "statusCode": 302
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/metadata-tags",
+    "destination": "/concepts/metadata-tags",
+    "statusCode": 302
   }
 ]

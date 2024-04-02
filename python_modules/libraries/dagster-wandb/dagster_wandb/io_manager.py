@@ -44,6 +44,8 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import TypedDict
 
+UNIT_TEST_RUN_ID = "0ab2e48b-6d63-4ff5-b160-662cc60145f4"
+
 
 class Config(TypedDict):
     dagster_run_id: str
@@ -711,7 +713,7 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         cache_duration_in_minutes = context.resource_config.get("cache_duration_in_minutes")
 
     if "PYTEST_CURRENT_TEST" in os.environ:
-        dagster_run_id = "unit-testing"
+        dagster_run_id = UNIT_TEST_RUN_ID
     else:
         dagster_run_id = context.run_id
 

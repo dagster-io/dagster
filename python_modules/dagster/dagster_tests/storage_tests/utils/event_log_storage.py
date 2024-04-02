@@ -506,7 +506,7 @@ class TestEventLogStorage:
         instance: DagsterInstance,
         storage: EventLogStorage,
     ):
-        runs = ["foo", "bar", "baz"]
+        runs = [make_new_run_id() for _ in range(3)]
         if instance:
             for run in runs:
                 create_run_for_test(instance, run_id=run)
@@ -616,14 +616,15 @@ class TestEventLogStorage:
         instance: DagsterInstance,
         storage: EventLogStorage,
     ):
-        with create_and_delete_test_runs(instance, ["other_run"]):
+        other_run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [other_run_id]):
             # two runs events to ensure pagination is not affected by other runs
             storage.store_event(create_test_event_log_record("A", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(0), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(0), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("B", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(1), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(1), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("C", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(2), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
             assert len(storage.get_logs_for_run(test_run_id)) == 4
@@ -1580,6 +1581,7 @@ class TestEventLogStorage:
             pytest.skip()
 
         asset_key = AssetKey(["path", "to", "asset_one"])
+        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
 
         events = []
 
@@ -1616,7 +1618,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="1",
+                    run_id=run_id_1,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1634,7 +1636,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="2",
+                    run_id=run_id_2,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1650,7 +1652,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="3",
+                    run_id=run_id_3,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1678,7 +1680,7 @@ class TestEventLogStorage:
                 DagsterEventType.RUN_SUCCESS,
                 DagsterEventType.RUN_SUCCESS,
             ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
 
             # use tz-naive cursor
             filtered_records = storage.get_event_records(
@@ -1695,7 +1697,7 @@ class TestEventLogStorage:
                 DagsterEventType.RUN_SUCCESS,
                 DagsterEventType.RUN_SUCCESS,
             ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
 
             # use invalid cursor
             with pytest.raises(
@@ -1964,8 +1966,8 @@ class TestEventLogStorage:
             if not storage.has_instance:
                 storage.register_instance(created_instance)
 
-            one_run_id = "one_run_id"
-            two_run_id = "two_run_id"
+            one_run_id = make_new_run_id()
+            two_run_id = make_new_run_id()
             events_one, _ = _synthesize_events(
                 lambda: one_asset_op(), run_id=one_run_id, instance=created_instance
             )
@@ -1991,7 +1993,7 @@ class TestEventLogStorage:
                     assert not storage.has_asset_key(AssetKey("asset_1"))
                     assert log_count == len(storage.get_logs_for_run(one_run_id))
 
-                    one_run_id = "one_run_id_2"
+                    one_run_id = make_new_run_id()
                     events_one, _ = _synthesize_events(
                         lambda: one_asset_op(),
                         run_id=one_run_id,
@@ -2022,8 +2024,8 @@ class TestEventLogStorage:
                 assert len(asset_keys) == 1
                 migrate_asset_key_data(storage)
 
-                two_first_run_id = "first"
-                two_second_run_id = "second"
+                two_first_run_id = make_new_run_id()
+                two_second_run_id = make_new_run_id()
                 events_two, _ = _synthesize_events(
                     lambda: two_asset_ops(),
                     run_id=two_first_run_id,

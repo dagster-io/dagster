@@ -143,27 +143,25 @@ class TestQueuedRunCoordinator:
 
     def test_submit_run(self, instance, coordinator, workspace, external_pipeline):
         run = self.create_run_for_test(
-            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
+            instance, external_pipeline, status=DagsterRunStatus.NOT_STARTED
         )
         returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
-        assert returned_run.run_id == "foo-1"
+        assert returned_run.run_id == run.run_id
         assert returned_run.status == DagsterRunStatus.QUEUED
 
         assert len(instance.run_launcher.queue()) == 0
-        stored_run = instance.get_run_by_id("foo-1")
+        stored_run = instance.get_run_by_id(run.run_id)
         assert stored_run.status == DagsterRunStatus.QUEUED
 
     def test_submit_run_checks_status(self, instance, coordinator, workspace, external_pipeline):
-        run = self.create_run_for_test(
-            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.QUEUED
-        )
+        run = self.create_run_for_test(instance, external_pipeline, status=DagsterRunStatus.QUEUED)
         coordinator.submit_run(SubmitRunContext(run, workspace))
 
         # check that no enqueue event is reported (the submit run call is a no-op)
         assert (
             len(
                 instance.get_records_for_run(
-                    "foo-1", of_type=DagsterEventType.PIPELINE_ENQUEUED
+                    run.run_id, of_type=DagsterEventType.PIPELINE_ENQUEUED
                 ).records
             )
             == 0
@@ -171,13 +169,13 @@ class TestQueuedRunCoordinator:
 
     def test_cancel_run(self, instance, coordinator, workspace, external_pipeline):
         run = self.create_run_for_test(
-            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
+            instance, external_pipeline, status=DagsterRunStatus.NOT_STARTED
         )
 
         coordinator.submit_run(SubmitRunContext(run, workspace))
 
         coordinator.cancel_run(run.run_id)
-        stored_run = instance.get_run_by_id("foo-1")
+        stored_run = instance.get_run_by_id(run.run_id)
         assert stored_run.status == DagsterRunStatus.CANCELED
 
 

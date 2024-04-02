@@ -4,6 +4,7 @@ import pytest
 import yaml
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
+from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
 
 ensure_dagster_tests_import()
@@ -26,7 +27,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             storage.dispose()
 
     def test_event_log_storage_two_watchers(self, storage):
-        run_id = "foo"
+        run_id = make_new_run_id()
         watched_1 = []
         watched_2 = []
 

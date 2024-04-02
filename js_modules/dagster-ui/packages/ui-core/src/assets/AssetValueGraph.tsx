@@ -71,12 +71,16 @@ export const AssetValueGraph = (props: {
       x: {
         id: 'x',
         display: true,
+        ticks: {
+          color: Colors.textLighter(),
+        },
         ...(props.data.xAxis === 'time'
           ? {
               type: 'time',
               title: {
                 display: true,
                 text: 'Timestamp',
+                color: Colors.textLighter(),
               },
             }
           : {
@@ -84,10 +88,18 @@ export const AssetValueGraph = (props: {
               title: {
                 display: true,
                 text: 'Partition',
+                color: Colors.textLighter(),
               },
             }),
       },
-      y: {id: 'y', display: true, title: {display: true, text: props.yAxisLabel || 'Value'}},
+      y: {
+        id: 'y',
+        display: true,
+        ticks: {
+          color: Colors.textLighter(),
+        },
+        title: {display: true, color: Colors.textLighter(), text: props.yAxisLabel || 'Value'},
+      },
     },
     plugins: {
       legend: {

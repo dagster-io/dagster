@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import {useState} from 'react';
+import {useContext, useState} from 'react';
 
 import {
   ExecuteChecksButtonAssetNodeFragment,
   ExecuteChecksButtonCheckFragment,
 } from './types/ExecuteChecksButton.types';
+import {CloudOSSContext} from '../../app/CloudOSSContext';
 import {usePermissionsForLocation} from '../../app/Permissions';
 import {AssetCheckCanExecuteIndividually, ExecutionParams} from '../../graphql/types';
 import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
@@ -44,6 +45,14 @@ export const ExecuteChecksButton = ({
     : checks.length === 0
     ? 'No checks are defined on this asset.'
     : '';
+
+  const {
+    featureContext: {canSeeExecuteChecksAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeExecuteChecksAction) {
+    return null;
+  }
 
   if (disabledReason) {
     return (
