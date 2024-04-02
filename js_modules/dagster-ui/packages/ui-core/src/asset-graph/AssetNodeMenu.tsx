@@ -1,16 +1,14 @@
-import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
+import {Box, Menu, MenuDivider, MenuItem} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
-import {CloudOSSContext} from '../app/CloudOSSContext';
-import {showSharedToaster} from '../app/DomUtils';
+import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
   AssetKeysDialog,
   AssetKeysDialogEmptyState,
   AssetKeysDialogHeader,
 } from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
-import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
@@ -32,7 +30,10 @@ export const useAssetNodeMenu = ({
   const upstream = Object.keys(graphData.upstream[node.id] ?? {});
   const downstream = Object.keys(graphData.downstream[node.id] ?? {});
 
-  const {onClick, loading, launchpadElement} = useMaterializationAction();
+  const {executeItem, launchpadElement} = useExecuteAssetMenuItem(
+    node.assetKey.path,
+    node.definition,
+  );
 
   const [showParents, setShowParents] = React.useState(false);
 
@@ -46,35 +47,11 @@ export const useAssetNodeMenu = ({
     onChangeExplorerPath({...explorerPath, opsQuery: nextOpsQuery}, 'push');
   }
 
-  const {
-    featureContext: {canSeeMaterializeAction},
-  } = React.useContext(CloudOSSContext);
-
   return {
     menu: (
       <Menu>
-        {canSeeMaterializeAction ? (
-          <>
-            <MenuItem
-              icon="materialization"
-              text={
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                  <span>Materialize</span>
-                  {loading ? <Spinner purpose="body-text" /> : null}
-                </Box>
-              }
-              onClick={async (e) => {
-                await showSharedToaster({
-                  intent: 'primary',
-                  message: 'Initiating materialization',
-                  icon: 'materialization',
-                });
-                onClick([node.assetKey], e, false);
-              }}
-            />
-            {upstream.length || downstream.length ? <MenuDivider /> : null}
-          </>
-        ) : null}
+        {executeItem}
+        {upstream.length || downstream.length ? <MenuDivider /> : null}
         {upstream.length ? (
           <MenuItem
             text={`View parents (${upstream.length})`}
