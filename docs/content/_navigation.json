@@ -200,7 +200,13 @@
       },
       {
         "title": "Dagster UI",
-        "path": "/concepts/webserver/ui"
+        "path": "/concepts/webserver/ui",
+        "children": [
+          {
+            "title": "User settings & preferences",
+            "path": "/concepts/webserver/ui-user-settings"
+          }
+        ]
       },
       {
         "title": "Logging",
@@ -555,7 +561,7 @@
                 "path": "/dagster-cloud/account/managing-users/managing-teams"
               },
               {
-                "title": "User roles and permissions",
+                "title": "User roles & permissions",
                 "path": "/dagster-cloud/account/managing-users/managing-user-roles-permissions"
               },
               {
