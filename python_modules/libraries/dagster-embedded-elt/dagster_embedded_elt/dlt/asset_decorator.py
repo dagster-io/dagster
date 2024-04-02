@@ -63,7 +63,7 @@ def dlt_assets(
             @dlt_assets(
                 dlt_source=github_reactions(
                     "dagster-io", "dagster", items_per_page=100, max_items=250
-                ).with_resources("issues"),
+                ),
                 dlt_pipeline=pipeline(
                     pipeline_name="github_issues",
                     dataset_name="github",
