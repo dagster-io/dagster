@@ -15,6 +15,7 @@ import {
 import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -89,9 +90,13 @@ export const AssetGroupRoot = ({
 
   const assetFilterState = useAssetDefinitionFilterState();
 
+  const {filterFn} = assetFilterState;
   const fetchOptions = React.useMemo(
-    () => ({groupSelector, hideNodesMatching: assetFilterState.filterFn}),
-    [groupSelector, assetFilterState.filterFn],
+    () => ({
+      groupSelector,
+      hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => !filterFn(node),
+    }),
+    [groupSelector, filterFn],
   );
 
   const lineageOptions = React.useMemo(
