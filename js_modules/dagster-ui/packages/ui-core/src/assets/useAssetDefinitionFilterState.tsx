@@ -16,7 +16,7 @@ import {RepoAddress} from '../workspace/types';
 
 type StrippedDownDefinition = Pick<
   AssetNode,
-  'changedReasons' | 'owners' | 'groupName' | 'tags'
+  'changedReasons' | 'owners' | 'groupName' | 'tags' | 'computeKind'
 > & {
   repository: Pick<AssetNode['repository'], 'name'> & {
     location: Pick<AssetNode['repository']['location'], 'name'>;
@@ -79,6 +79,12 @@ export const useAssetDefinitionFilterState = () => {
         }
       }
 
+      if (filters.computeKindTags?.length) {
+        if (!definition || !filters.computeKindTags.includes(definition.computeKind ?? '')) {
+          return false;
+        }
+      }
+
       if (filters.changedInBranch?.length) {
         if (
           !definition ||
@@ -106,7 +112,14 @@ export const useAssetDefinitionFilterState = () => {
 
       return true;
     },
-    [filters.repos, filters.groups, filters.changedInBranch, filters.owners, filters.tags],
+    [
+      filters.repos,
+      filters.groups,
+      filters.changedInBranch,
+      filters.computeKindTags,
+      filters.owners,
+      filters.tags,
+    ],
   );
 
   const {setComputeKindTags, setGroups, setChangedInBranch, setOwners, setAssetTags, setRepos} =
