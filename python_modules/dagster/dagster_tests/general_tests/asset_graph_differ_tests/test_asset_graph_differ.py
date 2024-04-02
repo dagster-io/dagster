@@ -328,3 +328,6 @@ def test_change_metadata(instance):
     )
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.METADATA]
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.METADATA]
+    assert differ.get_changes_for_asset(AssetKey("fruits")) == [ChangeReason.METADATA]
+    assert differ.get_changes_for_asset(AssetKey("letters")) == [ChangeReason.METADATA]
+    assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0
