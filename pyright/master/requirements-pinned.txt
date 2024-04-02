@@ -358,7 +358,7 @@ nest-asyncio==1.6.0
 networkx==2.8.8
 nh3==0.2.17
 nodeenv==1.8.0
-noteable-origami==0.0.35
+noteable-origami==1.1.5
 notebook==7.1.2
 notebook-shim==0.2.4
 numpy==1.26.4
@@ -390,7 +390,7 @@ pandas-stubs==2.2.1.240316
 pandera==0.18.3
 pandocfilters==1.5.1
 papermill==2.5.0
-papermill-origami==0.0.30
+papermill-origami==0.0.29
 paramiko==3.4.0
 parsedatetime==2.4
 parso==0.8.3
@@ -531,7 +531,7 @@ sshpubkeys==3.3.1
 sshtunnel==0.4.0
 stack-data==0.6.3
 starlette==0.37.2
-structlog==22.3.0
+structlog==24.1.0
 sympy==1.12
 syrupy==4.6.1
 tabledata==1.3.3
