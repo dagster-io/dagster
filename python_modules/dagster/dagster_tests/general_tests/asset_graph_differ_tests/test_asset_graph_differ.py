@@ -312,3 +312,6 @@ def test_change_tags(instance):
     )
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.TAGS]
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.TAGS]
+    assert differ.get_changes_for_asset(AssetKey("fruits")) == [ChangeReason.TAGS]
+    assert differ.get_changes_for_asset(AssetKey("letters")) == [ChangeReason.TAGS]
+    assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0
