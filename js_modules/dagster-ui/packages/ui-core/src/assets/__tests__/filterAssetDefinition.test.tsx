@@ -49,7 +49,7 @@ describe('filterAssetDefinition', () => {
         }),
       ],
     };
-    const definition = {}; // Assuming a definition that does not match the group
+    const definition = {};
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });
 
@@ -68,7 +68,7 @@ describe('filterAssetDefinition', () => {
       changedInBranch: [ChangeReason.INPUTS],
     };
     const definition = {
-      changedReasons: [ChangeReason.CODE_VERSION], // No matching reason
+      changedReasons: [ChangeReason.CODE_VERSION],
     };
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });
