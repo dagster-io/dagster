@@ -1,7 +1,8 @@
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import pytest
 from dagster import DefaultScheduleStatus, RunConfig
+from dagster._core.definitions.asset_selection import AndAssetSelection
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
 
@@ -79,8 +80,16 @@ def test_dbt_build_schedule(
     job = test_daily_schedule.job
 
     assert isinstance(job, UnresolvedAssetJobDefinition)
-    assert isinstance(job.selection, DbtManifestAssetSelection)
-    assert job.selection.select == (dbt_select or "fqn:*")
-    assert job.selection.exclude == (dbt_exclude or "")
     assert job.tags == (tags or {})
     assert job.config == (config.to_config_dict() if config else None)
+
+    assert isinstance(job.selection, AndAssetSelection)
+    assert len(job.selection.operands) == 2
+
+    [dbt_assets_selection, job_selection] = cast(
+        Sequence[DbtManifestAssetSelection], job.selection.operands
+    )
+    assert dbt_assets_selection.select == "fqn:*"
+    assert dbt_assets_selection.exclude == ""
+    assert job_selection.select == (dbt_select or "fqn:*")
+    assert job_selection.exclude == (dbt_exclude or "")

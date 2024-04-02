@@ -157,6 +157,58 @@ def test_dbt_asset_selection(
     assert selected_asset_keys == expected_asset_keys
 
 
+@pytest.mark.parametrize(
+    ["select", "exclude", "expected_dbt_resource_names"],
+    [
+        (
+            None,
+            None,
+            {
+                "raw_customers",
+                "stg_customers",
+            },
+        ),
+        (
+            "raw_customers",
+            None,
+            {
+                "raw_customers",
+            },
+        ),
+        (
+            "customers",
+            None,
+            {},
+        ),
+        (
+            None,
+            "raw_customers",
+            {"stg_customers"},
+        ),
+    ],
+)
+def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
+    test_jaffle_shop_manifest: Dict[str, Any],
+    select: Optional[str],
+    exclude: Optional[str],
+    expected_dbt_resource_names: Set[str],
+):
+    expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest, select="+stg_customers")
+    def my_dbt_assets(): ...
+
+    asset_graph = AssetGraph.from_assets([my_dbt_assets])
+    asset_selection = build_dbt_asset_selection(
+        [my_dbt_assets],
+        dbt_select=select or "fqn:*",
+        dbt_exclude=exclude,
+    )
+    selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
+
+    assert selected_asset_keys == expected_asset_keys
+
+
 def test_dbt_asset_selection_manifest_argument(
     test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: Dict[str, Any]
 ) -> None:
