@@ -44,6 +44,7 @@ export const useAssetTagFilter = ({
       setTags?.(Array.from(values));
     },
     matchType: 'all-of',
+    canSelectAll: false,
   });
 };
 

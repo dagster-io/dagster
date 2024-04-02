@@ -66,18 +66,15 @@ export const useAssetDefinitionFilterState = () => {
               repo.name === definition?.repository.name,
           )
         ) {
-          console.log(1);
           return false;
         }
       }
       if (filters.groups?.length) {
         if (!definition) {
-          console.log(2);
           return false;
         }
         const nodeGroup = buildAssetGroupSelector({definition});
         if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
-          console.log(3);
           return false;
         }
       }
@@ -87,18 +84,21 @@ export const useAssetDefinitionFilterState = () => {
           !definition ||
           definition.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))
         ) {
-          console.log(4);
           return false;
         }
       }
       if (filters.owners?.length) {
-        if (!doesFilterArrayMatchValueArray(filters.owners, definition?.owners ?? [])) {
-          console.log(5);
+        if (
+          !filters.owners.some((owner) =>
+            definition?.owners.length
+              ? definition.owners.some((defOwner) => isEqual(defOwner, owner))
+              : false,
+          )
+        ) {
           return false;
         }
       }
       if (filters.tags?.length) {
-        console.log(6);
         if (!doesFilterArrayMatchValueArray(filters.tags, definition?.tags ?? [])) {
           return false;
         }
