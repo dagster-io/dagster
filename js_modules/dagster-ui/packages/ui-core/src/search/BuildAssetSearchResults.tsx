@@ -22,7 +22,7 @@ type CountPerTag = {
   assetCount: number;
 };
 
-type CountPerGroupName = {
+export type CountPerGroupName = {
   assetCount: number;
   groupMetadata: GroupMetadata;
 };
