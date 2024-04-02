@@ -160,7 +160,7 @@ Ensure that these variables are defined in your environment; either in your `.en
 
 ## Step 4: Define a DagsterDltResource
 
-The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a dlt pipeline runner. This resource is shared across dlt pipelines; create an instance of this resource in the file in which you define resources. We will register the resource to our <PyObject module="dagster" object="Definitions" /> in a later step.
+The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" /> provides a wrapper of a dlt pipeline runner. This resource is shared across dlt pipelines. We will register the resource to our <PyObject module="dagster" object="Definitions" /> in a later step.
 
 ```python
 from dagster_embedded_elt.dlt import DagsterDltResource
@@ -172,7 +172,7 @@ dlt_resource = DagsterDltResource()
 
 ## Step 5: Create a dlt_assets definition for GitHub
 
-The `@dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and create a `dlt_pipeline` to ingest data from Github to Snowflake. In the file in which you define your assets, you can create create an instance of your `@dlt_assets` like so:
+The `@dlt_assets` decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and create a `dlt_pipeline` to ingest data from Github to Snowflake. In the file in which you define your Dagster assets, you can create create an instance of your `@dlt_assets` like so:
 
 ```python
 from dagster import AssetExecutionContext, Definitions
