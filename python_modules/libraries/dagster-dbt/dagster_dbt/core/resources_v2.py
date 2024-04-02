@@ -6,6 +6,7 @@ import signal
 import subprocess
 import sys
 import uuid
+from argparse import Namespace
 from contextlib import suppress
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
@@ -47,7 +48,12 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dagster._utils.warnings import disable_dagster_warnings
+from dbt.adapters.base.impl import BaseAdapter
+from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
+from dbt.config import RuntimeConfig
+from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
+from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
@@ -81,7 +87,10 @@ from ..dbt_manifest import (
     validate_manifest,
 )
 from ..errors import DagsterDbtCliRuntimeError
-from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
+from ..utils import (
+    ASSET_RESOURCE_TYPES,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
+)
 
 logger = get_dagster_logger()
 
@@ -480,6 +489,7 @@ class DbtCliInvocation:
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
+    adapter: Optional[BaseAdapter] = field(default=None)
     _stdout: List[str] = field(init=False, default_factory=list)
     _error_messages: List[str] = field(init=False, default_factory=list)
 
@@ -494,6 +504,7 @@ class DbtCliInvocation:
         target_path: Path,
         raise_on_error: bool,
         context: Optional[OpExecutionContext],
+        adapter: Optional[BaseAdapter],
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -535,6 +546,7 @@ class DbtCliInvocation:
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
+            adapter=adapter,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
@@ -1007,6 +1019,22 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
+    def _initialize_adapter(self, args: Sequence[str]) -> BaseAdapter:
+        # constructs a dummy set of flags, using the `run` command (ensures profile/project reqs get loaded)
+        profiles_dir = self.profiles_dir if self.profiles_dir else self.project_dir
+        set_from_args(Namespace(profiles_dir=profiles_dir), None)
+        flags = get_flags()
+
+        profile = load_profile(self.project_dir, {}, self.profile, self.target)
+        project = load_project(self.project_dir, False, profile, {})
+        config = RuntimeConfig.from_parts(project, profile, flags)
+
+        register_adapter(config)
+        adapter = cast(BaseAdapter, get_adapter(config))
+        # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
+        reset_adapters()
+        return adapter
+
     @public
     def cli(
         self,
@@ -1227,6 +1255,12 @@ class DbtCliResource(ConfigurableResource):
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
+        try:
+            adapter = self._initialize_adapter(args)
+        except:
+            # defer exceptions until they can be raised in the runtime context of the invocation
+            adapter = None
+
         return DbtCliInvocation.run(
             args=args,
             env=env,
@@ -1236,6 +1270,7 @@ class DbtCliResource(ConfigurableResource):
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
+            adapter=adapter,
         )
 
 
