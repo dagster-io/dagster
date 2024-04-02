@@ -119,7 +119,7 @@ describe('filterAssetDefinition', () => {
     expect(filterAssetDefinition(filters, definition)).toBe(true);
   });
 
-  it.only('returns true when all provided filters exactly match the definition', () => {
+  it('returns true when all provided filters exactly match the definition', () => {
     const tag = buildDefinitionTag({
       key: 'test',
       value: 'test',

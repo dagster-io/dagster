@@ -146,7 +146,7 @@ export const AssetsCatalogTable = ({
   );
 
   const filtered = React.useMemo(
-    () => pathMatches.filter((a) => filterFn(a.definition)),
+    () => pathMatches.filter((a) => filterFn(a.definition ?? {})),
     [filterFn, pathMatches],
   );
 
