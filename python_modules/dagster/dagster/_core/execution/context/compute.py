@@ -175,9 +175,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @property
     def dagster_run(self) -> DagsterRun:
-        """PipelineRun: The current pipeline run."""
+        """DagsterRun: The current run."""
         return self._step_execution_context.dagster_run
 
+    @public
     @property
     def run(self) -> DagsterRun:
         """DagsterRun: The current run."""
