@@ -184,9 +184,6 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get(self, asset_key: AssetKey) -> T_AssetNode:
         return self._asset_nodes_by_key[asset_key]
 
-    def get_for_check(self, asset_key: AssetCheckKey) -> T_AssetNode:
-        return self._asset_nodes_by_check_key[asset_key]
-
     @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
         return {

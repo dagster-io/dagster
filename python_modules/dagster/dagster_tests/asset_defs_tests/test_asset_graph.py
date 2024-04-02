@@ -20,6 +20,7 @@ from dagster import (
     asset,
     graph,
     multi_asset,
+    multi_asset_check,
     op,
     repository,
 )
@@ -768,6 +769,9 @@ def test_required_assets_and_checks_by_key_check_decorator(
     assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check0.check_keys))) == {
         AssetCheckKey(asset0.key, "check0")
     }
+    assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check1.check_keys))) == {
+        AssetCheckKey(asset0.key, "check1")
+    }
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
@@ -849,4 +853,39 @@ def test_required_assets_and_checks_by_key_multi_asset_single_asset(
     asset_graph = asset_graph_from_assets([asset_fn])
 
     for key in [AssetKey(["asset0"]), foo_check.key, bar_check.key]:
+        assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
+
+
+def test_multi_asset_check(
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
+):
+    @asset
+    def asset0(): ...
+
+    foo_check = AssetCheckSpec(name="foo", asset="asset0")
+    bar_check = AssetCheckSpec(name="bar", asset="asset0")
+
+    @multi_asset_check(
+        specs=[foo_check, bar_check],
+    )
+    def multi_check_1(): ...
+
+    biz_check = AssetCheckSpec(name="biz", asset="asset0")
+    buz_check = AssetCheckSpec(name="buz", asset="asset0")
+
+    @multi_asset_check(
+        specs=[biz_check, buz_check],
+        can_subset=True,
+    )
+    def multi_check_2(): ...
+
+    asset_graph = asset_graph_from_assets([asset0, multi_check_1, multi_check_2])
+
+    for key in [foo_check.key, bar_check.key]:
+        assert asset_graph.get_execution_set_asset_and_check_keys(key) == {
+            foo_check.key,
+            bar_check.key,
+        }
+
+    for key in [biz_check.key, buz_check.key]:
         assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
