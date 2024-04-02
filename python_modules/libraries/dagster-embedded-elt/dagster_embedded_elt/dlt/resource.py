@@ -36,7 +36,7 @@ class DagsterDltResource(ConfigurableResource):
         from pendulum import DateTime
 
         try:
-            from pendulum import Timezone
+            from pendulum import Timezone  # type: ignore
 
             casted_instance_types = (DateTime, Timezone)
         except ImportError:
