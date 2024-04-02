@@ -1,5 +1,5 @@
 ---
-title: "Dagster & Sling"
+title: "Sling & Dagster | Dagster Docs"
 description: Replicate data across systems using the Sling integration
 ---
 
@@ -143,7 +143,7 @@ Next, define a Sling asset using the <PyObject module="dagster_embedded_elt.slin
 
 Each stream will render two assets, one for the source stream and one for the target destination. You can override how assets are named by passing in a custom <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" /> object.
 
-```python file=/integrations/embedded_elt/sling_dagster_translator.py
+```python file=/integrations/embedded_elt/sling_dagster_translator.py lines=1-16
 from dagster_embedded_elt.sling import (
     SlingResource,
     sling_assets,
@@ -160,8 +160,15 @@ def my_assets(context, sling: SlingResource):
     yield from sling.replicate(context=context)
     for row in sling.stream_raw_logs():
         context.log.info(row)
+```
 
+---
 
+## Step 4: Create the Definitions object
+
+The last step is to include the Sling assets and resource in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
+
+```python file=/integrations/embedded_elt/sling_dagster_translator.py lines=19-26
 defs = Definitions(
     assets=[
         my_assets,
