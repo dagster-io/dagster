@@ -9,8 +9,6 @@ import {
 import {filterAssetDefinition} from '../useAssetDefinitionFilterState';
 
 describe('filterAssetDefinition', () => {
-  // Assuming isEqual, buildAssetGroupSelector, and doesFilterArrayMatchValueArray are mocked appropriately as previously described
-
   it('returns false when no definition is provided', () => {
     const filters = {
       repos: [{location: 'location1', name: 'repo1'}],
