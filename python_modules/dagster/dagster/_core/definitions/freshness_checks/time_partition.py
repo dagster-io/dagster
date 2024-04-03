@@ -22,8 +22,8 @@ def build_time_partition_freshness_checks(
     deadline_cron: str,
     timezone: str = DEFAULT_FRESHNESS_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
-) -> Sequence[AssetChecksDefinition]:
-    r"""For each provided time-window partitioned asset, constructs a freshness check definition.
+) -> AssetChecksDefinition:
+    r"""Construct an `AssetChecksDefinition` that checks the freshness of the provided assets.
 
     This check passes if the asset is considered "fresh" by the time that execution begins. We
     consider an asset to be "fresh" if there exists a record for the most recent partition, once
@@ -55,7 +55,7 @@ def build_time_partition_freshness_checks(
             # of 9:00 AM UTC
             from .somewhere import my_daily_scheduled_assets_def
 
-            checks = build_time_partition_freshness_checks(
+            checks_def = build_time_partition_freshness_checks(
                 [my_daily_scheduled_assets_def],
                 deadline_cron="0 9 * * *",
             )
@@ -71,8 +71,8 @@ def build_time_partition_freshness_checks(
             not provided, defaults to "UTC".
 
     Returns:
-        Sequence[AssetChecksDefinition]: A list of `AssetChecksDefinition` objects, each
-            corresponding to an asset in the `assets` parameter.
+        AssetChecksDefinition: An `AssetChecksDefinition` object, which can execute a freshness
+            check for each provided asset.
     """
     return build_freshness_checks_for_assets(
         assets=assets,
