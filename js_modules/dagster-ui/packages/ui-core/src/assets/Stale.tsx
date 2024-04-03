@@ -24,25 +24,42 @@ import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
 type StaleDataForNode = {
-  staleCauses?: LiveDataForNode['staleCauses'];
-  staleStatus?: LiveDataForNode['staleStatus'];
-};
-export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
-  liveData && liveData.staleStatus === StaleStatus.MISSING;
+  staleCauses: LiveDataForNode['staleCauses'];
+  staleStatus: LiveDataForNode['staleStatus'];
 
-export const isAssetStale = (
+  // May be omitted when showing staleness for a single partition
+  partitionStats?: LiveDataForNode['partitionStats'];
+};
+
+export const isAssetMissing = (
+  liveData?: Pick<StaleDataForNode, 'staleStatus' | 'partitionStats'>,
+) => {
+  if (!liveData) {
+    return false;
+  }
+  const {partitionStats, staleStatus} = liveData;
+
+  return partitionStats
+    ? partitionStats.numPartitions -
+        partitionStats.numMaterializing -
+        partitionStats.numMaterialized >
+        0
+    : staleStatus === StaleStatus.MISSING;
+};
+
+export const isAssetStaleAll = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) => {
+  return liveData && liveData.staleStatus === StaleStatus.STALE;
+};
+
+export const isAssetStaleFiltered = (
   assetKey: AssetKeyInput,
-  liveData?: Pick<StaleDataForNode, 'staleStatus'>,
-  include: 'all' | 'upstream' | 'self' = 'all',
+  liveData: Pick<StaleDataForNode, 'staleStatus' | 'staleCauses'> | undefined,
+  include: 'upstream' | 'self',
 ) => {
   if (liveData && liveData.staleStatus === StaleStatus.STALE) {
-    if (include === 'all') {
-      return true;
-    } else {
-      const grouped = groupedCauses(assetKey, include, liveData);
-      const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
-      return totalCauses > 0;
-    }
+    const grouped = groupedCauses(assetKey, include, liveData);
+    const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+    return totalCauses > 0;
   }
   return false;
 };
@@ -93,7 +110,12 @@ export const StaleReasonsLabel = ({
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
 }) => {
-  if (!isAssetStale(assetKey, liveData, include)) {
+  const isStale =
+    include === 'all'
+      ? isAssetStaleAll(liveData)
+      : isAssetStaleFiltered(assetKey, liveData, include);
+
+  if (!isStale) {
     return null;
   }
 
@@ -185,7 +207,7 @@ export const StaleCausesPopover = ({
 function groupedCauses(
   assetKey: AssetKeyInput,
   include: 'all' | 'upstream' | 'self',
-  liveData?: StaleDataForNode,
+  liveData?: Pick<StaleDataForNode, 'staleStatus' | 'staleCauses'>,
 ) {
   const all = (liveData?.staleCauses || [])
     .map((cause) => {

@@ -13,5 +13,12 @@ export type AssetStaleStatusQuery = {
     id: string;
     staleStatus: Types.StaleStatus | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    partitionStats: {
+      __typename: 'PartitionStats';
+      numMaterialized: number;
+      numMaterializing: number;
+      numPartitions: number;
+      numFailed: number;
+    } | null;
   }>;
 };
