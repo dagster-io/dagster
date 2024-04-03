@@ -1,15 +1,18 @@
-import {Box, Menu, MenuDivider, MenuItem} from '@dagster-io/ui-components';
+import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
   AssetKeysDialog,
   AssetKeysDialogEmptyState,
   AssetKeysDialogHeader,
 } from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {MenuLink} from '../ui/MenuLink';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
 export type AssetNodeMenuProps = {
@@ -47,11 +50,30 @@ export const useAssetNodeMenu = ({
     onChangeExplorerPath({...explorerPath, opsQuery: nextOpsQuery}, 'push');
   }
 
+  const {liveData} = useAssetLiveData(node.assetKey, 'context-menu');
+  const lastExecutionRunID = liveData?.lastMaterialization?.runId;
+
   return {
     menu: (
       <Menu>
+        <MenuLink
+          to={assetDetailsPathForKey(node.assetKey)}
+          text="View asset details"
+          icon="asset"
+        />
+        <MenuLink
+          icon="history"
+          disabled={!lastExecutionRunID}
+          to={`/runs/${lastExecutionRunID}`}
+          text={
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              View latest execution {liveData ? null : <Spinner purpose="body-text" />}
+            </Box>
+          }
+        />
+        {executeItem ? <MenuDivider /> : null}
         {executeItem}
-        {upstream.length || downstream.length ? <MenuDivider /> : null}
+        {executeItem && (upstream.length || downstream.length) ? <MenuDivider /> : null}
         {upstream.length ? (
           <MenuItem
             text={`View parents (${upstream.length})`}
