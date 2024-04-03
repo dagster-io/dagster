@@ -46,6 +46,9 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import (
@@ -199,6 +202,7 @@ class ExecutionData(NamedTuple):
     scoped_resources_builder: ScopedResourcesBuilder
     resolved_run_config: ResolvedRunConfig
     job_def: JobDefinition
+    repository_def: Optional[RepositoryDefinition]
 
 
 class IStepContext(IPlanContext):
@@ -346,6 +350,14 @@ class PlanExecutionContext(IPlanContext):
     @property
     def job_def(self) -> JobDefinition:
         return self._execution_data.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        check.invariant(
+            self._execution_data.repository_def is not None,
+            "No repository definition was set on the step context",
+        )
+        return cast(RepositoryDefinition, self._execution_data.repository_def)
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
@@ -626,6 +638,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def job_def(self) -> "JobDefinition":
         return self._execution_data.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        check.invariant(
+            self._execution_data.repository_def is not None,
+            "No repository definition was set on the step context",
+        )
+        return cast(RepositoryDefinition, self._execution_data.repository_def)
 
     @property
     def op(self) -> OpNode:
@@ -1383,6 +1403,10 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeLoaderContext, self).job_def
+
+    @property
+    def repository_def(self) -> "RepositoryDefinition":
+        return super(DagsterTypeLoaderContext, self).repository_def
 
     @public
     @property

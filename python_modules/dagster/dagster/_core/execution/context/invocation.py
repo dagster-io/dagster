@@ -30,6 +30,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
     ResourceDefinition,
@@ -444,6 +445,10 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
     @property
     def job_def(self) -> JobDefinition:
         raise DagsterInvalidPropertyError(_property_msg("job_def", "property"))
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("repository_def", "property"))
 
     @property
     def job_name(self) -> str:

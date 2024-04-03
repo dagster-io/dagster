@@ -90,6 +90,7 @@ def test_deprecation_warnings():
         "partition_keys",
         "retry_number",
         "op_execution_context",
+        "repository_def",
     ]
 
     other_ignores = [
