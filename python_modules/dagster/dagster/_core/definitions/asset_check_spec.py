@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
+ASSET_CHECK_KEY_USER_STRING_DELIMITER = "?"
+
 
 @whitelist_for_serdes
 class AssetCheckSeverity(Enum):
@@ -51,7 +53,9 @@ class AssetCheckKey(NamedTuple):
         return self._replace(asset_key=self.asset_key.with_prefix(prefix))
 
     def to_user_string(self) -> str:
-        return f"{self.asset_key.to_user_string()}:{self.name}"
+        return (
+            f"{self.asset_key.to_user_string()}{ASSET_CHECK_KEY_USER_STRING_DELIMITER}{self.name}"
+        )
 
 
 class AssetCheckSpec(

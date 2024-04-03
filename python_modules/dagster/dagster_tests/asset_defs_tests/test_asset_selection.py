@@ -654,7 +654,7 @@ def test_to_string_basic():
         == "key_prefix:(marketing or foo/bar)"
     )
     assert (
-        str(AssetSelection.checks(AssetCheckKey(AssetKey("foo"), "bar"))) == "asset_check:foo:bar"
+        str(AssetSelection.checks(AssetCheckKey(AssetKey("foo"), "bar"))) == "asset_check:foo?bar"
     )
     assert (
         str(
@@ -662,7 +662,7 @@ def test_to_string_basic():
                 AssetCheckKey(AssetKey("foo"), "bar"), AssetCheckKey(AssetKey("baz"), "qux")
             )
         )
-        == "asset_check:(foo:bar or baz:qux)"
+        == "asset_check:(foo?bar or baz?qux)"
     )
 
     assert (
