@@ -20,6 +20,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -306,10 +307,21 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
+@experimental
 class AssetCondition(ABC):
     """An AssetCondition represents some state of the world that can influence if an asset
-    partition should be materialized or not. AutomationConditions can be combined together to create
+    partition should be materialized or not. AssetConditions can be combined to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import AssetCondition, AutoMaterializePolicy
+
+            # At least one parent is newer and no parent is missing.
+            my_policy = AutoMaterializePolicy(
+                asset_condition = AssetCondition.parent_newer() & ~AssetCondition.parent_missing()
+            )
     """
 
     @property
@@ -329,13 +341,13 @@ class AssetCondition(ABC):
         raise NotImplementedError()
 
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
-        # group AndAutomationConditions together
+        # group AndAssetConditions together
         if isinstance(self, AndAssetCondition):
             return AndAssetCondition(children=[*self.children, other])
         return AndAssetCondition(children=[self, other])
 
     def __or__(self, other: "AssetCondition") -> "AssetCondition":
-        # group OrAutomationConditions together
+        # group OrAssetConditions together
         if isinstance(self, OrAssetCondition):
             return OrAssetCondition(children=[*self.children, other])
         return OrAssetCondition(children=[self, other])
