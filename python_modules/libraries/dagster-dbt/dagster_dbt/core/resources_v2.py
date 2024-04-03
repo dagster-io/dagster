@@ -1182,6 +1182,10 @@ class DbtCliResource(ConfigurableResource):
 
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
+            # Allow IO streaming when running in Windows.
+            # Also, allow it to be overriden by the current environment.
+            "PYTHONLEGACYWINDOWSSTDIO": "1",
+            # Pass the current environment variables to the dbt CLI invocation.
             **os.environ.copy(),
             # An environment variable to indicate that the dbt CLI is being invoked from Dagster.
             "DAGSTER_DBT_CLI": "true",
