@@ -19,7 +19,7 @@ import {
   ADDITIONAL_REQUIRED_KEYS_WARNING,
   MULTIPLE_DEFINITIONS_WARNING,
 } from './AssetDefinedInMultipleReposNotice';
-import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
+import {CalculateUnsyncedDialog} from './CalculateUnsyncedDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
@@ -188,7 +188,7 @@ export const LaunchAssetExecutionButton = ({
 
   const {MaterializeButton} = useLaunchPadHooks();
 
-  const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
+  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
     React.useState<boolean>(false);
 
   const {
@@ -225,10 +225,10 @@ export const LaunchAssetExecutionButton = ({
 
   return (
     <>
-      <CalculateChangedAndMissingDialog
-        isOpen={!!showCalculatingChangedAndMissingDialog}
+      <CalculateUnsyncedDialog
+        isOpen={showCalculatingUnsyncedDialog}
         onClose={() => {
-          setShowCalculatingChangedAndMissingDialog(false);
+          setShowCalculatingUnsyncedDialog(false);
         }}
         assets={inScope}
         onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {
@@ -276,7 +276,7 @@ export const LaunchAssetExecutionButton = ({
                 <MenuItem
                   text="Materialize unsynced"
                   icon="changes_present"
-                  onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
+                  onClick={() => setShowCalculatingUnsyncedDialog(true)}
                 />
               ) : null}
               <MenuItem
