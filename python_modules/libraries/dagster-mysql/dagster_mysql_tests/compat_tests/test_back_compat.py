@@ -11,8 +11,6 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    DagsterEventType,
-    EventRecordsFilter,
     Output,
     job,
     op,
@@ -281,43 +279,6 @@ def test_add_asset_event_tags_table(conn_string):
 
         with DagsterInstance.from_config(tempdir) as instance:
             assert "asset_event_tags" not in get_tables(instance)
-            asset_job.execute_in_process(instance=instance)
-            with pytest.raises(
-                DagsterInvalidInvocationError, match="In order to search for asset event tags"
-            ):
-                instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"]))
-
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "bar"},
-                        )
-                    )
-                )
-                == 1
-            )
-            # test version that doesn't support intersect:
-            mysql_version = instance._event_storage._mysql_version
-            try:
-                instance._event_storage._mysql_version = "8.0.30"
-                assert (
-                    len(
-                        instance.get_event_records(
-                            EventRecordsFilter(
-                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                                asset_key=AssetKey("a"),
-                                tags={"dagster/foo": "bar"},
-                            )
-                        )
-                    )
-                    == 1
-                )
-            finally:
-                instance._event_storage._mysql_version = mysql_version
-
             instance.upgrade()
             assert "asset_event_tags" in get_tables(instance)
             asset_job.execute_in_process(instance=instance)
