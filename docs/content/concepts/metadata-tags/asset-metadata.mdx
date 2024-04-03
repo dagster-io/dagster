@@ -1,0 +1,128 @@
+---
+title: "Defining asset metadata | Dagster Docs"
+description: TODO
+---
+
+# Asset metadata
+
+Attaching metadata to assets can help make your pipelines easy for you and other team members to understand. Data about your data (assets) can be attached to both asset definitions and materializations.
+
+In this guide, we'll show you how to define and attach metadata to assets, how to view the metadata in the Dagster UI, and TODO
+
+---
+
+## How it works
+
+There are two main types of metadata in Dagster:
+
+- **Definition metadata** is information that's fixed or doesn't frequently change. For example, definition metadata could be:
+- **Runtime metadata** is information that changes after an action occurs. This could be how many records were processed, how long an asset took to materialize, etc.
+
+Attaching metadata to an asset is done using the `metadata` argument and a dictionary of key/value pairs. Keys must be a string, but values can:
+
+- Be any of the <PyObject object="MetadataValue" /> classes provided by Dagster
+- Primitive Python types, which Dagster will convert to the appropriate <PyObject object="MetadataValue" />
+
+How metadata is attached to an asset depends on the type of metadata being attached. Refer to the following sections for more details.
+
+---
+
+## Defining metadata
+
+### Definition metadata
+
+Definition metadata is attached to the asset's definition using the `metadata` argument. This could be information like:
+
+- The columns an asset is expected to contain
+- A link to source file in Github that contains the code that defines the asset or job
+
+In the following example, we attached a list of columns the table produced by the asset should contain:
+
+```python file=/concepts/assets/asset_definition_metadata.py startafter=start endbefore=end
+from dagster_duckdb import DuckDBResource
+
+from dagster import asset
+
+
+@asset(
+    deps=[iris_dataset],
+    metadata={
+        "Expected columns": "sepal_length_cm, sepal_width_cm, petal_length_cm, petal_width_cm, species"
+    },
+)
+def small_petals(duckdb: DuckDBResource) -> None:
+    with duckdb.get_connection() as conn:
+        conn.execute(
+            "CREATE TABLE iris.small_petals AS SELECT * FROM iris.iris_dataset WHERE"
+            " 'petal_length_cm' < 1 AND 'petal_width_cm' < 1"
+        )
+```
+
+### Runtime metadata
+
+To add runtime, or materialization, metadata to an asset, you'll need to:
+
+- Return a <PyObject object="MaterializeResult" /> object with the `metadata` parameter
+- Use the <PyObject object="MetadataValue" /> utility class to wrap the data, ensuring it displays correctly in the UI
+
+In the following example, we added a row count and preview to a `topstories` asset:
+
+```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py lines=3-5,13,16-42
+import json
+import requests
+import pandas as pd
+from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult
+
+
+@asset(deps=[topstory_ids])
+def topstories(context: AssetExecutionContext) -> MaterializeResult:
+    with open("data/topstory_ids.json", "r") as f:
+        topstory_ids = json.load(f)
+
+    results = []
+    for item_id in topstory_ids:
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
+        results.append(item)
+
+        if len(results) % 20 == 0:
+            context.log.info(f"Got {len(results)} items so far.")
+
+    df = pd.DataFrame(results)
+    df.to_csv("data/topstories.csv")
+
+    return MaterializeResult(
+        metadata={
+            "num_records": len(df),  # Metadata can be any key-value pair
+            "preview": MetadataValue.md(df.head().to_markdown()),
+            # The `MetadataValue` class has useful static methods to build Metadata
+        }
+    )
+```
+
+---
+
+## Viewing asset metadata in the Dagster UI
+
+Metadata attached to assets will show up in a few places in the [Dagster UI](/concepts/webserver/ui).
+
+In the [**Global asset lineage**](/concepts/webserver/ui#global-asset-lineage)
+
+In the [**Asset details** page](/concepts/webserver/ui#asset-details)
+
+Runtime metadata: If it's numeric, it will be plotted.
+
+---
+
+## APIs in this guide
+
+| Name                                    | Description                        |
+| --------------------------------------- | ---------------------------------- |
+| <PyObject object="asset" decorator />   | A decorator used to define assets. |
+| <PyObject object="MaterializeResult" /> |                                    |
+| <PyObject object="MetadataValue" />     |                                    |
+
+---
+
+## Related
