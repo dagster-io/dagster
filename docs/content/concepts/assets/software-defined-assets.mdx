@@ -198,7 +198,7 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 
 ### Asset context
 
-When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject object="AssetExecutionContext"/> object to the body of the asset which provides access to system information like loggers and the current run id.
+When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject object="AssetExecutionContext"/> object to the body of the asset which provides access to system information like loggers and the current run ID.
 
 For example, to access the logger and log an info message:
 
@@ -224,6 +224,10 @@ def asset_with_version():
 ```
 
 When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
+
+### Defining metadata and tags
+
+Dagster offers several ways to provide useful information and documentation alongside your data pipelines, including metadata and tagging. Check out the [Metadata & tags](/concepts/metadata-tags) documentation to get started.
 
 ### Retrying failed assets
 
@@ -506,7 +510,6 @@ def test_uses_context():
 ## Examples
 
 - [Multi-component asset keys](#multi-component-asset-keys)
-- [Defining metadata](#defining-metadata)
 
 ### Multi-component asset keys
 
@@ -525,10 +528,6 @@ def upstream_asset():
 def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
-
-### Defining metadata and tags
-
-Dagster offers several ways to provide useful information and documentation alongside your data pipelines, including metadata and tagging. Check out the [Metadata & tags](/concepts/metadata-tags) documentation to get started.
 
 ---
 
