@@ -629,13 +629,13 @@ def test_dbt_config_group(test_meta_config_manifest: Dict[str, Any]) -> None:
         # If a model has a Dagster group name specified under `meta`, use that.
         AssetKey(["customized", "staging", "customers"]): "customized_dagster_group",
         # If a model has a dbt group name specified under `group`, use that.
-        AssetKey(["customized", "staging", "orders"]): "customized_dbt_group",
+        AssetKey(["customized", "staging", "orders"]): "customized_dbt_model_group",
         # If a model has both a Dagster group and dbt group, use the Dagster group.
         AssetKey(["customized", "staging", "payments"]): "customized_dagster_group",
         AssetKey(["orders"]): "default",
-        AssetKey(["raw_customers"]): "default",
-        AssetKey(["raw_orders"]): "default",
-        AssetKey(["raw_payments"]): "default",
+        AssetKey(["raw_customers"]): "customized_dbt_seed_group",
+        AssetKey(["raw_orders"]): "customized_dbt_seed_group",
+        AssetKey(["raw_payments"]): "customized_dbt_seed_group",
     }
 
 
@@ -649,7 +649,8 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
 
 
 def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
-    expected_dbt_owners = [UserAssetOwner("kafka@amerika.com")]
+    expected_dbt_model_owners = [UserAssetOwner("kafka@amerika.com")]
+    expected_dbt_seed_owners = [UserAssetOwner("kafka@judgment.com")]
     expected_dagster_owners = [UserAssetOwner("kafka@castle.com")]
 
     @dbt_assets(manifest=test_meta_config_manifest)
@@ -660,13 +661,13 @@ def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
         # If a model has Dagster owners specified under `meta`, use that.
         AssetKey(["customized", "staging", "customers"]): [],
         # If a model has a dbt owner specified under `group`, use that.
-        AssetKey(["customized", "staging", "orders"]): expected_dbt_owners,
+        AssetKey(["customized", "staging", "orders"]): expected_dbt_model_owners,
         # If a model has both Dagster owners and a dbt owner, use the Dagster owner.
         AssetKey(["customized", "staging", "payments"]): expected_dagster_owners,
         AssetKey(["orders"]): [],
-        AssetKey(["raw_customers"]): [],
-        AssetKey(["raw_orders"]): [],
-        AssetKey(["raw_payments"]): [],
+        AssetKey(["raw_customers"]): expected_dbt_seed_owners,
+        AssetKey(["raw_orders"]): expected_dbt_seed_owners,
+        AssetKey(["raw_payments"]): expected_dbt_seed_owners,
     }
 
 
