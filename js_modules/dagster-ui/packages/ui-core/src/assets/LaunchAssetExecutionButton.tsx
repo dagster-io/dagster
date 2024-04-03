@@ -226,7 +226,7 @@ export const LaunchAssetExecutionButton = ({
   return (
     <>
       <CalculateUnsyncedDialog
-        isOpen={!!showCalculatingUnsyncedDialog}
+        isOpen={showCalculatingUnsyncedDialog}
         onClose={() => {
           setShowCalculatingUnsyncedDialog(false);
         }}
