@@ -1,12 +1,7 @@
 import {LiveDataThreadManager} from './LiveDataThreadManager';
 import {BATCHING_INTERVAL} from './util';
 
-export type LiveDataThreadID =
-  | 'default'
-  | 'sidebar'
-  | 'asset-graph'
-  | 'group-node'
-  | 'context-menu';
+export type LiveDataThreadID = 'default' | 'sidebar' | 'group-node' | 'context-menu';
 
 export class LiveDataThread<T> {
   private isFetching: boolean = false;
