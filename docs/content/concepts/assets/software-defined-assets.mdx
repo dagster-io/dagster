@@ -506,8 +506,7 @@ def test_uses_context():
 ## Examples
 
 - [Multi-component asset keys](#multi-component-asset-keys)
-- [Recording materialization metadata](#recording-materialization-metadata)
-- [Attaching definition metadata](#attaching-definition-metadata)
+- [Defining metadata](#defining-metadata)
 
 ### Multi-component asset keys
 
@@ -527,45 +526,9 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
 
-### Recording materialization metadata
+### Defining metadata and tags
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
-
-```python file=/concepts/assets/asset_materialization_metadata.py
-from pandas import DataFrame
-
-from dagster import Output, asset
-
-
-@asset
-def table1() -> Output[DataFrame]:
-    df = DataFrame({"col1": [1, 2], "col2": [3, 4]})
-    return Output(df, metadata={"num_rows": df.shape[0]})
-```
-
-This works even if you're not returning an object from your decorated function:
-
-```python file=/concepts/assets/asset_materialization_metadata_none.py
-from dagster import Output, asset
-
-
-@asset
-def table1() -> Output[None]:
-    ...  # write out some data to table1
-    return Output(None, metadata={"num_rows": 25})
-```
-
-### Attaching definition metadata
-
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in the UI. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
-
-To attach metadata, supply a `metadata` dictionary to the asset:
-
-```python file=/concepts/assets/asset_definition_metadata.py startafter=start_example endbefore=end_example
-@asset(metadata={"priority": "high"})
-def my_asset():
-    return 5
-```
+Dagster offers several ways to provide useful information and documentation alongside your data pipelines, including metadata and tagging. Check out the [Metadata & tags](/concepts/metadata-tags) documentation to get started.
 
 ---
 
