@@ -136,11 +136,12 @@ height={1514}
 
 - **Description**: The **Asset details** page contains details about a single asset. Use the tabs on this page to view detailed information about the asset:
 
+  - **Overview** - Information about the asset such as its description, resources, config, type, etc. If you have the **Use new asset overview page** [user setting](/concepts/webserver/ui-user-settings) enabled, this tab will display instead of **Definition**.
   - **Partitions** - The asset's partitions, including their materialization status, metadata, and run information
   - **Events** - The asset's materialization history
   - **Checks** - The [Asset checks](/concepts/assets/asset-checks) defined for the asset
   - **Plots** - Any plots associated with the asset
-  - **Definition** - Information about the asset such as its description, resources, config, type, etc.
+  - **Definition** - The same information as the **Overview** tab. This tab will display if the **Use new asset overview page** user setting isn't enabled.
   - **Lineage** - The asset's lineage in the [**Global asset lineage** page](#global-asset-lineage)
   - **Automation** - The [Auto-materialize policies](/concepts/assets/asset-auto-execution) associated with the asset
   - **Insights** - **Cloud only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster Cloud Insights](/dagster-cloud/insights) documentation for more information.
