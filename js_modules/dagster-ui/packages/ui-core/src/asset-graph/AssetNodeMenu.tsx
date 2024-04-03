@@ -72,7 +72,7 @@ export const useAssetNodeMenu = ({
             text={
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                 View latest {isSource ? 'observation' : 'materialization'}
-                {liveData ? null : <Spinner purpose="body-text" />}
+                {liveData ? null : <Spinner purpose="caption-text" />}
               </Box>
             }
           />
