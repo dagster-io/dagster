@@ -1,16 +1,19 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
+from dagster._core.code_pointer import load_python_file
+from dagster._core.definitions.load_assets_from_modules import find_objects_in_module_of_types
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
 
+from ..dbt_project import DbtProject
 from ..include import STARTER_PROJECT_PATH
 from ..version import __version__ as dagster_dbt_version
 
@@ -25,7 +28,7 @@ app = typer.Typer(
 project_app = typer.Typer(
     name="project",
     no_args_is_help=True,
-    help="Commands to initialize a new Dagster project with an existing dbt project.",
+    help="Commands for using a dbt project in Dagster.",
     add_completion=False,
 )
 app.add_typer(project_app)
@@ -271,6 +274,81 @@ def project_scaffold_command(
             padding=1,
         ),
     )
+
+
+def prepare_for_deployment(project: DbtProject) -> None:
+    """A method that can be called as part of the deployment process."""
+    if project.manifest_preparer:
+        console.print(
+            f"Preparing project [bold green]{project.project_dir}[/bold green] for deployment with [bold green]{project.manifest_preparer.prepare.__qualname__}[/bold green]."
+        )
+        project.manifest_preparer.prepare(project)
+        console.print("Project preparation complete.")
+
+    if project.packaged_project_dir:
+        sync_project_to_packaged_dir(project)
+
+
+def sync_project_to_packaged_dir(
+    project: DbtProject,
+) -> None:
+    """Sync a `DbtProject`s `project_dir` directory to its `packaged_project_dir`."""
+    if project.packaged_project_dir is None:
+        raise Exception(
+            "sync_project_to_packaged_dir should only be called if `packaged_project_dir` is set."
+        )
+
+    console.print(
+        "Syncing project to package data directory"
+        f" [bold green]{project.packaged_project_dir}[/bold green]."
+    )
+    if project.packaged_project_dir.exists():
+        console.print(
+            f"Removing existing contents at [bold red]{project.packaged_project_dir}[/bold red]."
+        )
+        shutil.rmtree(project.packaged_project_dir)
+
+    # Determine if the package data dir is within the project dir, and ignore
+    # that path if so.
+    rel_path = Path(os.path.relpath(project.packaged_project_dir, project.project_dir))
+    rel_ignore = ""
+    if len(rel_path.parts) > 0 and rel_path.parts[0] != "..":
+        rel_ignore = rel_path.parts[0]
+
+    console.print(
+        f"Copying [bold green]{project.project_dir}[/bold green] to"
+        f" [bold green]{project.packaged_project_dir}[/bold green]."
+    )
+    shutil.copytree(
+        src=project.project_dir,
+        dst=project.packaged_project_dir,
+        ignore=shutil.ignore_patterns(
+            "*.git*",
+            "*partial_parse.msgpack",
+            rel_ignore,
+        ),
+    )
+    console.print("Sync complete.")
+
+
+@project_app.command(name="prepare-for-deployment")
+def project_prepare_for_deployment_command(
+    file: Annotated[
+        str,
+        typer.Option(
+            help="The file containing `DbtProject`'s definitions to prepare.",
+        ),
+    ],
+) -> None:
+    """This command will invoke `prepare_for_deployment` on `DbtProject`s found in the target module/file."""
+    console.print(
+        f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
+    )
+
+    contents = load_python_file(file, working_directory=None)
+    dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(contents, types=DbtProject)
+    for project in dbt_projects:
+        prepare_for_deployment(project)
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)

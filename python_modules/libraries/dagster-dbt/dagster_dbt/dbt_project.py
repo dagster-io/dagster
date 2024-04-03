@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
@@ -63,10 +62,14 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
     def prepare(self, project: "DbtProject") -> None:
         from .core.resources_v2 import DbtCliResource
 
-        DbtCliResource(project_dir=os.fspath(project.project_dir)).cli(
-            self._generate_cli_args,
-            target_path=project.target_dir,
-        ).wait()
+        (
+            DbtCliResource(project_dir=os.fspath(project.project_dir))
+            .cli(
+                self._generate_cli_args,
+                target_path=project.target_dir,
+            )
+            .wait()
+        )
 
 
 @experimental
@@ -76,7 +79,7 @@ class DbtProject(DagsterModel):
     manifest_path: Path
     state_dir: Optional[Path]
     packaged_project_dir: Optional[Path]
-    manifest_preparer: Optional[DbtManifestPreparer]
+    manifest_preparer: DbtManifestPreparer
 
     def __init__(
         self,
@@ -85,7 +88,7 @@ class DbtProject(DagsterModel):
         target_dir: Union[Path, str] = "target",
         state_dir: Optional[Union[Path, str]] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
-        manifest_preparer: Optional[DbtManifestPreparer] = DagsterDbtManifestPreparer(),
+        manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
         """Representation of a dbt project.
 
@@ -130,55 +133,3 @@ class DbtProject(DagsterModel):
         )
         if manifest_preparer:
             manifest_preparer.on_load(self)
-
-    def prepare_for_deployment(self) -> None:
-        prepare_for_deployment(self)
-
-
-def prepare_for_deployment(project: DbtProject) -> None:
-    """A method that can be called as part of the deployment process which runs the
-    following preparation steps if appropriate:
-        * project.manifest_init_fn(project, deploying=True)
-        * sync_project_to_packaged_dir.
-    """
-    if project.manifest_preparer:
-        logger.info(f"Preparing manifest with {project.manifest_preparer.prepare.__qualname__}.")
-        project.manifest_preparer.prepare(project)
-        logger.info("Manifest preparation complete.")
-
-    if project.packaged_project_dir:
-        sync_project_to_packaged_dir(project)
-
-
-def sync_project_to_packaged_dir(
-    project: DbtProject,
-) -> None:
-    """Sync a `DbtProject`s `project_dir` directory to its `packaged_project_dir`."""
-    if project.packaged_project_dir is None:
-        raise Exception(
-            "sync_project_to_packaged_dir should only be called if `packaged_project_dir` is set."
-        )
-
-    logger.info(f"Syncing project to package data directory {project.packaged_project_dir}.")
-    if project.packaged_project_dir.exists():
-        logger.info(f"Removing existing contents at {project.packaged_project_dir}.")
-        shutil.rmtree(project.packaged_project_dir)
-
-    # Determine if the package data dir is within the project dir, and ignore
-    # that path if so.
-    rel_path = Path(os.path.relpath(project.packaged_project_dir, project.project_dir))
-    rel_ignore = ""
-    if len(rel_path.parts) > 0 and rel_path.parts[0] != "..":
-        rel_ignore = rel_path.parts[0]
-
-    logger.info(f"Copying {project.project_dir} to {project.packaged_project_dir}.")
-    shutil.copytree(
-        src=project.project_dir,
-        dst=project.packaged_project_dir,
-        ignore=shutil.ignore_patterns(
-            "*.git*",
-            "*partial_parse.msgpack",
-            rel_ignore,
-        ),
-    )
-    logger.info("Sync complete.")
