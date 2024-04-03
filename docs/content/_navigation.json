@@ -288,16 +288,16 @@
             "path": "/concepts/metadata-tags",
             "children": [
               {
-                "title": "Tags",
-                "path": "/concepts/metadata-tags/tags"
-              },
-              {
                 "title": "Asset metadata",
                 "path": "/concepts/metadata-tags/asset-metadata"
               },
               {
                 "title": "Op job metadata",
                 "path": "/concepts/metadata-tags/op-job-metadata"
+              },
+              {
+                "title": "Tags",
+                "path": "/concepts/metadata-tags/tags"
               }
             ]
           },
