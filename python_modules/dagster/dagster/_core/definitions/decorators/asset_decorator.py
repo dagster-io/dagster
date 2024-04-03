@@ -198,8 +198,8 @@ def asset(
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can return None, which will not be materialized to
             storage and will halt execution of downstream assets.
-        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
-            with respect to its root data.
+        freshness_policy (FreshnessPolicy): (Deprecated) A constraint telling Dagster how often this
+            asset is intended to be updated with respect to its root data.
         auto_materialize_policy (AutoMaterializePolicy): (Experimental) Configure Dagster to automatically materialize
             this asset according to its FreshnessPolicy and when upstream dependencies change.
         backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
