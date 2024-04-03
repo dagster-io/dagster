@@ -52,7 +52,7 @@ export const useAssetNodeMenu = ({
 
   const {liveData} = useAssetLiveData(node.assetKey, 'context-menu');
 
-  const isSource = node.definition?.isExecutable && node.definition.isSource;
+  const isSource = node.definition.isSource;
   const lastMaterializationRunID = liveData?.lastMaterialization?.runId;
   const lastObservationID = liveData?.lastObservation?.runId;
 
