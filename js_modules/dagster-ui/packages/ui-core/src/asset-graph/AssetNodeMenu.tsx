@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {
   AssetKeysDialog,
@@ -45,27 +46,35 @@ export const useAssetNodeMenu = ({
     onChangeExplorerPath({...explorerPath, opsQuery: nextOpsQuery}, 'push');
   }
 
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = React.useContext(CloudOSSContext);
+
   return {
     menu: (
       <Menu>
-        <MenuItem
-          icon="materialization"
-          text={
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <span>Materialize</span>
-              {loading ? <Spinner purpose="body-text" /> : null}
-            </Box>
-          }
-          onClick={async (e) => {
-            await showSharedToaster({
-              intent: 'primary',
-              message: 'Initiating materialization',
-              icon: 'materialization',
-            });
-            onClick([node.assetKey], e, false);
-          }}
-        />
-        {upstream.length || downstream.length ? <MenuDivider /> : null}
+        {canSeeMaterializeAction ? (
+          <>
+            <MenuItem
+              icon="materialization"
+              text={
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                  <span>Materialize</span>
+                  {loading ? <Spinner purpose="body-text" /> : null}
+                </Box>
+              }
+              onClick={async (e) => {
+                await showSharedToaster({
+                  intent: 'primary',
+                  message: 'Initiating materialization',
+                  icon: 'materialization',
+                });
+                onClick([node.assetKey], e, false);
+              }}
+            />
+            {upstream.length || downstream.length ? <MenuDivider /> : null}
+          </>
+        ) : null}
         {upstream.length ? (
           <MenuItem
             text={`View parents (${upstream.length})`}
