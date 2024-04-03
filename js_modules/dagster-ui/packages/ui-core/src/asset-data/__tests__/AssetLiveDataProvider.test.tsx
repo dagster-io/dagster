@@ -429,7 +429,7 @@ describe('AssetLiveDataProvider', () => {
         mocks={[mockedQuery, mockedQuery2]}
         hooks={[
           {keys: assetKeys, thread: 'default', hookResult},
-          {keys: assetKeys2, thread: 'asset-graph', hookResult: hookResult2},
+          {keys: assetKeys2, thread: 'context-menu', hookResult: hookResult2},
         ]}
       />,
     );
