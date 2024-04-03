@@ -29,14 +29,19 @@ interface BackfillPreviewModalProps {
   }[];
   keysFiltered: string[];
   setOpen: (isOpen: boolean) => void;
+  showBackfillPolicies?: boolean;
 }
-const TEMPLATE_COLUMNS = '1fr 1fr 1fr 1fr';
+
+const getTemplateColumns = (showBackfillPolicies: boolean) => {
+  return showBackfillPolicies ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr';
+};
 
 export const BackfillPreviewModal = ({
   isOpen,
   setOpen,
   assets,
   keysFiltered,
+  showBackfillPolicies = true,
 }: BackfillPreviewModalProps) => {
   const assetKeys = useMemo(() => assets.map(asAssetKeyInput), [assets]);
   const parentRef = useRef<HTMLDivElement | null>(null);
@@ -80,7 +85,7 @@ export const BackfillPreviewModal = ({
         style={{maxHeight: '50vh'}}
         data-testid={testId('backfill-preview-modal-content')}
       >
-        <BackfillPreviewTableHeader />
+        <BackfillPreviewTableHeader showBackfillPolicies={showBackfillPolicies} />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, size, start}) => {
             const {assetKey, partitionDefinition, backfillPolicy} = assets[index]!;
@@ -89,17 +94,22 @@ export const BackfillPreviewModal = ({
 
             return (
               <Row key={token} $height={size} $start={start}>
-                <RowGrid border={index < assets.length - 1 ? 'bottom' : undefined}>
+                <RowGrid
+                  showBackfillPolicies={showBackfillPolicies}
+                  border={index < assets.length - 1 ? 'bottom' : undefined}
+                >
                   <RowCell>
                     <AssetLink path={assetKey.path} textStyle="middle-truncate" icon="asset" />
                   </RowCell>
-                  {backfillPolicy ? (
-                    <RowCell style={{color: Colors.textDefault()}}>
-                      {backfillPolicy?.description}
-                    </RowCell>
-                  ) : (
-                    <RowCell>{'\u2013'}</RowCell>
-                  )}
+                  {showBackfillPolicies ? (
+                    backfillPolicy ? (
+                      <RowCell style={{color: Colors.textDefault()}}>
+                        {backfillPolicy?.description}
+                      </RowCell>
+                    ) : (
+                      <RowCell>{'\u2013'}</RowCell>
+                    )
+                  ) : null}
                   {partitionDefinition ? (
                     <RowCell style={{color: Colors.textDefault()}}>
                       {partitionDefinition?.description}
@@ -129,26 +139,30 @@ export const BackfillPreviewModal = ({
   );
 };
 
-const RowGrid = styled(Box)`
+const RowGrid = styled(Box)<{showBackfillPolicies: boolean}>`
   display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
+  grid-template-columns: ${({showBackfillPolicies}) => getTemplateColumns(showBackfillPolicies)};
   height: 100%;
 `;
 
-export const BackfillPreviewTableHeader = () => {
+export const BackfillPreviewTableHeader = ({
+  showBackfillPolicies,
+}: {
+  showBackfillPolicies: boolean;
+}) => {
   return (
     <Box
       border="bottom"
       style={{
         display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
+        gridTemplateColumns: getTemplateColumns(showBackfillPolicies),
         height: '32px',
         fontSize: '12px',
         color: Colors.textLight(),
       }}
     >
       <HeaderCell>Asset key</HeaderCell>
-      <HeaderCell>Backfill policy</HeaderCell>
+      {showBackfillPolicies ? <HeaderCell>Backfill policy</HeaderCell> : null}
       <HeaderCell>Partition definition</HeaderCell>
       <HeaderCell>Partitions to launch</HeaderCell>
     </Box>

@@ -224,6 +224,10 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     (!launchWithRangesAsTags && keysFiltered.length !== 1);
 
   const backfillPolicyVaries = assets.some((a) => a.backfillPolicy !== assets[0]?.backfillPolicy);
+  const isUnsupportedBackfillPolicyContext =
+    target.type === 'job' &&
+    !isHiddenAssetGroupJob(target.jobName) &&
+    assets.some((a) => a.backfillPolicy !== null); // at least one defined backfillPolicy
 
   useEffect(() => {
     !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
@@ -421,12 +425,20 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   };
 
   const previewNotice = (() => {
+    console.log('hi');
     const notices: string[] = [];
     if (target.type === 'pureWithAnchorAsset') {
       notices.push(
         `Dagster will materialize all partitions downstream of the ` +
           `selected partitions for the selected assets, using separate runs
                 ${backfillPolicyVaries ? `and obeying backfill policies.` : `as needed.`}`,
+      );
+    } else if (isUnsupportedBackfillPolicyContext) {
+      notices.push(
+        'Selected assets are part of an asset job, but also have backfill policies set. Individual asset backfill policies ' +
+          'are ignored when assets are materialized as part of an asset job. Please select assets for materialization from the ' +
+          'asset graph view if you would like to use backfill policies. Note that selecting from the asset graph view will prevent ' +
+          "the current job's name, config, and tags from being applied to the launched runs.",
       );
     } else if (backfillPolicyVaries) {
       notices.push(
@@ -644,6 +656,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         keysFiltered={keysFiltered}
         isOpen={previewOpen}
         setOpen={setPreviewOpen}
+        showBackfillPolicies={!isUnsupportedBackfillPolicyContext}
       />
 
       {previewNotice && (
