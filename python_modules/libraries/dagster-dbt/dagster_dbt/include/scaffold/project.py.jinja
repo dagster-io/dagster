@@ -1,0 +1,16 @@
+from pathlib import Path
+
+from dagster_dbt import DbtProject
+
+# This class helps us manage expectations that
+# * If using `dagster dev` (or set the environment variable DAGSTER_DBT_PARSE_PROJECT_ON_LOAD) compile the manifest on load.
+# * If not expect the manifest.json to already be prepared. This can be done by running this file as a script.
+{{ dbt_project_name }} = DbtProject(
+    project_dir = Path(__file__).joinpath({{ dbt_project_dir_relative_path_parts | join(', ')}}).resolve(),
+{% if package_data_dir_relative_parts -%}
+    # For deployment scenarios like using pex, we need the dbt project to be installed as package data
+    # which this class helps manage for us, copying over the directory as part of `prepare`.
+    # For details, see https://docs.python.org/3/distutils/setupscript.html#installing-package-data.
+    packaged_project_dir = Path(__file__).joinpath({{ package_data_dir_relative_parts | join(', ')}}).resolve(),
+{% endif -%}
+)

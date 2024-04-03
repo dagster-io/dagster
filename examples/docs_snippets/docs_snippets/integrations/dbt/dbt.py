@@ -5,27 +5,16 @@ MANIFEST_PATH = ""
 
 def scope_compile_dbt_manifest(manifest):
     # start_compile_dbt_manifest
-    import os
     from pathlib import Path
 
-    from dagster_dbt import DbtCliResource
+    from dagster_dbt import DbtProject
 
-    dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
-
-    # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
-    # Otherwise, we expect a manifest to be present in the project's target directory.
-    if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-        dbt_manifest_path = (
-            dbt.cli(
-                ["--quiet", "parse"],
-                target_path=Path("target"),
-            )
-            .wait()
-            .target_path.joinpath("manifest.json")
-        )
-    else:
-        dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
+    # This class helps us manage expectations that
+    # * If using `dagster dev` (or set the environment variable DAGSTER_DBT_PARSE_PROJECT_ON_LOAD) compile the manifest on load.
+    # * If not expect the manifest.json to already be prepared.
+    dbt_project = DbtProject(
+        project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+    )
     # end_compile_dbt_manifest
 
 

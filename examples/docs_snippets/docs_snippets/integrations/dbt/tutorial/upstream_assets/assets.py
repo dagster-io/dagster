@@ -7,9 +7,9 @@ import pandas as pd
 from dagster import AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets
 
-from .constants import dbt_manifest_path, dbt_project_dir
+from .project import jaffle_shop_project
 
-duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
+duckdb_database_path = jaffle_shop_project.project_dir.joinpath("tutorial.duckdb")
 
 
 @asset(compute_kind="python")
@@ -25,7 +25,7 @@ def raw_customers(context: AssetExecutionContext) -> None:
     context.add_output_metadata({"num_rows": data.shape[0]})
 
 
-@dbt_assets(manifest=dbt_manifest_path)
+@dbt_assets(manifest=jaffle_shop_project.project_dir)
 def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
