@@ -12,7 +12,7 @@ import {
 import {useCallback, useState} from 'react';
 
 import {ShortcutHandler} from './ShortcutHandler';
-import {TopNavButton} from './TopNavButton';
+import {TooltipShortcutInfo, TopNavButton} from './TopNavButton';
 import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -100,7 +100,11 @@ export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}
             </Menu>
           }
         >
-          <Tooltip content="Help" placement="bottom" canShow={!isOpen}>
+          <Tooltip
+            content={<TooltipShortcutInfo label="Help" shortcutKey="?" />}
+            placement="bottom"
+            canShow={!isOpen}
+          >
             <TopNavButton>
               <Icon name="help_circle" size={20} />
             </TopNavButton>

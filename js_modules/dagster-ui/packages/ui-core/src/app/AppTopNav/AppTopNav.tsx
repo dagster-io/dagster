@@ -42,8 +42,7 @@ export const AppTopNav = ({children, allowGlobalReload = false}: Props) => {
               }
             }}
             shortcutLabel={`⌥R - ${reloading ? 'Reloading' : 'Reload all code locations'}`}
-            // On OSX Alt + R creates ®, not sure about windows, so checking 'r' for windows
-            shortcutFilter={(e) => e.altKey && (e.key === '®' || e.key === 'r')}
+            shortcutFilter={(e) => e.altKey && e.code === 'KeyR'}
           >
             <div style={{width: '0px', height: '30px'}} />
           </ShortcutHandler>

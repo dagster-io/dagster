@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -12,7 +12,7 @@ import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {TopNavButton} from '../app/TopNavButton';
+import {TooltipShortcutInfo, TopNavButton} from '../app/TopNavButton';
 import {useTrackEvent} from '../app/analytics';
 import {Trace, createTrace} from '../performance';
 
@@ -212,9 +212,14 @@ export const SearchDialog = () => {
   return (
     <>
       <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <TopNavButton onClick={openSearch}>
-          <Icon name="search" size={20} />
-        </TopNavButton>
+        <Tooltip
+          content={<TooltipShortcutInfo label="Search" shortcutKey="/" />}
+          placement="bottom"
+        >
+          <TopNavButton onClick={openSearch}>
+            <Icon name="search" size={20} />
+          </TopNavButton>
+        </Tooltip>
       </ShortcutHandler>
       <Overlay
         backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
