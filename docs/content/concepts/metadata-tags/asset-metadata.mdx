@@ -31,15 +31,14 @@ There are two main types of metadata in Dagster:
 
 ### Definition metadata
 
-Definition metadata is attached to the asset's definition using the `metadata` argument. In the following example, we attached a list of columns the table produced by the asset should contain:
+Definition metadata is attached to the asset's definition using the `metadata` argument. In the following example, we attached a list of columns that the table produced by the asset should contain:
 
 ```python file=/concepts/assets/asset_definition_metadata.py startafter=start endbefore=end
 from dagster_duckdb import DuckDBResource
-from integrations.duckdb.tutorial.resource.create_table import (
-    iris_dataset,
-)
 
 from dagster import asset
+
+# ... other assets
 
 
 @asset(
