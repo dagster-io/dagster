@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Box, Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -12,6 +12,7 @@ import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {TopNavButton} from '../app/TopNavButton';
 import {useTrackEvent} from '../app/analytics';
 import {Trace, createTrace} from '../performance';
 
@@ -72,7 +73,7 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
-export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
+export const SearchDialog = () => {
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
     includeAssetFilters: false,
@@ -211,25 +212,9 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   return (
     <>
       <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <SearchTrigger onClick={openSearch} data-search-trigger="1">
-          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <Box flex={{alignItems: 'center', gap: 4}}>
-              <div
-                style={{
-                  height: '24px',
-                  width: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name="search" color={Colors.navTextHover()} />
-              </div>
-              <div>{searchPlaceholder}</div>
-            </Box>
-            <SlashShortcut>/</SlashShortcut>
-          </Box>
-        </SearchTrigger>
+        <TopNavButton onClick={openSearch}>
+          <Icon name="search" size={20} />
+        </TopNavButton>
       </ShortcutHandler>
       <Overlay
         backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
@@ -263,29 +248,6 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
     </>
   );
 };
-
-const SearchTrigger = styled.button`
-  background-color: ${Colors.navButton()};
-  border-radius: 24px;
-  border: none;
-  color: ${Colors.navTextHover()};
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px 16px 4px 8px;
-  outline: none;
-  user-select: none;
-  width: 188px;
-  height: 32px;
-  transition: background-color 100ms linear;
-
-  :hover {
-    background-color: ${Colors.navButtonHover()};
-  }
-
-  :focus-visible {
-    outline: ${Colors.focusRing()} auto 1px;
-  }
-`;
 
 const Container = styled.div`
   background-color: ${Colors.backgroundDefault()};
@@ -340,12 +302,4 @@ export const SearchInput = styled.input`
   ::focus {
     outline: none;
   }
-`;
-
-const SlashShortcut = styled.div`
-  background-color: transparent;
-  border-radius: 3px;
-  color: ${Colors.navTextHover()};
-  font-size: 14px;
-  padding: 2px;
 `;
