@@ -71,7 +71,7 @@ export const useAssetNodeMenu = ({
             </Box>
           }
         />
-        {executeItem ? <MenuDivider /> : null}
+        <MenuDivider />
         {executeItem}
         {executeItem && (upstream.length || downstream.length) ? <MenuDivider /> : null}
         {upstream.length ? (
