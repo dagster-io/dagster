@@ -1,10 +1,10 @@
 ---
-title: "Lesson 2: Requirements"
+title: "Lesson 2: Setup requirements"
 module: 'dagster_dbt'
 lesson: '2'
 ---
 
-## Requirements
+## Setup requirements
 
 To complete this course, you’ll need:
 
