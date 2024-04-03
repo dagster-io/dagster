@@ -42,7 +42,7 @@ export default function AppPage() {
     <InjectedComponents>
       <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
         <AppProvider appCache={appCache} config={config}>
-          <AppTopNav searchPlaceholder="Search…" allowGlobalReload>
+          <AppTopNav allowGlobalReload>
             <HelpMenu showContactSales={false} />
             <UserSettingsButton />
           </AppTopNav>

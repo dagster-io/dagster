@@ -20,7 +20,7 @@ describe('AppTopNav', () => {
       >
         <MockedProvider>
           <MemoryRouter>
-            <AppTopNav searchPlaceholder="Test..." />
+            <AppTopNav />
           </MemoryRouter>
         </MockedProvider>
       </InjectedComponentContext.Provider>,

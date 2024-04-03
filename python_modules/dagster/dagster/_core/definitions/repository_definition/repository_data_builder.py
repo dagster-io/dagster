@@ -249,12 +249,13 @@ def build_caching_repository_data_from_list(
         key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
     }
     if assets_defs or asset_checks_defs or source_assets:
-        for job_def in get_base_asset_jobs(
+        for job_name, job_def in get_base_asset_jobs(
             asset_graph=asset_graph,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
-        ):
-            jobs[job_def.name] = job_def
+            logger_defs=default_logger_defs,
+        ).items():
+            jobs[job_name] = job_def
 
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():
