@@ -49,6 +49,14 @@ At this point, your dbt project will be successfully deployed onto Dagster Cloud
 
 {% /table %}
 
-{% callout %}
-💡 **Experiencing issues?** There are two ways to deploy Dagster Cloud Serverless and we only made changes to deploy dbt with the default option, called Fast Deploys with PEX (Python Executable). If you receive an erro message to turn off Fast Deploys, GitHub Actions will skip the steps to build your dbt project. We recommend staying with Fast Deploys, if possible. If your project works locally, then the most likely issue is that the path where Dagster is looking for your manifest in production is different than that of the course. This can be solved by tinkering with where you're writing the manifest. If you'd like more support, you can reach out to the Dagster community on [Slack](https://dagster.io/slack) in the `#dagster-university` channel.
-{% /callout %}
+---
+
+## Experiencing issues?
+
+There are two ways to deploy Dagster Cloud Serverless. In our case, we only made changes to deploy dbt with the default option, called Fast Deploys with PEX (Python Executable). 
+
+**If you receive an error message to turn off Fast Deploys**, GitHub Actions will skip the steps that build the dbt project. We recommend staying with Fast Deploys, if possible. 
+
+**If your project works locally**, the issue is likely a mismatch between where Dagster looks for the manifest locally and in production. This can be resolved by tinkering with where the manifest is being written.
+
+Reach out to the Dagster community on [Slack](https://dagster.io/slack) in the `#dagster-university` channel if you need more support!
