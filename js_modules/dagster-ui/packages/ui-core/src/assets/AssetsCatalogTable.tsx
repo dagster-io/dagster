@@ -276,7 +276,7 @@ export const AssetsCatalogTable = ({
         activeFiltersJsx.length ? (
           <Box
             border="top-and-bottom"
-            padding={12}
+            padding={{vertical: 12, left: 24, right: 12}}
             flex={{direction: 'row', gap: 4, alignItems: 'center'}}
           >
             {activeFiltersJsx}

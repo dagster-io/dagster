@@ -72,14 +72,25 @@ export const AssetEventDetail = ({
             {hidePartitionLinks ? (
               event.partition
             ) : (
-              <Link
-                to={assetDetailsPathForKey(assetKey, {
-                  view: 'partitions',
-                  partition: event.partition,
-                })}
-              >
-                {event.partition}
-              </Link>
+              <>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {
+                    view: 'partitions',
+                    partition: event.partition,
+                  })}
+                >
+                  {event.partition}
+                </Link>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {
+                    view: 'partitions',
+                    partition: event.partition,
+                    showAllEvents: true,
+                  })}
+                >
+                  View all partition events
+                </Link>
+              </>
             )}
           </Box>
         )}
