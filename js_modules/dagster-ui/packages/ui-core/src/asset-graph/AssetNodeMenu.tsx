@@ -51,7 +51,7 @@ export const useAssetNodeMenu = ({
   }
 
   const {liveData} = useAssetLiveData(node.assetKey, 'context-menu');
-  const lastExecutionRunID = liveData?.lastMaterialization?.runId;
+  const lastMaterializationRunID = liveData?.lastMaterialization?.runId;
 
   return {
     menu: (
@@ -63,11 +63,11 @@ export const useAssetNodeMenu = ({
         />
         <MenuLink
           icon="history"
-          disabled={!lastExecutionRunID}
-          to={`/runs/${lastExecutionRunID}`}
+          disabled={!lastMaterializationRunID}
+          to={`/runs/${lastMaterializationRunID}`}
           text={
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              View latest execution {liveData ? null : <Spinner purpose="body-text" />}
+              View latest materialization {liveData ? null : <Spinner purpose="body-text" />}
             </Box>
           }
         />
