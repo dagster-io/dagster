@@ -27,9 +27,9 @@ class FreshnessMinutes(NamedTuple):
 
 @deprecated(
     breaking_version="1.8",
-    additional_warn_text="For monitoring freshness, use freshness checks instead. "
-    "For lazy auto-materialize, using FreshnessPolicys is still recommended - a substitute will be "
-    "provided before it's removed.",
+    additional_warn_text="For monitoring freshness, use freshness checks instead. If using lazy "
+    "auto-materialize, using FreshnessPolicys is still required, and an alternative system will "
+    "be provided before this class is fully removed.",
 )
 @whitelist_for_serdes
 class FreshnessPolicy(

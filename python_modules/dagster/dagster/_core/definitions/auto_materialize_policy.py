@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -215,8 +215,14 @@ class AutoMaterializePolicy(
 
     @public
     @staticmethod
+    @deprecated(
+        breaking_version="1.8",
+        additional_warn_text="Lazy auto-materialize is deprecated, in favor of explicit cron-based "
+        "scheduling rules. Additional alternatives to replicate more of the lazy behavior will be "
+        "provided before this is fully removed.",
+    )
     def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
-        """Constructs a lazy AutoMaterializePolicy.
+        """(Deprecated) Constructs a lazy AutoMaterializePolicy.
 
         Args:
             max_materializations_per_minute (Optional[int]): The maximum number of

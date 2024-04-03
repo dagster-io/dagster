@@ -16,7 +16,7 @@ from typing import (
 import pytz
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
@@ -99,7 +99,7 @@ class AutoMaterializeRule(ABC):
     @public
     @staticmethod
     def materialize_on_required_for_freshness() -> "MaterializeOnRequiredForFreshnessRule":
-        """Materialize an asset partition if it is required to satisfy a freshness policy of this
+        """(Deprecated) Materialize an asset partition if it is required to satisfy a freshness policy of this
         asset or one of its downstream assets.
 
         Note: This rule has no effect on partitioned assets.
@@ -256,6 +256,12 @@ class AutoMaterializeRule(ABC):
         return hash(hash(type(self)) + super().__hash__())
 
 
+@deprecated(
+    breaking_version="1.8",
+    additional_warn_text="Lazy auto-materialize is deprecated, in favor of explicit cron-based "
+    "scheduling rules. Additional alternatives to replicate more of the lazy behavior will be "
+    "provided before this is fully removed.",
+)
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
