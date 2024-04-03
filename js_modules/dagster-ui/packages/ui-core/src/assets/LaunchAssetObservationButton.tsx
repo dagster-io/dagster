@@ -10,6 +10,7 @@ import {
   getCommonJob,
 } from './LaunchAssetExecutionButton';
 import {asAssetKeyInput} from './asInput';
+import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
@@ -31,6 +32,54 @@ type ObserveAssetsState =
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
+export const useObserveAction = (preferredJobName?: string) => {
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
+  const launchWithTelemetry = useLaunchWithTelemetry();
+  const client = useApolloClient();
+  const [state, setState] = useState<ObserveAssetsState>({type: 'none'});
+
+  const onClick = async (assetKeys: AssetKey[], e: React.MouseEvent<any>) => {
+    if (state.type === 'loading') {
+      return;
+    }
+    setState({type: 'loading'});
+
+    const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
+      query: LAUNCH_ASSET_LOADER_QUERY,
+      variables: {assetKeys},
+    });
+
+    if (result.data.assetNodeDefinitionCollisions.length) {
+      showCustomAlert(buildAssetCollisionsAlert(result.data));
+      setState({type: 'none'});
+      return;
+    }
+
+    const assets = result.data.assetNodes;
+    const forceLaunchpad = e.shiftKey;
+
+    const next = await stateForObservingAssets(client, assets, forceLaunchpad, preferredJobName);
+
+    if (next.type === 'error') {
+      showCustomAlert({
+        title: 'Unable to observe',
+        body: next.error,
+      });
+      setState({type: 'none'});
+      return;
+    }
+
+    if (next.type === 'single-run') {
+      await launchWithTelemetry({executionParams: next.executionParams}, 'toast');
+      setState({type: 'none'});
+    } else {
+      setState(next);
+    }
+  };
+
+  return {onClick, loading: state.type === 'loading'};
+};
+
 export const LaunchAssetObservationButton = ({
   scope,
   preferredJobName,
@@ -40,12 +89,7 @@ export const LaunchAssetObservationButton = ({
   primary?: boolean;
   preferredJobName?: string;
 }) => {
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
-  const launchWithTelemetry = useLaunchWithTelemetry();
-
-  const [state, setState] = useState<ObserveAssetsState>({type: 'none'});
-  const client = useApolloClient();
-
+  const {onClick, loading} = useObserveAction(preferredJobName);
   const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
 
   const {
@@ -83,52 +127,11 @@ export const LaunchAssetObservationButton = ({
     );
   }
 
-  const onClick = async (e: React.MouseEvent<any>) => {
-    if (state.type === 'loading') {
-      return;
-    }
-    setState({type: 'loading'});
-
-    const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
-      query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: scopeAssets.map(asAssetKeyInput)},
-    });
-
-    if (result.data.assetNodeDefinitionCollisions.length) {
-      showCustomAlert(buildAssetCollisionsAlert(result.data));
-      setState({type: 'none'});
-      return;
-    }
-
-    const assets = result.data.assetNodes;
-    const forceLaunchpad = e.shiftKey;
-
-    const next = await stateForObservingAssets(client, assets, forceLaunchpad, preferredJobName);
-
-    if (next.type === 'error') {
-      showCustomAlert({
-        title: 'Unable to observe',
-        body: next.error,
-      });
-      setState({type: 'none'});
-      return;
-    }
-
-    if (next.type === 'single-run') {
-      await launchWithTelemetry({executionParams: next.executionParams}, 'toast');
-      setState({type: 'none'});
-    } else {
-      setState(next);
-    }
-  };
-
   return (
     <Button
       intent={primary ? 'primary' : undefined}
-      onClick={onClick}
-      icon={
-        state.type === 'loading' ? <Spinner purpose="body-text" /> : <Icon name="observation" />
-      }
+      onClick={(e) => onClick(scopeAssets.map(asAssetKeyInput), e)}
+      icon={loading ? <Spinner purpose="body-text" /> : <Icon name="observation" />}
     >
       {label}
     </Button>
