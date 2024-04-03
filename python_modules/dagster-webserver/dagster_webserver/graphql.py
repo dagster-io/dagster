@@ -7,6 +7,7 @@ from typing import (
     AsyncGenerator,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -162,12 +163,15 @@ class GraphQLServer(ABC):
         if result.errors:
             response_data["errors"] = self.handle_graphql_errors(result.errors)
 
+        status_code, headers = self._determine_status_code_and_headers(
+            resolver_errors=result.errors,
+            captured_errors=captured_errors,
+        )
+
         return JSONResponse(
             response_data,
-            status_code=self._determine_status_code(
-                resolver_errors=result.errors,
-                captured_errors=captured_errors,
-            ),
+            status_code=status_code,
+            headers=headers,
         )
 
     async def graphql_ws_endpoint(self, websocket: WebSocket):
@@ -293,11 +297,11 @@ class GraphQLServer(ABC):
             **kwargs,
         )
 
-    def _determine_status_code(
+    def _determine_status_code_and_headers(
         self,
         resolver_errors: Optional[List[GraphQLError]],
         captured_errors: List[Exception],
-    ) -> int:
+    ) -> Tuple[int, Mapping[str, str]]:
         server_error = False
         user_error = False
 
@@ -314,12 +318,12 @@ class GraphQLServer(ABC):
             server_error = True
 
         if server_error:
-            return status.HTTP_500_INTERNAL_SERVER_ERROR
+            return (status.HTTP_500_INTERNAL_SERVER_ERROR, {})
 
         if user_error:
-            return status.HTTP_400_BAD_REQUEST
+            return (status.HTTP_400_BAD_REQUEST, {})
 
-        return status.HTTP_200_OK
+        return (status.HTTP_200_OK, {})
 
 
 async def _handle_async_results(results: AsyncGenerator, operation_id: str, websocket: WebSocket):
