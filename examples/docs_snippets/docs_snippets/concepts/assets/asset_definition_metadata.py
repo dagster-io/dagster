@@ -1,10 +1,8 @@
+# start
+from dagster_duckdb import DuckDBResource
 from integrations.duckdb.tutorial.resource.create_table import (
     iris_dataset,
-)  # noqa: I001
-
-# start
-
-from dagster_duckdb import DuckDBResource
+)
 
 from dagster import asset
 
