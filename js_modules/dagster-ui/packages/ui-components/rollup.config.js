@@ -16,8 +16,8 @@ export default {
   input: {
     index: './src/index.ts',
 
-    // Our core fonts, usable as global style components, e.g. `<GlobalInconsolata />`.
-    'fonts/GlobalInconsolata': './src/fonts/GlobalInconsolata.tsx',
+    // Our core fonts, usable as global style components, e.g. `<GlobalInter />`.
+    'fonts/GlobalGeistMono': './src/fonts/GlobalGeistMono.tsx',
     'fonts/GlobalInter': './src/fonts/GlobalInter.tsx',
 
     // Components are listed here individually so that they may be imported

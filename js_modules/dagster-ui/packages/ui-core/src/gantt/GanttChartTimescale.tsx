@@ -247,7 +247,7 @@ const TimescaleTicksContainer = styled.div`
   background: ${Colors.backgroundLight()};
   display: flex;
   color: ${Colors.textLight()};
-  font-size: 13px;
+  font-size: 11px;
   font-family: ${FontFamily.monospace};
   box-shadow: inset 0 -1px ${Colors.keylineDefault()};
   overflow: hidden;

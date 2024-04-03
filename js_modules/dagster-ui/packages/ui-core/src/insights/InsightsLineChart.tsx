@@ -157,13 +157,13 @@ export const InsightsLineChart = (props: Props) => {
         color: textLighterRGB,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
         color: textLighterRGB,
         font: {
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -193,13 +193,13 @@ export const InsightsLineChart = (props: Props) => {
         color: textLighterRGB,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
         color: textLighterRGB,
         font: {
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -266,7 +266,7 @@ export const InsightsLineChart = (props: Props) => {
           ticks: {
             color: rgbColors[Colors.textLighter()],
             font: {
-              size: 14,
+              size: 12,
               family: FontFamily.monospace,
             },
             callback(timestamp) {

@@ -779,7 +779,7 @@ const GanttChartContainer = styled.div`
     border-radius: 2px;
     white-space: nowrap;
     font-family: ${FontFamily.monospace};
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 700;
     line-height: 15px;
 

@@ -1,7 +1,7 @@
 import {
   FontFamily,
   GlobalInter,
-  GlobalInconsolata,
+  GlobalGeistMono,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -69,7 +69,7 @@ export const decorators = [
       <GlobalStyle />
       <GlobalThemeStyle />
       <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalGeistMono />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
