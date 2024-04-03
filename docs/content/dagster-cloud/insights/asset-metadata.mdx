@@ -11,7 +11,7 @@ platform_type: "cloud"
   This feature is considered <strong>experimental</strong>.
 </Note>
 
-Any numeric [asset materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata) attached to your assets can be viewed and aggregated in the Dagster Insights UI. This is a good way to track usage, cost, data size, or other characteristics of your data assets over time, and across different parts of your platform.
+Any numeric [asset materialization metadata](/concepts/metadata-tags/asset-metadata) attached to your assets can be viewed and aggregated in the Dagster Insights UI. This is a good way to track usage, cost, data size, or other characteristics of your data assets over time, and across different parts of your platform.
 
 ---
 
@@ -37,7 +37,7 @@ def table1() -> Output[None]:
     return Output(None, metadata={"num_rows": 25})
 ```
 
-For more examples, see the [asset materialization metadata documentation](/concepts/assets/software-defined-assets#recording-materialization-metadata).
+Refer to the [Asset metadata](/concepts/metadata-tags/asset-metadata) documentation for more information.
 
 ---
 
