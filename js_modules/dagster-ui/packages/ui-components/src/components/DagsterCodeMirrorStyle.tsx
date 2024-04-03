@@ -33,7 +33,7 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
     color: ${Colors.textDefault()};
 
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
 
     /* Note: Theme overrides */
     &.cm-s-default .cm-comment {

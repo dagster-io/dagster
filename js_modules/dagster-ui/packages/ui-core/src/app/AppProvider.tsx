@@ -16,6 +16,8 @@ import {
   GlobalInconsolata,
   GlobalInter,
   GlobalPopoverStyle,
+  GlobalRoboto,
+  GlobalRobotoMono,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
@@ -207,6 +209,8 @@ export const AppProvider = (props: AppProviderProps) => {
       <WebSocketProvider websocketClient={websocketClient}>
         <GlobalInter />
         <GlobalInconsolata />
+        <GlobalRoboto />
+        <GlobalRobotoMono />
         <GlobalStyle />
         <GlobalToasterStyle />
         <GlobalTooltipStyle />

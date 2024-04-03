@@ -109,7 +109,7 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '20px'}}>
+            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '18px'}}>
               {runId.slice(0, 8)}
             </Heading>
           }

@@ -67,3 +67,5 @@ export * as Colors from './palettes/Color';
 // your app tree root. E.g. <GlobalInconsolata />
 export * from './fonts/GlobalInconsolata';
 export * from './fonts/GlobalInter';
+export * from './fonts/GlobalRoboto';
+export * from './fonts/GlobalRobotoMono';
