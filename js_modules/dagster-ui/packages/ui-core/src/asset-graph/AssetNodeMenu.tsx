@@ -51,7 +51,10 @@ export const useAssetNodeMenu = ({
   }
 
   const {liveData} = useAssetLiveData(node.assetKey, 'context-menu');
+
+  const isSource = node.definition?.isExecutable && node.definition.isSource;
   const lastMaterializationRunID = liveData?.lastMaterialization?.runId;
+  const lastObservationID = liveData?.lastObservation?.runId;
 
   return {
     menu: (
@@ -61,16 +64,19 @@ export const useAssetNodeMenu = ({
           text="View asset details"
           icon="asset"
         />
-        <MenuLink
-          icon="history"
-          disabled={!lastMaterializationRunID}
-          to={`/runs/${lastMaterializationRunID}`}
-          text={
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              View latest materialization {liveData ? null : <Spinner purpose="body-text" />}
-            </Box>
-          }
-        />
+        {node.definition?.isExecutable ? (
+          <MenuLink
+            icon="history"
+            disabled={!lastMaterializationRunID && !lastObservationID}
+            to={`/runs/${lastMaterializationRunID || lastObservationID}`}
+            text={
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                View latest {isSource ? 'observation' : 'materialization'}
+                {liveData ? null : <Spinner purpose="body-text" />}
+              </Box>
+            }
+          />
+        ) : null}
         <MenuDivider />
         {executeItem}
         {executeItem && (upstream.length || downstream.length) ? <MenuDivider /> : null}
