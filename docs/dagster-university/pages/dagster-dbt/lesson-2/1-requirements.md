@@ -1,10 +1,10 @@
 ---
-title: "Lesson 2: Requirements"
+title: "Lesson 2: Setup requirements"
 module: 'dagster_dbt'
 lesson: '2'
 ---
 
-## Requirements
+## Setup requirements
 
 To complete this course, you’ll need:
 
@@ -20,18 +20,6 @@ To complete this course, you’ll need:
    python --version
    pip --version
    ```
-
-## Pre-requisite experience
-
-- **dbt familiarity** An understanding of the basics of dbt is required to complete this course. We recommend that you first complete dbt's Fundamentals course if you're a new dbt user.
-
-- **Dagster familiarity** You'll need to know the basics of Dagster to complete this course. If you've never used Dagster before or want a refresher before getting started, check out the Dagster Essentials course.
-
-- **Python & SQL knowledge** While you don’t need to be a Python expert to get started, you do need some Python familiarity to complete this course and use Dagster. Here are some Pythonic skills that you’ll be using, along with resources to learn about them: [Functions](https://realpython.com/defining-your-own-python-function/), [Packages and Modules](https://dagster.io/blog/python-packages-primer-1), [Decorators](https://realpython.com/primer-on-python-decorators/), and [Type Hints](https://dagster.io/blog/python-type-hinting). You won’t be writing complex SQL, but you will need to understand the concept of SELECT statements, what tables are, and how to make them. If you’d like a 5-minute crash course, here’s a short article and cheatsheet on using SQL.
-
-## Need help?
-
-If you'd like some assistance while working through this course, you can reach out to the Dagster community on [Slack](https://dagster.io/slack) in the `#dagster-university` channel.
 
 ---
 
