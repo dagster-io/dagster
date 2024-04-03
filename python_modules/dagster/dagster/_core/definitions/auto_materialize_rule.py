@@ -259,8 +259,8 @@ class AutoMaterializeRule(ABC):
 @deprecated(
     breaking_version="1.8",
     additional_warn_text="Lazy auto-materialize is deprecated, in favor of explicit cron-based "
-    "scheduling rules. Additional alternatives to replicate more of the lazy behavior will be "
-    "provided before this is fully removed.",
+    "scheduling rules. Additional alternatives to replicate more of the lazy auto-materialize "
+    "behavior will be provided before this is fully removed.",
 )
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
