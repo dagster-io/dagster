@@ -292,7 +292,6 @@ class K8sStepHandler(StepHandler):
                     "value": run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
-                *container_context.env,
             ],
         )
 

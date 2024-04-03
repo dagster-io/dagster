@@ -54,9 +54,10 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
@@ -225,8 +226,8 @@ class SensorLaunchContext(AbstractContextManager):
 
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
         if exception_value and not isinstance(exception_value, GeneratorExit):
-            error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.update_state(TickStatus.FAILURE, error=error_data)
+            error_info = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
+            self.update_state(TickStatus.FAILURE, error=error_info)
 
         self._write()
 
@@ -470,8 +471,11 @@ def _process_tick_generator(
             )
 
     except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.exception(f"Sensor daemon caught an error for sensor {external_sensor.name}")
+        error_info = DaemonErrorCapture.on_exception(
+            exc_info=sys.exc_info(),
+            logger=logger,
+            log_message=f"Sensor daemon caught an error for sensor {external_sensor.name}",
+        )
 
     yield error_info
 
@@ -566,8 +570,11 @@ def _submit_run_request(
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
         logger.info(f"Completed launch of run {run.run_id} for {external_sensor.name}")
     except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")
+        error_info = DaemonErrorCapture.on_exception(
+            exc_info=sys.exc_info(),
+            logger=logger,
+            log_message=f"Run {run.run_id} created successfully but failed to launch",
+        )
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
     return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)

@@ -590,20 +590,14 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
   const bIsDot = b.width === BOX_DOT_WIDTH_CUTOFF;
   const bCenterY = bIsDot ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2 : BOX_HEIGHT / 2;
 
-  const straight = b.y === a.y;
-
   // Line comes out of the center of the right side of the box
   const minX = Math.min(a.x + a.width, b.x + b.width);
-  const minY = TOP_INSET + (straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY);
+  const minY = TOP_INSET + a.y * BOX_HEIGHT + aCenterY;
 
   // Line ends on the center left edge of the box if it is on the
   // same line, or drops into the top center of the box if it's below.
-  const maxX = straight
-    ? Math.max(a.x, b.x)
-    : Math.max(a.x + a.width / 2, b.x + (bIsDot ? BOX_DOT_SIZE : b.width) / 2);
-  const maxY = straight
-    ? TOP_INSET + b.y * BOX_HEIGHT + bCenterY
-    : TOP_INSET + b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
+  const maxX = Math.max(a.x, b.x);
+  const maxY = TOP_INSET + b.y * BOX_HEIGHT + bCenterY;
 
   return {minX, minY, maxX, maxY};
 };
@@ -629,10 +623,49 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? Colors.accentGray() : Colors.accentGrayHover()
+      darkened ? Colors.lineageEdgeHighlighted() : Colors.lineageEdge()
     }`;
 
-    const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
+    if (depNotDrawn) {
+      return (
+        <div
+          className="line"
+          style={{
+            height: 1,
+            left: minX,
+            width: 50,
+            top: minY - 1,
+            borderTop: border,
+            zIndex: darkened ? 100 : 1,
+          }}
+        />
+      );
+    }
+    if (minY === maxY) {
+      return (
+        <div
+          className="line"
+          style={{
+            height: 1,
+            left: minX,
+            width: maxX - minX,
+            top: minY - 1,
+            borderTop: border,
+            zIndex: darkened ? 100 : 1,
+          }}
+        />
+      );
+    }
+
+    // When drawing a line that has a vertical segment, position the vertical segment
+    // in the space after the first box before the next box begins. This is ideal because
+    // there can be "marker-dot" and "marker-whiskers" elements before the next box, and
+    // the line looks better going straight through those.
+    //
+    // The idx lgoic here ensures that outgoing lines from a single box "stack" rather than
+    // layering on top of each other.
+    //
+    const verticalLineX = minX + BOX_SPACING_X * 0.4 + (depIdx % 10) * LINE_SIZE;
 
     return (
       <>
@@ -641,7 +674,7 @@ const GanttLine = React.memo(
           style={{
             height: 1,
             left: minX,
-            width: depNotDrawn ? 50 : maxXAvoidingOverlap - minX,
+            width: verticalLineX - minX,
             top: minY - 1,
             borderTop: border,
             zIndex: darkened ? 100 : 1,
@@ -652,7 +685,7 @@ const GanttLine = React.memo(
             className="line"
             style={{
               width: 1,
-              left: maxXAvoidingOverlap,
+              left: verticalLineX,
               top: minY - LINE_SIZE / 2,
               height: maxY - minY,
               borderRight: border,
@@ -660,6 +693,17 @@ const GanttLine = React.memo(
             }}
           />
         )}
+        <div
+          className="line"
+          style={{
+            height: 1,
+            left: verticalLineX,
+            width: maxX - verticalLineX,
+            top: maxY - 1,
+            borderTop: border,
+            zIndex: darkened ? 100 : 1,
+          }}
+        />
       </>
     );
   },

@@ -1,6 +1,6 @@
 import {ApolloClient, useApolloClient} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useState} from 'react';
 
 import {
   AssetsInScope,
@@ -10,11 +10,13 @@ import {
   getCommonJob,
 } from './LaunchAssetExecutionButton';
 import {asAssetKeyInput} from './asInput';
+import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
@@ -30,50 +32,13 @@ type ObserveAssetsState =
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
-export const LaunchAssetObservationButton = ({
-  scope,
-  preferredJobName,
-  primary = false,
-}: {
-  scope: AssetsInScope;
-  primary?: boolean;
-  preferredJobName?: string;
-}) => {
+export const useObserveAction = (preferredJobName?: string) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
-
-  const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});
   const client = useApolloClient();
+  const [state, setState] = useState<ObserveAssetsState>({type: 'none'});
 
-  const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
-  if (!scopeAssets.length) {
-    return <></>;
-  }
-
-  const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
-  const label =
-    'selected' in scope
-      ? `Observe selected${count}`
-      : scope.skipAllTerm
-      ? `Observe${count}`
-      : `Observe sources ${count}`;
-
-  const hasMaterializePermission = scopeAssets.every((a) => a.hasMaterializePermission);
-  if (!hasMaterializePermission) {
-    return (
-      <Tooltip content="You do not have permission to observe source assets">
-        <Button
-          intent={primary ? 'primary' : undefined}
-          icon={<Icon name="observation" />}
-          disabled
-        >
-          {label}
-        </Button>
-      </Tooltip>
-    );
-  }
-
-  const onClick = async (e: React.MouseEvent<any>) => {
+  const onClick = async (assetKeys: AssetKey[], e: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
       return;
     }
@@ -81,7 +46,7 @@ export const LaunchAssetObservationButton = ({
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: scopeAssets.map(asAssetKeyInput)},
+      variables: {assetKeys},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {
@@ -112,13 +77,61 @@ export const LaunchAssetObservationButton = ({
     }
   };
 
+  return {onClick, loading: state.type === 'loading'};
+};
+
+export const LaunchAssetObservationButton = ({
+  scope,
+  preferredJobName,
+  primary = false,
+}: {
+  scope: AssetsInScope;
+  primary?: boolean;
+  preferredJobName?: string;
+}) => {
+  const {onClick, loading} = useObserveAction(preferredJobName);
+  const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
+
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeMaterializeAction) {
+    return null;
+  }
+
+  if (!scopeAssets.length) {
+    return <></>;
+  }
+
+  const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
+  const label =
+    'selected' in scope
+      ? `Observe selected${count}`
+      : scope.skipAllTerm
+      ? `Observe${count}`
+      : `Observe sources ${count}`;
+
+  const hasMaterializePermission = scopeAssets.every((a) => a.hasMaterializePermission);
+  if (!hasMaterializePermission) {
+    return (
+      <Tooltip content="You do not have permission to observe source assets">
+        <Button
+          intent={primary ? 'primary' : undefined}
+          icon={<Icon name="observation" />}
+          disabled
+        >
+          {label}
+        </Button>
+      </Tooltip>
+    );
+  }
+
   return (
     <Button
       intent={primary ? 'primary' : undefined}
-      onClick={onClick}
-      icon={
-        state.type === 'loading' ? <Spinner purpose="body-text" /> : <Icon name="observation" />
-      }
+      onClick={(e) => onClick(scopeAssets.map(asAssetKeyInput), e)}
+      icon={loading ? <Spinner purpose="body-text" /> : <Icon name="observation" />}
     >
       {label}
     </Button>

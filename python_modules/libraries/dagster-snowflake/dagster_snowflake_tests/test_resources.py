@@ -294,7 +294,7 @@ def test_fetch_last_updated_timestamps_empty():
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.integration
-@pytest.mark.parametrize("db_str", [None, "TESTDB"])
+@pytest.mark.parametrize("db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"])
 def test_fetch_last_updated_timestamps(db_str: str):
     start_time = pendulum.now("UTC").timestamp()
     table_name = "the_table"
@@ -306,7 +306,9 @@ def test_fetch_last_updated_timestamps(db_str: str):
                 freshness_for_table = fetch_last_updated_timestamps(
                     snowflake_connection=conn,
                     database="TESTDB",
-                    tables=[table_name],
+                    tables=[
+                        table_name.lower()
+                    ],  # Snowflake table names are expected uppercase. Test that lowercase also works.
                     schema="TESTSCHEMA",
                 )[table_name].timestamp()
                 return ObserveResult(

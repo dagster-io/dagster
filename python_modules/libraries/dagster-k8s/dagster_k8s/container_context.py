@@ -19,7 +19,7 @@ from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.utils import get_env_var_name, parse_env_var
+from dagster._core.utils import parse_env_var
 from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
@@ -58,22 +58,10 @@ class K8sContainerContext(
     NamedTuple(
         "_K8sContainerContext",
         [
-            ("image_pull_policy", Optional[str]),
-            ("image_pull_secrets", Sequence[Mapping[str, str]]),
-            ("service_account_name", Optional[str]),
-            ("env_config_maps", Sequence[str]),
-            ("env_secrets", Sequence[str]),
-            ("env_vars", Sequence[str]),
-            ("volume_mounts", Sequence[Mapping[str, Any]]),
-            ("volumes", Sequence[Mapping[str, Any]]),
-            ("labels", Mapping[str, str]),
-            ("namespace", Optional[str]),
-            ("resources", Mapping[str, Any]),
-            ("scheduler_name", Optional[str]),
-            ("security_context", Mapping[str, Any]),
             ("server_k8s_config", UserDefinedDagsterK8sConfig),
             ("run_k8s_config", UserDefinedDagsterK8sConfig),
-            ("env", Sequence[Mapping[str, Any]]),
+            ("namespace", Optional[str]),
+            ("labels", Mapping[str, str]),
         ],
     )
 ):
@@ -102,8 +90,7 @@ class K8sContainerContext(
         run_k8s_config: Optional[UserDefinedDagsterK8sConfig] = None,
         env: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
-        return super(K8sContainerContext, cls).__new__(
-            cls,
+        top_level_k8s_config = K8sContainerContext._get_base_user_defined_k8s_config(
             image_pull_policy=check.opt_str_param(image_pull_policy, "image_pull_policy"),
             image_pull_secrets=check.opt_sequence_param(image_pull_secrets, "image_pull_secrets"),
             service_account_name=check.opt_str_param(service_account_name, "service_account_name"),
@@ -119,20 +106,110 @@ class K8sContainerContext(
                 for volume in check.opt_sequence_param(volumes, "volumes")
             ],
             labels=check.opt_mapping_param(labels, "labels"),
-            namespace=check.opt_str_param(namespace, "namespace"),
             resources=check.opt_mapping_param(resources, "resources"),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
             security_context=check.opt_mapping_param(security_context, "security_context"),
-            server_k8s_config=server_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
-            run_k8s_config=run_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
             env=[
                 k8s_snake_case_dict(kubernetes.client.V1EnvVar, e)
                 for e in check.opt_sequence_param(env, "env")
             ],
         )
 
+        run_k8s_config = K8sContainerContext._merge_k8s_config(
+            top_level_k8s_config,
+            run_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
+        )
+
+        server_k8s_config = K8sContainerContext._merge_k8s_config(
+            top_level_k8s_config,
+            server_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
+        )
+
+        return super(K8sContainerContext, cls).__new__(
+            cls,
+            run_k8s_config=run_k8s_config,
+            server_k8s_config=server_k8s_config,
+            namespace=namespace,
+            labels=check.opt_mapping_param(labels, "labels"),
+        )
+
+    @staticmethod
+    def _get_base_user_defined_k8s_config(
+        image_pull_policy: Optional[str],
+        image_pull_secrets: Optional[Sequence[Mapping[str, str]]],
+        service_account_name: Optional[str],
+        env_config_maps: Sequence[str],
+        env_secrets: Sequence[str],
+        env_vars: Sequence[str],
+        volume_mounts: Sequence[Mapping[str, Any]],
+        volumes: Sequence[Mapping[str, Any]],
+        labels: Mapping[str, str],
+        resources: Mapping[str, Any],
+        scheduler_name: Optional[str],
+        security_context: Mapping[str, Any],
+        env: Sequence[Mapping[str, Any]],
+    ) -> UserDefinedDagsterK8sConfig:
+        container_config = {}
+        pod_spec_config = {}
+        pod_template_spec_metadata = {}
+        job_metadata = {}
+
+        if volume_mounts:
+            container_config["volume_mounts"] = volume_mounts
+
+        if resources:
+            container_config["resources"] = resources
+
+        if image_pull_secrets:
+            pod_spec_config["image_pull_secrets"] = image_pull_secrets
+
+        if volumes:
+            pod_spec_config["volumes"] = volumes
+
+        if labels:
+            pod_template_spec_metadata["labels"] = labels
+            job_metadata["labels"] = labels
+
+        if image_pull_policy:
+            container_config["image_pull_policy"] = image_pull_policy
+
+        if service_account_name:
+            pod_spec_config["service_account_name"] = service_account_name
+
+        env_from = [{"config_map_ref": {"name": config_map}} for config_map in env_config_maps]
+
+        env_from.extend([{"secret_ref": {"name": secret}} for secret in env_secrets])
+
+        if env_from:
+            container_config["env_from"] = env_from
+
+        parsed_env_vars = [parse_env_var(key) for key in env_vars]
+
+        container_config_env = [
+            {"name": parsed_env_var[0], "value": parsed_env_var[1]}
+            for parsed_env_var in parsed_env_vars
+        ]
+
+        container_config_env.extend([{**v} for v in env])
+
+        if container_config_env:
+            container_config["env"] = container_config_env
+
+        if scheduler_name:
+            pod_spec_config["scheduler_name"] = scheduler_name
+
+        if security_context:
+            container_config["security_context"] = security_context
+
+        return UserDefinedDagsterK8sConfig(
+            container_config=container_config,
+            pod_spec_config=pod_spec_config,
+            pod_template_spec_metadata=pod_template_spec_metadata,
+            job_metadata=job_metadata,
+        )
+
+    @staticmethod
     def _merge_k8s_config(
-        self,
         onto_config: UserDefinedDagsterK8sConfig,
         from_config: UserDefinedDagsterK8sConfig,
     ) -> UserDefinedDagsterK8sConfig:
@@ -143,7 +220,9 @@ class K8sContainerContext(
         assert set(onto_dict) == set(from_dict)
         if merge_behavior == K8sConfigMergeBehavior.DEEP:
             onto_dict = copy.deepcopy(onto_dict)
-            merged_dict = self._deep_merge_k8s_config(onto_dict=onto_dict, from_dict=from_dict)
+            merged_dict = K8sContainerContext._deep_merge_k8s_config(
+                onto_dict=onto_dict, from_dict=from_dict
+            )
         else:
             merged_dict = {
                 key: (
@@ -155,7 +234,8 @@ class K8sContainerContext(
             }
         return UserDefinedDagsterK8sConfig.from_dict(merged_dict)
 
-    def _deep_merge_k8s_config(self, onto_dict: Dict[str, Any], from_dict: Mapping[str, Any]):
+    @staticmethod
+    def _deep_merge_k8s_config(onto_dict: Dict[str, Any], from_dict: Mapping[str, Any]):
         for from_key, from_value in from_dict.items():
             if from_key not in onto_dict:
                 onto_dict[from_key] = from_value
@@ -171,7 +251,9 @@ class K8sContainerContext(
                     onto_dict[from_key] = _dedupe_list([*onto_value, *from_value])
                 elif isinstance(from_value, dict):
                     check.invariant(isinstance(onto_value, dict))
-                    onto_dict[from_key] = self._deep_merge_k8s_config(onto_value, from_value)
+                    onto_dict[from_key] = K8sContainerContext._deep_merge_k8s_config(
+                        onto_value, from_value
+                    )
                 else:
                     onto_dict[from_key] = from_value
         return onto_dict
@@ -183,37 +265,13 @@ class K8sContainerContext(
         # Lists of attributes that can be combined are combined, scalar values are replaced
         # prefering the passed in container context
         return K8sContainerContext(
-            image_pull_policy=(
-                other.image_pull_policy if other.image_pull_policy else self.image_pull_policy
-            ),
-            image_pull_secrets=_dedupe_list([*self.image_pull_secrets, *other.image_pull_secrets]),
-            service_account_name=(
-                other.service_account_name
-                if other.service_account_name
-                else self.service_account_name
-            ),
-            env_config_maps=_dedupe_list([*self.env_config_maps, *other.env_config_maps]),
-            env_secrets=_dedupe_list([*self.env_secrets, *other.env_secrets]),
-            env_vars=_dedupe_list([*self.env_vars, *other.env_vars]),
-            volume_mounts=_dedupe_list([*self.volume_mounts, *other.volume_mounts]),
-            volumes=_dedupe_list([*self.volumes, *other.volumes]),
-            labels={**self.labels, **other.labels},
-            namespace=other.namespace if other.namespace else self.namespace,
-            resources=other.resources if other.resources else self.resources,
-            scheduler_name=other.scheduler_name if other.scheduler_name else self.scheduler_name,
-            security_context=(
-                other.security_context if other.security_context else self.security_context
-            ),
             server_k8s_config=self._merge_k8s_config(
                 self.server_k8s_config, other.server_k8s_config
             ),
             run_k8s_config=self._merge_k8s_config(self.run_k8s_config, other.run_k8s_config),
-            env=_dedupe_list([*self.env, *other.env]),
+            namespace=other.namespace if other.namespace else self.namespace,
+            labels={**self.labels, **other.labels},
         )
-
-    def get_environment_dict(self) -> Mapping[str, str]:
-        parsed_env_var_tuples = [parse_env_var(env_var) for env_var in self.env_vars]
-        return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 
     def _snake_case_allowed_fields(
         self, only_allow_user_defined_k8s_config_fields: Mapping[str, Any]
@@ -325,29 +383,12 @@ class K8sContainerContext(
             discarded_env_var_names,
         )
 
-        new_env_vars = []
-        for env_var in self.env_vars:
-            env_var_name = get_env_var_name(env_var)
-            if env_var_name in only_allow_user_defined_env_vars:
-                new_env_vars.append(env_var)
-            else:
-                discarded_env_var_names.add(env_var_name)
-
-        new_env = []
-        for env_map in self.env:
-            if env_map["name"] in only_allow_user_defined_env_vars:
-                new_env.append(env_map)
-            else:
-                discarded_env_var_names.add(env_map["name"])
-
         if discarded_env_var_names:
             logging.warning(
                 f"Excluding the following environment variables because they are not in the allowlist for user-defined environment variables: {', '.join(discarded_env_var_names)}"
             )
 
         return self._replace(
-            env_vars=new_env_vars,
-            env=new_env,
             run_k8s_config=new_run_k8s_config,
             server_k8s_config=new_server_k8s_config,
         )
@@ -369,56 +410,6 @@ class K8sContainerContext(
             used_fields[key] = used_fields.get(key, set()).union(
                 {field_key for field_key in fields}
             )
-
-        if self.image_pull_policy:
-            # image_pull_policy is equivalent to container_config.image_pull_policy
-            used_fields["container_config"].add("image_pull_policy")
-
-        if self.image_pull_secrets:
-            # image_pull_secrets is equivalent to pod_spec_config.image_pull_secrets
-            used_fields["pod_spec_config"].add("image_pull_secrets")
-
-        if self.service_account_name:
-            # service_account_name is equivalent to pod_spec_config.service_account_name
-            used_fields["pod_spec_config"].add("service_account_name")
-
-        if self.env_config_maps or self.env_secrets:
-            # env_config_maps and env_secrets end up on env_from on the container
-            used_fields["container_config"].add("env_from")
-
-        if self.env_vars:
-            # env_vars end up in the "env" field on the container
-            used_fields["container_config"].add("env")
-
-        if self.env:
-            # env is equivalent to container_config.env
-            used_fields["container_config"].add("env")
-
-        if self.volume_mounts:
-            # volume_mounts is equivalent to container_config.volume_mounts
-            used_fields["container_config"].add("volume_mounts")
-
-        if self.volumes:
-            # volumes is equivalent to pod_spec_config.volumes
-            used_fields["pod_spec_config"].add("volumes")
-
-        if self.labels:
-            # labels end up on both pod_template_spec_metadata.labels nad
-            # job_metadata.labels since they apply to both the pod and job
-            used_fields["pod_template_spec_metadata"].add("labels")
-            used_fields["job_metadata"].add("labels")
-
-        if self.resources:
-            # resources is equivalent to container_config.resources
-            used_fields["container_config"].add("resources")
-
-        if self.scheduler_name:
-            # scheduler_name is equivalent to pod_spec_config.scheduler_name
-            used_fields["pod_spec_config"].add("scheduler_name")
-
-        if self.security_context:
-            # security_context is equivalent to container_config.security_context
-            used_fields["container_config"].add("security_context")
 
         if self.namespace:
             used_fields["pod_template_spec_metadata"].add("namespace")
@@ -542,18 +533,6 @@ class K8sContainerContext(
         return DagsterK8sJobConfig(
             job_image=job_image if job_image else run_launcher.job_image,
             dagster_home=run_launcher.dagster_home,
-            image_pull_policy=self.image_pull_policy,
-            image_pull_secrets=self.image_pull_secrets,
-            service_account_name=self.service_account_name,
             instance_config_map=run_launcher.instance_config_map,
             postgres_password_secret=run_launcher.postgres_password_secret,
-            env_config_maps=self.env_config_maps,
-            env_secrets=self.env_secrets,
-            env_vars=self.env_vars,
-            volume_mounts=self.volume_mounts,
-            volumes=self.volumes,
-            labels=self.labels,
-            resources=self.resources,
-            scheduler_name=self.scheduler_name,
-            security_context=self.security_context,
         )

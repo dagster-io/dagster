@@ -175,9 +175,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @property
     def dagster_run(self) -> DagsterRun:
-        """PipelineRun: The current pipeline run."""
+        """DagsterRun: The current run."""
         return self._step_execution_context.dagster_run
 
+    @public
     @property
     def run(self) -> DagsterRun:
         """DagsterRun: The current run."""
@@ -1344,7 +1345,7 @@ USE_OP_CONTEXT = [
 
 
 def _get_deprecation_kwargs(attr: str) -> Mapping[str, Any]:
-    deprecation_kwargs = {"breaking_version": "1.8.0"}
+    deprecation_kwargs = {"breaking_version": "a future release"}
     deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
 
     if attr in ALTERNATE_METHODS:

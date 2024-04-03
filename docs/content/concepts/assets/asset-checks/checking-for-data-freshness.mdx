@@ -54,23 +54,37 @@ To run freshness checks on source assets, the checks need to know when the sourc
 
 The following is an example of multiple Snowflake tables, backed by an observation function that queries Snowflake to find the most recent time the tables were updated. The function yields the update time as metadata to be stored in the Dagster event log:
 
-```python
-from dagster import multi_observable_source_asset, AssetSpec, Definitions, MetadataValue, ObserveResult
-from dagster_snowflake import fetch_last_updated_timestamps, SnowflakeResource
+```python file=/concepts/assets/asset_checks/source_data_freshness_in_pieces.py startafter=start_multi_observable_marker endbefore=end_multi_observable_marker
+from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps
 
+from dagster import (
+    AssetSpec,
+    MetadataValue,
+    ObserveResult,
+    multi_observable_source_asset,
+)
+
+TABLE_SCHEMA = "PUBLIC"
 table_names = ["charges", "customers"]
 asset_specs = [AssetSpec(table_name) for table_name in table_names]
+
 
 @multi_observable_source_asset(specs=asset_specs)
 def source_tables(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
         freshness_results = fetch_last_updated_timestamps(
-            snowflake_connection=conn.cursor(), tables=table_names
+            snowflake_connection=conn.cursor(),
+            tables=table_names,
+            schema=TABLE_SCHEMA,
         )
         for table_name, last_updated in freshness_results.items():
             yield ObserveResult(
                 asset_key=table_name,
-        metadata={"dagster/last_updated_timestamp": MetadataValue.timestamp(last_updated)},
+                metadata={
+                    "dagster/last_updated_timestamp": MetadataValue.timestamp(
+                        last_updated
+                    )
+                },
             )
 ```
 
@@ -78,17 +92,17 @@ def source_tables(snowflake: SnowflakeResource):
 
 Next, we'll define a [schedule](/concepts/partitions-schedules-sensors/schedules) that regularly executes the function in the `source_tables` observable source asset:
 
-```python
-from dagster import define_asset_job, AssetSelection, ScheduleDefinition
+```python file=/concepts/assets/asset_checks/source_data_freshness_in_pieces.py startafter=start_schedule_marker endbefore=end_schedule_marker
+from dagster import AssetSelection, ScheduleDefinition, define_asset_job
 
 source_tables_observation_schedule = ScheduleDefinition(
-  job=define_asset_job(
-    "source_tables_observation_job",
-    selection=AssetSelection.assets(source_tables),
-  ),
-  # Runs every minute. Usually, a much less frequent cadence is necessary,
-  # but a short cadence makes it easier to play around with this example.
-  cron_schedule="* * * * *",
+    job=define_asset_job(
+        "source_tables_observation_job",
+        selection=AssetSelection.assets(source_tables),
+    ),
+    # Runs every minute. Usually, a much less frequent cadence is necessary,
+    # but a short cadence makes it easier to play around with this example.
+    cron_schedule="* * * * *",
 )
 ```
 
@@ -103,12 +117,14 @@ When the code location is loaded and the schedule is turned on, it will automati
 
 In our example, we expect the source tables to be updated no less than every two hours. We'll use the <PyObject object="build_freshness_checks_for_non_partitioned_assets" /> function to produce a set of asset checks that fail if an asset’s `last_updated_timestamp` is more than two hours before the current time:
 
-```python
-from dagster import build_freshness_checks_for_non_partitioned_assets
+```python file=/concepts/assets/asset_checks/source_data_freshness_in_pieces.py startafter=start_freshness_checks_marker endbefore=end_freshness_checks_marker
+from datetime import timedelta
 
-source_table_freshness_checks = build_freshness_checks_for_non_partitioned_assets(
-  assets=[source_tables],
-  maximum_lag_minutes=2 * 60,
+from dagster import build_last_update_freshness_checks
+
+source_table_freshness_checks = build_last_update_freshness_checks(
+    assets=[source_tables],
+    lower_bound_delta=timedelta(hours=2),
 )
 ```
 
@@ -140,34 +156,46 @@ freshness_checks = build_anomaly_detection_freshness_checks(
 
 ### Step 4: Create a Definitions object
 
-The last step is to include the asset, checks, and schedule in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
+The last step is to include the asset, checks, schedule, and resource in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
-```python
-from dagster import Definitions
+```python file=/concepts/assets/asset_checks/source_data_freshness_in_pieces.py startafter=start_defs_marker endbefore=end_defs_marker
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
-  assets=[source_table_freshness_checks],
-  asset_checks=[source_table_freshness_checks],
-  schedules=[source_tables_observation_schedule],
+    assets=[source_tables],
+    asset_checks=[*source_table_freshness_checks],
+    schedules=[source_tables_observation_schedule],
+    resources={
+        "snowflake": SnowflakeResource(
+            user=EnvVar("SNOWFLAKE_USER"),
+            account=EnvVar("SNOWFLAKE_ACCOUNT"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+        )
+    },
 )
 ```
 
 At this point, the finished code should look like this:
 
-```python
+```python file=/concepts/assets/asset_checks/source_data_freshness_complete.py
+from datetime import timedelta
+
+from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps
+
 from dagster import (
-    build_freshness_checks_for_non_partitioned_assets,
-    define_asset_job,
-    multi_observable_source_asset,
     AssetSelection,
     AssetSpec,
     Definitions,
-    ObserveResult,
+    EnvVar,
     MetadataValue,
+    ObserveResult,
     ScheduleDefinition,
+    build_last_update_freshness_checks,
+    define_asset_job,
+    multi_observable_source_asset,
 )
-from dagster_snowflake import fetch_last_updated_timestamps, SnowflakeResource
 
+TABLE_SCHEMA = "PUBLIC"
 table_names = ["charges", "customers"]
 asset_specs = [AssetSpec(table_name) for table_name in table_names]
 
@@ -176,34 +204,49 @@ asset_specs = [AssetSpec(table_name) for table_name in table_names]
 def source_tables(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
         freshness_results = fetch_last_updated_timestamps(
-            snowflake_connection=conn.cursor(), tables=table_names
+            snowflake_connection=conn.cursor(),
+            tables=table_names,
+            schema=TABLE_SCHEMA,
         )
         for table_name, last_updated in freshness_results.items():
             yield ObserveResult(
                 asset_key=table_name,
-        metadata={"dagster/last_updated_timestamp": MetadataValue.timestamp(last_updated)},
+                metadata={
+                    "dagster/last_updated_timestamp": MetadataValue.timestamp(
+                        last_updated
+                    )
+                },
             )
 
 
 source_tables_observation_schedule = ScheduleDefinition(
-  job=define_asset_job(
-    "source_tables_observation_job",
-    selection=AssetSelection.assets(source_tables),
-  ),
-  cron_schedule="* * * * *",
+    job=define_asset_job(
+        "source_tables_observation_job",
+        selection=AssetSelection.assets(source_tables),
+    ),
+    # Runs every minute. Usually, a much less frequent cadence is necessary,
+    # but a short cadence makes it easier to play around with this example.
+    cron_schedule="* * * * *",
 )
 
 
-source_table_freshness_checks = build_freshness_checks_for_non_partitioned_assets(
-  assets=[source_tables],
-  maximum_lag_minutes=2 * 60,
+source_table_freshness_checks = build_last_update_freshness_checks(
+    assets=[source_tables],
+    lower_bound_delta=timedelta(hours=2),
 )
 
 
 defs = Definitions(
-  assets=[source_table_freshness_checks],
-  asset_checks=[source_table_freshness_checks],
-  schedules=[source_tables_observation_schedule],
+    assets=[source_tables],
+    asset_checks=[*source_table_freshness_checks],
+    schedules=[source_tables_observation_schedule],
+    resources={
+        "snowflake": SnowflakeResource(
+            user=EnvVar("SNOWFLAKE_USER"),
+            account=EnvVar("SNOWFLAKE_ACCOUNT"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+        )
+    },
 )
 ```
 
@@ -217,17 +260,20 @@ In this section, we'll demonstrate how to implement freshness checks for materia
 
 ### Step 1: Define the freshness check
 
-In this example, we'll use the <PyObject object="build_freshness_checks_for_non_partitioned_assets" /> function to produce an asset check. This check will fail if an asset’s latest materialization is more than two hours before the current time:
+In this example, we'll use the <PyObject object="build_last_update_freshness_checks" /> function to produce an asset check. This check will fail if an asset’s latest materialization is more than two hours before the current time:
 
-```python
-from dagster import build_freshness_checks_for_non_partitioned_assets
+```python file=/concepts/assets/asset_checks/materializable_freshness_in_pieces.py startafter=start_checks_marker endbefore=end_checks_marker
+from datetime import timedelta
+
+from dagster import asset, build_last_update_freshness_checks
+
 
 @asset
-def my_asset():
-  ...
+def my_asset(): ...
 
-asset1_freshness_checks = build_freshness_checks_for_non_partitioned_assets(
-  assets=[my_asset], maximum_lag_minutes=2 * 60
+
+asset1_freshness_checks = build_last_update_freshness_checks(
+    assets=[my_asset], lower_bound_delta=timedelta(hours=2)
 )
 ```
 
@@ -237,11 +283,11 @@ A [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/conc
 
 In this example, we'll use <PyObject object="build_sensor_for_freshness_checks" /> to create a sensor to automatically run the check. Based on the check's parameters and last run time, the sensor will run the check when enough time has elapsed that the asset might fail the check:
 
-```python
+```python file=/concepts/assets/asset_checks/materializable_freshness_in_pieces.py startafter=start_sensor_marker endbefore=end_sensor_marker
 from dagster import build_sensor_for_freshness_checks
 
 freshness_checks_sensor = build_sensor_for_freshness_checks(
-  freshness_checks=[asset1_freshness_checks]
+    freshness_checks=[*asset1_freshness_checks]
 )
 ```
 
@@ -249,44 +295,43 @@ freshness_checks_sensor = build_sensor_for_freshness_checks(
 
 The last step is to include the asset, check, and sensor in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
-```python
+```python file=/concepts/assets/asset_checks/materializable_freshness_in_pieces.py startafter=start_defs_marker endbefore=end_defs_marker
+from dagster import Definitions
+
 defs = Definitions(
-  assets=[my_asset],
-  asset_checks=[asset1_freshness_checks],
-  sensors=[freshness_checks_sensor]
+    assets=[my_asset],
+    asset_checks=[*asset1_freshness_checks],
+    sensors=[freshness_checks_sensor],
 )
 ```
 
 At this point, the finished code should look like this:
 
-```python
+```python file=/concepts/assets/asset_checks/materializable_freshness_complete.py
+from datetime import timedelta
+
 from dagster import (
-  asset,
-  build_freshness_checks_for_non_partitioned_assets,
-  build_sensor_for_freshness_checks,
-  Definitions
+    Definitions,
+    asset,
+    build_last_update_freshness_checks,
+    build_sensor_for_freshness_checks,
 )
 
 
 @asset
-def my_asset():
-  ...
+def my_asset(): ...
 
 
-asset1_freshness_checks = build_freshness_checks_for_non_partitioned_assets(
-  assets=[my_asset], maximum_lag_minutes=2 * 60
+asset1_freshness_checks = build_last_update_freshness_checks(
+    assets=[my_asset], lower_bound_delta=timedelta(hours=2)
 )
-
-
 freshness_checks_sensor = build_sensor_for_freshness_checks(
-  freshness_checks=[asset1_freshness_checks]
+    freshness_checks=[*asset1_freshness_checks]
 )
-
-
 defs = Definitions(
-  assets=[my_asset],
-  asset_checks=[asset1_freshness_checks],
-  sensors=[freshness_checks_sensor]
+    assets=[my_asset],
+    asset_checks=[*asset1_freshness_checks],
+    sensors=[freshness_checks_sensor],
 )
 ```
 
@@ -299,6 +344,15 @@ From here, you can [view and manually execute the checks in the Dagster UI](#fre
 To view a freshness check, navigate to the **Asset details** page for the asset and click the **Checks tab**.
 
 This page allows you to see metadata about the check and its latest execution. You can also manually execute the check by clicking the **Execute** button.
+
+<!-- ![The checks tab opened to a freshness check in the UI](/images/concepts/assets/asset-checks/checking-for-data-freshness/view-freshness-check.png) -->
+
+<Image
+alt="The Asset Checks page, opened to a freshness check in the Dagster UI"
+src="/images/concepts/assets/asset-checks/checking-for-data-freshness/view-freshness-check.png"
+width={3572}
+height={1944}
+/>
 
 ---
 

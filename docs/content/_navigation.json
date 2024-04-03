@@ -200,7 +200,13 @@
       },
       {
         "title": "Dagster UI",
-        "path": "/concepts/webserver/ui"
+        "path": "/concepts/webserver/ui",
+        "children": [
+          {
+            "title": "User settings & preferences",
+            "path": "/concepts/webserver/ui-user-settings"
+          }
+        ]
       },
       {
         "title": "Logging",
@@ -274,10 +280,20 @@
               {
                 "title": "Job execution",
                 "path": "/concepts/ops-jobs-graphs/job-execution"
+              }
+            ]
+          },
+          {
+            "title": "Metadata & tags",
+            "path": "/concepts/metadata-tags",
+            "children": [
+              {
+                "title": "Tags",
+                "path": "/concepts/metadata-tags/tags"
               },
               {
-                "title": "Job metadata & tags",
-                "path": "/concepts/ops-jobs-graphs/metadata-tags"
+                "title": "Op job metadata",
+                "path": "/concepts/metadata-tags/op-job-metadata"
               }
             ]
           },
@@ -545,7 +561,7 @@
                 "path": "/dagster-cloud/account/managing-users/managing-teams"
               },
               {
-                "title": "User roles and permissions",
+                "title": "User roles & permissions",
                 "path": "/dagster-cloud/account/managing-users/managing-user-roles-permissions"
               },
               {
@@ -833,7 +849,17 @@
       },
       {
         "title": "Embedded ELT",
-        "path": "/integrations/embedded-elt"
+        "path": "/integrations/embedded-elt",
+        "children": [
+          {
+            "title": "dlt & Dagster",
+            "path": "/integrations/embedded-elt/dlt"
+          },
+          {
+            "title": "Sling & Dagster",
+            "path": "/integrations/embedded-elt/sling"
+          }
+        ]
       },
       {
         "title": "Fivetran",
@@ -1299,6 +1325,10 @@
           {
             "title": "DuckDB + Polars (dagster-duckdb-polars)",
             "path": "/_apidocs/libraries/dagster-duckdb-polars"
+          },
+          {
+            "title": "Embedded ELT (dagster-embedded-elt)",
+            "path": "/_apidocs/libraries/dagster-embedded-elt"
           },
           {
             "title": "Fivetran (dagster-fivetran)",

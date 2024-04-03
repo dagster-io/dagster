@@ -1,3 +1,4 @@
+from argparse import Namespace
 from typing import (
     AbstractSet,
     Any,
@@ -235,7 +236,6 @@ def select_unique_ids_from_manifest(
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
-    from dbt.flags import GLOBAL_FLAGS
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
@@ -285,8 +285,12 @@ def select_unique_ids_from_manifest(
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string
-    setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
-    setattr(GLOBAL_FLAGS, "WARN_ERROR", True)
+    _set_flag_attrs(
+        {
+            "INDIRECT_SELECTION": IndirectSelection.Eager,
+            "WARN_ERROR": True,
+        }
+    )
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
@@ -310,3 +314,14 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["metrics"],
         **manifest.get("semantic_models", {}),
     }
+
+
+def _set_flag_attrs(kvs: Dict[str, Any]):
+    from dbt.flags import get_flag_dict, set_flags
+
+    new_flags = Namespace()
+    for global_key, global_value in get_flag_dict().items():
+        setattr(new_flags, global_key.upper(), global_value)
+    for key, value in kvs.items():
+        setattr(new_flags, key.upper(), value)
+    set_flags(new_flags)

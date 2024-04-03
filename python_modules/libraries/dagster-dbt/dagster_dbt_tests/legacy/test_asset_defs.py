@@ -31,8 +31,10 @@ from dagster_dbt import (
     group_from_dbt_resource_props_fallback_to_directory,
 )
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from dagster_dbt.asset_utils import default_asset_key_fn
 from dagster_dbt.core.resources import DbtCliClient
 from dagster_dbt.core.utils import parse_run_results
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslatorSettings
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
 from dagster_dbt.types import DbtOutput
 from dagster_duckdb import build_duckdb_io_manager
@@ -44,11 +46,19 @@ from .utils import assert_assets_match_project
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest_json = json.loads(manifest_path.read_bytes())
 
+dagster_dbt_translator_without_checks = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+)
+
 
 def test_custom_resource_key_asset_load(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
 ):
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json, dbt_resource_key="my_custom_dbt")
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json,
+        dbt_resource_key="my_custom_dbt",
+        dagster_dbt_translator=dagster_dbt_translator_without_checks,
+    )
     assert_assets_match_project(dbt_assets)
 
     assert materialize_to_memory(
@@ -74,7 +84,21 @@ def test_load_from_manifest_json(prefix):
     with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_asset_key(cls, dbt_resource_props):
+            base_key = default_asset_key_fn(dbt_resource_props)
+            if dbt_resource_props["resource_type"] == "source":
+                return base_key
+            else:
+                return base_key.with_prefix(prefix or [])
+
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
+    )
     assert_assets_match_project(dbt_assets, prefix=prefix)
 
     dbt = MagicMock(spec=DbtCliClient)
@@ -91,7 +115,9 @@ def test_load_from_manifest_json(prefix):
 
 @pytest.mark.parametrize("manifest", [json.loads(manifest_path.read_bytes()), manifest_path])
 def test_manifest_argument(manifest):
-    my_dbt_assets = load_assets_from_dbt_manifest(manifest)
+    my_dbt_assets = load_assets_from_dbt_manifest(
+        manifest, dagster_dbt_translator=dagster_dbt_translator_without_checks
+    )
 
     assert my_dbt_assets[0].keys == {
         AssetKey.from_user_string(key)
@@ -116,7 +142,9 @@ def test_runtime_metadata_fn(
         return {"op_name": context.op_def.name, "dbt_model": node_info["name"]}
 
     dbt_assets = load_assets_from_dbt_manifest(
-        manifest_json=manifest_json, runtime_metadata_fn=runtime_metadata_fn
+        manifest_json=manifest_json,
+        runtime_metadata_fn=runtime_metadata_fn,
+        dagster_dbt_translator=dagster_dbt_translator_without_checks,
     )
     assert_assets_match_project(dbt_assets)
 
@@ -151,7 +179,9 @@ def test_fail_immediately(
 ) -> None:
     from dagster import build_init_resource_context
 
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json, dagster_dbt_translator=dagster_dbt_translator_without_checks
+    )
     good_dbt = dbt_cli_resource_factory(
         project_dir=test_project_dir,
         profiles_dir=dbt_config_dir,
@@ -219,7 +249,11 @@ def test_basic(
 
     # expected to emit json-formatted messages
     with capsys.disabled():
-        dbt_assets = load_assets_from_dbt_manifest(manifest_json, use_build_command=use_build)
+        dbt_assets = load_assets_from_dbt_manifest(
+            manifest_json,
+            use_build_command=use_build,
+            dagster_dbt_translator=dagster_dbt_translator_without_checks,
+        )
 
     assert len(dbt_assets[0].group_names_by_key) == len(dbt_assets[0].keys)
     assert set(dbt_assets[0].group_names_by_key.values()) == {"default"}
@@ -274,9 +308,16 @@ def test_basic(
 
 
 def test_groups_from_directories():
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_group_name(cls, dbt_resource_props):
+            return group_from_dbt_resource_props_fallback_to_directory(dbt_resource_props)
+
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json,
-        node_info_to_group_fn=group_from_dbt_resource_props_fallback_to_directory,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
     )
 
     assert dbt_assets[0].group_names_by_key == {
@@ -290,11 +331,16 @@ def test_groups_from_directories():
 
 
 def test_custom_groups():
-    def _node_info_to_group(node_info):
-        return node_info["tags"][0] if node_info["tags"] else "default"
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_group_name(cls, dbt_resource_props):
+            return dbt_resource_props["tags"][0] if dbt_resource_props["tags"] else "default"
 
     dbt_assets = load_assets_from_dbt_manifest(
-        manifest_json, node_info_to_group_fn=_node_info_to_group
+        manifest_json,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
     )
 
     assert dbt_assets[0].group_names_by_key == {
@@ -308,10 +354,15 @@ def test_custom_groups():
 
 
 def test_custom_freshness_policy():
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_freshness_policy(cls, dbt_resource_props):
+            return FreshnessPolicy(maximum_lag_minutes=len(dbt_resource_props["name"]))
+
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
-        node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
-            maximum_lag_minutes=len(node_info["name"])
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
         ),
     )
 
@@ -321,9 +372,16 @@ def test_custom_freshness_policy():
 
 
 def test_custom_auto_materialize_policy():
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_auto_materialize_policy(cls, dbt_resource_props):
+            return AutoMaterializePolicy.lazy()
+
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
-        node_info_to_auto_materialize_policy_fn=lambda _: AutoMaterializePolicy.lazy(),
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
     )
 
     assert dbt_assets[0].auto_materialize_policies_by_key == {
@@ -332,12 +390,16 @@ def test_custom_auto_materialize_policy():
 
 
 def test_custom_definition_metadata():
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_metadata(cls, dbt_resource_props):
+            return {"foo_key": dbt_resource_props["name"], "bar_key": 1.0}
+
     dbt_assets_custom = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
-        node_info_to_definition_metadata_fn=lambda node_info: {
-            "foo_key": node_info["name"],
-            "bar_key": 1.0,
-        },
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
     )
 
     for asset_key, custom_metadata in dbt_assets_custom[0].metadata_by_key.items():
@@ -393,12 +455,23 @@ def test_partitions(dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
 def test_select_from_project(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build, prefix
 ):
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_asset_key(cls, dbt_resource_props):
+            base_key = default_asset_key_fn(dbt_resource_props)
+            if dbt_resource_props["resource_type"] == "source":
+                return base_key
+            else:
+                return base_key.with_prefix(prefix or [])
+
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
         select="sort_by_calories subdir.least_caloric",
         use_build_command=use_build,
-        key_prefix=prefix,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
     )
 
     assert dbt_assets[0].keys == {
@@ -429,10 +502,7 @@ def test_select_from_project(
         for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_OBSERVATION"
     ]
-    if use_build:
-        assert len(observations) == 16
-    else:
-        assert len(observations) == 0
+    assert len(observations) == (16 if use_build else 0)
 
 
 def test_multiple_select_from_project(dbt_seed, test_project_dir, dbt_config_dir):
@@ -473,6 +543,7 @@ def test_select_from_manifest(
             "model.dagster_dbt_test_project.least_caloric",
         },
         use_build_command=use_build,
+        dagster_dbt_translator=dagster_dbt_translator_without_checks,
     )
 
     result = materialize(
@@ -506,11 +577,19 @@ def test_select_from_manifest(
 def test_node_info_to_asset_key(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build
 ):
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_asset_key(cls, dbt_resource_props):
+            return AssetKey(["foo", dbt_resource_props["name"]])
+
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json,
-        node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
         use_build_command=use_build,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
     )
+
     assert get_asset_key_for_model(dbt_assets, "sort_hot_cereals_by_calories") == AssetKey(
         ["foo", "sort_hot_cereals_by_calories"]
     )
@@ -567,7 +646,10 @@ def test_dagster_dbt_translator(
             return AutoMaterializePolicy.lazy()
 
     dbt_assets = load_assets_from_dbt_manifest(
-        manifest_json, dagster_dbt_translator=CustomDagsterDbtTranslator()
+        manifest_json,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+        ),
     )
 
     assert dbt_assets[0].keys == {

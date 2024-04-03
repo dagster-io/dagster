@@ -34,7 +34,7 @@ from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 PAGE_SIZE = 100
@@ -378,7 +378,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         try:
             instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except Exception as e:
-            error = serializable_error_info_from_exc_info(sys.exc_info())
+            error = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
 
             run = check.not_none(instance.get_run_by_id(run.run_id))
             # Make sure we don't re-enqueue a run if it has already finished or moved into STARTED:

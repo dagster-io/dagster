@@ -6,6 +6,7 @@ import signal
 import subprocess
 import sys
 import uuid
+from argparse import Namespace
 from contextlib import suppress
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
@@ -47,7 +48,12 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dagster._utils.warnings import disable_dagster_warnings
+from dbt.adapters.base.impl import BaseAdapter
+from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
+from dbt.config import RuntimeConfig
+from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
+from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
@@ -56,8 +62,9 @@ from sqlglot import (
     MappingSchema,
     exp,
     parse_one,
+    to_table,
 )
-from sqlglot.expressions import table_name
+from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 from typing_extensions import Final, Literal
@@ -80,7 +87,10 @@ from ..dbt_manifest import (
     validate_manifest,
 )
 from ..errors import DagsterDbtCliRuntimeError
-from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
+from ..utils import (
+    ASSET_RESOURCE_TYPES,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
+)
 
 logger = get_dagster_logger()
 
@@ -366,23 +376,30 @@ class DbtCliEventMessage:
             return {}
 
         # 1. Retrieve the current node's SQL file and its parents' column schemas.
-        sqlglot_mapping_schema = MappingSchema()
-        for relation_name, relation_metadata in self._event_history_metadata["parents"].items():
+        sql_dialect = manifest["metadata"]["adapter_type"]
+        sqlglot_mapping_schema = MappingSchema(dialect=sql_dialect)
+        for parent_relation_name, parent_relation_metadata in self._event_history_metadata[
+            "parents"
+        ].items():
             sqlglot_mapping_schema.add_table(
-                table=relation_name,
+                table=to_table(parent_relation_name, dialect=sql_dialect),
                 column_mapping={
                     column_name: column_metadata["data_type"]
-                    for column_name, column_metadata in relation_metadata["columns"].items()
+                    for column_name, column_metadata in parent_relation_metadata["columns"].items()
                 },
+                dialect=sql_dialect,
             )
 
-        dialect = manifest["metadata"]["adapter_type"]
         node_sql_path = target_path.joinpath(
             "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
         )
-        node_ast = parse_one(sql=node_sql_path.read_text()).expression
         optimized_node_ast = cast(
-            exp.Query, optimize(node_ast, schema=sqlglot_mapping_schema, dialect=dialect)
+            exp.Query,
+            optimize(
+                parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect).expression,
+                schema=sqlglot_mapping_schema,
+                dialect=sql_dialect,
+            ),
         )
 
         # 2. Retrieve the column names from the current node.
@@ -395,9 +412,14 @@ class DbtCliEventMessage:
             parent_dbt_resource_props = (
                 manifest["sources"] if is_resource_type_source else manifest["nodes"]
             )[parent_unique_id]
-            relation_name = parent_dbt_resource_props["relation_name"]
+            parent_relation_name = normalize_table_name(
+                to_table(parent_dbt_resource_props["relation_name"], dialect=sql_dialect),
+                dialect=sql_dialect,
+            )
 
-            dbt_parent_resource_props_by_relation_name[relation_name] = parent_dbt_resource_props
+            dbt_parent_resource_props_by_relation_name[parent_relation_name] = (
+                parent_dbt_resource_props
+            )
 
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
         for column_name in column_names:
@@ -406,7 +428,7 @@ class DbtCliEventMessage:
                 column=column_name,
                 sql=optimized_node_ast,
                 schema=sqlglot_mapping_schema,
-                dialect=dialect,
+                dialect=sql_dialect,
             ).walk():
                 # Only the leaves of the lineage graph contain relevant information.
                 if sqlglot_lineage_node.downstream:
@@ -418,8 +440,8 @@ class DbtCliEventMessage:
                     continue
 
                 # Attempt to retrieve the table's associated asset key and column.
-                parent_column_name = exp.to_column(sqlglot_lineage_node.name).name
-                parent_relation_name = table_name(table, dialect=dialect, identify=True)
+                parent_column_name = exp.to_column(sqlglot_lineage_node.name).name.lower()
+                parent_relation_name = normalize_table_name(table, dialect=sql_dialect)
                 parent_resource_props = dbt_parent_resource_props_by_relation_name.get(
                     parent_relation_name
                 )
@@ -434,7 +456,7 @@ class DbtCliEventMessage:
                     )
                 )
 
-            deps_by_column[column_name] = column_deps
+            deps_by_column[column_name.lower()] = column_deps
 
         # 4. Render the lineage as metadata.
         with disable_dagster_warnings():
@@ -467,6 +489,7 @@ class DbtCliInvocation:
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
+    adapter: Optional[BaseAdapter] = field(default=None)
     _stdout: List[str] = field(init=False, default_factory=list)
     _error_messages: List[str] = field(init=False, default_factory=list)
 
@@ -481,6 +504,7 @@ class DbtCliInvocation:
         target_path: Path,
         raise_on_error: bool,
         context: Optional[OpExecutionContext],
+        adapter: Optional[BaseAdapter],
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -522,6 +546,7 @@ class DbtCliInvocation:
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
+            adapter=adapter,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
@@ -994,6 +1019,22 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
+    def _initialize_adapter(self, args: Sequence[str]) -> BaseAdapter:
+        # constructs a dummy set of flags, using the `run` command (ensures profile/project reqs get loaded)
+        profiles_dir = self.profiles_dir if self.profiles_dir else self.project_dir
+        set_from_args(Namespace(profiles_dir=profiles_dir), None)
+        flags = get_flags()
+
+        profile = load_profile(self.project_dir, {}, self.profile, self.target)
+        project = load_project(self.project_dir, False, profile, {})
+        config = RuntimeConfig.from_parts(project, profile, flags)
+
+        register_adapter(config)
+        adapter = cast(BaseAdapter, get_adapter(config))
+        # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
+        reset_adapters()
+        return adapter
+
     @public
     def cli(
         self,
@@ -1141,6 +1182,10 @@ class DbtCliResource(ConfigurableResource):
 
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
+            # Allow IO streaming when running in Windows.
+            # Also, allow it to be overriden by the current environment.
+            "PYTHONLEGACYWINDOWSSTDIO": "1",
+            # Pass the current environment variables to the dbt CLI invocation.
             **os.environ.copy(),
             # An environment variable to indicate that the dbt CLI is being invoked from Dagster.
             "DAGSTER_DBT_CLI": "true",
@@ -1214,6 +1259,12 @@ class DbtCliResource(ConfigurableResource):
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
+        try:
+            adapter = self._initialize_adapter(args)
+        except:
+            # defer exceptions until they can be raised in the runtime context of the invocation
+            adapter = None
+
         return DbtCliInvocation.run(
             args=args,
             env=env,
@@ -1223,6 +1274,7 @@ class DbtCliResource(ConfigurableResource):
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
+            adapter=adapter,
         )
 
 
@@ -1321,7 +1373,7 @@ def get_subset_selection_for_context(
 
     # note that this will always be true if checks are disabled
     if selected_checks_target_selected_assets and all_checks_included_for_selected_assets:
-        selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
+        selected_dbt_resources = selected_dbt_non_test_resources
         indirect_selection = None
         logger.info(
             "A dbt subsetted execution is being performed. Overriding default dbt selection"

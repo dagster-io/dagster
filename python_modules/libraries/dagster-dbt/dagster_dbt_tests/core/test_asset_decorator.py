@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Set
+from typing import Any, Dict, Mapping, Optional, Sequence, Set
 
 import pytest
 from dagster import (
@@ -21,6 +21,7 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.definitions.assets import UserAssetOwner
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import DagsterType
@@ -244,7 +245,11 @@ def test_io_manager_key(
     expected_io_manager_key = DEFAULT_IO_MANAGER_KEY if io_manager_key is None else io_manager_key
 
     for output_def in my_dbt_assets.node_def.output_defs:
-        assert output_def.io_manager_key == expected_io_manager_key
+        if output_def.name in my_dbt_assets.keys_by_output_name:
+            assert output_def.io_manager_key == expected_io_manager_key
+        else:  # asset checks don't use io managers
+            assert output_def.name in my_dbt_assets.check_specs_by_output_name
+            assert output_def.io_manager_key == DEFAULT_IO_MANAGER_KEY
 
 
 @pytest.mark.parametrize(
@@ -506,6 +511,22 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> Non
         assert metadata["customized"] == "tag"
 
 
+def test_with_owner_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    expected_owners = [UserAssetOwner("custom@custom.com")]
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_owners(self, _: Mapping[str, Any]) -> Optional[Sequence[str]]:
+            return [owner.email for owner in expected_owners]
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+    def my_dbt_assets(): ...
+
+    for owners in my_dbt_assets.owners_by_key.values():
+        assert owners == expected_owners
+
+
 def test_with_group_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_group = "customized_group"
 
@@ -625,6 +646,28 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {"foo": "", "bar-baz": ""}
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
         assert my_dbt_assets.tags_by_key[asset_key] == {}
+
+
+def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
+    expected_dbt_owners = [UserAssetOwner("kafka@amerika.com")]
+    expected_dagster_owners = [UserAssetOwner("kafka@castle.com")]
+
+    @dbt_assets(manifest=test_meta_config_manifest)
+    def my_dbt_assets(): ...
+
+    assert my_dbt_assets.owners_by_key == {
+        AssetKey(["customers"]): [],
+        # If a model has Dagster owners specified under `meta`, use that.
+        AssetKey(["customized", "staging", "customers"]): [],
+        # If a model has a dbt owner specified under `group`, use that.
+        AssetKey(["customized", "staging", "orders"]): expected_dbt_owners,
+        # If a model has both Dagster owners and a dbt owner, use the Dagster owner.
+        AssetKey(["customized", "staging", "payments"]): expected_dagster_owners,
+        AssetKey(["orders"]): [],
+        AssetKey(["raw_customers"]): [],
+        AssetKey(["raw_orders"]): [],
+        AssetKey(["raw_payments"]): [],
+    }
 
 
 def test_dbt_with_downstream_asset_via_definition(test_meta_config_manifest: Dict[str, Any]):

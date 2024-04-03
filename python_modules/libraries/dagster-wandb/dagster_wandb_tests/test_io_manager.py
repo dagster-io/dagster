@@ -19,9 +19,10 @@ from dagster_wandb import (
     wandb_artifacts_io_manager,
     wandb_resource,
 )
+from dagster_wandb.io_manager import UNIT_TEST_RUN_ID
 from wandb import Artifact
 
-DAGSTER_RUN_ID = "unit-testing"
+DAGSTER_RUN_ID = UNIT_TEST_RUN_ID
 DAGSTER_RUN_ID_SHORT = DAGSTER_RUN_ID[0:8]
 DAGSTER_HOME = "/path/to/dagster_home"
 WANDB_PROJECT = "project"

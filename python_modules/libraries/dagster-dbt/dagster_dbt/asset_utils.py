@@ -41,6 +41,8 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._core.definitions.metadata import TableMetadataEntries
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
+from dbt.version import __version__ as dbt_version
+from packaging import version
 
 from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
 
@@ -223,11 +225,44 @@ def build_dbt_asset_selection(
             # of them (dbt-related or otherwise)
             foo_and_downstream_selection = foo_selection.downstream()
 
+        Building an asset selection on a dbt assets definition with an existing selection:
+
+        .. code-block:: python
+
+            from dagster_dbt import dbt_assets, build_dbt_asset_selection
+
+            @dbt_assets(
+                manifest=...
+                select="bar+",
+            )
+            def bar_plus_dbt_assets():
+                ...
+
+            # Select the dbt assets that are in the intersection of having the tag "foo" and being
+            # in the existing selection "bar+".
+            bar_plus_and_foo_selection = build_dbt_asset_selection(
+                [bar_plus_dbt_assets],
+                dbt_select="tag:foo"
+            )
+
+            # Furthermore, select all assets downstream (dbt-related or otherwise).
+            bar_plus_and_foo_and_downstream_selection = bar_plus_and_foo_selection.downstream()
+
     """
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
+    [dbt_assets_definition] = dbt_assets
+
+    dbt_assets_select = dbt_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
+    dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY)
+
     from .dbt_manifest_asset_selection import DbtManifestAssetSelection
 
     return DbtManifestAssetSelection.build(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        select=dbt_assets_select,
+        exclude=dbt_assets_exclude,
+    ) & DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
@@ -445,6 +480,23 @@ def group_from_dbt_resource_props_fallback_to_directory(
     return fqn[1]
 
 
+def default_owners_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[Sequence[str]]:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    owners_config = dagster_metadata.get("owners")
+
+    if owners_config:
+        return owners_config
+
+    owner: Optional[str] = (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
+
+    if not owner:
+        return None
+
+    return [owner]
+
+
 def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
@@ -537,39 +589,21 @@ def default_asset_check_fn(
     dbt_nodes: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
     asset_key: AssetKey,
-    unique_id: str,
     test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
     test_resource_props = dbt_nodes[test_unique_id]
     parent_unique_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
-    parent_unique_ids.discard(unique_id)
 
-    is_generic_test_on_attached_node = test_resource_props.get("attached_node") == unique_id
-    is_singular_test_with_single_dependency = (
-        not is_generic_test_on_attached_node
-        and len(set(test_resource_props["depends_on"]["nodes"])) == 1
+    asset_check_key = get_asset_check_key_for_test(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        test_unique_id=test_unique_id,
     )
 
-    has_asset_key_config = bool(
-        (
-            test_resource_props.get("config", {}).get("meta", {})
-            or test_resource_props.get("meta", {})
-        )
-        .get("dagster", {})
-        .get("asset_key", [])
-    )
-    is_singular_test_with_configured_asset_key = (
-        has_asset_key_config
-        and dagster_dbt_translator.get_asset_key(test_resource_props) == asset_key
-    )
-
-    if not all(
-        [
-            dagster_dbt_translator.settings.enable_asset_checks,
-            is_generic_test_on_attached_node
-            or is_singular_test_with_single_dependency
-            or is_singular_test_with_configured_asset_key,
-        ]
+    if not (
+        dagster_dbt_translator.settings.enable_asset_checks
+        and asset_check_key
+        and asset_check_key.asset_key == asset_key
     ):
         return None
 
@@ -762,7 +796,6 @@ def get_asset_deps(
                     dbt_nodes,
                     dagster_dbt_translator,
                     asset_key,
-                    unique_id,
                     test_unique_id,
                 )
                 if check_spec:
@@ -824,33 +857,45 @@ def get_asset_check_key_for_test(
 
     # If the test is singular, but has multiple dependencies, infer the attached node from
     # from the dbt meta.
-    has_asset_key_config = bool(
+    attached_node_ref = (
         (
             test_resource_props.get("config", {}).get("meta", {})
             or test_resource_props.get("meta", {})
         )
         .get("dagster", {})
-        .get("asset_key", [])
-    )
-    attached_node_dbt_resource_props = (
-        (
-            manifest["nodes"].get(attached_node_unique_id)
-            or manifest["sources"].get(attached_node_unique_id)
-        )
-        if attached_node_unique_id
-        else test_resource_props
-    )
-    attached_node_asset_key = (
-        dagster_dbt_translator.get_asset_key(attached_node_dbt_resource_props)
-        if attached_node_unique_id or has_asset_key_config
-        else None
+        .get("ref", {})
     )
 
-    return (
-        AssetCheckKey(
-            name=test_resource_props["name"],
-            asset_key=attached_node_asset_key,
+    # Attempt to find the attached node from the ref.
+    if attached_node_ref and version.parse(dbt_version) >= version.parse("1.6.0"):
+        ref_name, ref_package, ref_version = (
+            attached_node_ref["name"],
+            attached_node_ref.get("package"),
+            attached_node_ref.get("version"),
         )
-        if attached_node_asset_key
-        else None
+
+        project_name = manifest["metadata"]["project_name"]
+        if not ref_package:
+            ref_package = project_name
+
+        unique_id_by_ref: Mapping[Tuple[str, str, Optional[str]], str] = {
+            (
+                dbt_resource_props["name"],
+                dbt_resource_props["package_name"],
+                dbt_resource_props.get("version"),
+            ): unique_id
+            for unique_id, dbt_resource_props in manifest["nodes"].items()
+        }
+
+        attached_node_unique_id = unique_id_by_ref.get((ref_name, ref_package, ref_version))
+
+    if not attached_node_unique_id:
+        return None
+
+    return AssetCheckKey(
+        name=test_resource_props["name"],
+        asset_key=dagster_dbt_translator.get_asset_key(
+            manifest["nodes"].get(attached_node_unique_id)
+            or manifest["sources"].get(attached_node_unique_id)
+        ),
     )

@@ -314,9 +314,9 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
       }
       setIsOpen(false);
     };
-    document.body.addEventListener('click', listener);
+    document.body.addEventListener('mousedown', listener);
     return () => {
-      document.body.removeEventListener('click', listener);
+      document.body.removeEventListener('mousedown', listener);
     };
   }, [setIsOpen]);
 

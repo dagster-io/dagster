@@ -529,7 +529,7 @@ def downstream_asset(upstream_asset):
 
 ### Recording materialization metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Overview" and "Events" tabs of the **Asset Details** page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
 
 ```python file=/concepts/assets/asset_materialization_metadata.py
 from pandas import DataFrame
@@ -557,7 +557,7 @@ def table1() -> Output[None]:
 
 ### Attaching definition metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in the UI. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Overview" tab of the **Asset Details** page in the UI. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
 
 To attach metadata, supply a `metadata` dictionary to the asset:
 

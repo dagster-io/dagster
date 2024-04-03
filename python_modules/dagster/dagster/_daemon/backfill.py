@@ -6,7 +6,8 @@ from dagster._core.execution.asset_backfill import execute_asset_backfill_iterat
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._daemon.utils import DaemonErrorCapture
+from dagster._utils.error import SerializableErrorInfo
 
 
 def execute_backfill_iteration(
@@ -54,9 +55,12 @@ def execute_backfill_jobs(
                     backfill, logger, workspace_process_context, debug_crash_flags, instance
                 )
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            error_info = DaemonErrorCapture.on_exception(
+                sys.exc_info(),
+                logger=logger,
+                log_message=f"Backfill failed for {backfill.backfill_id}",
+            )
             instance.update_backfill(
                 backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
             )
-            logger.error(f"Backfill failed for {backfill.backfill_id}: {error_info.to_string()}")
             yield error_info

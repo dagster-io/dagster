@@ -75,7 +75,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    run = create_run_for_test(instance, job_name="foo_job", run_id="new_run")
+    run = create_run_for_test(instance, job_name="foo_job")
 
     assert instance.get_runs() == [run]
 
@@ -83,15 +83,13 @@ def test_get_run_by_id():
 
 
 def do_test_single_write_read(instance):
-    run_id = "some_run_id"
-
     @job
     def job_def():
         pass
 
-    instance.create_run_for_job(job_def=job_def, run_id=run_id)
-    run = instance.get_run_by_id(run_id)
-    assert run.run_id == run_id
+    run = instance.create_run_for_job(job_def=job_def)
+    stored_run = instance.get_run_by_id(run.run_id)
+    assert run.run_id == stored_run.run_id
     assert run.job_name == "job_def"
     assert list(instance.get_runs()) == [run]
     instance.wipe()
@@ -311,7 +309,6 @@ def test_submit_run():
             run = create_run_for_test(
                 instance=instance,
                 job_name=external_job.name,
-                run_id="foo-bar",
                 external_job_origin=external_job.get_external_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
@@ -319,7 +316,7 @@ def test_submit_run():
             instance.submit_run(run.run_id, workspace)
 
             assert len(instance.run_coordinator.queue()) == 1
-            assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
+            assert instance.run_coordinator.queue()[0].run_id == run.run_id
 
 
 def test_create_run_with_asset_partitions():
@@ -783,3 +780,12 @@ def test_report_runless_asset_event():
             limit=1,
         )
         assert len(records) == 1
+
+
+def test_invalid_run_id():
+    with instance_for_test() as instance:
+        with pytest.raises(
+            CheckError,
+            match="run_id must be a valid UUID. Got invalid_run_id",
+        ):
+            create_run_for_test(instance, job_name="foo_job", run_id="invalid_run_id")

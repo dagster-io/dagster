@@ -9,7 +9,7 @@ import {
   Tooltip,
   ifPlural,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import React, {useContext} from 'react';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
@@ -18,6 +18,7 @@ import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
@@ -207,23 +208,31 @@ export const useGroupNodeContextMenu = ({
   const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
     React.useState<boolean>(false);
 
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
+
   const menu = (
     <Menu>
-      <MenuItem
-        icon="materialization"
-        text={`Materialize assets (${numberFormatter.format(assets.length)})`}
-        onClick={(e) => {
-          onClick(
-            assets.map((asset) => asset.assetKey),
-            e,
-          );
-        }}
-      />
-      <MenuItem
-        icon="changes_present"
-        text="Materialize unsynced"
-        onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
-      />
+      {canSeeMaterializeAction ? (
+        <>
+          <MenuItem
+            icon="materialization"
+            text={`Materialize assets (${numberFormatter.format(assets.length)})`}
+            onClick={(e) => {
+              onClick(
+                assets.map((asset) => asset.assetKey),
+                e,
+              );
+            }}
+          />
+          <MenuItem
+            icon="changes_present"
+            text="Materialize unsynced"
+            onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
+          />
+        </>
+      ) : null}
       {onFilterToGroup ? (
         <MenuItem text="Filter to this group" onClick={onFilterToGroup} icon="filter_alt" />
       ) : null}
