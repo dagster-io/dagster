@@ -58,7 +58,7 @@ source_table_freshness_checks = build_last_update_freshness_checks(
 
 defs = Definitions(
     assets=[source_tables],
-    asset_checks=[*source_table_freshness_checks],
+    asset_checks=[source_table_freshness_checks],
     schedules=[source_tables_observation_schedule],
     resources={
         "snowflake": SnowflakeResource(
