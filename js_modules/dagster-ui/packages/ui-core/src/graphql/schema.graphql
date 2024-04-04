@@ -621,6 +621,7 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
+    tags: [InputTag!]
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String!]

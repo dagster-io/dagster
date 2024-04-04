@@ -687,7 +687,6 @@ def test_add_asset_event_tags_table(hostname, conn_string):
             assert "asset_event_tags" not in get_tables(instance)
 
             asset_job.execute_in_process(instance=instance)
-
             with pytest.raises(
                 DagsterInvalidInvocationError, match="In order to search for asset event tags"
             ):

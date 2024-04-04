@@ -39,6 +39,7 @@ from ..dagster_types import (
 )
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
+from ..inputs import GrapheneInputTag
 from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeLogs, from_captured_log_data
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -182,6 +183,7 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
+        tags=graphene.Argument(graphene.List(graphene.NonNull(GrapheneInputTag))),
     )
     assetObservations = graphene.Field(
         non_null_list(GrapheneObservationEvent),
@@ -219,6 +221,7 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
+        tags: Optional[Sequence[GrapheneInputTag]] = None,
     ) -> Sequence[GrapheneMaterializationEvent]:
         from ...implementation.fetch_assets import get_asset_materializations
 
@@ -233,6 +236,7 @@ class GrapheneAsset(graphene.ObjectType):
             partitions=partitions,
             before_timestamp=before_timestamp,
             after_timestamp=after_timestamp,
+            tags={tag["name"]: tag["value"] for tag in tags} if tags else None,
             limit=limit,
         )
         run_ids = [event.run_id for event in events]

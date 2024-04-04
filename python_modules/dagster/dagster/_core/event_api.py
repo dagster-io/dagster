@@ -1,7 +1,7 @@
 import base64
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Literal, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Callable, Literal, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 from typing_extensions import TypeAlias
 
@@ -235,6 +235,10 @@ class EventRecordsFilter(
         before_cursor = cursor_obj.storage_id() if not ascending else None
         return before_cursor, after_cursor
 
+    @property
+    def tags(self) -> Optional[Mapping[str, Union[str, Sequence[str]]]]:
+        return None
+
 
 @whitelist_for_serdes
 class AssetRecordsFilter(
@@ -268,6 +272,8 @@ class AssetRecordsFilter(
             events with storage_id less than the provided value are returned.
         storage_ids (Optional[Sequence[int]]): Filter parameter such that only event records for
             the given storage ids are returned.
+        tags (Optional[Mapping[str, Union[str, Sequence[str]]]]): Filter parameter such that only
+            events with the given event tags are returned
     """
 
     def __new__(
@@ -279,6 +285,7 @@ class AssetRecordsFilter(
         after_storage_id: Optional[int] = None,
         before_storage_id: Optional[int] = None,
         storage_ids: Optional[Sequence[int]] = None,
+        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
         return super(AssetRecordsFilter, cls).__new__(
             cls,
@@ -291,6 +298,7 @@ class AssetRecordsFilter(
             after_storage_id=check.opt_int_param(after_storage_id, "after_storage_id"),
             before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
+            tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str),
         )
 
     def to_event_records_filter(
@@ -322,6 +330,10 @@ class AssetRecordsFilter(
             before_timestamp=self.before_timestamp,
             storage_ids=self.storage_ids,
         )
+
+    @property
+    def tags(self) -> Optional[Mapping[str, Union[str, Sequence[str]]]]:
+        return None
 
 
 @whitelist_for_serdes
