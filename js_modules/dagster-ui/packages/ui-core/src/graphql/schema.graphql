@@ -902,6 +902,7 @@ type AssetCheck {
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
   blocking: Boolean!
+  additionalAssetKeys: [AssetKey!]!
 }
 
 type AssetCheckExecution {

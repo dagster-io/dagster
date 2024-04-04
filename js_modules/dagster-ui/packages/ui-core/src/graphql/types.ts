@@ -145,6 +145,7 @@ export type AssetBackfillTargetPartitions = {
 
 export type AssetCheck = {
   __typename: 'AssetCheck';
+  additionalAssetKeys: Array<AssetKey>;
   assetKey: AssetKey;
   blocking: Scalars['Boolean']['output'];
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
@@ -5685,6 +5686,10 @@ export const buildAssetCheck = (
   relationshipsToOmit.add('AssetCheck');
   return {
     __typename: 'AssetCheck',
+    additionalAssetKeys:
+      overrides && overrides.hasOwnProperty('additionalAssetKeys')
+        ? overrides.additionalAssetKeys!
+        : [],
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!
