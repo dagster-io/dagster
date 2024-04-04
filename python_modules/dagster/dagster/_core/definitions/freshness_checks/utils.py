@@ -23,6 +23,8 @@ DEADLINE_CRON_METADATA_KEY = "dagster/deadline_cron"
 FRESHNESS_TIMEZONE_METADATA_KEY = "dagster/freshness_timezone"
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
+OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY = "dagster/overdue_deadline_timestamp"
+OVERDUE_SECONDS_METADATA_KEY = "dagster/overdue_seconds"
 
 
 def ensure_no_duplicate_assets(
@@ -160,13 +162,52 @@ def ensure_freshness_check(checks: AssetsDefinition) -> None:
         )
 
 
+def get_deadline_timestamp(
+    deadline_cron: Optional[str],
+    current_timestamp: float,
+    last_update_timestamp: Optional[float],
+    lower_bound_delta: datetime.timedelta,
+    timezone: str,
+) -> float:
+    """Get the deadline as a timestamp for the given parameterization.
+
+    If a deadline cron is provided, the deadline will be the latest completed cron tick before the
+    current time. Otherwise, it will be the time of the last record + lower_bound_cron
+    (since that's the next time that the record could be considered overdue).
+    """
+    current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+    if deadline_cron:
+        return check.not_none(
+            get_latest_completed_cron_tick(
+                cron_string=deadline_cron,
+                current_time=current_time_in_freshness_tz,
+                timezone=timezone,
+            )
+        ).timestamp()
+    # Otherwise, the deadline for checking an update is lower_bound_delta after last_update_timestamp.
+    # If there is no last update, the deadline for checking is now.
+    return (
+        last_update_timestamp + lower_bound_delta.total_seconds()
+        if last_update_timestamp
+        else current_timestamp
+    )
+
+
+def get_overdue_seconds(
+    deadline_timestamp: float,
+    current_timestamp: float,
+) -> float:
+    """Get the number of seconds that the asset is overdue by."""
+    return max(0.0, current_timestamp - deadline_timestamp)
+
+
 def get_last_update_time_lower_bound(
     deadline_cron: Optional[str],
     current_timestamp: float,
     lower_bound_delta: datetime.timedelta,
     timezone: str,
 ) -> datetime.datetime:
-    """Get the lower bound of the last_update_time for the given cron schedule."""
+    """Get the lower bound of the last_update_time for the given parametrization."""
     current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
     if deadline_cron:
         return (

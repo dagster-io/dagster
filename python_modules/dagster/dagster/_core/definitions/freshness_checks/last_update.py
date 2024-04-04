@@ -50,6 +50,17 @@ def build_last_update_freshness_checks(
     parameter to "3 hours". This would mean that the check will expect the most recent observation
     record to indicate data no older than 3 hours, relative to the current time, regardless of when it runs.
 
+    The check result will contain the following metadata:
+    - "dagster/last_updated_time": The time of the most recent update to the asset
+    - "dagster/overdue_seconds": (Only present if asset is overdue) The number of seconds that the
+        asset is overdue by.
+    - "dagster/freshness_params": A dictionary containing the parameters used to construct the
+        check.
+    - "dagster/overdue_deadline_timestamp": The timestamp that we are expecting the asset to have
+        arrived by. In the case of a provided deadline_cron, this is the timestamp of the most recent
+        tick of the cron schedule. In the case of no deadline_cron, this is lower_bound_delta seconds
+        after the last update time of the asset.
+
     Examples:
         .. code-block:: python
 

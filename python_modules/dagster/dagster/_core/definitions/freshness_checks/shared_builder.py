@@ -1,5 +1,5 @@
 import datetime
-from typing import Callable, Iterable, Optional, Sequence, Union, cast
+from typing import Any, Callable, Iterable, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import (
     multi_asset_check,
 )
+from dagster._core.definitions.metadata import FloatMetadataValue, TimestampMetadataValue
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.execution.context.compute import (
     AssetCheckExecutionContext,
@@ -23,12 +24,16 @@ from .utils import (
     FRESHNESS_PARAMS_METADATA_KEY,
     FRESHNESS_TIMEZONE_METADATA_KEY,
     LOWER_BOUND_DELTA_METADATA_KEY,
+    OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY,
+    OVERDUE_SECONDS_METADATA_KEY,
     asset_to_keys_iterable,
     ensure_no_duplicate_assets,
+    get_deadline_timestamp,
     get_description_for_freshness_check_result,
     get_last_update_time_lower_bound,
     get_last_updated_timestamp,
     get_latest_complete_partition_key,
+    get_overdue_seconds,
     retrieve_latest_record,
     unique_id_from_asset_keys,
 )
@@ -42,10 +47,9 @@ def build_freshness_multi_check(
     lower_bound_delta: datetime.timedelta,
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]],
 ) -> AssetChecksDefinition:
-    params_metadata = {}
+    params_metadata: dict[str, Any] = {FRESHNESS_TIMEZONE_METADATA_KEY: timezone}
     if deadline_cron:
         params_metadata[DEADLINE_CRON_METADATA_KEY] = deadline_cron
-        params_metadata[FRESHNESS_TIMEZONE_METADATA_KEY] = timezone
     if lower_bound_delta:
         params_metadata[LOWER_BOUND_DELTA_METADATA_KEY] = lower_bound_delta.total_seconds()
 
@@ -103,6 +107,24 @@ def build_freshness_multi_check(
                 and update_timestamp >= last_update_time_lower_bound.timestamp()
             )
 
+            deadline_timestamp = get_deadline_timestamp(
+                deadline_cron=deadline_cron,
+                timezone=timezone,
+                current_timestamp=current_timestamp,
+                lower_bound_delta=lower_bound_delta,
+                last_update_timestamp=update_timestamp,
+            )
+            metadata = {
+                FRESHNESS_PARAMS_METADATA_KEY: params_metadata,
+                OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(deadline_timestamp),
+            }
+            if not passed:
+                metadata[OVERDUE_SECONDS_METADATA_KEY] = FloatMetadataValue(
+                    get_overdue_seconds(
+                        deadline_timestamp=deadline_timestamp, current_timestamp=current_timestamp
+                    )
+                )
+
             yield AssetCheckResult(
                 passed=passed,
                 description=get_description_for_freshness_check_result(
@@ -114,6 +136,7 @@ def build_freshness_multi_check(
                 ),
                 severity=severity,
                 asset_key=asset_key,
+                metadata=metadata,
             )
 
     return the_check
