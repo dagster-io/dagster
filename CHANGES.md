@@ -14,7 +14,7 @@
 - The new `build_column_schema_change_checks` API allows defining asset checks that warn when an asset’s columns have changed since its latest materialization.
 - In the asset graph UI, the “Upstream data”, “Code version changed”, and “Upstream code version” statuses have been collapsed into a single “Unsynced” status. Clicking on “Unsynced” displays more detailed information.
 - I/O managers are now optional. This enhances flexibility for scenarios where they are not necessary. For guidance, see [When to use I/O managers](https://docs.dagster.io/concepts/io-management/io-managers#when-to-use-io-managers).
-    - Assets with `None` or `MaterializeResult` return type annotations won't use I/O managers; dependencies for these assets can be set using the `deps` parameter in the `@asset` decorator.
+  - Assets with `None` or `MaterializeResult` return type annotations won't use I/O managers; dependencies for these assets can be set using the `deps` parameter in the `@asset` decorator.
 - [dagster-dbt] Dagster’s dbt integration can now be configured to automatically collect [metadata about column schema and column lineage](https://www.notion.so/https-docs-dagster-io-integrations-snowflake-3ec05f9d3677469b8c0ceec1d6cf6a45?pvs=21).
 - [dagster-dbt] dbt tests are now pulled in as Dagster asset checks by default.
 - [dagster-dbt] dbt resource tags are now automatically pulled in as Dagster asset tags.
@@ -55,9 +55,9 @@
 - [dagster-dbt] Column lineage metadata can now be emitted when invoking dbt. See the [documentation for details](https://docs.dagster.io/integrations/dbt/reference#emit-column-level-metadata-as-materialization-metadata-).
 - [experimental][dagster-embedded-elt] Add the data load tool (dlt) integration for easily building and integration dlt ingestion pipelines with Dagster.
 - [dagster-dbt][community-contribution] You can now specify a custom schedule name for schedules created with `build_schedule_from_dbt_selection`. Thanks [@dragos-pop](https://github.com/dragos-pop)!
-- [helm][community-contribution] You can now specify a custom job namespace for your user code deployments.  Thanks [@tmatthews0020](https://github.com/tmatthews0020)!
-- [dagster-polars][community-contribution] Column schema metadata is now integrated using the dagster-specific metadata key in `dagster_polars`.  Thanks [@danielgafni](https://github.com/danielgafni)!
-- [dagster-datadog][community-contribution] Added `datadog.api` module to the `DatadogClient` resource, enabling direct access to API methods.  Thanks [@shivgupta](https://github.com/shivonchain)!
+- [helm][community-contribution] You can now specify a custom job namespace for your user code deployments. Thanks [@tmatthews0020](https://github.com/tmatthews0020)!
+- [dagster-polars][community-contribution] Column schema metadata is now integrated using the dagster-specific metadata key in `dagster_polars`. Thanks [@danielgafni](https://github.com/danielgafni)!
+- [dagster-datadog][community-contribution] Added `datadog.api` module to the `DatadogClient` resource, enabling direct access to API methods. Thanks [@shivgupta](https://github.com/shivonchain)!
 
 ### Bugfixes
 
@@ -69,18 +69,18 @@
 - [dagster-aws] Fixed an issue where a race condition where simultaneously materializing the same asset more than once would sometimes raise an Exception when using the `s3_io_manager`.
 - [ui] Fixed a bug where resizable panels could inadvertently be hidden and never recovered, for instance the right panel on the global asset graph.
 - [ui] Fixed a bug where opening a run with an op selection in the Launchpad could lose the op selection setting for the subsequently launched run. The op selection is now correctly preserved.
-- [community-contribution] Fixed `dagster-polars` tests by excluding `Decimal` types.  Thanks [@ion-elgreco](https://github.com/ion-elgreco)!
-- [community-contribution] Fixed a bug where auto-materialize rule evaluation would error on FIPS-compliant machines.  Thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!
-- [community-contribution] Fixed an issue where an excessive DeprecationWarning was being issued for a `ScheduleDefinition` passed into the `Definitions` object.  Thanks [@2Ryan09](https://github.com/2Ryan09)!
+- [community-contribution] Fixed `dagster-polars` tests by excluding `Decimal` types. Thanks [@ion-elgreco](https://github.com/ion-elgreco)!
+- [community-contribution] Fixed a bug where auto-materialize rule evaluation would error on FIPS-compliant machines. Thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!
+- [community-contribution] Fixed an issue where an excessive DeprecationWarning was being issued for a `ScheduleDefinition` passed into the `Definitions` object. Thanks [@2Ryan09](https://github.com/2Ryan09)!
 
 ### Breaking Changes
 
-- Creating a run with a custom non-UUID `run_id` was previously private and only used for testing.  It will now raise an exception.
+- Creating a run with a custom non-UUID `run_id` was previously private and only used for testing. It will now raise an exception.
 - [community-contribution] Previously, calling `get_partition_keys_in_range` on a `MultiPartitionsDefinition` would erroneously return partition keys that were within the one-dimensional range of alphabetically-sorted partition keys for the definition. Now, this method returns the cartesian product of partition keys within each dimension’s range. Thanks, [@mst](https://github.com/mst)!
 - Added `AssetCheckExecutionContext` to replace `AssetExecutionContext` as the type of the `context` param passed in to `@asset_check` functions. `@asset_check` was an experimental decorator.
 - [experimental] `@classmethod` decorators have been removed from `[dagster-embedded-slt.sling](http://dagster-embedded-slt.sling)` `DagsterSlingTranslator`
 - [dagster-dbt] `@classmethod` decorators have been removed from `DagsterDbtTranslator`.
-- [dagster-k8s]  The default merge behavior when raw kubernetes config is supplied at multiple scopes (for example, at the instance level and for a particluar job) has been changed to be more consistent. Previously, configuration was merged shallowly by default, with fields replacing other fields instead of appending or merging. Now, it is merged deeply by default, with lists appended to each other and dictionaries merged, in order to be more consistent with how kubernetes configuration is combined in all other places. See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#precedence-rules) for more information, including how to restore the previous default merge behavior.
+- [dagster-k8s] The default merge behavior when raw kubernetes config is supplied at multiple scopes (for example, at the instance level and for a particluar job) has been changed to be more consistent. Previously, configuration was merged shallowly by default, with fields replacing other fields instead of appending or merging. Now, it is merged deeply by default, with lists appended to each other and dictionaries merged, in order to be more consistent with how kubernetes configuration is combined in all other places. See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#precedence-rules) for more information, including how to restore the previous default merge behavior.
 
 ### Deprecations
 
@@ -94,27 +94,25 @@
 
 - Lots of updates to examples to reflect the recent opt-in nature of I/O managers
 - [Dagster Cloud alert guides](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts) have been split up by alert type:
-    - [Managing alerts in the Dagster Cloud UI](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui)
-    - [Managing alerts using the dagster-cloud CLI](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/managing-alerts-cli)
-    - [Email alerts](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/email)
-    - [Microsoft Teams alerts](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/microsoft-teams)
-    - [Slack alerts](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/slack)
+  - [Managing alerts in the Dagster Cloud UI](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui)
+  - [Managing alerts using the dagster-cloud CLI](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/managing-alerts-cli)
+  - [Email alerts](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/email)
+  - [Microsoft Teams alerts](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/microsoft-teams)
+  - [Slack alerts](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts/slack)
 - Added info about asset check-based-alerts to the Dagster Cloud [alerting docs](https://docs.dagster.io/dagster-cloud/managing-deployments/alerts)
 - The [Asset checks documentation](https://docs.dagster.io/concepts/asset-checks) got a face lift - info about defining and executing asset checks [now lives in its own guide](https://docs.dagster.io/concepts/assets/asset-checks/define-execute-asset-checks)
 - Added a new guide for [using freshness checks](https://docs.dagster.io/concepts/assets/asset-checks/checking-for-data-freshness) to the Asset checks documentation
 - Cleaned up the [Getting help guide](https://docs.dagster.io/getting-started/getting-help) - it now includes a high-level summary of all Dagster support resources, making it easier to skim!
-- [community-contribution] Fixed the indentation level of a code snippet in the `dagster-polars` documentation.  Thanks [@danielgafni](https://github.com/danielgafni)!
+- [community-contribution] Fixed the indentation level of a code snippet in the `dagster-polars` documentation. Thanks [@danielgafni](https://github.com/danielgafni)!
 
 ### Dagster Cloud
 
 - The Dagster Cloud agent will now monitor the code servers that it spins to detect whether they have stopped serving requests, and will automatically redeploy the code server if it has stopped responding for an extended period of time.
 - New additions and bugfixes in Insights:
-    - Added per-metric cost estimation. Estimates can be added via the “Insights settings” button, and will appear in the table and chart for that metric.
-    - Branch deployments are now included in the deployment filter control.
-    - In the Deployments view, fixed deployment links in the data table.
-    - Added support for BigQuery cost metrics.
-
-
+  - Added per-metric cost estimation. Estimates can be added via the “Insights settings” button, and will appear in the table and chart for that metric.
+  - Branch deployments are now included in the deployment filter control.
+  - In the Deployments view, fixed deployment links in the data table.
+  - Added support for BigQuery cost metrics.
 
 # 1.6.14 (core) / 0.22.14 (libraries)
 
