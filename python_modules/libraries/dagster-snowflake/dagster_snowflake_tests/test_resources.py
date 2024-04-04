@@ -310,7 +310,9 @@ def test_fetch_last_updated_timestamps(db_str: str):
                         table_name.lower()
                     ],  # Snowflake table names are expected uppercase. Test that lowercase also works.
                     schema="TESTSCHEMA",
-                )[table_name].timestamp()
+                )[
+                    table_name.lower()
+                ].timestamp()  # Expect that table name is returned in the same case it was passed in.
                 return ObserveResult(
                     data_version=DataVersion("foo"),
                     metadata={"freshness": FloatMetadataValue(freshness_for_table)},
