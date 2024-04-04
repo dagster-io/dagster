@@ -307,8 +307,9 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
-@experimental(emit_runtime_warning=False)
-class AssetCondition(ABC):
+# Adding the NamedTuple inheritance to avoid bugs with the experimental decorator and subclasses.
+@experimental
+class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
     """An AssetCondition represents some state of the world that can influence if an asset
     partition should be materialized or not. AssetConditions can be combined to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
@@ -444,7 +445,7 @@ class AssetCondition(ABC):
 
 
 @experimental
-class RuleCondition(
+class RuleCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
     AssetCondition,
 ):
@@ -472,7 +473,7 @@ class RuleCondition(
 
 
 @experimental
-class AndAssetCondition(
+class AndAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_AndAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
 ):
@@ -494,7 +495,7 @@ class AndAssetCondition(
 
 
 @experimental
-class OrAssetCondition(
+class OrAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_OrAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
 ):
@@ -518,7 +519,7 @@ class OrAssetCondition(
 
 
 @experimental
-class NotAssetCondition(
+class NotAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_NotAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
 ):
