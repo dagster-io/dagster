@@ -1353,6 +1353,11 @@
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
                   "solid_name": "asset_1"
                 }
               ]
@@ -9715,6 +9720,11 @@
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
                   "solid_name": "asset_1"
                 }
               ]
@@ -16445,7 +16455,7 @@
   'd65a072229c6e8fc80db02c8d06067f3b0b48305'
 # ---
 # name: test_all_snapshot_ids[11]
-  'e5ac3743cbfc741199017e8d2ec8bff52bbbef4e'
+  '85068488a294006b6e678e4e12b0185b93d52eca'
 # ---
 # name: test_all_snapshot_ids[120]
   '''
@@ -22577,6 +22587,11 @@
               "input_name": "asset_1",
               "is_dynamic_collect": false,
               "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
@@ -29543,7 +29558,7 @@
   'b131f0bc1872f377636fbf002a3ad86049c1e8af'
 # ---
 # name: test_all_snapshot_ids[13]
-  'c7692c22ea80315f2d23aac853f3f19262a1cf70'
+  '6a348b1cde8828f827027eb43837bc6c8b169261'
 # ---
 # name: test_all_snapshot_ids[140]
   '''
@@ -35313,6 +35328,11 @@
               "input_name": "asset_1",
               "is_dynamic_collect": false,
               "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
@@ -42352,7 +42372,7 @@
   'a273aada46419892fdf5bbc48d0878f0e1eecba7'
 # ---
 # name: test_all_snapshot_ids[15]
-  '0f764ee99fd4ca113e99db6fcbf035b92120ca4e'
+  '8ad31a076f8b7a4f5d7b9fa893de78d00d2ccce3'
 # ---
 # name: test_all_snapshot_ids[160]
   '''
@@ -45875,6 +45895,11 @@
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
                   "solid_name": "asset_1"
                 }
               ]
@@ -47714,7 +47739,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[17]
-  '76a04c6a8a1c071a35a7bf78860ceb23d296aa02'
+  '5188d18a643479e54badb6a5c1654edad3d214b6'
 # ---
 # name: test_all_snapshot_ids[18]
   '''
@@ -49058,6 +49083,11 @@
               "input_name": "asset_1",
               "is_dynamic_collect": false,
               "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
@@ -50886,10 +50916,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[19]
-  '79cbf979acc4920cb3a4366fb410e4d5dcfc13ed'
+  'c891e118179fb623b92a997b7f3066560169b7d8'
 # ---
 # name: test_all_snapshot_ids[1]
-  '17092da9c23db2c90f88e6bd3fd2876fd5faa1be'
+  'c669d7f9aaa25317ceb313bfabbd0c8266df021a'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -57103,6 +57133,11 @@
               "input_name": "asset_1",
               "is_dynamic_collect": false,
               "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
@@ -64312,7 +64347,7 @@
   'a28dd9e490e08f05fab6ab1309de27da5cd3eb0f'
 # ---
 # name: test_all_snapshot_ids[3]
-  'dab69732d7ded7444284aefd080b68da18e7eb9e'
+  'aae856eaf606a5b900cd95ab5b26c66cbc3c396f'
 # ---
 # name: test_all_snapshot_ids[40]
   '''
@@ -70845,6 +70880,11 @@
               "input_name": "asset_1",
               "is_dynamic_collect": false,
               "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
@@ -78142,6 +78182,11 @@
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
                   "solid_name": "asset_1"
                 }
               ]
@@ -78387,10 +78432,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[59]
-  '18148f4a4dffa80180e9d70b389fdd2952275a82'
+  '2c05b9e8349e0ac4746df31cab1e829979d89977'
 # ---
 # name: test_all_snapshot_ids[5]
-  '8bd95363c7c1c2494a686c3fbaca2cc3d3a84a0b'
+  'c2dc77310df032dac131b0377f4d61c26c7e12ec'
 # ---
 # name: test_all_snapshot_ids[60]
   '''
@@ -85631,6 +85676,11 @@
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
                   "solid_name": "asset_1"
                 }
               ]
@@ -92000,7 +92050,7 @@
   '643e2b02ca69b0087d15b448a9108d39d5b35036'
 # ---
 # name: test_all_snapshot_ids[7]
-  '57b5a17a320c174c4eed18f1f6491d0e3d6ed058'
+  'cd2a24d349eb7be3d979264eabdf6f304bf613b5'
 # ---
 # name: test_all_snapshot_ids[80]
   '''
@@ -97967,6 +98017,11 @@
               "input_name": "asset_1",
               "is_dynamic_collect": false,
               "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "asset_1_my_check"
+                },
                 {
                   "__class__": "OutputHandleSnap",
                   "output_name": "result",
@@ -104561,5 +104616,5 @@
   '10cfd966244a4e4064ff00517d3e012ad6ce4c7d'
 # ---
 # name: test_all_snapshot_ids[9]
-  '6d78f488993e79dba49bfe51a5b28bafc0f1344b'
+  'd15ea226fec757f8bf3c3042e6f2b398f51bdcb3'
 # ---
