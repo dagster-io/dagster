@@ -20,6 +20,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -306,10 +307,22 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
-class AssetCondition(ABC):
+# Adding the NamedTuple inheritance to avoid bugs with the experimental decorator and subclasses.
+@experimental
+class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
     """An AssetCondition represents some state of the world that can influence if an asset
-    partition should be materialized or not. AutomationConditions can be combined together to create
+    partition should be materialized or not. AssetConditions can be combined to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import AssetCondition, AutoMaterializePolicy
+
+            # At least one parent is newer and no parent is missing.
+            my_policy = AutoMaterializePolicy(
+                asset_condition = AssetCondition.parent_newer() & ~AssetCondition.parent_missing()
+            )
     """
 
     @property
@@ -329,13 +342,13 @@ class AssetCondition(ABC):
         raise NotImplementedError()
 
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
-        # group AndAutomationConditions together
+        # group AndAssetConditions together
         if isinstance(self, AndAssetCondition):
             return AndAssetCondition(children=[*self.children, other])
         return AndAssetCondition(children=[self, other])
 
     def __or__(self, other: "AssetCondition") -> "AssetCondition":
-        # group OrAutomationConditions together
+        # group OrAssetConditions together
         if isinstance(self, OrAssetCondition):
             return OrAssetCondition(children=[*self.children, other])
         return OrAssetCondition(children=[self, other])
@@ -431,7 +444,8 @@ class AssetCondition(ABC):
         )
 
 
-class RuleCondition(
+@experimental
+class RuleCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
     AssetCondition,
 ):
@@ -458,7 +472,8 @@ class RuleCondition(
         return evaluation_result
 
 
-class AndAssetCondition(
+@experimental
+class AndAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_AndAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
 ):
@@ -479,7 +494,8 @@ class AndAssetCondition(
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
-class OrAssetCondition(
+@experimental
+class OrAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_OrAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
 ):
@@ -502,7 +518,8 @@ class OrAssetCondition(
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
-class NotAssetCondition(
+@experimental
+class NotAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_NotAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
 ):
