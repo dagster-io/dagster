@@ -2,6 +2,25 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.7.0
+
+### Breaking Changes
+
+- Creating a run with a custom non-UUID `run_id` was previously private and only used for testing. It will now raise an exception.
+- [community-contribution] Previously, calling `get_partition_keys_in_range` on a `MultiPartitionsDefinition` would erroneously return partition keys that were within the one-dimensional range of alphabetically-sorted partition keys for the definition. Now, this method returns the cartesian product of partition keys within each dimension’s range. Thanks, [@mst](https://github.com/mst)!
+- Added `AssetCheckExecutionContext` to replace `AssetExecutionContext` as the type of the `context` param passed in to `@asset_check` functions. `@asset_check` was an experimental decorator.
+- [experimental] `@classmethod` decorators have been removed from `[dagster-embedded-slt.sling](http://dagster-embedded-slt.sling)` `DagsterSlingTranslator`
+- [dagster-dbt] `@classmethod` decorators have been removed from `DagsterDbtTranslator`.
+- [dagster-k8s] The default merge behavior when raw kubernetes config is supplied at multiple scopes (for example, at the instance level and for a particluar job) has been changed to be more consistent. Previously, configuration was merged shallowly by default, with fields replacing other fields instead of appending or merging. Now, it is merged deeply by default, with lists appended to each other and dictionaries merged, in order to be more consistent with how kubernetes configuration is combined in all other places. See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#precedence-rules) for more information, including how to restore the previous default merge behavior.
+
+### Deprecations
+
+- `AssetSelection.keys()` has been deprecated. Instead, you can now supply asset key arguments to `AssetSelection.assets()` .
+- Run tag keys with long lengths and certain characters are now deprecated. For consistency with asset tags, run tags keys are expected to only contain alpha-numeric characters, dashes, underscores, and periods. Run tag keys can also contain a prefix section, separated with a slash. The main section and prefix section of a run tag are limited to 63 characters.
+- `AssetExecutionContext` has been simplified. Op-related methods and methods with existing access paths have been marked deprecated. For a full list of deprecated methods see this [GitHub Discussion](https://github.com/dagster-io/dagster/discussions/20974).
+- The `metadata` property on `InputContext` and `OutputContext` has been deprecated and renamed to `definition_metadata` .
+- `FreshnessPolicy` is now deprecated. For monitoring freshness, use freshness checks instead. If you are using `AutoMaterializePolicy.lazy()`, `FreshnessPolicy` is still recommended, and will continue to be supported until an alternative is provided.
+
 ## Migrating to 1.6.0
 
 ### Breaking changes
