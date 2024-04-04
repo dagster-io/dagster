@@ -653,6 +653,31 @@ def test_to_string_basic():
         str(AssetSelection.key_prefixes("marketing", ["foo", "bar"]))
         == "key_prefix:(marketing or foo/bar)"
     )
+    assert (
+        str(AssetSelection.checks(AssetCheckKey(AssetKey("foo"), "bar"))) == "asset_check:foo:bar"
+    )
+    assert (
+        str(
+            AssetSelection.checks(
+                AssetCheckKey(AssetKey("foo"), "bar"), AssetCheckKey(AssetKey("baz"), "qux")
+            )
+        )
+        == "asset_check:(foo:bar or baz:qux)"
+    )
+
+    assert (
+        str(
+            AssetChecksForAssetKeysSelection(
+                selected_asset_keys=[AssetKey("foo"), AssetKey("bar"), AssetKey("baz")]
+            )
+        )
+        == "asset_check:(foo or bar or baz)"
+    )
+
+    assert (
+        str(AssetChecksForAssetKeysSelection(selected_asset_keys=[AssetKey("foo")]))
+        == "asset_check:foo"
+    )
 
 
 def test_to_string_binary_operators():
