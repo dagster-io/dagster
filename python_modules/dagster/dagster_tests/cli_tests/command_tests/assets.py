@@ -1,4 +1,4 @@
-from dagster import Config, StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, Config, StaticPartitionsDefinition, asset
 
 
 @asset
@@ -24,8 +24,8 @@ class MyConfig(Config):
     some_prop: str
 
 @asset
-def asset_with_config(config: MyConfig):
-    return config.some_prop
+def asset_with_config(context: AssetExecutionContext, config: MyConfig):
+    context.log.info(f"some_prop:{config.some_prop}")
 
 @asset
 def fail_asset() -> None:
