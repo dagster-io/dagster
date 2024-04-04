@@ -10,6 +10,9 @@ from dagster import (
     asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness_checks.last_update import (
     build_last_update_freshness_checks,
@@ -19,7 +22,7 @@ from dagster._core.definitions.freshness_checks.sensor import (
     build_sensor_for_freshness_checks,
 )
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.sensor_definition import build_sensor_context
+from dagster._core.definitions.sensor_definition import SensorDefinition, build_sensor_context
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 
@@ -40,11 +43,13 @@ def test_params() -> None:
         freshness_checks=[check],
     )
     assert result.name == "freshness_checks_sensor"
+    assert result.job_name == "freshness_checks_sensor_job"
 
     # All params (valid)
     result = build_sensor_for_freshness_checks(
         freshness_checks=[check], minimum_interval_seconds=10, name="my_sensor"
     )
+    assert isinstance(result, SensorDefinition)
 
     # Duplicate checks
     with pytest.raises(CheckError, match="duplicate asset checks"):
@@ -58,6 +63,27 @@ def test_params() -> None:
             freshness_checks=[check],
             minimum_interval_seconds=-1,
         )
+
+    # Provide selection and checks list
+    with pytest.raises(
+        CheckError, match="Only one of freshness_checks or check_selection can be provided"
+    ):
+        build_sensor_for_freshness_checks(
+            check_selection=AssetSelection.all_asset_checks(),
+            freshness_checks=[check],
+        )
+
+    # Provide neither selection nor checks list
+    with pytest.raises(
+        CheckError, match="Exactly one of freshness_checks or check_selection must be provided"
+    ):
+        build_sensor_for_freshness_checks()
+
+    # Check selection
+    result = build_sensor_for_freshness_checks(
+        check_selection=AssetSelection.all_asset_checks(),
+    )
+    assert isinstance(result, SensorDefinition)
 
 
 def test_lower_bound_delta() -> None:
@@ -99,10 +125,12 @@ def test_lower_bound_delta() -> None:
     with pendulum_freeze_time(freeze_datetime):
         run_request = sensor(context)
         assert isinstance(run_request, RunRequest)
-        assert run_request.asset_check_keys == [
+        asset_check_keys = run_request.asset_check_keys
+        assert asset_check_keys is not None
+        assert set(asset_check_keys) == {
             AssetCheckKey(AssetKey("my_asset"), "freshness_check"),
             AssetCheckKey(AssetKey("my_other_asset"), "freshness_check"),
-        ]
+        }
         assert context.cursor
         cursor = deserialize_value(context.cursor, FreshnessCheckSensorCursor)
         assert cursor == FreshnessCheckSensorCursor(
@@ -218,11 +246,13 @@ def test_freshness_cron() -> None:
     with pendulum_freeze_time(freeze_datetime):
         run_request = sensor(context)
         assert isinstance(run_request, RunRequest)
-        assert run_request.asset_check_keys == [
+        asset_check_keys = run_request.asset_check_keys
+        assert asset_check_keys is not None
+        assert set(asset_check_keys) == {
             AssetCheckKey(AssetKey("my_utc_asset"), "freshness_check"),
             AssetCheckKey(AssetKey("my_behind_asset"), "freshness_check"),
             AssetCheckKey(AssetKey("my_ahead_asset"), "freshness_check"),
-        ]
+        }
         assert context.cursor
         cursor = deserialize_value(context.cursor, FreshnessCheckSensorCursor)
         assert cursor == FreshnessCheckSensorCursor(
@@ -264,10 +294,12 @@ def test_freshness_cron() -> None:
     with pendulum_freeze_time(freeze_datetime):
         result = sensor(context)
         assert isinstance(result, RunRequest)
-        assert result.asset_check_keys == [
+        asset_check_keys = result.asset_check_keys
+        assert asset_check_keys is not None
+        assert set(asset_check_keys) == {
             AssetCheckKey(AssetKey("my_behind_asset"), "freshness_check"),
             AssetCheckKey(AssetKey("my_ahead_asset"), "freshness_check"),
-        ]
+        }
         assert context.cursor
         cursor = deserialize_value(context.cursor, FreshnessCheckSensorCursor)
         assert cursor == FreshnessCheckSensorCursor(
@@ -308,3 +340,60 @@ def test_freshness_cron() -> None:
                 ): freeze_datetime.subtract(hours=5).timestamp(),
             }
         )
+
+
+def test_runtime_selection_error() -> None:
+    """Test the case where we have a runtime error in the selection function."""
+
+    # Case where we select a non-freshness asset check
+    @asset
+    def my_asset():
+        pass
+
+    check = build_last_update_freshness_checks(
+        assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
+    )
+
+    @asset_check(asset=my_asset)
+    def non_freshness_check() -> AssetCheckResult:
+        return AssetCheckResult(passed=True)
+
+    sensor = build_sensor_for_freshness_checks(
+        check_selection=AssetSelection.all_asset_checks(),
+    )
+
+    defs = Definitions(
+        sensors=[sensor],
+        assets=[my_asset],
+        asset_checks=[check, non_freshness_check],
+    )
+
+    context = build_sensor_context(
+        definitions=defs,
+    )
+
+    with pytest.raises(
+        CheckError, match="my_asset:non_freshness_check didn't have expected metadata."
+    ):
+        sensor(context)
+
+    # Case where we select an asset instead of a check. We fail with a check error, since a
+    # non-freshness check has been selected.
+    sensor = build_sensor_for_freshness_checks(
+        check_selection=AssetSelection.assets(my_asset),
+    )
+
+    defs = Definitions(
+        sensors=[sensor],
+        assets=[my_asset],
+        asset_checks=[check, non_freshness_check],
+    )
+
+    context = build_sensor_context(
+        definitions=defs,
+    )
+
+    with pytest.raises(
+        CheckError, match="my_asset:non_freshness_check didn't have expected metadata."
+    ):
+        sensor(context)

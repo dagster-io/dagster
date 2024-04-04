@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._serdes.serdes import (
     FieldSerializer,
     JsonSerializableValue,
@@ -34,7 +35,7 @@ from .utils import (
     FRESHNESS_PARAMS_METADATA_KEY,
     FRESHNESS_TIMEZONE_METADATA_KEY,
     LOWER_BOUND_DELTA_METADATA_KEY,
-    ensure_freshness_checks,
+    ensure_freshness_check,
     ensure_no_duplicate_asset_checks,
 )
 
@@ -88,7 +89,8 @@ class FreshnessCheckSensorCursor(BaseModel):
 @experimental
 def build_sensor_for_freshness_checks(
     *,
-    freshness_checks: Sequence[AssetChecksDefinition],
+    freshness_checks: Optional[Sequence[AssetChecksDefinition]] = None,
+    check_selection: Optional[AssetSelection] = None,
     minimum_interval_seconds: Optional[int] = None,
     name: str = DEFAULT_FRESHNESS_SENSOR_NAME,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -101,7 +103,11 @@ def build_sensor_for_freshness_checks(
     sensor will request one run of the check per interval specified by the maximum lag.
 
     Args:
-        freshness_checks (Sequence[AssetChecksDefinition]): The freshness checks to evaluate.
+        freshness_checks (Optional[Sequence[AssetChecksDefinition]]): The freshness checks to evaluate.
+            Either this or check_selection must be provided.
+        check_selection (Optional[AssetSelection]): The asset checks to evaluate. The provided
+            selection must resolve to a set of freshness checks, will result in an error otherwise.
+            Either this or freshness_checks must be provided.
         minimum_interval_seconds (Optional[int]): The duration in seconds between evaluations of the sensor.
         name (Optional[str]): The name of the sensor. Defaults to "freshness_check_sensor", but a
             name may need to be provided in case of multiple calls of this function.
@@ -111,9 +117,18 @@ def build_sensor_for_freshness_checks(
     Returns:
         SensorDefinition: The sensor that evaluates the freshness of the assets.
     """
-    freshness_checks = check.sequence_param(freshness_checks, "freshness_checks")
-    ensure_no_duplicate_asset_checks(freshness_checks)
-    ensure_freshness_checks(freshness_checks)
+    check.opt_sequence_param(freshness_checks, "freshness_checks")
+    check.opt_inst_param(check_selection, "check_selection", AssetSelection)
+    check.invariant(
+        freshness_checks is not None or check_selection is not None,
+        "Exactly one of freshness_checks or check_selection must be provided.",
+    )
+    check.invariant(
+        freshness_checks is None or check_selection is None,
+        "Only one of freshness_checks or check_selection can be provided.",
+    )
+    if freshness_checks:
+        ensure_no_duplicate_asset_checks(freshness_checks)
     check.invariant(
         check.int_param(minimum_interval_seconds, "minimum_interval_seconds") > 0
         if minimum_interval_seconds
@@ -121,12 +136,20 @@ def build_sensor_for_freshness_checks(
         "Interval must be a positive integer.",
     )
     check.str_param(name, "name")
+    if freshness_checks:
+        selection = AssetSelection.checks(*freshness_checks)
+    elif check_selection:
+        selection = check_selection
+    else:
+        check.failed("Should not be possible")
+
+    job_name = f"{name}_job"
 
     @sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         description="Evaluates the freshness of targeted assets.",
-        asset_selection=AssetSelection.checks(*freshness_checks),
+        job=define_asset_job(job_name, selection=selection),
         default_status=default_status,
     )
     def the_sensor(context: SensorEvaluationContext) -> Optional[RunRequest]:
@@ -135,15 +158,16 @@ def build_sensor_for_freshness_checks(
             if context.cursor
             else FreshnessCheckSensorCursor.empty()
         )
+        job_def = check.not_none(check.not_none(context.repository_def).get_job(job_name))
+
         current_timestamp = pendulum.now("UTC").timestamp()
         check_keys_to_run = []
-        for asset_check in freshness_checks:
-            for asset_check_spec in asset_check.check_specs:
-                prev_evaluation_timestamp = cursor.get_last_evaluation_timestamp(
-                    asset_check_spec.key
-                )
-                if should_run_again(asset_check_spec, prev_evaluation_timestamp, current_timestamp):
-                    check_keys_to_run.append(asset_check_spec.key)
+        for check_key, asset_checks_def in job_def.asset_layer.assets_defs_by_check_key.items():
+            ensure_freshness_check(asset_checks_def)
+            asset_check_spec = asset_checks_def.get_spec_for_check_key(check_key)
+            prev_evaluation_timestamp = cursor.get_last_evaluation_timestamp(asset_check_spec.key)
+            if should_run_again(asset_check_spec, prev_evaluation_timestamp, current_timestamp):
+                check_keys_to_run.append(asset_check_spec.key)
         context.update_cursor(
             serialize_value(cursor.with_updated_evaluations(check_keys_to_run, current_timestamp))
         )
