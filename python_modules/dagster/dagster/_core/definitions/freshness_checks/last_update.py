@@ -7,10 +7,10 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from ..asset_checks import AssetChecksDefinition
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import CoercibleToAssetKey
+from .shared_builder import build_freshness_checks_for_assets
 from .utils import (
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
-    build_freshness_checks_for_assets,
 )
 
 
