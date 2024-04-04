@@ -65,7 +65,7 @@ describe('filterAssetDefinition', () => {
 
   it('returns false when changedInBranch filter is provided but definition does not have matching changed reasons', () => {
     const filters = {
-      changedInBranch: [ChangeReason.INPUTS],
+      changedInBranch: [ChangeReason.DEPENDENCIES],
     };
     const definition = {
       changedReasons: [ChangeReason.CODE_VERSION],
@@ -140,7 +140,7 @@ describe('filterAssetDefinition', () => {
       repos: [repo],
       groups: [group],
       computeKindTags: ['computeKind1'],
-      changedInBranch: [ChangeReason.INPUTS, ChangeReason.PARTITIONS_DEFINITION],
+      changedInBranch: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
       owners: [owner],
       tags: [tag],
     };
@@ -153,7 +153,7 @@ describe('filterAssetDefinition', () => {
       }),
       groupName: group.groupName,
       computeKind: 'computeKind1',
-      changedReasons: [ChangeReason.INPUTS, ChangeReason.PARTITIONS_DEFINITION],
+      changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
       owners: [owner],
       tags: [tag],
     };
