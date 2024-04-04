@@ -84,7 +84,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
   const {data} = queryResult;
 
   return (
-    <>
+    <div style={{overflowY: 'auto'}}>
       {data ? (
         <>
           <Box margin={{bottom: 64}}>
@@ -110,7 +110,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
           <Spinner purpose="section" />
         </Box>
       )}
-    </>
+    </div>
   );
 });
 
