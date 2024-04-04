@@ -61,8 +61,7 @@ In this step, you'll add the required GitHub workflow files to your GitHub repos
 Copy the following files to your repository (the linked files are shown in the Hybrid repo, there are equivalents in the Serverless repo).
 
 - [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/dagster_cloud.yaml)
-- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/branch_deployments.yml)
-- [`.github/workflows/deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/deploy.yml)
+- [`.github/workflows/dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml)
 
 In the next step, you'll modify these files to work with your Dagster Cloud setup.
 
@@ -166,19 +165,21 @@ height={318}
 
 In this step, you'll update the GitHub Workflow files in the repository to set up Docker registry access.
 
-In the `.github/workflows/deploy.yml` and `.github/workflows/branch_deployments.yml` files, uncomment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd uncomment the following portion of the workflow files:
+In the `.github/workflows/dagster-cloud-deploy.yml` file, uncomment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd uncomment the following portion of the workflow file:
 
 ```yaml
-steps:
-  - name: Configure AWS credentials
-    uses: aws-actions/configure-aws-credentials@v1
-    with:
-      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      aws-region: ${{ secrets.AWS_REGION }}
+jobs:
+  dagster-cloud-deploy:
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 ```
 
-Save and commit the files to the repository.
+Save and commit the file to the repository.
 
 ### Step 4.4: Verify Action runs
 
