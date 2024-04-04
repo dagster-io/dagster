@@ -118,3 +118,14 @@ def test_conflicting_partitions():
 def test_failure():
     result = invoke_materialize("fail_asset")
     assert result.exit_code == 1
+
+def test_run__cli_config_json():
+    with instance_for_test() as instance:
+        runner = CliRunner()
+
+        result = runner.invoke(asset_materialize_command, ["--select", "asset_with_config", "--cli-config-json", "{\"some_prop\": \"foo\"}"])
+
+        assert "RUN_SUCCESS" in result.output
+        assert instance.get_latest_materialization_event(AssetKey("asset_with_config")) is not None
+        assert result.exit_code == 0
+        # TODO: how to check the value of the materialized asset?
