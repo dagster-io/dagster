@@ -17,6 +17,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.errors import DagsterImportClassFromCodePointerError
 from dagster._utils import convert_dagster_submodule_name
 from dagster._utils.yaml_utils import load_run_config_yaml
 
@@ -95,7 +96,7 @@ class ConfigurableClassData(
         try:
             module = importlib.import_module(self.module_name)
         except ModuleNotFoundError:
-            check.failed(
+            raise DagsterImportClassFromCodePointerError(
                 f"Couldn't import module {self.module_name} when attempting to load the "
                 f"configurable class {self.module_name}.{self.class_name}"
             )
@@ -107,7 +108,7 @@ class ConfigurableClassData(
             # error when `ConfigurableClass` is added as an ancestor to storage classes.
             klass = cast(Type[ConfigurableClass], getattr(module, self.class_name))
         except AttributeError:
-            check.failed(
+            raise DagsterImportClassFromCodePointerError(
                 f"Couldn't find class {self.class_name} in module when attempting to load the "
                 f"configurable class {self.module_name}.{self.class_name}"
             )
@@ -218,7 +219,7 @@ def class_from_code_pointer(module_name: str, class_name: str) -> Type[object]:
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:
-        check.failed(
+        raise DagsterImportClassFromCodePointerError(
             "Couldn't import module {module_name} when attempting to load the class {klass}".format(
                 module_name=module_name,
                 klass=module_name + "." + class_name,
@@ -227,7 +228,7 @@ def class_from_code_pointer(module_name: str, class_name: str) -> Type[object]:
     try:
         return getattr(module, class_name)
     except AttributeError:
-        check.failed(
+        raise DagsterImportClassFromCodePointerError(
             "Couldn't find class {class_name} in module when attempting to load the "
             "class {klass}".format(
                 class_name=class_name,
