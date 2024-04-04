@@ -716,8 +716,20 @@ def multi_asset(
                 ),
             )
             output_tuples_by_asset_key = build_asset_outs(asset_out_map)
+
+            # validate that the asset_ins are a subset of the upstream asset_deps.
+            upstream_internal_asset_keys = set().union(*asset_deps.values())
+            asset_in_keys = set(asset_ins.keys())
+            if asset_deps and not asset_in_keys.issubset(upstream_internal_asset_keys):
+                invalid_asset_in_keys = asset_in_keys - upstream_internal_asset_keys
+                check.failed(
+                    f"Invalid asset dependencies: `{invalid_asset_in_keys}` specified as asset"
+                    " inputs, but are not specified in `internal_asset_deps`. Asset inputs must"
+                    " be associated with an output produced by the asset."
+                )
+
             # validate that the asset_deps make sense
-            valid_asset_deps = set(asset_ins.keys()) | set(output_tuples_by_asset_key.keys())
+            valid_asset_deps = asset_in_keys | set(output_tuples_by_asset_key.keys())
             for out_name, asset_keys in asset_deps.items():
                 if asset_out_map and out_name not in asset_out_map:
                     check.failed(
