@@ -1,5 +1,5 @@
 import datetime
-from typing import Callable, Iterable, Optional, Sequence, Union, cast
+from typing import Any, Callable, Iterable, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -10,11 +10,12 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import (
     multi_asset_check,
 )
+from dagster._core.definitions.metadata import FloatMetadataValue, TimestampMetadataValue
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.execution.context.compute import (
     AssetCheckExecutionContext,
 )
-from dagster._utils.schedules import is_valid_cron_string
+from dagster._utils.schedules import get_latest_completed_cron_tick, is_valid_cron_string
 
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
@@ -22,13 +23,15 @@ from .utils import (
     DEADLINE_CRON_METADATA_KEY,
     FRESHNESS_PARAMS_METADATA_KEY,
     FRESHNESS_TIMEZONE_METADATA_KEY,
+    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
     LOWER_BOUND_DELTA_METADATA_KEY,
+    OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY,
+    OVERDUE_SECONDS_METADATA_KEY,
     asset_to_keys_iterable,
     ensure_no_duplicate_assets,
     get_description_for_freshness_check_result,
-    get_last_update_time_lower_bound,
+    get_expected_partition_key,
     get_last_updated_timestamp,
-    get_latest_complete_partition_key,
     retrieve_latest_record,
     unique_id_from_asset_keys,
 )
@@ -42,10 +45,9 @@ def build_freshness_multi_check(
     lower_bound_delta: datetime.timedelta,
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]],
 ) -> AssetChecksDefinition:
-    params_metadata = {}
+    params_metadata: dict[str, Any] = {FRESHNESS_TIMEZONE_METADATA_KEY: timezone}
     if deadline_cron:
         params_metadata[DEADLINE_CRON_METADATA_KEY] = deadline_cron
-        params_metadata[FRESHNESS_TIMEZONE_METADATA_KEY] = timezone
     if lower_bound_delta:
         params_metadata[LOWER_BOUND_DELTA_METADATA_KEY] = lower_bound_delta.total_seconds()
 
@@ -81,17 +83,18 @@ def build_freshness_multi_check(
                 or isinstance(partitions_def, TimeWindowPartitionsDefinition),
                 "Expected partitions_def to be time-windowed.",
             )
-
-            last_update_time_lower_bound = get_last_update_time_lower_bound(
-                deadline_cron=deadline_cron,
-                timezone=timezone,
-                current_timestamp=current_timestamp,
-                lower_bound_delta=lower_bound_delta,
+            current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+            latest_completed_cron_tick = get_latest_completed_cron_tick(
+                deadline_cron, current_time_in_freshness_tz, timezone
             )
-            expected_partition_key = get_latest_complete_partition_key(
-                deadline_cron=deadline_cron,
-                current_timestamp=current_timestamp,
-                timezone=timezone,
+            deadline = check.inst_param(
+                latest_completed_cron_tick or current_time_in_freshness_tz,
+                "deadline",
+                datetime.datetime,
+            )
+            last_update_time_lower_bound = cast(datetime.datetime, deadline - lower_bound_delta)
+            expected_partition_key = get_expected_partition_key(
+                deadline=deadline,
                 partitions_def=partitions_def,
             )
             latest_record = retrieve_latest_record(
@@ -102,6 +105,21 @@ def build_freshness_multi_check(
                 update_timestamp is not None
                 and update_timestamp >= last_update_time_lower_bound.timestamp()
             )
+
+            metadata = {
+                FRESHNESS_PARAMS_METADATA_KEY: params_metadata,
+                OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(
+                    deadline.timestamp()
+                ),
+            }
+            if not passed:
+                metadata[OVERDUE_SECONDS_METADATA_KEY] = FloatMetadataValue(
+                    current_timestamp - deadline.timestamp()
+                )
+            if update_timestamp:
+                metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY] = TimestampMetadataValue(
+                    update_timestamp
+                )
 
             yield AssetCheckResult(
                 passed=passed,
@@ -114,6 +132,7 @@ def build_freshness_multi_check(
                 ),
                 severity=severity,
                 asset_key=asset_key,
+                metadata=metadata,
             )
 
     return the_check
