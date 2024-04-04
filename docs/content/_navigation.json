@@ -407,7 +407,7 @@
                     "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
                   },
                   {
-                    "title": "Customzing deployments",
+                    "title": "Customizing deployments",
                     "path": "/deployment/guides/kubernetes/customizing-your-deployment"
                   },
                   {
