@@ -58,7 +58,7 @@ export const ChangedReasonsPopover = ({
         return '';
       case ChangeReason.CODE_VERSION:
         return 'has a changed code version';
-      case ChangeReason.INPUTS:
+      case ChangeReason.DEPENDENCIES:
         return 'has changed dependencies';
       case ChangeReason.PARTITIONS_DEFINITION:
         return 'has a changed partition definition';
