@@ -963,9 +963,9 @@ class DbtCliResource(ConfigurableResource):
         state_dir: Optional[str] = None,
     ):
         if isinstance(project_dir, DbtProject):
-            populated_state_dir = project_dir.get_state_dir_if_populated()
-            if state_dir is None and populated_state_dir:
-                state_dir = os.fspath(populated_state_dir)
+            if not state_dir and project_dir.state_dir:
+                state_dir = os.fspath(project_dir.state_dir)
+
             project_dir = os.fspath(project_dir.project_dir)
 
         # static typing doesn't understand whats going on here, thinks these fields dont exist
@@ -1070,17 +1070,7 @@ class DbtCliResource(ConfigurableResource):
         if state_dir is None:
             return None
 
-        resolved_state_dir = cls._validate_absolute_path_exists(state_dir)
-        cls._validate_path_contains_file(
-            path=resolved_state_dir,
-            file_name="manifest.json",
-            error_message=(
-                f"{resolved_state_dir} does not contain a manifest.json file. Please"
-                " specify a valid path to a dbt state directory."
-            ),
-        )
-
-        return os.fspath(resolved_state_dir)
+        return os.fspath(cls._validate_absolute_path_exists(state_dir))
 
     def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
         """Get a unique target path for the dbt CLI invocation.
@@ -1118,19 +1108,21 @@ class DbtCliResource(ConfigurableResource):
         return adapter
 
     def get_defer_args(self) -> Sequence[str]:
-        """Returns ('--defer', '--defer-state', state_artifacts_dir) if state_dir was
-        specified and contains a manifest.json, () otherwise.
+        """Build the defer arguments for the dbt CLI command, using the supplied state directory.
+        If no state directory is supplied, or the state directory does not have a manifest for.
+        comparison, an empty list of arguments is returned.
+
+        Returns:
+            Sequence[str]: The defer arguements for the dbt CLI command.
         """
+        if not (self.state_dir and Path(self.state_dir).joinpath("manifest.json").exists()):
+            return []
+
+        state_flag = "--defer-state"
         if version.parse(dbt_version) < version.parse("1.6.0"):
             state_flag = "--state"
-        else:
-            # Use the more scoped --defer-state on versions it is available
-            state_flag = "--defer-state"
 
-        if self.state_dir and Path(self.state_dir).joinpath("manifest.json").exists():
-            return ("--defer", state_flag, self.state_dir)
-        else:
-            return ()
+        return ["--defer", state_flag, self.state_dir]
 
     @public
     def cli(

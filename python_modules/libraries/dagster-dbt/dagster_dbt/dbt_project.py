@@ -134,12 +134,6 @@ class DbtProject(DagsterModel):
     def prepare_for_deployment(self) -> None:
         prepare_for_deployment(self)
 
-    def get_state_dir_if_populated(self) -> Optional[Path]:
-        if self.state_dir and self.state_dir.joinpath("manifest.json").exists():
-            return self.state_dir
-
-        return None
-
 
 def prepare_for_deployment(project: DbtProject) -> None:
     """A method that can be called as part of the deployment process which runs the
