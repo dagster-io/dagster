@@ -159,13 +159,12 @@ def get_last_updated_timestamp(record: Optional[EventLogRecord]) -> Optional[flo
         check.failed("Expected record to be an observation or materialization")
 
 
-def ensure_freshness_checks(checks: Sequence[AssetChecksDefinition]) -> None:
-    for check_def in checks:
-        for check_spec in check_def.check_specs:
-            check.invariant(
-                check_spec.metadata and check_spec.metadata.get(FRESHNESS_PARAMS_METADATA_KEY),
-                f"Asset check {check_spec.key} didn't have expected metadata. Please ensure that the asset check is a freshness check.",
-            )
+def ensure_freshness_check(checks: AssetsDefinition) -> None:
+    for check_spec in checks.check_specs:
+        check.invariant(
+            check_spec.metadata and check_spec.metadata.get(FRESHNESS_PARAMS_METADATA_KEY),
+            f"Asset check {check_spec.key.to_user_string()} didn't have expected metadata. Please ensure that the asset check is a freshness check.",
+        )
 
 
 def get_last_update_time_lower_bound(
