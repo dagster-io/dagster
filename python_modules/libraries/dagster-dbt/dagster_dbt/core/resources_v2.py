@@ -53,6 +53,7 @@ from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
+from dbt.events.functions import cleanup_event_logger
 from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -1083,6 +1084,7 @@ class DbtCliResource(ConfigurableResource):
         project = load_project(self.project_dir, False, profile, {})
         config = RuntimeConfig.from_parts(project, profile, flags)
 
+        cleanup_event_logger()
         register_adapter(config)
         adapter = cast(BaseAdapter, get_adapter(config))
         # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
