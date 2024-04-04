@@ -686,3 +686,7 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
 
 class DagsterPipesExecutionError(DagsterError):
     """Indicates that an error occurred during the execution of an external process."""
+
+
+class DagsterImportClassFromCodePointerError(DagsterError):
+    """Indicates that an error occurred while importing a class from a code pointer."""

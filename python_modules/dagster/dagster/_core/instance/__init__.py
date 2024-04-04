@@ -546,14 +546,8 @@ class DagsterInstance(DynamicPartitionsStore):
             settings=settings,
         )
 
-    @public
     @staticmethod
-    def get() -> "DagsterInstance":
-        """Get the current `DagsterInstance` as specified by the ``DAGSTER_HOME`` environment variable.
-
-        Returns:
-            DagsterInstance: The current DagsterInstance.
-        """
+    def get_validated_dagster_home_path() -> str:
         dagster_home_path = os.getenv("DAGSTER_HOME")
 
         if not dagster_home_path:
@@ -588,7 +582,17 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
             )
 
-        return DagsterInstance.from_config(dagster_home_path)
+        return dagster_home_path
+
+    @public
+    @staticmethod
+    def get() -> "DagsterInstance":
+        """Get the current `DagsterInstance` as specified by the ``DAGSTER_HOME`` environment variable.
+
+        Returns:
+            DagsterInstance: The current DagsterInstance.
+        """
+        return DagsterInstance.from_config(DagsterInstance.get_validated_dagster_home_path())
 
     @public
     @staticmethod
@@ -621,8 +625,11 @@ class DagsterInstance(DynamicPartitionsStore):
     def from_config(
         config_dir: str,
         config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
+        overrides: Optional[DagsterInstanceOverrides] = None,
     ) -> "DagsterInstance":
-        instance_ref = InstanceRef.from_dir(config_dir, config_filename=config_filename)
+        instance_ref = InstanceRef.from_dir(
+            config_dir, config_filename=config_filename, overrides=overrides
+        )
         return DagsterInstance.from_ref(instance_ref)
 
     @staticmethod
