@@ -285,7 +285,6 @@ class AssetRecordsFilter(
         after_storage_id: Optional[int] = None,
         before_storage_id: Optional[int] = None,
         storage_ids: Optional[Sequence[int]] = None,
-        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
         return super(AssetRecordsFilter, cls).__new__(
             cls,
@@ -298,7 +297,6 @@ class AssetRecordsFilter(
             after_storage_id=check.opt_int_param(after_storage_id, "after_storage_id"),
             before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
-            tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str),
         )
 
     def to_event_records_filter(
