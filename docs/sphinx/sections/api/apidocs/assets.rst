@@ -58,3 +58,5 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 .. autoclass:: AssetOut
 
 .. autoclass:: AssetValueLoader
+
+.. autoclass:: AssetObservation
