@@ -16,7 +16,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {isAssetMissing} from './Stale';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
