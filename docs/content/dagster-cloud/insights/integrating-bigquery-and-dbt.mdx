@@ -53,7 +53,7 @@ def my_asset(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt_with_bigquery_insights(context, dbt_cli_invocation)
 ```
 
-This passes through all underlying events and emits additional `AssetObservation`s with BigQuery cost metrics. These metrics are obtained by querying the underlying `INFORMATION_SCHEMA.JOBS` table, using the BigQuery client from the dbt adapter.
+This passes through all underlying events and emits additional <PyObject object="AssetObservation" pluralize /> with BigQuery cost metrics. These metrics are obtained by querying the underlying `INFORMATION_SCHEMA.JOBS` table, using the BigQuery client from the dbt adapter.
 
 </TabItem>
 <TabItem name="Using ops and jobs">
@@ -97,9 +97,13 @@ query-comment:
   append: true
 ```
 
-This allows you to add a comment to every query recorded in BigQuery's `INFORMATION_SCHEMA.JOBS` table. The comments will contain the dbt invocation ID and unique ID. This allows Insights to attribute cost metrics in BigQuery to the corresponding Dagster concepts of jobs and assets.
+This allows you to add a comment, containing the dbt invocation ID and unique ID, to every query recorded in BigQuery's `INFORMATION_SCHEMA.JOBS` table. Using this data, Insights will attribute cost metrics in BigQuery to the corresponding Dagster jobs and assets.
 
-The BigQuery cost metrics should be available on the **Insights** tab in the Dagster UI after a short period of time (within 24 hours):
+---
+
+## Step 3: View BigQuery usage in the Dagster UI
+
+Typically within 24 hours, the BigQuery metrics should be available in the **Insights** tab in the Dagster UI:
 
 <!-- ![BigQuery credits in the Insights tab of the Dagster UI](/images/dagster-cloud/insights/insights-bigquery.png) -->
 
@@ -109,3 +113,22 @@ src="/images/dagster-cloud/insights/insights-bigquery.png"
 width={3454}
 height={1338}
 />
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Cloud Insights"
+    href="/dagster-cloud/insights"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Google BigQuery + Insights"
+    href="/dagster-cloud/insights/integrating-bigquery"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster Cloud alerts"
+    href="/dagster-cloud/managing-deployments/alerts"
+  ></ArticleListItem>
+</ArticleList>
