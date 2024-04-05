@@ -4,6 +4,7 @@ import {
   Menu,
   MenuDivider,
   MenuExternalLink,
+  MenuItem,
   Popover,
   ProductTour,
   ProductTourPosition,
@@ -16,7 +17,12 @@ import {TooltipShortcutInfo, TopNavButton} from './TopNavButton';
 import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
-export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}) => {
+interface Props {
+  showContactSales?: boolean;
+  onShareFeedback?: () => void;
+}
+
+export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const onInteraction = useCallback((open: boolean) => setIsOpen(open), []);
@@ -64,6 +70,9 @@ export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}
                 text="View changelog"
               />
               <MenuDivider title="Help" />
+              {onShareFeedback ? (
+                <MenuItem icon="send" text="Share feedback" onClick={onShareFeedback} />
+              ) : null}
               <MenuExternalLink
                 href="https://dagster.io/slack"
                 icon="slack"
