@@ -408,7 +408,10 @@ class DbtCliEventMessage:
         )
 
         # 2. Retrieve the column names from the current node.
-        column_names = optimized_node_ast.named_selects
+        schema_column_names = {
+            column.lower() for column in self._event_history_metadata["columns"].keys()
+        }
+        sqlglot_column_names = set(optimized_node_ast.named_selects)
 
         # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
         dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
@@ -426,8 +429,28 @@ class DbtCliEventMessage:
                 parent_dbt_resource_props
             )
 
+        normalized_sqlglot_column_names = {
+            sqlglot_column.lower() for sqlglot_column in sqlglot_column_names
+        }
+        implicit_alias_column_names = {
+            column
+            for column in schema_column_names
+            if column not in normalized_sqlglot_column_names
+        }
+
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
-        for column_name in column_names:
+        if implicit_alias_column_names:
+            logger.warning(
+                "The following columns are implicitly aliased and will be marked with an "
+                f" empty list column dependencies: `{implicit_alias_column_names}`."
+            )
+
+            deps_by_column = {column: [] for column in implicit_alias_column_names}
+
+        for column_name in sqlglot_column_names:
+            if column_name.lower() not in schema_column_names:
+                continue
+
             column_deps: Set[TableColumnDep] = set()
             for sqlglot_lineage_node in lineage(
                 column=column_name,

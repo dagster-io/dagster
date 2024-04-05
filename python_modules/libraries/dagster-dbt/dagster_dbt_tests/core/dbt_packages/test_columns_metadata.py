@@ -369,6 +369,11 @@ def test_column_lineage(
                 "count_star": [],
             }
         ),
+        AssetKey(["count_star_implicit_alias_customers"]): TableColumnLineage(
+            deps_by_column={
+                "count_star()": [],
+            }
+        ),
     }
     if asset_key_selection:
         expected_column_lineage_by_asset_key = {
