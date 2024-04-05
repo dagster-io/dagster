@@ -344,6 +344,7 @@ class InstanceRef(
             custom_instance_class_config = {
                 key: val for key, val in config_value.items() if key in config_keys
             }
+            # here custom instance class data is reconstructed
             custom_instance_class_data = ConfigurableClassData(
                 config_value["instance_class"]["module"],
                 config_value["instance_class"]["class"],
