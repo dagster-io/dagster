@@ -296,6 +296,11 @@ def test_column_lineage(
                 ],
             }
         ),
+        AssetKey(["duplicate_column_dep_orders"]): TableColumnLineage(
+            deps_by_column={
+                "amount_2x": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="amount")],
+            }
+        ),
         AssetKey(["customers"]): TableColumnLineage(
             deps_by_column={
                 "customer_id": [

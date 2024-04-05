@@ -19,6 +19,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     cast,
@@ -425,7 +426,7 @@ class DbtCliEventMessage:
 
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
         for column_name in column_names:
-            column_deps: Sequence[TableColumnDep] = []
+            column_deps: Set[TableColumnDep] = set()
             for sqlglot_lineage_node in lineage(
                 column=column_name,
                 sql=optimized_node_ast,
@@ -451,14 +452,14 @@ class DbtCliEventMessage:
                     continue
 
                 # Add the column dependency.
-                column_deps.append(
+                column_deps.add(
                     TableColumnDep(
                         asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
                         column_name=parent_column_name,
                     )
                 )
 
-            deps_by_column[column_name.lower()] = column_deps
+            deps_by_column[column_name.lower()] = list(column_deps)
 
         # 4. Render the lineage as metadata.
         with disable_dagster_warnings():
