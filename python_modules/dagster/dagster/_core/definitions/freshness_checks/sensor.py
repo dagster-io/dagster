@@ -1,11 +1,12 @@
 import datetime
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import pendulum
 from pydantic import BaseModel
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -27,25 +28,24 @@ from ..asset_check_spec import AssetCheckKey, AssetCheckSpec
 from ..asset_checks import AssetChecksDefinition
 from ..asset_selection import AssetSelection
 from ..decorators import sensor
-from ..run_request import RunRequest
 from ..sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
+from .shared_builder import evaluate_freshness_check
 from .utils import (
     DEADLINE_CRON_METADATA_KEY,
     DEFAULT_FRESHNESS_TIMEZONE,
     FRESHNESS_PARAMS_METADATA_KEY,
     FRESHNESS_TIMEZONE_METADATA_KEY,
     LOWER_BOUND_DELTA_METADATA_KEY,
-    ensure_freshness_check,
     ensure_no_duplicate_asset_checks,
 )
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
 
 
-class EvaluationTimestampsSerializer(FieldSerializer):
+class CheckEvaluationsSerializer(FieldSerializer):
     def pack(
         self,
-        mapping: Mapping[str, float],
+        mapping: Mapping[str, AssetCheckResult],
         whitelist_map: WhitelistMap,
         descent_path: str,
     ) -> JsonSerializableValue:
@@ -60,30 +60,30 @@ class EvaluationTimestampsSerializer(FieldSerializer):
         return unpack_value(unpacked_value, dict, whitelist_map, context)
 
 
-@whitelist_for_serdes(
-    field_serializers={"evaluation_timestamps_by_check_key": EvaluationTimestampsSerializer}
-)
+@whitelist_for_serdes(field_serializers={"check_evaluations_by_key": CheckEvaluationsSerializer})
 class FreshnessCheckSensorCursor(BaseModel):
     """The cursor for the freshness check sensor."""
 
-    evaluation_timestamps_by_check_key: Mapping[AssetCheckKey, float]
+    check_evaluations_by_key: Mapping[AssetCheckKey, AssetCheckResult]
+    last_evaluated_check_key: Optional[AssetCheckKey] = None
 
-    def get_last_evaluation_timestamp(self, key: AssetCheckKey) -> Optional[float]:
-        return self.evaluation_timestamps_by_check_key.get(key)
+    def get_last_check_evaluation(self, key: AssetCheckKey) -> Optional[AssetCheckResult]:
+        return self.check_evaluations_by_key.get(key)
 
     @staticmethod
     def empty():
-        return FreshnessCheckSensorCursor(evaluation_timestamps_by_check_key={})
+        return FreshnessCheckSensorCursor(check_evaluations_by_key={})
 
-    def with_updated_evaluations(
-        self, keys: Sequence[AssetCheckKey], evaluation_timestamp: float
+    def with_updated_evaluation(
+        self, key: AssetCheckKey, evaluation: AssetCheckResult
     ) -> "FreshnessCheckSensorCursor":
         return FreshnessCheckSensorCursor(
-            evaluation_timestamps_by_check_key=merge_dicts(
-                self.evaluation_timestamps_by_check_key,
-                {key: evaluation_timestamp for key in keys},
-            )
+            check_evaluations_by_key=merge_dicts(self.check_evaluations_by_key, {key: evaluation}),
+            last_evaluated_check_key=key,
         )
+
+
+MAXIMUM_SENSOR_RUNTIME_SECONDS = 40  # Leave some buffer for grpc communication overhead
 
 
 @experimental
@@ -152,29 +152,35 @@ def build_sensor_for_freshness_checks(
         job=define_asset_job(job_name, selection=selection),
         default_status=default_status,
     )
-    def the_sensor(context: SensorEvaluationContext) -> Optional[RunRequest]:
-        cursor = (
-            deserialize_value(context.cursor, FreshnessCheckSensorCursor)
-            if context.cursor
-            else FreshnessCheckSensorCursor.empty()
-        )
-        job_def = check.not_none(check.not_none(context.repository_def).get_job(job_name))
-
-        current_timestamp = pendulum.now("UTC").timestamp()
-        check_keys_to_run = []
-        for check_key, asset_checks_def in job_def.asset_layer.assets_defs_by_check_key.items():
-            ensure_freshness_check(asset_checks_def)
-            asset_check_spec = asset_checks_def.get_spec_for_check_key(check_key)
-            prev_evaluation_timestamp = cursor.get_last_evaluation_timestamp(asset_check_spec.key)
-            if should_run_again(asset_check_spec, prev_evaluation_timestamp, current_timestamp):
-                check_keys_to_run.append(asset_check_spec.key)
-        context.update_cursor(
-            serialize_value(cursor.with_updated_evaluations(check_keys_to_run, current_timestamp))
-        )
-        if check_keys_to_run:
-            return RunRequest(asset_check_keys=check_keys_to_run)
+    def the_sensor(context: SensorEvaluationContext) -> Iterator[AssetCheckResult]:
+        iteration_start_time = pendulum.now("UTC").timestamp()
+        while (
+            pendulum.now("UTC").timestamp() - iteration_start_time < MAXIMUM_SENSOR_RUNTIME_SECONDS
+        ):
+            for result in evaluate_freshness_loop(context, job_name):
+                if result:
+                    yield result
 
     return the_sensor
+
+
+def evaluate_freshness_loop(
+    context: SensorEvaluationContext, job_name: str
+) -> Iterator[Optional[AssetCheckResult]]:
+    cursor = (
+        deserialize_value(context.cursor, FreshnessCheckSensorCursor)
+        if context.cursor
+        else FreshnessCheckSensorCursor.empty()
+    )
+    job_def = check.not_none(check.not_none(context.repository_def).get_job(job_name))
+    for check_key in job_def.asset_layer.assets_defs_by_check_key.keys():
+        previous_evaluation = cursor.get_last_check_evaluation(check_key)
+        result = evaluate_freshness_check(check_key, job_def, context.instance)
+        state_change = previous_evaluation is None or result.passed != previous_evaluation.passed
+        cursor = cursor.with_updated_evaluation(check_key, result)
+        context.update_cursor(serialize_value(cursor))
+        # We only yield new results on state change.
+        yield result if state_change else None
 
 
 def should_run_again(

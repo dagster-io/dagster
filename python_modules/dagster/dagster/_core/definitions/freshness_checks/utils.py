@@ -20,6 +20,7 @@ DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
 DEFAULT_FRESHNESS_TIMEZONE = "UTC"
 LOWER_BOUND_DELTA_METADATA_KEY = "dagster/lower_bound_delta"
 DEADLINE_CRON_METADATA_KEY = "dagster/deadline_cron"
+SEVERITY_METADATA_KEY = "dagster/freshness_severity"
 FRESHNESS_TIMEZONE_METADATA_KEY = "dagster/freshness_timezone"
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"

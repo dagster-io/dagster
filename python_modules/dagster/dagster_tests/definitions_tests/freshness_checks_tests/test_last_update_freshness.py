@@ -48,6 +48,7 @@ def test_params() -> None:
     assert next(iter(check_specs)).metadata == {
         "dagster/freshness_params": {
             "dagster/lower_bound_delta": 600,
+            "dagster/freshness_severity": "WARN",
             "dagster/freshness_timezone": "UTC",
         }
     }
@@ -71,6 +72,7 @@ def test_params() -> None:
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": {
             "dagster/lower_bound_delta": 600,
+            "dagster/freshness_severity": "WARN",
             "dagster/deadline_cron": "0 0 * * *",
             "dagster/freshness_timezone": "UTC",
         }
@@ -174,6 +176,7 @@ def test_check_result_cron(
                     {
                         "dagster/deadline_cron": deadline_cron,
                         "dagster/freshness_timezone": timezone,
+                        "dagster/freshness_severity": "WARN",
                         "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
                     }
                 ),
@@ -208,6 +211,7 @@ def test_check_result_cron(
                     {
                         "dagster/deadline_cron": deadline_cron,
                         "dagster/freshness_timezone": timezone,
+                        "dagster/freshness_severity": "WARN",
                         "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
                     }
                 ),
@@ -268,6 +272,7 @@ def test_check_result_bound_only(
                     {
                         "dagster/lower_bound_delta": 600,
                         "dagster/freshness_timezone": "UTC",
+                        "dagster/freshness_severity": "WARN",
                     }
                 ),
                 # Indicates that no records exist.
@@ -302,6 +307,7 @@ def test_check_result_bound_only(
                     {
                         "dagster/lower_bound_delta": 600,
                         "dagster/freshness_timezone": "UTC",
+                        "dagster/freshness_severity": "WARN",
                     }
                 ),
                 # Deadline is 10 minutes after the previous event, so in one minute
