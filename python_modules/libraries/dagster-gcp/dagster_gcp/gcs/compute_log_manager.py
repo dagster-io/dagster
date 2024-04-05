@@ -77,7 +77,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             json_info_str = os.environ.get(json_credentials_envvar)
             credentials_info = json.loads(json_info_str)  # type: ignore  # (possible none)
             self._bucket = (
-                storage.Client()
+                storage.Client
                 .from_service_account_info(credentials_info)
                 .bucket(self._bucket_name)
             )
