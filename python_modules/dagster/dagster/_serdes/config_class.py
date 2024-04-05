@@ -96,10 +96,20 @@ class ConfigurableClassData(
         try:
             module = importlib.import_module(self.module_name)
         except ModuleNotFoundError:
-            raise DagsterImportClassFromCodePointerError(
-                f"Couldn't import module {self.module_name} when attempting to load the "
-                f"configurable class {self.module_name}.{self.class_name}"
-            )
+            module_elems = self.module_name.split(".")
+            if "dagster_cloud" == module_elems[0]:
+                try:
+                    module = importlib.import_module(".".join(["dagster_plus", *module_elems[1:]]))
+                except Exception:
+                    raise DagsterImportClassFromCodePointerError(
+                        f"Couldn't import module {self.module_name} when attempting to load the "
+                        f"configurable class {self.module_name}.{self.class_name}"
+                    )
+            else:
+                raise DagsterImportClassFromCodePointerError(
+                    f"Couldn't import module {self.module_name} when attempting to load the "
+                    f"configurable class {self.module_name}.{self.class_name}"
+                )
         try:
             # All rehydrated classes are expected to implement the ConfigurableClass interface and
             # will error when we call `klass.from_config_value` and `klass.config_type` below if

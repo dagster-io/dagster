@@ -17,7 +17,7 @@ from dagster._config import (
     validate_config,
 )
 from dagster._config.source import BoolSource
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import DagsterImportClassFromCodePointerError, DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
 from dagster._utils.concurrency import get_max_concurrency_limit_value
@@ -70,12 +70,28 @@ def dagster_instance_config(
                 custom_instance_class_data,
             )
 
-        custom_instance_class = cast(
-            Type["DagsterInstance"],
-            class_from_code_pointer(
-                custom_instance_class_data["module"], custom_instance_class_data["class"]
-            ),
-        )
+        try:
+            custom_instance_class = cast(
+                Type["DagsterInstance"],
+                class_from_code_pointer(
+                    custom_instance_class_data["module"], custom_instance_class_data["class"]
+                ),
+            )
+        except DagsterImportClassFromCodePointerError as e:
+            module_elems = custom_instance_class_data["module"].split(".")
+            if "dagster_cloud" == module_elems[0]:
+                try:
+                    custom_instance_class = cast(
+                        Type["DagsterInstance"],
+                        class_from_code_pointer(
+                            ".".join(["dagster_plus", *module_elems[1:]]),
+                            custom_instance_class_data["class"],
+                        ),
+                    )
+                except Exception:
+                    raise e
+            else:
+                raise e
 
         schema: Mapping[str, Field]
         if hasattr(custom_instance_class, "config_schema"):
