@@ -6,6 +6,7 @@ import {OverviewAssetsRoot} from './OverviewAssetsRoot';
 import {OverviewPageHeader} from './OverviewPageHeader';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
+import {useFeatureFlags} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -22,13 +23,19 @@ export const OverviewActivityRoot = () => {
     [],
   );
 
-  const [defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets'>(
+  const [_defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets'>(
     'overview-activity-tab',
     (json) => (['timeline', 'assets'].includes(json) ? json : 'timeline'),
   );
 
+  const {flagUseNewAssetHealthOverviewPage} = useFeatureFlags();
+  const defaultTab = flagUseNewAssetHealthOverviewPage ? 'timeline' : _defaultTab;
+
   const tabButton = React.useCallback(
     ({selected}: {selected: 'timeline' | 'assets'}) => {
+      if (flagUseNewAssetHealthOverviewPage) {
+        return null;
+      }
       if (defaultTab !== selected) {
         setDefaultTab(selected);
       }
@@ -43,15 +50,17 @@ export const OverviewActivityRoot = () => {
         </JoinedButtons>
       );
     },
-    [defaultTab, setDefaultTab],
+    [defaultTab, setDefaultTab, flagUseNewAssetHealthOverviewPage],
   );
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <Switch>
-        <Route path="/overview/activity/assets">
-          <OverviewAssetsRoot Header={header} TabButton={tabButton} />
-        </Route>
+        {!flagUseNewAssetHealthOverviewPage && (
+          <Route path="/overview/activity/assets">
+            <OverviewAssetsRoot Header={header} TabButton={tabButton} />
+          </Route>
+        )}
         <Route path="/overview/activity/timeline">
           <OverviewTimelineRoot Header={header} TabButton={tabButton} />
         </Route>

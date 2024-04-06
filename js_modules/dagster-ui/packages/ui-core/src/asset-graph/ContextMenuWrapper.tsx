@@ -18,14 +18,24 @@ export const ContextMenuWrapper = ({
   wrapperInnerStyles?: React.CSSProperties;
 }) => {
   const [menuVisible, setMenuVisible] = React.useState(false);
-  const [menuPosition, setMenuPosition] = React.useState<{top: number; left: number}>({
-    top: 0,
-    left: 0,
+  const [menuPosition, setMenuPosition] = React.useState<{
+    x: number;
+    y: number;
+    anchor: 'left' | 'right';
+  }>({
+    anchor: 'left',
+    x: 0,
+    y: 0,
   });
 
   const showMenu = (e: React.MouseEvent) => {
+    const anchor = window.innerWidth - e.pageX < 240 ? 'right' : 'left';
     e.preventDefault();
-    setMenuPosition({top: e.pageY, left: e.pageX});
+    setMenuPosition({
+      x: anchor === 'left' ? e.pageX : window.innerWidth - e.pageX,
+      y: e.pageY,
+      anchor,
+    });
 
     if (!menuVisible) {
       setMenuVisible(true);
@@ -78,8 +88,9 @@ export const ContextMenuWrapper = ({
             <div
               style={{
                 position: 'absolute',
-                top: menuPosition.top,
-                left: menuPosition.left,
+                top: menuPosition.y,
+                left: menuPosition.anchor === 'left' ? menuPosition.x : 'unset',
+                right: menuPosition.anchor === 'right' ? menuPosition.x : 'unset',
                 backgroundColor: Colors.popoverBackground(),
                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                 zIndex: 10,
@@ -102,4 +113,5 @@ export const triggerContextMenu = (e: React.MouseEvent) => {
   const evt = new MouseEvent('contextmenu', e.nativeEvent);
   e.target.dispatchEvent(evt);
   e.stopPropagation();
+  e.preventDefault();
 };

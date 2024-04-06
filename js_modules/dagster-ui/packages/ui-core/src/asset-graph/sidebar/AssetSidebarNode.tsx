@@ -2,7 +2,7 @@ import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {StatusDot} from './StatusDot';
+import {StatusDot, StatusDotNode} from './StatusDot';
 import {
   FolderNodeCodeLocationType,
   FolderNodeGroupType,
@@ -11,13 +11,13 @@ import {
 } from './util';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {AssetGroup} from '../AssetGraphExplorer';
-import {useAssetNodeMenu} from '../AssetNodeMenu';
+import {AssetNodeMenuProps, useAssetNodeMenu} from '../AssetNodeMenu';
 import {useGroupNodeContextMenu} from '../CollapsedGroupNode';
 import {ContextMenuWrapper, triggerContextMenu} from '../ContextMenuWrapper';
 import {GraphData, GraphNode} from '../Utils';
 
 type AssetSidebarNodeProps = {
-  fullAssetGraphData: GraphData;
+  fullAssetGraphData?: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
   toggleOpen: () => void;
@@ -42,10 +42,9 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
   const showArrow = !isAssetNode;
 
   return (
-    <Box ref={elementRef} padding={{left: 8}}>
+    <Box ref={elementRef} padding={{left: 8, right: 12}}>
       <BoxWrapper level={level}>
         <ItemContainer
-          padding={{right: 12}}
           flex={{direction: 'row', alignItems: 'center'}}
           onClick={selectThisNode}
           onDoubleClick={(e) => !e.metaKey && toggleOpen()}
@@ -93,7 +92,18 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
   );
 };
 
-const AssetSidebarAssetLabel = ({
+type AssetSidebarAssetLabelProps = {
+  fullAssetGraphData?: GraphData;
+  showStatus?: boolean;
+  node: AssetNodeMenuProps['node'] & StatusDotNode;
+  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+  isLastSelected: boolean;
+  isSelected: boolean;
+  explorerPath: ExplorerPath;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+};
+
+export const AssetSidebarAssetLabel = ({
   node,
   isSelected,
   isLastSelected,
@@ -101,7 +111,8 @@ const AssetSidebarAssetLabel = ({
   selectNode,
   explorerPath,
   onChangeExplorerPath,
-}: Omit<AssetSidebarNodeProps, 'node'> & {node: GraphNode}) => {
+  showStatus = true,
+}: AssetSidebarAssetLabelProps) => {
   const {menu, dialog} = useAssetNodeMenu({
     graphData: fullAssetGraphData,
     node,
@@ -115,7 +126,7 @@ const AssetSidebarAssetLabel = ({
       <FocusableLabelContainer
         isSelected={isSelected}
         isLastSelected={isLastSelected}
-        icon={<StatusDot node={node} />}
+        icon={showStatus ? <StatusDot node={node} /> : null}
         text={getDisplayName(node)}
       />
       <ExpandMore onClick={triggerContextMenu}>
@@ -196,6 +207,7 @@ const FocusableLabelContainer = ({
     <GrayOnHoverBox
       ref={ref}
       style={{
+        gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
         ...(isSelected ? {background: Colors.backgroundBlue()} : {}),
       }}
     >
@@ -231,7 +243,7 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
 const ExpandMore = styled(UnstyledButton)`
   position: absolute;
   top: 8px;
-  right: 20px;
+  right: 8px;
   visibility: hidden;
 `;
 
@@ -240,8 +252,8 @@ const GrayOnHoverBox = styled(UnstyledButton)`
   user-select: none;
   width: 100%;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
   flex-direction: row;
+  height: 32px;
   align-items: center;
   padding: 5px 8px;
   justify-content: space-between;
@@ -251,7 +263,7 @@ const GrayOnHoverBox = styled(UnstyledButton)`
   transition: background 100ms linear;
 `;
 
-const ItemContainer = styled(Box)`
+export const ItemContainer = styled(Box)`
   height: 32px;
   position: relative;
   cursor: pointer;
