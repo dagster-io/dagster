@@ -104,7 +104,7 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
     </tr>
     <tr>
       <td>
-        <strong>Insights metric alert</strong>
+        <strong>Insights metric alert</strong> <Experimental />
       </td>
       <td>
         <strong>
@@ -123,10 +123,12 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
           <li>Spend on external tools such as Snowflake or BigQuery credits</li>
         </ul>
         Alerts can be scoped to the sum of any metric across an entire
-        deployment, or for a specific job, asset group, or asset key.{" "}
+        deployment, or for a specific job, asset group, or asset key.
+        <br />
         <strong>Note</strong>: Alerts are sent only when the threshold is first
         crossed, and will not be sent again until the value returns to expected
-        levels.
+        levels. Insights data may become available up to 24 hours after run
+        completion.
       </td>
     </tr>
   </tbody>
