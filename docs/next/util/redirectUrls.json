@@ -1069,5 +1069,10 @@
         "source": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents",
         "destination": "/dagster-plus/managing-deployments/setting-environment-variables-agents",
         "statusCode": "302"
+    },
+    {
+        "source": "/dagster-cloud",
+        "destination": "/dagster-plus",
+        "statusCode": "302"
     }
 ]
