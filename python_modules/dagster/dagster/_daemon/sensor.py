@@ -470,11 +470,11 @@ def _process_tick_generator(
                 sensor_debug_crash_flags,
             )
 
-    except Exception:
+    except Exception as e:
         error_info = DaemonErrorCapture.on_exception(
             exc_info=sys.exc_info(),
             logger=logger,
-            log_message=f"Sensor daemon caught an error for sensor {external_sensor.name}",
+            log_message=f"Sensor daemon caught an error for sensor {external_sensor.name}, {e!s}",
         )
 
     yield error_info

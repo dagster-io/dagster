@@ -10,7 +10,6 @@ from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
     StaticPartitionsDefinition,
-    _check as check,
     _seven,
     asset,
     execute_job,
@@ -28,6 +27,7 @@ from dagster._core.definitions.events import AssetMaterialization, AssetObservat
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterHomeNotSetError,
+    DagsterImportClassFromCodePointerError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
@@ -532,7 +532,7 @@ def test_dagster_home_not_set():
 
 def test_invalid_configurable_class():
     with pytest.raises(
-        check.CheckError,
+        DagsterImportClassFromCodePointerError,
         match=re.escape(
             "Couldn't find class MadeUpRunLauncher in module when attempting to "
             "load the configurable class dagster.MadeUpRunLauncher"
@@ -546,7 +546,7 @@ def test_invalid_configurable_class():
 
 def test_invalid_configurable_module():
     with pytest.raises(
-        check.CheckError,
+        DagsterImportClassFromCodePointerError,
         match=re.escape(
             "Couldn't import module made_up_module when attempting to load "
             "the configurable class made_up_module.MadeUpRunLauncher",

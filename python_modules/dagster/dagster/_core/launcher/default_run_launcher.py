@@ -64,6 +64,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         # defer for perf
         from dagster._grpc.types import ExecuteExternalJobArgs, StartRunResult
 
+        # here?
         instance.add_run_tags(
             run.run_id,
             {
