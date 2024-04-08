@@ -55,18 +55,6 @@ declare namespace Intl {
     timeZones: string[];
   }
 }
-declare module '*.mp4' {
-  const src: string;
-  export default src;
-}
-
-declare module 'worker-loader!*' {
-  class WebpackWorker extends Worker {
-    constructor();
-  }
-
-  export default WebpackWorker;
-}
 
 declare module 'chartjs-adapter-date-fns';
 
