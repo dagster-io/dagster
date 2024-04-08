@@ -536,7 +536,7 @@
                   },
                   {
                     "title": "Setting environment variables",
-                    "path": "/dagster-plus/managing-deployments/setting-environment-variables-dagster-cloud-agents"
+                    "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
                   }
                 ]
               }
@@ -654,7 +654,7 @@
                   },
                   {
                     "title": "Setup for Hybrid agents",
-                    "path": "/dagster-plus/managing-deployments/setting-environment-variables-dagster-cloud-agents"
+                    "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
                   }
                 ]
               },
