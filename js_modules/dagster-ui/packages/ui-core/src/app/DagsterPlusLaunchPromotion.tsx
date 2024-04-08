@@ -1,12 +1,4 @@
-import {
-  Body1,
-  Box,
-  Button,
-  DagsterTheme,
-  Dialog,
-  ExternalAnchorButton,
-  getTheme,
-} from '@dagster-io/ui-components';
+import {Body1, Box, Button, Dialog, ExternalAnchorButton} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import dagster_plus from './dagster_plus.png';
@@ -23,7 +15,6 @@ export const DagsterPlusLaunchPromotion = () => {
   if (Date.now() > EVENT_TIME) {
     return null;
   }
-  const isDarkMode = getTheme() === DagsterTheme.Dark;
   return (
     <Dialog
       isOpen={!didDismissPromotion}
