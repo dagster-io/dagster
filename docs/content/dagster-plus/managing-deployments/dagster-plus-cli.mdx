@@ -1,14 +1,14 @@
 ---
-title: "Using the dagster-cloud CLI | Dagster Docs"
+title: "Using the dagster-plus CLI | Dagster Docs"
 ---
 
-# Using the dagster-cloud CLI
+# Using the dagster-plus CLI
 
 <Note>This guide is applicable to Dagster+.</Note>
 
-The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster+.
+The `dagster-plus` CLI is a command-line toolkit designed to work with Dagster+.
 
-In this guide, we'll cover how to install and configure the `dagster-cloud` CLI, get help, and use some helpful environment variables and CLI options.
+In this guide, we'll cover how to install and configure the `dagster-plus` CLI, get help, and use some helpful environment variables and CLI options.
 
 ---
 
@@ -17,39 +17,39 @@ In this guide, we'll cover how to install and configure the `dagster-cloud` CLI,
 The Dagster+ Agent library is available in PyPi. To install, run:
 
 ```shell
-pip install dagster-cloud
+pip install dagster-plus
 ```
 
 Refer to the [configuration section](#configuring-the-cli) for next steps.
 
 ### Completions
 
-Optionally, you can install command-line completions to make using the `dagster-cloud` CLI easier.
+Optionally, you can install command-line completions to make using the `dagster-plus` CLI easier.
 
 To have the CLI install these completions to your shell, run:
 
 ```shell
-dagster-cloud --install-completion
+dagster-plus --install-completion
 ```
 
 To print out the completion for copying or manual installation:
 
 ```shell
-dagster-cloud --show-completion
+dagster-plus --show-completion
 ```
 
 ---
 
 ## Configuring the CLI
 
-The recommended way to set up your CLI's config for long-term use is through the configuration file, located by default at `~/.dagster_cloud_cli/config`.
+The recommended way to set up your CLI's config for long-term use is through the configuration file, located by default at `~/.dagster_plus_cli/config`.
 
 ### Setting up the configuration file
 
 Set up the config file:
 
 ```shell
-dagster-cloud config setup
+dagster-plus config setup
 ```
 
 Select your authentication method. **Note**: Browser authentication is the easiest method to configure.
@@ -60,7 +60,7 @@ Select your authentication method. **Note**: Browser authentication is the easie
 The easiest way to set up is to authenticate through the browser.
 
 ```shell
-$ dagster-cloud config setup
+$ dagster-plus config setup
 ? How would you like to authenticate the CLI? (Use arrow keys)
  » Authenticate in browser
    Authenticate using token
@@ -69,7 +69,7 @@ Authorized for organization `hooli`
 ? Default deployment: prod
 ```
 
-When prompted, you can specify a default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster+ organization is `prod`.
+When prompted, you can specify a default deployment. If specified, a deployment won't be required in subsequent `dagster-plus` commands. The default deployment for a new Dagster+ organization is `prod`.
 
 </details>
 
@@ -79,7 +79,7 @@ When prompted, you can specify a default deployment. If specified, a deployment 
 Alternatively, you may authenticate using a user token. Refer to the [Managing user and agent tokens guide](/dagster-plus/account/managing-user-agent-tokens) for more info.
 
 ```shell
-$ dagster-cloud config setup
+$ dagster-plus config setup
 ? How would you like to authenticate the CLI? (Use arrow keys)
    Authenticate in browser
  » Authenticate using token
@@ -91,9 +91,9 @@ $ dagster-cloud config setup
 
 When prompted, specify the following:
 
-- **Organization** - Your organization name as it appears in your Dagster+ URL. For example, if your Dagster+ instance is `https://hooli.dagster.cloud/`, this would be `hooli`.
+- **Organization** - Your organization name as it appears in your Dagster+ URL. For example, if your Dagster+ instance is `https://hooli.dagster.plus/`, this would be `hooli`.
 - **User token** - The user token.
-- **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster+ organization is `prod`.
+- **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-plus` commands. The default deployment for a new Dagster+ organization is `prod`.
 
 </details>
 
@@ -102,7 +102,7 @@ When prompted, specify the following:
 To view the contents of the CLI configuration file, run:
 
 ```shell
-$ dagster-cloud config view
+$ dagster-plus config view
 
 default_deployment: prod
 organization: hooli
@@ -114,7 +114,7 @@ Specify the `--show-token` flag to show the full user token.
 To modify the existing config, re-run:
 
 ```shell
-dagster-cloud config setup
+dagster-plus config setup
 ```
 
 ---
@@ -124,7 +124,7 @@ dagster-cloud config setup
 To quickly toggle between deployments, run:
 
 ```shell
-dagster-cloud config set-deployment <deployment_name>
+dagster-plus config set-deployment <deployment_name>
 ```
 
 ---
@@ -134,7 +134,7 @@ dagster-cloud config set-deployment <deployment_name>
 To view help options in the CLI:
 
 ```shell
-dagster-cloud --help
+dagster-plus --help
 ```
 
 ---

@@ -107,7 +107,7 @@ To delete a deployment:
   are required to modify deployment settings.
 </Note>
 
-Deployment settings can be configured in the Dagster+ interface or using the dagster-cloud CLI. Refer to the [deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference) for more info about individual settings.
+Deployment settings can be configured in the Dagster+ interface or using the `dagster-plus` CLI. Refer to the [deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference) for more info about individual settings.
 
 <TabGroup>
   <TabItem name="Dagster+">
@@ -127,9 +127,9 @@ Deployment settings can be configured in the Dagster+ interface or using the dag
     <li>When finished, click <strong>Save deployment settings</strong>.</li>
    </ol>
   </TabItem>
-  <TabItem name="dagster-cloud CLI">
+  <TabItem name="dagster-plus CLI">
 <Note>
-<strong>Note:</strong> <code>dagster-cloud</code> 0.13.14 or later must be installed to run the CLI. Agent and/or job code doesn't need to be upgraded.
+<strong>Note:</strong> <code>dagster-plus</code> 0.13.14 or later must be installed to run the CLI. Agent and/or job code doesn't need to be upgraded.
 </Note>
 
 Create a file with the settings you'd like to configure. For example:
@@ -154,13 +154,13 @@ run_retries:
 Use the CLI to upload the settings file:
 
 ```shell
-dagster-cloud deployment settings set-from-file my-settings.yaml
+dagster-plus deployment settings set-from-file my-settings.yaml
 ```
 
 This will replace all of your configured settings. Any that are not specified will resort to their default values. You also use the CLI to read your current settings, including the default values:
 
 ```shell
-dagster-cloud deployment settings get
+dagster-plus deployment settings get
 ```
 
   </TabItem>
@@ -188,8 +188,8 @@ dagster-cloud deployment settings get
     href="/guides/dagster/branch_deployments"
   ></ArticleListItem>
   <ArticleListItem
-    title="Using the dagster-cloud CLI"
-    href="/dagster-plus/managing-deployments/dagster-cloud-cli"
+    title="Using the dagster-plus CLI"
+    href="/dagster-plus/managing-deployments/dagster-plus-cli"
   ></ArticleListItem>
   <ArticleListItem
     title="Managing users in Dagster+"

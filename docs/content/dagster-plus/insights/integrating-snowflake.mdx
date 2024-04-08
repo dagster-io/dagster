@@ -11,7 +11,7 @@ platform_type: "cloud"
   This feature is considered <strong>experimental</strong>.
 </Note>
 
-External metrics, such as Snowflake credits, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster+ via an API.
+External metrics, such as Snowflake credits, can be integrated into the Dagster Insights UI. The [`dagster-plus`](https://pypi.org/project/dagster-plus/) package contains utilities for capturing and submitting external metrics about data operations to Dagster+ via an API.
 
 If you use the [Snowflake Resource](/\_apidocs/libraries/dagster-snowflake) to query Snowflake, use this guide to integrate Snowflake metrics into the Insights UI. For instructions on integrating usage of dbt models which run in Snowflake, see [Integrating Snowflake + dbt with Dagster+ Insights](/dagster-plus/insights/integrating-snowflake-and-dbt).
 
@@ -27,10 +27,10 @@ To complete the steps in this guide, you'll need:
 - To install the following libraries:
 
   ```shell
-  pip install dagster dagster-cloud dagster-snowflake
+  pip install dagster dagster-plus dagster-snowflake
   ```
 
-  **Note**: If you already have `dagster-cloud` installed, **make sure you're using version 1.5.8 or newer**.
+  **Note**: If you already have `dagster-plus` installed, **make sure you're using version 1.5.8 or newer**.
 
 ---
 

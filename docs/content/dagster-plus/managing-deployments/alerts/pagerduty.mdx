@@ -57,7 +57,7 @@ If you need help with this integration, [contact Dagster+ support](https://dagst
 
    - **If creating a new service for your integration**: Refer to PagerDuty's [Configuring services and integrations documentation](https://support.pagerduty.com/docs/services-and-integrations#section-configuring-services-and-integrations) and follow the steps outlined in the [Create a new service](https://support.pagerduty.com/docs/services-and-integrations#section-create-a-new-service) section, selecting **Dagster+** as the **Integration Type** in step 4. Continue with the [**In Dagster+**](#in-dagster-cloud) section (below) once finished.
 
-3. Enter an **Integration Name** in the format `monitoring-tool-service-name` (e.g. `dagster-cloud-run-failures`) and select **Dagster+** from the **Integration Type** menu.
+3. Enter an **Integration Name** in the format `monitoring-tool-service-name` (e.g. `dagster-plus-run-failures`) and select **Dagster+** from the **Integration Type** menu.
 
 4. Click the **Add Integration** button to save your new integration. You will be redirected to the **Integrations** tab for your service.
 
@@ -93,9 +93,9 @@ Creating an alert policy can be done using the Dagster+ UI or in code.
 4. Click **Save policy**.
 
 </TabItem>
-<TabItem name="dagster-cloud CLI">
+<TabItem name="dagster-plus CLI">
 
-#### dagster-cloud CLI
+#### dagster-plus CLI
 
 To define a PagerDuty alert policy in code, use the `notification_service.pagerduty.integration_key` key to provide the integration key. For example:
 
@@ -115,13 +115,13 @@ alert_policies:
         integration_key: "<pagerduty_integration_key>"
 ```
 
-Then, use the `dagster-cloud` CLI to set the alert policies for the deployment:
+Then, use the `dagster-plus` CLI to set the alert policies for the deployment:
 
 ```bash file=/dagster_cloud/alerts/cli_commands.yaml startafter=start_set_alerts endbefore=end_set_alerts
-dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
+dagster-plus deployment alert-policies sync -a /path/to/alert_policies.yaml
 ```
 
-Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
+Refer to the [Managing alerts using the `dagster-plus` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
 
 </TabItem>
 </TabGroup>
@@ -146,7 +146,7 @@ To uninstall PagerDuty, click the **Delete** button next to the policy. When pro
     href="/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing alerts using the dagster-cloud CLI"
+    title="Managing alerts using the dagster-plus CLI"
     href="/dagster-plus/managing-deployments/alerts/managing-alerts-cli"
   ></ArticleListItem>
   <ArticleListItem
@@ -154,8 +154,8 @@ To uninstall PagerDuty, click the **Delete** button next to the policy. When pro
     href="/dagster-plus/managing-deployments/deployment-settings-reference"
   ></ArticleListItem>
   <ArticleListItem
-    title="dagster-cloud CLI"
-    href="/dagster-plus/managing-deployments/dagster-cloud-cli"
+    title="dagster-plus CLI"
+    href="/dagster-plus/managing-deployments/dagster-plus-cli"
   ></ArticleListItem>
   <ArticleListItem
     title="dagster_cloud.yaml"

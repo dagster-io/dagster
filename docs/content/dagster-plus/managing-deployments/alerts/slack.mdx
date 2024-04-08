@@ -40,7 +40,7 @@ After the app is installed in your Slack workspace, invite the `@Dagster+` bot u
 
 ## Step 3: Create an alert policy in Dagster+
 
-Creating an alert policy can be done using the Dagster+ UI or the `dagster-cloud` CLI and a YAML file.
+Creating an alert policy can be done using the Dagster+ UI or the `dagster-plus` CLI and a YAML file.
 
 <TabGroup>
 <TabItem name="In the UI">
@@ -58,9 +58,9 @@ Creating an alert policy can be done using the Dagster+ UI or the `dagster-cloud
 4. Click **Save policy**.
 
 </TabItem>
-<TabItem name="dagster-cloud CLI">
+<TabItem name="dagster-plus CLI">
 
-### dagster-cloud CLI
+### dagster-plus CLI
 
 To define a Slack alert policy in code, use the following keys to configure the alert:
 
@@ -85,13 +85,13 @@ alert_policies:
         slack_channel_name: "sales-notifications"
 ```
 
-Then, use the `dagster-cloud` CLI to set the alert policies for the deployment:
+Then, use the `dagster-plus` CLI to set the alert policies for the deployment:
 
 ```bash file=/dagster_cloud/alerts/cli_commands.yaml startafter=start_set_alerts endbefore=end_set_alerts
-dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
+dagster-plus deployment alert-policies sync -a /path/to/alert_policies.yaml
 ```
 
-Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
+Refer to the [Managing alerts using the `dagster-plus` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
 
 </TabItem>
 </TabGroup>
@@ -118,7 +118,7 @@ Once the app is removed, refresh the **Alerts** page in Dagster+ and the **Conne
     href="/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing alerts using the dagster-cloud CLI"
+    title="Managing alerts using the dagster-plus CLI"
     href="/dagster-plus/managing-deployments/alerts/managing-alerts-cli"
   ></ArticleListItem>
   <ArticleListItem
@@ -126,8 +126,8 @@ Once the app is removed, refresh the **Alerts** page in Dagster+ and the **Conne
     href="/dagster-plus/managing-deployments/deployment-settings-reference"
   ></ArticleListItem>
   <ArticleListItem
-    title="dagster-cloud CLI"
-    href="/dagster-plus/managing-deployments/dagster-cloud-cli"
+    title="dagster-plus CLI"
+    href="/dagster-plus/managing-deployments/dagster-plus-cli"
   ></ArticleListItem>
   <ArticleListItem
     title="dagster_cloud.yaml"

@@ -70,32 +70,32 @@ dagster project from-example \
 ```
 
 <Note>
-  Once scaffolded, add <code>dagster-cloud</code> as a dependency in your{" "}
+  Once scaffolded, add <code>dagster-plus</code> as a dependency in your{" "}
   <code>setup.py</code> file.
 </Note>
 
-Next, install the [dagster-cloud CLI](/dagster-plus/managing-deployments/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
+Next, install the [`dagster-plus` CLI](/dagster-plus/managing-deployments/dagster-plus-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
 
 ```shell
-pip install dagster-cloud
-dagster-cloud configure
+pip install dagster-plus
+dagster-plus configure
 ```
 
-You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-plus/managing-deployments/dagster-cloud-cli#environment-variables-and-cli-options) for more information.
+You can also configure the `dagster-plus` tool noninteractively; see [the CLI docs](/dagster-plus/managing-deployments/dagster-plus-cli#environment-variables-and-cli-options) for more information.
 
-Add `dagster-cloud` as a dependency to `my-dagster-project/setup.py`:
+Add `dagster-plus` as a dependency to `my-dagster-project/setup.py`:
 
 ```python
 install_requires=[
     "dagster",
-    "dagster-cloud",    # add this line
+    "dagster-plus",    # add this line
     "dagster-airbyte",
 ```
 
 Finally, deploy your project with Dagster+ Serverless:
 
 ```shell
-dagster-cloud serverless deploy-python-executable ./my-dagster-project \
+dagster-plus serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
   --package-name assets_modern_data_stack
 ```
@@ -168,7 +168,7 @@ The default version of Python for Serverless deployments is Python 3.8. Versions
 - **With the CLI**: Add the `--python-version` CLI argument to the deploy command to specify the registry path to the desired base image:
 
   ```shell
-  dagster-cloud serverless deploy-python-executable --location-name=my_location --python-version=3.9
+  dagster-plus serverless deploy-python-executable --location-name=my_location --python-version=3.9
   ```
 
 ### Using a different base image or using native dependencies
@@ -176,25 +176,25 @@ The default version of Python for Serverless deployments is Python 3.8. Versions
 Dagster+ runs your code on a Docker image that we build as follows:
 
 1. The standard Python "slim" [Docker image](https://hub.docker.com/\_/python), such as `python:3.8-slim` is used as the base.
-2. The `dagster-cloud[serverless]` module installed in the image.
+2. The `dagster-plus[serverless]` module installed in the image.
 
 As far as possible, add all dependencies by including the corresponding native Python bindings in your `setup.py`. When that is not possible, you can build and upload a custom base image that will be used to run your Python code.
 
 To build and upload the image, use the command line:
 
-1. Build your Docker image using `docker build` or your usual Docker toolchain. Ensure the `dagster-cloud[serverless]` dependency is included. You can do this by adding the following to your `Dockerfile`:
+1. Build your Docker image using `docker build` or your usual Docker toolchain. Ensure the `dagster-plus[serverless]` dependency is included. You can do this by adding the following to your `Dockerfile`:
 
    ```shell
-   RUN pip install "dagster-cloud[serverless]"
+   RUN pip install "dagster-plus[serverless]"
    ```
 
 2. Upload your Docker image to Dagster+ using the `upload-base-image` command. Note that this command prints out the tag used in Dagster+ to identify your image:
 
    ```shell
-   $ dagster-cloud serverless upload-base-image local-image:tag
+   $ dagster-plus serverless upload-base-image local-image:tag
 
    ...
-   To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+   To use the uploaded image run: dagster-plus deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
    ```
 
 3. To use a Docker image you have published to Dagster+, use the `--base-image-tag` tag printed out by the above command.
@@ -211,7 +211,7 @@ To build and upload the image, use the command line:
    - **With the CLI**: Add the `--base-image-tag` CLI argument to the deploy command:
 
      ```shell
-     dagster-cloud serverless deploy-python-executable \
+     dagster-plus serverless deploy-python-executable \
        --location-name example \
        --package-name assets_modern_data_stack \
        --base-image-tag sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
@@ -233,7 +233,7 @@ Prior to using PEX files, Dagster+ deployed code using Docker images. This featu
 - **With the CLI**: Use the `deploy` command instead of the `deploy-python-executable` command:
 
   ```shell
-  dagster-cloud serverless deploy \
+  dagster-plus serverless deploy \
     --location-name example \
     --package-name assets_modern_data_stack
   ```
@@ -272,7 +272,7 @@ The default base image is `debian:bullseye-slim`, but it can be changed.
 - **With the CLI**: Add the `--base-image` CLI argument to the deploy command to specify the registry path to the desired base image:
 
   ```shell
-  dagster-cloud serverless deploy --location-name=my_location --base-image=my_base_image:latest
+  dagster-plus serverless deploy --location-name=my_location --base-image=my_base_image:latest
   ```
 
 </TabItem>
