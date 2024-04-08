@@ -635,7 +635,9 @@ class DagsterKubernetesClient:
                     self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason == None:
-                    self.logger(f'Pod "{pod_name}" is waiting with reason "None" - this is temporary/transition state')
+                    self.logger(
+                        f'Pod "{pod_name}" is waiting with reason "None" - this is temporary/transition state'
+                    )
                     self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason in [

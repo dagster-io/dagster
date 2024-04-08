@@ -1,4 +1,3 @@
-from email import message
 import time
 from collections import namedtuple
 from unittest import mock
@@ -875,6 +874,7 @@ def test_valid_failure_waiting_reasons():
             mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
         assert f'Failed: Reason="{reason}" Message="bad things"' in str(exc_info.value)
 
+
 def test_waiting_reason_none():
     mock_client = create_mocked_client()
     single_waiting_pod = _pod_list_for_container_status(
@@ -900,6 +900,7 @@ def test_waiting_reason_none():
         ],
     )
     assert len(mock_client.sleeper.mock_calls) == 1
+
 
 def test_bad_waiting_state():
     mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=2))
