@@ -1,4 +1,4 @@
-import {Body1, Box, Button, Dialog, ExternalAnchorButton} from '@dagster-io/ui-components';
+import {Body1, Box, Button, Dialog, ExternalAnchorButton, Icon} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import dagster_plus from './dagster_plus.png';
@@ -40,6 +40,7 @@ export const DagsterPlusLaunchPromotion = () => {
             target="_blank"
             rel="noreferrer"
             intent="primary"
+            icon={<Icon name="open_in_new" />}
           >
             Learn more
           </ExternalAnchorButton>
