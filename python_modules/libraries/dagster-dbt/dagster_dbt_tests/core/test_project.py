@@ -75,10 +75,9 @@ def test_state_defer(tmp_path) -> None:
     with copy_directory(test_jaffle_shop_path) as project_dir:
         # simulate deploying and running prod
         with environ({"DAGSTER_DBT_JAFFLE_SCHEMA": "prod"}):
-            my_project = DbtProject(
-                project_dir,
-                state_dir="prod_artifacts",
-            )
+            state_dir = Path(project_dir).joinpath("prod_artifacts")
+            state_dir.mkdir()
+            my_project = DbtProject(project_dir, state_dir=state_dir.name)
             dbt_resource = DbtCliResource(my_project)
 
             dbt_resource.cli(["seed"]).wait()  # test set-up
