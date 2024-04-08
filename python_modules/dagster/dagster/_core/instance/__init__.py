@@ -71,6 +71,7 @@ from dagster._core.storage.tags import (
     RUN_FAILURE_REASON_TAG,
 )
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -679,6 +680,17 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def get_ref(self) -> InstanceRef:
         if self._ref:
+            if self._ref.custom_instance_class_data:
+                module_elems = self._ref.custom_instance_class_data.module_name.split(".")
+                if "dagster_plus" == module_elems[0]:
+                    return self._ref._replace(
+                        custom_instance_class_data=ConfigurableClassData(
+                            module_name=".".join(["dagster_cloud", *module_elems[1:]]),
+                            class_name=self._ref.custom_instance_class_data.class_name,
+                            config_yaml=self._ref.custom_instance_class_data.config_yaml,
+                        )
+                    )
+
             return self._ref
 
         check.failed(
