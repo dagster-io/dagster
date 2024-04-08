@@ -394,12 +394,14 @@ class DbtCliEventMessage:
             )
 
         node_sql_path = target_path.joinpath(
-            "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
+            "compiled",
+            manifest["metadata"]["project_name"],
+            dbt_resource_props["original_file_path"],
         )
         optimized_node_ast = cast(
             exp.Query,
             optimize(
-                parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect).expression,
+                parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
                 schema=sqlglot_mapping_schema,
                 dialect=sql_dialect,
             ),
