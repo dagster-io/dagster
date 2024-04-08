@@ -7,14 +7,14 @@ description: Develop and test in the cloud.
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) with Gitlab CI/CD.
+In this guide, we'll walk you through setting up [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments) with Gitlab CI/CD.
 
 Using this approach to branch deployments may be a good fit if:
 
 - You use Gitlab for version control
 - You want Dagster to fully automate Branch Deployments
 
-**If you don't use Gitlab for version control or want full control over your setup**, check out the [Branch deployments with the `dagster-cloud CLI` guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments).
+**If you don't use Gitlab for version control or want full control over your setup**, check out the [Branch deployments with the `dagster-cloud CLI` guide](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments).
 
 ---
 
@@ -23,8 +23,8 @@ Using this approach to branch deployments may be a good fit if:
 To complete the steps in this guide, you'll need:
 
 - **Organization Admin** permissions in Dagster Cloud
-- **The ability to run a new agent in your infrastructure**. This isn't required if you're using [Serverless deployment](/dagster-cloud/deployment/serverless).
-- **The ability to configure Gitlab CI/CD for your project**. This isn't required if you used the Dagster Cloud Gitlab app to connect your project as a [code location](/dagster-cloud/managing-deployments/code-locations).
+- **The ability to run a new agent in your infrastructure**. This isn't required if you're using [Serverless deployment](/dagster-plus/deployment/serverless).
+- **The ability to configure Gitlab CI/CD for your project**. This isn't required if you used the Dagster Cloud Gitlab app to connect your project as a [code location](/dagster-plus/managing-deployments/code-locations).
 
 ---
 
@@ -39,7 +39,7 @@ To complete the steps in this guide, you'll need:
 <Note>
   <strong>
     If using{" "}
-    <a href="/dagster-cloud/deployment/serverless">Serverless deployment</a>
+    <a href="/dagster-plus/deployment/serverless">Serverless deployment</a>
   </strong>
   , this step isn't required.
 </Note>
@@ -83,7 +83,7 @@ In this section, you'll:
   <a href="#step-42-configure-gitlab-cicd-variables">Skip to the next step</a>.
 </Note>
 
-In the [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml), replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-create-and-configure-an-agent).
+In the [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml), replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-create-and-configure-an-agent).
 
 For example:
 
@@ -106,7 +106,7 @@ locations:
   isn't required.
   <br></br>
   <br></br>
-  <strong>Want to use secrets in your Dagster code?</strong> Check out the <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
+  <strong>Want to use secrets in your Dagster code?</strong> Check out the <a href="/dagster-plus/managing-deployments/environment-variables-and-secrets">
     Dagster Cloud environment variables and secrets guide
   </a> for more info.
 </Note>

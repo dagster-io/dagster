@@ -25,7 +25,7 @@ Let's get started!
 
 If you don't already have a Dagster Cloud account, [sign up for one](https://dagster.cloud/signup) before continuing.
 
-You'll also be asked to create a Dagster Cloud organization. When your organization is created, a single deployment, named `prod`, will also be created. Refer to the [Managing deployments guide](/dagster-cloud/managing-deployments/managing-deployments) for more information about deployments in Dagster Cloud.
+You'll also be asked to create a Dagster Cloud organization. When your organization is created, a single deployment, named `prod`, will also be created. Refer to the [Managing deployments guide](/dagster-plus/managing-deployments/managing-deployments) for more information about deployments in Dagster Cloud.
 
 ---
 
@@ -67,7 +67,7 @@ In this step, you'll select the type of deployment you want to use: **Serverless
         In a Serverless deployment, Dagster manages the infrastructure needed to
         run Dagster jobs. This means you don't need to spin up or manage any
         infrastructure. Refer to the{" "}
-        <a href="/dagster-cloud/deployment/serverless">
+        <a href="/dagster-plus/deployment/serverless">
           Serverless deployment documentation
         </a>{" "}
         for more info.
@@ -102,14 +102,14 @@ In this step, you'll select the type of deployment you want to use: **Serverless
         infrastructure. The agent runs in your infrastructure, executes your
         code, and streams metadata about code execution and assets and jobs (for
         visualization) over HTTPS back to Dagster Cloud. Refer to the{" "}
-        <a href="/dagster-cloud/deployment/hybrid">
+        <a href="/dagster-plus/deployment/hybrid">
           Hybrid deployment documentation
         </a>{" "}
         for more info.
         <br></br>
         <br></br>
         Dagster Cloud supports a variety of agents, each with its own prerequisites
-        for setup. Refer to the <a href="/dagster-cloud/deployment/agents">
+        for setup. Refer to the <a href="/dagster-plus/deployment/agents">
           Agent documentation
         </a> for more info.
       </td>
@@ -129,7 +129,7 @@ In this step, you'll select the type of deployment you want to use: **Serverless
           <li>You can create and configure an agent in your infrastructure</li>
           <li>
             You can use one of the{" "}
-            <a href="/dagster-cloud/deployment/agents">
+            <a href="/dagster-plus/deployment/agents">
               agents currently supported for Dagster Cloud
             </a>
           </li>
@@ -145,7 +145,7 @@ Select the deployment type you want to use and [proceed to the next step](#step-
 
 ## Step 3: Deploy your code
 
-Now that you've selected a deployment type, the next step is to tell Dagster Cloud the location of your Dagster code. In addition to this, you'll set up Continuous Integration (CI) and Continuous Deployment (CD). Once completed, [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) and continuous code location deployments will be enabled for your Dagster project.
+Now that you've selected a deployment type, the next step is to tell Dagster Cloud the location of your Dagster code. In addition to this, you'll set up Continuous Integration (CI) and Continuous Deployment (CD). Once completed, [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments) and continuous code location deployments will be enabled for your Dagster project.
 
 The steps for accomplishing this vary depending on the **deployment type** you selected in the previous step:
 
@@ -163,7 +163,7 @@ For **Serverless deployments**, there are two ways to deploy your code to Dagste
 
 - [**Start from a template**](#use-a-template) - Use one of our quickstart templates to get up and running. All templates come with CI/CD already configured and will be cloned to a new GitHub repository.
 
-- [**Import an existing project**](#import-an-existing-project) - Import an existing GitHub repository using our GitHub integration or the [dagster-cloud CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli). **Note**: If using the GitHub integration, Dagster Cloud will automatically set up CI/CD for you.
+- [**Import an existing project**](#import-an-existing-project) - Import an existing GitHub repository using our GitHub integration or the [dagster-cloud CLI](/dagster-plus/managing-deployments/dagster-cloud-cli). **Note**: If using the GitHub integration, Dagster Cloud will automatically set up CI/CD for you.
 
 #### Use a template
 
@@ -215,7 +215,7 @@ If you have existing Dagster code, you can use Dagster's GitHub / Gitlab app or 
 
 Using the GitHub integration to import an existing GitHub repository also sets up CI/CD for you.
 
-Before you get started, note that the repository must have a [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
+Before you get started, note that the repository must have a [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
 
 If this file doesn't currently exist, create it in the root of your repository with the following code:
 
@@ -246,7 +246,7 @@ When finished, [continue to Step 5](#step-5-set-up-environment-variables-and-sec
 
 Using the Gitlab integration to import an existing Gitlab project also sets up CI/CD for you.
 
-Before you get started, note that the project must have a [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
+Before you get started, note that the project must have a [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
 
 If this file doesn't currently exist, create it in the root of your repository with the following code:
 
@@ -280,7 +280,7 @@ When finished, [continue to Step 5](#step-5-set-up-environment-variables-and-sec
   version of Python 3 and Docker.
 </Note>
 
-To complete this step using the CLI, you can use your own Dagster code or the [Dagster starter kit](https://github.com/dagster-io/quickstart-etl). The starter kit is a template with everything you need to get started using Serverless in Dagster Cloud, including CI/CD configuration and the required [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml).
+To complete this step using the CLI, you can use your own Dagster code or the [Dagster starter kit](https://github.com/dagster-io/quickstart-etl). The starter kit is a template with everything you need to get started using Serverless in Dagster Cloud, including CI/CD configuration and the required [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml).
 
 - **If using the template**, [clone the repository](https://github.com/dagster-io/quickstart-etl) to your local environment.
 
@@ -324,16 +324,16 @@ To set up Hybrid deployment and deploy your code, you'll need to:
 
 For most Hybrid deployments - with the exception of those using a local agent - you'll need to create a Docker image containing your Dagster code and then add a code location to Dagster Cloud that references the image.
 
-1. The dialog that displays will contain a pre-generated [agent token](/dagster-cloud/account/managing-user-agent-tokens) and details about the agents currently supported by Dagster Cloud.
+1. The dialog that displays will contain a pre-generated [agent token](/dagster-plus/account/managing-user-agent-tokens) and details about the agents currently supported by Dagster Cloud.
 
    **Note**: Keep this token handy - you'll need it to set up CI/CD in the next step.
 
 2. Follow the steps for setting up and deploying your agent:
 
-   - [Amazon Elastic Container Service (ECS)](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc)
-   - [Docker](/dagster-cloud/deployment/agents/docker)
-   - [Kubernetes](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent)
-   - [Local](/dagster-cloud/deployment/agents/local)
+   - [Amazon Elastic Container Service (ECS)](/dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc)
+   - [Docker](/dagster-plus/deployment/agents/docker)
+   - [Kubernetes](/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent)
+   - [Local](/dagster-plus/deployment/agents/local)
 
 3. The dialog will indicate when Dagster Cloud receives an agent heartbeat. Click **Continue**.
 
@@ -377,7 +377,7 @@ To set up continuous integration using GitHub Actions, you can use your own Dags
 
 **To configure the workflow**, follow these steps:
 
-1. In the repository, set the `DAGSTER_CLOUD_API_TOKEN` GitHub action secret. This is the Dagster Cloud agent token from the previous section. Refer to the [agent tokens documentation](/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens) for more info.
+1. In the repository, set the `DAGSTER_CLOUD_API_TOKEN` GitHub action secret. This is the Dagster Cloud agent token from the previous section. Refer to the [agent tokens documentation](/dagster-plus/account/managing-user-agent-tokens#managing-agent-tokens) for more info.
 
    Refer to the [GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) for more info about GitHub Action secrets.
 
@@ -396,7 +396,7 @@ When finished, [continue to the next step](#step-5-set-up-environment-variables-
 
 For continuous integration using a CI/CD provider other than GitHub, your system should use the `dagster-cloud ci` subcommand to deploy code locations to Dagster Cloud.
 
-Ensure that you have created a `dagster_cloud.yaml` file as described in [the quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/). For detailed documentation about this file see the [`dagster_cloud.yaml` reference](/dagster-cloud/managing-deployments/dagster-cloud-yaml). The following steps are typically implemented in the CI/CD workflow:
+Ensure that you have created a `dagster_cloud.yaml` file as described in [the quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/). For detailed documentation about this file see the [`dagster_cloud.yaml` reference](/dagster-plus/managing-deployments/dagster-cloud-yaml). The following steps are typically implemented in the CI/CD workflow:
 
 1. Set the build environment variables. Note that all variables are required:
 
@@ -455,7 +455,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 
    This command updates the code locations in Dagster Cloud. Once this finishes successfully, you should be able to see the code locations under the **Deployments** tab in Dagster Cloud.
 
-**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments) for more info.
+**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments) for more info.
 
 When finished, [continue to the next step](#step-5-set-up-environment-variables-and-secrets).
 
@@ -466,7 +466,7 @@ When finished, [continue to the next step](#step-5-set-up-environment-variables-
 
 ## Step 5: Set up environment variables and secrets
 
-Congrats! At this point, your Dagster Cloud deployment should be up and running. To ensure the external services you use in your Dagster project work correctly, start setting up your [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets). Using environment variables, you can securely pass in sensitive info like passwords, API tokens, etc.
+Congrats! At this point, your Dagster Cloud deployment should be up and running. To ensure the external services you use in your Dagster project work correctly, start setting up your [environment variables](/dagster-plus/managing-deployments/environment-variables-and-secrets). Using environment variables, you can securely pass in sensitive info like passwords, API tokens, etc.
 
 ---
 
@@ -474,7 +474,7 @@ Congrats! At this point, your Dagster Cloud deployment should be up and running.
 
 From here, you can:
 
-- [Invite your team](/dagster-cloud/account/managing-users)
-- [Configure authentication for your account](/dagster-cloud/account/authentication)
-- [Set up monitoring and alerting](/dagster-cloud/managing-deployments/alerts)
-- [Learn more setting up CI using Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments)
+- [Invite your team](/dagster-plus/account/managing-users)
+- [Configure authentication for your account](/dagster-plus/account/authentication)
+- [Set up monitoring and alerting](/dagster-plus/managing-deployments/alerts)
+- [Learn more setting up CI using Branch Deployments](/dagster-plus/managing-deployments/branch-deployments)

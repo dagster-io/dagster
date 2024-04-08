@@ -123,7 +123,7 @@ dagsterCloud:
 
 ### In Amazon ECS
 
-The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#per-deployment-configuration) guide for more information.
+The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/dagster-plus/deployment/agents/amazon-ecs/configuration-reference#per-deployment-configuration) guide for more information.
 
 </TabItem>
 </TabGroup>
@@ -142,7 +142,7 @@ To route requests for a code location to a specific agent, annotate the code loc
 
 ### Step 1: Define an agent queue for the code location
 
-First, set an agent queue for the code location in your [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml):
+First, set an agent queue for the code location in your [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml):
 
 ```yaml
 # dagster_cloud.yaml

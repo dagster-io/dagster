@@ -9,7 +9,7 @@ description: Learn to manage and configure your Dagster Cloud deployments.
 
 In Dagster Cloud, there are two types of deployments:
 
-- [**Branch deployments**](/dagster-cloud/managing-deployments/branch-deployments), which are temporary deployments built for testing purposes
+- [**Branch deployments**](/dagster-plus/managing-deployments/branch-deployments), which are temporary deployments built for testing purposes
 - **Full deployments**, which are persistent, fully-featured deployments intended to perform actions on a recurring basis
 
 This guide will focus on **full deployments**, hereafter referred to simply as deployments.
@@ -22,11 +22,11 @@ Deployments are standalone environments, allowing you to operate independent ins
 
 When a Dagster Cloud organization is created, a single deployment named `prod` will also be created. To create additional deployments, a [Pro plan](https://dagster.io/pricing) is required.
 
-Each deployment can have one or multiple [code locations](/dagster-cloud/managing-deployments/code-locations).
+Each deployment can have one or multiple [code locations](/dagster-plus/managing-deployments/code-locations).
 
 **Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster Cloud users, regardless of plan.
 
-Refer to the [Branch Deployment docs](/dagster-cloud/managing-deployments/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/guides/dagster/branch_deployments) for a real-world example.
+Refer to the [Branch Deployment docs](/dagster-plus/managing-deployments/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/guides/dagster/branch_deployments) for a real-world example.
 
 ---
 
@@ -48,7 +48,7 @@ To view all deployments, click **View all deployments**.
 ## Creating deployments
 
 <Note>
-  <a href="/dagster-cloud/account/managing-users#understanding-user-permissions">
+  <a href="/dagster-plus/account/managing-users#understanding-user-permissions">
     Organization Admin permissions
   </a>{" "}
   are required to create deployments. Additionally, note that creating multiple
@@ -78,7 +78,7 @@ To create a deployment:
 ## Deleting deployments
 
 <Note>
-  <a href="/dagster-cloud/account/managing-users#understanding-user-permissions">
+  <a href="/dagster-plus/account/managing-users#understanding-user-permissions">
     Organization Admin permissions
   </a>{" "}
   are required to delete deployments. Additionally, note that deleting a
@@ -101,13 +101,13 @@ To delete a deployment:
 ## Configuring deployment settings
 
 <Note>
-  <a href="/dagster-cloud/account/managing-users#understanding-user-permissions">
+  <a href="/dagster-plus/account/managing-users#understanding-user-permissions">
     Editor permissions
   </a>{" "}
   are required to modify deployment settings.
 </Note>
 
-Deployment settings can be configured in the Dagster Cloud interface or using the dagster-cloud CLI. Refer to the [deployment settings reference](/dagster-cloud/managing-deployments/deployment-settings-reference) for more info about individual settings.
+Deployment settings can be configured in the Dagster Cloud interface or using the dagster-cloud CLI. Refer to the [deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference) for more info about individual settings.
 
 <TabGroup>
   <TabItem name="Dagster Cloud">
@@ -173,15 +173,15 @@ dagster-cloud deployment settings get
 <ArticleList>
   <ArticleListItem
     title="Dagster Cloud deployment settings reference"
-    href="/dagster-cloud/managing-deployments/deployment-settings-reference"
+    href="/dagster-plus/managing-deployments/deployment-settings-reference"
   ></ArticleListItem>
   <ArticleListItem
     title="Managing code locations in Dagster Cloud"
-    href="/dagster-cloud/managing-deployments/code-locations"
+    href="/dagster-plus/managing-deployments/code-locations"
   ></ArticleListItem>
   <ArticleListItem
     title="Branch Deployments in Dagster Cloud"
-    href="/dagster-cloud/managing-deployments/branch-deployments"
+    href="/dagster-plus/managing-deployments/branch-deployments"
   ></ArticleListItem>
   <ArticleListItem
     title="Testing against production using Branch Deployments"
@@ -189,10 +189,10 @@ dagster-cloud deployment settings get
   ></ArticleListItem>
   <ArticleListItem
     title="Using the dagster-cloud CLI"
-    href="/dagster-cloud/managing-deployments/dagster-cloud-cli"
+    href="/dagster-plus/managing-deployments/dagster-cloud-cli"
   ></ArticleListItem>
   <ArticleListItem
     title="Managing users in Dagster Cloud"
-    href="/dagster-cloud/account/managing-users"
+    href="/dagster-plus/account/managing-users"
   ></ArticleListItem>
 </ArticleList>

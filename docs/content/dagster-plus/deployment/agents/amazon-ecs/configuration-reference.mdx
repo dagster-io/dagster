@@ -8,17 +8,17 @@ platform_type: "cloud"
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-This reference describes the various configuration options Dagster Cloud currently supports for [Amazon ECS agents](/dagster-cloud/deployment/agents/amazon-ecs).
+This reference describes the various configuration options Dagster Cloud currently supports for [Amazon ECS agents](/dagster-plus/deployment/agents/amazon-ecs).
 
 ---
 
 ## Per-location configuration
 
-When [adding a code location](/dagster-cloud/managing-deployments/code-locations) to Dagster Cloud with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
+When [adding a code location](/dagster-plus/managing-deployments/code-locations) to Dagster Cloud with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
 
 **Note**: If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
 
-The following example [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml) file illustrates the available fields:
+The following example [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file illustrates the available fields:
 
 ```yaml
 locations:
@@ -82,7 +82,7 @@ locations:
 
 Refer to the following guides for more info about environment variables:
 
-- [Dagster Cloud environment variables and secrets](/dagster-cloud/managing-deployments/environment-variables-and-secrets)
+- [Dagster Cloud environment variables and secrets](/dagster-plus/managing-deployments/environment-variables-and-secrets)
 - [Using environment variables and secrets in Dagster code](/guides/dagster/using-environment-variables-and-secrets)
 
 ---
@@ -320,7 +320,7 @@ agent_queues:
   <ReferenceTableItem propertyName="isolated_agents.enabled">
     When enabled, agents are isolated and will not be able to access each
     others' resources. See the
-    <a href="/dagster-cloud/deployment/agents/running-multiple-agents#running-multiple-agents-in-different-environments">
+    <a href="/dagster-plus/deployment/agents/running-multiple-agents#running-multiple-agents-in-different-environments">
       Running multiple agents guide
     </a>
     for more information.
@@ -329,7 +329,7 @@ agent_queues:
 
 ### agent_queues properties
 
-These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
+These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
 
 <ReferenceTable>
   <ReferenceTableItem propertyName="agent_queues.include_default_queue">

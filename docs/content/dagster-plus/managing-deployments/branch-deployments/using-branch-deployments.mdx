@@ -7,7 +7,7 @@ description: Develop and test in the cloud.
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through setting up Continuous Integration (CI) [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) with a general continuous integration (CI) or git platform, using the [`dagster-cloud` CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli).
+In this guide, we'll walk you through setting up Continuous Integration (CI) [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments) with a general continuous integration (CI) or git platform, using the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-cloud-cli).
 
 Using this approach to branch deployments may be a good fit if:
 
@@ -15,7 +15,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use an alternate CI platform
 - You want full control over Branch Deployment configuration
 
-**If you use GitHub for version control or want Dagster to automate branch deployments**, check out the dedicated [Branch deployments with GitHub guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github).
+**If you use GitHub for version control or want Dagster to automate branch deployments**, check out the dedicated [Branch deployments with GitHub guide](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github).
 
 ---
 
@@ -24,7 +24,7 @@ Using this approach to branch deployments may be a good fit if:
 Utilizing Branch Deployments requires setting up two components: the Branch Deployment agent and CI platform. You'll need:
 
 - **Organization Admin** permissions in Dagster Cloud
-- To install the [`dagster-cloud` CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli)
+- To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-cloud-cli)
 - The ability to run a new agent in your infrastructure
 - The ability to configure your CI platform
 
@@ -46,7 +46,7 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 
 Next, you'll create a branch deployment using the `dagster-cloud` CLI. When the state of a branch or merge request is updated, Dagster Cloud first expects these steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to the [Dagster code requirements guide](/dagster-cloud/managing-deployments/code-locations).
+1. A new image containing your code and requirements is built on the branch. Refer to the [Dagster code requirements guide](/dagster-plus/managing-deployments/code-locations).
 
 2. The new image is pushed to a Docker registry accessible to your agent. **Note**: The following examples assume the registry URL and image tag are stored in the `LOCATION_REGISTRY_URL` and `IMAGE_TAG` environment variables, respectively.
 
@@ -117,7 +117,7 @@ After the above has occurred:
        --git-url "${GIT_URL}"
    ```
 
-   Refer to the [Code location guide](/dagster-cloud/managing-deployments/code-locations) for more info on how a location's details are specified.
+   Refer to the [Code location guide](/dagster-plus/managing-deployments/code-locations) for more info on how a location's details are specified.
 
 ---
 

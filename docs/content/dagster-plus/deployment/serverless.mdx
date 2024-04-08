@@ -14,7 +14,7 @@ Dagster Cloud Serverless is a fully managed version of Dagster Cloud, and is the
 
 Serverless works best with workloads that primarily orchestrate other services or perform light computation. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
 
-If any of the following are applicable, you should select [Hybrid deployment](/dagster-cloud/deployment/hybrid):
+If any of the following are applicable, you should select [Hybrid deployment](/dagster-plus/deployment/hybrid):
 
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process.
 - Your dataset is too large to fit in memory. For example, training a large machine learning (ML) model in-process on a terabyte of data.
@@ -48,13 +48,13 @@ Pro customers may request a quota increase by [contacting Sales](mailto:sales@da
 
 If you are a GitHub user, our GitHub integration is the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster Cloud's best practices with a single click.
 
-When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/managing-deployments/branch-deployments) using the Serverless agent.
+When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
 
 ### With Gitlab
 
 If you are a Gitlab user, our Gitlab integration is the fastest way to get started. It uses a Gitlab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster Cloud's best practices with a single click.
 
-When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our Gitlab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/managing-deployments/branch-deployments) using the Serverless agent.
+When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our Gitlab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
 
 ### Other (BitBucket or local development)
 
@@ -74,14 +74,14 @@ dagster project from-example \
   <code>setup.py</code> file.
 </Note>
 
-Next, install the [dagster-cloud CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
+Next, install the [dagster-cloud CLI](/dagster-plus/managing-deployments/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
 
 ```shell
 pip install dagster-cloud
 dagster-cloud configure
 ```
 
-You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-cloud/managing-deployments/dagster-cloud-cli#environment-variables-and-cli-options) for more information.
+You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-plus/managing-deployments/dagster-cloud-cli#environment-variables-and-cli-options) for more information.
 
 Add `dagster-cloud` as a dependency to `my-dagster-project/setup.py`:
 
@@ -104,7 +104,7 @@ dagster-cloud serverless deploy-python-executable ./my-dagster-project \
 
 ### Adding secrets
 
-Often you'll need to securely access secrets from your jobs. Dagster Cloud supports several methods for adding secrets - refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info.
+Often you'll need to securely access secrets from your jobs. Dagster Cloud supports several methods for adding secrets - refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info.
 
 ### Adding dependencies
 
@@ -282,7 +282,7 @@ The default base image is `debian:bullseye-slim`, but it can be changed.
 
 ## Transitioning to Hybrid
 
-If your organization begins to hit the limitations of Serverless, you should transition to a Hybrid deployment. Hybrid deployments allow you to run an [agent in your own infrastructure](/dagster-cloud/deployment/agents) and give you substantially more flexibility and control over the Dagster environment.
+If your organization begins to hit the limitations of Serverless, you should transition to a Hybrid deployment. Hybrid deployments allow you to run an [agent in your own infrastructure](/dagster-plus/deployment/agents) and give you substantially more flexibility and control over the Dagster environment.
 
 To switch to Hybrid, navigate to **Status > Agents** in your Dagster Cloud account. On this page, you can disable the Serverless agent on and view instructions for enabling Hybrid.
 
@@ -370,7 +370,7 @@ height={35}
 
 By default only one non-isolated run will execute at once. While a run is in progress, the the Launchpad will swap to only launching isolated runs.
 
-This limit can be configured in [deployment settings](/dagster-cloud/managing-deployments/deployment-settings-reference#non-isolated-runs). Take caution; The limit is in place to help wih avoiding crashes due to OOMs.
+This limit can be configured in [deployment settings](/dagster-plus/managing-deployments/deployment-settings-reference#non-isolated-runs). Take caution; The limit is in place to help wih avoiding crashes due to OOMs.
 
 ```yaml
 non_isolated_runs:

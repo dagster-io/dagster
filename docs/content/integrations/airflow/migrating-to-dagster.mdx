@@ -33,9 +33,9 @@ To complete the migration, you'll need:
   - What Airflow secrets backend you use
   - Where the permissions that your DAGs depend on are defined
 
-- **If using Dagster Cloud**, an existing [Dagster Cloud](/dagster-cloud) account. While your migrated Airflow DAGs will work with Dagster Open Source, this guide includes setup specific to Dagster Cloud.
+- **If using Dagster Cloud**, an existing [Dagster Cloud](/dagster-plus) account. While your migrated Airflow DAGs will work with Dagster Open Source, this guide includes setup specific to Dagster Cloud.
 
-  **If you just signed up for a Cloud account**, follow the steps in the [Dagster Cloud Getting Started guide](/dagster-cloud/getting-started) before proceeding.
+  **If you just signed up for a Cloud account**, follow the steps in the [Dagster Cloud Getting Started guide](/dagster-plus/getting-started) before proceeding.
 
 ### Before you begin
 
@@ -202,9 +202,9 @@ In this step, you'll set up your project for use with Dagster Cloud.
 
 <!-- Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made as part of the Dagster Cloud onboarding. -->
 
-1. Complete the steps in the [Dagster Cloud Getting Started guide](/dagster-cloud/getting-started), if you haven't already. Proceed to the next step when your account is set up and you have the `dagster-cloud` CLI installed.
+1. Complete the steps in the [Dagster Cloud Getting Started guide](/dagster-plus/getting-started), if you haven't already. Proceed to the next step when your account is set up and you have the `dagster-cloud` CLI installed.
 
-2. In the root of your project, create or modify the [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) with the following code:
+2. In the root of your project, create or modify the [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) with the following code:
 
    ```yaml
    locations:
@@ -221,7 +221,7 @@ In this step, you'll set up your project for use with Dagster Cloud.
 
 Your Airflow instance likely had specific IAM or Kubernetes permissions that allowed it to successfully run your Airflow DAGs. To run the migrated Dagster jobs, you'll need to duplicate these permissions for Dagster.
 
-- **We recommend using [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets)** to define permissions whenever possible.
+- **We recommend using [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [environment variables](/dagster-plus/managing-deployments/environment-variables-and-secrets)** to define permissions whenever possible.
 
 - **If you're unable to use Airflow connections or environment variables,** you can attach permissions directly to the infrastructure where you're deploying Dagster.
 

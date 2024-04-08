@@ -40,10 +40,10 @@ Here’s an overview of the main concepts we’ll be using:
 To complete the steps in this guide, you'll need:
 
 - A Dagster Cloud account
-- An existing Branch Deployments setup that uses [GitHub actions](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
+- An existing Branch Deployments setup that uses [GitHub actions](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/branch-deployments.yaml`) or a Gitlab CI/CD file (e.g. `.gitlab-ci.yml`)
   - Dockerfile that installs your Dagster project
-- User permissions in Dagster Cloud that allow you to [access Branch Deployments](/dagster-cloud/account/managing-users/managing-user-roles-permissions)
+- User permissions in Dagster Cloud that allow you to [access Branch Deployments](/dagster-plus/account/managing-users/managing-user-roles-permissions)
 
 ---
 
@@ -126,7 +126,7 @@ At runtime, we’d like to determine which environment our code is running in: b
 
 To ensure we can't accidentally write to production from within our branch deployment, we’ll use a different set of credentials from production and write to our database clone.
 
-Dagster automatically sets certain [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
+Dagster automatically sets certain [environment variables](/dagster-plus/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
 
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
 
@@ -170,7 +170,7 @@ defs = Definitions(
 )
 ```
 
-Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info about available environment variables.
+Refer to the [Dagster Cloud environment variables documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info about available environment variables.
 
 ---
 

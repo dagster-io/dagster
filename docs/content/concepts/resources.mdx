@@ -154,7 +154,7 @@ There are many supported config types that can be used when defining resources. 
 
 ### Using environment variables with resources
 
-Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster Cloud](/dagster-cloud), environment variables can be [configured directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
+Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster Cloud](/dagster-plus), environment variables can be [configured directly in the UI](/dagster-plus/managing-deployments/environment-variables-and-secrets).
 
 To use environment variables, pass an <PyObject object="EnvVar" /> when constructing the resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated when a run is launched.
 

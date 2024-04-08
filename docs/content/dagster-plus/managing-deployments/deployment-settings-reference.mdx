@@ -7,9 +7,9 @@ description: "Detailed info about configurable settings for Dagster Cloud deploy
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-This reference describes the settings that can be configured for full deployments in [Dagster Cloud](/dagster-cloud).
+This reference describes the settings that can be configured for full deployments in [Dagster Cloud](/dagster-plus).
 
-Refer to the [Managing deployments in Dagster Cloud guide](/dagster-cloud/managing-deployments/managing-deployments#configuring-deployment-settings) for info about configuring settings in the Dagster Cloud interface or using the dagster-cloud CLI.
+Refer to the [Managing deployments in Dagster Cloud guide](/dagster-plus/managing-deployments/managing-deployments#configuring-deployment-settings) for info about configuring settings in the Dagster Cloud interface or using the dagster-cloud CLI.
 
 ---
 
@@ -75,8 +75,8 @@ run_queue:
       </li>
       <li>
         <strong>Maximum</strong> - <code>500</code> (
-        <a href="/dagster-cloud/deployment/hybrid">Hybrid</a>), <code>50</code>{" "}
-        (<a href="/dagster-cloud/deployment/serverless">Serverless</a>)
+        <a href="/dagster-plus/deployment/hybrid">Hybrid</a>), <code>50</code> (
+        <a href="/dagster-plus/deployment/serverless">Serverless</a>)
       </li>
     </ul>
   </ReferenceTableItem>
@@ -178,7 +178,7 @@ run_retries:
 
 ### SSO default role
 
-The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster Cloud permissions reference](/dagster-cloud/account/managing-users/managing-user-roles-permissions#user-permissions-reference).
+The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster Cloud permissions reference](/dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference).
 
 ```yaml
 sso_default_role: EDITOR
@@ -199,7 +199,7 @@ sso_default_role: EDITOR
 
 ### Non-isolated runs
 
-Configure [non-isolated runs](/dagster-cloud/deployment/serverless) on your deployment.
+Configure [non-isolated runs](/dagster-plus/deployment/serverless) on your deployment.
 
 ```yaml
 non_isolated_runs:

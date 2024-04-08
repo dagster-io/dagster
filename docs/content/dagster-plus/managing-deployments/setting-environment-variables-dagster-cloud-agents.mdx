@@ -7,11 +7,11 @@ description: Set environment variables in your Dagster Cloud agent.
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through setting environment variables for a Dagster Cloud [Hybrid deployment](/dagster-cloud/deployment/hybrid) using the Hybrid agent's configuration.
+In this guide, we'll walk you through setting environment variables for a Dagster Cloud [Hybrid deployment](/dagster-plus/deployment/hybrid) using the Hybrid agent's configuration.
 
 There are two ways to set environment variables:
 
-- **On a per-code location basis**, which involves modifying the `dagster.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster Cloud UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets). Values will pass through Dagster Cloud.
+- **On a per-code location basis**, which involves modifying the `dagster.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster Cloud UI](/dagster-plus/managing-deployments/environment-variables-and-secrets). Values will pass through Dagster Cloud.
 - **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster Cloud deployment. As values are pulled from the user cluster, values will bypass Dagster Cloud entirely.
 
 ---
@@ -20,8 +20,8 @@ There are two ways to set environment variables:
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster Cloud account using [Hybrid deployment](/dagster-cloud/deployment/hybrid)
-- An existing [Hybrid agent](/dagster-cloud/deployment/agents)
+- A Dagster Cloud account using [Hybrid deployment](/dagster-plus/deployment/hybrid)
+- An existing [Hybrid agent](/dagster-plus/deployment/agents)
 - **Editor**, **Admin**, or **Organization Admin** permissions in Dagster Cloud
 
 ---
@@ -30,7 +30,7 @@ To complete the steps in this guide, you'll need:
 
 <Note>
   To set environment variables, you need{" "}
-  <a href="/dagster-cloud/account/managing-users">
+  <a href="/dagster-plus/account/managing-users">
     one of the following user roles
   </a>{" "}
   in Dagster Cloud:
@@ -43,9 +43,9 @@ To complete the steps in this guide, you'll need:
   </ul>
 </Note>
 
-Setting environment variables for specific code locations is accomplished by adding them to your agent's configuration in your project's [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml). The `container_context` property in this file sets the variables in the agent's environment.
+Setting environment variables for specific code locations is accomplished by adding them to your agent's configuration in your project's [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml). The `container_context` property in this file sets the variables in the agent's environment.
 
-**Note**: This approach is functionally the same as [setting environment variables using the Dagster Cloud UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
+**Note**: This approach is functionally the same as [setting environment variables using the Dagster Cloud UI](/dagster-plus/managing-deployments/environment-variables-and-secrets).
 
 How `container_context` is configured depends on the agent type. Click the tab for your agent type to view instructions.
 
@@ -106,7 +106,7 @@ height={284}
 
 <Note>
   If you're a Dagster Cloud{" "}
-  <a href="/dagster-cloud/account/managing-users">
+  <a href="/dagster-plus/account/managing-users">
     <strong>Editor</strong> or <strong>Admin</strong>
   </a>
   , you can only set environment variables for full deployments where you're an <strong>
@@ -237,7 +237,7 @@ To make environment variables to a full deployment with a Kubernetes agent, you'
 <ArticleList>
   <ArticleListItem
     title="Dagster Cloud environment variables and secrets"
-    href="/dagster-cloud/managing-deployments/environment-variables-and-secrets"
+    href="/dagster-plus/managing-deployments/environment-variables-and-secrets"
   ></ArticleListItem>
   <ArticleListItem
     title="Using environment variables and secrets in Dagster code"

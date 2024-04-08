@@ -13,7 +13,7 @@ platform_type: "cloud"
 
 External metrics, such as Snowflake credits, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster Cloud via an API.
 
-If you use dbt to materialize tables in Snowflake, use this guide to integrate Snowflake metrics into the Insights UI. For instructions on integrating direct Snowflake queries, see [Integrating Direct Snowflake Usage with Dagster Cloud Insights](/dagster-cloud/insights/integrating-snowflake).
+If you use dbt to materialize tables in Snowflake, use this guide to integrate Snowflake metrics into the Insights UI. For instructions on integrating direct Snowflake queries, see [Integrating Direct Snowflake Usage with Dagster Cloud Insights](/dagster-plus/insights/integrating-snowflake).
 
 ---
 
@@ -22,7 +22,7 @@ If you use dbt to materialize tables in Snowflake, use this guide to integrate S
 To complete the steps in this guide, you'll need:
 
 - A Dagster Cloud account on the Pro plan
-- Access to the [Dagster Cloud Insights feature](/dagster-cloud/insights)
+- Access to the [Dagster Cloud Insights feature](/dagster-plus/insights)
 - Snowflake credentials which have access to the `snowflake.account_usage.query_history` table. For more information on granting access to this table, see the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles).
 - To install the following libraries:
 
@@ -158,14 +158,14 @@ height={1636}
 <ArticleList>
   <ArticleListItem
     title="Dagster Cloud Insights"
-    href="/dagster-cloud/insights"
+    href="/dagster-plus/insights"
   ></ArticleListItem>
   <ArticleListItem
     title="Snowflake + Insights"
-    href="/dagster-cloud/insights/integrating-snowflake"
+    href="/dagster-plus/insights/integrating-snowflake"
   ></ArticleListItem>
   <ArticleListItem
     title="Dagster Cloud alerts"
-    href="/dagster-cloud/managing-deployments/alerts"
+    href="/dagster-plus/managing-deployments/alerts"
   ></ArticleListItem>
 </ArticleList>

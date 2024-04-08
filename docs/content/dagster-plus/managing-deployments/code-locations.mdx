@@ -8,7 +8,7 @@ title: "Managing code locations in Dagster Cloud | Dagster Docs"
 
 In this guide, we'll cover the requirements for Dagster code, how to add code in Dagster Cloud, and how to add code using the `dagster-cloud` CLI.
 
-A [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) is recommended to configure code locations for Dagster Cloud.
+A [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) is recommended to configure code locations for Dagster Cloud.
 
 ---
 
@@ -36,9 +36,9 @@ To work with Dagster Cloud, your Dagster code:
 
 - **Must be loaded from a single entry point, either a Python file or package.** This entry point can load repositories from other files or packages.
 
-- **Must run in an environment where the `dagster` and [`dagster-cloud`](/dagster-cloud/managing-deployments/dagster-cloud-cli) 0.13.2 or later Python packages are installed.**
+- **Must run in an environment where the `dagster` and [`dagster-cloud`](/dagster-plus/managing-deployments/dagster-cloud-cli) 0.13.2 or later Python packages are installed.**
 
-- **If using [Hybrid Deployment](/dagster-cloud/deployment/hybrid)**:
+- **If using [Hybrid Deployment](/dagster-plus/deployment/hybrid)**:
 
   - **And you're using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent**, your code must be packaged into a Docker image and pushed to a registry your agent can access. Dagster Cloud doesn't need access to your image - your agent only needs to be able to pull it.
 
@@ -113,10 +113,10 @@ Additionally, note that:
      <ReferenceTableItem propertyName="container_context">
        <strong>Optional. For agent versions 0.14.9 and later.</strong>{" "}
        Customizes the code location for a specific execution environment. Refer
-       to the <a href="/dagster-cloud/deployment/agents">Agent documentation</a>{" "}
+       to the <a href="/dagster-plus/deployment/agents">Agent documentation</a>{" "}
        for info on available configuration options for each agent type,
        including declaring{" "}
-       <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
+       <a href="/dagster-plus/managing-deployments/environment-variables-and-secrets">
          environment variables and secrets
        </a>
        .
@@ -192,7 +192,7 @@ You can also use the `dagster-cloud workspace` CLI commands to:
 - [Delete code locations](#deleting-code-locations-1)
 - [Sync the workspace and remote](#syncing-the-workspace)
 
-These commands perform the same underlying operations as editing your code locations in the **Deployment** tab in Dagster Cloud. Refer to the [dagster-cloud CLI guide](/dagster-cloud/managing-deployments/dagster-cloud-cli) for more info and installation instructions.
+These commands perform the same underlying operations as editing your code locations in the **Deployment** tab in Dagster Cloud. Refer to the [dagster-cloud CLI guide](/dagster-plus/managing-deployments/dagster-cloud-cli) for more info and installation instructions.
 
 ### Adding and updating code locations
 
@@ -244,7 +244,7 @@ dagster-cloud workspace delete-location <LOCATION_NAME>
 
 ### Syncing the workspace
 
-You can also keep the YAML configuration for your entire workspace in a [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml) file and use the `dagster-cloud sync` command to reconcile the workspace config in Dagster Cloud with that local file.
+You can also keep the YAML configuration for your entire workspace in a [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file and use the `dagster-cloud sync` command to reconcile the workspace config in Dagster Cloud with that local file.
 
 For example, if you have the following `dagster_cloud.yaml` file:
 
