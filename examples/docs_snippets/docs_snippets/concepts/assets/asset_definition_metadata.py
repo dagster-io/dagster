@@ -14,9 +14,7 @@ from dagster import asset
 
 @asset(
     deps=[iris_dataset],
-    metadata={
-        "Expected columns": "sepal_length_cm, sepal_width_cm, petal_length_cm, petal_width_cm, species"
-    },
+    metadata={"dataset_name": "iris.small_petals"},
 )
 def small_petals(duckdb: DuckDBResource) -> None:
     with duckdb.get_connection() as conn:

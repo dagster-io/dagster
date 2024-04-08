@@ -5,7 +5,7 @@ description: "Learn to attach metadata to your assets to provide useful info and
 
 # Asset metadata
 
-Attaching metadata to assets can help make your pipelines easy for you and other team members to understand. Data about your data (assets) can be attached to both asset definitions and materializations.
+Attaching metadata to assets can help make your pipelines easier for you and other team members to understand. Data about your data assets can be attached to both asset definitions and materializations.
 
 By the end of this guide, you'll understand how to attach metadata to assets and view that metadata in the Dagster UI.
 
@@ -26,12 +26,12 @@ How metadata is attached to an asset depends on the type of metadata being attac
 
 There are two main types of metadata in Dagster:
 
-- **Definition metadata** is information that's fixed or doesn't frequently change. For example, definition metadata could be the expected columns an asset should produce, a link to its definition in GitHub, etc.
-- **Runtime, or materialization metadata** is information that changes after a materialization occurs. This could be how many records were processed, how long an asset took to materialize, etc.
+- **Definition metadata** is information that's fixed or doesn't frequently change. For example, definition metadata could be the expected columns an asset should produce or a link to its definition in GitHub.
+- **Runtime, or materialization metadata** is information that changes after a materialization occurs. This could be how many records were processed, or how long an asset took to materialize.
 
 ### Definition metadata
 
-Definition metadata is attached to the asset's definition using the `metadata` argument. In the following example, we attached a list of columns that the table produced by the asset should contain:
+Definition metadata is attached to the asset's definition using the `metadata` argument. In the following example, we attached the storage location of the table produced by the asset:
 
 ```python file=/concepts/assets/asset_definition_metadata.py startafter=start endbefore=end
 from dagster_duckdb import DuckDBResource
@@ -43,9 +43,7 @@ from dagster import asset
 
 @asset(
     deps=[iris_dataset],
-    metadata={
-        "Expected columns": "sepal_length_cm, sepal_width_cm, petal_length_cm, petal_width_cm, species"
-    },
+    metadata={"dataset_name": "iris.small_petals"},
 )
 def small_petals(duckdb: DuckDBResource) -> None:
     with duckdb.get_connection() as conn:
