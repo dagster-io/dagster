@@ -45,6 +45,7 @@ import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import './blueprint.css';
+import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -227,7 +228,10 @@ export const AppProvider = (props: AppProviderProps) => {
                           <AnalyticsContext.Provider value={analytics}>
                             <InstancePageContext.Provider value={instancePageValue}>
                               <JobFeatureProvider>
-                                <LayoutProvider>{props.children}</LayoutProvider>
+                                <LayoutProvider>
+                                  <DagsterPlusLaunchPromotion />
+                                  {props.children}
+                                </LayoutProvider>
                               </JobFeatureProvider>
                             </InstancePageContext.Provider>
                           </AnalyticsContext.Provider>
