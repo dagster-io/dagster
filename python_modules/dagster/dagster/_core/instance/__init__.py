@@ -16,7 +16,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Final,
     Generic,
     Iterable,
     List,
@@ -104,13 +103,6 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 RUNLESS_RUN_ID = ""
 RUNLESS_JOB_NAME = ""
 
-# Sets the number of events that will be buffered before being written to the event log. Only
-# applies to explicitly batched events. Currently this defaults to 0, which turns off batching
-# entirely (multiple store_event calls are made instead of store_event_batch). This makes batching
-# opt-in.
-EVENT_BATCH_SIZE: Final = int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
-
-
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -191,8 +183,19 @@ if TYPE_CHECKING:
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
 
+# Sets the number of events that will be buffered before being written to the event log. Only
+# applies to explicitly batched events. Currently this defaults to 0, which turns off batching
+# entirely (multiple store_event calls are made instead of store_event_batch). This makes batching
+# opt-in.
+#
+# Note that we don't store the value in the constant so that it can be changed without a process
+# restart.
+def _get_event_batch_size() -> int:
+    return int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
+
+
 def _is_batch_writing_enabled() -> bool:
-    return EVENT_BATCH_SIZE > 0
+    return _get_event_batch_size() > 0
 
 
 def _check_run_equality(
@@ -2385,7 +2388,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Events may optionally be sent with `batch_metadata`. If batch writing is enabled, then
         events sent with `batch_metadata` will not trigger an immediate write. Instead, they will be
         kept in a batch-specific buffer (identified by `batch_metadata.id`) until either the buffer
-        reaches the EVENT_BATCH_SIZE or the end of the batch is reached (signaled by
+        reaches the event batch size or the end of the batch is reached (signaled by
         `batch_metadata.is_end`). When this point is reached, all events in the buffer will be sent
         to the storage layer in a single batch. If an error occurrs during batch writing, then we
         fall back to iterative individual event writes.
@@ -2399,7 +2402,7 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             batch_id, is_batch_end = batch_metadata.id, batch_metadata.is_end
             self._event_buffer[batch_id].append(event)
-            if is_batch_end or len(self._event_buffer[batch_id]) == EVENT_BATCH_SIZE:
+            if is_batch_end or len(self._event_buffer[batch_id]) == _get_event_batch_size():
                 events = self._event_buffer[batch_id]
                 del self._event_buffer[batch_id]
             else:

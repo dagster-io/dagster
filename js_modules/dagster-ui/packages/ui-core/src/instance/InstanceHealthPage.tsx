@@ -42,7 +42,7 @@ export const InstanceHealthPageContent = () => {
   };
 
   return (
-    <>
+    <div style={{overflowY: 'auto'}}>
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
@@ -53,7 +53,7 @@ export const InstanceHealthPageContent = () => {
         </div>
       </Box>
       {daemonContent()}
-    </>
+    </div>
   );
 };
 

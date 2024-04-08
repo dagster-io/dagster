@@ -717,7 +717,7 @@ enum BackfillPolicyType {
 enum ChangeReason {
   NEW
   CODE_VERSION
-  INPUTS
+  DEPENDENCIES
   PARTITIONS_DEFINITION
 }
 

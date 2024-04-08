@@ -44,6 +44,9 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
@@ -93,6 +96,11 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     @abstractmethod
     def job_def(self) -> JobDefinition:
         """The job being executed."""
+
+    @property
+    @abstractmethod
+    def repository_def(self) -> RepositoryDefinition:
+        """The Dagster repository containing the job being executed."""
 
     @property
     @abstractmethod
@@ -233,8 +241,13 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def job_def(self) -> JobDefinition:
-        """JobDefinition: The currently executing pipeline."""
+        """JobDefinition: The currently executing job."""
         return self._step_execution_context.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        """RepositoryDefinition: The Dagster repository for the currently executing job."""
+        return self._step_execution_context.repository_def
 
     @public
     @property
@@ -1441,6 +1454,11 @@ class AssetExecutionContext(OpExecutionContext):
         """
         return self.op_execution_context.job_def
 
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        """RepositoryDefinition: The Dagster repository for the currently executing job."""
+        return self.op_execution_context.repository_def
+
     ######## Deprecated methods
 
     @deprecated(**_get_deprecation_kwargs("dagster_run"))
@@ -1848,6 +1866,11 @@ class AssetCheckExecutionContext:
         Returns: JobDefinition.
         """
         return self.op_execution_context.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        """RepositoryDefinition: The Dagster repository for the currently executing job."""
+        return self.op_execution_context.repository_def
 
     #### check related
     @public

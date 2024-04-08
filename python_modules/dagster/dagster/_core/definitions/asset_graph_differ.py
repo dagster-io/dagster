@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class ChangeReason(Enum):
     NEW = "NEW"
     CODE_VERSION = "CODE_VERSION"
-    INPUTS = "INPUTS"
+    DEPENDENCIES = "DEPENDENCIES"
     PARTITIONS_DEFINITION = "PARTITIONS_DEFINITION"
 
 
@@ -130,15 +130,15 @@ class AssetGraphDiffer:
             self.branch_asset_graph.get(asset_key).parent_keys
             != self.base_asset_graph.get(asset_key).parent_keys
         ):
-            changes.append(ChangeReason.INPUTS)
+            changes.append(ChangeReason.DEPENDENCIES)
         else:
-            # if the set of inputs is different, then we don't need to check if the partition mappings
-            # for inputs have changed since ChangeReason.INPUTS is already in the list of changes
+            # if the set of upstream dependencies is different, then we don't need to check if the partition mappings
+            # for dependencies have changed since ChangeReason.DEPENDENCIES is already in the list of changes
             for upstream_asset in self.branch_asset_graph.get(asset_key).parent_keys:
                 if self.branch_asset_graph.get_partition_mapping(
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
-                    changes.append(ChangeReason.INPUTS)
+                    changes.append(ChangeReason.DEPENDENCIES)
                     break
 
         if (

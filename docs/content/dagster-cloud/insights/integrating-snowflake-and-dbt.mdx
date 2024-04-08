@@ -53,7 +53,7 @@ def my_asset(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt_with_snowflake_insights(context, dbt_cli_invocation)
 ```
 
-This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log.
+This passes through all underlying events and emits an <PyObject object="AssetObservation" /> for each asset materialization. The observation contains the dbt invocation ID and unique ID recorded in the Dagster event log.
 
 </TabItem>
 <TabItem name="Using ops and jobs">
@@ -97,7 +97,7 @@ query-comment:
   append: true
 ```
 
-This allows you to add a comment to every query recorded in Snowflake's `query_history` table. The comments will contain the dbt invocation ID and unique ID.
+This allows you to add a comment, containing the dbt invocation ID and unique ID, to every query recorded in Snowflake's `query_history` table. Using this data, Insights will attribute cost metrics in BigQuery to the corresponding Dagster jobs and assets.
 
 **Note**: Make sure to include `append: true`, as Snowflake strips leading comments.
 
@@ -140,7 +140,7 @@ defs = Definitions(
 
 In this example, the `snowflake_resource_key` is a <PyObject module="dagster_snowflake" object="SnowflakeResource" /> that has access to the `query_history` table.
 
-Once the pipeline runs, Snowflake credits will be visible in the **Insights** tab in the Dagster UI:
+Snowflake credit metrics should be available on the **Insights** tab in the Dagster UI after a short period of time (within 24 hours) of the ingestion job running:
 
 <!-- ![Snowflake credits in the Insights tab of the Dagster UI](/images/dagster-cloud/insights/insights-snowflake.png) -->
 
@@ -150,3 +150,22 @@ src="/images/dagster-cloud/insights/insights-snowflake.png"
 width={3066}
 height={1636}
 />
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Cloud Insights"
+    href="/dagster-cloud/insights"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Snowflake + Insights"
+    href="/dagster-cloud/insights/integrating-snowflake"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster Cloud alerts"
+    href="/dagster-cloud/managing-deployments/alerts"
+  ></ArticleListItem>
+</ArticleList>

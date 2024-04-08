@@ -199,7 +199,7 @@ To build and upload the image, use the command line:
 
 3. To use a Docker image you have published to Dagster Cloud, use the `--base-image-tag` tag printed out by the above command.
 
-   - **With GitHub**: Set the `SERVERLESS_BASE_IMAGE_TAG` environment variable in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+   - **With GitHub**: Set the `SERVERLESS_BASE_IMAGE_TAG` environment variable in your GitHub Actions configuration (usually at `.github/workflows/dagster-cloud-deploy.yml`):
 
      ```yaml
      env:
@@ -221,7 +221,7 @@ To build and upload the image, use the command line:
 
 Prior to using PEX files, Dagster Cloud deployed code using Docker images. This feature is still available. To deploy using a Docker image instead of PEX:
 
-- **With GitHub**: Delete the `ENABLE_FAST_DEPLOYS: 'true'` line in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+- **With GitHub**: Delete the `ENABLE_FAST_DEPLOYS: 'true'` line in your GitHub Actions configuration (usually at `.github/workflows/dagster-cloud-deploy.yml`):
 
   ```yaml
   env:
@@ -254,7 +254,7 @@ This method is the most flexible, but requires setting up a pipeline outside of 
 
 The default base image is `debian:bullseye-slim`, but it can be changed.
 
-- **With GitHub**: Provide a `base_image` input parameter to the **Build and deploy** step in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+- **With GitHub**: Provide a `base_image` input parameter to the **Build and deploy** step in your GitHub Actions configuration (usually at `.github/workflows/dagster-cloud-deploy.yml`):
 
   ```yaml
   - name: Build and deploy to Dagster Cloud serverless

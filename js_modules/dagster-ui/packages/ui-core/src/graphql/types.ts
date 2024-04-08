@@ -740,7 +740,7 @@ export type CapturedLogsMetadata = {
 
 export enum ChangeReason {
   CODE_VERSION = 'CODE_VERSION',
-  INPUTS = 'INPUTS',
+  DEPENDENCIES = 'DEPENDENCIES',
   NEW = 'NEW',
   PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
 }

@@ -411,7 +411,7 @@
                     "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
                   },
                   {
-                    "title": "Customzing deployments",
+                    "title": "Customizing deployments",
                     "path": "/deployment/guides/kubernetes/customizing-your-deployment"
                   },
                   {
@@ -719,7 +719,15 @@
                 "path": "/dagster-cloud/insights/integrating-external-metrics",
                 "children": [
                   {
-                    "title": "Direct Snowflake queries",
+                    "title": "Google BigQuery",
+                    "path": "/dagster-cloud/insights/integrating-bigquery"
+                  },
+                  {
+                    "title": "Google BigQuery + dbt",
+                    "path": "/dagster-cloud/insights/integrating-bigquery-and-dbt"
+                  },
+                  {
+                    "title": "Snowflake",
                     "path": "/dagster-cloud/insights/integrating-snowflake"
                   },
                   {

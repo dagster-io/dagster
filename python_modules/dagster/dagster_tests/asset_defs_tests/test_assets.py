@@ -1898,6 +1898,18 @@ def test_multi_asset_nodes_out_names():
     }
 
 
+def test_multi_asset_dependencies_captured_in_internal_asset_deps() -> None:
+    @asset
+    def my_upstream_asset() -> int:
+        return 1
+
+    with pytest.raises(CheckError, match="inputs must be associated with an output"):
+
+        @multi_asset(outs={"asset_one": AssetOut()}, internal_asset_deps={"asset_one": set()})
+        def my_multi_asset(my_upstream_asset: int) -> int:
+            return my_upstream_asset + 1
+
+
 def test_asset_spec_deps():
     @asset
     def table_A():

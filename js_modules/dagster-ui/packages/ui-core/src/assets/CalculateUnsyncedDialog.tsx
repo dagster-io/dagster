@@ -23,12 +23,12 @@ import {AssetKey} from './types';
 import {
   AssetStaleStatusQuery,
   AssetStaleStatusQueryVariables,
-} from './types/CalculateChangedAndMissingDialog.types';
+} from './types/CalculateUnsyncedDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
-export const CalculateChangedAndMissingDialog = React.memo(
+export const CalculateUnsyncedDialog = React.memo(
   ({
     isOpen,
     onClose,
@@ -52,10 +52,10 @@ export const CalculateChangedAndMissingDialog = React.memo(
       },
     );
 
-    const staleOrMissing = React.useMemo(
+    const unsynced = React.useMemo(
       () =>
-        data?.assetNodes
-          .filter((node) => isAssetStale(node.assetKey, node, 'all') || isAssetMissing(node))
+        (data?.assetNodes || [])
+          .filter((node) => isAssetStale(node) || isAssetMissing(node))
           .map(asAssetKeyInput),
       [data],
     );
@@ -72,7 +72,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const virtualizer = useVirtualizer({
-      count: staleOrMissing?.length ?? 0,
+      count: unsynced.length,
       getScrollElement: () => containerRef.current,
       estimateSize: () => 28,
     });
@@ -81,8 +81,8 @@ export const CalculateChangedAndMissingDialog = React.memo(
 
     const [checked, setChecked] = React.useState<Set<AssetKey>>(new Set());
     React.useLayoutEffect(() => {
-      setChecked(new Set(staleOrMissing));
-    }, [staleOrMissing]);
+      setChecked(new Set(unsynced));
+    }, [unsynced]);
 
     const content = () => {
       if (!isOpen) {
@@ -95,19 +95,19 @@ export const CalculateChangedAndMissingDialog = React.memo(
           </Box>
         );
       }
-      if (staleOrMissing?.length) {
+      if (unsynced.length) {
         return (
           <>
             <RowGrid border="bottom" padding={{bottom: 8}}>
               <Checkbox
                 id="check-all"
-                checked={checked.size === staleOrMissing.length}
+                checked={checked.size === unsynced.length}
                 onChange={() => {
                   setChecked((checked) => {
-                    if (checked.size === staleOrMissing.length) {
+                    if (checked.size === unsynced.length) {
                       return new Set();
                     } else {
-                      return new Set(staleOrMissing);
+                      return new Set(unsynced);
                     }
                   });
                 }}
@@ -119,7 +119,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
-                  const item = staleOrMissing[index]!;
+                  const item = unsynced[index]!;
                   return (
                     <Row
                       $height={size}
@@ -180,7 +180,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
           <DialogFooter topBorder>
             {loading ? (
               <Button onClick={onClose}>Cancel</Button>
-            ) : staleOrMissing?.length ? (
+            ) : unsynced.length ? (
               <Button
                 intent="primary"
                 onClick={(e) => {
@@ -209,6 +209,12 @@ const ASSET_STALE_STATUS_QUERY = gql`
         path
       }
       staleStatus
+      partitionStats {
+        numMaterialized
+        numMaterializing
+        numPartitions
+        numFailed
+      }
     }
   }
 `;

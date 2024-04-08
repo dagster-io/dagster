@@ -22,8 +22,8 @@ def build_last_update_freshness_checks(
     deadline_cron: Optional[str] = None,
     timezone: str = DEFAULT_FRESHNESS_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
-) -> Sequence[AssetChecksDefinition]:
-    r"""For each provided asset, constructs a freshness check definition.
+) -> AssetChecksDefinition:
+    r"""Constructs an `AssetChecksDefinition` that checks the freshness of the provided assets.
 
     This check passes if the asset is found to be "fresh", and fails if the asset is found to be
     "overdue". An asset is considered fresh if a record (i.e. a materialization or observation)
@@ -58,7 +58,7 @@ def build_last_update_freshness_checks(
             from dagster import build_last_update_freshness_checks, AssetKey
             from .somewhere import my_daily_scheduled_assets_def
 
-            checks = build_last_update_freshness_checks(
+            checks_def = build_last_update_freshness_checks(
                 [my_daily_scheduled_assets_def, AssetKey("my_other_daily_asset_key")],
                 lower_bound_delta=datetime.timedelta(minutes=45),
                 deadline_cron="0 9 * * *",
@@ -68,7 +68,7 @@ def build_last_update_freshness_checks(
             from dagster import build_last_update_freshness_checks, AssetKey
             from .somewhere import my_observable_source_asset
 
-            checks = build_last_update_freshness_checks(
+            checks_def = build_last_update_freshness_checks(
                 [my_observable_source_asset, AssetKey("my_other_observable_asset_key")],
                 lower_bound_delta=datetime.timedelta(hours=3),
             )
@@ -76,8 +76,8 @@ def build_last_update_freshness_checks(
 
     Args:
         assets (Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]): The assets to
-            construct checks for. For each individual asset (of which there can be multiple per
-            `AssetsDefinition`, there will be a corresponding constructed `AssetChecksDefinition`.
+            construct checks for. All checks are incorporated into the same `AssetChecksDefinition`,
+            which can be subsetted to run checks for specific assets.
         lower_bound_delta (datetime.timedelta): The check will pass if the asset was updated within
             lower_bound_delta of the current_time (no cron) or the most recent tick of the cron
             (cron provided).
@@ -87,8 +87,8 @@ def build_last_update_freshness_checks(
             not provided, defaults to "UTC".
 
     Returns:
-        Sequence[AssetChecksDefinition]: A list of `AssetChecksDefinition` objects, each
-            corresponding to an asset in the `assets` parameter.
+        AssetChecksDefinition: An `AssetChecksDefinition` object, which can execute a freshness check
+            for all provided assets.
     """
     return build_freshness_checks_for_assets(
         assets=assets,

@@ -21,7 +21,7 @@ import {groupAssetsByStatus} from './util';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
-import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
+import {CalculateUnsyncedDialog} from '../assets/CalculateUnsyncedDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {numberFormatter} from '../ui/formatters';
@@ -205,7 +205,7 @@ export const useGroupNodeContextMenu = ({
   preferredJobName?: string;
 }) => {
   const {onClick, launchpadElement} = useMaterializationAction(preferredJobName);
-  const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
+  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
     React.useState<boolean>(false);
 
   const {
@@ -229,7 +229,7 @@ export const useGroupNodeContextMenu = ({
           <MenuItem
             icon="changes_present"
             text="Materialize unsynced"
-            onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
+            onClick={() => setShowCalculatingUnsyncedDialog(true)}
           />
         </>
       ) : null}
@@ -240,10 +240,10 @@ export const useGroupNodeContextMenu = ({
   );
   const dialog = (
     <div>
-      <CalculateChangedAndMissingDialog
-        isOpen={!!showCalculatingChangedAndMissingDialog}
+      <CalculateUnsyncedDialog
+        isOpen={showCalculatingUnsyncedDialog}
         onClose={() => {
-          setShowCalculatingChangedAndMissingDialog(false);
+          setShowCalculatingUnsyncedDialog(false);
         }}
         assets={assets}
         onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {

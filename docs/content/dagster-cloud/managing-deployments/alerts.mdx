@@ -102,6 +102,35 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         <a href="/dagster-cloud/deployment/hybrid">Hybrid deployments</a> only.
       </td>
     </tr>
+    <tr>
+      <td>
+        <strong>Insights metric alert</strong> <Experimental />
+      </td>
+      <td>
+        <strong>
+          A Dagster Cloud Pro plan is required to use this feature.
+        </strong>
+        <br />
+        Sends a notification when a{" "}
+        <a href="/dagster-cloud/insights">Dagster Cloud Insights</a> metric
+        exceeds or falls below a specified threshold over a specified time
+        window. This can be used to alert on:
+        <ul>
+          <li>
+            Dagster credit usage across a deployment or for a specific job
+          </li>
+          <li>Performance regressions on asset or job runtime</li>
+          <li>Spend on external tools such as Snowflake or BigQuery credits</li>
+        </ul>
+        Alerts can be scoped to the sum of any metric across an entire
+        deployment, or for a specific job, asset group, or asset key.
+        <br />
+        <strong>Note</strong>: Alerts are sent only when the threshold is first
+        crossed, and will not be sent again until the value returns to expected
+        levels. Insights data may become available up to 24 hours after run
+        completion.
+      </td>
+    </tr>
   </tbody>
 </table>
 
