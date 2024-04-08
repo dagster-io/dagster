@@ -26,7 +26,7 @@ This guide covers:
 This starter kit includes:
 
 - Basics of creating, connecting, and testing [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) in Dagster.
-- Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata), etc.
+- Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/metadata-tags/asset-metadata), etc.
 - [Snowflake I/O manager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake) to load the datasets in Snowflake and read from it, which [uses environment variables](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) to handle credentials.
 - A [schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) defined to run a job that generates assets daily.
 - [Scaffolded project layout](https://docs.dagster.io/getting-started/create-new-project) that helps you to quickly get started with everything set up.

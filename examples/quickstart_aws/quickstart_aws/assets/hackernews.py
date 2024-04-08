@@ -32,7 +32,11 @@ def hackernews_topstory_ids(s3: S3Resource) -> None:
     )
 
 
-@asset(deps=[hackernews_topstory_ids], group_name="hackernews", compute_kind="HackerNews API")
+@asset(
+    deps=[hackernews_topstory_ids],
+    group_name="hackernews",
+    compute_kind="HackerNews API",
+)
 def hackernews_topstories(
     context: AssetExecutionContext,
     s3: S3Resource,
@@ -68,7 +72,7 @@ def hackernews_topstories(
         # Dagster supports attaching arbitrary metadata to asset materializations. This metadata will be
         # shown in the run logs and also be displayed on the "Activity" tab of the "Asset Details" page in the UI.
         # This metadata would be useful for monitoring and maintaining the asset as you iterate.
-        # Read more about in asset metadata in https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata
+        # Read more about in asset metadata in https://docs.dagster.io/concepts/metadata-tags/asset-metadata
         metadata={
             "num_records": len(df),
             "preview": MetadataValue.md(df.head().to_markdown()),

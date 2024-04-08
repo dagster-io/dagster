@@ -1,17 +1,17 @@
 ---
-title: "Using asset metadata with Dagster Cloud Insights | Dagster Docs"
+title: "Integrating asset metadata into Dagster Cloud Insights | Dagster Docs"
 description: "Integrating external metrics with Dagster Insights."
 
 platform_type: "cloud"
 ---
 
-# Using asset metadata with Dagster Cloud Insights <Experimental />
+# Integrating asset metadata into Dagster Cloud Insights <Experimental />
 
 <Note>
   This feature is considered <strong>experimental</strong>.
 </Note>
 
-Any numeric [asset materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata) attached to your assets can be viewed and aggregated in the Dagster Insights UI. This is a good way to track usage, cost, data size, or other characteristics of your data assets over time, and across different parts of your platform.
+Any numeric [asset materialization metadata](/concepts/metadata-tags/asset-metadata) attached to your assets can be viewed and aggregated in the Dagster Insights UI. This is a good way to track usage, cost, data size, or other characteristics of your data assets over time, and across different parts of your platform.
 
 ---
 
@@ -25,7 +25,7 @@ To complete the steps in this guide, you'll need:
 
 ## Step 1: Emit numeric values alongside your asset materializations
 
-In order to populate Insights with materialization metadata, you must first emit numeric metadata to be aggregated. In the below example, we attach a `num_rows` metadata value to the output of our `table1` asset. Insights will let us track this value over time, and aggregate it between any other assets which might provide a `num_rows` value.
+To populate Insights with materialization metadata, you must first emit numeric metadata to be aggregated. In the below example, we attached a `num_rows` metadata value to the output of the `table1` asset:
 
 ```python file=/concepts/assets/asset_materialization_metadata_none.py
 from dagster import Output, asset
@@ -37,7 +37,9 @@ def table1() -> Output[None]:
     return Output(None, metadata={"num_rows": 25})
 ```
 
-For more examples, see the [asset materialization metadata documentation](/concepts/assets/software-defined-assets#recording-materialization-metadata).
+Insights lets us track this value over time and aggregate it between any other assets which might provide a `num_rows` value.
+
+Refer to the [Asset metadata](/concepts/metadata-tags/asset-metadata) documentation for more information about asset metadata.
 
 ---
 
@@ -45,22 +47,38 @@ For more examples, see the [asset materialization metadata documentation](/conce
 
 Once one or more assets are emitting numeric metadata values, you'll be able to enable viewing them in the Insights UI. **Note**: It may take up to 24 hours for new metadata types to be reflected in the UI.
 
-To modify the list of materialization metadata values shown in Insights, click the **Edit** button in the Insights sidebar next to the **User provided metrics** header.
+To modify the list of materialization metadata values shown in Insights, click **Edit** in the sidebar next to the **User provided metrics** header:
+
+<!-- ![Insights sidebar showing the Edit button by the User provided metrics header](/images/dagster-cloud/insights/insights-sidebar.png) -->
 
 <Image
 alt="Insights sidebar showing the Edit button by the User provided metrics header"
-src="/images/dagster-cloud/insights/insights-sidebar.jpeg"
-width={2538}
-height={1616}
+src="/images/dagster-cloud/insights/insights-sidebar.png"
+width={1920}
+height={1103}
 />
 
-In the dialog that appears, you can see a list of available metrics to check or uncheck.
+In the dialog that appears, check or uncheck metrics to use them in Insights. Selected metrics will be immediately available to view in Insights in the sidebar and on individual asset pages.
 
-<Image
-alt="Metadata metrics selection dialog with checkboxes"
-src="/images/dagster-cloud/insights/insights-dialog.png"
-width={1408}
-height={674}
-/>
+---
 
-Selected metrics will be immediately available to view in Insights in the sidebar and on individual asset pages.
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Cloud Insights"
+    href="/dagster-cloud/insights"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Software-defined Assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset metadata"
+    href="/concepts/metadata-tags"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster UI"
+    href="/concepts/webserver/ui"
+  ></ArticleListItem>
+</ArticleList>

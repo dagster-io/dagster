@@ -1,0 +1,291 @@
+---
+title: "Defining asset metadata | Dagster Docs"
+description: "Learn to attach metadata to your assets to provide useful info and context."
+---
+
+# Asset metadata
+
+Attaching metadata to assets can help make your pipelines easier for you and other team members to understand. Data about your data assets can be attached to both asset definitions and materializations.
+
+By the end of this guide, you'll understand how to attach metadata to assets and view that metadata in the Dagster UI.
+
+---
+
+## How it works
+
+Attaching metadata to an asset is done using the `metadata` argument and a dictionary of key/value pairs. Keys must be a string, but values can:
+
+- Be any of the <PyObject object="MetadataValue" /> classes provided by Dagster
+- Primitive Python types, which Dagster will convert to the appropriate <PyObject object="MetadataValue" />
+
+How metadata is attached to an asset depends on the type of metadata being attached. Refer to the following sections for more details.
+
+---
+
+## Defining metadata
+
+There are two main types of metadata in Dagster:
+
+- **Definition metadata** is information that's fixed or doesn't frequently change. For example, definition metadata could be the expected columns an asset should produce or a link to its definition in GitHub.
+- **Runtime, or materialization metadata** is information that changes after a materialization occurs. This could be how many records were processed, or how long an asset took to materialize.
+
+### Definition metadata
+
+Definition metadata is attached to the asset's definition using the `metadata` argument. In the following example, we attached the storage location of the table produced by the asset:
+
+```python file=/concepts/assets/asset_definition_metadata.py startafter=start endbefore=end
+from dagster_duckdb import DuckDBResource
+
+from dagster import asset
+
+# ... other assets
+
+
+@asset(
+    deps=[iris_dataset],
+    metadata={"dataset_name": "iris.small_petals"},
+)
+def small_petals(duckdb: DuckDBResource) -> None:
+    with duckdb.get_connection() as conn:
+        conn.execute(
+            "CREATE TABLE iris.small_petals AS SELECT * FROM iris.iris_dataset WHERE"
+            " 'petal_length_cm' < 1 AND 'petal_width_cm' < 1"
+        )
+```
+
+### Materialization metadata
+
+To add materialization metadata to an asset, you'll need to:
+
+- Return a <PyObject object="MaterializeResult" /> object with the `metadata` parameter
+- Use the <PyObject object="MetadataValue" /> utility class to wrap the data, ensuring it displays correctly in the UI
+
+In the following example, we added a row count and preview to a `topstories` asset:
+
+```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py lines=3-5,13,16-42
+import json
+import requests
+import pandas as pd
+from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult
+
+
+@asset(deps=[topstory_ids])
+def topstories(context: AssetExecutionContext) -> MaterializeResult:
+    with open("data/topstory_ids.json", "r") as f:
+        topstory_ids = json.load(f)
+
+    results = []
+    for item_id in topstory_ids:
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
+        results.append(item)
+
+        if len(results) % 20 == 0:
+            context.log.info(f"Got {len(results)} items so far.")
+
+    df = pd.DataFrame(results)
+    df.to_csv("data/topstories.csv")
+
+    return MaterializeResult(
+        metadata={
+            "num_records": len(df),  # Metadata can be any key-value pair
+            "preview": MetadataValue.md(df.head().to_markdown()),
+            # The `MetadataValue` class has useful static methods to build Metadata
+        }
+    )
+```
+
+---
+
+## Viewing asset metadata in the Dagster UI
+
+Metadata attached to assets shows up in a few places in the [Dagster UI](/concepts/webserver/ui).
+
+<TabGroup>
+<TabItem name="Global asset lineage">
+
+### Global asset lineage
+
+In the [**Global asset lineage**](/concepts/webserver/ui#global-asset-lineage) page, click on an asset to open the asset details in the sidepanel:
+
+<!-- ![Asset details sidepanel showing metadata in the Global asset lineage page of the Dagster UI](/images/concepts/metadata-tags/metadata-asset-lineage.png) -->
+
+<Image
+alt="Asset details sidepanel showing metadata in the Global asset lineage page of the Dagster UI"
+src="/images/concepts/metadata-tags/metadata-asset-lineage.png"
+width={1920}
+height={1099}
+/>
+
+If materialization metadata is numeric, it will display as a plot in the **Metadata plots** section of the sidepanel.
+
+</TabItem>
+<TabItem name="Asset details">
+
+### Asset details
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td colspan="2">
+        <strong>Definition tab</strong>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        In the{" "}
+        <a href="/concepts/webserver/ui#asset-details">
+          <strong>Asset details</strong>
+        </a>{" "}
+        page, metadata will display in the <strong>Definition</strong> tab.
+      </td>
+      <td>
+        <Image
+          alt="Definitions tab showing metadata in the Asset details page of the Dagster UI"
+          src="/images/concepts/metadata-tags/metadata-asset-details.png"
+          width={2640}
+          height={1422}
+        />
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <strong>Overview tab</strong>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        If you have the <strong>Use new asset overview page</strong>{" "}
+        <a href="/concepts/webserver/ui-user-settings">user setting</a> enabled,
+        metadata will display in the <strong>Overview</strong> tab instead of{" "}
+        <strong>Definition</strong>.
+      </td>
+      <td>
+        <Image
+          alt="Overview tab showing metadata in the Asset details page of the Dagster UI"
+          src="/images/concepts/metadata-tags/metadata-new-asset-details.png"
+          width={2640}
+          height={1490}
+        />
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <strong>Plots tab</strong>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        If any materialization data is numeric, check out the{" "}
+        <strong>Plots</strong> tab to view it.
+      </td>
+      <td>
+        <Image
+          alt="Plots tab showing metadata in the Asset details page of the Dagster UI"
+          src="/images/concepts/metadata-tags/metadata-asset-plots.png"
+          width={1920}
+          height={1047}
+        />
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <strong>Insights tab</strong>
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "25%",
+        }}
+      >
+        If using a Dagster Cloud Pro plan, numeric materialization metadata will
+        also display in the <strong>Insights</strong> tab.
+      </td>
+      <td>
+        <Image
+          alt="Insights tab showing metadata in the Asset details page of the Dagster UI"
+          src="/images/concepts/metadata-tags/metadata-asset-insights.png"
+          width={2640}
+          height={1516}
+        />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</TabItem>
+<TabItem name="Dagster Cloud Insights">
+
+### Dagster Cloud Insights
+
+<Note>A Dagster Cloud Pro plan is required to use this feature.</Note>
+
+Dagster Cloud users can view and add numeric asset materialization metrics to [Insights](/dagster-cloud/insights), allowing you to track user-provided metrics alongside Dagster Cloud metrics.
+
+<Image
+alt="Insights page showing metadata in the Dagster UI"
+src="/images/dagster-cloud/insights/insights-sidebar.png"
+width={1920}
+height={1103}
+/>
+
+Refer to the [Integrating asset metadata into Dagster Cloud Insights](/dagster-cloud/insights/asset-metadata) guide for more information.
+
+</TabItem>
+</TabGroup>
+
+---
+
+## APIs in this guide
+
+| Name                                    | Description                                                                                                                              |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset" decorator />   | A decorator used to define assets.                                                                                                       |
+| <PyObject object="MaterializeResult" /> | An object representing a successful materialization of an asset.                                                                         |
+| <PyObject object="MetadataValue" />     | Utility class to wrap metadata values passed into Dagster events, which allows them to be displayed in the Dagster UI and other tooling. |
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Software-defined Assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Metadata & tags"
+    href="/concepts/metadata-tags"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Tags"
+    href="/concepts/metadata-tags/tags"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster UI"
+    href="/concepts/webserver/ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Integrating asset metadata with Dagster Cloud Insights"
+    href="/dagster-cloud/insights/asset-metadata"
+  ></ArticleListItem>
+</ArticleList>
