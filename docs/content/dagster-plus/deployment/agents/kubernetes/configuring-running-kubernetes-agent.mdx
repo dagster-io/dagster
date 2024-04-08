@@ -6,7 +6,7 @@ platform_type: "cloud"
 
 # Configuring and running a Kubernetes agent
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
 In this guide, you'll configure and run a Kubernetes agent. Kubernetes agents are used to launch your code in Kubernetes Jobs and Services.
 
@@ -16,7 +16,7 @@ In this guide, you'll configure and run a Kubernetes agent. Kubernetes agents ar
 
 To complete the steps in this guide, you'll need:
 
-- **Permissions in Dagster Cloud that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-plus/account/managing-users) for more info.
+- **Permissions in Dagster+ that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-plus/account/managing-users) for more info.
 
 - **A Kubernetes cluster into which you can deploy the agent.** This can be a self-hosted Kubernetes cluster or a managed offering like [Amazon EKS](https://aws.amazon.com/eks/), [Azure AKS](https://azure.microsoft.com/en-us/services/kubernetes-service/#overview), or [Google GKE](https://cloud.google.com/kubernetes-engine).
 
@@ -30,7 +30,7 @@ To complete the steps in this guide, you'll need:
 
 ---
 
-## Step 1: Generate a Dagster Cloud agent token
+## Step 1: Generate a Dagster+ agent token
 
 <GenerateAgentToken />
 
@@ -38,9 +38,9 @@ To complete the steps in this guide, you'll need:
 
 ## Step 2: Configure the agent
 
-In this step, you'll create a Kubernetes namespace for your Dagster Cloud resources. You'll also add the agent token to the Kubernetes cluster.
+In this step, you'll create a Kubernetes namespace for your Dagster+ resources. You'll also add the agent token to the Kubernetes cluster.
 
-1. Create a Kubernetes namespace for your Dagster Cloud resources:
+1. Create a Kubernetes namespace for your Dagster+ resources:
 
    ```shell
    kubectl create namespace <namespace>
@@ -76,7 +76,7 @@ In this step, you'll spin up the agent with Helm.
 2. Install the agent chart, specifying:
 
    - The namespace into which to install the chart
-   - The Dagster Cloud deployment the agent will be responsible for. **Note**: When your Dagster Cloud organization is first created, the default deployment is `prod`:
+   - The Dagster+ deployment the agent will be responsible for. **Note**: When your Dagster+ organization is first created, the default deployment is `prod`:
 
    ```shell
    helm upgrade \
@@ -85,9 +85,9 @@ In this step, you'll spin up the agent with Helm.
       --set dagsterCloud.deployment=prod
    ```
 
-After the Helm chart is installed into the Kubernetes cluster, you can view the agent in Dagster Cloud.
+After the Helm chart is installed into the Kubernetes cluster, you can view the agent in Dagster+.
 
-In Dagster Cloud, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
+In Dagster+, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
 <Image
 alt="Instance Status"
@@ -102,8 +102,8 @@ height={320}
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/dagster-plus/managing-deployments/code-locations) using the agent.
+- **If you're getting Dagster+ set up**, the next step is to [add a code location](/dagster-plus/managing-deployments/code-locations) using the agent.
 
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/dagster-plus/managing-deployments/code-locations) guide for more info.
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/dagster-plus/managing-deployments/code-locations) guide for more info.
 
 You can also further [configure the jobs the agent runs](/dagster-plus/deployment/agents/kubernetes/configuration-reference), including adding secrets, mounting volumes, and setting resource limits.

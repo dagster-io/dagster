@@ -1,12 +1,12 @@
 ---
-title: "Serverless deployment in Dagster Cloud | Dagster Docs"
+title: "Serverless deployment in Dagster+ | Dagster Docs"
 ---
 
-# Serverless deployment in Dagster Cloud
+# Serverless deployment in Dagster+
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-Dagster Cloud Serverless is a fully managed version of Dagster Cloud, and is the easiest way to get started with Dagster. With Serverless, you can run your Dagster jobs without spinning up any infrastructure.
+Dagster+ Serverless is a fully managed version of Dagster+, and is the easiest way to get started with Dagster. With Serverless, you can run your Dagster jobs without spinning up any infrastructure.
 
 ---
 
@@ -18,7 +18,7 @@ If any of the following are applicable, you should select [Hybrid deployment](/d
 
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process.
 - Your dataset is too large to fit in memory. For example, training a large machine learning (ML) model in-process on a terabyte of data.
-- You need to distribute computation across many nodes for a single run. Dagster Cloud runs currently execute on a single node with 4 CPUs.
+- You need to distribute computation across many nodes for a single run. Dagster+ runs currently execute on a single node with 4 CPUs.
 - You don't want to add Dagster Labs as a data processor.
 
 ---
@@ -46,15 +46,15 @@ Pro customers may request a quota increase by [contacting Sales](mailto:sales@da
 
 ### With GitHub
 
-If you are a GitHub user, our GitHub integration is the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster Cloud's best practices with a single click.
+If you are a GitHub user, our GitHub integration is the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster+'s best practices with a single click.
 
-When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
+When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
 
 ### With Gitlab
 
-If you are a Gitlab user, our Gitlab integration is the fastest way to get started. It uses a Gitlab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster Cloud's best practices with a single click.
+If you are a Gitlab user, our Gitlab integration is the fastest way to get started. It uses a Gitlab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster+'s best practices with a single click.
 
-When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our Gitlab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
+When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our Gitlab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
 
 ### Other (BitBucket or local development)
 
@@ -92,7 +92,7 @@ install_requires=[
     "dagster-airbyte",
 ```
 
-Finally, deploy your project with Dagster Cloud Serverless:
+Finally, deploy your project with Dagster+ Serverless:
 
 ```shell
 dagster-cloud serverless deploy-python-executable ./my-dagster-project \
@@ -104,17 +104,17 @@ dagster-cloud serverless deploy-python-executable ./my-dagster-project \
 
 ### Adding secrets
 
-Often you'll need to securely access secrets from your jobs. Dagster Cloud supports several methods for adding secrets - refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info.
+Often you'll need to securely access secrets from your jobs. Dagster+ supports several methods for adding secrets - refer to the [Dagster+ environment variables and secrets documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info.
 
 ### Adding dependencies
 
-Any dependencies specified in either `requirements.txt` or `setup.py` will be installed for you automatically by the Dagster Cloud Serverless infrastructure.
+Any dependencies specified in either `requirements.txt` or `setup.py` will be installed for you automatically by the Dagster+ Serverless infrastructure.
 
 ---
 
 ## Customizing the runtime environment
 
-Dagster Cloud Serverless packages your code as [PEX](https://pex.readthedocs.io) files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. Many apps will work fine with the default Dagster Cloud Serverless setup. However, some apps may need to make changes to the runtime environment, either to include data files, use a different base image, different Python version, or install some native dependencies. You can customize the runtime environment using various methods described below.
+Dagster+ Serverless packages your code as [PEX](https://pex.readthedocs.io) files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. Many apps will work fine with the default Dagster+ Serverless setup. However, some apps may need to make changes to the runtime environment, either to include data files, use a different base image, different Python version, or install some native dependencies. You can customize the runtime environment using various methods described below.
 
 ### Including data files
 
@@ -173,7 +173,7 @@ The default version of Python for Serverless deployments is Python 3.8. Versions
 
 ### Using a different base image or using native dependencies
 
-Dagster Cloud runs your code on a Docker image that we build as follows:
+Dagster+ runs your code on a Docker image that we build as follows:
 
 1. The standard Python "slim" [Docker image](https://hub.docker.com/\_/python), such as `python:3.8-slim` is used as the base.
 2. The `dagster-cloud[serverless]` module installed in the image.
@@ -188,7 +188,7 @@ To build and upload the image, use the command line:
    RUN pip install "dagster-cloud[serverless]"
    ```
 
-2. Upload your Docker image to Dagster Cloud using the `upload-base-image` command. Note that this command prints out the tag used in Dagster Cloud to identify your image:
+2. Upload your Docker image to Dagster+ using the `upload-base-image` command. Note that this command prints out the tag used in Dagster+ to identify your image:
 
    ```shell
    $ dagster-cloud serverless upload-base-image local-image:tag
@@ -197,7 +197,7 @@ To build and upload the image, use the command line:
    To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
    ```
 
-3. To use a Docker image you have published to Dagster Cloud, use the `--base-image-tag` tag printed out by the above command.
+3. To use a Docker image you have published to Dagster+, use the `--base-image-tag` tag printed out by the above command.
 
    - **With GitHub**: Set the `SERVERLESS_BASE_IMAGE_TAG` environment variable in your GitHub Actions configuration (usually at `.github/workflows/dagster-cloud-deploy.yml`):
 
@@ -219,7 +219,7 @@ To build and upload the image, use the command line:
 
 ### Disabling PEX-based deploys
 
-Prior to using PEX files, Dagster Cloud deployed code using Docker images. This feature is still available. To deploy using a Docker image instead of PEX:
+Prior to using PEX files, Dagster+ deployed code using Docker images. This feature is still available. To deploy using a Docker image instead of PEX:
 
 - **With GitHub**: Delete the `ENABLE_FAST_DEPLOYS: 'true'` line in your GitHub Actions configuration (usually at `.github/workflows/dagster-cloud-deploy.yml`):
 
@@ -257,7 +257,7 @@ The default base image is `debian:bullseye-slim`, but it can be changed.
 - **With GitHub**: Provide a `base_image` input parameter to the **Build and deploy** step in your GitHub Actions configuration (usually at `.github/workflows/dagster-cloud-deploy.yml`):
 
   ```yaml
-  - name: Build and deploy to Dagster Cloud serverless
+  - name: Build and deploy to Dagster+ serverless
     uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy@v0.1
     with:
       dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
@@ -284,15 +284,15 @@ The default base image is `debian:bullseye-slim`, but it can be changed.
 
 If your organization begins to hit the limitations of Serverless, you should transition to a Hybrid deployment. Hybrid deployments allow you to run an [agent in your own infrastructure](/dagster-plus/deployment/agents) and give you substantially more flexibility and control over the Dagster environment.
 
-To switch to Hybrid, navigate to **Status > Agents** in your Dagster Cloud account. On this page, you can disable the Serverless agent on and view instructions for enabling Hybrid.
+To switch to Hybrid, navigate to **Status > Agents** in your Dagster+ account. On this page, you can disable the Serverless agent on and view instructions for enabling Hybrid.
 
 ---
 
 ## Security and data protection
 
-Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to your data, secrets and source code.
+Unlike Hybrid, Serverless Deployments on Dagster+ require direct access to your data, secrets and source code.
 
-- Dagster Cloud Serverless does not provide persistent storage. Ephemeral storage is deleted when a run concludes.
+- Dagster+ Serverless does not provide persistent storage. Ephemeral storage is deleted when a run concludes.
 - Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
 - User code is securely sandboxed using modern container sandboxing techniques.
 - All production access is governed by industry-standard best practices which are regularly audited.
@@ -327,7 +327,7 @@ Serverless code will make requests from one of the following IP addresses. You m
 
 ## Run isolation
 
-Dagster Cloud Serverless offers two settings for run isolation: isolated and non-isolated. Non-isolated runs are for iterating quickly and trade off isolation for speed. Isolated runs are for production and compute heavy Assets/Jobs.
+Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated. Non-isolated runs are for iterating quickly and trade off isolation for speed. Isolated runs are for production and compute heavy Assets/Jobs.
 
 ### Isolated runs (default)
 
@@ -338,7 +338,7 @@ These runs may take up to 3 minutes to start while these resources are provision
 When launching runs manually, select `Isolate run environment` in the Launchpad to launch an isolated runs. Scheduled, sensor, and backfill runs are always isolated.
 
 <Image
-alt="The isolated run toggle in Dagster Cloud"
+alt="The isolated run toggle in Dagster+"
 src="/images/dagster-cloud/deployment/isolatedruns.png"
 width={344}
 height={37}
@@ -362,7 +362,7 @@ They have fewer compute resources: 0.25 vCPU cores and 1GB of RAM. These resourc
 While launching runs from the Launchpad, uncheck `Isolate run environment`. When materializing an asset, shift-click `Materialize all` and uncheck it in the modal.
 
 <Image
-alt="The isolated run toggle in Dagster Cloud"
+alt="The isolated run toggle in Dagster+"
 src="/images/dagster-cloud/deployment/nonisolatedruns.png"
 width={339}
 height={35}

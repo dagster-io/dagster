@@ -1,19 +1,19 @@
 ---
-title: "Integrating direct Google BigQuery usage with Dagster Cloud Insights | Dagster Docs"
+title: "Integrating direct Google BigQuery usage with Dagster+ Insights | Dagster Docs"
 description: "Integrating BigQuery metrics with Dagster Insights."
 
 platform_type: "cloud"
 ---
 
-# Integrating direct Google BigQuery usage with Dagster Cloud Insights (Experimental)
+# Integrating direct Google BigQuery usage with Dagster+ Insights (Experimental)
 
 <Note>
   This feature is considered <strong>experimental</strong>.
 </Note>
 
-External metrics, such as Google BigQuery usage, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster Cloud via an API.
+External metrics, such as Google BigQuery usage, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster+ via an API.
 
-If you use the [BigQuery resource](/\_apidocs/libraries/dagster-snowflake), use this guide to integrate BigQuery metrics into the Insights UI. For instructions on integrating usage of dbt models that run in BigQuery, see [Integrating BigQuery + dbt with Dagster Cloud Insights](/dagster-plus/insights/integrating-bigquery-and-dbt).
+If you use the [BigQuery resource](/\_apidocs/libraries/dagster-snowflake), use this guide to integrate BigQuery metrics into the Insights UI. For instructions on integrating usage of dbt models that run in BigQuery, see [Integrating BigQuery + dbt with Dagster+ Insights](/dagster-plus/insights/integrating-bigquery-and-dbt).
 
 ---
 
@@ -21,8 +21,8 @@ If you use the [BigQuery resource](/\_apidocs/libraries/dagster-snowflake), use 
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster Cloud account on the Pro plan
-- Access to the [Dagster Cloud Insights feature](/dagster-plus/insights)
+- A Dagster+ account on the Pro plan
+- Access to the [Dagster+ Insights feature](/dagster-plus/insights)
 - BigQuery credentials that have access to the `INFORMATION_SCHEMA.JOBS` table. For more information on granting access to this table, see the [BigQuery documentation](https://cloud.google.com/bigquery/docs/information-schema-jobs).
 - To install the following libraries:
 
@@ -36,7 +36,7 @@ To complete the steps in this guide, you'll need:
 
 ## Step 1: Replace your BigQuery resources
 
-The first step is to replace any existing BigQuery resources with <PyObject module="dagster_cloud" object="InsightsBigQueryResource" />. This resource is a drop-in replacement for the <PyObject module="dagster_bigquery" object="BigQueryResource" /> resource, but it also emits BigQuery usage metrics to the Dagster Cloud Insights API.
+The first step is to replace any existing BigQuery resources with <PyObject module="dagster_cloud" object="InsightsBigQueryResource" />. This resource is a drop-in replacement for the <PyObject module="dagster_bigquery" object="BigQueryResource" /> resource, but it also emits BigQuery usage metrics to the Dagster+ Insights API.
 
 ```python
 from dagster_cloud.dagster_insights import InsightsBigQueryResource
@@ -69,7 +69,7 @@ height={1338}
 
 <ArticleList>
   <ArticleListItem
-    title="Dagster Cloud Insights"
+    title="Dagster+ Insights"
     href="/dagster-plus/insights"
   ></ArticleListItem>
   <ArticleListItem
@@ -77,7 +77,7 @@ height={1338}
     href="/dagster-plus/insights/integrating-bigquery-and-dbt"
   ></ArticleListItem>
   <ArticleListItem
-    title="Dagster Cloud alerts"
+    title="Dagster+ alerts"
     href="/dagster-plus/managing-deployments/alerts"
   ></ArticleListItem>
 </ArticleList>

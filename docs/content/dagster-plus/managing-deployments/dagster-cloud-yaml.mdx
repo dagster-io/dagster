@@ -1,11 +1,11 @@
 ---
 title: dagster_cloud.yaml reference | Dagster Docs
-description: Use dagster_cloud.yaml to configure code locations for Dagster Cloud
+description: Use dagster_cloud.yaml to configure code locations for Dagster+
 ---
 
 # dagster_cloud.yaml
 
-<Note>This reference is applicable to Dagster Cloud.</Note>
+<Note>This reference is applicable to Dagster+.</Note>
 
 <table
   className="table"
@@ -42,7 +42,7 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
       >
         <strong>Required</strong>
       </td>
-      <td>Required for Cloud</td>
+      <td>Required for Dagster+</td>
     </tr>
     <tr>
       <td
@@ -55,7 +55,7 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
       <td>
         {" "}
         Similar to the <code>workspace.yaml</code> in open source to define code
-        locations for Dagster Cloud.
+        locations for Dagster+.
       </td>
     </tr>
     <tr>
@@ -68,8 +68,8 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
       </td>
       <td>
         {" "}
-        Defines multiple code locations for Dagster Cloud. For Hybrid deployments,
-        this file can be used <a href="/dagster-plus/managing-deployments/setting-environment-variables-dagster-cloud-agents">
+        Defines multiple code locations for Dagster+. For Hybrid deployments, this
+        file can be used <a href="/dagster-plus/managing-deployments/setting-environment-variables-dagster-cloud-agents">
           to manage environment variables/secrets.
         </a>
         <ul></ul>
@@ -82,7 +82,7 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
 
 ## File location
 
-The `dagster_cloud.yaml` file should be placed in the root of your Dagster project. Below is an example of a file structure modified from the [Dagster Cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
+The `dagster_cloud.yaml` file should be placed in the root of your Dagster project. Below is an example of a file structure modified from the [Dagster+ ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
 
 ```shell
 quickstart_etl
@@ -332,9 +332,9 @@ locations:
 
 ### Python executable
 
-For Dagster Cloud Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different code locations.
+For Dagster+ Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different code locations.
 
-For Dagster Cloud Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-plus/deployment/serverless#using-a-different-python-version).
+For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-plus/deployment/serverless#using-a-different-python-version).
 
 ```yaml
 # dagster_cloud.yaml

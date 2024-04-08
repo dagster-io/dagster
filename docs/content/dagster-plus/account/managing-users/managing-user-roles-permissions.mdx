@@ -1,20 +1,20 @@
 ---
-title: Understanding role-based access control in Dagster Cloud | Dagster Docs
+title: Understanding role-based access control in Dagster+ | Dagster Docs
 ---
 
-# Understanding role-based access control in Dagster Cloud
+# Understanding role-based access control in Dagster+
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster Cloud, and no more.
+Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
 
-In this guide, we'll cover how RBAC works in Dagster Cloud, how to assign roles to users, and the granular permissions for each user role.
+In this guide, we'll cover how RBAC works in Dagster+, how to assign roles to users, and the granular permissions for each user role.
 
 ---
 
-## Dagster Cloud user roles
+## Dagster+ user roles
 
-Dagster Cloud uses a hierarchical model for RBAC, meaning that the most permissive roles include permissions from the roles beneath them. The following user roles are currently supported, in order from the **most** permissive to the **least** permissive:
+Dagster+ uses a hierarchical model for RBAC, meaning that the most permissive roles include permissions from the roles beneath them. The following user roles are currently supported, in order from the **most** permissive to the **least** permissive:
 
 - Organization Admin
 - Admin
@@ -22,15 +22,15 @@ Dagster Cloud uses a hierarchical model for RBAC, meaning that the most permissi
 - Launcher (Pro plans only)
 - Viewer
 
-For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster Cloud.
+For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+.
 
 ### User role enforcement
 
-All user roles are enforced both in Dagster Cloud and the [GraphQL API](/concepts/webserver/graphql).
+All user roles are enforced both in Dagster+ and the [GraphQL API](/concepts/webserver/graphql).
 
 ### Teams
 
-Dagster Cloud Pro users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster Cloud](/dagster-plus/account/managing-users/managing-teams) guide for more info.
+Dagster+ Pro users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster+](/dagster-plus/account/managing-users/managing-teams) guide for more info.
 
 ---
 
@@ -72,7 +72,7 @@ Organization Admins have access to the entire organization, including all [full 
         Defines the level of access for a given code location in a deployment.
         <br />
         <br />
-        Dagster Cloud Pro users can <a href="#code-locations">
+        Dagster+ Pro users can <a href="#code-locations">
           override the default deployment-level role for individual code
           locations
         </a>. For example, if the <strong>Deployment</strong> role is <strong>
@@ -98,7 +98,7 @@ Organization Admins have access to the entire organization, including all [full 
 
 ### Applying role overrides
 
-<Note>This section is applicable to Dagster Cloud Pro plans.</Note>
+<Note>This section is applicable to Dagster+ Pro plans.</Note>
 
 As previously mentioned, you can define individual user roles for users in your organization. You can also apply permission overrides to grant specific exceptions.
 
@@ -122,7 +122,7 @@ To override a code location role for an individual user:
 
 #### Team members
 
-Users in your organization can belong to one or more [teams](/dagster-plus/account/managing-users/managing-teams). When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants.
+Users in your organization can belong to one or more [teams](/dagster-plus/account/managing-users/managing-teams). When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants.
 
 For example, let's look at a user with the following roles for our `dev` deployment:
 
@@ -139,7 +139,7 @@ The above also applies to code locations and Branch Deployment roles.
 To view deployment-level overrides for a specific user, locate the user on the **Users** page and hover over a deployment:
 
 <Image
-alt="Deployment overrides popup in Dagster Cloud"
+alt="Deployment overrides popup in Dagster+"
 src="/images/dagster-cloud/user-token-management/user-overrides-popup.png"
 width={1010}
 height={265}
@@ -148,7 +148,7 @@ height={265}
 If there are code location-level overrides, a small **N override(s)** link will display beneath the user's deployment role. Hover over it to display the list of overrides:
 
 <Image
-alt="Code location overrides popup in Dagster Cloud"
+alt="Code location overrides popup in Dagster+"
 src="/images/dagster-cloud/user-token-management/code-location-override-popup.png"
 width={1976}
 height={554}

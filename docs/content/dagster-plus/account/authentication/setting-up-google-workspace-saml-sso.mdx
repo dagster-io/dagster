@@ -1,5 +1,5 @@
 ---
-title: "Setting up Google Workspace SSO for Dagster Cloud | Dagster Docs"
+title: "Setting up Google Workspace SSO for Dagster+ | Dagster Docs"
 
 platform_type: "cloud"
 display_name: "Google Workspace"
@@ -7,11 +7,11 @@ feature_name: "saml_sso_google"
 pricing_plan: "pro"
 ---
 
-# Setting up Google Workspace SSO for Dagster Cloud
+# Setting up Google Workspace SSO for Dagster+
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-In this guide, you'll configure Google Workspace to use single sign-on (SSO) with your Dagster Cloud organization.
+In this guide, you'll configure Google Workspace to use single sign-on (SSO) with your Dagster+ organization.
 
 ---
 
@@ -23,14 +23,14 @@ To complete the steps in this guide, you'll need:
   - An existing Google account
   - [Workspace Admin permissions](https://support.google.com/a/answer/6365252?hl=en\&ref_topic=4388346)
 - **To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-cloud-cli)**
-- **The following in Dagster Cloud:**
+- **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens)
   - [Organization Admin permissions](/dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference) in your organization
 
 ---
 
-## Step 1: Add the Dagster Cloud app in Google Workspace
+## Step 1: Add the Dagster+ app in Google Workspace
 
 1. Navigate to your Google Admin Console: <https://admin.google.com>
 
@@ -81,13 +81,13 @@ To complete the steps in this guide, you'll need:
 
    1. In the **ACS URL** and **Entity ID** fields:
 
-      Copy and paste the following URL, replacing `<organization_name>` with your Dagster Cloud organization name:
+      Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
           https://<organization_name>.dagster.cloud/auth/saml/consume
 
    2. Check the **Signed Response** box.
 
-      The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster Cloud domain is `https://hooli.dagster.cloud`:
+      The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
 
       <Image
       alt="Service Provider Details"
@@ -119,11 +119,11 @@ To complete the steps in this guide, you'll need:
 
 ---
 
-## Step 3: Upload the SAML metadata to Dagster Cloud
+## Step 3: Upload the SAML metadata to Dagster+
 
-Next, you'll save and upload the application's SAML metadata to Dagster Cloud. This will enable single sign-on.
+Next, you'll save and upload the application's SAML metadata to Dagster+. This will enable single sign-on.
 
-1. In your Google Workspace, open the Dagster Cloud application you added in [Step 2](#step-2-configure-sso-in-google-workspace).
+1. In your Google Workspace, open the Dagster+ application you added in [Step 2](#step-2-configure-sso-in-google-workspace).
 
 2. Click **Download metadata**:
 
@@ -136,7 +136,7 @@ Next, you'll save and upload the application's SAML metadata to Dagster Cloud. T
 
 3. In the modal that displays, click **Download metadata** to start the download. Save the file to your computer.
 
-4. After you've downloaded the SAML metadata file, upload it to Dagster Cloud using the `dagster-cloud` CLI:
+4. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
 
    ```shell
    dagster-cloud organization settings saml upload-identity-provider-metadata <the_path/to/metadata> \
@@ -148,9 +148,9 @@ Next, you'll save and upload the application's SAML metadata to Dagster Cloud. T
 
 ## Step 4: Grant access to users
 
-In this step, you'll assign users in your Google Workspace to the Dagster Cloud application. This allows members of the workspace to log in to Dagster Cloud using their credentials when the single sign-on flow is initiated.
+In this step, you'll assign users in your Google Workspace to the Dagster+ application. This allows members of the workspace to log in to Dagster+ using their credentials when the single sign-on flow is initiated.
 
-1. In the Google Workspace Dagster Cloud application, click **User access**.
+1. In the Google Workspace Dagster+ application, click **User access**.
 2. Select an organizational unit.
 3. Click **ON for everyone**.
 4. Click **Save**.
@@ -173,7 +173,7 @@ Lastly, you'll test your SSO configuration:
 
 ### Testing a service provider-initiated login
 
-1. Navigate to your Dagster Cloud sign in page at `https://<organization_name>.dagster.cloud`
+1. Navigate to your Dagster+ sign in page at `https://<organization_name>.dagster.cloud`
 
 2. Click the **Sign in with SSO** button.
 
@@ -181,4 +181,4 @@ Lastly, you'll test your SSO configuration:
 
 ### Testing an identity provider-initiated login
 
-In the Google Workspace portal, click on the **Dagster Cloud icon**. If successful, you'll be automatically signed into your Dagster Cloud organization.
+In the Google Workspace portal, click on the **Dagster+ icon**. If successful, you'll be automatically signed into your Dagster+ organization.

@@ -1,18 +1,18 @@
 ---
-title: Setting Dagster Cloud environment variables using agent configuration | Dagster Docs
-description: Set environment variables in your Dagster Cloud agent.
+title: Setting Dagster+ environment variables using agent configuration | Dagster Docs
+description: Set environment variables in your Dagster+ agent.
 ---
 
-# Setting Dagster Cloud environment variables using agent configuration
+# Setting Dagster+ environment variables using agent configuration
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-In this guide, we'll walk you through setting environment variables for a Dagster Cloud [Hybrid deployment](/dagster-plus/deployment/hybrid) using the Hybrid agent's configuration.
+In this guide, we'll walk you through setting environment variables for a Dagster+ [Hybrid deployment](/dagster-plus/deployment/hybrid) using the Hybrid agent's configuration.
 
 There are two ways to set environment variables:
 
-- **On a per-code location basis**, which involves modifying the `dagster.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster Cloud UI](/dagster-plus/managing-deployments/environment-variables-and-secrets). Values will pass through Dagster Cloud.
-- **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster Cloud deployment. As values are pulled from the user cluster, values will bypass Dagster Cloud entirely.
+- **On a per-code location basis**, which involves modifying the `dagster.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/managing-deployments/environment-variables-and-secrets). Values will pass through Dagster+.
+- **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster+ deployment. As values are pulled from the user cluster, values will bypass Dagster+ entirely.
 
 ---
 
@@ -20,9 +20,9 @@ There are two ways to set environment variables:
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster Cloud account using [Hybrid deployment](/dagster-plus/deployment/hybrid)
+- A Dagster+ account using [Hybrid deployment](/dagster-plus/deployment/hybrid)
 - An existing [Hybrid agent](/dagster-plus/deployment/agents)
-- **Editor**, **Admin**, or **Organization Admin** permissions in Dagster Cloud
+- **Editor**, **Admin**, or **Organization Admin** permissions in Dagster+
 
 ---
 
@@ -33,7 +33,7 @@ To complete the steps in this guide, you'll need:
   <a href="/dagster-plus/account/managing-users">
     one of the following user roles
   </a>{" "}
-  in Dagster Cloud:
+  in Dagster+:
   <ul>
     <li>Organization Admin, or</li>
     <li>
@@ -45,7 +45,7 @@ To complete the steps in this guide, you'll need:
 
 Setting environment variables for specific code locations is accomplished by adding them to your agent's configuration in your project's [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml). The `container_context` property in this file sets the variables in the agent's environment.
 
-**Note**: This approach is functionally the same as [setting environment variables using the Dagster Cloud UI](/dagster-plus/managing-deployments/environment-variables-and-secrets).
+**Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/managing-deployments/environment-variables-and-secrets).
 
 How `container_context` is configured depends on the agent type. Click the tab for your agent type to view instructions.
 
@@ -56,10 +56,10 @@ How `container_context` is configured depends on the agent type. Click the tab f
 
 <AmazonEcsEnvVarsConfiguration />
 
-After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster Cloud to apply the changes:
+After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 <Image
-alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster Cloud"
+alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
 src="/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png"
 width={1920}
 height={284}
@@ -72,10 +72,10 @@ height={284}
 
 <DockerEnvVarsConfiguration />
 
-After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster Cloud to apply the changes:
+After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 <Image
-alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster Cloud"
+alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
 src="/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png"
 width={1920}
 height={284}
@@ -88,10 +88,10 @@ height={284}
 
 <K8sEnvVarsConfiguration />
 
-After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster Cloud to apply the changes:
+After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 <Image
-alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster Cloud"
+alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
 src="/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png"
 width={1920}
 height={284}
@@ -105,7 +105,7 @@ height={284}
 ## Setting environment variables for full deployments
 
 <Note>
-  If you're a Dagster Cloud{" "}
+  If you're a Dagster+{" "}
   <a href="/dagster-plus/account/managing-users">
     <strong>Editor</strong> or <strong>Admin</strong>
   </a>
@@ -114,7 +114,7 @@ height={284}
   </strong> or <strong>Admin</strong>.
 </Note>
 
-Setting environment variables for a full deployment will make the variables available for all code locations in the full deployment. Using this approach will pull variable values from your user cluster, bypassing Dagster Cloud entirely.
+Setting environment variables for a full deployment will make the variables available for all code locations in the full deployment. Using this approach will pull variable values from your user cluster, bypassing Dagster+ entirely.
 
 Click the tab for your agent type to view instructions.
 
@@ -236,7 +236,7 @@ To make environment variables to a full deployment with a Kubernetes agent, you'
 
 <ArticleList>
   <ArticleListItem
-    title="Dagster Cloud environment variables and secrets"
+    title="Dagster+ environment variables and secrets"
     href="/dagster-plus/managing-deployments/environment-variables-and-secrets"
   ></ArticleListItem>
   <ArticleListItem

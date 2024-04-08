@@ -1,11 +1,11 @@
 ---
-title: Using Branch Deployments (CI) with the dagster-cloud CLI | Dagster Cloud
+title: Using Branch Deployments (CI) with the dagster-cloud CLI | Dagster+
 description: Develop and test in the cloud.
 ---
 
 # Using Branch Deployments (CI) with the dagster-cloud CLI
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
 In this guide, we'll walk you through setting up Continuous Integration (CI) [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments) with a general continuous integration (CI) or git platform, using the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-cloud-cli).
 
@@ -23,14 +23,14 @@ Using this approach to branch deployments may be a good fit if:
 
 Utilizing Branch Deployments requires setting up two components: the Branch Deployment agent and CI platform. You'll need:
 
-- **Organization Admin** permissions in Dagster Cloud
+- **Organization Admin** permissions in Dagster+
 - To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-cloud-cli)
 - The ability to run a new agent in your infrastructure
 - The ability to configure your CI platform
 
 ---
 
-## Step 1: Generate a Dagster Cloud agent token
+## Step 1: Generate a Dagster+ agent token
 
 <GenerateAgentToken />
 
@@ -44,7 +44,7 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 
 ## Step 3: Create a branch deployment using the dagster-cloud CLI
 
-Next, you'll create a branch deployment using the `dagster-cloud` CLI. When the state of a branch or merge request is updated, Dagster Cloud first expects these steps to occur:
+Next, you'll create a branch deployment using the `dagster-cloud` CLI. When the state of a branch or merge request is updated, Dagster+ first expects these steps to occur:
 
 1. A new image containing your code and requirements is built on the branch. Refer to the [Dagster code requirements guide](/dagster-plus/managing-deployments/code-locations).
 
@@ -66,7 +66,7 @@ After the above has occurred:
    )
    ```
 
-   One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the Branch Deployments UI in Dagster Cloud:
+   One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the Branch Deployments UI in Dagster+:
 
    ```shell
    BRANCH_DEPLOYMENT_NAME=$(
@@ -123,12 +123,12 @@ After the above has occurred:
 
 ## Step 4: Access the branch deployment
 
-Now that Branch Deployments are configured, you can check out the preview in Dagster Cloud.
+Now that Branch Deployments are configured, you can check out the preview in Dagster+.
 
 Click the **deployment switcher** to view your workspace's branch deployments:
 
 <Image
-alt="Highlighted branch deployments in the Dagster Cloud's deployment switcher"
+alt="Highlighted branch deployments in the Dagster+'s deployment switcher"
 src="/images/dagster-cloud/developing-testing/branch-deployments/dagster-ui-deployment-switcher.png"
 width={563}
 height={311}

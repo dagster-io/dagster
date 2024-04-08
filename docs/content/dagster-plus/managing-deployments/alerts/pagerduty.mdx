@@ -1,47 +1,47 @@
 ---
-title: "PagerDuty & Dagster Cloud | Dagster Docs"
-description: "Create alerts that make PagerDuty incidents based on events in Dagster Cloud."
+title: "PagerDuty & Dagster+ | Dagster Docs"
+description: "Create alerts that make PagerDuty incidents based on events in Dagster+."
 
 platform_type: "cloud"
 feature: "alerting"
 integration: "pagerduty"
 ---
 
-# PagerDuty & Dagster Cloud
+# PagerDuty & Dagster+
 
 <ApplicableCloudPlan />
 
-Dagster Cloud supports [sending alerts](/dagster-plus/managing-deployments/alerts) to PagerDuty, which will automatically create a PagerDuty incident.
+Dagster+ supports [sending alerts](/dagster-plus/managing-deployments/alerts) to PagerDuty, which will automatically create a PagerDuty incident.
 
 ---
 
-## PagerDuty + Dagster Cloud integration benefits
+## PagerDuty + Dagster+ integration benefits
 
-- Empower your team with real-time incident response by integrating Dagster Cloud and PagerDuty
-- Notify on-call responders when alerts are triggered in Dagster Cloud
+- Empower your team with real-time incident response by integrating Dagster+ and PagerDuty
+- Notify on-call responders when alerts are triggered in Dagster+
 - Dramatically reduce downtime for issues related to asset materialization, asset checks, job runs, schedules, sensors, and code locations
-- Customize the urgency and routing of PagerDuty incidents based on the content of the Dagster Cloud event payload
+- Customize the urgency and routing of PagerDuty incidents based on the content of the Dagster+ event payload
 
 ---
 
 ## How it works
 
-- Events that trigger an alert in Dagster Cloud will automatically create a PagerDuty incident
+- Events that trigger an alert in Dagster+ will automatically create a PagerDuty incident
 - Incidents can be triggered for events related to runs, assets, schedules, sensors, and code locations
-- Users must resolve incidents in PagerDuty. Dagster Cloud doesn't currently automatically resolve incidents.
+- Users must resolve incidents in PagerDuty. Dagster+ doesn't currently automatically resolve incidents.
 
 ### Requirements
 
-To integrate PagerDuty with Dagster Cloud, you'll need:
+To integrate PagerDuty with Dagster+, you'll need:
 
 - **Permissions in PagerDuty that allow you to manage services and integrations.** Refer to PagerDuty's [User roles](https://support.pagerduty.com/docs/user-roles) documentation for more information.
-- **The following in Dagster Cloud**:
+- **The following in Dagster+**:
   - **A Pro plan**
   - **Organization, Admin, or Editor permissions**, which are required to create and manage alerts
 
 ### Support
 
-If you need help with this integration, [contact Dagster Cloud support](https://dagster.io/contact) by selecting **Contact support** in the contact form's **Request type**.
+If you need help with this integration, [contact Dagster+ support](https://dagster.io/contact) by selecting **Contact support** in the contact form's **Request type**.
 
 ---
 
@@ -55,13 +55,13 @@ If you need help with this integration, [contact Dagster Cloud support](https://
 
    - **If adding your integration to an existing service**: Click the **name** of the service you want to add the integration to. Then, select the **Integrations** tab and click the **New Integration** button.
 
-   - **If creating a new service for your integration**: Refer to PagerDuty's [Configuring services and integrations documentation](https://support.pagerduty.com/docs/services-and-integrations#section-configuring-services-and-integrations) and follow the steps outlined in the [Create a new service](https://support.pagerduty.com/docs/services-and-integrations#section-create-a-new-service) section, selecting **Dagster Cloud** as the **Integration Type** in step 4. Continue with the [**In Dagster Cloud**](#in-dagster-cloud) section (below) once finished.
+   - **If creating a new service for your integration**: Refer to PagerDuty's [Configuring services and integrations documentation](https://support.pagerduty.com/docs/services-and-integrations#section-configuring-services-and-integrations) and follow the steps outlined in the [Create a new service](https://support.pagerduty.com/docs/services-and-integrations#section-create-a-new-service) section, selecting **Dagster+** as the **Integration Type** in step 4. Continue with the [**In Dagster+**](#in-dagster-cloud) section (below) once finished.
 
-3. Enter an **Integration Name** in the format `monitoring-tool-service-name` (e.g. `dagster-cloud-run-failures`) and select **Dagster Cloud** from the **Integration Type** menu.
+3. Enter an **Integration Name** in the format `monitoring-tool-service-name` (e.g. `dagster-cloud-run-failures`) and select **Dagster+** from the **Integration Type** menu.
 
 4. Click the **Add Integration** button to save your new integration. You will be redirected to the **Integrations** tab for your service.
 
-5. An **Integration Key** will be generated on this screen. Keep this key saved in a safe place, as it will be used when you configure the integration with **Dagster Cloud** in the next section.
+5. An **Integration Key** will be generated on this screen. Keep this key saved in a safe place, as it will be used when you configure the integration with **Dagster+** in the next section.
 
    <!-- ![Highlighted integration key field in the PagerDuty UI](/images/dagster-cloud/alerts/pagerduty-integration-key.png) -->
 
@@ -72,16 +72,16 @@ If you need help with this integration, [contact Dagster Cloud support](https://
    height={1015}
    />
 
-### In Dagster Cloud
+### In Dagster+
 
-Creating an alert policy can be done using the Dagster Cloud UI or in code.
+Creating an alert policy can be done using the Dagster+ UI or in code.
 
 <TabGroup>
 <TabItem name="In the UI">
 
 #### In the UI
 
-1. Sign into your Dagster Cloud account.
+1. Sign into your Dagster+ account.
 
 2. Create and configure an alert policy as per the [alert policy documentation](/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui#creating-alert-policies).
 
@@ -138,11 +138,11 @@ To uninstall PagerDuty, click the **Delete** button next to the policy. When pro
 
 <ArticleList>
   <ArticleListItem
-    title="Dagster Cloud alerts"
+    title="Dagster+ alerts"
     href="/dagster-plus/managing-deployments/alerts"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing alerts in Dagster Cloud"
+    title="Managing alerts in Dagster+"
     href="/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui"
   ></ArticleListItem>
   <ArticleListItem

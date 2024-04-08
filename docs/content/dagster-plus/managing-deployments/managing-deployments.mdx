@@ -1,13 +1,13 @@
 ---
-title: Managing deployments in Dagster Cloud | Dagster Docs
-description: Learn to manage and configure your Dagster Cloud deployments.
+title: Managing deployments in Dagster+ | Dagster Docs
+description: Learn to manage and configure your Dagster+ deployments.
 ---
 
-# Managing deployments in Dagster Cloud
+# Managing deployments in Dagster+
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-In Dagster Cloud, there are two types of deployments:
+In Dagster+, there are two types of deployments:
 
 - [**Branch deployments**](/dagster-plus/managing-deployments/branch-deployments), which are temporary deployments built for testing purposes
 - **Full deployments**, which are persistent, fully-featured deployments intended to perform actions on a recurring basis
@@ -20,11 +20,11 @@ This guide will focus on **full deployments**, hereafter referred to simply as d
 
 Deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
 
-When a Dagster Cloud organization is created, a single deployment named `prod` will also be created. To create additional deployments, a [Pro plan](https://dagster.io/pricing) is required.
+When a Dagster+ organization is created, a single deployment named `prod` will also be created. To create additional deployments, a [Pro plan](https://dagster.io/pricing) is required.
 
 Each deployment can have one or multiple [code locations](/dagster-plus/managing-deployments/code-locations).
 
-**Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster Cloud users, regardless of plan.
+**Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster+ users, regardless of plan.
 
 Refer to the [Branch Deployment docs](/dagster-plus/managing-deployments/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/guides/dagster/branch_deployments) for a real-world example.
 
@@ -32,10 +32,10 @@ Refer to the [Branch Deployment docs](/dagster-plus/managing-deployments/branch-
 
 ## Viewing and switching deployments
 
-In Dagster Cloud, you can view and switch between deployments using the **deployment switcher**:
+In Dagster+, you can view and switch between deployments using the **deployment switcher**:
 
 <Image
-alt="The deployment switcher in Dagster Cloud"
+alt="The deployment switcher in Dagster+"
 src="/images/dagster-cloud/developing-testing/deployments/deployment-switcher.png"
 width={660}
 height={207}
@@ -61,7 +61,7 @@ To view all deployments, click **View all deployments**.
 
 To create a deployment:
 
-1. Sign in to your Dagster Cloud account.
+1. Sign in to your Dagster+ account.
 2. Access the **Deployments** page using one of the following options:
    - Click the **deployment switcher > View all deployments**.
    - Click **your user icon > Organization Settings > Deployments**.
@@ -88,7 +88,7 @@ To create a deployment:
 
 To delete a deployment:
 
-1. Sign in to your Dagster Cloud account.
+1. Sign in to your Dagster+ account.
 2. Access the **Deployments** page using one of the following options:
    - Click the **deployment switcher > View all deployments**.
    - Click the **deployment switcher**, then the **gear icon** next to the deployment.
@@ -107,14 +107,14 @@ To delete a deployment:
   are required to modify deployment settings.
 </Note>
 
-Deployment settings can be configured in the Dagster Cloud interface or using the dagster-cloud CLI. Refer to the [deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference) for more info about individual settings.
+Deployment settings can be configured in the Dagster+ interface or using the dagster-cloud CLI. Refer to the [deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference) for more info about individual settings.
 
 <TabGroup>
-  <TabItem name="Dagster Cloud">
-   To configure deployment settings in the Dagster Cloud UI:
+  <TabItem name="Dagster+">
+   To configure deployment settings in the Dagster+ UI:
 
    <ol>
-    <li>Sign in to your Dagster Cloud account.</li>
+    <li>Sign in to your Dagster+ account.</li>
     <li>Access the <strong>Deployments</strong> page using one of the following:
      <ul>
       <li>Click the <strong>deployment switcher > View all deployments</strong>.</li>
@@ -172,15 +172,15 @@ dagster-cloud deployment settings get
 
 <ArticleList>
   <ArticleListItem
-    title="Dagster Cloud deployment settings reference"
+    title="Dagster+ deployment settings reference"
     href="/dagster-plus/managing-deployments/deployment-settings-reference"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing code locations in Dagster Cloud"
+    title="Managing code locations in Dagster+"
     href="/dagster-plus/managing-deployments/code-locations"
   ></ArticleListItem>
   <ArticleListItem
-    title="Branch Deployments in Dagster Cloud"
+    title="Branch Deployments in Dagster+"
     href="/dagster-plus/managing-deployments/branch-deployments"
   ></ArticleListItem>
   <ArticleListItem
@@ -192,7 +192,7 @@ dagster-cloud deployment settings get
     href="/dagster-plus/managing-deployments/dagster-cloud-cli"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing users in Dagster Cloud"
+    title="Managing users in Dagster+"
     href="/dagster-plus/account/managing-users"
   ></ArticleListItem>
 </ArticleList>

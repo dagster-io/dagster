@@ -22,7 +22,7 @@ description: "A code location is a collection of Dagster definitions loadable an
   />
 </center>
 
-A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster Cloud. A code location comprises:
+A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster+. A code location comprises:
 
 - A reference to a Python module that has an instance of <PyObject object="Definitions" /> in a top-level variable
 - A Python environment that can successfully load that module
@@ -70,7 +70,7 @@ Definitions can be included in a Python file like `my_file.py` or a Python modul
 ## Deploying and loading code locations
 
 - [Local development](#local-development)
-- [Cloud deployment](#cloud-deployment)
+- [Dagster+ deployment](#dagster-deployment)
 - [Open source deployment](#open-source-deployment)
 
 ### Local development
@@ -81,9 +81,9 @@ Definitions can be included in a Python file like `my_file.py` or a Python modul
 
 Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info about local development, including how to configure your local instance.
 
-### Cloud deployment
+### Dagster+ deployment
 
-The [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file is used to create and deploy code locations for Cloud deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file or module:
+The [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file is used to create and deploy code locations for Dagster+ deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file or module:
 
 <TabGroup>
 <TabItem name="Using a Python file">

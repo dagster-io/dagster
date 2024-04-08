@@ -1,16 +1,16 @@
 ---
-title: "Setting up Okta SCIM provisioning for Dagster Cloud | Dagster Docs"
+title: "Setting up Okta SCIM provisioning for Dagster+ | Dagster Docs"
 
 display_name: "Okta"
 feature_name: "scim_okta"
 pricing_plan: "pro"
 ---
 
-# Setting up Okta SCIM provisioning for Dagster Cloud
+# Setting up Okta SCIM provisioning for Dagster+
 
-The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. When enabled in Dagster Cloud, SCIM allows you to efficiently and easily manage users in your Identity Provider (IdP) - in this case, Okta - and sync their information to Dagster Cloud.
+The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. When enabled in Dagster+, SCIM allows you to efficiently and easily manage users in your Identity Provider (IdP) - in this case, Okta - and sync their information to Dagster+.
 
-In this guide, we'll walk you through configuring [Okta SCIM provisioning](https://developer.okta.com/docs/concepts/scim/) for Dagster Cloud.
+In this guide, we'll walk you through configuring [Okta SCIM provisioning](https://developer.okta.com/docs/concepts/scim/) for Dagster+.
 
 ---
 
@@ -21,7 +21,7 @@ In this guide, we'll walk you through configuring [Okta SCIM provisioning](https
 
 ### Supported features
 
-With Dagster Cloud's Okta SCIM provisioning feature, you can:
+With Dagster+'s Okta SCIM provisioning feature, you can:
 
 <ScimSupportedFeatures />
 
@@ -32,7 +32,7 @@ Refer to [Okta's SCIM documentation](https://developer.okta.com/docs/concepts/sc
 
 ### Limitations
 
-Dagster Cloud currently supports the following attributes for SCIM syncing:
+Dagster+ currently supports the following attributes for SCIM syncing:
 
 - `user.firstName`
 - `user.lastName`
@@ -48,21 +48,21 @@ Dagster Cloud currently supports the following attributes for SCIM syncing:
 
 To complete the steps in this guide, you'll need:
 
-- **To have set up Okta SSO for Dagster Cloud.** Refer to the [Okta SSO setup guide](/dagster-plus/account/authentication/okta/saml-sso) for more info.
+- **To have set up Okta SSO for Dagster+.** Refer to the [Okta SSO setup guide](/dagster-plus/account/authentication/okta/saml-sso) for more info.
 - **Permissions in Okta that allow you to configure applications.**
-- **The following in Dagster Cloud:**
+- **The following in Dagster+:**
   - A Pro plan
   - [Organization Admin permissions](/dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference) in your organization
 
 ---
 
-## Step 1: Enable SCIM provisioning in Dagster Cloud
+## Step 1: Enable SCIM provisioning in Dagster+
 
-1. Sign in to your Dagster Cloud account.
+1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
 3. Click the **Provisioning** tab.
 4. If SCIM provisioning isn't enabled, click the **Enable SCIM provisioning** button to enable it.
-5. Click **Create SCIM token** to create an API token. This token will be used to authenticate requests from Okta to Dagster Cloud.
+5. Click **Create SCIM token** to create an API token. This token will be used to authenticate requests from Okta to Dagster+.
 
 Keep the API token handy - you'll need it in the next step.
 
@@ -74,7 +74,7 @@ Keep the API token handy - you'll need it in the next step.
 
 2. Using the sidebar, click **Applications > Applications**.
 
-3. Click the Dagster Cloud app. **Note**: If you haven't set up SSO for Okta, [follow this guide](/dagster-plus/account/authentication/okta/saml-sso)) to do so before continuing.
+3. Click the Dagster+ app. **Note**: If you haven't set up SSO for Okta, [follow this guide](/dagster-plus/account/authentication/okta/saml-sso)) to do so before continuing.
 
 4. Click the **Sign On** tab and complete the following:
 
@@ -85,7 +85,7 @@ Keep the API token handy - you'll need it in the next step.
    3. In the **Credential Details** section, set the **Application username format** field to **Email**:
 
       <Image
-      alt="Configured Sign On tab of Dagster Cloud Okta application"
+      alt="Configured Sign On tab of Dagster+ Okta application"
       src="/images/dagster-cloud/sso/okta/scim-sign-on-tab.png"
       width={800}
       height={606}
@@ -99,10 +99,10 @@ Keep the API token handy - you'll need it in the next step.
 
    2. Check the **Enable API integration** checkbox that displays.
 
-   3. In the **API Token** field, paste the Dagster Cloud API token you generated in [Step 1](#step-1-enable-scim-provisioning-in-dagster-cloud):
+   3. In the **API Token** field, paste the Dagster+ API token you generated in [Step 1](#step-1-enable-scim-provisioning-in-dagster-cloud):
 
       <Image
-      alt="Configured Provisioning tab of Dagster Cloud Okta application"
+      alt="Configured Provisioning tab of Dagster+ Okta application"
       src="/images/dagster-cloud/sso/okta/provisioning-tab.png"
       width={1024}
       height={649}
@@ -116,9 +116,9 @@ Keep the API token handy - you'll need it in the next step.
 
 ## Step 3: Enable user syncing in Okta
 
-After you confirm that your API credentials work in the Dagster Cloud Okta application, you can enable user syncing:
+After you confirm that your API credentials work in the Dagster+ Okta application, you can enable user syncing:
 
-1. In the Dagster Cloud Okta app, click the **Provisioning** tab.
+1. In the Dagster+ Okta app, click the **Provisioning** tab.
 
 2. In the **Settings** panel, click **To App**.
 
@@ -144,21 +144,20 @@ After you confirm that your API credentials work in the Dagster Cloud Okta appli
 ## Step 4: Enable group syncing in Okta
 
 <Note>
-  This step is required only if you want to sync Okta user groups to Dagster
-  Cloud as{" "}
+  This step is required only if you want to sync Okta user groups to Dagster+ as{" "}
   <a href="/dagster-plus/account/managing-users/managing-teams">Teams</a>.
 </Note>
 
-When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster Cloud as [Teams](/dagster-plus/account/managing-users/managing-teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions.
+When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions.
 
 ---
 
 ## Next steps
 
-That's it! Once Okta successfully syncs users to Dagster Cloud, synced users will have a 'synced' icon next to them in the Dagster Cloud users page:
+That's it! Once Okta successfully syncs users to Dagster+, synced users will have a 'synced' icon next to them in the Dagster+ users page:
 
 <Image
-alt="Synced/external user icon next to user in Dagster Cloud user list"
+alt="Synced/external user icon next to user in Dagster+ user list"
 src="/images/dagster-cloud/sso/dagster-cloud-external-user.png"
 width={800}
 height={211}

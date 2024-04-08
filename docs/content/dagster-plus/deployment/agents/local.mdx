@@ -6,7 +6,7 @@ platform_type: "cloud"
 
 # Configuring and running a local agent
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
 In this guide, you'll configure and run a local agent. Local agents are used to launch user code in operating system subprocesses.
 
@@ -27,14 +27,14 @@ If you’re running the local agent in production, make sure you’ve set up a s
 
 To complete the steps in this guide, you'll need:
 
-- **Permissions in Dagster Cloud that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-plus/account/managing-users) for more info.
+- **Permissions in Dagster+ that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-plus/account/managing-users) for more info.
 - **To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-cloud-cli)**. This should be in the same environment where the agent will run.
 
   **Note**: Your Dagster application code and its Python and system requirements must also be installed in this environment. We recommend using Python [virtual environments](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment) to accomplish this.
 
 ---
 
-## Step 1: Generate a Dagster Cloud agent token
+## Step 1: Generate a Dagster+ agent token
 
 <GenerateAgentToken />
 
@@ -68,7 +68,7 @@ To complete the steps in this guide, you'll need:
 
    - `deployment` - Enter the deployment associated with this instance of the agent.
 
-     In the above example, we specified `prod` as the deployment. This is present when Dagster Cloud organizations are first created.
+     In the above example, we specified `prod` as the deployment. This is present when Dagster+ organizations are first created.
 
 4. Save the file.
 
@@ -82,7 +82,7 @@ Next, run the process agent by pointing at the home directory you created:
 dagster-cloud agent run ~/dagster_home/
 ```
 
-To view the agent in Dagster Cloud, click the Dagster icon in the top left to navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
+To view the agent in Dagster+, click the Dagster icon in the top left to navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
 <Image
 alt="Instance Status"
@@ -97,6 +97,6 @@ height={320}
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/dagster-plus/managing-deployments/code-locations) using the agent.
+- **If you're getting Dagster+ set up**, the next step is to [add a code location](/dagster-plus/managing-deployments/code-locations) using the agent.
 
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/dagster-plus/managing-deployments/code-locations) guide for more info.
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/dagster-plus/managing-deployments/code-locations) guide for more info.

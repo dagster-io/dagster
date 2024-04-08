@@ -1,11 +1,11 @@
 ---
-title: "Managing multiple projects & teams in Dagster Cloud | Dagster Docs"
-description: "How to set up and manage multiple projects with Dagster Cloud Hybrid deployments."
+title: "Managing multiple projects & teams in Dagster+ | Dagster Docs"
+description: "How to set up and manage multiple projects with Dagster+ Hybrid deployments."
 ---
 
-# Managing multiple projects & teams in Dagster Cloud
+# Managing multiple projects & teams in Dagster+
 
-In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster Cloud account.
+In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
 
 ---
 
@@ -146,7 +146,7 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
 #### Example with GitHub CI/CD on Hybrid deployment
 
-1. **For each repository**, use the CI/CD workflow provided in [Dagster Cloud Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
+1. **For each repository**, use the CI/CD workflow provided in [Dagster+ Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
 
 2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml):
 
@@ -286,7 +286,7 @@ height={384}
 ### Agent isolation
 
 <Note>
-  Agent queues are a Dagster Cloud Pro feature available on hybrid deployment.
+  Agent queues are a Dagster+ Pro feature available on hybrid deployment.
 </Note>
 
 Using the [agent routing feature](/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
@@ -347,12 +347,12 @@ height={537}
 
 ### Deployment isolation
 
-<Note>Multiple deployments are only available in Dagster Cloud Pro.</Note>
+<Note>Multiple deployments are only available in Dagster+ Pro.</Note>
 
 Of the approaches outlined in this guide, multiple deployments are the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments. It may be considered to satisfy other organization specific requirements.
 
 <Image
-alt="Diagram of isolation at the Dagster Cloud deployment level"
+alt="Diagram of isolation at the Dagster+ deployment level"
 src="/images/dagster-cloud/managing-deployments/isolation-level-deployments.png"
 width={1152}
 height={349}
@@ -411,19 +411,19 @@ height={349}
 
 <ArticleList>
   <ArticleListItem
-    title="Dagster Cloud Hybrid deployments"
+    title="Dagster+ Hybrid deployments"
     href="/dagster-plus/deployment/hybrid"
   ></ArticleListItem>
   <ArticleListItem
-    title="Dagster Cloud Hybrid agents"
+    title="Dagster+ Hybrid agents"
     href="/dagster-plus/deployment/agents"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing deployments in Dagster Cloud"
+    title="Managing deployments in Dagster+"
     href="/dagster-plus/managing-deployments"
   ></ArticleListItem>
   <ArticleListItem
-    title="Running multiple Dagster Cloud Hybrid agents"
+    title="Running multiple Dagster+ Hybrid agents"
     href="/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents"
   ></ArticleListItem>
   <ArticleListItem

@@ -5,9 +5,9 @@ platform_type: "cloud"
 
 # Running multiple agents
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
+Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
 
 ---
 
@@ -132,9 +132,9 @@ The `isolated_agents` option can be set as per-deployment configuration on the `
 
 ## Routing requests to specific agents
 
-<Note>Agent queues are a Dagster Cloud Pro feature.</Note>
+<Note>Agent queues are a Dagster+ Pro feature.</Note>
 
-Every Dagster Cloud agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent will read requests only from that default queue.
+Every Dagster+ agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent will read requests only from that default queue.
 
 In some cases, you might want to route requests for certain code locations to specific agents. For example, routing requests for one code location to an agent running in an on-premise data center, but then routing requests for all other code locations to an agent running in AWS.
 

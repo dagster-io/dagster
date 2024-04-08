@@ -241,7 +241,7 @@ defs = Definitions(
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-- **For Dagster Cloud users**, we recommend using [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our [comprehensive guide to branch deployments](/guides/dagster/branch_deployments) to learn how to use branch deployments to verify data pipelines before deploying them to production.
+- **For Dagster+ users**, we recommend using [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our [comprehensive guide to branch deployments](/guides/dagster/branch_deployments) to learn how to use branch deployments to verify data pipelines before deploying them to production.
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 

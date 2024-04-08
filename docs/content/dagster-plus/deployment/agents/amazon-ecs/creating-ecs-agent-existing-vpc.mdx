@@ -4,7 +4,7 @@ title: Creating an Amazon Elastic Container Service agent in an existing VPC | D
 
 # Creating an Amazon Elastic Container Service agent in an existing VPC
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
 In this guide, you'll set up and deploy an Amazon Elastic Container Service (ECS) agent in an existing VPC using CloudFormation. Amazon ECS agents are used to launch user code in ECS tasks.
 
@@ -18,10 +18,10 @@ Our CloudFormation template allows you to quickly spin up the ECS agent stack in
 
 To complete the steps in this guide, you'll need:
 
-- **In Dagster Cloud**:
+- **In Dagster+**:
 
   - **Your organization and deployment names.**
-  - **Permissions in Dagster Cloud that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-plus/account/managing-users) for more info.
+  - **Permissions in Dagster+ that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-plus/account/managing-users) for more info.
 
 - **In Amazon Web Services (AWS)**:
   - **An existing VPC with the following:**
@@ -31,7 +31,7 @@ To complete the steps in this guide, you'll need:
 
 ---
 
-## Step 1: Generate a Dagster Cloud agent token
+## Step 1: Generate a Dagster+ agent token
 
 <GenerateAgentToken />
 
@@ -51,8 +51,8 @@ Press the "Launch Stack" button below to install the CloudFormation stack in you
 
 After the stack is installed, you'll be prompted to configure it. In the ECS wizard, fill in the following fields:
 
-- **Dagster Cloud Organization**: Enter the name of your Dagster Cloud organization.
-- **Dagster Cloud Deployment**: Enter the name of the Dagster Cloud deployment you want to use. Leave this field empty if the agent will only serve Branch deployments.
+- **Dagster+ Organization**: Enter the name of your Dagster+ organization.
+- **Dagster+ Deployment**: Enter the name of the Dagster+ deployment you want to use. Leave this field empty if the agent will only serve Branch deployments.
 - **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/dagster-plus/managing-deployments/branch-deployments). Only a single agent should have this setting enabled.
 - **Agent Token**: Paste the agent token you generated in [Step 1](#step-1-generate-a-dagster-cloud-agent-token).
 - **Deploy VPC**: The existing VPC to deploy the agent into.
@@ -69,7 +69,7 @@ width={927}
 height={1099}
 />
 
-After you've finished configuring the stack in AWS, you can view the agent in Dagster Cloud. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
+After you've finished configuring the stack in AWS, you can view the agent in Dagster+. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
 <Image
 alt="Instance Status"
@@ -84,8 +84,8 @@ height={320}
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/dagster-plus/managing-deployments/code-locations) using the agent.
+- **If you're getting Dagster+ set up**, the next step is to [add a code location](/dagster-plus/managing-deployments/code-locations) using the agent.
 
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/dagster-plus/managing-deployments/code-locations) guide for more info.
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/dagster-plus/managing-deployments/code-locations) guide for more info.
 
 If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/dagster-plus/deployment/agents/amazon-ecs/upgrading-cloudformation-template) for more info.

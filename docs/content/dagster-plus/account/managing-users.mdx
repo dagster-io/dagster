@@ -1,14 +1,14 @@
 ---
-title: Managing users in Dagster Cloud | Dagster Docs
+title: Managing users in Dagster+ | Dagster Docs
 ---
 
-# Managing users in Dagster Cloud
+# Managing users in Dagster+
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-In this guide, we'll cover how to add and remove users in your Dagster Cloud organization.
+In this guide, we'll cover how to add and remove users in your Dagster+ organization.
 
-**Note**: If utilizing [SCIM provisioning](/dagster-plus/account/authentication/utilizing-scim-provisioning), you'll need to manage users through your Identity Provider (IdP) instead of Dagster Cloud.
+**Note**: If utilizing [SCIM provisioning](/dagster-plus/account/authentication/utilizing-scim-provisioning), you'll need to manage users through your Identity Provider (IdP) instead of Dagster+.
 
 ---
 
@@ -16,18 +16,18 @@ In this guide, we'll cover how to add and remove users in your Dagster Cloud org
 
 <Note>
   <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
-  required to add users in Dagster Cloud.
+  required to add users in Dagster+.
 </Note>
 
 Before you start, note that:
 
-- **If SCIM provisioning is enabled,** you'll need to add new users in your IdP. Adding users will be disabled in Dagster Cloud.
-- **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
-- **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster Cloud. Refer to the [SSO setup guides](/dagster-plus/account/authentication#single-sign-on) for setup instructions for each of our supported IdP solutions.
+- **If SCIM provisioning is enabled,** you'll need to add new users in your IdP. Adding users will be disabled in Dagster+.
+- **If using Google for SSO**, users must be added in Dagster+ before they can log in.
+- **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the [SSO setup guides](/dagster-plus/account/authentication#single-sign-on) for setup instructions for each of our supported IdP solutions.
 
   By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-plus/managing-deployments/deployment-settings-reference#sso-default-role).
 
-1. Sign in to your Dagster Cloud account.
+1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
 3. Click the **Users** tab.
 4. Click **Add new user.**
@@ -42,15 +42,15 @@ After the user is created, you can [add the user to teams and assign user roles 
 
 <Note>
   <strong>Organization Admin</strong> permissions are required to manage users
-  in Dagster Cloud.
+  in Dagster+.
 </Note>
 
 After a user is created, the **Manage user permissions** window will automatically display. You can also access this window by clicking **Edit** next to a user in the users table.
 
-<!-- ![Managing user teams and roles for a user in Dagster Cloud](/images/dagster-cloud/user-token-management/manage-new-user-permissions.png) -->
+<!-- ![Managing user teams and roles for a user in Dagster+](/images/dagster-cloud/user-token-management/manage-new-user-permissions.png) -->
 
 <Image
-alt="Managing user teams and roles for a user in Dagster Cloud"
+alt="Managing user teams and roles for a user in Dagster+"
 src="/images/dagster-cloud/user-token-management/manage-new-user-permissions.png"
 width={1792}
 height={1474}
@@ -58,20 +58,20 @@ height={1474}
 
 ### Adding users to teams
 
-<Note>Teams are a Dagster Cloud Pro feature.</Note>
+<Note>Teams are a Dagster+ Pro feature.</Note>
 
 Using the **Teams** field, you can add users to one or more teams. This is useful for centralizing permission sets for different types of users. Refer to the [Managing teams](/dagster-plus/account/managing-users/managing-teams) guide for more info about creating and managing teams.
 
-<!-- ![Adding a user to a team in the Dagster Cloud UI](/images/dagster-cloud/user-token-management/add-user-to-teams.png) -->
+<!-- ![Adding a user to a team in the Dagster+ UI](/images/dagster-cloud/user-token-management/add-user-to-teams.png) -->
 
 <Image
-alt="Adding a user to a team in the Dagster Cloud UI"
+alt="Adding a user to a team in the Dagster+ UI"
 src="/images/dagster-cloud/user-token-management/add-user-to-teams.png"
 width={1742}
 height={376}
 />
 
-**Note**: When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to the [Managing user roles and permissions](/dagster-plus/account/managing-users/managing-user-roles-permissions#applying-role-overrides) guide for more info.
+**Note**: When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to the [Managing user roles and permissions](/dagster-plus/account/managing-users/managing-user-roles-permissions#applying-role-overrides) guide for more info.
 
 ### Assigning user roles
 
@@ -98,12 +98,12 @@ In the **Roles** section, you can assign the select the appropriate [user role](
 
 <Note>
   <strong>Organization Admin</strong> permissions are required to remove users
-  in Dagster Cloud.
+  in Dagster+.
 </Note>
 
-Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the IdP. Removing the user in Dagster Cloud doesn't remove them from the IdP.
+Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the IdP. Removing the user in Dagster+ doesn't remove them from the IdP.
 
-1. Sign in to your Dagster Cloud account.
+1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
 3. Click the **Users** tab.
 4. Locate the user in the user list.

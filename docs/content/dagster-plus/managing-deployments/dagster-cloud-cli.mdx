@@ -4,9 +4,9 @@ title: "Using the dagster-cloud CLI | Dagster Docs"
 
 # Using the dagster-cloud CLI
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster Cloud.
+The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster+.
 
 In this guide, we'll cover how to install and configure the `dagster-cloud` CLI, get help, and use some helpful environment variables and CLI options.
 
@@ -14,7 +14,7 @@ In this guide, we'll cover how to install and configure the `dagster-cloud` CLI,
 
 ## Installing the CLI
 
-The Dagster Cloud Agent library is available in PyPi. To install, run:
+The Dagster+ Agent library is available in PyPi. To install, run:
 
 ```shell
 pip install dagster-cloud
@@ -69,7 +69,7 @@ Authorized for organization `hooli`
 ? Default deployment: prod
 ```
 
-When prompted, you can specify a default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster Cloud organization is `prod`.
+When prompted, you can specify a default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster+ organization is `prod`.
 
 </details>
 
@@ -84,16 +84,16 @@ $ dagster-cloud config setup
    Authenticate in browser
  » Authenticate using token
 
-? Dagster Cloud organization: hooli
-? Dagster Cloud user token: *************************************
+? Dagster+ organization: hooli
+? Dagster+ user token: *************************************
 ? Default deployment: prod
 ```
 
 When prompted, specify the following:
 
-- **Organization** - Your organization name as it appears in your Dagster Cloud URL. For example, if your Dagster Cloud instance is `https://hooli.dagster.cloud/`, this would be `hooli`.
+- **Organization** - Your organization name as it appears in your Dagster+ URL. For example, if your Dagster+ instance is `https://hooli.dagster.cloud/`, this would be `hooli`.
 - **User token** - The user token.
-- **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster Cloud organization is `prod`.
+- **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster+ organization is `prod`.
 
 </details>
 

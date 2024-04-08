@@ -1,19 +1,19 @@
 ---
-title: "Integrating Snowflake + dbt with Dagster Cloud Insights | Dagster Docs"
+title: "Integrating Snowflake + dbt with Dagster+ Insights | Dagster Docs"
 description: "Integrating external metrics with Dagster Insights."
 
 platform_type: "cloud"
 ---
 
-# Integrating Snowflake + dbt with Dagster Cloud Insights (Experimental)
+# Integrating Snowflake + dbt with Dagster+ Insights (Experimental)
 
 <Note>
   This feature is considered <strong>experimental</strong>.
 </Note>
 
-External metrics, such as Snowflake credits, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster Cloud via an API.
+External metrics, such as Snowflake credits, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster+ via an API.
 
-If you use dbt to materialize tables in Snowflake, use this guide to integrate Snowflake metrics into the Insights UI. For instructions on integrating direct Snowflake queries, see [Integrating Direct Snowflake Usage with Dagster Cloud Insights](/dagster-plus/insights/integrating-snowflake).
+If you use dbt to materialize tables in Snowflake, use this guide to integrate Snowflake metrics into the Insights UI. For instructions on integrating direct Snowflake queries, see [Integrating Direct Snowflake Usage with Dagster+ Insights](/dagster-plus/insights/integrating-snowflake).
 
 ---
 
@@ -21,8 +21,8 @@ If you use dbt to materialize tables in Snowflake, use this guide to integrate S
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster Cloud account on the Pro plan
-- Access to the [Dagster Cloud Insights feature](/dagster-plus/insights)
+- A Dagster+ account on the Pro plan
+- Access to the [Dagster+ Insights feature](/dagster-plus/insights)
 - Snowflake credentials which have access to the `snowflake.account_usage.query_history` table. For more information on granting access to this table, see the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles).
 - To install the following libraries:
 
@@ -105,7 +105,7 @@ This allows you to add a comment, containing the dbt invocation ID and unique ID
 
 ## Step 3: Create a metrics ingestion pipeline in Dagster
 
-The last step is to create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster Cloud ingestion API. Snowflake usage information is available at a delay, so this pipeline will run on a schedule to ingest Snowflake usage information from the previous hour.
+The last step is to create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster+ ingestion API. Snowflake usage information is available at a delay, so this pipeline will run on a schedule to ingest Snowflake usage information from the previous hour.
 
 Note that you only need to create this pipeline in a single code location per deployment, even if you have instrumented dbt assets in multiple code locations.
 
@@ -157,7 +157,7 @@ height={1636}
 
 <ArticleList>
   <ArticleListItem
-    title="Dagster Cloud Insights"
+    title="Dagster+ Insights"
     href="/dagster-plus/insights"
   ></ArticleListItem>
   <ArticleListItem
@@ -165,7 +165,7 @@ height={1636}
     href="/dagster-plus/insights/integrating-snowflake"
   ></ArticleListItem>
   <ArticleListItem
-    title="Dagster Cloud alerts"
+    title="Dagster+ alerts"
     href="/dagster-plus/managing-deployments/alerts"
   ></ArticleListItem>
 </ArticleList>
