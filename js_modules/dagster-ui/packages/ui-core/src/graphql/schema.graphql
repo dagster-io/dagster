@@ -901,6 +901,8 @@ type AssetCheck {
   jobNames: [String!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
+  blocking: Boolean!
+  additionalAssetKeys: [AssetKey!]!
 }
 
 type AssetCheckExecution {

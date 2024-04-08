@@ -20,14 +20,6 @@ if TYPE_CHECKING:
 runner = CliRunner()
 
 
-@pytest.fixture(name="dbt_project_dir")
-def dbt_project_dir_fixture(tmp_path: Path) -> Path:
-    dbt_project_dir = tmp_path.joinpath("test_jaffle_shop")
-    shutil.copytree(src=test_jaffle_shop_path, dst=dbt_project_dir)
-
-    return dbt_project_dir
-
-
 def _assert_scaffold_invocation(
     project_name: str,
     dbt_project_dir: Path,

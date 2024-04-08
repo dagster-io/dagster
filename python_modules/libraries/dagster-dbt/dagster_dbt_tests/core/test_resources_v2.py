@@ -18,6 +18,7 @@ from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
     DbtCliResource,
 )
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from dbt.version import __version__ as dbt_version
 from packaging import version
@@ -420,6 +421,39 @@ def test_dbt_cli_default_selection(
         yield from dbt_cli_invocation.stream()
 
     result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+
+def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -> None:
+    monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "prod")
+
+    state_dir = Path("state", testrun_uid)
+    test_jaffle_shop_path.joinpath(state_dir).mkdir(parents=True, exist_ok=True)
+
+    project = DbtProject(project_dir=test_jaffle_shop_path, state_dir=state_dir)
+    dbt = DbtCliResource(project_dir=project)
+
+    dbt.cli(["--quiet", "parse"], target_path=project.target_dir).wait()
+
+    @dbt_assets(manifest=project.manifest_path)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    # Defer will not work since the manifest is not in the state directory.
+    monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "staging")
+    result = materialize(
+        [my_dbt_assets], resources={"dbt": dbt}, selection="orders", raise_on_error=False
+    )
+    assert not result.success
+
+    # Defer works after copying the manifest into the state directory.
+    assert project.state_dir
+    shutil.copy(project.manifest_path, project.state_dir.joinpath("manifest.json"))
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt}, selection="orders")
     assert result.success
 
 

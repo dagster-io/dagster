@@ -1230,6 +1230,8 @@ class ExternalAssetCheck(
             ("description", Optional[str]),
             ("execution_set_identifier", Optional[str]),
             ("job_names", Sequence[str]),
+            ("blocking", bool),
+            ("additional_asset_keys", Sequence[AssetKey]),
         ],
     )
 ):
@@ -1242,6 +1244,8 @@ class ExternalAssetCheck(
         description: Optional[str],
         execution_set_identifier: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
+        blocking: bool = False,
+        additional_asset_keys: Optional[Sequence[AssetKey]] = None,
     ):
         return super(ExternalAssetCheck, cls).__new__(
             cls,
@@ -1252,6 +1256,10 @@ class ExternalAssetCheck(
                 execution_set_identifier, "execution_set_identifier"
             ),
             job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
+            blocking=check.bool_param(blocking, "blocking"),
+            additional_asset_keys=check.opt_sequence_param(
+                additional_asset_keys, "additional_asset_keys", of_type=AssetKey
+            ),
         )
 
     @property
@@ -1648,6 +1656,8 @@ def external_asset_checks_from_defs(
                 description=spec.description,
                 execution_set_identifier=execution_set_identifier,
                 job_names=job_names_by_check_key[check_key],
+                blocking=spec.blocking,
+                additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
             )
         )
 
