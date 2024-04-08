@@ -34,7 +34,7 @@ export const DagsterPlusLaunchPromotion = () => {
       canOutsideClickClose
       canEscapeKeyClose
       title={
-        <Header>
+        <Header $isDarkMode={isDarkMode}>
           Join us for the unveiling of <span style={{fontWeight: 800}}>Dagster+</span>, the next
           generation of Dagster Cloud.
         </Header>
@@ -62,9 +62,19 @@ export const DagsterPlusLaunchPromotion = () => {
   );
 };
 
-const Header = styled.div`
-  background: linear-gradient(0deg, #4f43dd, #ac00fc 40%, #5756ab);
-  background: -webkit-linear-gradient(0deg, #4f43dd, #ac00fc 40%, #5756ab);
+const Header = styled.div<{$isDarkMode: boolean}>`
+  ${({$isDarkMode}) => {
+    if ($isDarkMode) {
+      return `
+      background: linear-gradient(0deg, #4f43dd, #ac00fc 40%, #5756ab);
+      background: -webkit-linear-gradient(0deg, #4f43dd, #ac00fc 40%, #5756ab);
+      `;
+    }
+    return `
+    background: linear-gradient(0deg, #413a9b, #7e12b0 40%, #434278);
+    background: -webkit-linear-gradient(0deg, #413a9b, #7e12b0 40%, #434278);
+    `;
+  }}
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
