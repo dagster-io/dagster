@@ -40,7 +40,7 @@ export const DagsterPlusLaunchPromotion = () => {
             target="_blank"
             rel="noreferrer"
             intent="primary"
-            icon={<Icon name="open_in_new" />}
+            rightIcon={<Icon name="open_in_new" />}
           >
             Learn more
           </ExternalAnchorButton>
