@@ -29,6 +29,7 @@ import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {AppContext} from './AppContext';
 import {CustomAlertProvider, GlobalCustomAlertPortalStyle} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
+import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
@@ -43,9 +44,7 @@ import {InstancePageContext} from '../instance/InstancePageContext';
 import {PerformancePageNavigationListener} from '../performance';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
-
 import './blueprint.css';
-import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
