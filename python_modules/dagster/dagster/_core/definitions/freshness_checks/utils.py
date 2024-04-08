@@ -386,6 +386,7 @@ def unique_id_from_asset_keys(asset_keys: Sequence[AssetKey]) -> str:
     This is necessary to disambiguate between different ops underlying freshness checks without
     forcing the user to provide a name for the underlying op.
     """
-    return hashlib.md5(",".join([str(asset_key) for asset_key in asset_keys]).encode()).hexdigest()[
-        :8
-    ]
+    sorted_asset_keys = sorted(asset_keys, key=lambda asset_key: asset_key.to_string())
+    return hashlib.md5(
+        ",".join([str(asset_key) for asset_key in sorted_asset_keys]).encode()
+    ).hexdigest()[:8]

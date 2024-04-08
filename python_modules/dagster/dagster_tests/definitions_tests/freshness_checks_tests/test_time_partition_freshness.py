@@ -20,6 +20,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_checks.time_partition import (
     build_time_partition_freshness_checks,
 )
+from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import (
@@ -174,6 +175,32 @@ def test_params() -> None:
             deadline_cron="0 0 * * *",
             timezone="UTC",
         )
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(
+            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+        )
+    )
+    def my_other_partitioned_asset():
+        pass
+
+    check_multiple_assets = build_time_partition_freshness_checks(
+        assets=[my_partitioned_asset, my_other_partitioned_asset],
+        deadline_cron="0 9 * * *",
+    )
+    check_multiple_assets_switched_order = build_time_partition_freshness_checks(
+        assets=[my_partitioned_asset, my_other_partitioned_asset],
+        deadline_cron="0 9 * * *",
+    )
+    assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
+    unique_id = unique_id_from_asset_keys(
+        [my_partitioned_asset.key, my_other_partitioned_asset.key]
+    )
+    unique_id_switched_order = unique_id_from_asset_keys(
+        [my_other_partitioned_asset.key, my_partitioned_asset.key]
+    )
+    assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id}"
+    assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id_switched_order}"
 
 
 def test_result_cron_param(

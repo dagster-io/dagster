@@ -15,6 +15,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness_checks.last_update import (
     build_last_update_freshness_checks,
 )
+from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
@@ -102,6 +103,20 @@ def test_params() -> None:
     )
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
+
+    check_multiple_assets = build_last_update_freshness_checks(
+        assets=[my_asset, other_asset],
+        lower_bound_delta=datetime.timedelta(minutes=10),
+    )
+    check_multiple_assets_switched_order = build_last_update_freshness_checks(
+        assets=[other_asset, my_asset],
+        lower_bound_delta=datetime.timedelta(minutes=10),
+    )
+    assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
+    unique_id = unique_id_from_asset_keys([my_asset.key, other_asset.key])
+    unique_id_switched_order = unique_id_from_asset_keys([other_asset.key, my_asset.key])
+    assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id}"
+    assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id_switched_order}"
 
 
 @pytest.mark.parametrize(
