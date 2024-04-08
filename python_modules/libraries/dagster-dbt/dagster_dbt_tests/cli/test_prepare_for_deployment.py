@@ -101,10 +101,7 @@ def test_prepare_for_deployment_with_state(
             ["project", "prepare-for-deployment", "--file", os.fspath(tmp_script_path)],
         )
 
-    state_dir = dbt_project_dir.joinpath("prod_artifacts")
-    state_dir.mkdir()
-
-    project = DbtProject(dbt_project_dir, state_dir=state_dir.name)
+    project = DbtProject(dbt_project_dir, state_dir="prod_artifacts")
     assert project.state_dir
 
     dbt = DbtCliResource(project)
@@ -128,6 +125,7 @@ def test_prepare_for_deployment_with_state(
     assert not result.success
 
     # Once the state directory is populated, the subselected asset can be produced.
+    project.state_dir.mkdir(exist_ok=True)
     shutil.copyfile(project.manifest_path, project.state_dir.joinpath("manifest.json"))
 
     with tmp_script(

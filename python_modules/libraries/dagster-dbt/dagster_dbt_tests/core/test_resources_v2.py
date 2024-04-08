@@ -427,10 +427,7 @@ def test_dbt_cli_default_selection(
 def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -> None:
     monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "prod")
 
-    state_dir = Path("state", testrun_uid)
-    test_jaffle_shop_path.joinpath(state_dir).mkdir(parents=True, exist_ok=True)
-
-    project = DbtProject(project_dir=test_jaffle_shop_path, state_dir=state_dir)
+    project = DbtProject(project_dir=test_jaffle_shop_path, state_dir=Path("state", testrun_uid))
     dbt = DbtCliResource(project_dir=project)
 
     dbt.cli(["--quiet", "parse"], target_path=project.target_dir).wait()
@@ -451,6 +448,7 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
 
     # Defer works after copying the manifest into the state directory.
     assert project.state_dir
+    project.state_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(project.manifest_path, project.state_dir.joinpath("manifest.json"))
 
     result = materialize([my_dbt_assets], resources={"dbt": dbt}, selection="orders")

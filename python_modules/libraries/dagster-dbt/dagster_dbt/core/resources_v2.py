@@ -1070,7 +1070,7 @@ class DbtCliResource(ConfigurableResource):
         if state_dir is None:
             return None
 
-        return os.fspath(cls._validate_absolute_path_exists(state_dir))
+        return os.fspath(Path(state_dir).absolute().resolve())
 
     def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
         """Get a unique target path for the dbt CLI invocation.
