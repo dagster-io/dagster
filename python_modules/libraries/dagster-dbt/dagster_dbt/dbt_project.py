@@ -116,18 +116,16 @@ class DbtProject(DagsterModel):
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
 
         packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
-        if using_dagster_dev() and packaged_project_dir:
-            current_project_dir = packaged_project_dir
-        else:
-            current_project_dir = project_dir
+        if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
+            project_dir = packaged_project_dir
 
-        manifest_path = current_project_dir.joinpath(target_dir, "manifest.json")
+        manifest_path = project_dir.joinpath(target_dir, "manifest.json")
 
         super().__init__(
             project_dir=project_dir,
             target_dir=target_dir,
             manifest_path=manifest_path,
-            state_dir=current_project_dir.joinpath(state_dir) if state_dir else None,
+            state_dir=project_dir.joinpath(state_dir) if state_dir else None,
             packaged_project_dir=packaged_project_dir,
             manifest_preparer=manifest_preparer,
         )
