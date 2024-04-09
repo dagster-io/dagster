@@ -19,6 +19,7 @@ class ChangeReason(Enum):
     DEPENDENCIES = "DEPENDENCIES"
     PARTITIONS_DEFINITION = "PARTITIONS_DEFINITION"
     TAGS = "TAGS"
+    METADATA = "METADATA"
 
 
 def _get_external_repo_from_context(
@@ -144,6 +145,9 @@ class AssetGraphDiffer:
 
         if branch_asset.tags != base_asset.tags:
             changes.append(ChangeReason.TAGS)
+
+        if branch_asset.metadata != base_asset.metadata:
+            changes.append(ChangeReason.METADATA)
 
         return changes
 

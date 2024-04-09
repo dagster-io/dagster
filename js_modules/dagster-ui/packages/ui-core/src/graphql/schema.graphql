@@ -720,6 +720,7 @@ enum ChangeReason {
   DEPENDENCIES
   PARTITIONS_DEFINITION
   TAGS
+  METADATA
 }
 
 type AssetDependency {
