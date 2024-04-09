@@ -1,0 +1,176 @@
+---
+title: "Tracking asset changes in Dagster+ Branch Deployments | Dagster Docs"
+description: "Change tracking in Branch Deployments makes it eaiser for you and your team to identify how changes in a pull request will impact data assets."
+---
+
+# Tracking asset changes in Dagster+ Branch Deployments
+
+<ApplicableDagsterProduct />
+
+Change tracking in Branch Deployments makes it eaiser for you and your team to identify how changes in a pull request will impact data assets. By the end of this guide, you'll understand how change tracking works and what types of asset changes can be detected.
+
+---
+
+## How it works
+
+Branch Deployments compare asset definitions in the branch deployment against the asset definitions in the main deployment. The UI will then mark changed assets accordingly. For example, if the pull request associated with the branch deployment adds a new asset, the UI will display a label indicating the addition.
+
+You can also apply filters to show only new and changed assets in the UI. This makes it easy to understand which assets will be impacted by the changes in the branch deployment.
+
+---
+
+## Supported change types
+
+Change tracking can detect the following changes to assets:
+
+- [New assets](#new-assets)
+- [Code versions](#code-versions)
+- [Upstream dependencies](#upstream-dependencies)
+- [Partitions definitions](#partitions-definitions)
+
+### New assets
+
+If an asset is new in the branch deployment, the asset will have a **New in branch** label in the asset graph:
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-new.png"
+width={764}
+height={308}
+/>
+
+### Code versions
+
+Change tracking can detect when an asset's `code_version` has changed, whether it's just been added, removed, or updated.
+
+Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, including strategies for how to compute code versions automatically, refer to the [Code versioning guide](/guides/dagster/asset-versioning-and-caching).
+
+<TabGroup>
+<TabItem name="Asset definition">
+
+For example, if the main branch contains `customers` with code version `v1`
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
+@asset(code_version="v1")
+def customers(): ...
+```
+
+And the pull request modifies `customers` and changes the code version to `v2`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
+@asset(code_version="v2")
+def customers(): ...
+```
+
+---
+
+</TabItem>
+<TabItem name="Asset in the Dagster UI">
+
+Click the **Asset definition** tab to view how this asset is defined.
+
+In this example, the `customers` asset has a **Changed in branch** label indicating its `code_version` has been changed:
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-code-version.png"
+width={1042}
+height={444}
+/>
+
+---
+
+</TabItem>
+</TabGroup>
+
+### Upstream dependencies
+
+Change tracking can detect when an asset's upstream dependencies have changed, whether they've been added or removed.
+
+**Note**: If an asset is marked as having changed dependencies, it only means its dependencies have changed. It does **not** indicate that the upstream dependency has new data or that its definition has changed.
+
+<TabGroup>
+<TabItem name="Asset definition">
+
+For example, if the main branch contains `returns`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
+@asset(deps=[orders])
+def returns(): ...
+```
+
+And the pull request adds a new upstream dependency `customers`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
+@asset(deps=[orders, customers])
+def returns(): ...
+```
+
+---
+
+</TabItem>
+<TabItem name="Asset in the Dagster UI">
+
+Click the **Asset definition** tab to view how this asset is defined.
+
+In this example, the `returns` asset has a **Changed in branch** label indicating it has changed dependencies:
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png"
+width={1154}
+height={490}
+/>
+
+</TabItem>
+</TabGroup>
+
+### Partitions definitions
+
+Change tracking can detect if an asset's <PyObject object="PartitionsDefinition" /> has been changed, whether it's been added, removed, or updated.
+
+<TabGroup>
+<TabItem name="Asset definition">
+
+For example, if the main branch contains `weekly_orders`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
+@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2024-01-01"))
+def weekly_orders(): ...
+```
+
+And the pull request updates the <PyObject object="WeeklyPartitionsDefinition" /> to start one year earlier:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
+@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))
+def weekly_orders(): ...
+```
+
+</TabItem>
+<TabItem name="Asset in the Dagster UI">
+
+Click the **Asset definition** tab to view how this asset is defined.
+
+In this example, the `weekly_orders` asset has a **Changed in branch** label indicating a changed partitions definition:
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-partitions.png"
+width={1154}
+height={490}
+/>
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Branch deployments"
+    href="/dagster-plus/managing-deployments/branch-deployments"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing Dagster+ deployments"
+    href="/dagster-plus/managing-deployments"
+  ></ArticleListItem>
+  <ArticleListItem title="Dagster Cloud" href="/dagster-plus"></ArticleListItem>
+</ArticleList>
