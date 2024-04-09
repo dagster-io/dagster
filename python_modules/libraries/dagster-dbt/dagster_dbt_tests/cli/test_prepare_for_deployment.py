@@ -34,50 +34,55 @@ def tmp_script(
     yield tmp_script_path
 
 
-@pytest.mark.parametrize(
-    "packaged_project_dir_name",
-    [
-        "",
-        "dbt-project",
-    ],
-    ids=[
-        "no package data",
-        "with package data",
-    ],
-)
+@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_prepare_for_deployment(
-    dbt_project_dir: Path, tmp_path: Path, packaged_project_dir_name: Optional[str]
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path, use_dbt_project_package_data_dir: bool
 ) -> None:
-    def script_fn() -> None:
-        from dagster_dbt.dbt_project import DbtProject
+    monkeypatch.chdir(dbt_project_dir)
 
-        _ = DbtProject(
-            project_dir="{project_dir}",
-            packaged_project_dir="{packaged_project_dir}",
-        )
+    project_name = "jaffle_dagster"
+    dagster_project_dir = dbt_project_dir.joinpath(project_name)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+            *(
+                ["--use-dbt-project-package-data-dir"]
+                if use_dbt_project_package_data_dir
+                else ["--use-experimental-dbt-project"]
+            ),
+        ],
+    )
+
+    assert result.exit_code == 0
 
     manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
     packaged_project_dir = (
-        tmp_path.joinpath(packaged_project_dir_name) if packaged_project_dir_name else None
+        dagster_project_dir.joinpath("dbt-project") if use_dbt_project_package_data_dir else None
     )
 
-    with tmp_script(
-        script_fn,
-        tmp_path=tmp_path,
-        dbt_project_dir=dbt_project_dir,
-        packaged_project_dir=packaged_project_dir,
-    ) as tmp_script_path:
-        assert not manifest_path.exists()
-        assert not packaged_project_dir or not packaged_project_dir.exists()
+    assert not manifest_path.exists()
+    assert not packaged_project_dir or not packaged_project_dir.exists()
 
-        result = runner.invoke(
-            app,
-            ["project", "prepare-for-deployment", "--file", os.fspath(tmp_script_path)],
-        )
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "prepare-for-deployment",
+            "--file",
+            os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
+        ],
+    )
 
-        assert result.exit_code == 0
-        assert manifest_path.exists()
-        assert not packaged_project_dir or packaged_project_dir.exists()
+    assert result.exit_code == 0
+    assert manifest_path.exists()
+    assert not packaged_project_dir or packaged_project_dir.exists()
 
 
 def test_prepare_for_deployment_with_state(
