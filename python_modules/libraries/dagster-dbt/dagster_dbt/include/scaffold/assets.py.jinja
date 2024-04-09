@@ -13,4 +13,9 @@ from .constants import dbt_manifest_path
 @dbt_assets(manifest=dbt_manifest_path)
 {% endif -%}
 def {{ dbt_assets_name }}(context: AssetExecutionContext, dbt: DbtCliResource):
+    {% if use_experimental_dbt_state -%}
+    # When dbt state is available, pass it to the dbt invocation.
+    yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+    {% else -%}
     yield from dbt.cli(["build"], context=context).stream()
+    {% endif -%}
