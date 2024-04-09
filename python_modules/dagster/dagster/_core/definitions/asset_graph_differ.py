@@ -18,6 +18,7 @@ class ChangeReason(Enum):
     CODE_VERSION = "CODE_VERSION"
     DEPENDENCIES = "DEPENDENCIES"
     PARTITIONS_DEFINITION = "PARTITIONS_DEFINITION"
+    TAGS = "TAGS"
 
 
 def _get_external_repo_from_context(
@@ -119,33 +120,30 @@ class AssetGraphDiffer:
         if asset_key not in self.base_asset_graph.all_asset_keys:
             return [ChangeReason.NEW]
 
+        branch_asset = self.branch_asset_graph.get(asset_key)
+        base_asset = self.base_asset_graph.get(asset_key)
+
         changes = []
-        if (
-            self.branch_asset_graph.get(asset_key).code_version
-            != self.base_asset_graph.get(asset_key).code_version
-        ):
+        if branch_asset.code_version != base_asset.code_version:
             changes.append(ChangeReason.CODE_VERSION)
 
-        if (
-            self.branch_asset_graph.get(asset_key).parent_keys
-            != self.base_asset_graph.get(asset_key).parent_keys
-        ):
+        if branch_asset.parent_keys != base_asset.parent_keys:
             changes.append(ChangeReason.DEPENDENCIES)
         else:
             # if the set of upstream dependencies is different, then we don't need to check if the partition mappings
             # for dependencies have changed since ChangeReason.DEPENDENCIES is already in the list of changes
-            for upstream_asset in self.branch_asset_graph.get(asset_key).parent_keys:
+            for upstream_asset in branch_asset.parent_keys:
                 if self.branch_asset_graph.get_partition_mapping(
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
                     changes.append(ChangeReason.DEPENDENCIES)
                     break
 
-        if (
-            self.branch_asset_graph.get(asset_key).partitions_def
-            != self.base_asset_graph.get(asset_key).partitions_def
-        ):
+        if branch_asset.partitions_def != base_asset.partitions_def:
             changes.append(ChangeReason.PARTITIONS_DEFINITION)
+
+        if branch_asset.tags != base_asset.tags:
+            changes.append(ChangeReason.TAGS)
 
         return changes
 
