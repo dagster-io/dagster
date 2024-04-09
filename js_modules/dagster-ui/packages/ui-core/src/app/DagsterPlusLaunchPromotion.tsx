@@ -30,7 +30,10 @@ export const DagsterPlusLaunchPromotion = () => {
       </ImageWrapper>
       <Box flex={{direction: 'column', alignItems: 'center'}} padding={24}>
         <Header>Introducing Dagster+</Header>
-        <Body1>Join us for the unveiling of the next generation of Dagster Cloud.</Body1>
+        <Body1>
+          Join us on <span style={{fontWeight: 600}}>April 17 at 12 ET</span> for the unveiling of
+          the next generation of Dagster Cloud.
+        </Body1>
         <Box
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 8}}
           padding={{top: 12}}
