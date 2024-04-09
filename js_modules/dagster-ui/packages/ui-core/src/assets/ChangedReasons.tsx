@@ -65,7 +65,7 @@ export const ChangedReasonsPopover = ({
       case ChangeReason.TAGS:
         return 'has changed tags';
       case ChangeReason.METADATA:
-        return 'has changed metadata'
+        return 'has changed metadata';
     }
   }
   return (
