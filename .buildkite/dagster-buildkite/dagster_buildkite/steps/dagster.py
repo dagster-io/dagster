@@ -113,7 +113,7 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 CommandStepBuilder(":pyright: make pyright")
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y",
-                    "pip install -U uv",
+                    "pip install -U uv==1.29",
                     "make install_pyright",
                     "make pyright",
                 )
@@ -123,7 +123,7 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 CommandStepBuilder(":pyright: make rebuild_pyright_pins")
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y",
-                    "pip install -U uv",
+                    "pip install -U uv==1.29",
                     "make install_pyright",
                     "make rebuild_pyright_pins",
                 )
