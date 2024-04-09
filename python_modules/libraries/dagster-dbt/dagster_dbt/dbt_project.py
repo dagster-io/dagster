@@ -63,7 +63,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
         from .core.resources_v2 import DbtCliResource
 
         (
-            DbtCliResource(project_dir=os.fspath(project.project_dir))
+            DbtCliResource(project_dir=project)
             .cli(
                 self._generate_cli_args,
                 target_path=project.target_dir,
@@ -77,6 +77,7 @@ class DbtProject(DagsterModel):
     project_dir: Path
     target_dir: Path
     manifest_path: Path
+    target: Optional[str]
     state_dir: Optional[Path]
     packaged_project_dir: Optional[Path]
     manifest_preparer: DbtManifestPreparer
@@ -86,6 +87,7 @@ class DbtProject(DagsterModel):
         project_dir: Union[Path, str],
         *,
         target_dir: Union[Path, str] = "target",
+        target: Optional[str] = None,
         state_dir: Optional[Union[Path, str]] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
@@ -98,6 +100,8 @@ class DbtProject(DagsterModel):
             target_dir (Union[str, Path]):
                 The folder in the project directory to output artifacts.
                 Default: "target"
+            target (Optional[str]):
+                The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
             state_dir (Optional[Union[str, Path]]):
                 The folder in the project directory to reference artifacts from another run.
             manifest_preparer (Optional[DbtManifestPreparer]):
@@ -125,6 +129,7 @@ class DbtProject(DagsterModel):
             project_dir=project_dir,
             target_dir=target_dir,
             manifest_path=manifest_path,
+            target=target,
             state_dir=project_dir.joinpath(state_dir) if state_dir else None,
             packaged_project_dir=packaged_project_dir,
             manifest_preparer=manifest_preparer,
