@@ -4,10 +4,16 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 import yaml
 
 import dagster._check as check
-from dagster._core.errors import DagsterImportClassFromCodePointerError
-from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
+from dagster._serdes import (
+    ConfigurableClassData,
+    whitelist_for_serdes,
+)
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
+from .config import (
+    DAGSTER_CONFIG_YAML_FILENAME,
+    dagster_instance_class_from_code_pointer,
+    dagster_instance_config,
+)
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance, DagsterInstanceOverrides
@@ -344,7 +350,6 @@ class InstanceRef(
             custom_instance_class_config = {
                 key: val for key, val in config_value.items() if key in config_keys
             }
-            # here custom instance class data is reconstructed
             custom_instance_class_data = ConfigurableClassData(
                 config_value["instance_class"]["module"],
                 config_value["instance_class"]["class"],
@@ -575,26 +580,14 @@ class InstanceRef(
 
     @property
     def custom_instance_class(self) -> Type["DagsterInstance"]:
-        instance_class = None
-        if self.custom_instance_class_data:
-            try:
-                instance_class = class_from_code_pointer(
-                    self.custom_instance_class_data.module_name,
-                    self.custom_instance_class_data.class_name,
-                )
-            except DagsterImportClassFromCodePointerError as e:
-                module_elems = self.custom_instance_class_data.module_name.split(".")
-                if "dagster_cloud" == module_elems[0]:
-                    try:
-                        instance_class = class_from_code_pointer(
-                            ".".join(["dagster_plus", *module_elems[1:]]),
-                            self.custom_instance_class_data.class_name,
-                        )
-                    except Exception:
-                        raise e
-                else:
-                    raise e
-        return instance_class  # type: ignore
+        return (
+            dagster_instance_class_from_code_pointer(
+                self.custom_instance_class_data.module_name,
+                self.custom_instance_class_data.class_name,
+            )
+            if self.custom_instance_class_data
+            else None
+        )  # type: ignore
 
     @property
     def custom_instance_class_config(self) -> Mapping[str, Any]:

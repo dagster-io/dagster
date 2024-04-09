@@ -13,11 +13,11 @@ from dagster import (
     In,
     Out,
     Output,
-    _check as check,
     job,
     op,
 )
 from dagster._core.definitions.events import RetryRequested
+from dagster._core.errors import DagsterImportClassFromCodePointerError
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
@@ -103,7 +103,7 @@ def test_init_compute_log_with_bad_config_module():
                 fd,
                 default_flow_style=False,
             )
-        with pytest.raises(check.CheckError, match="Couldn't import module"):
+        with pytest.raises(DagsterImportClassFromCodePointerError, match="Couldn't import module"):
             DagsterInstance.from_ref(  # noqa: B018
                 InstanceRef.from_dir(tmpdir_path)
             ).compute_log_manager

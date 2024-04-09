@@ -36,6 +36,31 @@ def is_dagster_home_set() -> bool:
     return bool(os.getenv("DAGSTER_HOME"))
 
 
+def dagster_instance_class_from_code_pointer(
+    module_name: str, class_name: str
+) -> Type["DagsterInstance"]:
+    try:
+        return cast(
+            Type["DagsterInstance"],
+            class_from_code_pointer(module_name, class_name),
+        )
+    except DagsterImportClassFromCodePointerError as e:
+        module_elems = module_name.split(".")
+        if "dagster_cloud" == module_elems[0]:
+            try:
+                return cast(
+                    Type["DagsterInstance"],
+                    dagster_instance_class_from_code_pointer(
+                        ".".join(["dagster_plus", *module_elems[1:]]),
+                        class_name,
+                    ),
+                )
+            except Exception:
+                raise e
+        else:
+            raise e
+
+
 def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
@@ -70,28 +95,9 @@ def dagster_instance_config(
                 custom_instance_class_data,
             )
 
-        try:
-            custom_instance_class = cast(
-                Type["DagsterInstance"],
-                class_from_code_pointer(
-                    custom_instance_class_data["module"], custom_instance_class_data["class"]
-                ),
-            )
-        except DagsterImportClassFromCodePointerError as e:
-            module_elems = custom_instance_class_data["module"].split(".")
-            if "dagster_cloud" == module_elems[0]:
-                try:
-                    custom_instance_class = cast(
-                        Type["DagsterInstance"],
-                        class_from_code_pointer(
-                            ".".join(["dagster_plus", *module_elems[1:]]),
-                            custom_instance_class_data["class"],
-                        ),
-                    )
-                except Exception:
-                    raise e
-            else:
-                raise e
+        custom_instance_class = dagster_instance_class_from_code_pointer(
+            custom_instance_class_data["module"], custom_instance_class_data["class"]
+        )
 
         schema: Mapping[str, Field]
         if hasattr(custom_instance_class, "config_schema"):
