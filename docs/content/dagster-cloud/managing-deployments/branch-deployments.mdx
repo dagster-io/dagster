@@ -91,8 +91,6 @@ The Branch Deployment will mark `customers` as changed. <Image src="/images/dags
 
 Some dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, including strategies for how to compute code versions automatically, see the code versions documentation LINK.
 
-<!-- TODO - question about code versions - are they set to the latest run id if not user specified? docs claim yes but i only see code versions in the ui for dbt assets -->
-
 #### Dependency changes
 
 Change Tracking will indicate if the set of upstream dependencies for an asset has changed. Change Tracking can detect added or removed upstream dependencies. For example, if the main branch contains `returns`:
@@ -111,7 +109,7 @@ def returns(): ...
 
 The Branch Deployment will mark `returns` as having changed dependencies. <Image src="/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png" width={1154} height={490} />
 
-Note that if an asset is marked as having changed dependencies, it means that either an upstream asset has been added or removed as a dependency. It does not mean that the upstream dependency has changed or that the upstream dependency has new data. TODO wording
+Note that if an asset is marked as having changed dependencies, it means that either an upstream asset has been added or removed as a dependency. It does **not** mean that the upstream dependency has changed or that the upstream dependency has new data.
 
 #### Partitions definition changes
 
@@ -122,7 +120,7 @@ Change Tracking will indicate if the `PartitionsDefinition` of an asset has chan
 def weekly_orders(): ...
 ```
 
-And the pull request updates the `WeeklyPartitionsDefinition` to include an additional year:
+And the pull request updates the `WeeklyPartitionsDefinition` to start one year earlier:
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))
