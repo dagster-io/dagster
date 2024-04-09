@@ -107,6 +107,13 @@ def test_dbt_cli_failure() -> None:
     ):
         dbt.cli(["parse"]).wait()
 
+    project = DbtProject(project_dir=os.fspath(test_exceptions_path), target="error_dev")
+    dbt = DbtCliResource(project_dir=project)
+    with pytest.raises(
+        DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
+    ):
+        dbt.cli(["parse"]).wait()
+
 
 def test_dbt_cli_subprocess_cleanup(
     mocker: MockerFixture,

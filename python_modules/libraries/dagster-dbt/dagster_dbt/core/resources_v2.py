@@ -965,6 +965,8 @@ class DbtCliResource(ConfigurableResource):
         if isinstance(project_dir, DbtProject):
             if not state_dir and project_dir.state_dir:
                 state_dir = os.fspath(project_dir.state_dir)
+            if not target and project_dir.target:
+                target = project_dir.target
 
             project_dir = os.fspath(project_dir.project_dir)
 
