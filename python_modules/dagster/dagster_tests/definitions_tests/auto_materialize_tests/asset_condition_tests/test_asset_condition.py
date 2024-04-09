@@ -1,4 +1,7 @@
+from dagster import AutoMaterializePolicy, Definitions, asset
 from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
+from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._serdes import serialize_value
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
@@ -54,3 +57,18 @@ def test_missing_time_partitioned() -> None:
     # if we evaluate from scratch, they're still False
     _, result = state.without_previous_evaluation_state().evaluate("A")
     assert result.true_subset.size == 4
+
+
+def test_serialize_definitions_with_asset_condition():
+    amp = AutoMaterializePolicy.from_asset_condition(
+        AssetCondition.parent_newer() & ~AssetCondition.updated_since_cron("0 * * * *")
+    )
+
+    @asset(auto_materialize_policy=amp)
+    def my_asset():
+        return 0
+
+    result = serialize_value(
+        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+    )
+    assert isinstance(result, str)
