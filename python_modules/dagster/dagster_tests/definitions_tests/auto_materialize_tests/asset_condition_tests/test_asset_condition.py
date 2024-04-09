@@ -60,11 +60,8 @@ def test_missing_time_partitioned() -> None:
 
 
 def test_serialize_definitions_with_asset_condition():
-    amp = AutoMaterializePolicy(
-        rules=set(),
-        asset_condition=AssetCondition.parent_newer()
-        & ~AssetCondition.updated_since_cron("0 * * * *"),
-        max_materializations_per_minute=None,
+    amp = AutoMaterializePolicy.from_asset_condition(
+        AssetCondition.parent_newer() & ~AssetCondition.updated_since_cron("0 * * * *")
     )
 
     @asset(auto_materialize_policy=amp)
