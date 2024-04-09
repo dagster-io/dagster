@@ -842,8 +842,8 @@ class DbtCliResource(ConfigurableResource):
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
         dbt_executable (str): The path to the dbt executable. By default, this is `dbt`.
-        state_dir (Optional[str]): The path to a directory of dbt artifacts to be used
-            with the --state or --defer-state cli arguments.
+        state_path (Optional[str]): The path, relative to the project directory, to a directory of
+            dbt artifacts to be used with `--state` / `--defer-state`.
 
     Examples:
         Creating a dbt resource with only a reference to ``project_dir``:
@@ -944,11 +944,12 @@ class DbtCliResource(ConfigurableResource):
         default=DBT_EXECUTABLE,
         description="The path to the dbt executable.",
     )
-    state_dir: Optional[str] = Field(
+    state_path: Optional[str] = Field(
         description=(
-            "The path to a directory of dbt artifacts to be used with --state / --defer-state. "
-            "This can be used with methods such as get_defer_args to allow for a @dbt_assets to "
-            "use defer in the appropriate environments."
+            "The path, relative to the project directory, to a directory of dbt artifacts to be"
+            " used with --state / --defer-state."
+            " This can be used with methods such as get_defer_args to allow for a @dbt_assets to"
+            " use defer in the appropriate environments."
         )
     )
 
@@ -960,11 +961,12 @@ class DbtCliResource(ConfigurableResource):
         profile: Optional[str] = None,
         target: Optional[str] = None,
         dbt_executable: str = DBT_EXECUTABLE,
-        state_dir: Optional[str] = None,
+        state_path: Optional[str] = None,
     ):
         if isinstance(project_dir, DbtProject):
-            if not state_dir and project_dir.state_dir:
-                state_dir = os.fspath(project_dir.state_dir)
+            if not state_path and project_dir.state_path:
+                state_path = os.fspath(project_dir.state_path)
+
             if not target and project_dir.target:
                 target = project_dir.target
 
@@ -978,7 +980,7 @@ class DbtCliResource(ConfigurableResource):
             profile=profile,  # type: ignore
             target=target,  # type: ignore
             dbt_executable=dbt_executable,  # type: ignore
-            state_dir=state_dir,  # type: ignore
+            state_path=state_path,  # type: ignore
         )
 
     @classmethod
@@ -1067,12 +1069,12 @@ class DbtCliResource(ConfigurableResource):
 
         return values
 
-    @validator("state_dir")
-    def validate_state_dir(cls, state_dir: Optional[str]) -> Optional[str]:
-        if state_dir is None:
+    @validator("state_path")
+    def validate_state_path(cls, state_path: Optional[str]) -> Optional[str]:
+        if state_path is None:
             return None
 
-        return os.fspath(Path(state_dir).absolute().resolve())
+        return os.fspath(Path(state_path).absolute().resolve())
 
     def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
         """Get a unique target path for the dbt CLI invocation.
@@ -1117,14 +1119,14 @@ class DbtCliResource(ConfigurableResource):
         Returns:
             Sequence[str]: The defer arguements for the dbt CLI command.
         """
-        if not (self.state_dir and Path(self.state_dir).joinpath("manifest.json").exists()):
+        if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
             return []
 
         state_flag = "--defer-state"
         if version.parse(dbt_version) < version.parse("1.6.0"):
             state_flag = "--state"
 
-        return ["--defer", state_flag, self.state_dir]
+        return ["--defer", state_flag, self.state_path]
 
     @public
     def cli(

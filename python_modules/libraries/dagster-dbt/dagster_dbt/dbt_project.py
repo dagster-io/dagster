@@ -66,7 +66,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
             DbtCliResource(project_dir=project)
             .cli(
                 self._generate_cli_args,
-                target_path=project.target_dir,
+                target_path=project.target_path,
             )
             .wait()
         )
@@ -75,10 +75,10 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 @experimental
 class DbtProject(DagsterModel):
     project_dir: Path
-    target_dir: Path
-    manifest_path: Path
+    target_path: Path
     target: Optional[str]
-    state_dir: Optional[Path]
+    manifest_path: Path
+    state_path: Optional[Path]
     packaged_project_dir: Optional[Path]
     manifest_preparer: DbtManifestPreparer
 
@@ -86,9 +86,9 @@ class DbtProject(DagsterModel):
         self,
         project_dir: Union[Path, str],
         *,
-        target_dir: Union[Path, str] = "target",
+        target_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
-        state_dir: Optional[Union[Path, str]] = None,
+        state_path: Optional[Union[Path, str]] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
@@ -97,13 +97,13 @@ class DbtProject(DagsterModel):
         Args:
             project_path (Union[str, Path]):
                 The directory of the dbt project.
-            target_dir (Union[str, Path]):
-                The folder in the project directory to output artifacts.
+            target_path (Union[str, Path]):
+                The path, relative to the project directory, to output artifacts.
                 Default: "target"
             target (Optional[str]):
                 The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
-            state_dir (Optional[Union[str, Path]]):
-                The folder in the project directory to reference artifacts from another run.
+            state_path (Optional[Union[str, Path]]):
+                The path, relative to the project directory, to reference artifacts from another run.
             manifest_preparer (Optional[DbtManifestPreparer]):
                 A object for ensuring that manifest.json is in the right state at
                 the right times.
@@ -123,14 +123,14 @@ class DbtProject(DagsterModel):
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
             project_dir = packaged_project_dir
 
-        manifest_path = project_dir.joinpath(target_dir, "manifest.json")
+        manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
         super().__init__(
             project_dir=project_dir,
-            target_dir=target_dir,
-            manifest_path=manifest_path,
+            target_path=target_path,
             target=target,
-            state_dir=project_dir.joinpath(state_dir) if state_dir else None,
+            manifest_path=manifest_path,
+            state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
             manifest_preparer=manifest_preparer,
         )
