@@ -16,8 +16,7 @@ class DagsterDltTranslator:
         """Defines asset key for a given dlt resource key and dataset name.
 
         Args:
-            resource_key (str): key of dlt resource
-            dataset_name (str): name of dlt dataset
+            resource (DltResource): dlt resource / transformer
 
         Returns:
             AssetKey of Dagster asset derived from dlt resource
