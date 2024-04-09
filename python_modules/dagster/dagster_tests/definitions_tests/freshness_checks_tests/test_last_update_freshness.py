@@ -16,6 +16,11 @@ from dagster._core.definitions.freshness_checks.last_update import (
     build_last_update_freshness_checks,
 )
 from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
+from dagster._core.definitions.metadata import (
+    FloatMetadataValue,
+    JsonMetadataValue,
+    TimestampMetadataValue,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
@@ -44,6 +49,7 @@ def test_params() -> None:
     assert next(iter(check_specs)).metadata == {
         "dagster/freshness_params": {
             "dagster/lower_bound_delta": 600,
+            "dagster/freshness_timezone": "UTC",
         }
     }
 
@@ -146,7 +152,7 @@ def test_different_event_types(
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
-def test_check_result_cron_non_partitioned(
+def test_check_result_cron(
     pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
 ) -> None:
@@ -178,6 +184,19 @@ def test_check_result_cron_non_partitioned(
             AssetCheckSeverity.WARN,
             False,
             description_match="Asset is overdue. Expected an update within the last 1 hours, 10 minutes.",
+            metadata_match={
+                "dagster/freshness_params": JsonMetadataValue(
+                    {
+                        "dagster/deadline_cron": deadline_cron,
+                        "dagster/freshness_timezone": timezone,
+                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                    }
+                ),
+                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
+                ),
+                "dagster/overdue_seconds": FloatMetadataValue(3600.0),
+            },
         )
 
     # Add an event outside of the allowed time window. Check fails.
@@ -198,8 +217,22 @@ def test_check_result_cron_non_partitioned(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            # This looks weird at first, but notice that we're one hours, after the last cron tick already.
             description_match="Asset is fresh. Expected an update within the last 1 hours, 10 minutes, and found an update 1 hours, 9 minutes ago.",
+            metadata_match={
+                "dagster/freshness_params": JsonMetadataValue(
+                    {
+                        "dagster/deadline_cron": deadline_cron,
+                        "dagster/freshness_timezone": timezone,
+                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                    }
+                ),
+                "dagster/last_updated_timestamp": TimestampMetadataValue(
+                    value=lower_bound.add(minutes=1).timestamp()
+                ),
+                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
+                ),
+            },
         )
 
     # Advance a full day. By now, we would expect a new event to have been added.
@@ -248,6 +281,19 @@ def test_check_result_bound_only(
             AssetCheckSeverity.WARN,
             False,
             description_match="Asset is overdue. Expected an update within the last 10 minutes.",
+            metadata_match={
+                "dagster/freshness_params": JsonMetadataValue(
+                    {
+                        "dagster/lower_bound_delta": 600,
+                        "dagster/freshness_timezone": "UTC",
+                    }
+                ),
+                # Indicates that no records exist.
+                "dagster/overdue_seconds": FloatMetadataValue(0.0),
+                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC").timestamp()
+                ),
+            },
         )
 
     # Add an event outside of the allowed time window. Check fails.
@@ -269,6 +315,21 @@ def test_check_result_bound_only(
             AssetCheckSeverity.WARN,
             True,
             description_match="Asset is fresh. Expected an update within the last 10 minutes, and found an update 9 minutes ago.",
+            metadata_match={
+                "dagster/freshness_params": JsonMetadataValue(
+                    {
+                        "dagster/lower_bound_delta": 600,
+                        "dagster/freshness_timezone": "UTC",
+                    }
+                ),
+                # Since no freshness cron, deadline is the current time.
+                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
+                    value=freeze_datetime.timestamp()
+                ),
+                "dagster/last_updated_timestamp": TimestampMetadataValue(
+                    value=lower_bound.add(minutes=1).timestamp()
+                ),
+            },
         )
 
 
