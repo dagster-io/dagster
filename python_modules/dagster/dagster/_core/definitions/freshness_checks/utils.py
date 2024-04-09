@@ -11,7 +11,6 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._utils.schedules import get_latest_completed_cron_tick
 
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
@@ -23,6 +22,8 @@ DEADLINE_CRON_METADATA_KEY = "dagster/deadline_cron"
 FRESHNESS_TIMEZONE_METADATA_KEY = "dagster/freshness_timezone"
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
+OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY = "dagster/overdue_deadline_timestamp"
+OVERDUE_SECONDS_METADATA_KEY = "dagster/overdue_seconds"
 
 
 def ensure_no_duplicate_assets(
@@ -161,51 +162,18 @@ def ensure_freshness_checks(checks: Sequence[AssetChecksDefinition]) -> None:
             )
 
 
-def get_last_update_time_lower_bound(
-    deadline_cron: Optional[str],
-    current_timestamp: float,
-    lower_bound_delta: datetime.timedelta,
-    timezone: str,
-) -> datetime.datetime:
-    """Get the lower bound of the last_update_time for the given cron schedule."""
-    current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
-    if deadline_cron:
-        return (
-            check.not_none(
-                get_latest_completed_cron_tick(
-                    cron_string=deadline_cron,
-                    current_time=current_time_in_freshness_tz,
-                    timezone=timezone,
-                )
-            )
-            - lower_bound_delta
-        )
-    else:
-        return current_time_in_freshness_tz - lower_bound_delta
-
-
-def get_latest_complete_partition_key(
-    deadline_cron: Optional[str],
-    current_timestamp: float,
-    timezone: str,
+def get_expected_partition_key(
+    deadline: datetime.datetime,
     partitions_def: Optional[TimeWindowPartitionsDefinition],
 ) -> Optional[str]:
     """Get the latest complete partition key for the given cron schedule."""
     if not partitions_def:
         return None
-    current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
-    latest_cron_tick_time = check.not_none(
-        get_latest_completed_cron_tick(
-            cron_string=deadline_cron,
-            current_time=current_time_in_freshness_tz,
-            timezone=timezone,
-        )
-    )
-    latest_cron_tick_time_in_partitions_def_tz = pendulum.from_timestamp(
-        latest_cron_tick_time.timestamp(), tz=partitions_def.timezone
+    deadline_in_partitions_def_tz = pendulum.from_timestamp(
+        deadline.timestamp(), tz=partitions_def.timezone
     )
     time_window = check.not_none(
-        partitions_def.get_prev_partition_window(latest_cron_tick_time_in_partitions_def_tz)
+        partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)
     )
     return partitions_def.get_partition_key_range_for_time_window(time_window).start
 
