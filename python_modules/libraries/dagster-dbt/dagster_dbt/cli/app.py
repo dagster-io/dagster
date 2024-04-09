@@ -107,6 +107,7 @@ def copy_scaffold(
     dagster_project_dir: Path,
     dbt_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_state: bool,
     use_experimental_dbt_project: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
@@ -159,6 +160,7 @@ def copy_scaffold(
                 dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
                 use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+                use_experimental_dbt_state=use_experimental_dbt_state,
                 use_experimental_dbt_project=use_experimental_dbt_project,
             ).dump(destination_path)
 
@@ -244,6 +246,15 @@ def project_scaffold_command(
             hidden=True,
         ),
     ] = False,
+    use_experimental_dbt_state: Annotated[
+        bool,
+        typer.Option(
+            default=...,
+            help="Controls whether `DbtProject` is used with dbt state.",
+            is_flag=True,
+            hidden=True,
+        ),
+    ] = False,
     use_experimental_dbt_project: Annotated[
         bool,
         typer.Option(
@@ -275,8 +286,11 @@ def project_scaffold_command(
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+        use_experimental_dbt_state=use_experimental_dbt_state,
         use_experimental_dbt_project=(
-            use_experimental_dbt_project or use_dbt_project_package_data_dir
+            use_experimental_dbt_project
+            or use_dbt_project_package_data_dir
+            or use_experimental_dbt_state
         ),
     )
 
