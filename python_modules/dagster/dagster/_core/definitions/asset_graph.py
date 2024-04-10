@@ -128,12 +128,10 @@ class AssetNode(BaseAssetNode):
 
     @property
     def execution_set_asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
-        if self.assets_def.can_subset or (
-            len(self.assets_def.keys) <= 1 and not len(self.assets_def.check_keys) > 0
-        ):
+        if self.assets_def.can_subset:
             return {self.key}
         else:
-            return {*self.assets_def.keys, *self.assets_def.check_keys}
+            return self.assets_def.asset_and_check_keys
 
     ##### ASSET GRAPH SPECIFIC INTERFACE
 

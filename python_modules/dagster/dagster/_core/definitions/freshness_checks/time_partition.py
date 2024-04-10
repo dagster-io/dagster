@@ -8,10 +8,10 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from ..asset_checks import AssetChecksDefinition
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import CoercibleToAssetKey
+from .shared_builder import build_freshness_checks_for_assets
 from .utils import (
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
-    build_freshness_checks_for_assets,
 )
 
 
@@ -46,6 +46,16 @@ def build_time_partition_freshness_checks(
     timestamp at which that record was created.
 
     The check will fail at runtime if a non-time-window partitioned asset is passed in.
+
+    The check result will contain the following metadata:
+    "dagster/freshness_params": A dictionary containing the parameters used to construct the
+    check.
+    "dagster/last_updated_time": (Only present if the asset has been observed/materialized before)
+    The time of the most recent update to the asset.
+    "dagster/overdue_seconds": (Only present if asset is overdue) The number of seconds that the
+    asset is overdue by.
+    "dagster/overdue_deadline_timestamp": The timestamp that we are expecting the asset to have
+    arrived by. This is the timestamp of the most recent tick of the cron schedule.
 
     Examples:
         .. code-block:: python

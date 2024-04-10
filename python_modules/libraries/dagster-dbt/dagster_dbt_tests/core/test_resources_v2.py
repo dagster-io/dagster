@@ -107,6 +107,13 @@ def test_dbt_cli_failure() -> None:
     ):
         dbt.cli(["parse"]).wait()
 
+    project = DbtProject(project_dir=os.fspath(test_exceptions_path), target="error_dev")
+    dbt = DbtCliResource(project_dir=project)
+    with pytest.raises(
+        DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
+    ):
+        dbt.cli(["parse"]).wait()
+
 
 def test_dbt_cli_subprocess_cleanup(
     mocker: MockerFixture,
@@ -427,13 +434,10 @@ def test_dbt_cli_default_selection(
 def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -> None:
     monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "prod")
 
-    state_dir = Path("state", testrun_uid)
-    test_jaffle_shop_path.joinpath(state_dir).mkdir(parents=True, exist_ok=True)
-
-    project = DbtProject(project_dir=test_jaffle_shop_path, state_dir=state_dir)
+    project = DbtProject(project_dir=test_jaffle_shop_path, state_path=Path("state", testrun_uid))
     dbt = DbtCliResource(project_dir=project)
 
-    dbt.cli(["--quiet", "parse"], target_path=project.target_dir).wait()
+    dbt.cli(["--quiet", "parse"], target_path=project.target_path).wait()
 
     @dbt_assets(manifest=project.manifest_path)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -450,8 +454,9 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
     assert not result.success
 
     # Defer works after copying the manifest into the state directory.
-    assert project.state_dir
-    shutil.copy(project.manifest_path, project.state_dir.joinpath("manifest.json"))
+    assert project.state_path
+    project.state_path.mkdir(parents=True, exist_ok=True)
+    shutil.copy(project.manifest_path, project.state_path.joinpath("manifest.json"))
 
     result = materialize([my_dbt_assets], resources={"dbt": dbt}, selection="orders")
     assert result.success
