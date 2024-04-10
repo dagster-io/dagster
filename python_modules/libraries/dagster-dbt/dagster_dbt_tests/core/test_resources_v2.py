@@ -18,6 +18,7 @@ from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
     DbtCliResource,
 )
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from dbt.version import __version__ as dbt_version
 from packaging import version
@@ -101,6 +102,13 @@ def test_dbt_cli_failure() -> None:
 
     dbt = DbtCliResource(project_dir=os.fspath(test_exceptions_path), target="error_dev")
 
+    with pytest.raises(
+        DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
+    ):
+        dbt.cli(["parse"]).wait()
+
+    project = DbtProject(project_dir=os.fspath(test_exceptions_path), target="error_dev")
+    dbt = DbtCliResource(project_dir=project)
     with pytest.raises(
         DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
     ):
@@ -420,6 +428,37 @@ def test_dbt_cli_default_selection(
         yield from dbt_cli_invocation.stream()
 
     result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+
+def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -> None:
+    monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "prod")
+
+    project = DbtProject(project_dir=test_jaffle_shop_path, state_path=Path("state", testrun_uid))
+    dbt = DbtCliResource(project_dir=project)
+
+    dbt.cli(["--quiet", "parse"], target_path=project.target_path).wait()
+
+    @dbt_assets(manifest=project.manifest_path)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    # Defer will not work since the manifest is not in the state directory.
+    monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "staging")
+    result = materialize(
+        [my_dbt_assets], resources={"dbt": dbt}, selection="orders", raise_on_error=False
+    )
+    assert not result.success
+
+    # Defer works after copying the manifest into the state directory.
+    assert project.state_path
+    project.state_path.mkdir(parents=True, exist_ok=True)
+    shutil.copy(project.manifest_path, project.state_path.joinpath("manifest.json"))
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt}, selection="orders")
     assert result.success
 
 

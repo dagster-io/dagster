@@ -180,20 +180,20 @@ To keep your external assets updated, you can use any of the following approache
 
 ### Using the REST API
 
-Whether you're using Dagster OSS or Dagster Cloud, you can use a REST endpoint for reporting asset materializations. The API also has endpoints for reporting [asset observations](/concepts/assets/asset-observations) and [asset check evaluations](/concepts/assets/asset-checks).
+Whether you're using Dagster OSS or Dagster+, you can use a REST endpoint for reporting asset materializations. The API also has endpoints for reporting [asset observations](/concepts/assets/asset-observations) and [asset check evaluations](/concepts/assets/asset-checks).
 
 Refer to the following tabs for examples using `curl` and Python to communicate with the API.
 
 #### Using curl
 
 <TabGroup>
-<TabItem name="Dagster Cloud">
+<TabItem name="Dagster+">
 
-##### Dagster Cloud
+##### Dagster+
 
 ```bash
 curl --request POST \
-    --url https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key} \
+    --url https://{organization}.dagster.plus/{deployment}/report_asset_materialization/{asset_key} \
     --header 'Content-Type: application/json' \
     --header 'Dagster-Cloud-Api-Token: {token}' \
     --data '{
@@ -229,14 +229,14 @@ curl --request POST \
 #### Using Python
 
 <TabGroup>
-<TabItem name="Dagster Cloud">
+<TabItem name="Dagster+">
 
-##### Dagster Cloud
+##### Dagster+
 
 ```python
 import requests
 
-url = f"https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key}"
+url = f"https://{organization}.dagster.plus/{deployment}/report_asset_materialization/{asset_key}"
 payload = { "metadata": { "source": "From python script" } }
 headers = { "Content-Type": "application/json", "Dagster-Cloud-Api-Token": "{token}" }
 

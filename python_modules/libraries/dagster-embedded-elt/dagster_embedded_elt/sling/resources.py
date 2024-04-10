@@ -228,6 +228,10 @@ class SlingResource(ConfigurableResource):
     connections: List[SlingConnectionResource] = []
     _stdout: List[str] = []
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def _clean_connection_dict(self, d: Dict[str, Any]) -> Dict[str, Any]:
         d = _process_env_vars(d)
         if d["connection_string"]:

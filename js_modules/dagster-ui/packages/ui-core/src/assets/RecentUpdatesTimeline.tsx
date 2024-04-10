@@ -80,9 +80,12 @@ export const RecentUpdatesTimeline = ({
     );
   }, [materializations, observations]);
 
-  const startTimestamp = parseInt(sortedMaterializations[0]?.timestamp ?? '0');
   const endTimestamp = parseInt(
     sortedMaterializations[sortedMaterializations.length - 1]?.timestamp ?? '0',
+  );
+  const startTimestamp = Math.min(
+    parseInt(sortedMaterializations[0]?.timestamp ?? '0'),
+    endTimestamp - 100,
   );
   const timeRange = endTimestamp - startTimestamp;
   const bucketTimeRange = timeRange / buckets;

@@ -10,3 +10,4 @@ env/
 **/*.duckdb
 **/*.duckdb.wal
 tmp/
+state/

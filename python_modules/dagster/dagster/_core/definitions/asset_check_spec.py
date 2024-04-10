@@ -61,7 +61,7 @@ class AssetCheckSpec(
             ("name", PublicAttr[str]),
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("additional_deps", PublicAttr[Optional[Iterable["AssetDep"]]]),
+            ("additional_deps", PublicAttr[Iterable["AssetDep"]]),
             (
                 "blocking",  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
                 bool,

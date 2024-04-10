@@ -20,7 +20,7 @@ This reference page provides information for working with [`dagster-bigquery`](/
 
 ## Providing credentials as configuration
 
-In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster Cloud Serverless](/dagster-cloud/deployment/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
+In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster+ Serverless](/dagster-plus/deployment/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
 
 You can provide credentials directly to the BigQuery I/O manager by using the `gcp_credentials` configuration value. The BigQuery I/O manager will create a temporary file to store the credential and will set `GOOGLE_APPLICATION_CREDENTIALS` to point to this file. When the Dagster run is completed, the temporary file is deleted and `GOOGLE_APPLICATION_CREDENTIALS` is unset.
 

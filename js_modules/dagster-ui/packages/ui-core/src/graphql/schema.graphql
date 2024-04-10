@@ -719,6 +719,8 @@ enum ChangeReason {
   CODE_VERSION
   DEPENDENCIES
   PARTITIONS_DEFINITION
+  TAGS
+  METADATA
 }
 
 type AssetDependency {
@@ -901,6 +903,8 @@ type AssetCheck {
   jobNames: [String!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
+  blocking: Boolean!
+  additionalAssetKeys: [AssetKey!]!
 }
 
 type AssetCheckExecution {
