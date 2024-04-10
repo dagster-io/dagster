@@ -1,5 +1,4 @@
 // How many assets to fetch at once
-// Assuming window.location.search contains the URL parameters
 const urlParams = new URLSearchParams(window.location.search);
 const liveDataBatchSize = parseInt(urlParams.get('live-data-batch-size') ?? '10', 10);
 
