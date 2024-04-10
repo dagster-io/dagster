@@ -11,38 +11,41 @@ platform_type: "cloud"
   This feature is considered <strong>experimental</strong>.
 </Note>
 
-Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics such as Dagster+ run duration, credit usage, and failures. You can also [integrate other metrics](#integrating-other-metrics) into the Insights UI and [export metrics from Dagster+](#exporting-metrics).
+You can also:
+
+- [Integrate other metrics](#integrating-other-metrics)
+- [Export metrics from Dagster+](#exporting-metrics)
+- [Create alerts for different metrics](/dagster-plus/managing-deployments/alerts)
 
 ---
 
-## About Insights
+## How it works
 
-Launched in October 2023, Insights is currently an **experimental feature.** This means we’re still collecting feedback on how Insights works and could make changes based on that feedback.
+Insights makes it easier to capture operational data not only from Dagster pipelines, but also downstream systems. Visualizations are built right into the Dagster UI, allowing you to explore Dagster usage alongside metrics from other platforms, like Google BigQuery.
 
-**Note**: These changes may include breaking changes to some aspects of the feature, though we will attempt to avoid it.
-
-### Future plans
-
-As part of the experimental release, out-of-the-box utilities for capturing external cost data are limited to Snowflake. Refer to the [Integrating other metrics section](#integrating-other-metrics) for more info.
-
----
-
-## Accessing Insights in the Dagster UI
-
-To access this feature, click **Insights** in the top navigation bar in the UI:
+To access Insights, click **Insights** in the top navigation bar in the UI:
 
 <!-- ![Viewing the Insights tab in the Dagster UI](/images/dagster-cloud/insights/insights-tab.png) -->
 
 <Image
 alt="Viewing the Insights tab in the Dagster UI"
 src="/images/dagster-cloud/insights/insights-tab.png"
-width={3066}
-height={1636}
+width={2640}
+height={1516}
 />
 
 The left navigation panel on this page contains a list of [available metrics](#available-metrics). For each metric, the daily, weekly, or monthly aggregated values are displayed in the graph.
 
-These metrics are updated on a daily basis.
+Use the tabs above the charts to view metrics only for **Assets**, **Asset groups**, **Jobs**, and **Deployments**.
+
+These metrics are updated on a daily basis. Refer to the [Available metrics](#available-metrics) section for more information about these metrics.
+
+### Data retention
+
+How long historical Insights data is retained depends on your Dagster+ plan:
+
+- **Dagster+ Pro** - 120 days
+- **All other plans** - 30 days
 
 ### Available metrics
 
@@ -141,7 +144,7 @@ These metrics are updated on a daily basis.
 
 ---
 
-## Uses
+## Working with metrics
 
 ### Integrating other metrics
 
