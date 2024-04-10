@@ -56,7 +56,7 @@ function HTMLRenderer({data}: {data: HTMLData}) {
         />
       </VersionedContentLayout>
 
-      <aside className="relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
+      <aside className="hidden relative xl:flex flex-none w-80 border-l border-gray-200">
         {/* Start secondary column (hidden on smaller screens) */}
         <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
           <div className="mb-8 px-4 py-2 relative overflow-y-scroll max-h-(screen-60)">
