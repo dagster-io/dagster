@@ -30,7 +30,6 @@ from .utils import (
     asset_to_keys_iterable,
     ensure_no_duplicate_assets,
     get_description_for_freshness_check_result,
-    get_expected_partition_key,
     get_last_updated_timestamp,
     retrieve_latest_record,
     unique_id_from_asset_keys,
@@ -42,7 +41,7 @@ def build_freshness_multi_check(
     deadline_cron: Optional[str],
     timezone: str,
     severity: AssetCheckSeverity,
-    lower_bound_delta: datetime.timedelta,
+    lower_bound_delta: Optional[datetime.timedelta],
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]],
 ) -> AssetChecksDefinition:
     params_metadata: dict[str, Any] = {FRESHNESS_TIMEZONE_METADATA_KEY: timezone}
@@ -78,6 +77,7 @@ def build_freshness_multi_check(
                 Optional[TimeWindowPartitionsDefinition],
                 context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def,
             )
+
             check.invariant(
                 partitions_def is None
                 or isinstance(partitions_def, TimeWindowPartitionsDefinition),
@@ -92,11 +92,28 @@ def build_freshness_multi_check(
                 "deadline",
                 datetime.datetime,
             )
-            last_update_time_lower_bound = cast(datetime.datetime, deadline - lower_bound_delta)
-            expected_partition_key = get_expected_partition_key(
-                deadline=deadline,
-                partitions_def=partitions_def,
-            )
+            if not partitions_def:
+                last_completed_time_window = None
+                expected_partition_key = None
+            else:
+                deadline_in_partitions_def_tz = pendulum.from_timestamp(
+                    deadline.timestamp(), tz=partitions_def.timezone
+                )
+                last_completed_time_window = check.not_none(
+                    partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)
+                )
+                expected_partition_key = partitions_def.get_partition_key_range_for_time_window(
+                    last_completed_time_window
+                ).start
+
+            if lower_bound_delta:
+                last_update_time_lower_bound = cast(datetime.datetime, deadline - lower_bound_delta)
+            else:
+                last_update_time_lower_bound = check.not_none(
+                    last_completed_time_window,
+                    "Expected a valid partitioned asset with a completed time window in order to determine valid freshness window.",
+                ).end
+
             latest_record = retrieve_latest_record(
                 instance=context.instance, asset_key=asset_key, partition_key=expected_partition_key
             )
@@ -129,6 +146,8 @@ def build_freshness_multi_check(
                     last_update_time_lower_bound,
                     current_timestamp,
                     expected_partition_key,
+                    record_arrival_timestamp=latest_record.timestamp if latest_record else None,
+                    event_type=latest_record.event_type if latest_record else None,
                 ),
                 severity=severity,
                 asset_key=asset_key,
@@ -144,7 +163,7 @@ def build_freshness_checks_for_assets(
     timezone: str,
     severity: AssetCheckSeverity,
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]] = None,
-    lower_bound_delta: datetime.timedelta = datetime.timedelta(minutes=0),
+    lower_bound_delta: Optional[datetime.timedelta] = None,
 ) -> AssetChecksDefinition:
     ensure_no_duplicate_assets(assets)
     deadline_cron = check.opt_str_param(deadline_cron, "deadline_cron")
@@ -154,7 +173,7 @@ def build_freshness_checks_for_assets(
     )
     severity = check.inst_param(severity, "severity", AssetCheckSeverity)
     timezone = check.str_param(timezone, "timezone")
-    lower_bound_delta = check.inst_param(lower_bound_delta, "lower_bound_delta", datetime.timedelta)
+    check.opt_inst_param(lower_bound_delta, "lower_bound_delta", datetime.timedelta)
 
     return build_freshness_multi_check(
         asset_keys=[asset_key for asset in assets for asset_key in asset_to_keys_iterable(asset)],
