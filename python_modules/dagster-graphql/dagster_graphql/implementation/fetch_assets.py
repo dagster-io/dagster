@@ -263,8 +263,8 @@ def get_asset_nodes_by_asset_key(
     }
 
 
-def get_asset_nodes(graphene_info: "ResolveInfo"):
-    return get_asset_nodes_by_asset_key(graphene_info).values()
+def get_asset_nodes(graphene_info: "ResolveInfo", asset_keys: Optional[Sequence[AssetKey]] = None):
+    return get_asset_nodes_by_asset_key(graphene_info, asset_keys=asset_keys).values()
 
 
 def get_asset_node(

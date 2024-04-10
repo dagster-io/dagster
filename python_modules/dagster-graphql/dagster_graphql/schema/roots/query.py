@@ -927,7 +927,10 @@ class GrapheneQuery(graphene.ObjectType):
                 else []
             )
         else:
-            results = get_asset_nodes(graphene_info)
+            results = get_asset_nodes(
+                graphene_info,
+                asset_keys=(None if use_all_asset_keys else check.not_none(resolved_asset_keys)),
+            )
 
         # Filter down to requested asset keys
         results = [
