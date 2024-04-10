@@ -59,7 +59,7 @@ class UPathIOManager(MemoizableIOManager):
         When loading a single partition, it will call `load_from_path` on it.
         When loading multiple partitions, it will invoke `load_from_path` multiple times over paths produced by
         `get_path_for_partition` method, and store the results in a dictionary with formatted partitions as keys.
-        Sometimes, this is not desired. If the serialization format natively supports loading multiple partitions at once, this method should be overridden.
+        Sometimes, this is not desired. If the serialization format natively supports loading multiple partitions at once, this method should be overridden together with `get_path_for_partition`.
         hint: context.asset_partition_keys can be used to access the partitions to load.
         """
         paths = self._get_paths_for_partitions(context)  # paths for normal partitions
