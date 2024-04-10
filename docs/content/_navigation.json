@@ -407,7 +407,7 @@
                     "path": "/deployment/guides/kubernetes/deploying-with-helm"
                   },
                   {
-                    "title": "Celery + Helm",
+                    "title": "Celery & Helm",
                     "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
                   },
                   {
@@ -723,7 +723,7 @@
                     "path": "/dagster-plus/insights/integrating-bigquery"
                   },
                   {
-                    "title": "Google BigQuery + dbt",
+                    "title": "Google BigQuery & dbt",
                     "path": "/dagster-plus/insights/integrating-bigquery-and-dbt"
                   },
                   {
@@ -731,7 +731,7 @@
                     "path": "/dagster-plus/insights/integrating-snowflake"
                   },
                   {
-                    "title": "Snowflake + dbt",
+                    "title": "Snowflake & dbt",
                     "path": "/dagster-plus/insights/integrating-snowflake-and-dbt"
                   }
                 ]
@@ -760,11 +760,11 @@
         "path": "/integrations/airbyte",
         "children": [
           {
-            "title": "Airbyte + Dagster",
+            "title": "Airbyte & Dagster",
             "path": "/integrations/airbyte"
           },
           {
-            "title": "Airbyte Cloud + Dagster",
+            "title": "Airbyte Cloud & Dagster",
             "path": "/integrations/airbyte-cloud"
           },
           {
@@ -800,7 +800,7 @@
         "path": "/integrations/dbt",
         "children": [
           {
-            "title": "dbt + Dagster tutorial",
+            "title": "dbt & Dagster tutorial",
             "path": "/integrations/dbt/using-dbt-with-dagster",
             "children": [
               {
@@ -836,7 +836,7 @@
         "path": "/integrations/deltalake",
         "children": [
           {
-            "title": "Delta Lake + Dagster tutorial",
+            "title": "Delta Lake & Dagster tutorial",
             "path": "/integrations/deltalake/using-deltalake-with-dagster"
           },
           {
@@ -850,7 +850,7 @@
         "path": "/integrations/duckdb",
         "children": [
           {
-            "title": "DuckDB + Dagster tutorial",
+            "title": "DuckDB & Dagster tutorial",
             "path": "/integrations/duckdb/using-duckdb-with-dagster"
           },
           {
@@ -886,7 +886,7 @@
         "path": "/integrations/bigquery",
         "children": [
           {
-            "title": "Google BigQuery + Dagster tutorial",
+            "title": "Google BigQuery & Dagster tutorial",
             "path": "/integrations/bigquery/using-bigquery-with-dagster"
           },
           {
@@ -900,7 +900,7 @@
         "path": "/integrations/dagstermill",
         "children": [
           {
-            "title": "Jupyter, Papermill + Dagster tutorial",
+            "title": "Jupyter, Papermill & Dagster tutorial",
             "path": "/integrations/dagstermill/using-notebooks-with-dagster"
           },
           {
@@ -1058,21 +1058,21 @@
                 "path": "/guides/dagster-pipes/subprocess/modify-external-code"
               },
               {
-                "title": "Dagster Pipes + subprocess reference",
+                "title": "Dagster Pipes & subprocess reference",
                 "path": "/guides/dagster-pipes/subprocess/reference"
               }
             ]
           },
           {
-            "title": "Dagster Pipes + AWS Lambda",
+            "title": "Dagster Pipes & AWS Lambda",
             "path": "/guides/dagster-pipes/aws-lambda"
           },
           {
-            "title": "Dagster Pipes + Databricks",
+            "title": "Dagster Pipes & Databricks",
             "path": "/guides/dagster-pipes/databricks"
           },
           {
-            "title": "Dagster Pipes + Kubernetes",
+            "title": "Dagster Pipes & Kubernetes",
             "path": "/guides/dagster-pipes/kubernetes"
           },
           {
@@ -1283,11 +1283,11 @@
             "path": "/_apidocs/libraries/dagster-celery"
           },
           {
-            "title": "Celery + Docker (dagster-celery-docker)",
+            "title": "Celery & Docker (dagster-celery-docker)",
             "path": "/_apidocs/libraries/dagster-celery-docker"
           },
           {
-            "title": "Celery + Kubernetes (dagster-celery-k8s)",
+            "title": "Celery & Kubernetes (dagster-celery-k8s)",
             "path": "/_apidocs/libraries/dagster-celery-k8s"
           },
           {
@@ -1327,15 +1327,15 @@
             "path": "/_apidocs/libraries/dagster-duckdb"
           },
           {
-            "title": "DuckDB + Pandas (dagster-duckdb-pandas)",
+            "title": "DuckDB & Pandas (dagster-duckdb-pandas)",
             "path": "/_apidocs/libraries/dagster-duckdb-pandas"
           },
           {
-            "title": "DuckDB + PySpark (dagster-duckdb-pyspark)",
+            "title": "DuckDB & PySpark (dagster-duckdb-pyspark)",
             "path": "/_apidocs/libraries/dagster-duckdb-pyspark"
           },
           {
-            "title": "DuckDB + Polars (dagster-duckdb-polars)",
+            "title": "DuckDB & Polars (dagster-duckdb-polars)",
             "path": "/_apidocs/libraries/dagster-duckdb-polars"
           },
           {
@@ -1351,11 +1351,11 @@
             "path": "/_apidocs/libraries/dagster-gcp"
           },
           {
-            "title": "GCP + Pandas (dagster-gcp-pandas)",
+            "title": "GCP & Pandas (dagster-gcp-pandas)",
             "path": "/_apidocs/libraries/dagster-gcp-pandas"
           },
           {
-            "title": "GCP + PySpark (dagster-gcp-pyspark)",
+            "title": "GCP & PySpark (dagster-gcp-pyspark)",
             "path": "/_apidocs/libraries/dagster-gcp-pyspark"
           },
           {
@@ -1435,11 +1435,11 @@
             "path": "/_apidocs/libraries/dagster-snowflake"
           },
           {
-            "title": "Snowflake + Pandas (dagster-snowflake-pandas)",
+            "title": "Snowflake & Pandas (dagster-snowflake-pandas)",
             "path": "/_apidocs/libraries/dagster-snowflake-pandas"
           },
           {
-            "title": "Snowflake + PySpark (dagster-snowflake-pyspark)",
+            "title": "Snowflake & PySpark (dagster-snowflake-pyspark)",
             "path": "/_apidocs/libraries/dagster-snowflake-pyspark"
           },
           {
