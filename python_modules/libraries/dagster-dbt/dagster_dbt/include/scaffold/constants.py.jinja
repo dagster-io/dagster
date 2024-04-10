@@ -3,10 +3,6 @@ from pathlib import Path
 
 from dagster_dbt import DbtCliResource
 
-{% if use_dbt_project_package_data_dir -%}
-# We expect the dbt project to be installed as package data.
-# For details, see https://docs.python.org/3/distutils/setupscript.html#installing-package-data.
-{% endif -%}
 dbt_project_dir = Path(__file__).joinpath({{ dbt_project_dir_relative_path_parts | join(', ')}}).resolve()
 dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 

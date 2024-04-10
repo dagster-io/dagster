@@ -107,6 +107,8 @@ def copy_scaffold(
     dagster_project_dir: Path,
     dbt_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_state: bool,
+    use_experimental_dbt_project: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
     dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
@@ -124,11 +126,12 @@ def copy_scaffold(
         for target in profile["outputs"].values()
     ]
 
-    shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
+    shutil.copytree(
+        src=STARTER_PROJECT_PATH,
+        dst=dagster_project_dir,
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
     dagster_project_dir.joinpath("__init__.py").unlink()
-
-    if use_dbt_project_package_data_dir:
-        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
 
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
@@ -151,17 +154,24 @@ def copy_scaffold(
 
             env.get_template(template_path).stream(
                 dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,
-                dbt_project_name=dbt_project_name,
+                dbt_project_name=f"{dbt_project_name}_project",
                 dbt_parse_command=dbt_parse_command,
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
                 use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+                use_experimental_dbt_state=use_experimental_dbt_state,
+                use_experimental_dbt_project=use_experimental_dbt_project,
             ).dump(destination_path)
 
             path.unlink()
 
     dagster_project_dir.joinpath("scaffold").rename(dagster_project_dir.joinpath(project_name))
+
+    if use_experimental_dbt_project:
+        dagster_project_dir.joinpath(project_name, "constants.py").unlink()
+    else:
+        dagster_project_dir.joinpath(project_name, "project.py").unlink()
 
 
 def _check_and_error_on_package_conflicts(project_name: str) -> None:
@@ -231,7 +241,25 @@ def project_scaffold_command(
         bool,
         typer.Option(
             default=...,
-            help="Controls whether the dbt project package data directory is used.",
+            help="Controls whether `DbtProject` is used with a dbt project package data directory.",
+            is_flag=True,
+            hidden=True,
+        ),
+    ] = False,
+    use_experimental_dbt_state: Annotated[
+        bool,
+        typer.Option(
+            default=...,
+            help="Controls whether `DbtProject` is used with dbt state.",
+            is_flag=True,
+            hidden=True,
+        ),
+    ] = False,
+    use_experimental_dbt_project: Annotated[
+        bool,
+        typer.Option(
+            default=...,
+            help="Controls whether `DbtProject` is used.",
             is_flag=True,
             hidden=True,
         ),
@@ -248,7 +276,7 @@ def project_scaffold_command(
     )
     console.print(
         f"Initializing Dagster project [bold green]{project_name}[/bold green] in the current"
-        f" working directory for dbt project directory [bold green]{dbt_project_dir}[/bold green]"
+        f" working directory for dbt project directory [bold green]{dbt_project_dir}[/bold green].",
     )
 
     dagster_project_dir = Path.cwd().joinpath(project_name)
@@ -258,7 +286,17 @@ def project_scaffold_command(
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+        use_experimental_dbt_state=use_experimental_dbt_state,
+        use_experimental_dbt_project=(
+            use_experimental_dbt_project
+            or use_dbt_project_package_data_dir
+            or use_experimental_dbt_state
+        ),
     )
+
+    dagster_dev_command = "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev"
+    if use_experimental_dbt_project:
+        dagster_dev_command = "dagster dev"
 
     console.print(
         "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
@@ -267,7 +305,7 @@ def project_scaffold_command(
             code="\n".join(
                 [
                     f"cd '{dagster_project_dir}'",
-                    "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev",
+                    dagster_dev_command,
                 ]
             ),
             lexer="bash",

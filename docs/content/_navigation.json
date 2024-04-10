@@ -642,6 +642,10 @@
                   {
                     "title": "Slack",
                     "path": "/dagster-cloud/managing-deployments/alerts/slack"
+                  },
+                  {
+                    "title": "PagerDuty",
+                    "path": "/dagster-cloud/managing-deployments/alerts/pagerduty"
                   }
                 ]
               },

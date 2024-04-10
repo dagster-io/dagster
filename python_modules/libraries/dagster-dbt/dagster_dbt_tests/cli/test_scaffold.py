@@ -25,6 +25,7 @@ def _assert_scaffold_invocation(
     dbt_project_dir: Path,
     dagster_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_project: bool,
 ) -> None:
     result = runner.invoke(
         app,
@@ -36,6 +37,7 @@ def _assert_scaffold_invocation(
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
             *(["--use-dbt-project-package-data-dir"] if use_dbt_project_package_data_dir else []),
+            *(["--use-experimental-dbt-project"] if use_experimental_dbt_project else []),
         ],
     )
 
@@ -46,6 +48,13 @@ def _assert_scaffold_invocation(
     assert dagster_project_dir.joinpath(project_name).exists()
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
     assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
+
+    if use_dbt_project_package_data_dir or use_experimental_dbt_project:
+        assert dagster_project_dir.joinpath(project_name, "project.py").exists()
+        assert not dagster_project_dir.joinpath(project_name, "constants.py").exists()
+    else:
+        assert not dagster_project_dir.joinpath(project_name, "project.py").exists()
+        assert dagster_project_dir.joinpath(project_name, "constants.py").exists()
 
 
 def _assert_scaffold_defs(project_name: str, dagster_project_dir: Path) -> None:
@@ -76,16 +85,18 @@ def _update_dbt_project_path(
     return dbt_project_dir
 
 
+@pytest.mark.parametrize("use_experimental_dbt_project", [True, False])
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_precompiled_manifest(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     dbt_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_project: bool,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    project_name = f"test_dagster_scaffold_precompiled_manifest_{use_dbt_project_package_data_dir}"
+    project_name = f"test_dagster_scaffold_precompiled_manifest_{use_experimental_dbt_project}"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     _assert_scaffold_invocation(
@@ -93,6 +104,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
         dbt_project_dir=dbt_project_dir,
         dagster_project_dir=dagster_project_dir,
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+        use_experimental_dbt_project=use_experimental_dbt_project,
     )
 
     dbt_project_dir = _update_dbt_project_path(
@@ -111,16 +123,18 @@ def test_project_scaffold_command_with_precompiled_manifest(
     _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
 
 
+@pytest.mark.parametrize("use_experimental_dbt_project", [True, False])
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_runtime_manifest(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     dbt_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_project: bool,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    project_name = f"test_dagster_scaffold_runtime_manifest_{use_dbt_project_package_data_dir}"
+    project_name = f"test_dagster_scaffold_runtime_manifest_{use_experimental_dbt_project}"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     _assert_scaffold_invocation(
@@ -128,6 +142,7 @@ def test_project_scaffold_command_with_runtime_manifest(
         dbt_project_dir=dbt_project_dir,
         dagster_project_dir=dagster_project_dir,
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+        use_experimental_dbt_project=use_experimental_dbt_project,
     )
 
     dbt_project_dir = _update_dbt_project_path(
@@ -143,16 +158,18 @@ def test_project_scaffold_command_with_runtime_manifest(
     _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
 
 
+@pytest.mark.parametrize("use_experimental_dbt_project", [True, False])
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_runtime_manifest_without_env_var(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     dbt_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_project: bool,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    project_name = f"test_scaffold_runtime_without_env_var_{use_dbt_project_package_data_dir}"
+    project_name = f"test_scaffold_runtime_without_env_var_{use_experimental_dbt_project}"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     _assert_scaffold_invocation(
@@ -160,6 +177,7 @@ def test_project_scaffold_command_with_runtime_manifest_without_env_var(
         dbt_project_dir=dbt_project_dir,
         dagster_project_dir=dagster_project_dir,
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+        use_experimental_dbt_project=use_experimental_dbt_project,
     )
 
     dbt_project_dir = _update_dbt_project_path(
