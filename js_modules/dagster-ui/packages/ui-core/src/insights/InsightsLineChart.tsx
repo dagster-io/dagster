@@ -138,6 +138,9 @@ export const InsightsLineChart = (props: Props) => {
   const yCount = useMemo(() => {
     return {
       display: showYAxis,
+      grid: {
+        color: Colors.keylineDefault(),
+      },
       title: {
         display: true,
         text: metricLabel,
@@ -170,6 +173,9 @@ export const InsightsLineChart = (props: Props) => {
     const yCostMax = yMax * Number(costMultiplier);
     return {
       display: !!(showYAxis && costMultiplier),
+      grid: {
+        display: false,
+      },
       position: 'right' as const,
       title: {
         display: true,

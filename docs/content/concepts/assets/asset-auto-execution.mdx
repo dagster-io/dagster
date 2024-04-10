@@ -14,7 +14,7 @@ At a high-level, the most common way for assets to be auto-materialized is "eage
 To enable assets to be automatically materialized, you need to first flip a toggle in the Dagster UI.
 
 - If you're using an open source Dagster deployment, you can get to this toggle by clicking "Deployment" in the top navigation pane and then clicking on the "Daemons" tab.
-- If you're using Dagster Cloud, you can get to this toggle by clicking "Deployment" in the top navigation pane, then clicking on the "Agents" tab, then looking under "Cloud service statuses".
+- If you're using Dagster+, you can get to this toggle by clicking "Deployment" in the top navigation pane, then clicking on the "Agents" tab, then looking under "Cloud service statuses".
 
 ## Auto-materialize policies
 
@@ -78,7 +78,7 @@ defs = Definitions(
 
 ### Run tags
 
-Runs triggered by auto-materialize policies are tagged with `dagster/auto_materialize: true`. Additional tags can be configured in [`dagster.yaml` (OSS)](/deployment/dagster-instance#auto-materialize) or [deployment settings (Cloud)](/dagster-cloud/managing-deployments/deployment-settings-reference#auto-materialize).
+Runs triggered by auto-materialize policies are tagged with `dagster/auto_materialize: true`. Additional tags can be configured in [`dagster.yaml` (OSS)](/deployment/dagster-instance#auto-materialize) or [deployment settings (Dagster+)](/dagster-plus/managing-deployments/deployment-settings-reference#auto-materialize).
 
 ### Customizing auto-materialize policies
 
@@ -205,9 +205,9 @@ def asset1(): ...
 
 You can break up the evaluation of your auto-materialization policies into multiple [sensors](/concepts/partitions-schedules-sensors/sensors), which can be turned on and off independently and run at different intervals. Additionally, an error during the evaluation of one sensor will not affect the execution of another sensor.
 
-How to enable auto-materialize sensors depends on whether you're using Dagster Cloud or Dagster Open Source:
+How to enable auto-materialize sensors depends on whether you're using Dagster+ or Dagster Open Source:
 
-- **Dagster Cloud**: Use the [Dagster Cloud UI or the dagster-cloud CLI](/dagster-cloud/managing-deployments/managing-deployments#configuring-deployment-settings) to set `auto_materialize.use_sensors` to `true` in your deployment settings.
+- **Dagster+**: Use the [Dagster+ UI or the dagster-plus CLI](/dagster-plus/managing-deployments/managing-deployments#configuring-deployment-settings) to set `auto_materialize.use_sensors` to `true` in your deployment settings.
 - **Dagster Open Source**: Add the following to your instance's `dagster.yaml` file:
 
   ```yaml
