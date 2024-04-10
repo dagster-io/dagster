@@ -120,6 +120,9 @@ export const InsightsBarChart = (props: Props) => {
   const yAxis = useMemo(() => {
     return {
       display: showYAxis,
+      grid: {
+        color: Colors.keylineDefault(),
+      },
       title: {
         display: true,
         text: metricLabel,
