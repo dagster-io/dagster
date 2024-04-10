@@ -601,3 +601,7 @@ pre[class="noop"] {
 .prose p {
   line-height: 1.75em;
 }
+
+dl, dl * {
+  overflow-wrap: break-word;
+}
