@@ -681,6 +681,10 @@
                 "path": "/dagster-plus/managing-deployments/branch-deployments",
                 "children": [
                   {
+                   "title": "Overview",
+                    "path": "/dagster-plus/managing-deployments/branch-deployments"
+                  },
+                  {
                     "title": "Using with GitHub",
                     "path": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github"
                   },
@@ -691,6 +695,10 @@
                   {
                     "title": "Using with dagster-plus CLI",
                     "path": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments"
+                  },
+                  {
+                   "title": "Tracking asset changes",
+                    "path": "/dagster-plus/managing-deployments/branch-deployments/change-tracking"
                   }
                 ]
               },
