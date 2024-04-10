@@ -294,3 +294,43 @@ export const getUpstreamNodes = memoize(
   },
   (key, data) => JSON.stringify({key, data}),
 );
+
+export function findUnconnectedGraphs(graphData: GraphData): GraphData[] {
+  const visited = new Set<string>();
+  const unconnectedGraphs: GraphData[] = [];
+
+  const dfs = (currentId: string, currentGraph: GraphData) => {
+    visited.add(currentId);
+    currentGraph.nodes[currentId] = graphData.nodes[currentId]!;
+
+    // Copy downstream connections
+    if (graphData.downstream[currentId]) {
+      currentGraph.downstream[currentId] = {...graphData.downstream[currentId]};
+      for (const childId of Object.keys(graphData.downstream[currentId])) {
+        if (!visited.has(childId)) {
+          dfs(childId, currentGraph);
+        }
+      }
+    }
+
+    // Copy upstream connections
+    if (graphData.upstream[currentId]) {
+      currentGraph.upstream[currentId] = {...graphData.upstream[currentId]};
+      for (const parentId of Object.keys(graphData.upstream[currentId])) {
+        if (!visited.has(parentId)) {
+          dfs(parentId, currentGraph);
+        }
+      }
+    }
+  };
+
+  for (const nodeId of Object.keys(graphData.nodes)) {
+    if (!visited.has(nodeId)) {
+      const newGraph: GraphData = {nodes: {}, downstream: {}, upstream: {}};
+      dfs(nodeId, newGraph);
+      unconnectedGraphs.push(newGraph);
+    }
+  }
+
+  return unconnectedGraphs;
+}

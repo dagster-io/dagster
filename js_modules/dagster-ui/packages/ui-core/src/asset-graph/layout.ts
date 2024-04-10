@@ -1,6 +1,13 @@
 import * as dagre from 'dagre';
 
-import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
+import {
+  GraphData,
+  GraphId,
+  GraphNode,
+  findUnconnectedGraphs,
+  groupIdForNode,
+  isGroupId,
+} from './Utils';
 import {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';
 
@@ -91,6 +98,47 @@ export const Config = {
 };
 
 export const layoutAssetGraph = (
+  graphData: GraphData,
+  opts: LayoutAssetGraphOptions,
+): AssetGraphLayout => {
+  const unconnectedGraphs = findUnconnectedGraphs(graphData);
+  const layouts = unconnectedGraphs.map((graphData) => layoutAssetGraphImpl(graphData, opts));
+  let heightSoFar = 0;
+  let maxWidth = 0;
+  const combinedLayout: AssetGraphLayout = {
+    nodes: {},
+    edges: [],
+    groups: {},
+    height: 0,
+    width: 0,
+  };
+  layouts.forEach((layout) => {
+    layout.edges.forEach((edge) => {
+      edge.from.y += heightSoFar;
+    });
+    Object.values(layout.nodes).forEach((node) => {
+      node.bounds.y += heightSoFar;
+    });
+    combinedLayout.nodes = {
+      ...combinedLayout.nodes,
+      ...layout.nodes,
+    };
+    combinedLayout.edges.push(...layout.edges);
+    combinedLayout.groups = {
+      ...combinedLayout.groups,
+      ...layout.groups,
+    };
+    heightSoFar += layout.height;
+    maxWidth = Math.max(layout.width, maxWidth);
+  });
+
+  combinedLayout.width = maxWidth;
+  combinedLayout.height = heightSoFar;
+
+  return combinedLayout;
+};
+
+export const layoutAssetGraphImpl = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
