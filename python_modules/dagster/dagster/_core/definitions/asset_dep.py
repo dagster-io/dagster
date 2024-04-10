@@ -7,6 +7,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.trigger_definition import TriggerDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from .events import (
@@ -15,7 +16,7 @@ from .events import (
 )
 
 CoercibleToAssetDep = Union[
-    CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset, "AssetDep"
+    CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset, "AssetDep", TriggerDefinition
 ]
 
 
@@ -87,12 +88,14 @@ class AssetDep(
 
     @staticmethod
     def from_coercible(arg: "CoercibleToAssetDep") -> "AssetDep":
+        if isinstance(arg, TriggerDefinition):
+            return AssetDep(asset=arg.key)
         # if arg is AssetDep, return the original object to retain partition_mapping
         return arg if isinstance(arg, AssetDep) else AssetDep(asset=arg)
 
 
 def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
-    if isinstance(arg, (AssetsDefinition, SourceAsset, AssetSpec)):
+    if isinstance(arg, (AssetsDefinition, SourceAsset, AssetSpec, TriggerDefinition)):
         return arg.key
     elif isinstance(arg, AssetDep):
         return arg.asset_key

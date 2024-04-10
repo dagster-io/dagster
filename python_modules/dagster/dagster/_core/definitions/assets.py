@@ -46,6 +46,7 @@ from dagster._core.definitions.resource_requirement import (
 )
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.trigger_definition import TriggerDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -153,6 +154,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
+        triggers: Optional[Sequence[TriggerDefinition]] = None,
     ):
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
@@ -381,6 +383,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, owners in (owners_by_key or {}).items()
         }
 
+        self._triggers = triggers or []
+
     def dagster_internal_init(
         *,
         keys_by_input_name: Mapping[str, AssetKey],
@@ -403,6 +407,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
         owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]],
+        triggers: Optional[Sequence[TriggerDefinition]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -425,6 +430,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=selected_asset_check_keys,
             is_subset=is_subset,
             owners_by_key=owners_by_key,
+            triggers=triggers,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -807,6 +813,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=None,
             is_subset=False,
             owners_by_key=owners_by_key,
+            triggers=[],  # being lazy
         )
 
     @public
@@ -1041,6 +1048,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def owners_by_key(self) -> Mapping[AssetKey, Sequence[AssetOwner]]:
         return self._owners_by_key
 
+    @property
+    def triggers(self) -> Sequence[TriggerDefinition]:
+        return self._triggers
+
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
         """Returns the partition mapping between keys in this AssetsDefinition and a given input
@@ -1141,6 +1152,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
+        triggers: Optional[Sequence[TriggerDefinition]] = None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -1310,6 +1322,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=selected_asset_check_keys
             if selected_asset_check_keys
             else self._selected_asset_check_keys,
+            triggers=triggers if triggers else self._triggers,
         )
 
         merged_attrs = merge_dicts(self.get_attributes_dict(), replaced_attributes)
@@ -1570,6 +1583,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=self._selected_asset_check_keys,
             owners_by_key=self._owners_by_key,
             tags_by_key=self._tags_by_key,
+            triggers=self._triggers,
         )
 
 

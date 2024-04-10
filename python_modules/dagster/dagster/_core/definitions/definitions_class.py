@@ -8,6 +8,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
 )
@@ -238,6 +239,29 @@ def _attach_resources_to_jobs_and_instigator_jobs(
     return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
 
 
+def _add_triggers_to_assets_and_sensors(
+    assets: Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]],
+    sensors: Iterable[SensorDefinition],
+) -> Tuple[
+    Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]],
+    Iterable[SensorDefinition],
+]:
+    """Synthesize SensorDefintiions and SourceAssets for all triggers found on AssetDefinitions."""
+    trigger_sensors_by_key = {}
+    trigger_assets = []
+    for asset in assets:
+        if not isinstance(asset, AssetsDefinition):
+            continue
+        for trigger in asset.triggers:
+            if trigger.key not in trigger_sensors_by_key:
+                trigger_sensors_by_key[trigger.key] = trigger.sensor
+                trigger_assets.append(trigger.asset)
+
+    assets = list(assets) + trigger_assets
+    sensors = list(sensors) + list(trigger_sensors_by_key.values())
+    return assets, sensors
+
+
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -294,6 +318,12 @@ def _create_repository_using_definitions_args(
         sensors_with_resources,
     ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
 
+    # Add triggers to sensors and assets
+    final_assets, final_sensors = _add_triggers_to_assets_and_sensors(
+        assets or [],
+        sensors_with_resources,
+    )
+
     @repository(
         name=name,
         default_executor_def=executor_def,
@@ -303,10 +333,10 @@ def _create_repository_using_definitions_args(
     )
     def created_repo():
         return [
-            *with_resources(assets or [], resource_defs),
+            *with_resources(final_assets or [], resource_defs),
             *with_resources(asset_checks or [], resource_defs),
             *(schedules_with_resources),
-            *(sensors_with_resources),
+            *(final_sensors),
             *(jobs_with_resources),
         ]
 

@@ -51,6 +51,7 @@ from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
+from ..trigger_definition import TriggerDefinition
 from ..utils import (
     DEFAULT_IO_MANAGER_KEY,
     DEFAULT_OUTPUT,
@@ -257,6 +258,7 @@ def asset(
             check_specs=check_specs,
             key=key,
             owners=owners,
+            triggers=[dep for dep in deps if isinstance(dep, TriggerDefinition)] if deps else deps,
         )
 
     if compute_fn is not None:
@@ -331,6 +333,7 @@ class _Asset:
         key: Optional[CoercibleToAssetKey] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners: Optional[Sequence[str]] = None,
+        triggers: Optional[Sequence[TriggerDefinition]] = None,
     ):
         self.name = name
         self.key_prefix = key_prefix
@@ -360,6 +363,7 @@ class _Asset:
         self.check_specs = check_specs
         self.key = key
         self.owners = owners
+        self.triggers = triggers
 
     def __call__(self, fn: Callable[..., Any]) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
@@ -506,6 +510,7 @@ class _Asset:
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
             owners_by_key={out_asset_key: self.owners} if self.owners else None,
+            triggers=self.triggers,
         )
 
 
@@ -928,6 +933,7 @@ def multi_asset(
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
             owners_by_key=owners_by_key,
+            triggers=[],
         )
 
     return inner
