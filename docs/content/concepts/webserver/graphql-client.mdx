@@ -58,7 +58,7 @@ client = DagsterGraphQLClient("localhost", port_number=3000)
 If you are using Dagster+, you can configure your client against the Dagster+ API by passing your deployment-specific URL and a User Token to the client as follows:
 
 ```python file=/concepts/webserver/graphql/client_example.py startafter=start_cloud_usage endbefore=end_cloud_usage
-url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
+url = "yourorg.dagster.plus/prod"  # Your deployment-scoped url
 user_token = (  # a User Token generated from the Organization Settings page in Dagster+.
     "your_token_here"
 )

@@ -105,7 +105,7 @@ else:
 # end_shutdown_repo_location_marker
 
 # start_cloud_usage
-url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
+url = "yourorg.dagster.plus/prod"  # Your deployment-scoped url
 user_token = (  # a User Token generated from the Organization Settings page in Dagster+.
     "your_token_here"
 )
