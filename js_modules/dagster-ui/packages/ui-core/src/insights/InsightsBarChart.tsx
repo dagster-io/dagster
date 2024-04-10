@@ -18,7 +18,7 @@ import {InsightsBarChartTooltip} from './InsightsBarChartTooltip';
 import {EmptyStateContainer, LoadingStateContainer} from './InsightsChartShared';
 import {formatMetric} from './formatMetric';
 import {RenderTooltipFn, renderInsightsChartTooltip} from './renderInsightsChartTooltip';
-import {BarDatapoint, DatapointType, ReportingUnitType} from './types';
+import {BarDatapoint, BarValue, DatapointType, ReportingUnitType} from './types';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Filler);
@@ -31,7 +31,7 @@ interface Props {
   metricName: string;
   metricLabel: string;
   timestamps: number[];
-  datapoints: Record<string, BarDatapoint>;
+  datapoint: BarDatapoint;
   emptyState?: React.ReactNode;
 }
 
@@ -45,12 +45,11 @@ export const InsightsBarChart = (props: Props) => {
     metricLabel,
     metricName,
     timestamps,
-    datapoints,
+    datapoint,
     costMultiplier,
     emptyState,
   } = props;
-  const dataValues = React.useMemo(() => Object.values(datapoints), [datapoints]);
-  const dataEntries = React.useMemo(() => Object.entries(datapoints), [datapoints]);
+  const {label, barColor, values} = datapoint;
 
   const [canShowSpinner, setCanShowSpinner] = React.useState(false);
 
@@ -62,46 +61,41 @@ export const InsightsBarChart = (props: Props) => {
   }, []);
 
   const yMax = React.useMemo(() => {
-    const allData = dataValues
-      .map(({values}) => values.map((item) => item?.value))
-      .flat()
-      .filter((value) => value !== null) as number[];
-    const maxValue = Math.max(...allData);
+    const allValues = values
+      .filter((value): value is BarValue => value !== null)
+      .map(({value}) => value);
+    const maxValue = Math.max(...allValues);
     return Math.ceil(maxValue * 1.05);
-  }, [dataValues]);
+  }, [values]);
 
   const formatDateTime = useFormatDateTime();
 
   // Don't show the y axis while loading datapoints, to avoid jumping renders.
-  const showYAxis = dataValues.length > 0;
+  const showYAxis = values.length > 0;
 
   const data = React.useMemo(() => {
     return {
       labels: timestamps,
-      datasets: dataEntries.map(([_key, {label, barColor, values}]) => {
-        return {
+      datasets: [
+        {
           label,
           data: values.map((value) => value?.value),
           backgroundColor: barColor.replace(/, 1\)/, ', 0.6)'),
           hoverBackgroundColor: barColor,
-        };
-      }),
+        },
+      ],
     };
-  }, [dataEntries, timestamps]);
+  }, [label, timestamps, values, barColor]);
 
   const onClick = useCallback(
     (element: ActiveElement | null) => {
       if (element) {
-        const dataEntry = dataEntries[element.datasetIndex];
-        if (dataEntry) {
-          const [_, datapoint] = dataEntry;
-          const whichBar = datapoint.values[element.index];
-          console.log('Clicked', whichBar?.href);
-          return;
-        }
+        const whichBar = values[element.index];
+        console.log('Clicked', whichBar?.href);
+        return;
       }
     },
-    [dataEntries],
+    [values],
   );
 
   const renderTooltipFn: RenderTooltipFn = useCallback(
@@ -210,7 +204,7 @@ export const InsightsBarChart = (props: Props) => {
   }, [yAxis, onClick, renderTooltipFn, formatDateTime]);
 
   const emptyContent = () => {
-    const anyDatapoints = Object.keys(datapoints).length > 0;
+    const anyDatapoints = values.length > 0;
 
     // If there is some data, we don't want to show a loading or empty state.
     // Or, if we shouldn't show the spinner yet (due to the delay) we also shouldn't
