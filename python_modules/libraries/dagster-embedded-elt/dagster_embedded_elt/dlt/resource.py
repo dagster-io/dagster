@@ -20,6 +20,10 @@ from .translator import DagsterDltTranslator
 
 @experimental
 class DagsterDltResource(ConfigurableResource):
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def _cast_load_info_metadata(self, mapping: Mapping[Any, Any]) -> Mapping[Any, Any]:
         """Converts pendulum DateTime and Timezone values in a mapping to strings.
 

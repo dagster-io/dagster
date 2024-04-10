@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 
 import pytest
@@ -48,6 +49,7 @@ def airbyte_instance_fixture(request):
             )
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 12), reason="something with py3.12 and sqlite")
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize(

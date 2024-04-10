@@ -719,6 +719,8 @@ enum ChangeReason {
   CODE_VERSION
   DEPENDENCIES
   PARTITIONS_DEFINITION
+  TAGS
+  METADATA
 }
 
 type AssetDependency {

@@ -200,7 +200,7 @@ const StaleCausesPopoverSummary = ({
     return <div />;
   }
   return (
-    <Box flex={{direction: 'column'}}>
+    <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
       <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
         <Subtitle2>
           {numberFormatter.format(totalCauses)} {ifPlural(totalCauses, 'change', 'changes')} since

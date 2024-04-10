@@ -1116,6 +1116,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             f"Asset key {key.to_user_string()} not found in AssetsDefinition"
         )
 
+    def get_output_name_for_asset_check_key(self, key: AssetCheckKey) -> str:
+        for output_name, spec in self._check_specs_by_output_name.items():
+            if key == spec.key:
+                return output_name
+
+        raise DagsterInvariantViolationError(
+            f"Asset check key {key.to_user_string()} not found in AssetsDefinition"
+        )
+
     def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
         """If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
         returns the op def within the graph that produces the given asset key.

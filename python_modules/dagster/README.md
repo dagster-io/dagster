@@ -81,7 +81,7 @@ This installs two packages:
 - `dagster`: The core programming model.
 - `dagster-webserver`: The server that hosts Dagster's web UI for developing and operating Dagster jobs and assets.
 
-Running on Using a Mac with an Apple silicon chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
+Running on a Mac with an Apple silicon chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
 
 ## Documentation
 
