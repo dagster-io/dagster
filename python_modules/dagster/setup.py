@@ -30,7 +30,7 @@ GRPC_VERSION_FLOOR = "1.44.0"
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "1!0+dev" else f"=={ver}"
+pin = ""  # if ver == "1!0+dev" else f"=={ver}"
 
 setup(
     name="dagster",
