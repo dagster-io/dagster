@@ -45,30 +45,11 @@ Change tracking can detect when an asset's `code_version` has changed, whether i
 Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, including strategies for how to compute code versions automatically, refer to the [Code versioning guide](/guides/dagster/asset-versioning-and-caching).
 
 <TabGroup>
-<TabItem name="Asset definition">
-
-For example, if the main branch contains `customers` with code version `v1`
-
-```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
-@asset(code_version="v1")
-def customers(): ...
-```
-
-And the pull request modifies `customers` and changes the code version to `v2`:
-
-```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
-@asset(code_version="v2")
-def customers(): ...
-```
-
----
-
-</TabItem>
 <TabItem name="Asset in the Dagster UI">
 
-Click the **Asset definition** tab to view how this asset is defined.
+In this example, the `customers` asset has a **Changed in branch** label indicating its `code_version` has been changed.
 
-In this example, the `customers` asset has a **Changed in branch** label indicating its `code_version` has been changed:
+Click the **Asset definition** tab to see the code change that created this label.
 
 <Image
 src="/images/dagster-cloud/managing-deployments/change-tracking-code-version.png"
@@ -79,25 +60,59 @@ height={444}
 ---
 
 </TabItem>
+<TabItem name="Asset definition">
+
+**In the main branch**, we have a `customers` asset with a code version of `v1`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
+@asset(code_version="v1")
+def customers(): ...
+```
+
+**In the pull request**, `customers` is modified to change the code version to `v2`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_code_version.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
+@asset(code_version="v2")
+def customers(): ...
+```
+
+---
+
+</TabItem>
 </TabGroup>
 
 ### Upstream dependencies
 
 Change tracking can detect when an asset's upstream dependencies have changed, whether they've been added or removed.
 
-**Note**: If an asset is marked as having changed dependencies, it only means its dependencies have changed. It does **not** indicate that the upstream dependency has new data or that its definition has changed.
+**Note**: If an asset is marked as having changed dependencies, it means that the <PyObject object="AssetKey" pluralize /> defining its upstream dependencies have changed. It doesn't mean that an upstream dependency has new data.
 
 <TabGroup>
+<TabItem name="Asset in the Dagster UI">
+
+In this example, the `returns` asset has a **Changed in branch** label indicating it has changed dependencies.
+
+Click the **Asset definition** tab to see the code change that created this label.
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png"
+width={1154}
+height={490}
+/>
+
+---
+
+</TabItem>
 <TabItem name="Asset definition">
 
-For example, if the main branch contains `returns`:
+**In the main branch**, we have a `returns` asset:
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
 @asset(deps=[orders])
 def returns(): ...
 ```
 
-And the pull request adds a new upstream dependency `customers`:
+**In the pull request**, we added a new upstream dependency `customers`:
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(deps=[orders, customers])
@@ -107,19 +122,6 @@ def returns(): ...
 ---
 
 </TabItem>
-<TabItem name="Asset in the Dagster UI">
-
-Click the **Asset definition** tab to view how this asset is defined.
-
-In this example, the `returns` asset has a **Changed in branch** label indicating it has changed dependencies:
-
-<Image
-src="/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png"
-width={1154}
-height={490}
-/>
-
-</TabItem>
 </TabGroup>
 
 ### Partitions definitions
@@ -127,34 +129,34 @@ height={490}
 Change tracking can detect if an asset's <PyObject object="PartitionsDefinition" /> has been changed, whether it's been added, removed, or updated.
 
 <TabGroup>
-<TabItem name="Asset definition">
-
-For example, if the main branch contains `weekly_orders`:
-
-```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
-@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2024-01-01"))
-def weekly_orders(): ...
-```
-
-And the pull request updates the <PyObject object="WeeklyPartitionsDefinition" /> to start one year earlier:
-
-```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
-@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))
-def weekly_orders(): ...
-```
-
-</TabItem>
 <TabItem name="Asset in the Dagster UI">
 
-Click the **Asset definition** tab to view how this asset is defined.
+In this example, the `weekly_orders` asset has a **Changed in branch** label indicating a changed partitions definition.
 
-In this example, the `weekly_orders` asset has a **Changed in branch** label indicating a changed partitions definition:
+Click the **Asset definition** tab to see the code change that created this label.
 
 <Image
 src="/images/dagster-cloud/managing-deployments/change-tracking-partitions.png"
 width={1154}
 height={490}
 />
+
+</TabItem>
+<TabItem name="Asset definition">
+
+**In the main branch**, we have a `weekly_orders` asset:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
+@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2024-01-01"))
+def weekly_orders(): ...
+```
+
+**In the pull request**, we updated the <PyObject object="WeeklyPartitionsDefinition" /> to start one year earlier:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
+@asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))
+def weekly_orders(): ...
+```
 
 </TabItem>
 </TabGroup>
