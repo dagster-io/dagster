@@ -15,10 +15,7 @@ from typer.testing import CliRunner
 runner = CliRunner()
 
 
-@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
-def test_prepare_for_deployment(
-    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path, use_dbt_project_package_data_dir: bool
-) -> None:
+def test_prepare_for_deployment(monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path) -> None:
     monkeypatch.chdir(dbt_project_dir)
 
     project_name = "jaffle_dagster"
@@ -33,23 +30,17 @@ def test_prepare_for_deployment(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            *(
-                ["--use-dbt-project-package-data-dir"]
-                if use_dbt_project_package_data_dir
-                else ["--use-experimental-dbt-project"]
-            ),
+            "--use-experimental-dbt-project",
         ],
     )
 
     assert result.exit_code == 0
 
     manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
-    packaged_project_dir = (
-        dagster_project_dir.joinpath("dbt-project") if use_dbt_project_package_data_dir else None
-    )
+    packaged_project_dir = dagster_project_dir.joinpath("dbt-project")
 
     assert not manifest_path.exists()
-    assert not packaged_project_dir or not packaged_project_dir.exists()
+    assert not packaged_project_dir.exists()
 
     result = runner.invoke(
         app,
@@ -63,7 +54,8 @@ def test_prepare_for_deployment(
 
     assert result.exit_code == 0
     assert manifest_path.exists()
-    assert not packaged_project_dir or packaged_project_dir.exists()
+    assert packaged_project_dir.exists()
+    assert not packaged_project_dir.is_symlink()
 
 
 def test_prepare_for_deployment_with_state(
@@ -102,6 +94,8 @@ def test_prepare_for_deployment_with_state(
     project = cast(DbtProject, getattr(scaffold_defs_module, "jaffle_shop_project"))
     dbt = DbtCliResource(project_dir=project)
 
+    assert project.packaged_project_dir
+    assert not Path(project.packaged_project_dir).is_symlink()
     assert dbt.state_path
 
     # Running in production produces all the assets.
@@ -110,20 +104,15 @@ def test_prepare_for_deployment_with_state(
 
     # Running in staging should fail because the state directory is empty, so there is no --defer.
     monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "staging")
+
     result = materialize(
         [my_dbt_assets], selection="orders", resources={"dbt": dbt}, raise_on_error=False
     )
     assert not result.success
 
     # Once the state directory is populated, the subselected asset can be produced.
-    Path(dbt.state_path).mkdir(exist_ok=True)
+    Path(dbt.state_path).mkdir(parents=True, exist_ok=True)
     shutil.copyfile(project.manifest_path, Path(dbt.state_path).joinpath("manifest.json"))
-
-    result = runner.invoke(
-        app,
-        ["project", "prepare-for-deployment", "--file", os.fspath(dbt_project_file_path)],
-    )
-    assert result.exit_code == 0
 
     result = materialize([my_dbt_assets], selection="orders", resources={"dbt": dbt})
     assert result.success

@@ -145,17 +145,46 @@ def test_project_scaffold_command_with_runtime_manifest(
         use_experimental_dbt_project=use_experimental_dbt_project,
     )
 
-    dbt_project_dir = _update_dbt_project_path(
+    monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
+    monkeypatch.chdir(tmp_path)
+    sys.path.append(os.fspath(tmp_path))
+
+    _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
+    assert (
+        not dagster_project_dir.joinpath("dbt-project").exists()
+        or dagster_project_dir.joinpath("dbt-project").is_symlink()
+    )
+
+
+def test_project_scaffold_command_with_packaged_project_dir_exceptions(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    project_name = "test_dagster_scaffold_exceptions"
+    dagster_project_dir = tmp_path.joinpath(project_name)
+    packaged_project_dir = dagster_project_dir.joinpath("dbt-project")
+
+    _assert_scaffold_invocation(
+        project_name=project_name,
         dbt_project_dir=dbt_project_dir,
         dagster_project_dir=dagster_project_dir,
-        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+        use_dbt_project_package_data_dir=True,
+        use_experimental_dbt_project=True,
     )
 
     monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
-    _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
+    packaged_project_dir.touch()
+    with pytest.raises(Exception, match="not a symlink"):
+        importlib.import_module(f"{project_name}.{project_name}.definitions")
+
+    packaged_project_dir.unlink()
+    packaged_project_dir.symlink_to(tmp_path)
+    with pytest.raises(Exception, match="symlink already exists"):
+        importlib.import_module(f"{project_name}.{project_name}.definitions")
 
 
 @pytest.mark.parametrize("use_experimental_dbt_project", [True, False])

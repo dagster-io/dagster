@@ -106,7 +106,6 @@ def copy_scaffold(
     project_name: str,
     dagster_project_dir: Path,
     dbt_project_dir: Path,
-    use_dbt_project_package_data_dir: bool,
     use_experimental_dbt_state: bool,
     use_experimental_dbt_project: bool,
 ) -> None:
@@ -159,7 +158,6 @@ def copy_scaffold(
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
-                use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
                 use_experimental_dbt_state=use_experimental_dbt_state,
                 use_experimental_dbt_project=use_experimental_dbt_project,
             ).dump(destination_path)
@@ -237,15 +235,6 @@ def project_scaffold_command(
             hidden=True,
         ),
     ] = False,
-    use_dbt_project_package_data_dir: Annotated[
-        bool,
-        typer.Option(
-            default=...,
-            help="Controls whether `DbtProject` is used with a dbt project package data directory.",
-            is_flag=True,
-            hidden=True,
-        ),
-    ] = False,
     use_experimental_dbt_state: Annotated[
         bool,
         typer.Option(
@@ -258,7 +247,9 @@ def project_scaffold_command(
     use_experimental_dbt_project: Annotated[
         bool,
         typer.Option(
-            default=...,
+            ...,
+            "--use-dbt-project-package-data-dir",
+            "--use-experimental-dbt-project",
             help="Controls whether `DbtProject` is used.",
             is_flag=True,
             hidden=True,
@@ -280,18 +271,14 @@ def project_scaffold_command(
     )
 
     dagster_project_dir = Path.cwd().joinpath(project_name)
+    use_experimental_dbt_project = use_experimental_dbt_project or use_experimental_dbt_state
 
     copy_scaffold(
         project_name=project_name,
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
-        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
         use_experimental_dbt_state=use_experimental_dbt_state,
-        use_experimental_dbt_project=(
-            use_experimental_dbt_project
-            or use_dbt_project_package_data_dir
-            or use_experimental_dbt_state
-        ),
+        use_experimental_dbt_project=use_experimental_dbt_project,
     )
 
     dagster_dev_command = "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev"

@@ -51,6 +51,31 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
     def on_load(self, project: "DbtProject"):
         if self.using_dagster_dev() or self.parse_on_load_opt_in():
+            # If the project is intended to be packaged, create a symlink at the
+            # packaged project directory to the project directory.
+            if project.packaged_project_dir:
+                if not project.packaged_project_dir.exists():
+                    logger.info(
+                        f"Creating symlink at packaged_project_dir `{project.packaged_project_dir}`"
+                        f" to project_dir `{project.project_dir}`."
+                    )
+
+                    project.packaged_project_dir.symlink_to(project.project_dir)
+
+                if not project.packaged_project_dir.is_symlink():
+                    raise Exception(
+                        f"The packaged_project_dir `{project.packaged_project_dir}` points to an"
+                        " existing file or directory that is not a symlink to the"
+                        f" project_dir `{project.project_dir}`, Remove it to continue."
+                    )
+
+                if project.packaged_project_dir.readlink() != project.project_dir:
+                    raise Exception(
+                        f"A symlink already exists at "
+                        f" packaged_project_dir `{project.packaged_project_dir}`, but does not"
+                        f" point to the project_dir `{project.project_dir}`. Remove it to continue."
+                    )
+
             self.prepare(project)
             if not project.manifest_path.exists():
                 raise DagsterDbtManifestNotFoundError(
@@ -78,8 +103,8 @@ class DbtProject(DagsterModel):
     target_path: Path
     target: Optional[str]
     manifest_path: Path
-    state_path: Optional[Path]
     packaged_project_dir: Optional[Path]
+    state_path: Optional[Path]
     manifest_preparer: DbtManifestPreparer
 
     def __init__(
@@ -88,8 +113,8 @@ class DbtProject(DagsterModel):
         *,
         target_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
-        state_path: Optional[Union[Path, str]] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
+        state_path: Optional[Union[Path, str]] = None,
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
         """Representation of a dbt project.
@@ -120,7 +145,11 @@ class DbtProject(DagsterModel):
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
 
         packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
-        if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
+        if (
+            not manifest_preparer.using_dagster_dev()
+            and packaged_project_dir
+            and packaged_project_dir.exists()
+        ):
             project_dir = packaged_project_dir
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
