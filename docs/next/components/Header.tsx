@@ -165,7 +165,7 @@ const Header = ({openMobileDocsMenu}) => {
               href="https://dagster.cloud/signup"
               className="hidden 3xl:inline-flex px-4 py-1 border border-blurple bg-blurple cursor-pointer hover:bg-blurple-darker text-white gap-2 leading-8 items-center rounded-full whitespace-nowrap transition"
             >
-              Try Dagster Cloud
+              Try Dagster+
             </a>
           </div>
         </div>
@@ -263,7 +263,7 @@ const Header = ({openMobileDocsMenu}) => {
               href="https://dagster.cloud/signup"
               className="px-6 py-2 border text-lg border-gable-green cursor-pointer bg-transparent hover:bg-gable-green hover:text-white inline-flex gap-2 leading-8 items-center rounded-full whitespace-nowrap transition"
             >
-              Try Dagster Cloud
+              Try Dagster+
             </a>
           </div>
         </div>
