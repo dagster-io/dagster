@@ -169,15 +169,3 @@ class AssetCheckResult(
             severity=self.severity,
             description=self.description,
         )
-
-    def get_spec_python_identifier(
-        self, *, asset_key: Optional[AssetKey] = None, check_name: Optional[str] = None
-    ) -> str:
-        """Returns a string uniquely identifying the asset check spec associated with this result.
-        This is used for the output name associated with an `AssetCheckResult`.
-        """
-        asset_key = asset_key or self.asset_key
-        check_name = check_name or self.check_name
-        assert asset_key is not None, "Asset key must be provided if not set on spec"
-        assert asset_key is not None, "Asset key must be provided if not set on spec"
-        return f"{asset_key.to_python_identifier()}_{self.check_name}"
