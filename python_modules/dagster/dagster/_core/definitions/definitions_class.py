@@ -22,6 +22,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.trigger_definition import TriggerDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
@@ -429,12 +430,19 @@ class Definitions:
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+        triggers: Optional[Iterable[TriggerDefinition]] = None,
     ):
+        trigger_assets = []
+        trigger_sensors = []
+        for trigger in triggers or []:
+            trigger_assets.append(trigger.asset)
+            trigger_sensors.append(trigger.sensor)
+
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
-            assets=assets,
+            assets=[*(assets or []), *trigger_assets],
             schedules=schedules,
-            sensors=sensors,
+            sensors=[*(sensors or []), *trigger_sensors],
             jobs=jobs,
             resources=resources,
             executor=executor,

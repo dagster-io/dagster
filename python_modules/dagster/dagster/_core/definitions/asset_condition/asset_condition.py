@@ -309,6 +309,7 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
 
 # Adding the NamedTuple inheritance to avoid bugs with the experimental decorator and subclasses.
 @experimental
+@whitelist_for_serdes
 class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
     """An AssetCondition represents some state of the world that can influence if an asset
     partition should be materialized or not. AssetConditions can be combined to create
@@ -405,6 +406,12 @@ class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
         return RuleCondition(AutoMaterializeRule.materialize_on_parent_updated())
 
     @staticmethod
+    def trigger_newer(trigger: AssetKey) -> "AssetCondition":
+        from .trigger_newer import TriggerNewerAssetCondition
+
+        return TriggerNewerAssetCondition(trigger=trigger)
+
+    @staticmethod
     def missing() -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition when it has never been
         materialized.
@@ -445,6 +452,7 @@ class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
 
 
 @experimental
+@whitelist_for_serdes
 class RuleCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
     AssetCondition,
@@ -473,6 +481,7 @@ class RuleCondition(  # type: ignore # related to AssetCondition being experimen
 
 
 @experimental
+@whitelist_for_serdes
 class AndAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_AndAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
@@ -495,6 +504,7 @@ class AndAssetCondition(  # type: ignore # related to AssetCondition being exper
 
 
 @experimental
+@whitelist_for_serdes
 class OrAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_OrAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
@@ -519,6 +529,7 @@ class OrAssetCondition(  # type: ignore # related to AssetCondition being experi
 
 
 @experimental
+@whitelist_for_serdes
 class NotAssetCondition(  # type: ignore # related to AssetCondition being experimental
     NamedTuple("_NotAssetCondition", [("children", Sequence[AssetCondition])]),
     AssetCondition,
