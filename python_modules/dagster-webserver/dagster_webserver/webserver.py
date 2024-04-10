@@ -1,5 +1,6 @@
 import gzip
 import io
+import mimetypes
 import uuid
 from os import path, walk
 from typing import Generic, List, Optional, TypeVar
@@ -40,7 +41,6 @@ from .external_assets import (
 from .graphql import GraphQLServer
 from .version import __version__
 
-import mimetypes
 mimetypes.init()
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
@@ -265,11 +265,11 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 path,
                 lambda _: FileResponse(path=file_path),
                 name="root_static",
-            )            
-                
-        mimetypes.add_type('application/javascript', '.js')
-        mimetypes.add_type('text/css', '.css')
-        mimetypes.add_type('image/svg+xml', '.svg')
+            )
+
+        mimetypes.add_type("application/javascript", ".js")
+        mimetypes.add_type("text/css", ".css")
+        mimetypes.add_type("image/svg+xml", ".svg")
 
         routes = []
         base_dir = self.relative_path("webapp/build/")
