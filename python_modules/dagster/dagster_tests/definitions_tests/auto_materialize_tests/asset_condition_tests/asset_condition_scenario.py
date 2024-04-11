@@ -26,6 +26,7 @@ from ..scenario_state import ScenarioState
 class FalseAssetCondition(AssetCondition):
     """Always returns the empty subset."""
 
+    @property
     def description(self) -> str:
         return ""
 
