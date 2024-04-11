@@ -37,6 +37,7 @@ paths = [
     "../../python_modules/libraries/dagster-embedded-elt/dlt",
     "../../python_modules/libraries/dagster-fivetran",
     "../../python_modules/libraries/dagster-github",
+    "../../python_modules/libraries/dagster-hightouch",
     "../../python_modules/libraries/dagster-k8s",
     "../../python_modules/libraries/dagster-managed-elements",
     "../../python_modules/libraries/dagster-mlflow",

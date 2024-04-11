@@ -900,6 +900,10 @@
         ]
       },
       {
+        "title": "Hightouch",
+        "path": "/integrations/hightouch"
+      },
+      {
         "title": "Jupyter / Papermill",
         "path": "/integrations/dagstermill",
         "children": [
@@ -1369,6 +1373,10 @@
           {
             "title": "GitHub (dagster-github)",
             "path": "/_apidocs/libraries/dagster-github"
+          },
+          {
+            "title": "Hightouch (dagster-hightouch)",
+            "path": "/_apidocs/libraries/dagster-hightouch"
           },
           {
             "title": "Jupyter / Papermill (dagstermill)",

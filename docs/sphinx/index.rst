@@ -55,6 +55,7 @@
    sections/api/apidocs/libraries/dagster-gcp-pyspark
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
+   sections/api/apidocs/libraries/dagster-hightouch
    sections/api/apidocs/libraries/dagster-k8s
    sections/api/apidocs/libraries/dagster-mlflow
    sections/api/apidocs/libraries/dagster-msteams
