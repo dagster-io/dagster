@@ -1,11 +1,10 @@
 import json
 from enum import Enum
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union, overload
 
-import dagster._check as check
 import polars as pl
-from dagster import InputContext, MetadataValue, OutputContext
+from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
 from dagster._annotations import experimental
 from dagster._core.storage.upath_io_manager import is_dict_type
 
@@ -42,9 +41,11 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
      - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
      - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
      - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table.
-       To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`).
-       Automatically filters loaded partitions, unless `MultiPartitionsDefinition` is used.
-       With `MultiPartitionsDefinition` you are responsible for filtering the partitions in the downstream asset, as it's non-trivial to do so in the IOManager.
+       To enable this behavior, set the `partition_by` metadata value or config parameter **and** use a non-dict type annotation when loading the asset.
+       The `partition_by` value will be used in `delta_write_options` of `pl.DataFrame.write_delta` and `pyarrow_options` of `pl.scan_detla`).
+       It must be in the following format:
+       - `"column:` - when using a normal one-dimensinsl `PartitionsDefinition`
+       - `{"dimension": "column"}` - when using a `MultiPartitionsDefinition`
        When loading all available asset partitions, the whole table can be loaded in one go by using type annotations like `pl.DataFrame` and `pl.LazyFrame`.
      - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
@@ -117,72 +118,6 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     overwrite_schema: bool = False
     version: Optional[int] = None
 
-    # tmp fix until UPathIOManager supports this: added special handling for loading all partitions of an asset
-
-    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
-        # If no asset key, we are dealing with an op output which is always non-partitioned
-        if not context.has_asset_key or not context.has_asset_partitions:
-            path = self._get_path(context)
-            return self._load_single_input(path, context)
-        else:
-            asset_partition_keys = context.asset_partition_keys
-            if len(asset_partition_keys) == 0:
-                return None
-            elif len(asset_partition_keys) == 1:
-                paths = self._get_paths_for_partitions(context)
-                check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
-                path = next(iter(paths.values()))
-                backcompat_paths = self._get_multipartition_backcompat_paths(context)
-                backcompat_path = (
-                    None if not backcompat_paths else next(iter(backcompat_paths.values()))
-                )
-
-                return self._load_partition_from_path(
-                    context=context,
-                    partition_key=asset_partition_keys[0],
-                    path=path,
-                    backcompat_path=backcompat_path,
-                )
-            else:  # we are dealing with multiple partitions of an asset
-                type_annotation = context.dagster_type.typing_type
-                if type_annotation == Any or is_dict_type(type_annotation):
-                    return self._load_multiple_inputs(context)
-
-                # special case of loading the whole DeltaLake table at once
-                # when using AllPartitionMappings and native DeltaLake partitioning
-                elif (
-                    context.upstream_output is not None
-                    and context.upstream_output.definition_metadata is not None
-                    and context.upstream_output.definition_metadata.get("partition_by") is not None
-                    and type_annotation in SINGLE_LOADING_TYPES
-                    and context.upstream_output.asset_info is not None
-                    and context.upstream_output.asset_info.partitions_def is not None
-                    and set(asset_partition_keys)
-                    == set(
-                        context.upstream_output.asset_info.partitions_def.get_partition_keys(
-                            dynamic_partitions_store=context.instance
-                        )
-                    )
-                ):
-                    # load all partitions at once
-                    return self.load_from_path(
-                        context=context,
-                        path=self.get_path_for_partition(
-                            context=context,
-                            partition=asset_partition_keys[0],  # 0 would work,
-                            path=self._get_paths_for_partitions(context)[
-                                asset_partition_keys[0]
-                            ],  # 0 would work,
-                        ),
-                        partition_key=None,
-                    )
-                else:
-                    check.failed(
-                        "Loading an input that corresponds to multiple partitions, but the"
-                        f" type annotation on the op input is not a dict, Dict, Mapping, one of {SINGLE_LOADING_TYPES},"
-                        " or Any: is '{type_annotation}'."
-                    )
-
     def sink_df_to_path(
         self,
         context: OutputContext,
@@ -217,10 +152,18 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                     context.partition_key is not None
                 ), 'can\'t set "partition_by" for an asset without partitions'
 
-                delta_write_options["partition_by"] = partition_by
-                delta_write_options["partition_filters"] = [
-                    (partition_by, "=", context.partition_key)
-                ]
+                if isinstance(partition_by, dict) and isinstance(
+                    context.partition_key, MultiPartitionKey
+                ):
+                    delta_write_options["partition_by"] = list(partition_by.values())
+                elif isinstance(partition_by, str) and isinstance(context.partition_key, str):
+                    delta_write_options["partition_by"] = partition_by
+                else:
+                    raise ValueError(
+                        "partitio_by metadata value must be a string for single-partitioned assets or a dictionary for multi-partitioned assets"
+                    )
+
+                delta_write_options["partition_filters"] = self.get_partition_filters(context)
 
         if delta_write_options is not None:
             context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
@@ -267,17 +210,42 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         context: InputContext,
         with_metadata: Optional[bool] = False,
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
+        """This method scans a DeltaLake table into a `polars.LazyFrame`.
+        It can be called in 3 different situations:
+        1. with an unpartitioned asset
+        2. with a partitioned asset without native partitioning enabled - multiple times on nested .delta tables
+        3. with a partitioned asset and with native partitioning enabled - a single time on the .delta table.
+
+        In the (3) optin we apply partition filters to only load mapped partitions
+        """
         context_metadata = context.definition_metadata or {}
 
         version = self.get_delta_version_to_load(path, context)
 
         context.log.debug(f"Reading Delta table with version: {version}")
 
+        pyarrow_options = context_metadata.get("pyarrow_options", {})
+
+        partition_by = context.upstream_output.metadata.get("partition_by")
+
+        # we want to apply partition filters when loading some partitions, but not all partitions
+        if (
+            partition_by
+            and len(context.asset_partition_keys) > 0
+            and set(context.asset_partition_keys)
+            != set(
+                context.upstream_output.asset_info.partitions_def.get_partition_keys(
+                    dynamic_partitions_store=context.instance
+                )
+            )
+        ):
+            pyarrow_options["partitions"] = self.get_partition_filters(context)
+
         ldf = pl.scan_delta(
             str(path),
             version=version,
             delta_table_options=context_metadata.get("delta_table_options"),
-            pyarrow_options=context_metadata.get("pyarrow_options"),
+            pyarrow_options=pyarrow_options,
             storage_options=self.storage_options,
         )
 
@@ -292,6 +260,18 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         else:
             return ldf
+
+    def load_partitions(self, context: InputContext):
+        # any partition would work as they all are stored in the same DeltaLake table
+        path = self._get_path_without_extension(context)
+        if context.upstream_output.metadata.get("partition_by") and not is_dict_type(
+            context.dagster_type.typing_type
+        ):
+            # user enabled native partitioning and wants a `pl.DataFrame` or `pl.LazyFrame`
+            return self.load_from_path(context, self._with_extension(path))
+        else:
+            # default behaviour
+            return super().load_partitions(context)
 
     def get_path_for_partition(
         self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
@@ -314,6 +294,30 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 return path
 
         return path / partition  # partitioning is handled by the IOManager
+
+    @staticmethod
+    def get_partition_filters(
+        context: Union[InputContext, OutputContext],
+    ) -> List[Tuple[str, str, Any]]:
+        assert context.metadata is not None
+
+        partition_filters = []
+
+        partition_by = context.metadata.get("partition_by")
+
+        if partition_by is None or not context.has_asset_partitions:
+            return []
+
+        for partition_key in context.asset_partition_keys:
+            if isinstance(partition_key, MultiPartitionKey):
+                for dim, key in partition_key.keys_by_dimension.items():
+                    partition_filters.append((partition_by[dim], "=", key))
+            elif isinstance(partition_key, str):
+                partition_filters.append((partition_by, "=", partition_key))
+            else:
+                raise NotImplementedError("Unsupported partition_key type: type(partition_key)")
+
+        return partition_filters
 
     def get_metadata(
         self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
