@@ -152,6 +152,71 @@ def test_different_event_types(
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
+def test_observation_descriptions(
+    pendulum_aware_report_dagster_event: None, instance: DagsterInstance
+) -> None:
+    @asset
+    def my_asset():
+        pass
+
+    start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
+    lower_bound_delta = datetime.timedelta(minutes=10)
+
+    check = build_last_update_freshness_checks(
+        assets=[my_asset],
+        lower_bound_delta=lower_bound_delta,
+    )
+    # First, create an event that is outside of the allowed time window.
+    with pendulum_freeze_time(
+        start_time.subtract(seconds=int(lower_bound_delta.total_seconds() + 1))
+    ):
+        add_new_event(instance, my_asset.key, is_materialization=False)
+    # Check fails, and the description should reflect that we don't know the current state of the asset.
+    with pendulum_freeze_time(start_time):
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            False,
+            description_match="Asset is in an unknown state. Expected an update within the last 10 minutes, but we have not received an observation in that time, so we can't determine the state of the asset.",
+        )
+
+        # Create an observation event within the allotted time window, but with an out of date last update time. Description should change.
+        add_new_event(
+            instance,
+            my_asset.key,
+            is_materialization=False,
+            override_timestamp=start_time.subtract(
+                seconds=int(lower_bound_delta.total_seconds() + 1)
+            ).timestamp(),
+        )
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            False,
+            description_match="Asset is overdue. Expected an update within the last 10 minutes.",
+        )
+
+        # Create an observation event within the allotted time window, with an up to date last update time. Description should change.
+        add_new_event(
+            instance,
+            my_asset.key,
+            is_materialization=False,
+            override_timestamp=start_time.subtract(minutes=9).timestamp(),
+        )
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            True,
+            description_match="Asset is fresh. Expected an update within the last 10 minutes, and found an update 9 minutes ago.",
+        )
+
+
 def test_check_result_cron(
     pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
@@ -183,7 +248,7 @@ def test_check_result_cron(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is overdue. Expected an update within the last 1 hours, 10 minutes.",
+            description_match="Asset is overdue. Expected an update within the last 1 hour, 10 minutes.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
@@ -217,7 +282,7 @@ def test_check_result_cron(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Asset is fresh. Expected an update within the last 1 hours, 10 minutes, and found an update 1 hours, 9 minutes ago.",
+            description_match="Asset is fresh. Expected an update within the last 1 hour, 10 minutes, and found an update 1 hour, 9 minutes ago.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
