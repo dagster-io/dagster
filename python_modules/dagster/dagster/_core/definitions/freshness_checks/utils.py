@@ -2,14 +2,12 @@ import datetime
 import hashlib
 from typing import Iterator, Optional, Sequence, Union, cast
 
-import pendulum
-
 from dagster import _check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
 
 from ..assets import AssetsDefinition, SourceAsset
@@ -138,7 +136,9 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
         return cast(float, value)
 
 
-def get_last_updated_timestamp(record: Optional[EventLogRecord]) -> Optional[float]:
+def get_last_updated_timestamp(
+    record: Optional[EventLogRecord], context: AssetCheckExecutionContext
+) -> Optional[float]:
     if record is None:
         return None
     if record.asset_materialization is not None:
@@ -148,6 +148,12 @@ def get_last_updated_timestamp(record: Optional[EventLogRecord]) -> Optional[flo
         if metadata_value is not None:
             return check.float_param(metadata_value.value, "last_updated_timestamp")
         else:
+            context.log.warning(
+                f"Could not find last updated timestamp in observation record for asset key "
+                f"{check.not_none(record.asset_key).to_user_string()}. Please set "
+                "dagster/last_updated_timestamp in the metadata of the observation record on "
+                "assets which have freshness checks."
+            )
             return None
     else:
         check.failed("Expected record to be an observation or materialization")
@@ -162,32 +168,22 @@ def ensure_freshness_checks(checks: Sequence[AssetChecksDefinition]) -> None:
             )
 
 
-def get_expected_partition_key(
-    deadline: datetime.datetime,
-    partitions_def: Optional[TimeWindowPartitionsDefinition],
-) -> Optional[str]:
-    """Get the latest complete partition key for the given cron schedule."""
-    if not partitions_def:
-        return None
-    deadline_in_partitions_def_tz = pendulum.from_timestamp(
-        deadline.timestamp(), tz=partitions_def.timezone
-    )
-    time_window = check.not_none(
-        partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)
-    )
-    return partitions_def.get_partition_key_range_for_time_window(time_window).start
-
-
 def get_description_for_freshness_check_result(
     passed: bool,
     update_timestamp: Optional[float],
     last_update_time_lower_bound: datetime.datetime,
     current_timestamp: float,
     expected_partition_key: Optional[str],
+    record_arrival_timestamp: Optional[float],
+    event_type: Optional[DagsterEventType],
 ) -> str:
     check.invariant(
         (passed and update_timestamp is not None) or not passed,
         "Should not be possible for check to pass without an update to the asset.",
+    )
+    out_of_date_observation = record_arrival_timestamp is None or (
+        record_arrival_timestamp < last_update_time_lower_bound.timestamp()
+        and event_type == DagsterEventType.ASSET_OBSERVATION
     )
     update_time_delta_str = (
         seconds_in_words(current_timestamp - update_timestamp) if update_timestamp else None
@@ -199,9 +195,12 @@ def get_description_for_freshness_check_result(
         f"Partition {expected_partition_key} is fresh. Expected the partition to arrive within the last {last_update_time_lower_bound_delta_str}, and it arrived {update_time_delta_str} ago."
         if passed and expected_partition_key
         else f"Partition {expected_partition_key} is overdue. Expected the partition to arrive within the last {last_update_time_lower_bound_delta_str}."
-        if not passed and expected_partition_key
+        if not passed
+        and expected_partition_key  # Since we search for a specific partition, if that partition has never been materialized, we will have no record and is therefore in an "unknown" state, but we can't distinguish between that and an overdue state, so we call it overdue regardless.
         else f"Asset is fresh. Expected an update within the last {last_update_time_lower_bound_delta_str}, and found an update {update_time_delta_str} ago."
         if passed and update_timestamp
+        else f"Asset is in an unknown state. Expected an update within the last {last_update_time_lower_bound_delta_str}, but we have not received an observation in that time, so we can't determine the state of the asset."
+        if not passed and update_timestamp and out_of_date_observation
         else f"Asset is overdue. Expected an update within the last {last_update_time_lower_bound_delta_str}."
     )
 
@@ -212,17 +211,21 @@ def seconds_in_words(delta: float) -> str:
     Return format is "X days, Y hours, Z minutes, A seconds".
     """
     days = int(delta // 86400)
-    hours = int(delta // 3600)
+    days_unit = "days" if days > 1 else "day" if days == 1 else None
+    hours = int(delta % 86400 // 3600)
+    hours_unit = "hours" if hours > 1 else "hour" if hours == 1 else None
     minutes = int((delta % 3600) // 60)
+    minutes_unit = "minutes" if minutes > 1 else "minute" if minutes == 1 else None
     seconds = int(delta % 60)
+    seconds_unit = "seconds" if seconds > 1 else "second" if seconds == 1 else None
     return ", ".join(
         filter(
             None,
             [
-                f"{days} days" if days else None,
-                f"{hours} hours" if hours else None,
-                f"{minutes} minutes" if minutes else None,
-                f"{seconds} seconds" if seconds else None,
+                f"{days} {days_unit}" if days_unit else None,
+                f"{hours} {hours_unit}" if hours_unit else None,
+                f"{minutes} {minutes_unit}" if minutes_unit else None,
+                f"{seconds} {seconds_unit}" if seconds_unit else None,
             ],
         )
     )

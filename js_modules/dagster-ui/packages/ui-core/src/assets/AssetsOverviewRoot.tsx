@@ -23,9 +23,11 @@ import {ReloadAllButton} from '../workspace/ReloadAllButton';
 export const AssetsOverviewRoot = ({
   writeAssetVisit,
   headerBreadcrumbs,
+  documentTitlePrefix,
 }: {
   writeAssetVisit?: (assetKey: AssetKey) => void;
   headerBreadcrumbs: BreadcrumbProps[];
+  documentTitlePrefix: string;
 }) => {
   useTrackPageView();
 
@@ -46,8 +48,8 @@ export const AssetsOverviewRoot = ({
 
   useDocumentTitle(
     currentPath && currentPath.length
-      ? `Assets: ${displayNameForAssetKey({path: currentPath})}`
-      : 'Assets',
+      ? `${documentTitlePrefix}: ${displayNameForAssetKey({path: currentPath})}`
+      : documentTitlePrefix,
   );
 
   const trace = usePageLoadTrace(

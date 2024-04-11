@@ -233,7 +233,8 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-01 is overdue. Expected the partition to arrive within the last 16 hours.",
+            # We expected the asset to arrive between the end of the partition window (2021-01-02) and the current time (2021-01-03).
+            description_match="Partition 2021-01-01 is overdue. Expected the partition to arrive within the last 1 day, 1 hour.",
         )
 
         # Add an event for an old partition. Still fails
@@ -244,7 +245,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-01 is overdue. Expected the partition to arrive within the last 16 hours.",
+            description_match="Partition 2021-01-01 is overdue. Expected the partition to arrive within the last 1 day, 1 hour.",
         )
 
         # Go back in time and add an event for the most recent completed partition previous the
@@ -259,7 +260,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 16 hours, 1 seconds, and it arrived 1 seconds ago.",
+            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 1 second, and it arrived 1 second ago.",
         )
 
     # Advance a full day. By now, we would expect a new event to have been added.
@@ -272,7 +273,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 16 hours, 1 seconds.",
+            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 1 day, 1 hour, 1 second.",
         )
 
         # Add a partition for the most recently completed day, but before the cron has completed on
@@ -284,7 +285,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 16 hours, 1 seconds.",
+            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 1 day, 1 hour, 1 second.",
         )
 
         # Again, go back in time, and add an event for the most recently completed time window
@@ -299,7 +300,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 16 hours, 2 seconds, and it arrived 1 seconds ago.",
+            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 2 seconds, and it arrived 1 second ago.",
         )
 
 
@@ -371,7 +372,7 @@ def test_observations(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 16 hours, 1 seconds, and it arrived 1 seconds ago.",
+            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 1 second, and it arrived 1 second ago.",
         )
 
 
@@ -417,7 +418,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 14 hours, 1 seconds, and it arrived 1 seconds ago.",
+            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 1 second, and it arrived 1 second ago.",
         )
 
     # Move forward enough that only the process timezone would have ticked. The check should still pass.
@@ -430,7 +431,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 21 hours, 1 seconds, and it arrived 7 hours, 1 seconds ago.",
+            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 8 hours, 1 second, and it arrived 7 hours, 1 second ago.",
         )
 
     # Then, move forward only enough that in the timezone of the partition, and the process timezone, the cron would have ticked, but not in the timezone of the cron. The check should still therefore pass.
@@ -443,7 +444,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 22 hours, 1 seconds, and it arrived 8 hours, 1 seconds ago.",
+            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 9 hours, 1 second, and it arrived 8 hours, 1 second ago.",
         )
 
     # Finally, move forward enough that the cron has ticked in all timezones, and the new partition isn't present. The check should now fail.
@@ -456,7 +457,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 1 seconds.",
+            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 11 hours, 1 second.",
         )
 
         add_new_event(instance, my_chicago_asset.key, "2021-01-02")
@@ -467,7 +468,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 2 seconds, and it arrived 1 seconds ago",
+            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 11 hours, 2 seconds, and it arrived 1 second ago",
         )
 
 
@@ -530,3 +531,69 @@ def test_subset_freshness_checks(instance: DagsterInstance):
         my_other_asset.key,
     }
     assert not all(evaluation.passed for evaluation in result.get_asset_check_evaluations())
+
+
+def test_observation_descriptions(
+    pendulum_aware_report_dagster_event: None, instance: DagsterInstance
+) -> None:
+    @asset(
+        partitions_def=DailyPartitionsDefinition(
+            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+        )
+    )
+    def my_asset():
+        pass
+
+    start_time = pendulum.datetime(
+        2021, 1, 3, 9, 0, 1, tz="UTC"
+    )  # 2021-01-03 at 09:00:00. We expect the 2021-01-02 partition to be fresh.
+
+    check = build_time_partition_freshness_checks(
+        assets=[my_asset],
+        deadline_cron="0 9 * * *",
+    )
+    # First, create an event that is outside of the allowed time window.
+    with pendulum_freeze_time(pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")):
+        add_new_event(instance, my_asset.key, is_materialization=False, partition_key="2021-01-01")
+    with pendulum_freeze_time(start_time):
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            False,
+            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 9 hours, 1 second.",
+        )
+
+        add_new_event(
+            instance,
+            my_asset.key,
+            is_materialization=False,
+            override_timestamp=start_time.subtract(minutes=2).timestamp(),
+            partition_key="2021-01-01",
+        )
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            False,
+            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 9 hours, 1 second.",
+        )
+
+        # Create an observation event within the allotted time window, with an up to date last update time. Description should change.
+        add_new_event(
+            instance,
+            my_asset.key,
+            is_materialization=False,
+            override_timestamp=start_time.subtract(minutes=1).timestamp(),
+            partition_key="2021-01-02",
+        )
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            True,
+            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 9 hours, 1 second, and it arrived 1 minute ago.",
+        )

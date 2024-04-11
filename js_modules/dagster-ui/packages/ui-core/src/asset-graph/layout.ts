@@ -51,6 +51,7 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
   /** Supported in Dagre, just not documented. Additional spacing between group nodes */
   clusterpaddingtop?: number;
   clusterpaddingbottom?: number;
+  ranker?: 'tight-tree' | 'longest-path' | 'network-simplex';
 };
 
 export type LayoutAssetGraphOptions = {
@@ -91,6 +92,26 @@ export const Config = {
 };
 
 export const layoutAssetGraph = (
+  graphData: GraphData,
+  opts: LayoutAssetGraphOptions,
+): AssetGraphLayout => {
+  try {
+    return layoutAssetGraphImpl(graphData, opts);
+  } catch (e) {
+    try {
+      return layoutAssetGraphImpl(graphData, {
+        ...opts,
+        overrides: {
+          ranker: 'longest-path',
+        },
+      });
+    } catch (e) {
+      return layoutAssetGraphImpl(graphData, {...opts, overrides: {ranker: 'network-simplex'}});
+    }
+  }
+};
+
+export const layoutAssetGraphImpl = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {

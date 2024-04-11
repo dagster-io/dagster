@@ -106,10 +106,15 @@ def add_new_event(
     asset_key: AssetKey,
     partition_key: Optional[str] = None,
     is_materialization: bool = True,
+    override_timestamp: Optional[float] = None,
 ):
     klass = AssetMaterialization if is_materialization else AssetObservation
     metadata = (
-        {"dagster/last_updated_timestamp": TimestampMetadataValue(pendulum.now("UTC").timestamp())}
+        {
+            "dagster/last_updated_timestamp": TimestampMetadataValue(
+                pendulum.now("UTC").timestamp() if not override_timestamp else override_timestamp
+            )
+        }
         if not is_materialization
         else None
     )

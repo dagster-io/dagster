@@ -32,4 +32,5 @@ Dagster allows you to define and execute checks on your software-defined assets.
 .. autofunction:: build_time_partition_freshness_checks 
 
 .. autofunction:: build_sensor_for_freshness_checks 
-    
+
+.. autofunction:: build_column_schema_change_checks

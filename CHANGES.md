@@ -1,5 +1,38 @@
 # Changelog
 
+# 1.7.1 (core) / 0.23.1 (libraries)
+
+### New
+
+- [dagster-dbt][experimental] A new cli command `dagster-dbt project prepare-for-deployment` has been added in conjunction with `DbtProject` for managing the behavior of rebuilding the manifest during development and preparing a pre-built one for production.
+
+### Bugfixes
+
+- Fixed an issue with duplicate asset check keys when loading checks from a package.
+- A bug with the new `build_last_update_freshness_checks` and `build_time_partition_freshness_checks` has been fixed where multi_asset checks passed in would not be executable.
+- [dagster-dbt] Fixed some issues with building column lineage for incremental models, models with implicit column aliases, and models with columns that have multiple dependencies on the same upstream column.
+
+### Breaking Changes
+
+- [dagster-dbt] The experimental `DbtArtifacts` class has been replaced by `DbtProject`.
+
+### Documentation
+
+- Added a dedicated concept page for all things [metadata and tags](https://docs.dagster.io/concepts/metadata-tags)
+- Moved asset metadata content to a dedicated concept page: [Asset metadata](https://docs.dagster.io/concepts/metadata-tags/asset-metadata)
+- Added section headings to the [Software-defined Assets API reference](https://docs.dagster.io/_apidocs/assets), which groups APIs by asset type or use
+- Added a guide about [user settings in the Dagster UI](https://docs.dagster.io/concepts/webserver/ui-user-settings)
+- Added `AssetObservation` to the Software-defined Assets API reference
+- Renamed Dagster Cloud GitHub workflow files to the new, consolidated `dagster-cloud-deploy.yml`
+- Miscellaneous formatting and copy updates
+- [community-contribution] [dagster-embedded-elt] Fixed `get_asset_key` API documentation (thanks @aksestok!)
+- [community-contribution] Updated Python version in contributing documentation (thanks @piotrmarczydlo!)
+- [community-contribution] Typo fix in README (thanks @MiConnell!)
+
+### Dagster Cloud
+
+- Fixed a bug where an incorrect value was being emitted for BigQuery bytes billed in Insights.
+
 # 1.7.0 (core) / 0.23.0 (libraries)
 
 ## Major Changes since 1.6.0 (core) / 0.22.0 (libraries)

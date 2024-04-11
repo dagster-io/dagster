@@ -298,26 +298,26 @@ class AutoMaterializePolicy(
             return self.asset_condition
 
         materialize_condition = OrAssetCondition(
-            children=[
+            operands=[
                 rule.to_asset_condition()
                 for rule in sorted(self.materialize_rules, key=lambda rule: rule.description)
             ]
         )
         skip_condition = OrAssetCondition(
-            children=[
+            operands=[
                 rule.to_asset_condition()
                 for rule in sorted(self.skip_rules, key=lambda rule: rule.description)
             ]
         )
         children = [
             materialize_condition,
-            NotAssetCondition([skip_condition]),
+            NotAssetCondition(skip_condition),
         ]
         if self.max_materializations_per_minute:
             discard_condition = DiscardOnMaxMaterializationsExceededRule(
                 self.max_materializations_per_minute
             ).to_asset_condition()
-            children.append(NotAssetCondition([discard_condition]))
+            children.append(NotAssetCondition(discard_condition))
 
         # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d
         return AndAssetCondition(children)
