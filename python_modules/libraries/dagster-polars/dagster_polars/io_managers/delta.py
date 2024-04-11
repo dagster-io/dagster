@@ -45,10 +45,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
      - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table.
        To enable this behavior, set the `partition_by` metadata value or config parameter **and** use a non-dict type annotation when loading the asset.
        The `partition_by` value will be used in `delta_write_options` of `pl.DataFrame.write_delta` and `pyarrow_options` of `pl.scan_detla`).
-       It must be in the following format:
-       - `"column:` - when using a normal one-dimensinsl `PartitionsDefinition`
-       - `{"dimension": "column"}` - when using a `MultiPartitionsDefinition`
-       When loading all available asset partitions, the whole table can be loaded in one go by using type annotations like `pl.DataFrame` and `pl.LazyFrame`.
+       When using a one-dimensional `PartitionsDefinition`, it should be a single string like "column`. When using a `MultiPartitionsDefinition`, 
+       it should be a dict with dimension to column names mapping, like `{"dimension": "column"}`.
      - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
     Install `dagster-polars[delta]` to use this IOManager.
@@ -100,19 +98,52 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 metadata={
                     "partition_by": "partition_col"
                 },
-                partitions_def=...
+                partitions_def=StaticPartitionsDefinition(["a, "b", "c"])
             )
             def upstream(context: AssetExecutionContext) -> pl.DataFrame:
                 df = ...
 
-                # add partition to the DataFrame
-                df = df.with_columns(pl.lit(context.partition_key).alias("partition_col"))
-                return df
+                # column with the partition_key must match `partition_by` metadata value
+                return df.with_columns(pl.lit(context.partition_key).alias("partition_col"))
 
             @asset
-            def downstream(upstream: LazyFramePartitions) -> pl.DataFrame:
-                # concat LazyFrames, filter required partitions and call .collect()
+            def downstream(upstream: pl.LazyFrame) -> pl.DataFrame:
                 ...
+
+        When using `MuiltiPartitionsDefinition`, `partition_by` metadata value should be a dictionary mapping dimensions to column names.
+
+        .. code-block:: python
+
+            from dagster import AssetExecutionContext, DailyPartitionedDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
+            from dagster_polars import LazyFramePartitions
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                metadata={
+                    "partition_by": {"time": "date", "clients": "client"}  # dimension->column mapping
+                },
+                partitions_def=MultiPartitionsDefinition(
+                    {
+                        "date": DailyPartitionedDefinition(...),
+                        "clients": StaticPartitionsDefinition(...)
+                    }
+                )
+            )
+            def upstream(context: AssetExecutionContext) -> pl.DataFrame:
+                df = ...
+
+                partition_keys_by_dimension = context.partition_key.keys_by_dimension
+
+                return df.with_columns(
+                    pl.lit(partition_keys_by_dimension["time"]).alias("date"),  # time dimension matches date column
+                    pl.lit(partition_keys_by_dimension["clients"]).alias("client")  # clients dimension matches client column
+                )
+
+
+            @asset
+            def downstream(upstream: pl.LazyFrame) -> pl.DataFrame:
+                ...
+
     """
 
     extension: str = ".delta"
