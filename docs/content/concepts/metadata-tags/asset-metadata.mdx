@@ -61,9 +61,9 @@ def small_petals(duckdb: DuckDBResource) -> None:
 ### Asset owners
 
 <Note>
-  <strong>Did you know?</strong> If using Dagster+, you can create asset-based
-  alerts that will automatically notify an asset's owners when triggered. Refer
-  to the{" "}
+  <strong>Did you know?</strong> If using Dagster+ Pro, you can create
+  asset-based alerts that will automatically notify an asset's owners when
+  triggered. Refer to the{" "}
   <a href="/dagster-plus/managing-deployments/alerts">
     Dagster+ alert documentation
   </a>{" "}
@@ -79,8 +79,7 @@ from dagster import asset
 
 
 @asset(owners=["richard.hendricks@hooli.com", "team:data-eng"])
-def leads():
-    ...
+def leads(): ...
 ```
 
 ---
