@@ -45,7 +45,7 @@ class AssetConditionScenarioState(ScenarioState):
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery
         asset_condition = AndAssetCondition(
-            children=[check.not_none(self.asset_condition), FalseAssetCondition()]
+            operands=[check.not_none(self.asset_condition), FalseAssetCondition()]
         )
 
         with pendulum_freeze_time(self.current_time):

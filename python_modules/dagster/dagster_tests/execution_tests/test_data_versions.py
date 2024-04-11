@@ -33,6 +33,7 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition_mapping import AllPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.events import DagsterEventType
@@ -563,6 +564,51 @@ def test_stale_status_partitions_enabled() -> None:
         assert status_resolver.get_status(asset1.key, "foo") == StaleStatus.FRESH
         assert status_resolver.get_status(asset2.key, "foo") == StaleStatus.STALE
         assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
+
+
+def test_stale_status_downstream_of_all_partitions_mapping():
+    start_date = datetime(2020, 1, 1)
+    end_date = start_date + timedelta(days=2)
+    start_key = start_date.strftime("%Y-%m-%d")
+
+    partitions_def = DailyPartitionsDefinition(start_date=start_date, end_date=end_date)
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        return 1
+
+    @asset(
+        ins={"asset1": AssetIn(partition_mapping=AllPartitionMapping())},
+    )
+    def asset2(asset1):
+        return 2
+
+    all_assets = [asset1, asset2]
+
+    # Downstream values are not stale even after upstream changed because of the partition mapping
+    with instance_for_test() as instance:
+        for k in partitions_def.get_partition_keys():
+            materialize_asset(all_assets, asset1, instance, partition_key=k)
+
+        materialize_asset(all_assets, asset2, instance)
+
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        for k in partitions_def.get_partition_keys():
+            assert status_resolver.get_status(asset1.key, k) == StaleStatus.FRESH
+
+        assert status_resolver.get_status(asset2.key, None) == StaleStatus.FRESH
+
+        materialize_asset(
+            all_assets,
+            asset1,
+            instance,
+            partition_key=start_key,
+        )
+
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+
+        # Still fresh b/c of the partition mapping
+        assert status_resolver.get_status(asset2.key, None) == StaleStatus.FRESH
 
 
 def test_stale_status_many_to_one_partitions() -> None:
