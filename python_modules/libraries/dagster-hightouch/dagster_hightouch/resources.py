@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 import requests
-
 from dagster import Failure, Field, StringSource, get_dagster_logger, resource
 
 from . import utils
@@ -27,9 +26,7 @@ WARNING = "warning"
 
 
 class HightouchResource:
-    """
-    this class exposes methods on top of the Hightouch REST API.
-    """
+    """This class exposes methods on top of the Hightouch REST API."""
 
     def __init__(
         self,
@@ -43,14 +40,16 @@ class HightouchResource:
         self._request_max_retries = request_max_retries
         self._request_retry_delay = request_retry_delay
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @property
     def api_base_url(self) -> str:
         return HIGHTOUCH_API_BASE
 
-    def make_request(
-        self, method: str, endpoint: str, params: Optional[Dict[str, Any]] = None
-    ):
-        """Creates and sends a request to the desired Hightouch API endpoint
+    def make_request(self, method: str, endpoint: str, params: Optional[Dict[str, Any]] = None):
+        """Creates and sends a request to the desired Hightouch API endpoint.
 
         Args:
             method (str): The http method use for this request (e.g. "GET", "POST").
@@ -60,7 +59,6 @@ class HightouchResource:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-
         try:
             __version__ = version("dagster_hightouch")
         except PackageNotFoundError:
@@ -90,9 +88,7 @@ class HightouchResource:
 
         raise Failure("Exceeded max number of retries.")
 
-    def get_sync_run_details(
-        self, sync_id: str, sync_request_id: str
-    ) -> List[Dict[str, Any]]:
+    def get_sync_run_details(self, sync_id: str, sync_request_id: str) -> List[Dict[str, Any]]:
         """Get details about a given sync run from the Hightouch API.
 
         Args:
@@ -103,9 +99,7 @@ class HightouchResource:
             Dict[str, Any]: Parsed json data from the response
         """
         params = {"runId": sync_request_id}
-        return self.make_request(
-            method="GET", endpoint=f"syncs/{sync_id}/runs", params=params
-        )
+        return self.make_request(method="GET", endpoint=f"syncs/{sync_id}/runs", params=params)
 
     def get_destination_details(self, destination_id: str) -> Dict[str, Any]:
         """Get details about a destination from the Hightouch API.
@@ -116,9 +110,7 @@ class HightouchResource:
         Returns:
             Dict[str, Any]: Parsed json data from the response
         """
-        return self.make_request(
-            method="GET", endpoint=f"destinations/{destination_id}"
-        )
+        return self.make_request(method="GET", endpoint=f"destinations/{destination_id}")
 
     def get_sync_details(self, sync_id: str) -> Dict[str, Any]:
         """Get details about a given sync from the Hightouch API.
@@ -132,7 +124,7 @@ class HightouchResource:
         return self.make_request(method="GET", endpoint=f"syncs/{sync_id}")
 
     def start_sync(self, sync_id: str) -> str:
-        """Trigger a sync and initiate a sync run
+        """Triggers a sync and initiate a sync run.
 
         Args:
             sync_id (str): The Hightouch Sync ID.
@@ -140,9 +132,7 @@ class HightouchResource:
         Returns:
             str: The sync request ID created by the Hightouch API.
         """
-        return self.make_request(method="POST", endpoint=f"syncs/{sync_id}/trigger")[
-            "id"
-        ]
+        return self.make_request(method="POST", endpoint=f"syncs/{sync_id}/trigger")["id"]
 
     def poll_sync(
         self,
@@ -152,7 +142,7 @@ class HightouchResource:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
-        """Poll for the completion of a sync
+        """Polls for the completion of a sync.
 
         Args:
             sync_id (str): The Hightouch Sync ID
@@ -197,10 +187,8 @@ class HightouchResource:
                     sync_id,
                     sync_request_id,
                 )
-            if (
-                poll_timeout
-                and datetime.datetime.now()
-                > poll_start + datetime.timedelta(seconds=poll_timeout)
+            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
+                seconds=poll_timeout
             ):
                 raise Failure(
                     f"Sync {sync_id} for request: {sync_request_id}' time out after "
@@ -209,9 +197,7 @@ class HightouchResource:
 
             time.sleep(poll_interval)
         sync_details = self.get_sync_details(sync_id)
-        destination_details = self.get_destination_details(
-            sync_details["destinationId"]
-        )
+        destination_details = self.get_destination_details(sync_details["destinationId"])
 
         return (sync_details, sync_run_details, destination_details)
 
@@ -222,8 +208,7 @@ class HightouchResource:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> HightouchOutput:
-        """
-        Initialize a sync run for the given sync id, and polls until it completes
+        """Initializes a sync run for the given sync id, and polls until it completes.
 
         Args:
             sync_id (str): The Hightouch Sync ID
@@ -232,6 +217,7 @@ class HightouchResource:
             poll_interval (float): The time in seconds that will be waited between succcessive polls
             poll_timeout (float): The maximum time that will be waited before this operation
                 times out.
+
         Returns:
             :py:class:`~HightouchOutput`:
                 Object containing details about the Hightouch sync run
@@ -267,11 +253,10 @@ class HightouchResource:
             description="Time (in seconds) to wait between each request retry.",
         ),
     },
-    description="This resource helps manage Fivetran connectors",
+    description="This resource helps manage Hightouch connectors",
 )
 def ht_resource(context) -> HightouchResource:
-    """
-    This resource allows users to programatically interface with the Hightouch REST API to triggers
+    """This resource allows users to programatically interface with the Hightouch REST API to triggers
     syncs and monitor their progress.
     """
     return HightouchResource(

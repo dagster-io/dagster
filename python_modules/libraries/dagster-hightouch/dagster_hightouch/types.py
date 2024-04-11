@@ -12,8 +12,8 @@ class HightouchOutput(
         ],
     )
 ):
-    """
-    Contains recorded information about the state of a Hightouch sync after a sync completes.
+    """Contains recorded information about the state of a Hightouch sync after a sync completes.
+
     Attributes:
         sync_details (Dict[str, Any]):
             https://hightouch.io/docs/api-reference/#operation/GetSync
