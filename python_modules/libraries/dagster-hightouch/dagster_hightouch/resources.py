@@ -253,7 +253,7 @@ class HightouchResource:
             description="Time (in seconds) to wait between each request retry.",
         ),
     },
-    description="This resource helps manage Fivetran connectors",
+    description="This resource helps manage Hightouch connectors",
 )
 def ht_resource(context) -> HightouchResource:
     """This resource allows users to programatically interface with the Hightouch REST API to triggers
