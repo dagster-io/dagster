@@ -18,6 +18,8 @@ Refer to the `Software-defined Assets </concepts/assets/software-defined-assets>
 
 .. autoclass:: AssetsDefinition
 
+.. autoclass:: AssetKey
+
 Graph-backed assets
 -------------------
 
@@ -66,7 +68,7 @@ Dependencies
 Asset jobs
 ----------
 
-`Asset jobs </concepts/assets/asset-jobs>`_ enable the automation of asset materializations.  Dagster's `asset selection syntax </concepts/assets/asset-selection-syntax>`_ can be used to select assets and assign them to a job. 
+`Asset jobs </concepts/assets/asset-jobs>`_ enable the automation of asset materializations.  Dagster's `asset selection syntax </concepts/assets/asset-selection-syntax>`_ can be used to select assets and assign them to a job.
 
 .. autofunction:: define_asset_job
 
