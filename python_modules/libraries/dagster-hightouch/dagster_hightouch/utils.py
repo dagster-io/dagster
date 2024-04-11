@@ -1,46 +1,39 @@
-from typing import Type
-
 from dateutil import parser
 
 from .types import SyncRunParsedOutput
 
 
-def parse_sync_run_details(sync_run_details) -> Type[SyncRunParsedOutput]:
-    x = SyncRunParsedOutput
+def parse_sync_run_details(sync_run_details) -> SyncRunParsedOutput:
+    created_at = (
+        parser.parse(sync_run_details["createdAt"]) if sync_run_details.get("createdAt") else None
+    )
+    started_at = (
+        parser.parse(sync_run_details["startedAt"]) if sync_run_details.get("startedAt") else None
+    )
+    finished_at = (
+        parser.parse(sync_run_details["finishedAt"]) if sync_run_details.get("finishedAt") else None
+    )
+    elapsed_seconds = (finished_at - started_at).seconds if finished_at and started_at else None
 
-    x.created_at = None
-    x.started_at = None
-    x.finished_at = None
-    x.elapsed_seconds = None
-
-    if sync_run_details.get("createdAt"):
-        x.created_at = parser.parse(sync_run_details["createdAt"])
-    if sync_run_details.get("startedAt"):
-        x.started_at = parser.parse(sync_run_details["startedAt"])
-    if sync_run_details.get("finishedAt"):
-        x.finished_at = parser.parse(sync_run_details["finishedAt"])
-
-    if x.finished_at and x.started_at:
-        x.elapsed_seconds = (x.finished_at - x.started_at).seconds
-
-    x.planned_add = sync_run_details["plannedRows"].get("addedCount")
-    x.planned_change = sync_run_details["plannedRows"].get("changedCount")
-    x.planned_remove = sync_run_details["plannedRows"].get("removedCount")
-
-    x.successful_add = sync_run_details["successfulRows"].get("addedCount")
-    x.successful_change = sync_run_details["successfulRows"].get("changedCount")
-    x.successful_remove = sync_run_details["successfulRows"].get("removedCount")
-
-    x.failed_add = sync_run_details["failedRows"].get("addedCount")
-    x.failed_change = sync_run_details["failedRows"].get("changedCount")
-    x.failed_remove = sync_run_details["failedRows"].get("removedCount")
-
-    x.query_size = sync_run_details.get("querySize")
-    x.status = sync_run_details.get("status")
-    x.completion_ratio = float(sync_run_details.get("completionRatio", 0))
-    x.error = sync_run_details.get("error")
-
-    return x
+    return SyncRunParsedOutput(
+        created_at=created_at,
+        started_at=started_at,
+        finished_at=finished_at,
+        elapsed_seconds=elapsed_seconds,
+        planned_add=sync_run_details["plannedRows"].get("addedCount"),
+        planned_change=sync_run_details["plannedRows"].get("changedCount"),
+        planned_remove=sync_run_details["plannedRows"].get("removedCount"),
+        successful_add=sync_run_details["successfulRows"].get("addedCount"),
+        successful_change=sync_run_details["successfulRows"].get("changedCount"),
+        successful_remove=sync_run_details["successfulRows"].get("removedCount"),
+        failed_add=sync_run_details["failedRows"].get("addedCount"),
+        failed_change=sync_run_details["failedRows"].get("changedCount"),
+        failed_remove=sync_run_details["failedRows"].get("removedCount"),
+        query_size=sync_run_details.get("querySize"),
+        status=sync_run_details.get("status"),
+        completion_ratio=float(sync_run_details.get("completionRatio", 0)),
+        error=sync_run_details.get("error"),
+    )
 
 
 def generate_metadata_from_parsed_run(parsed_output: SyncRunParsedOutput):
