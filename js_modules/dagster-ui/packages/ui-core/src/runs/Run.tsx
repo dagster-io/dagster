@@ -6,7 +6,6 @@ import {
   Icon,
   NonIdealState,
   SplitPanelContainer,
-  SplitPanelContainerHandle,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -250,33 +249,35 @@ const RunWithData = ({
     onSetSelectionQuery(newSelected.join(', ') || '*');
   };
 
-  const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
-  const containerRef = React.useRef<SplitPanelContainerHandle>(null);
-
+  const [splitPanelContainer, setSplitPanelContainer] = React.useState<null | SplitPanelContainer>(
+    null,
+  );
   React.useEffect(() => {
-    if (containerRef.current) {
-      const size = containerRef.current.getSize();
-      if (size === 100) {
+    const initialSize = splitPanelContainer?.getSize();
+    switch (initialSize) {
+      case 100:
         setExpandedPanel('top');
-      } else if (size === 0) {
+        return;
+      case 0:
         setExpandedPanel('bottom');
-      }
+        return;
     }
-  }, []);
+  }, [splitPanelContainer]);
 
+  const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
   const isTopExpanded = expandedPanel === 'top';
   const isBottomExpanded = expandedPanel === 'bottom';
 
   const expandBottomPanel = () => {
-    containerRef.current?.changeSize(0);
+    splitPanelContainer?.onChangeSize(0);
     setExpandedPanel('bottom');
   };
   const expandTopPanel = () => {
-    containerRef.current?.changeSize(100);
+    splitPanelContainer?.onChangeSize(100);
     setExpandedPanel('top');
   };
   const resetPanels = () => {
-    containerRef.current?.changeSize(50);
+    splitPanelContainer?.onChangeSize(50);
     setExpandedPanel(null);
   };
 
@@ -330,13 +331,14 @@ const RunWithData = ({
   return (
     <>
       <SplitPanelContainer
-        ref={containerRef}
+        ref={(container) => {
+          setSplitPanelContainer(container);
+        }}
         axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
         firstMinSize={56}
         first={gantt(metadata)}
-        secondMinSize={56}
         second={
           <ErrorBoundary region="logs">
             <LogsContainer>

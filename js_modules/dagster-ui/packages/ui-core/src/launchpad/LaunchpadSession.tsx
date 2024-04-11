@@ -14,8 +14,8 @@ import {
   Group,
   Icon,
   NewConfigEditor,
+  SecondPanelToggle,
   SplitPanelContainer,
-  SplitPanelContainerHandle,
   TextInput,
   isHelpContextEqual,
 } from '@dagster-io/ui-components';
@@ -29,7 +29,6 @@ import {
   ConfigEditorConfigPicker,
 } from './ConfigEditorConfigPicker';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
-import {LaunchpadConfigExpansionButton} from './LaunchpadConfigExpansionButton';
 import {useLaunchPadHooks} from './LaunchpadHooksContext';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
@@ -198,6 +197,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const mounted = React.useRef<boolean>(false);
   const editor = React.useRef<ConfigEditorHandle | null>(null);
+  const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
 
   const {isJob} = pipeline;
@@ -567,8 +567,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   const onConfigLoading = () => dispatch({type: 'toggle-config-loading', payload: true});
   const onConfigLoaded = () => dispatch({type: 'toggle-config-loading', payload: false});
 
-  const splitPanelRef = React.useRef<SplitPanelContainerHandle>(null);
-
   const {
     preview,
     previewLoading,
@@ -747,12 +745,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                 </Button>
               </ShortcutHandler>
               <SessionSettingsSpacer />
-              <LaunchpadConfigExpansionButton
-                axis="horizontal"
-                firstInitialPercent={75}
-                getSize={splitPanelRef.current?.getSize}
-                changeSize={splitPanelRef.current?.changeSize}
-              />
+              <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
             </SessionSettingsBar>
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
@@ -790,7 +783,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
               </Box>
             ) : null}
             <SplitPanelContainer
-              ref={splitPanelRef}
+              ref={editorSplitPanelContainer}
               axis="horizontal"
               identifier="execution-editor"
               firstMinSize={100}
@@ -839,7 +832,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             />
           </>
         }
-        secondMinSize={240}
       />
 
       <LaunchButtonContainer launchpadType={launchpadType}>

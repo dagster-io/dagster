@@ -1,7 +1,9 @@
-import {forwardRef, useCallback, useImperativeHandle, useRef, useState} from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 
+import {Button} from './Button';
 import {Colors} from './Color';
+import {Icon} from './Icon';
 
 const DIVIDER_THICKNESS = 2;
 
@@ -11,124 +13,110 @@ interface SplitPanelContainerProps {
   first: React.ReactNode;
   firstInitialPercent: number;
   firstMinSize?: number;
-  secondMinSize?: number;
   second: React.ReactNode | null; // Note: pass null to hide / animate away the second panel
 }
 
-export type SplitPanelContainerHandle = {
-  getSize: () => number;
-  changeSize: (value: number) => void;
-};
+interface SplitPanelContainerState {
+  size: number;
+  key: string;
+  resizing: boolean;
+}
 
-export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPanelContainerProps>(
-  (props, ref) => {
-    const {
-      axis = 'horizontal',
-      identifier,
-      first,
-      firstInitialPercent,
-      firstMinSize,
-      secondMinSize = 0,
-      second,
-    } = props;
+export class SplitPanelContainer extends React.Component<
+  SplitPanelContainerProps,
+  SplitPanelContainerState
+> {
+  constructor(props: SplitPanelContainerProps) {
+    super(props);
 
-    const [_, setTrigger] = useState(0);
-    const [resizing, setResizing] = useState(false);
-    const key = `dagster.panel-width.${identifier}`;
+    const key = `dagster.panel-width.${this.props.identifier}`;
+    const value = window.localStorage.getItem(key);
+    let size = Number(value);
+    if (value === null || isNaN(size)) {
+      size = this.props.firstInitialPercent;
+    }
 
-    const getSize = useCallback(() => {
-      if (!second) {
-        return 100;
-      }
-      const storedSize = window.localStorage.getItem(key);
-      const parsed = storedSize === null ? null : parseFloat(storedSize);
-      return parsed === null || isNaN(parsed) ? firstInitialPercent : parsed;
-    }, [firstInitialPercent, key, second]);
+    this.state = {size, key, resizing: false};
+  }
 
-    const onChangeSize = useCallback(
-      (newValue: number) => {
-        window.localStorage.setItem(key, `${newValue}`);
-        setTrigger((current) => (current ? 0 : 1));
-      },
-      [key],
-    );
+  onChangeSize = (size: number) => {
+    this.setState({size});
+    window.localStorage.setItem(this.state.key, `${size}`);
+  };
 
-    useImperativeHandle(ref, () => ({getSize, changeSize: onChangeSize}), [onChangeSize, getSize]);
+  getSize = () => {
+    return this.state.size;
+  };
 
-    const firstSize = getSize();
+  render() {
+    const {firstMinSize, first, second} = this.props;
+    const {size: _size, resizing} = this.state;
+    const axis = this.props.axis || 'horizontal';
 
     const firstPaneStyles: React.CSSProperties = {flexShrink: 0};
+    const firstSize = second ? _size : 100;
 
     // Note: The divider appears after the first panel, so making the first panel 100% wide
     // hides the divider offscreen. To prevent this, we subtract the divider depth.
     if (axis === 'horizontal') {
       firstPaneStyles.minWidth = firstMinSize;
-      firstPaneStyles.width = `calc(${firstSize / 100} * (100% - ${
-        DIVIDER_THICKNESS + (second ? secondMinSize : 0)
-      }px))`;
+      firstPaneStyles.width = `calc(${firstSize}% - ${DIVIDER_THICKNESS}px)`;
     } else {
       firstPaneStyles.minHeight = firstMinSize;
-      firstPaneStyles.height = `calc(${firstSize / 100} * (100% - ${
-        DIVIDER_THICKNESS + (second ? secondMinSize : 0)
-      }px))`;
+      firstPaneStyles.height = `calc(${firstSize}% - ${DIVIDER_THICKNESS}px)`;
     }
 
     return (
-      <Container axis={axis} className="split-panel-container" resizing={resizing}>
+      <Container axis={axis} id="split-panel-container" resizing={resizing}>
         <div className="split-panel" style={firstPaneStyles}>
           {first}
         </div>
         <PanelDivider
           axis={axis}
           resizing={resizing}
-          secondMinSize={secondMinSize}
-          onSetResizing={setResizing}
-          onMove={onChangeSize}
+          onSetResizing={(resizing) => this.setState({resizing})}
+          onMove={this.onChangeSize}
         />
         <div className="split-panel" style={{flex: 1}}>
           {second}
         </div>
       </Container>
     );
-  },
-);
+  }
+}
 
 interface IDividerProps {
   axis: 'horizontal' | 'vertical';
   resizing: boolean;
-  secondMinSize: number;
   onSetResizing: (resizing: boolean) => void;
   onMove: (vw: number) => void;
 }
 
-const PanelDivider = (props: IDividerProps) => {
-  const {axis, resizing, secondMinSize, onSetResizing, onMove} = props;
-  const ref = useRef<HTMLDivElement>(null);
+class PanelDivider extends React.Component<IDividerProps> {
+  ref = React.createRef<any>();
 
-  const onMouseDown = (e: React.MouseEvent) => {
+  onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
 
-    onSetResizing(true);
+    this.props.onSetResizing(true);
 
     const onMouseMove = (event: MouseEvent) => {
-      const parent = ref.current?.closest('.split-panel-container');
+      const parent = this.ref.current?.closest('#split-panel-container');
       if (!parent) {
         return;
       }
       const parentRect = parent.getBoundingClientRect();
 
       const firstPanelPercent =
-        axis === 'horizontal'
-          ? ((event.clientX - parentRect.left) * 100) /
-            (parentRect.width - secondMinSize - DIVIDER_THICKNESS)
-          : ((event.clientY - parentRect.top) * 100) /
-            (parentRect.height - secondMinSize - DIVIDER_THICKNESS);
+        this.props.axis === 'horizontal'
+          ? ((event.clientX - parentRect.left) * 100) / parentRect.width
+          : ((event.clientY - parentRect.top) * 100) / parentRect.height;
 
-      onMove(Math.min(100, Math.max(0, firstPanelPercent)));
+      this.props.onMove(Math.min(100, Math.max(0, firstPanelPercent)));
     };
 
     const onMouseUp = () => {
-      onSetResizing(false);
+      this.props.onSetResizing(false);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
@@ -136,60 +124,109 @@ const PanelDivider = (props: IDividerProps) => {
     document.addEventListener('mouseup', onMouseUp);
   };
 
-  const hitArea =
-    axis === 'horizontal' ? (
-      <HorizontalDividerHitArea onMouseDown={onMouseDown} />
-    ) : (
-      <VerticalDividerHitArea onMouseDown={onMouseDown} />
+  render() {
+    const Wrapper = DividerWrapper[this.props.axis];
+    const HitArea = DividerHitArea[this.props.axis];
+    return (
+      <Wrapper resizing={this.props.resizing} ref={this.ref}>
+        <HitArea onMouseDown={this.onMouseDown} />
+      </Wrapper>
     );
+  }
+}
 
-  return axis === 'horizontal' ? (
-    <HorizontalDividerWrapper $resizing={resizing} ref={ref}>
-      {hitArea}
-    </HorizontalDividerWrapper>
-  ) : (
-    <VerticalDividerWrapper $resizing={resizing} ref={ref}>
-      {hitArea}
-    </VerticalDividerWrapper>
+interface PanelToggleProps {
+  axis: 'horizontal' | 'vertical';
+  container: React.RefObject<SplitPanelContainer>;
+}
+
+// Todo: This component attempts to sync itself with the container, but it can't
+// observe the container's width without a React context or adding a listener, etc.
+// If we keep making components that manipulate panel state we may want to move it
+// all to a context consumed by both.
+//
+export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
+  const [prevSize, setPrevSize] = React.useState<number | 'unknown'>('unknown');
+  const initialIsOpen = (container.current?.state.size || 0) < 100;
+
+  const [open, setOpen] = React.useState<boolean>(initialIsOpen);
+  React.useEffect(() => setOpen(initialIsOpen), [initialIsOpen]);
+
+  return (
+    <Button
+      active={open}
+      title="Toggle second pane"
+      icon={
+        <Icon
+          name={
+            axis === 'horizontal'
+              ? open
+                ? 'panel_hide_right'
+                : 'panel_show_right'
+              : 'panel_show_bottom'
+          }
+        />
+      }
+      onClick={() => {
+        if (!container.current) {
+          return;
+        }
+        const current = container.current.state.size;
+        if (current < 90) {
+          setPrevSize(current);
+          setOpen(false);
+          container.current.onChangeSize(100);
+        } else {
+          setOpen(true);
+          container.current.onChangeSize(
+            prevSize === 'unknown' ? container.current.props.firstInitialPercent : prevSize,
+          );
+        }
+      }}
+    />
   );
 };
 
 // Note: -1px margins here let the divider cover the last 1px of the previous box, hiding
 // any scrollbar border it might have.
 
-const HorizontalDividerWrapper = styled.div<{$resizing: boolean}>`
-  width: ${DIVIDER_THICKNESS}px;
-  z-index: 1;
-  background: ${(p) => (p.$resizing ? Colors.accentGray() : Colors.keylineDefault())};
-  margin-left: -1px;
-  overflow: visible;
-  position: relative;
-`;
-const VerticalDividerWrapper = styled.div<{$resizing: boolean}>`
-  height: ${DIVIDER_THICKNESS}px;
-  z-index: 1;
-  background: ${(p) => (p.$resizing ? Colors.accentGray() : Colors.keylineDefault())};
-  margin-top: -1px;
-  overflow: visible;
-  position: relative;
-`;
+const DividerWrapper = {
+  horizontal: styled.div<{resizing: boolean}>`
+    width: ${DIVIDER_THICKNESS}px;
+    z-index: 1;
+    background: ${(p) => (p.resizing ? Colors.accentGray() : Colors.keylineDefault())};
+    margin-left: -1px;
+    overflow: visible;
+    position: relative;
+  `,
+  vertical: styled.div<{resizing: boolean}>`
+    height: ${DIVIDER_THICKNESS}px;
+    z-index: 1;
+    background: ${(p) => (p.resizing ? Colors.accentGray() : Colors.keylineDefault())};
+    margin-top: -1px;
+    overflow: visible;
+    position: relative;
+  `,
+};
 
-const HorizontalDividerHitArea = styled.div`
-  width: 17px;
-  height: 100%;
-  z-index: 1;
-  cursor: ew-resize;
-  position: relative;
-  left: -8px;
-`;
-const VerticalDividerHitArea = styled.div`
-  height: 17px;
-  width: 100%;
-  z-index: 1;
-  cursor: ns-resize;
-  position: relative;
-  top: -8px;
-`;
+const DividerHitArea = {
+  horizontal: styled.div`
+    width: 17px;
+    height: 100%;
+    z-index: 1;
+    cursor: ew-resize;
+    position: relative;
+    left: -8px;
+  `,
+  vertical: styled.div`
+    height: 17px;
+    width: 100%;
+    z-index: 1;
+    cursor: ns-resize;
+    position: relative;
+    top: -8px;
+  `,
+};
 
 const Container = styled.div<{
   axis?: 'horizontal' | 'vertical';
