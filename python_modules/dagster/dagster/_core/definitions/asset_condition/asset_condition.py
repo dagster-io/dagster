@@ -27,6 +27,7 @@ from dagster._model import DagsterModel
 from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
 
 from ..asset_subset import AssetSubset, ValidAssetSubset
+from ..auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
@@ -357,8 +358,6 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition is newer than it.
         """
-        from ..auto_materialize_rule import AutoMaterializeRule
-
         return RuleCondition(rule=AutoMaterializeRule.materialize_on_parent_updated())
 
     @staticmethod
@@ -407,8 +406,6 @@ class AssetCondition(ABC, DagsterModel):
 @whitelist_for_serdes
 class RuleCondition(AssetCondition):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
-
-    from ..auto_materialize_rule import AutoMaterializeRule
 
     rule: AutoMaterializeRule
 
