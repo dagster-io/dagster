@@ -26,7 +26,7 @@ WARNING = "warning"
 
 
 class HightouchResource:
-    """this class exposes methods on top of the Hightouch REST API."""
+    """This class exposes methods on top of the Hightouch REST API."""
 
     def __init__(
         self,
