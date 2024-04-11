@@ -32,7 +32,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=["dagster_hightouch_tests*"]),
     python_requires=">=3.8,<3.13",
     install_requires=[f"dagster{pin}", "requests"],
     zip_safe=False,
