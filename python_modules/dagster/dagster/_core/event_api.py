@@ -134,6 +134,13 @@ class EventLogRecord(NamedTuple):
     def asset_observation(self) -> Optional[AssetObservation]:
         return self.event_log_entry.asset_observation
 
+    @property
+    def event_type(self) -> DagsterEventType:
+        return check.not_none(
+            self.event_log_entry.dagster_event,
+            "Expected dagster_event property to be present if calling the event_type property",
+        ).event_type
+
 
 class EventRecordsResult(NamedTuple):
     """Return value for a query fetching event records from the instance.  Contains a list of event
