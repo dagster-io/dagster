@@ -323,7 +323,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             raise DagsterInvariantViolationError("Invalid context type: type(context)")
 
         if partition_by is None or not context.has_asset_partitions:
-            return []
+            filters = []
         elif isinstance(partition_by, dict):
             all_keys_by_dim = defaultdict(list)
             for partition_key in context.asset_partition_keys:
@@ -333,16 +333,20 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 for dim, key in partition_key.keys_by_dimension.items():
                     all_keys_by_dim[dim].append(key)
 
-            return [(dim, "in", [keys]) for dim, keys in all_keys_by_dim.items()]
+            filters = [(partition_by[dim], "in", keys) for dim, keys in all_keys_by_dim.items()]
 
         elif isinstance(partition_by, str):
             assert not isinstance(
                 context.asset_partition_keys[0], MultiPartitionKey
             ), f"receiveds string `partition_by` metadata value {partition_by}, but the partition_key is not a `MultiPartitionKey`: {context.asset_partition_keys[0]}"
-            return [(partition_by, "in", context.asset_partition_keys)]
+            filters = [(partition_by, "in", context.asset_partition_keys)]
 
         else:
             raise NotImplementedError("Unsupported `partitio_by` metadata value: {partition_by}")
+
+        breakpoint()
+
+        return filters
 
     def get_metadata(
         self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
