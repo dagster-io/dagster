@@ -1,13 +1,13 @@
 ---
-title: "Tracking asset changes in Dagster+ Branch Deployments | Dagster Docs"
+title: "Branch Deployment Change Tracking in Dagster+ | Dagster Docs"
 description: "Change tracking in Branch Deployments makes it eaiser for you and your team to identify how changes in a pull request will impact data assets."
 ---
 
-# Tracking asset changes in Dagster+ Branch Deployments
+# Branch Deployment Change Tracking in Dagster+
 
 <ApplicableDagsterProduct />
 
-Change tracking in Branch Deployments makes it eaiser for you and your team to identify how changes in a pull request will impact data assets. By the end of this guide, you'll understand how change tracking works and what types of asset changes can be detected.
+Branch Deployments Change Tracking makes it eaiser for you and your team to identify how changes in a pull request will impact data assets. By the end of this guide, you'll understand how Change Tracking works and what types of asset changes can be detected.
 
 ---
 
@@ -21,7 +21,7 @@ You can also apply filters to show only new and changed assets in the UI. This m
 
 ## Supported change types
 
-Change tracking can detect the following changes to assets:
+Change Tracking can detect the following changes to assets:
 
 - [New assets](#new-assets)
 - [Code versions](#code-versions)
@@ -40,9 +40,9 @@ height={308}
 
 ### Code versions
 
-Change tracking can detect when an asset's `code_version` has changed, whether it's just been added, removed, or updated.
+If using the `code_version` argument on the asset decorator, Change Tracking can detect when this value changes.
 
-Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, including strategies for how to compute code versions automatically, refer to the [Code versioning guide](/guides/dagster/asset-versioning-and-caching).
+Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, including strategies for how to automatically compute code versions, refer to the [Code versioning guide](/guides/dagster/asset-versioning-and-caching).
 
 <TabGroup>
 <TabItem name="Asset in the Dagster UI">
@@ -83,7 +83,7 @@ def customers(): ...
 
 ### Upstream dependencies
 
-Change tracking can detect when an asset's upstream dependencies have changed, whether they've been added or removed.
+Change Tracking can detect when an asset's upstream dependencies have changed, whether they've been added or removed.
 
 **Note**: If an asset is marked as having changed dependencies, it means that the <PyObject object="AssetKey" pluralize /> defining its upstream dependencies have changed. It doesn't mean that an upstream dependency has new data.
 
@@ -126,7 +126,7 @@ def returns(): ...
 
 ### Partitions definitions
 
-Change tracking can detect if an asset's <PyObject object="PartitionsDefinition" /> has been changed, whether it's been added, removed, or updated.
+Change Tracking can detect if an asset's <PyObject object="PartitionsDefinition" /> has been changed, whether it's been added, removed, or updated.
 
 <TabGroup>
 <TabItem name="Asset in the Dagster UI">
