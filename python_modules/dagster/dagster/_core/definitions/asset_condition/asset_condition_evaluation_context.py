@@ -197,7 +197,7 @@ class AssetConditionEvaluationContext:
             if not parent_info:
                 continue
             parent_subset = parent_info.true_subset.as_valid(self.partitions_def)
-            subset |= parent_subset._replace(asset_key=self.asset_key)
+            subset |= parent_subset.copy(update={"asset_key": self.asset_key})
         return subset
 
     @functools.cached_property
@@ -393,7 +393,7 @@ class AssetConditionEvaluationContext:
         return (
             self.candidate_subset & true_subset,
             [
-                AssetSubsetWithMetadata(subset, dict(metadata))
+                AssetSubsetWithMetadata(subset=subset, metadata=dict(metadata))
                 for metadata, subset in mapping.items()
             ],
         )

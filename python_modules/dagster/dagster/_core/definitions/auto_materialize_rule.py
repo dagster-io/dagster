@@ -1033,7 +1033,8 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 ).partitions_subset
 
                 non_updated_parent_asset_partitions = (
-                    ValidAssetSubset(parent_asset_key, parent_subset) - updated_parent_subset
+                    ValidAssetSubset(asset_key=parent_asset_key, value=parent_subset)
+                    - updated_parent_subset
                 ).asset_partitions
 
             return not any(
