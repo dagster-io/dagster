@@ -587,8 +587,6 @@ def test_backcompat_multipartitions_fs_io_manager():
                 asset_selection=[AssetKey("downstream_of_multipartitioned")],
             )
 
-        breakpoint()
-
         my_job = define_asset_job(
             "my_job", [multipartitioned, downstream_of_multipartitioned]
         ).resolve(
