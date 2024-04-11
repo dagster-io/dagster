@@ -570,7 +570,6 @@ def test_stale_status_downstream_of_all_partitions_mapping():
     start_date = datetime(2020, 1, 1)
     end_date = start_date + timedelta(days=2)
     start_key = start_date.strftime("%Y-%m-%d")
-    end_key = (end_date - timedelta(days=1)).strftime("%Y-%m-%d")
 
     partitions_def = DailyPartitionsDefinition(start_date=start_date, end_date=end_date)
 
