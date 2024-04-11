@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from enum import Enum
 from pprint import pformat
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union, overload
@@ -236,10 +237,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if (
             partition_by
             and len(context.asset_partition_keys) > 0
-            and set(context.asset_partition_keys)
             and context.upstream_output.asset_info is not None
-            and context.upstream_output.asset_info.partitions_def
-            is not None
+            and context.upstream_output.asset_info.partitions_def is not None
+            and context.asset_partition_keys
             != set(
                 context.upstream_output.asset_info.partitions_def.get_partition_keys(
                     dynamic_partitions_store=context.instance
@@ -315,28 +315,34 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     def get_partition_filters(
         context: Union[InputContext, OutputContext],
     ) -> List[Tuple[str, str, Any]]:
-        partition_filters = []
-
         if isinstance(context, OutputContext):
             partition_by = context.definition_metadata.get("partition_by")
-        elif isinstance(context, InputContext):
+        elif isinstance(context, InputContext) and context.upstream_output is not None:
             partition_by = context.upstream_output.definition_metadata.get("partition_by")
         else:
             raise DagsterInvariantViolationError("Invalid context type: type(context)")
 
         if partition_by is None or not context.has_asset_partitions:
             return []
-
-        for partition_key in context.asset_partition_keys:
-            if isinstance(partition_key, MultiPartitionKey):
+        elif isinstance(partition_by, dict):
+            all_keys_by_dim = defaultdict(list)
+            for partition_key in context.asset_partition_keys:
+                assert isinstance(
+                    partition_key, MultiPartitionKey
+                ), f"received dict `partition_by` metadata value {partition_by}, but the partition_key is not a `MultiPartitionKey`: {partition_key}"
                 for dim, key in partition_key.keys_by_dimension.items():
-                    partition_filters.append((partition_by[dim], "=", key))
-            elif isinstance(partition_key, str):
-                partition_filters.append((partition_by, "=", partition_key))
-            else:
-                raise NotImplementedError("Unsupported partition_key type: type(partition_key)")
+                    all_keys_by_dim[dim].append(key)
 
-        return partition_filters
+            return [(dim, "in", [keys]) for dim, keys in all_keys_by_dim.items()]
+
+        elif isinstance(partition_by, str):
+            assert not isinstance(
+                context.asset_partition_keys[0], MultiPartitionKey
+            ), f"receiveds string `partition_by` metadata value {partition_by}, but the partition_key is not a `MultiPartitionKey`: {context.asset_partition_keys[0]}"
+            return [(partition_by, "in", context.asset_partition_keys)]
+
+        else:
+            raise NotImplementedError("Unsupported `partitio_by` metadata value: {partition_by}")
 
     def get_metadata(
         self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]

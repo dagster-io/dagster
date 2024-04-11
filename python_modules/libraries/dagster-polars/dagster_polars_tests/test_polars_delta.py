@@ -11,6 +11,7 @@ from dagster import (
     Config,
     DagsterInstance,
     DailyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     OpExecutionContext,
     RunConfig,
@@ -341,6 +342,7 @@ def test_polars_delta_native_multi_partitions(
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         partition_key = context.partition_key
+        assert isinstance(partition_key, MultiPartitionKey)
         return df.with_columns(
             pl.lit(partition_key.keys_by_dimension["time"]).alias("date"),
             pl.lit(partition_key.keys_by_dimension["category"]).alias("category"),
