@@ -248,10 +248,18 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         ):
             pyarrow_options["partitions"] = self.get_partition_filters(context)
 
+        if pyarrow_options:
+            context.log.debug(f"Reading with pyarrow_options: {pyarrow_options}")
+
+        delta_table_options = context_metadata.get("delta_table_options")
+
+        if delta_table_options:
+            context.log.debug("Reading with delta_table_optilns: {delta_table_options}")
+
         ldf = pl.scan_delta(
             str(path),
             version=version,
-            delta_table_options=context_metadata.get("delta_table_options"),
+            delta_table_options=delta_table_options,
             pyarrow_options=pyarrow_options,
             storage_options=self.storage_options,
         )

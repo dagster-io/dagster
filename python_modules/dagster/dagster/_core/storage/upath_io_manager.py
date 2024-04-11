@@ -208,7 +208,7 @@ class UPathIOManager(MemoizableIOManager):
         Args:
             context (Union[InputContext, OutputContext]): The context for the I/O operation.
             path (UPath): The path to the file or object.
-            partition (str): Formatted partition/multipartition key
+            partition (str): slash-formatted partition/multipartition key
 
         Returns:
             UPath: The path to the file with the partition key appended.
@@ -317,7 +317,7 @@ class UPathIOManager(MemoizableIOManager):
                         f" {backcompat_path}"
                     )
                     return obj
-                except FileNotFoundError as e:
+                except FileNotFoundError:
                     if allow_missing_partitions:
                         context.log.warning(self.get_missing_partition_log_message(partition_key))
                         return None
@@ -410,14 +410,16 @@ class UPathIOManager(MemoizableIOManager):
             asset_partition_keys = context.asset_partition_keys
             if len(asset_partition_keys) == 0:
                 return None
-            else:  # we are dealing with multiple partitions of an asset
+            else:
                 return self._load_partitions(context)
 
     def _handle_transition_to_partitioned_asset(self, context: OutputContext, path: "UPath"):
         # if the asset was previously non-partitioned, path will be a file, when it should
         # be a directory for the partitioned asset. Delete the file, so that it can be made
         # into a directory
-        # TODO: this might not be the case. Some serialization formats (e.g. `zarr`) may already operate on directories.
+
+        # TODO: this might not be the case if the serialization format is already operating with directories
+        # e.g. DeltaLake, zarr
         if path.exists() and path.is_file():
             context.log.warn(
                 f"Found file at {path} believed to correspond with previously non-partitioned version"
