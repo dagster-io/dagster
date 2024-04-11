@@ -179,13 +179,25 @@ def _filter_expected_output_defs(
         (result,) if not isinstance(result, tuple) or is_named_tuple_instance(result) else result
     )
     asset_results = [x for x in result_tuple if isinstance(x, AssetResult)]
-    remove_outputs = [
-        r.get_spec_python_identifier(
-            asset_key=x.asset_key or context.op_execution_context.asset_key
-        )
-        for x in asset_results
-        for r in x.check_results or []
-    ]
+
+    if not asset_results:
+        return output_defs
+
+    check_names_by_asset_key = {}
+    for spec in context.op_execution_context.assets_def.check_specs:
+        if spec.asset_key not in check_names_by_asset_key:
+            check_names_by_asset_key[spec.asset_key] = []
+        check_names_by_asset_key[spec.asset_key].append(spec.name)
+
+    remove_outputs = []
+    for asset_result in asset_results:
+        for check_result in asset_result.check_results:
+            remove_outputs.append(
+                context.op_execution_context.assets_def.get_output_name_for_asset_check_key(
+                    check_result.resolve_target_check_key(check_names_by_asset_key)
+                )
+            )
+
     return [out for out in output_defs if out.name not in remove_outputs]
 
 

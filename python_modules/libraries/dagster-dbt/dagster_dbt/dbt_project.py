@@ -78,8 +78,8 @@ class DbtProject(DagsterModel):
     target_path: Path
     target: Optional[str]
     manifest_path: Path
-    state_path: Optional[Path]
     packaged_project_dir: Optional[Path]
+    state_path: Optional[Path]
     manifest_preparer: DbtManifestPreparer
 
     def __init__(
@@ -88,8 +88,8 @@ class DbtProject(DagsterModel):
         *,
         target_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
-        state_path: Optional[Union[Path, str]] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
+        state_path: Optional[Union[Path, str]] = None,
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
         """Representation of a dbt project.
@@ -102,18 +102,18 @@ class DbtProject(DagsterModel):
                 Default: "target"
             target (Optional[str]):
                 The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
-            state_path (Optional[Union[str, Path]]):
-                The path, relative to the project directory, to reference artifacts from another run.
-            manifest_preparer (Optional[DbtManifestPreparer]):
-                A object for ensuring that manifest.json is in the right state at
-                the right times.
-                Default: DagsterDbtManifestPreparer
             packaged_project_dir (Optional[Union[str, Path]]):
                 A directory that will contain a copy of the dbt project and the manifest.json
                 when the artifacts have been built. The prepare method will handle syncing
                 the project_path to this directory.
                 This is useful when the dbt project needs to be part of the python package data
                 like when deploying using PEX.
+            state_path (Optional[Union[str, Path]]):
+                The path, relative to the project directory, to reference artifacts from another run.
+            manifest_preparer (Optional[DbtManifestPreparer]):
+                A object for ensuring that manifest.json is in the right state at
+                the right times.
+                Default: DagsterDbtManifestPreparer
         """
         project_dir = Path(project_dir)
         if not project_dir.exists():

@@ -1,6 +1,7 @@
 import functools
 import hashlib
 from abc import ABC, abstractmethod, abstractproperty
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -19,7 +20,6 @@ from typing import (
 
 import pendulum
 
-import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
@@ -307,10 +307,8 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
-# Adding the NamedTuple inheritance to avoid bugs with the experimental decorator and subclasses.
 @experimental
-@whitelist_for_serdes
-class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
+class AssetCondition(ABC):
     """An AssetCondition represents some state of the world that can influence if an asset
     partition should be materialized or not. AssetConditions can be combined to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
@@ -345,17 +343,17 @@ class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
         # group AndAssetConditions together
         if isinstance(self, AndAssetCondition):
-            return AndAssetCondition(children=[*self.children, other])
-        return AndAssetCondition(children=[self, other])
+            return AndAssetCondition(operands=[*self.operands, other])
+        return AndAssetCondition(operands=[self, other])
 
     def __or__(self, other: "AssetCondition") -> "AssetCondition":
         # group OrAssetConditions together
         if isinstance(self, OrAssetCondition):
-            return OrAssetCondition(children=[*self.children, other])
-        return OrAssetCondition(children=[self, other])
+            return OrAssetCondition(operands=[*self.operands, other])
+        return OrAssetCondition(operands=[self, other])
 
     def __invert__(self) -> "AssetCondition":
-        return NotAssetCondition(children=[self])
+        return NotAssetCondition(operand=self)
 
     @property
     def is_legacy(self) -> bool:
@@ -447,11 +445,11 @@ class AssetCondition(NamedTuple("_AssetCondition", []), ABC):
 
 @experimental
 @whitelist_for_serdes
-class RuleCondition(  # type: ignore # related to AssetCondition being experimental
-    NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
-    AssetCondition,
-):
+@dataclass(frozen=True)
+class RuleCondition(AssetCondition):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
+
+    rule: "AutoMaterializeRule"
 
     @property
     def unique_id(self) -> str:
@@ -476,11 +474,15 @@ class RuleCondition(  # type: ignore # related to AssetCondition being experimen
 
 @experimental
 @whitelist_for_serdes
-class AndAssetCondition(  # type: ignore # related to AssetCondition being experimental
-    NamedTuple("_AndAssetCondition", [("children", Sequence[AssetCondition])]),
-    AssetCondition,
-):
+@dataclass(frozen=True)
+class AndAssetCondition(AssetCondition):
     """This class represents the condition that all of its children evaluate to true."""
+
+    operands: Sequence[AssetCondition]
+
+    @property
+    def children(self) -> Sequence[AssetCondition]:
+        return self.operands
 
     @property
     def description(self) -> str:
@@ -499,11 +501,15 @@ class AndAssetCondition(  # type: ignore # related to AssetCondition being exper
 
 @experimental
 @whitelist_for_serdes
-class OrAssetCondition(  # type: ignore # related to AssetCondition being experimental
-    NamedTuple("_OrAssetCondition", [("children", Sequence[AssetCondition])]),
-    AssetCondition,
-):
+@dataclass(frozen=True)
+class OrAssetCondition(AssetCondition):
     """This class represents the condition that any of its children evaluate to true."""
+
+    operands: Sequence[AssetCondition]
+
+    @property
+    def children(self) -> Sequence[AssetCondition]:
+        return self.operands
 
     @property
     def description(self) -> str:
@@ -524,29 +530,25 @@ class OrAssetCondition(  # type: ignore # related to AssetCondition being experi
 
 @experimental
 @whitelist_for_serdes
-class NotAssetCondition(  # type: ignore # related to AssetCondition being experimental
-    NamedTuple("_NotAssetCondition", [("children", Sequence[AssetCondition])]),
-    AssetCondition,
-):
+@dataclass(frozen=True)
+class NotAssetCondition(AssetCondition):
     """This class represents the condition that none of its children evaluate to true."""
 
-    def __new__(cls, children: Sequence[AssetCondition]):
-        check.invariant(len(children) == 1)
-        return super().__new__(cls, children)
+    operand: AssetCondition
 
     @property
     def description(self) -> str:
         return "Not"
 
     @property
-    def child(self) -> AssetCondition:
-        return self.children[0]
+    def children(self) -> Sequence[AssetCondition]:
+        return [self.operand]
 
     def evaluate(self, context: "AssetConditionEvaluationContext") -> AssetConditionResult:
         child_context = context.for_child(
-            condition=self.child, candidate_subset=context.candidate_subset
+            condition=self.operand, candidate_subset=context.candidate_subset
         )
-        child_result = self.child.evaluate(child_context)
+        child_result = self.operand.evaluate(child_context)
         true_subset = context.candidate_subset - child_result.true_subset
 
         return AssetConditionResult.create_from_children(context, true_subset, [child_result])
