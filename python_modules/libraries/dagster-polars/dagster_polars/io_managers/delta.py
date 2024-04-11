@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Uni
 import polars as pl
 from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.upath_io_manager import is_dict_type
-from dagster.core.errors import DagsterInvariantViolationError
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
@@ -219,6 +219,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         In the (3) optin we apply partition filters to only load mapped partitions
         """
+        assert context.upstream_output is not None
+        assert context.upstream_output.definition_metadata is not None
+
         context_metadata = context.definition_metadata or {}
 
         version = self.get_delta_version_to_load(path, context)
@@ -227,13 +230,16 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         pyarrow_options = context_metadata.get("pyarrow_options", {})
 
-        partition_by = context.upstream_output.metadata.get("partition_by")
+        partition_by = context.upstream_output.definition_metadata.get("partition_by")
 
         # we want to apply partition filters when loading some partitions, but not all partitions
         if (
             partition_by
             and len(context.asset_partition_keys) > 0
             and set(context.asset_partition_keys)
+            and context.upstream_output.asset_info is not None
+            and context.upstream_output.asset_info.partitions_def
+            is not None
             != set(
                 context.upstream_output.asset_info.partitions_def.get_partition_keys(
                     dynamic_partitions_store=context.instance
@@ -263,9 +269,10 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             return ldf
 
     def load_partitions(self, context: InputContext):
+        assert context.upstream_output is not None
         # any partition would work as they all are stored in the same DeltaLake table
         path = self._get_path_without_extension(context)
-        if context.upstream_output.metadata.get("partition_by") and not is_dict_type(
+        if context.upstream_output.definition_metadata.get("partition_by") and not is_dict_type(
             context.dagster_type.typing_type
         ):
             # user enabled native partitioning and wants a `pl.DataFrame` or `pl.LazyFrame`
@@ -300,14 +307,12 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     def get_partition_filters(
         context: Union[InputContext, OutputContext],
     ) -> List[Tuple[str, str, Any]]:
-        assert context.metadata is not None
-
         partition_filters = []
 
         if isinstance(context, OutputContext):
-            partition_by = context.metadata.get("partition_by")
+            partition_by = context.definition_metadata.get("partition_by")
         elif isinstance(context, InputContext):
-            partition_by = context.upstream_output.metadata.get("partition_by")
+            partition_by = context.upstream_output.definition_metadata.get("partition_by")
         else:
             raise DagsterInvariantViolationError("Invalid context type: type(context)")
 
