@@ -697,7 +697,7 @@
                     "path": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments"
                   },
                   {
-                   "title": "Tracking asset changes",
+                   "title": "Change Tracking",
                     "path": "/dagster-plus/managing-deployments/branch-deployments/change-tracking"
                   }
                 ]
