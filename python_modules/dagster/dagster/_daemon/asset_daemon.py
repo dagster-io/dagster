@@ -983,8 +983,8 @@ class AssetDaemon(DagsterDaemon):
                 # asset keys for observation runs don't have evaluations
                 if asset_key in evaluations_by_asset_key:
                     evaluation = evaluations_by_asset_key[asset_key]
-                    evaluations_by_asset_key[asset_key] = evaluation._replace(
-                        run_ids=evaluation.run_ids | {submitted_run.run_id}
+                    evaluations_by_asset_key[asset_key] = evaluation.copy(
+                        update={"run_ids": evaluation.run_ids | {submitted_run.run_id}}
                     )
                     updated_evaluation_asset_keys.add(asset_key)
 

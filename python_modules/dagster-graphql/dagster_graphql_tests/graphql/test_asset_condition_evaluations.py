@@ -513,7 +513,9 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
     ) -> AssetConditionEvaluation:
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
-                "...", description, str(random.randint(0, 100000000))
+                class_name="...",
+                description=description,
+                unique_id=str(random.randint(0, 100000000)),
             ),
             true_subset=AssetSubset(
                 asset_key=asset_key,
@@ -607,7 +609,9 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         ).add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
-                AssetConditionEvaluationWithRunIds(evaluation, frozenset({"runid1", "runid2"}))
+                AssetConditionEvaluationWithRunIds(
+                    evaluation=evaluation, run_ids=frozenset({"runid1", "runid2"})
+                )
             ],
         )
 

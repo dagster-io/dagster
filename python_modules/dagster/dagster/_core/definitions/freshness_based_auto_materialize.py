@@ -226,7 +226,7 @@ def freshness_evaluation_results_for_asset_key(
         all_subset = AssetSubset.all(asset_key, None)
         return (
             AssetSubset.all(asset_key, None),
-            [AssetSubsetWithMetadata(all_subset, evaluation_data.metadata)],
+            [AssetSubsetWithMetadata(subset=all_subset, metadata=evaluation_data.metadata)],
         )
     else:
         return context.empty_subset(), []
