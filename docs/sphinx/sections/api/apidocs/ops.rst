@@ -112,7 +112,7 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 Tables
 ^^^^^^
 
-These APIs provide the ability to express table schemas (`TableSchema`) and table rows/records (`TableRecord`) in Dagster. Currently the only use case for `TableSchemas` and `TableRecords` is to wrap them in their corresponding metadata classes :py:class:`TableMetadataValue` and :py:class:`TableSchemaMetadataValue` for attachment to events or Dagster types.
+These APIs provide the ability to express column schemas (`TableSchema`), rows/records (`TableRecord`), and column lineage (`TableColumnLineage`) in Dagster.
 
 .. autoclass:: TableRecord
 
@@ -123,6 +123,10 @@ These APIs provide the ability to express table schemas (`TableSchema`) and tabl
 .. autoclass:: TableColumn
 
 .. autoclass:: TableColumnConstraints
+
+.. autoclass:: TableColumnLineage
+
+.. autoclass:: TableColumnDep
 
 -------
 
