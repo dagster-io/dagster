@@ -20,6 +20,7 @@ from dagster import (
 )
 from dagster_polars import PolarsDeltaIOManager
 from dagster_polars.io_managers.delta import DeltaWriteMode
+from deltalake import DeltaTable
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
 
@@ -302,7 +303,15 @@ def test_polars_delta_native_partitioning(
         assert set(upstream_partitioned["partition"].unique()) == {"a", "b"}
 
     for partition_key in ["a", "b"]:
-        materialize([upstream_partitioned], partition_key=partition_key)
+        result = materialize(
+            [upstream_partitioned],
+            partition_key=partition_key,
+        )
+        saved_path = get_saved_path(result, "upstream_partitioned")
+        assert saved_path.endswith(
+            "upstream_partitioned.delta"
+        ), saved_path  # DeltaLake should handle partitioning!
+        assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
 
     materialize(
         [

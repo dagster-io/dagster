@@ -7,6 +7,7 @@ import polars as pl
 from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
 from dagster._annotations import experimental
 from dagster._core.storage.upath_io_manager import is_dict_type
+from dagster.core.errors import DagsterInvariantViolationError
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
@@ -303,7 +304,12 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         partition_filters = []
 
-        partition_by = context.metadata.get("partition_by")
+        if isinstance(context, OutputContext):
+            partition_by = context.metadata.get("partition_by")
+        elif isinstance(context, InputContext):
+            partition_by = context.upstream_output.metadata.get("partition_by")
+        else:
+            raise DagsterInvariantViolationError("Invalid context type: type(context)")
 
         if partition_by is None or not context.has_asset_partitions:
             return []
