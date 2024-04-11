@@ -309,47 +309,47 @@ class TableColumnLineage(
 
     Examples:
         Defining column lineage at materialization time, where the resulting asset has two columns,
-        `new_column_foo` and `new_column_qux`. The first column, `new_column_foo`, depends on
-        `column_bar` in `source_bar` and `column_baz` in `source_baz`. The second column,
-        `new_column_qux`, depends on `column_quuz` in `source_bar`.
+        ``new_column_foo`` and ``new_column_qux``. The first column, ``new_column_foo``, depends on
+        ``column_bar`` in ``source_bar`` and ``column_baz`` in ``source_baz``. The second column,
+        ``new_column_qux``, depends on ``column_quuz`` in ``source_bar``.
 
-            .. code-block:: python
+        .. code-block:: python
 
-                from dagster import (
-                    AssetKey,
-                    MaterializeResult,
-                    TableColumnDep,
-                    TableColumnLineage,
-                    asset,
+            from dagster import (
+                AssetKey,
+                MaterializeResult,
+                TableColumnDep,
+                TableColumnLineage,
+                asset,
+            )
+
+
+            @asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
+            def my_asset():
+                yield MaterializeResult(
+                    metadata={
+                        "dagster/column_lineage": TableColumnLineage(
+                            deps_by_column={
+                                "new_column_foo": [
+                                    TableColumnDep(
+                                        asset_key=AssetKey("source_bar"),
+                                        column_name="column_bar",
+                                    ),
+                                    TableColumnDep(
+                                        asset_key=AssetKey("source_baz"),
+                                        column_name="column_baz",
+                                    ),
+                                ],
+                                "new_column_qux": [
+                                    TableColumnDep(
+                                        asset_key=AssetKey("source_bar"),
+                                        column_name="column_quuz",
+                                    ),
+                                ],
+                            }
+                        )
+                    }
                 )
-
-
-                @asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
-                def my_asset():
-                    yield MaterializeResult(
-                        metadata={
-                            "dagster/column_lineage": TableColumnLineage(
-                                deps_by_column={
-                                    "new_column_foo": [
-                                        TableColumnDep(
-                                            asset_key=AssetKey("source_bar"),
-                                            column_name="column_bar",
-                                        ),
-                                        TableColumnDep(
-                                            asset_key=AssetKey("source_baz"),
-                                            column_name="column_baz",
-                                        ),
-                                    ],
-                                    "new_column_qux": [
-                                        TableColumnDep(
-                                            asset_key=AssetKey("source_bar"),
-                                            column_name="column_quuz",
-                                        ),
-                                    ],
-                                }
-                            )
-                        }
-                    )
     """
 
     def __new__(cls, deps_by_column: Mapping[str, Sequence[TableColumnDep]]):
