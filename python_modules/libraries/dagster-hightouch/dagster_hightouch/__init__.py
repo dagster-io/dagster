@@ -8,4 +8,4 @@ from .resources import (
 )
 from .version import __version__ as __version__
 
-DagsterLibraryRegistry.register("dagster-fivetran", __version__)
+DagsterLibraryRegistry.register("dagster-hightouch", __version__)
