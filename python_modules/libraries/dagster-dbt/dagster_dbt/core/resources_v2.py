@@ -38,13 +38,13 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
+    TableColumnDep,
+    TableColumnLineage,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.metadata import (
-    TableColumnDep,
-    TableColumnLineage,
     TableMetadataEntries,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
