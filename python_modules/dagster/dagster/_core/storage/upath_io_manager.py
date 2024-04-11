@@ -267,31 +267,14 @@ class UPathIOManager(MemoizableIOManager):
             if isinstance(partition_key, MultiPartitionKey)
         }
 
-    def _load_single_input(
-        self, path: "UPath", context: InputContext, backcompat_path: Optional["UPath"] = None
-    ) -> Any:
+    def _load_single_input(self, path: "UPath", context: InputContext) -> Any:
         context.log.debug(self.get_loading_input_log_message(path))
-        try:
-            obj = self.load_from_path(context=context, path=path)
-            if asyncio.iscoroutine(obj):
-                obj = asyncio.run(obj)
-        except FileNotFoundError as e:
-            if backcompat_path is not None:
-                try:
-                    obj = self.load_from_path(context=context, path=backcompat_path)
-                    if asyncio.iscoroutine(obj):
-                        obj = asyncio.run(obj)
-
-                    context.log.debug(
-                        f"File not found at {path}. Loaded instead from backcompat path:"
-                        f" {backcompat_path}"
-                    )
-                except FileNotFoundError:
-                    raise e
-            else:
-                raise e
+        obj = self.load_from_path(context=context, path=path)
+        if asyncio.iscoroutine(obj):
+            obj = asyncio.run(obj)
 
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
+
         return obj
 
     def _load_partition_from_path(
