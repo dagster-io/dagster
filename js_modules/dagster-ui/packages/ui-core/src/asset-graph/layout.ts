@@ -101,55 +101,6 @@ export const layoutAssetGraph = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
-  const unconnectedGraphs = findUnconnectedGraphs(graphData);
-  const layouts = unconnectedGraphs.map((graphData) => layoutAssetGraphImpl(graphData, opts));
-  let heightSoFar = 0;
-  let maxWidth = 0;
-  const combinedLayout: AssetGraphLayout = {
-    nodes: {},
-    edges: [],
-    groups: {},
-    height: 0,
-    width: 0,
-  };
-  layouts.forEach((layout) => {
-    layout.edges.forEach((edge) => {
-      edge.from.y += heightSoFar;
-    });
-    Object.values(layout.nodes).forEach((node) => {
-      node.bounds.y += heightSoFar;
-    });
-    combinedLayout.nodes = {
-      ...combinedLayout.nodes,
-      ...layout.nodes,
-    };
-    combinedLayout.edges.push(...layout.edges);
-    combinedLayout.groups = {
-      ...combinedLayout.groups,
-      ...layout.groups,
-    };
-    heightSoFar += layout.height;
-    maxWidth = Math.max(layout.width, maxWidth);
-  });
-
-  combinedLayout.width = maxWidth;
-  combinedLayout.height = heightSoFar;
-
-  return combinedLayout;
-};
-
-export const layoutAssetGraphImpl = (
-  graphData: GraphData,
-  opts: LayoutAssetGraphOptions,
-): AssetGraphLayout => {
-  const g = new dagre.graphlib.Graph({compound: true});
-  const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
-
-  g.setGraph(config);
-  g.setDefaultEdgeLabel(() => ({}));
-
-  // const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
-  const shouldRender = (node?: GraphNode) => node;
   const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
   const expandedGroups = graphData.expandedGroups || [];
 
@@ -168,6 +119,71 @@ export const layoutAssetGraphImpl = (
       };
     }
   }
+
+  const unconnectedGraphs = findUnconnectedGraphs(graphData);
+  const layouts = unconnectedGraphs
+    .map((graphData, i) => {
+      try {
+        const ret = layoutAssetGraphImpl(graphData, opts, groups, expandedGroups, renderedNodes);
+        return ret;
+      } catch (e) {
+        console.log('failed', i);
+        return null as any as ReturnType<typeof layoutAssetGraphImpl>;
+      }
+    })
+    .filter((i) => i);
+  let heightSoFar = 0;
+  let maxWidth = 0;
+  const combinedLayout: AssetGraphLayout = {
+    nodes: {},
+    edges: [],
+    groups: {},
+    height: 0,
+    width: 0,
+  };
+  const seenEdges = new Set<string>();
+  layouts.forEach((layout) => {
+    layout.edges.forEach((edge) => {
+      edge.from.y += heightSoFar;
+      const edgeId = `${edge.fromId}--${edge.toId}`;
+      if (!seenEdges.has(edgeId)) {
+        combinedLayout.edges.push(edge);
+        seenEdges.add(edgeId);
+      }
+    });
+    Object.values(layout.nodes).forEach((node) => {
+      node.bounds.y += heightSoFar;
+    });
+    combinedLayout.nodes = {
+      ...layout.nodes,
+      ...combinedLayout.nodes,
+    };
+    combinedLayout.groups = {
+      ...layout.groups,
+      ...combinedLayout.groups,
+    };
+    heightSoFar += layout.height;
+    maxWidth = Math.max(layout.width, maxWidth);
+  });
+
+  combinedLayout.width = maxWidth;
+  combinedLayout.height = heightSoFar;
+
+  return combinedLayout;
+};
+
+export const layoutAssetGraphImpl = (
+  graphData: GraphData,
+  opts: LayoutAssetGraphOptions,
+  groups: {[id: string]: GroupLayout},
+  expandedGroups: string[],
+  renderedNodes: GraphNode[],
+): AssetGraphLayout => {
+  const g = new dagre.graphlib.Graph({compound: true});
+  const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
+
+  g.setGraph(config);
+  g.setDefaultEdgeLabel(() => ({}));
 
   // Add all the group boxes to the graph
   const groupsPresent =
@@ -398,3 +414,5 @@ export const getAssetNodeDimensions = (def: {
 
   return {width, height};
 };
+
+const shouldRender = (node?: GraphNode) => node;
