@@ -23,7 +23,7 @@ from .resources import DEFAULT_POLL_INTERVAL, HightouchOutput
         "poll_interval": Field(
             float,
             default_value=DEFAULT_POLL_INTERVAL,
-            description="The time (in seconds) that will be waited between successive " "polls.",
+            description="The time (in seconds) that will be waited between successive polls.",
         ),
         "fail_on_warning": Field(
             bool,
