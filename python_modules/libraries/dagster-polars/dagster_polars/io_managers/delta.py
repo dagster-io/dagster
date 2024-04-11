@@ -2,7 +2,17 @@ import json
 from collections import defaultdict
 from enum import Enum
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
 import polars as pl
 from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
@@ -45,7 +55,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
      - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table.
        To enable this behavior, set the `partition_by` metadata value or config parameter **and** use a non-dict type annotation when loading the asset.
        The `partition_by` value will be used in `delta_write_options` of `pl.DataFrame.write_delta` and `pyarrow_options` of `pl.scan_detla`).
-       When using a one-dimensional `PartitionsDefinition`, it should be a single string like "column`. When using a `MultiPartitionsDefinition`, 
+       When using a one-dimensional `PartitionsDefinition`, it should be a single string like "column`. When using a `MultiPartitionsDefinition`,
        it should be a dict with dimension to column names mapping, like `{"dimension": "column"}`.
      - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
@@ -345,7 +355,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     @staticmethod
     def get_partition_filters(
         context: Union[InputContext, OutputContext],
-    ) -> List[Tuple[str, str, Any]]:
+    ) -> Sequence[Tuple[str, str, Any]]:
         if isinstance(context, OutputContext):
             partition_by = context.definition_metadata.get("partition_by")
         elif isinstance(context, InputContext) and context.upstream_output is not None:
