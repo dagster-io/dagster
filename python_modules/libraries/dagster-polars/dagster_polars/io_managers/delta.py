@@ -385,8 +385,6 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         else:
             raise NotImplementedError("Unsupported `partitio_by` metadata value: {partition_by}")
 
-        breakpoint()
-
         return filters
 
     def get_metadata(
