@@ -181,6 +181,7 @@ class AssetSubset(DagsterModel):
         # Must be overridden as the Pydantic implementation errors when encountering NamedTuples
         # which have different fields than their __new__ method, which TimeWindowPartitionsSubset
         # unfortunately has.
+        # This can likely be removed once TimeWindowPartitionsSubset is converted into a DagsterModel
         return {"asset_key": self.asset_key, "value": self.value}
 
 
