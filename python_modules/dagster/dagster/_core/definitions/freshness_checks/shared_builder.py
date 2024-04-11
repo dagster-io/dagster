@@ -100,7 +100,7 @@ def build_freshness_multi_check(
             latest_record = retrieve_latest_record(
                 instance=context.instance, asset_key=asset_key, partition_key=expected_partition_key
             )
-            update_timestamp = get_last_updated_timestamp(latest_record)
+            update_timestamp = get_last_updated_timestamp(latest_record, context)
             passed = (
                 update_timestamp is not None
                 and update_timestamp >= last_update_time_lower_bound.timestamp()

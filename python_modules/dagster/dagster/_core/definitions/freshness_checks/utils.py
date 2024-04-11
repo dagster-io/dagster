@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
 
 from ..assets import AssetsDefinition, SourceAsset
@@ -138,7 +139,9 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
         return cast(float, value)
 
 
-def get_last_updated_timestamp(record: Optional[EventLogRecord]) -> Optional[float]:
+def get_last_updated_timestamp(
+    record: Optional[EventLogRecord], context: AssetCheckExecutionContext
+) -> Optional[float]:
     if record is None:
         return None
     if record.asset_materialization is not None:
@@ -148,6 +151,12 @@ def get_last_updated_timestamp(record: Optional[EventLogRecord]) -> Optional[flo
         if metadata_value is not None:
             return check.float_param(metadata_value.value, "last_updated_timestamp")
         else:
+            context.log.warning(
+                f"Could not find last updated timestamp in observation record for asset key "
+                f"{check.not_none(record.asset_key).to_user_string()}. Please set "
+                "dagster/last_updated_timestamp in the metadata of the observation record on "
+                "assets which have freshness checks."
+            )
             return None
     else:
         check.failed("Expected record to be an observation or materialization")
