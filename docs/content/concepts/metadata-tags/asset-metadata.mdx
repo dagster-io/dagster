@@ -13,25 +13,30 @@ By the end of this guide, you'll understand how to attach metadata to assets and
 
 ## How it works
 
-Attaching metadata to an asset is done using the `metadata` argument and a dictionary of key/value pairs. Keys must be a string, but values can:
+There are two main types of metadata in Dagster:
 
-- Be any of the <PyObject object="MetadataValue" /> classes provided by Dagster
-- Primitive Python types, which Dagster will convert to the appropriate <PyObject object="MetadataValue" />
+- [**Definition metadata**](#attaching-definition-metadata) is information that's fixed or doesn't frequently change. For example, definition metadata could be the storage location of a table, a link the asset's definition in GitHub, or who owns the asset.
+- [**Runtime, or materialization metadata**](#attaching-materialization-metadata) is information that changes after a materialization occurs. This could be how many records were processed or how long an asset took to materialize.
 
 How metadata is attached to an asset depends on the type of metadata being attached. Refer to the following sections for more details.
 
 ---
 
-## Defining metadata
+## Attaching definition metadata
 
-There are two main types of metadata in Dagster:
+Dagster supports attaching a few different types of definition metadata:
 
-- **Definition metadata** is information that's fixed or doesn't frequently change. For example, definition metadata could be the expected columns an asset should produce or a link to its definition in GitHub.
-- **Runtime, or materialization metadata** is information that changes after a materialization occurs. This could be how many records were processed, or how long an asset took to materialize.
+- [**Arbitrary metadata**](#arbitrary-metadata-using-the-metadata-parameter), such as the storage location of the table produced by the asset
+- [**Asset owners**](#asset-owners), which are the people and/or teams who own the asset
 
-### Definition metadata
+### Arbitrary metadata using the metadata parameter
 
-Definition metadata is attached to the asset's definition using the `metadata` argument. In the following example, we attached the storage location of the table produced by the asset:
+Attaching arbitrary metadata to an asset is done using the `metadata` argument and a dictionary of key/value pairs. Keys must be a string, but values can:
+
+- Be any of the <PyObject object="MetadataValue" /> classes provided by Dagster
+- Primitive Python types, which Dagster will convert to the appropriate <PyObject object="MetadataValue" />
+
+In the following example, we attached the storage location of the table produced by the asset:
 
 ```python file=/concepts/assets/asset_definition_metadata.py startafter=start endbefore=end
 from dagster_duckdb import DuckDBResource
@@ -53,12 +58,37 @@ def small_petals(duckdb: DuckDBResource) -> None:
         )
 ```
 
-### Materialization metadata
+### Asset owners
 
-To add materialization metadata to an asset, you'll need to:
+<Note>
+  <strong>Did you know?</strong> If using Dagster+ Pro, you can create
+  asset-based alerts that will automatically notify an asset's owners when
+  triggered. Refer to the{" "}
+  <a href="/dagster-plus/managing-deployments/alerts">
+    Dagster+ alert documentation
+  </a>{" "}
+  for more information.
+</Note>
 
-- Return a <PyObject object="MaterializeResult" /> object with the `metadata` parameter
-- Use the <PyObject object="MetadataValue" /> utility class to wrap the data, ensuring it displays correctly in the UI
+An asset can have multiple owners, defined using the `owners` argument on the <PyObject object="asset" decorator /> decorator. This argument accepts a dictionary of owners, where each value is either an individual email address or a team. Teams must include a `team:` prefix; for example: `team:data-eng`.
+
+The asset in the following example has two owners: `richard.hendricks@hooli.com` and the `data-eng` team.
+
+```python file=/concepts/metadata-tags/asset_owners.py
+from dagster import asset
+
+
+@asset(owners=["richard.hendricks@hooli.com", "team:data-eng"])
+def leads(): ...
+```
+
+---
+
+## Attaching materialization metadata
+
+Attaching materialization metadata to an asset is accomplished by returning a <PyObject object="MaterializeResult" /> object containing a `metadata` parameter. This parameter accepts a dictionary of key/value pairs, where keys must be a string.
+
+When specifying values, use the <PyObject object="MetadataValue" /> utility class to wrap the data, ensuring it displays correctly in the UI. Values can also be primitive Python types, which Dagster will convert to the appropriate <PyObject object="MetadataValue" />.
 
 In the following example, we added a row count and preview to a `topstories` asset:
 
