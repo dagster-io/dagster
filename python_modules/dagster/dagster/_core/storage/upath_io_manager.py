@@ -328,7 +328,7 @@ class UPathIOManager(MemoizableIOManager):
         except FileNotFoundError as e:
             if backcompat_path is not None:
                 try:
-                    obj = self.load_from_path(context=context, path=path)
+                    obj = self.load_from_path(context=context, path=backcompat_path)
                     context.log.debug(
                         f"File not found at {path}. Loaded instead from backcompat path:"
                         f" {backcompat_path}"
