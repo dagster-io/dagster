@@ -40,6 +40,10 @@ class HightouchResource:
         self._request_max_retries = request_max_retries
         self._request_retry_delay = request_retry_delay
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @property
     def api_base_url(self) -> str:
         return HIGHTOUCH_API_BASE
@@ -249,7 +253,7 @@ class HightouchResource:
             description="Time (in seconds) to wait between each request retry.",
         ),
     },
-    description="This resource helps manage Fivetran connectors",
+    description="This resource helps manage Hightouch connectors",
 )
 def ht_resource(context) -> HightouchResource:
     """This resource allows users to programatically interface with the Hightouch REST API to triggers

@@ -125,6 +125,7 @@ cycler==0.12.1
 -e python_modules/libraries/dagster-gcp-pyspark
 -e python_modules/libraries/dagster-ge
 -e python_modules/libraries/dagster-github
+-e python_modules/libraries/dagster-hightouch
 -e python_modules/dagster-graphql
 -e helm/dagster/schema
 -e python_modules/libraries/dagster-k8s
