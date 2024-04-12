@@ -48,7 +48,7 @@
 - In the asset graph UI, the “Upstream data”, “Code version changed”, and “Upstream code version” statuses have been collapsed into a single “Unsynced” status. Clicking on “Unsynced” displays more detailed information.
 - I/O managers are now optional. This enhances flexibility for scenarios where they are not necessary. For guidance, see [When to use I/O managers](https://docs.dagster.io/concepts/io-management/io-managers#when-to-use-io-managers).
   - Assets with `None` or `MaterializeResult` return type annotations won't use I/O managers; dependencies for these assets can be set using the `deps` parameter in the `@asset` decorator.
-- [dagster-dbt] Dagster’s dbt integration can now be configured to automatically collect [metadata about column schema and column lineage](https://www.notion.so/https-docs-dagster-io-integrations-snowflake-3ec05f9d3677469b8c0ceec1d6cf6a45?pvs=21).
+- [dagster-dbt] Dagster’s dbt integration can now be configured to automatically collect [metadata about column schema and column lineage](https://docs.dagster.io/integrations/dbt/reference#emit-column-level-metadata-as-materialization-metadata-).
 - [dagster-dbt] dbt tests are now pulled in as Dagster asset checks by default.
 - [dagster-dbt] dbt resource tags are now automatically pulled in as Dagster asset tags.
 - [dagster-snowflake] [dagster-gcp] The dagster-snowflake and dagster-gcp packages now both expose a `fetch_last_updated_timestamps` API, which makes it straightforward to collect data freshness information in source asset observation functions.
