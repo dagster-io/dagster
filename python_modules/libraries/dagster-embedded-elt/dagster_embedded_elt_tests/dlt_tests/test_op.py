@@ -1,28 +1,23 @@
-import dlt
 import duckdb
 from dagster import OpExecutionContext, job, op
 from dagster_embedded_elt.dlt import DagsterDltResource
 
-from .dlt_test_sources.duckdb_with_transformer import pipeline
-
-EXAMPLE_PIPELINE_DUCKDB = "example_pipeline.duckdb"
+from .constants import EXAMPLE_PIPELINE_DUCKDB
 
 
-def test_base_dlt_op():
+def test_base_dlt_op(setup_dlt_pipeline) -> None:
+    dlt_source, dlt_pipeline = setup_dlt_pipeline
+
     @op(out={})
     def my_dlt_op_yield_events(context: OpExecutionContext, dlt_resource: DagsterDltResource):
         yield from dlt_resource.run(
             context=context,
-            dlt_source=pipeline(),
-            dlt_pipeline=dlt.pipeline(
-                pipeline_name="example_pipeline",
-                dataset_name="example",
-                destination="duckdb",
-            ),
+            dlt_source=dlt_source,
+            dlt_pipeline=dlt_pipeline,
         )
 
     @job
-    def my_dlt_op_yield_events_job():
+    def my_dlt_op_yield_events_job() -> None:
         my_dlt_op_yield_events()
 
     res = my_dlt_op_yield_events_job.execute_in_process(
