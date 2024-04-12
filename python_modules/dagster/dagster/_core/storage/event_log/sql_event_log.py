@@ -1191,6 +1191,7 @@ class SqlEventLogStorage(EventLogStorage):
                         if can_cache_asset_status_data
                         else None
                     ),
+                    last_planned_materialization_storage_id=None,
                 ),
             )
         else:

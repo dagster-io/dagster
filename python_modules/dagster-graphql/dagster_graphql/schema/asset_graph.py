@@ -1143,7 +1143,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             (
                 self._asset_record_loader.get_asset_record(asset_key)
                 if self._asset_record_loader
-                else None
+                else next(iter(graphene_info.context.instance.get_asset_records([asset_key])), None)
             ),
             partitions_def,
         )
@@ -1177,7 +1177,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 (
                     self._asset_record_loader.get_asset_record(self._external_asset_node.asset_key)
                     if self._asset_record_loader
-                    else None
+                    else next(
+                        iter(graphene_info.context.instance.get_asset_records([asset_key])), None
+                    )
                 ),
                 (
                     self._external_asset_node.partitions_def_data.get_partitions_definition()

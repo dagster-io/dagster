@@ -429,9 +429,9 @@ def get_partition_subsets(
         updated_cache_value = get_and_update_asset_status_cache_value(
             instance,
             asset_key,
+            asset_record,
             partitions_def,
             dynamic_partitions_loader,
-            asset_record,
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
@@ -471,7 +471,11 @@ def get_partition_subsets(
         )
 
         failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
-            instance, asset_key, partitions_def, dynamic_partitions_loader
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_loader,
+            asset_record=asset_record,
         )
 
         return materialized_subset, failed_subset, in_progress_subset
