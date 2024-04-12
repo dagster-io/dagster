@@ -19,6 +19,7 @@ import {EmptyStateContainer, LoadingStateContainer} from './InsightsChartShared'
 import {formatMetric} from './formatMetric';
 import {RenderTooltipFn, renderInsightsChartTooltip} from './renderInsightsChartTooltip';
 import {BarDatapoint, BarValue, DatapointType, ReportingUnitType} from './types';
+import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Filler);
@@ -51,6 +52,7 @@ export const InsightsBarChart = (props: Props) => {
   } = props;
   const {label, barColor, values} = datapoint;
 
+  const rgbColors = useRGBColorsForTheme();
   const [canShowSpinner, setCanShowSpinner] = React.useState(false);
 
   React.useEffect(() => {
@@ -73,6 +75,10 @@ export const InsightsBarChart = (props: Props) => {
   // Don't show the y axis while loading datapoints, to avoid jumping renders.
   const showYAxis = values.length > 0;
 
+  const barColorRGB = rgbColors[barColor]!;
+  const keylineDefaultRGB = rgbColors[Colors.keylineDefault()];
+  const textLighterRGB = rgbColors[Colors.textLighter()];
+
   const data = React.useMemo(() => {
     return {
       labels: timestamps,
@@ -80,12 +86,12 @@ export const InsightsBarChart = (props: Props) => {
         {
           label,
           data: values.map((value) => value?.value),
-          backgroundColor: barColor.replace(/, 1\)/, ', 0.6)'),
-          hoverBackgroundColor: barColor,
+          backgroundColor: barColorRGB.replace(/, 1\)/, ', 0.6)'),
+          hoverBackgroundColor: barColorRGB,
         },
       ],
     };
-  }, [label, timestamps, values, barColor]);
+  }, [timestamps, label, values, barColorRGB]);
 
   const onClick = useCallback(
     (element: ActiveElement | null) => {
@@ -123,7 +129,7 @@ export const InsightsBarChart = (props: Props) => {
     return {
       display: showYAxis,
       grid: {
-        color: Colors.keylineDefault(),
+        color: keylineDefaultRGB,
       },
       title: {
         display: true,
@@ -136,7 +142,7 @@ export const InsightsBarChart = (props: Props) => {
       ticks: {
         font: {
           color: {
-            color: Colors.textLighter(),
+            color: textLighterRGB,
           },
           size: 14,
           family: FontFamily.monospace,
@@ -152,7 +158,7 @@ export const InsightsBarChart = (props: Props) => {
       min: 0,
       suggestedMax: yMax,
     };
-  }, [metricLabel, showYAxis, unitType, yMax]);
+  }, [keylineDefaultRGB, metricLabel, showYAxis, textLighterRGB, unitType, yMax]);
 
   const options: ChartOptions<'bar'> = React.useMemo(() => {
     return {
@@ -190,7 +196,7 @@ export const InsightsBarChart = (props: Props) => {
           ticks: {
             font: {
               color: {
-                color: Colors.textLighter(),
+                color: textLighterRGB,
               },
               size: 14,
               family: FontFamily.monospace,
@@ -210,7 +216,7 @@ export const InsightsBarChart = (props: Props) => {
         y: yAxis,
       },
     };
-  }, [yAxis, onClick, renderTooltipFn, formatDateTime]);
+  }, [textLighterRGB, yAxis, onClick, renderTooltipFn, formatDateTime]);
 
   const emptyContent = () => {
     const anyDatapoints = values.length > 0;
