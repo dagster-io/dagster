@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Mapping, Union
+from typing import Any, Generator, Mapping, Optional, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -99,55 +99,58 @@ class DagsterDltResource(ConfigurableResource):
     def run(
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
+        dlt_source: Optional[DltSource] = None,
+        dlt_pipeline: Optional[Pipeline] = None,
+        dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
         **kwargs,
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
         """Runs the dlt pipeline with subset support.
 
         Args:
             context (Union[OpExecutionContext, AssetExecutionContext]): Asset or op execution context
+            dlt_source (Optional[DltSource]): optional dlt source if resource is used from an `@op`
+            dlt_pipeline (Optional[Pipeline]): optional dlt pipeline if resource is used from an `@op`
+            dagster_dlt_translator (Optional[DagsterDltTranslator]): optional dlt translator if resource is used from an `@op`
             **kwargs (dict[str, Any]): Keyword args passed to pipeline `run` method
 
         Returns:
-            Iterator[Union[AssetMaterialization, MaterializeResult]]: A generator of AssetMaterialization or MaterializeResult
+            Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
 
         """
-        metadata_by_key = context.assets_def.metadata_by_key
-        first_asset_metadata = next(iter(metadata_by_key.values()))
+        # This resource can be used in both `asset` and `op` definitions. In the context of an asset
+        # execution, we retrieve the dlt source, pipeline, and translator from the asset metadata.
+        # This allows us to provide the parameter _only_ in the `dlt_assets` decorator.
+        if isinstance(context, AssetExecutionContext):
+            metadata_by_key = context.assets_def.metadata_by_key
+            first_asset_metadata = next(iter(metadata_by_key.values()))
 
-        dlt_source = check.inst(first_asset_metadata.get(META_KEY_SOURCE), DltSource)
-        dlt_pipeline = check.inst(first_asset_metadata.get(META_KEY_PIPELINE), Pipeline)
-        dagster_dlt_translator = check.inst(
-            first_asset_metadata.get(META_KEY_TRANSLATOR), DagsterDltTranslator
-        )
+            dlt_source = check.inst(first_asset_metadata.get(META_KEY_SOURCE), DltSource)
+            dlt_pipeline = check.inst(first_asset_metadata.get(META_KEY_PIPELINE), Pipeline)
+            dagster_dlt_translator = check.inst(
+                first_asset_metadata.get(META_KEY_TRANSLATOR), DagsterDltTranslator
+            )
+
+        else:
+            if dlt_source is None or dlt_pipeline is None:
+                raise ValueError(
+                    "dlt_source, and dlt_pipeline parameters must be provided in an `op` context"
+                )
+
+        # Default to base translator if undefined
+        dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
 
         asset_key_dlt_source_resource_mapping = {
             dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
             for dlt_source_resource in dlt_source.resources.values()
         }
 
-        # Filter sources by asset key sub-selection
-        if context.is_subset:
-            asset_key_dlt_source_resource_mapping = {
-                asset_key: asset_dlt_source_resource
-                for (
-                    asset_key,
-                    asset_dlt_source_resource,
-                ) in asset_key_dlt_source_resource_mapping.items()
-                if asset_key in context.selected_asset_keys
-            }
-            dlt_source = dlt_source.with_resources(
-                *[
-                    dlt_source_resource.name
-                    for dlt_source_resource in asset_key_dlt_source_resource_mapping.values()
-                    if dlt_source_resource
-                ]
-            )
-
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
+
+        has_asset_def: bool = bool(context and context.has_assets_def)
 
         for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(dlt_source_resource, load_info)
-            if isinstance(context, AssetExecutionContext):
+            if has_asset_def:
                 yield MaterializeResult(asset_key=asset_key, metadata=metadata)
 
             else:
