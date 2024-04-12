@@ -66,21 +66,6 @@ The graph loaded into Dagster's web UI:
 
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
 
-## Special Event: Introducing Dagster+
-
-<p align="center">
-  <img width="100%" alt="Join us on April 17 (12PM ET) for a special event introducing Dagster+" src="https://i.imgur.com/1r7hOep.png">
-</p>
-
-Join us on April 17 (12PM ET) for a special event introducing Dagster+. [Register for our Dagster+ launch event here](https://dagster.io/events/dagster-plus-launch-event)
-
-In addition to the core open-source project, we are excited to announce Dagster+, the next generation of Dagster's cloud offering.
-
-- Find out how to weave data reliability and quality checks into the execution of your data pipelines.
-- See how diff-based branch deployments will accelerate your development cycle and cut extraneous compute costs.
-- Get a deep understanding of what is driving the cost of your data pipelines, then optimize to get the best cost/performance outcomes.
-- Enjoy the benefits of built-in data cataloging, and asset-level rich metadata.
-
 ## Quick Start:
 
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
