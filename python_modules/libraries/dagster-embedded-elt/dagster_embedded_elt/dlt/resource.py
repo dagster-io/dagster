@@ -131,10 +131,12 @@ class DagsterDltResource(ConfigurableResource):
             )
 
         else:
-            if dlt_source is None or dlt_pipeline is None:
-                raise ValueError(
-                    "dlt_source, and dlt_pipeline parameters must be provided in an `op` context"
-                )
+            dlt_source = check.not_none(
+                dlt_source, "dlt_source is a required parameter in an op context"
+            )
+            dlt_pipeline = check.not_none(
+                dlt_pipeline, "dlt_pipeline is a required parameter in an op context"
+            )
 
         # Default to base translator if undefined
         dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
