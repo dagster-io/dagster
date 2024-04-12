@@ -422,6 +422,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Indicates that the EventLogStorage supports global concurrency limits."""
         return False
 
+    @property
+    def asset_records_have_last_observation(self) -> bool:
+        return False
+
     @abstractmethod
     def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
         """Initialize a concurrency limit to the instance default value.  Is a no-op for concurrency
