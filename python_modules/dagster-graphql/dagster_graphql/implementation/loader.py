@@ -19,6 +19,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.storage.dagster_run import RunRecord, RunsFilter
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
@@ -180,8 +181,8 @@ class BatchRunLoader:
             self._records[record.dagster_run.run_id] = record
 
 
-class BatchMaterializationLoader:
-    """A batch loader that fetches materializations for asset keys.  This loader is expected to be
+class BatchAssetRecordLoader:
+    """A batch loader that fetches asset records.  This loader is expected to be
     instantiated with a set of asset keys.
     """
 
@@ -189,11 +190,9 @@ class BatchMaterializationLoader:
         self._instance = instance
         self._asset_keys: List[AssetKey] = list(asset_keys)
         self._fetched = False
-        self._materializations: Mapping[AssetKey, Optional[EventLogEntry]] = {}
+        self._asset_records: Mapping[AssetKey, Optional[AssetRecord]] = {}
 
-    def get_latest_materialization_for_asset_key(
-        self, asset_key: AssetKey
-    ) -> Optional[EventLogEntry]:
+    def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
         if asset_key not in self._asset_keys:
             check.failed(
                 f"Asset key {asset_key} not recognized for this loader.  Expected one of:"
@@ -202,12 +201,22 @@ class BatchMaterializationLoader:
 
         if not self._fetched:
             self._fetch()
-        return self._materializations.get(asset_key)
+
+        return self._asset_records.get(asset_key)
+
+    def get_latest_materialization_for_asset_key(
+        self, asset_key: AssetKey
+    ) -> Optional[EventLogEntry]:
+        asset_record = self.get_asset_record(asset_key)
+        if not asset_record:
+            return None
+
+        return asset_record.asset_entry.last_materialization
 
     def _fetch(self) -> None:
         self._fetched = True
-        self._materializations = {
-            record.asset_entry.asset_key: record.asset_entry.last_materialization
+        self._asset_records = {
+            record.asset_entry.asset_key: record
             for record in self._instance.get_asset_records(self._asset_keys)
         }
 
