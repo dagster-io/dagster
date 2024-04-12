@@ -839,7 +839,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             />
           </>
         }
-        secondMinSize={240}
       />
 
       <LaunchButtonContainer launchpadType={launchpadType}>

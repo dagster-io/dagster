@@ -311,13 +311,13 @@ class AutoMaterializePolicy(
         )
         children = [
             materialize_condition,
-            NotAssetCondition(skip_condition),
+            NotAssetCondition(operand=skip_condition),
         ]
         if self.max_materializations_per_minute:
             discard_condition = DiscardOnMaxMaterializationsExceededRule(
                 self.max_materializations_per_minute
             ).to_asset_condition()
-            children.append(NotAssetCondition(discard_condition))
+            children.append(NotAssetCondition(operand=discard_condition))
 
         # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d
-        return AndAssetCondition(children)
+        return AndAssetCondition(operands=children)
