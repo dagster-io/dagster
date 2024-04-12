@@ -19,6 +19,7 @@ Branch Deployments automatically create staging environments of your Dagster cod
 - [Supported platforms](#supported-platforms)
 - [Limitations](#limitations)
 - [Output handling](#output-handling)
+- [Change Tracking](#change-tracking)
 
 ### Overview
 
@@ -62,6 +63,10 @@ Branch Deployments aren't currently supported for use in Dagster Open Source.
 ### Output handling
 
 Output created from a branch deployment - such as a database, table, etc. - won't be automatically removed from storage once a branch is merged or closed. Refer to the [Best practices section](#best-practices) for info on how to handle this.
+
+### Change Tracking
+
+When a Branch Deployment is deployed, it compares the asset definitions in the branch deployment with the asset definitions in the main deployment. The Dagster UI will then mark the changed assets, making it easy to identify changes. Refer to the [Branch Deployments Change Tracking](/dagster-plus/managing-deployments/branch-deployments/change-tracking) guide for more information and examples.
 
 ---
 
