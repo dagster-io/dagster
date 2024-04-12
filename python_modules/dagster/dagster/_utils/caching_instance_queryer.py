@@ -168,7 +168,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             value = self.asset_partition_has_materialization_or_observation(
                 AssetKeyPartitionKey(asset_key)
             )
-        return AssetSubset(asset_key, value)
+        return AssetSubset(asset_key=asset_key, value=value)
 
     ####################
     # ASSET RECORDS / STORAGE IDS
@@ -825,7 +825,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         partitions_def = self.asset_graph.get(asset_key).partitions_def
         if partitions_def is None:
             return ValidAssetSubset(
-                asset_key,
+                asset_key=asset_key,
                 value=self.asset_partition_has_materialization_or_observation(
                     AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
                 ),

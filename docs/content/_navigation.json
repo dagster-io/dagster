@@ -1170,6 +1170,10 @@
             "path": "/_apidocs/assets"
           },
           {
+            "title": "Metadata",
+            "path": "/_apidocs/metadata"
+          },
+          {
             "title": "Jobs",
             "path": "/_apidocs/jobs"
           },

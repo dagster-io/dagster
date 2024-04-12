@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import logging
 import time
@@ -277,12 +278,15 @@ class AssetDaemonContext:
                     # the subset of all required neighbors
                     if neighbor_key in evaluation_state_by_key:
                         neighbor_evaluation_state = evaluation_state_by_key[neighbor_key]
-                        evaluation_state_by_key[neighbor_key] = neighbor_evaluation_state._replace(
-                            previous_evaluation=neighbor_evaluation_state.previous_evaluation._replace(
-                                true_subset=neighbor_evaluation_state.true_subset._replace(
-                                    asset_key=neighbor_key
-                                )
-                            )
+                        evaluation_state_by_key[neighbor_key] = dataclasses.replace(
+                            neighbor_evaluation_state,
+                            previous_evaluation=neighbor_evaluation_state.previous_evaluation.copy(
+                                update={
+                                    "true_subset": neighbor_evaluation_state.true_subset.copy(
+                                        update={"asset_key": neighbor_key}
+                                    )
+                                }
+                            ),
                         )
                     to_request |= {
                         ap._replace(asset_key=neighbor_key)

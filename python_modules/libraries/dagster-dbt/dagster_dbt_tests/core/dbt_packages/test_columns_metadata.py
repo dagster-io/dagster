@@ -9,14 +9,12 @@ from dagster import (
     AssetKey,
     AssetSelection,
     TableColumn,
+    TableColumnDep,
+    TableColumnLineage,
     TableSchema,
     materialize,
 )
 from dagster._core.definitions.metadata import TableMetadataEntries
-from dagster._core.definitions.metadata.table import (
-    TableColumnDep,
-    TableColumnLineage,
-)
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dbt.version import __version__ as dbt_version

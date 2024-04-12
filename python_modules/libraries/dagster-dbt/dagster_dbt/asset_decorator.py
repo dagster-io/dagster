@@ -177,7 +177,35 @@ def dbt_assets(
                 yield from dbt.cli(["run"], context=context).stream()
                 yield from dbt.cli(["test"], context=context).stream()
 
-        Customizing the Dagster asset metadata inferred from a dbt project using :py:class:`~dagster_dbt.DagsterDbtTranslator`:
+        Accessing the dbt event stream alongside the Dagster event stream:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                dbt_cli_invocation = dbt.cli(["build"], context=context)
+
+                # Each dbt event is structured: https://docs.getdbt.com/reference/events-logging
+                for dbt_event in dbt_invocation.stream_raw_events():
+                    for dagster_event in dbt_event.to_default_asset_events(
+                        manifest=dbt_invocation.manifest,
+                        dagster_dbt_translator=dbt_invocation.dagster_dbt_translator,
+                        context=dbt_invocation.context,
+                        target_path=dbt_invocation.target_path,
+                    ):
+                        # Manipulate `dbt_event`
+                        ...
+
+                        # Then yield the Dagster event
+                        yield dagster_event
+
+        Customizing the Dagster asset definition metadata inferred from a dbt project using :py:class:`~dagster_dbt.DagsterDbtTranslator`:
 
         .. code-block:: python
 
