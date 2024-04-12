@@ -828,6 +828,19 @@ def test_serialization(static_serialization, time_window_serialization):
 
     assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True
 
+    @asset(partitions_def=static_partitions)
+    def daily_asset_renamed():
+        return 1
+
+    asset_graph_renamed = external_asset_graph_from_assets_by_repo_name(
+        {"repo": [daily_asset_renamed, static_asset]}
+    )
+
+    assert (
+        AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph_renamed)
+        is False
+    )
+
 
 def test_asset_backfill_status_counts():
     @asset
