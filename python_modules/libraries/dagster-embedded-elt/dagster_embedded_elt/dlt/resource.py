@@ -145,24 +145,6 @@ class DagsterDltResource(ConfigurableResource):
             for dlt_source_resource in dlt_source.resources.values()
         }
 
-        # Filter sources by asset key sub-selection
-        if context.is_subset:
-            asset_key_dlt_source_resource_mapping = {
-                asset_key: asset_dlt_source_resource
-                for (
-                    asset_key,
-                    asset_dlt_source_resource,
-                ) in asset_key_dlt_source_resource_mapping.items()
-                if asset_key in context.selected_asset_keys
-            }
-            dlt_source = dlt_source.with_resources(
-                *[
-                    dlt_source_resource.name
-                    for dlt_source_resource in asset_key_dlt_source_resource_mapping.values()
-                    if dlt_source_resource
-                ]
-            )
-
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 
         has_asset_def: bool = bool(context and context.has_assets_def)
