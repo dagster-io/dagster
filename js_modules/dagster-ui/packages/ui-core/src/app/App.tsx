@@ -23,7 +23,11 @@ export const App = ({banner, children}: Props) => {
   return (
     <Container>
       {flagSettingsPage ? null : <LeftNav />}
-      <Main $smallScreen={nav.isSmallScreen} $navOpen={nav.isOpen} onClick={onClickMain}>
+      <Main
+        $smallScreen={nav.isSmallScreen}
+        $navOpen={nav.isOpen && !flagSettingsPage}
+        onClick={onClickMain}
+      >
         <div>{banner}</div>
         <ChildContainer>{children}</ChildContainer>
       </Main>
