@@ -1,4 +1,4 @@
-from typing import Any, Generator, Mapping, Optional, Union
+from typing import Any, Iterator, Mapping, Optional, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -103,7 +103,7 @@ class DagsterDltResource(ConfigurableResource):
         dlt_pipeline: Optional[Pipeline] = None,
         dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
         **kwargs,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> Iterator[Union[MaterializeResult, AssetMaterialization]]:
         """Runs the dlt pipeline with subset support.
 
         Args:
@@ -114,7 +114,7 @@ class DagsterDltResource(ConfigurableResource):
             **kwargs (dict[str, Any]): Keyword args passed to pipeline `run` method
 
         Returns:
-            Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
+            Iterator[Union[MaterializeResult, AssetMaterialization]]: An iterator of MaterializeResult or AssetMaterialization
 
         """
         # This resource can be used in both `asset` and `op` definitions. In the context of an asset
