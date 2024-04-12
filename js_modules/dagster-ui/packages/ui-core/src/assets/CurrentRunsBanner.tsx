@@ -71,9 +71,11 @@ export const CurrentRunsBanner = ({
 };
 
 const RunIdLinks = ({ids}: {ids: string[]}) =>
-  ids.map((id, idx) => (
-    <Fragment key={id}>
-      <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
-      {idx < ids.length - 1 ? ', ' : ' '}
-    </Fragment>
-  ));
+  ids.length <= 4
+    ? ids.map((id, idx) => (
+        <Fragment key={id}>
+          <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
+          {idx < ids.length - 1 ? ', ' : ' '}
+        </Fragment>
+      ))
+    : '';
