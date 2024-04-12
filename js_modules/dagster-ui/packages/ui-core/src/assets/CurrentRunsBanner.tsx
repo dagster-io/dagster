@@ -47,6 +47,7 @@ export const CurrentRunsBanner = ({
                       Run <RunIdLinks ids={inProgressRunIds} /> is currently refreshing this asset.
                     </>
                   )}
+                  {inProgressRunIds.length && unstartedRunIds.length ? ' ' : ''}
                   {unstartedRunIds.length > 1 && (
                     <>
                       Runs <RunIdLinks ids={unstartedRunIds} /> have started and will refresh this
