@@ -344,7 +344,9 @@ def test_polars_delta_native_multi_partitions(
         partition_key = context.partition_key
         assert isinstance(partition_key, MultiPartitionKey)
         return df.with_columns(
-            pl.lit(partition_key.keys_by_dimension["time"]).alias("date"),
+            pl.lit(partition_key.keys_by_dimension["time"])
+            .str.strptime(pl.Date, "%Y-%m-%d")
+            .alias("date"),
             pl.lit(partition_key.keys_by_dimension["category"]).alias("category"),
         )
 
@@ -353,7 +355,10 @@ def test_polars_delta_native_multi_partitions(
         upstream_partitioned: pl.DataFrame,
     ) -> None:
         assert set(upstream_partitioned["category"].unique()) == {"a", "b"}
-        assert set(upstream_partitioned["date"].unique()) == {"2024-01-01", "2024-01-02"}
+        assert set(upstream_partitioned["date"].unique()) == {
+            datetime(2024, 1, 1).date(),
+            datetime(2024, 1, 2).date(),
+        }
 
     for date in ["2024-01-01", "2024-01-02"]:
         for category in ["a", "b"]:
