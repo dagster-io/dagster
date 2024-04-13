@@ -3514,6 +3514,43 @@ class TestEventLogStorage:
                     asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
                     assert asset_entry.last_run_id is None
 
+    def test_asset_record_last_observation(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
+        if not storage.asset_records_have_last_observation:
+            pytest.skip(
+                "storage does not support last_observation events being stored on asset records"
+            )
+
+        asset_key = AssetKey("foo")
+
+        @op
+        def observe_asset():
+            yield AssetObservation("foo")
+            yield Output(5)
+
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
+            with instance_for_test() as created_instance:
+                if not storage.has_instance:
+                    storage.register_instance(created_instance)
+
+                events, result = _synthesize_events(
+                    lambda: observe_asset(), instance=created_instance, run_id=run_id
+                )
+                for event in events:
+                    storage.store_event(event)
+
+                # there is an observation
+                fetched_record = storage.fetch_observations(asset_key, limit=1).records[0]
+                assert fetched_record
+
+                # the observation is stored on the asset record
+                asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
+                assert asset_entry.last_observation_record == fetched_record
+
     def test_last_run_id_updates_on_materialization_planned(
         self,
         storage: EventLogStorage,
