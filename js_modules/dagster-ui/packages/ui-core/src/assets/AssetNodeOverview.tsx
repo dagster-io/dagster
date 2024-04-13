@@ -56,6 +56,7 @@ import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {AssetCheckExecutionResolvedStatus, AssetKeyInput} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
@@ -141,7 +142,11 @@ export const AssetNodeOverview = ({
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
             <Subtitle2>Check results</Subtitle2>
-            <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
+            <AssetChecksStatusSummary
+              liveData={liveData}
+              rendering="tags"
+              assetKey={assetNode.assetKey}
+            />
           </Box>
         ) : undefined}
       </Box>

@@ -164,7 +164,11 @@ const AssetNodeChecksRow = ({
         to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
         onClick={(e) => e.stopPropagation()}
       >
-        <AssetChecksStatusSummary liveData={liveData} rendering="dag" />
+        <AssetChecksStatusSummary
+          liveData={liveData}
+          rendering="dag"
+          assetKey={definition.assetKey}
+        />
       </Link>
     </AssetNodeRowBox>
   );
@@ -386,7 +390,7 @@ const MinimalAssetNodeBox = styled.div<{
   ${(p) =>
     p.$isQueued
       ? `
-        animation: pulse 0.75s infinite alternate; 
+        animation: pulse 0.75s infinite alternate;
         @keyframes pulse {
           0% {
             border-color: ${Colors.replaceAlpha(p.$border, 0.2)};
