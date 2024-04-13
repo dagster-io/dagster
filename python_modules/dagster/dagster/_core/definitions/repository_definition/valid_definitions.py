@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, TypeVar, Union
 
 from typing_extensions import TypeAlias
 
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -34,7 +33,6 @@ T_RepositoryLevelDefinition = TypeVar(
 
 RepositoryListDefinition: TypeAlias = Union[
     "AssetsDefinition",
-    AssetChecksDefinition,
     GraphDefinition,
     JobDefinition,
     ScheduleDefinition,

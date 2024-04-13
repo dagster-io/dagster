@@ -4,7 +4,7 @@ setup(
     name="{{ project_name }}",
     version="0.0.1",
     packages=find_packages(),
-    {%- if use_dbt_project_package_data_dir %}
+    {%- if use_experimental_dbt_project %}
     package_data={
         "{{ project_name }}": [
             "dbt-project/**/*",

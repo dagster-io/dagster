@@ -588,7 +588,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         )
 
     def resolve_repositoryOrigin(self, _graphene_info: ResolveInfo):
-        origin = self._instigator_state.origin.external_repository_origin
+        origin = self._instigator_state.origin.repository_origin
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_repositoryName(self, _graphene_info: ResolveInfo):
@@ -635,7 +635,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_runs(self, graphene_info: ResolveInfo, limit: Optional[int] = None):
         from .pipelines.pipeline import GrapheneRun
 
-        repository_label = self._instigator_state.origin.external_repository_origin.get_label()
+        repository_label = self._instigator_state.origin.repository_origin.get_label()
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:
             filters = RunsFilter(
                 tags={

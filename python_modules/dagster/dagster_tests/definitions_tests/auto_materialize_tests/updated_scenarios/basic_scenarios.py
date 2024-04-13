@@ -1,4 +1,5 @@
-from dagster import AssetSpec, AutoMaterializeRule
+from dagster import AssetSpec, AutoMaterializePolicy, AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule import SkipOnRunInProgressRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
@@ -289,5 +290,40 @@ basic_scenarios = [
         .with_not_started_runs()
         .evaluate_tick()
         .assert_requested_runs(),
+    ),
+    # Ensure that with a rule that skips on run in progress, we don't launch a new run
+    AssetDaemonScenario(
+        id="asset_in_progress-rule",
+        initial_spec=two_assets_in_sequence.with_asset_properties(
+            keys=["B"],
+            auto_materialize_policy=AutoMaterializePolicy.eager().with_rules(
+                SkipOnRunInProgressRule()
+            ),
+        ),
+        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"]))
+        .with_not_started_runs()
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_runs(run_request(["A"]))
+        .with_in_progress_run_for_asset("B")
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+    # Demonstrate the behavior that we will always launch a new run if there is no rule
+    AssetDaemonScenario(
+        id="asset_in_progress-no-rule",
+        initial_spec=two_assets_in_sequence.with_all_eager(),
+        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"]))
+        .with_not_started_runs()
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_runs(run_request(["A"]))
+        .with_in_progress_run_for_asset("B")
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"])),
     ),
 ]

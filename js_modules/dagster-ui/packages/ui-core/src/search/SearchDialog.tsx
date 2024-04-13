@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Box, Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -12,6 +12,7 @@ import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {TooltipShortcutInfo, TopNavButton} from '../app/TopNavButton';
 import {useTrackEvent} from '../app/analytics';
 import {Trace, createTrace} from '../performance';
 
@@ -72,7 +73,7 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
-export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
+export const SearchDialog = () => {
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
     includeAssetFilters: false,
@@ -211,25 +212,14 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   return (
     <>
       <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <SearchTrigger onClick={openSearch} data-search-trigger="1">
-          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <Box flex={{alignItems: 'center', gap: 4}}>
-              <div
-                style={{
-                  height: '24px',
-                  width: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name="search" color={Colors.navTextHover()} />
-              </div>
-              <div>{searchPlaceholder}</div>
-            </Box>
-            <SlashShortcut>/</SlashShortcut>
-          </Box>
-        </SearchTrigger>
+        <Tooltip
+          content={<TooltipShortcutInfo label="Search" shortcutKey="/" />}
+          placement="bottom"
+        >
+          <TopNavButton onClick={openSearch}>
+            <Icon name="search" size={20} />
+          </TopNavButton>
+        </Tooltip>
       </ShortcutHandler>
       <Overlay
         backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
@@ -238,7 +228,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
         transitionDuration={100}
       >
         <Container>
-          <SearchBox hasQueryString={!!queryString.length}>
+          <SearchBox $hasQueryString={!!queryString.length}>
             <Icon name="search" color={Colors.accentGray()} size={20} />
             <SearchInput
               data-search-input="1"
@@ -256,7 +246,6 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
             highlight={highlight}
             queryString={queryString}
             results={renderedResults}
-            filterResults={[]}
             onClickResult={onClickResult}
           />
         </Container>
@@ -265,78 +254,57 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   );
 };
 
-const SearchTrigger = styled.button`
-  background-color: ${Colors.navButton()};
-  border-radius: 24px;
-  border: none;
-  color: ${Colors.navTextHover()};
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px 16px 4px 8px;
-  outline: none;
-  user-select: none;
-  width: 188px;
-  height: 32px;
-  transition: background-color 100ms linear;
-
-  :hover {
-    background-color: ${Colors.navButtonHover()};
-  }
-
-  :focus-visible {
-    outline: ${Colors.focusRing()} auto 1px;
-  }
-`;
-
 const Container = styled.div`
   background-color: ${Colors.backgroundDefault()};
-  border-radius: 4px;
-  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
+  border-radius: 8px;
+  box-shadow:
+    2px 2px 8px ${Colors.shadowDefault()},
+    ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
   max-height: 60vh;
   left: calc(50% - 300px);
   overflow: hidden;
   width: 600px;
   top: 20vh;
-
-  input {
-    background-color: transparent;
-  }
 `;
 
-interface SearchBoxProps {
-  readonly hasQueryString: boolean;
+export interface SearchBoxProps {
+  readonly $hasQueryString: boolean;
 }
 
 export const SearchBox = styled.div<SearchBoxProps>`
-  border-radius: 12px;
-  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
-
+  background: ${Colors.backgroundDefault()};
+  border-radius: ${({$hasQueryString}) => ($hasQueryString ? '8px 8px 0 0' : '8px')};
+  border: none;
   align-items: center;
-  border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${Colors.keylineDefault()}` : 'none'};
+  box-shadow: ${({$hasQueryString}) =>
+      $hasQueryString ? Colors.keylineDefault() : Colors.borderDefault()}
+    inset 0px 0px 0px 1px;
   display: flex;
   padding: 12px 20px 12px 12px;
+  transition: all 100ms linear;
+
+  :hover {
+    box-shadow: ${({$hasQueryString}) =>
+        $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
+      0 0 0 1px inset;
+  }
 `;
 
 export const SearchInput = styled.input`
+  background-color: transparent;
   border: none;
-  color: ${Colors.textLight()};
+  color: ${Colors.textDefault()};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
   outline: none;
   width: 100%;
-  background-color: transparent;
 
   &::placeholder {
-    color: ${Colors.textLighter()};
+    color: ${Colors.textDisabled()};
   }
-`;
 
-const SlashShortcut = styled.div`
-  background-color: transparent;
-  border-radius: 3px;
-  color: ${Colors.navTextHover()};
-  font-size: 14px;
-  padding: 2px;
+  ::focus {
+    outline: none;
+  }
 `;

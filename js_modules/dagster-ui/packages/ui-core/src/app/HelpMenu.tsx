@@ -1,24 +1,28 @@
 import {
-  Colors,
   ExternalAnchorButton,
   Icon,
-  IconWrapper,
   Menu,
   MenuDivider,
   MenuExternalLink,
+  MenuItem,
   Popover,
   ProductTour,
   ProductTourPosition,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
-import styled from 'styled-components';
 
 import {ShortcutHandler} from './ShortcutHandler';
+import {TooltipShortcutInfo, TopNavButton} from './TopNavButton';
 import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
-export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}) => {
+interface Props {
+  showContactSales?: boolean;
+  onShareFeedback?: () => void;
+}
+
+export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const onInteraction = useCallback((open: boolean) => setIsOpen(open), []);
@@ -66,6 +70,9 @@ export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}
                 text="View changelog"
               />
               <MenuDivider title="Help" />
+              {onShareFeedback ? (
+                <MenuItem icon="send" text="Share feedback" onClick={onShareFeedback} />
+              ) : null}
               <MenuExternalLink
                 href="https://dagster.io/slack"
                 icon="slack"
@@ -102,33 +109,17 @@ export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}
             </Menu>
           }
         >
-          <Tooltip content="Help">
-            <HelpButton>
-              <Icon name="chat_support" size={20} />
-            </HelpButton>
+          <Tooltip
+            content={<TooltipShortcutInfo label="Help" shortcutKey="?" />}
+            placement="bottom"
+            canShow={!isOpen}
+          >
+            <TopNavButton>
+              <Icon name="help_circle" size={20} />
+            </TopNavButton>
           </Tooltip>
         </Popover>
       </ProductTour>
     </ShortcutHandler>
   );
 };
-
-const HelpButton = styled.button`
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-
-  :focus {
-    outline: none;
-  }
-
-  ${IconWrapper} {
-    background-color: ${Colors.navTextSelected()};
-    transition: background-color 100ms linear;
-  }
-
-  :focus ${IconWrapper}, :hover ${IconWrapper} {
-    background-color: ${Colors.navTextHover()};
-  }
-`;

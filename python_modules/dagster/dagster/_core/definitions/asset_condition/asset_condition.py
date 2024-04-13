@@ -1,6 +1,7 @@
 import functools
 import hashlib
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -8,7 +9,6 @@ from typing import (
     FrozenSet,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Tuple,
@@ -19,16 +19,17 @@ from typing import (
 
 import pendulum
 
-import dagster._check as check
+from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._model import DagsterModel
 from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
 
 from ..asset_subset import AssetSubset, ValidAssetSubset
+from ..auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
-    from ..auto_materialize_rule import AutoMaterializeRule
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
 
 
@@ -36,14 +37,14 @@ T = TypeVar("T")
 
 
 @whitelist_for_serdes
-class HistoricalAllPartitionsSubsetSentinel(NamedTuple):
+class HistoricalAllPartitionsSubsetSentinel(DagsterModel):
     """Serializable indicator that this value was an AllPartitionsSubset at serialization time, but
     the partitions may have changed since that time.
     """
 
 
 @whitelist_for_serdes
-class AssetConditionSnapshot(NamedTuple):
+class AssetConditionSnapshot(DagsterModel):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
     class_name: str
@@ -52,7 +53,7 @@ class AssetConditionSnapshot(NamedTuple):
 
 
 @whitelist_for_serdes
-class AssetSubsetWithMetadata(NamedTuple):
+class AssetSubsetWithMetadata(DagsterModel):
     """An asset subset with metadata that corresponds to it."""
 
     subset: AssetSubset
@@ -74,58 +75,8 @@ def get_serializable_candidate_subset(
     return candidate_subset
 
 
-class AssetConditionResult(NamedTuple):
-    condition: "AssetCondition"
-    start_timestamp: float
-    end_timestamp: float
-
-    true_subset: AssetSubset
-    candidate_subset: AssetSubset
-    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
-    extra_state: PackableValue
-
-    child_results: Sequence["AssetConditionResult"]
-
-    @staticmethod
-    def create_from_children(
-        context: "AssetConditionEvaluationContext",
-        true_subset: AssetSubset,
-        child_results: Sequence["AssetConditionResult"],
-    ) -> "AssetConditionResult":
-        """Returns a new AssetConditionEvaluation from the given child results."""
-        return AssetConditionResult(
-            condition=context.condition,
-            start_timestamp=context.start_timestamp,
-            end_timestamp=pendulum.now("UTC").timestamp(),
-            true_subset=true_subset,
-            candidate_subset=context.candidate_subset,
-            subsets_with_metadata=[],
-            child_results=child_results,
-            extra_state=None,
-        )
-
-    @staticmethod
-    def create(
-        context: "AssetConditionEvaluationContext",
-        true_subset: AssetSubset,
-        subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
-        extra_state: PackableValue = None,
-    ) -> "AssetConditionResult":
-        """Returns a new AssetConditionEvaluation from the given parameters."""
-        return AssetConditionResult(
-            condition=context.condition,
-            start_timestamp=context.start_timestamp,
-            end_timestamp=pendulum.now("UTC").timestamp(),
-            true_subset=true_subset,
-            candidate_subset=context.candidate_subset,
-            subsets_with_metadata=subsets_with_metadata,
-            child_results=[],
-            extra_state=extra_state,
-        )
-
-
 @whitelist_for_serdes
-class AssetConditionEvaluation(NamedTuple):
+class AssetConditionEvaluation(DagsterModel):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AssetConditionSnapshot
@@ -143,7 +94,7 @@ class AssetConditionEvaluation(NamedTuple):
         return self.true_subset.asset_key
 
     @staticmethod
-    def from_result(result: AssetConditionResult) -> "AssetConditionEvaluation":
+    def from_result(result: "AssetConditionResult") -> "AssetConditionEvaluation":
         return AssetConditionEvaluation(
             condition_snapshot=result.condition.snapshot,
             start_timestamp=result.start_timestamp,
@@ -196,7 +147,10 @@ class AssetConditionEvaluation(NamedTuple):
         else:
             # the true_subset and discarded_subset were created on the same tick, so they are
             # guaranteed to be compatible with each other
-            return ValidAssetSubset(*self.true_subset) | discarded_subset
+            return (
+                ValidAssetSubset(asset_key=self.asset_key, value=self.true_subset.value)
+                | discarded_subset
+            )
 
     def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -228,7 +182,8 @@ class AssetConditionEvaluation(NamedTuple):
 
 
 @whitelist_for_serdes
-class AssetConditionEvaluationState(NamedTuple):
+@dataclass(frozen=True)
+class AssetConditionEvaluationState:
     """Incremental state calculated during the evaluation of an AssetCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
@@ -256,14 +211,16 @@ class AssetConditionEvaluationState(NamedTuple):
 
     @staticmethod
     def create(
-        context: "AssetConditionEvaluationContext", root_result: AssetConditionResult
+        context: "AssetConditionEvaluationContext", root_result: "AssetConditionResult"
     ) -> "AssetConditionEvaluationState":
         """Convenience constructor to generate an AssetConditionEvaluationState from the root result
         and the context in which it was evaluated.
         """
 
         # flatten the extra state into a single dict
-        def _flatten_extra_state(r: AssetConditionResult) -> Mapping[str, PackableValue]:
+        def _flatten_extra_state(
+            r: AssetConditionResult,
+        ) -> Mapping[str, PackableValue]:
             extra_state: Dict[str, PackableValue] = (
                 {r.condition.unique_id: r.extra_state} if r.extra_state else {}
             )
@@ -289,7 +246,7 @@ class AssetConditionEvaluationState(NamedTuple):
 
 
 @whitelist_for_serdes
-class AssetConditionEvaluationWithRunIds(NamedTuple):
+class AssetConditionEvaluationWithRunIds(DagsterModel):
     """A union of an AssetConditionEvaluation and the set of run IDs that have been launched in
     response to it.
     """
@@ -306,11 +263,24 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
-class AssetCondition(ABC):
+class AssetCondition(ABC, DagsterModel):
     """An AssetCondition represents some state of the world that can influence if an asset
-    partition should be materialized or not. AutomationConditions can be combined together to create
+    partition should be materialized or not. AssetConditions can be combined to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import AssetCondition, AutoMaterializePolicy
+
+            # At least one parent is newer and no parent is missing.
+            my_policy = AutoMaterializePolicy(
+                asset_condition = AssetCondition.parent_newer() & ~AssetCondition.parent_missing()
+            )
     """
+
+    class Config:
+        keep_untouched = (functools.cached_property,)
 
     @property
     def unique_id(self) -> str:
@@ -321,27 +291,28 @@ class AssetCondition(ABC):
         return hashlib.md5("".join(parts).encode()).hexdigest()
 
     @abstractmethod
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> AssetConditionResult:
+    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
         raise NotImplementedError()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def description(self) -> str:
         raise NotImplementedError()
 
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
-        # group AndAutomationConditions together
+        # group AndAssetConditions together
         if isinstance(self, AndAssetCondition):
-            return AndAssetCondition(children=[*self.children, other])
-        return AndAssetCondition(children=[self, other])
+            return AndAssetCondition(operands=[*self.operands, other])
+        return AndAssetCondition(operands=[self, other])
 
     def __or__(self, other: "AssetCondition") -> "AssetCondition":
-        # group OrAutomationConditions together
+        # group OrAssetConditions together
         if isinstance(self, OrAssetCondition):
-            return OrAssetCondition(children=[*self.children, other])
-        return OrAssetCondition(children=[self, other])
+            return OrAssetCondition(operands=[*self.operands, other])
+        return OrAssetCondition(operands=[self, other])
 
     def __invert__(self) -> "AssetCondition":
-        return NotAssetCondition(children=[self])
+        return NotAssetCondition(operand=self)
 
     @property
     def is_legacy(self) -> bool:
@@ -387,9 +358,7 @@ class AssetCondition(ABC):
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition is newer than it.
         """
-        from ..auto_materialize_rule import AutoMaterializeRule
-
-        return RuleCondition(AutoMaterializeRule.materialize_on_parent_updated())
+        return RuleCondition(rule=AutoMaterializeRule.materialize_on_parent_updated())
 
     @staticmethod
     def missing() -> "AssetCondition":
@@ -398,7 +367,7 @@ class AssetCondition(ABC):
         """
         from ..auto_materialize_rule import AutoMaterializeRule
 
-        return RuleCondition(AutoMaterializeRule.materialize_on_missing())
+        return RuleCondition(rule=AutoMaterializeRule.materialize_on_missing())
 
     @staticmethod
     def parent_missing() -> "AssetCondition":
@@ -407,7 +376,7 @@ class AssetCondition(ABC):
         """
         from ..auto_materialize_rule import AutoMaterializeRule
 
-        return RuleCondition(AutoMaterializeRule.skip_on_parent_missing())
+        return RuleCondition(rule=AutoMaterializeRule.skip_on_parent_missing())
 
     @staticmethod
     def updated_since_cron(cron_schedule: str, timezone: str = "UTC") -> "AssetCondition":
@@ -417,7 +386,7 @@ class AssetCondition(ABC):
         """
         from ..auto_materialize_rule import AutoMaterializeRule
 
-        return ~RuleCondition(AutoMaterializeRule.materialize_on_cron(cron_schedule, timezone))
+        return ~RuleCondition(rule=AutoMaterializeRule.materialize_on_cron(cron_schedule, timezone))
 
     @staticmethod
     def parents_updated_since_cron(cron_schedule: str, timezone: str = "UTC") -> "AssetCondition":
@@ -427,15 +396,18 @@ class AssetCondition(ABC):
         from ..auto_materialize_rule import AutoMaterializeRule
 
         return ~RuleCondition(
-            AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(cron_schedule, timezone)
+            rule=AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(
+                cron_schedule, timezone
+            )
         )
 
 
-class RuleCondition(
-    NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
-    AssetCondition,
-):
+@experimental
+@whitelist_for_serdes
+class RuleCondition(AssetCondition):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
+
+    rule: AutoMaterializeRule
 
     @property
     def unique_id(self) -> str:
@@ -446,7 +418,7 @@ class RuleCondition(
     def description(self) -> str:
         return self.rule.description
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> AssetConditionResult:
+    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
         context.root_context.daemon_context.logger.debug(
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
@@ -458,17 +430,22 @@ class RuleCondition(
         return evaluation_result
 
 
-class AndAssetCondition(
-    NamedTuple("_AndAssetCondition", [("children", Sequence[AssetCondition])]),
-    AssetCondition,
-):
+@experimental
+@whitelist_for_serdes
+class AndAssetCondition(AssetCondition):
     """This class represents the condition that all of its children evaluate to true."""
+
+    operands: Sequence[AssetCondition]
+
+    @property
+    def children(self) -> Sequence[AssetCondition]:
+        return self.operands
 
     @property
     def description(self) -> str:
         return "All of"
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> AssetConditionResult:
+    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
         child_results: List[AssetConditionResult] = []
         true_subset = context.candidate_subset
         for child in self.children:
@@ -479,17 +456,22 @@ class AndAssetCondition(
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
-class OrAssetCondition(
-    NamedTuple("_OrAssetCondition", [("children", Sequence[AssetCondition])]),
-    AssetCondition,
-):
+@experimental
+@whitelist_for_serdes
+class OrAssetCondition(AssetCondition):
     """This class represents the condition that any of its children evaluate to true."""
+
+    operands: Sequence[AssetCondition]
+
+    @property
+    def children(self) -> Sequence[AssetCondition]:
+        return self.operands
 
     @property
     def description(self) -> str:
         return "Any of"
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> AssetConditionResult:
+    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
         child_results: List[AssetConditionResult] = []
         true_subset = context.empty_subset()
         for child in self.children:
@@ -502,29 +484,77 @@ class OrAssetCondition(
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
-class NotAssetCondition(
-    NamedTuple("_NotAssetCondition", [("children", Sequence[AssetCondition])]),
-    AssetCondition,
-):
+@experimental
+@whitelist_for_serdes
+class NotAssetCondition(AssetCondition):
     """This class represents the condition that none of its children evaluate to true."""
 
-    def __new__(cls, children: Sequence[AssetCondition]):
-        check.invariant(len(children) == 1)
-        return super().__new__(cls, children)
+    operand: AssetCondition
 
     @property
     def description(self) -> str:
         return "Not"
 
     @property
-    def child(self) -> AssetCondition:
-        return self.children[0]
+    def children(self) -> Sequence[AssetCondition]:
+        return [self.operand]
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> AssetConditionResult:
+    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
         child_context = context.for_child(
-            condition=self.child, candidate_subset=context.candidate_subset
+            condition=self.operand, candidate_subset=context.candidate_subset
         )
-        child_result = self.child.evaluate(child_context)
+        child_result = self.operand.evaluate(child_context)
         true_subset = context.candidate_subset - child_result.true_subset
 
         return AssetConditionResult.create_from_children(context, true_subset, [child_result])
+
+
+@dataclass(frozen=True)
+class AssetConditionResult:
+    condition: AssetCondition
+    start_timestamp: float
+    end_timestamp: float
+
+    true_subset: AssetSubset
+    candidate_subset: AssetSubset
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
+
+    extra_state: PackableValue
+    child_results: Sequence["AssetConditionResult"]
+
+    @staticmethod
+    def create_from_children(
+        context: "AssetConditionEvaluationContext",
+        true_subset: AssetSubset,
+        child_results: Sequence["AssetConditionResult"],
+    ) -> "AssetConditionResult":
+        """Returns a new AssetConditionEvaluation from the given child results."""
+        return AssetConditionResult(
+            condition=context.condition,
+            start_timestamp=context.start_timestamp,
+            end_timestamp=pendulum.now("UTC").timestamp(),
+            true_subset=true_subset,
+            candidate_subset=context.candidate_subset,
+            subsets_with_metadata=[],
+            child_results=child_results,
+            extra_state=None,
+        )
+
+    @staticmethod
+    def create(
+        context: "AssetConditionEvaluationContext",
+        true_subset: AssetSubset,
+        subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
+        extra_state: PackableValue = None,
+    ) -> "AssetConditionResult":
+        """Returns a new AssetConditionEvaluation from the given parameters."""
+        return AssetConditionResult(
+            condition=context.condition,
+            start_timestamp=context.start_timestamp,
+            end_timestamp=pendulum.now("UTC").timestamp(),
+            true_subset=true_subset,
+            candidate_subset=context.candidate_subset,
+            subsets_with_metadata=subsets_with_metadata,
+            child_results=[],
+            extra_state=extra_state,
+        )

@@ -24,7 +24,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.assets_job import (
+from dagster._core.definitions.asset_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
 )
@@ -219,45 +219,43 @@ def build_caching_repository_data_from_list(
                 )
             # we can only resolve these once we have all assets
             unresolved_jobs[definition.name] = definition
+        elif isinstance(definition, AssetChecksDefinition):
+            for key in definition.check_keys:
+                if key in asset_check_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
+            asset_check_keys.update(definition.check_keys)
+            asset_checks_defs.append(definition)
         elif isinstance(definition, AssetsDefinition):
             for key in definition.keys:
                 if key in asset_keys:
                     raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
+            for key in definition.check_keys:
+                if key in asset_check_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
 
             asset_keys.update(definition.keys)
+            asset_check_keys.update(definition.check_keys)
             assets_defs.append(definition)
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
             asset_keys.add(definition.key)
-        elif isinstance(definition, AssetChecksDefinition):
-            for key in definition.keys:
-                if key in asset_check_keys:
-                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
-            asset_check_keys.update(definition.keys)
-            asset_checks_defs.append(definition)
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
-    asset_graph = AssetGraph.from_assets(
-        [*assets_defs, *source_assets], asset_checks=asset_checks_defs
-    )
-    if assets_defs or source_assets or asset_checks_defs:
-        for job_def in get_base_asset_jobs(
+    asset_graph = AssetGraph.from_assets([*assets_defs, *asset_checks_defs, *source_assets])
+    source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
+    assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
+    asset_checks_defs_by_key = {
+        key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
+    }
+    if assets_defs or asset_checks_defs or source_assets:
+        for job_name, job_def in get_base_asset_jobs(
             asset_graph=asset_graph,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
-        ):
-            jobs[job_def.name] = job_def
-
-        source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
-        assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
-        asset_checks_defs_by_key = {
-            key: checks_def for checks_def in asset_checks_defs for key in checks_def.keys
-        }
-    else:
-        source_assets_by_key = {}
-        assets_defs_by_key = {}
-        asset_checks_defs_by_key = {}
+            logger_defs=default_logger_defs,
+        ).items():
+            jobs[job_name] = job_def
 
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():

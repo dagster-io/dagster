@@ -54,6 +54,23 @@ def test_external_asset_basic_creation() -> None:
     assert not assets_def.is_executable
 
 
+def test_external_asset_with_hyphens() -> None:
+    key = AssetKey(["with-hyphen", "external_asset_one"])
+    assets_def = next(
+        iter(
+            external_assets_from_specs(
+                specs=[
+                    AssetSpec(
+                        key=key,
+                    )
+                ]
+            )
+        )
+    )
+    assert isinstance(assets_def, AssetsDefinition)
+    assert assets_def.key == key
+
+
 def test_multi_external_asset_basic_creation() -> None:
     for assets_def in external_assets_from_specs(
         specs=[

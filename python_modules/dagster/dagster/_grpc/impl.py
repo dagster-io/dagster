@@ -56,6 +56,7 @@ from dagster._core.remote_representation.external_data import (
     ExternalSensorExecutionErrorData,
     job_name_for_external_partition_set_name,
 )
+from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
@@ -206,10 +207,8 @@ def _run_in_subprocess(
 
             if not dagster_run:
                 raise DagsterRunNotFoundError(
-                    "gRPC server could not load run {run_id} in order to execute it. Make sure that"
-                    " the gRPC server has access to your run storage.".format(
-                        run_id=execute_run_args.run_id
-                    ),
+                    f"gRPC server could not load run {execute_run_args.run_id} in order to execute it. Make sure that"
+                    " the gRPC server has access to your run storage.",
                     invalid_run_id=execute_run_args.run_id,
                 )
 
@@ -350,6 +349,7 @@ def get_external_schedule_execution(
 
 def get_external_sensor_execution(
     repo_def: RepositoryDefinition,
+    code_location_origin: CodeLocationOrigin,
     instance_ref: Optional[InstanceRef],
     sensor_name: str,
     last_tick_completion_timestamp: Optional[float],
@@ -383,6 +383,7 @@ def get_external_sensor_execution(
             sensor_name=sensor_name,
             resources=resources_to_build,
             last_sensor_start_time=last_sensor_start_timestamp,
+            code_location_origin=code_location_origin,
         ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,

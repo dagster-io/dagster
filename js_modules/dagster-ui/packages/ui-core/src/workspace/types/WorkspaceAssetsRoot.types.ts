@@ -26,7 +26,7 @@ export type WorkspaceAssetsQuery = {
         assetNodes: Array<{
           __typename: 'AssetNode';
           id: string;
-          groupName: string | null;
+          groupName: string;
           changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
           isSource: boolean;
@@ -41,6 +41,7 @@ export type WorkspaceAssetsQuery = {
             | {__typename: 'TeamAssetOwner'; team: string}
             | {__typename: 'UserAssetOwner'; email: string}
           >;
+          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           repository: {
             __typename: 'Repository';
             id: string;

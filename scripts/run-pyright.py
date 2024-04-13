@@ -94,6 +94,16 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--skip-typecheck",
+    action="store_true",
+    default=False,
+    help=(
+        "Skip type checking, i.e. actually running pyright. This only makes sense when used together"
+        " with `--rebuild` or `--update-pins` to build an environment."
+    ),
+)
+
+parser.add_argument(
     "paths",
     type=str,
     nargs="*",
@@ -113,6 +123,7 @@ class Params(TypedDict):
     rebuild: bool
     update_pins: bool
     venv_python: str
+    skip_typecheck: bool
 
 
 class Position(TypedDict):
@@ -209,7 +220,7 @@ def get_params(args: argparse.Namespace) -> Params:
             sys.exit(0)
     else:
         mode = "path"
-        targets = args.pathsBUILDKIT
+        targets = args.paths
 
     venv_python = (
         subprocess.run(["which", "python"], check=True, capture_output=True).stdout.decode().strip()
@@ -222,6 +233,7 @@ def get_params(args: argparse.Namespace) -> Params:
         rebuild=args.rebuild,
         unannotated=args.unannotated,
         venv_python=venv_python,
+        skip_typecheck=args.skip_typecheck,
     )
 
 
@@ -328,12 +340,18 @@ def update_pinned_requirements(env: str) -> None:
         text=True,
         check=True,
     ).stdout
-    is_internal = not os.path.exists("python_modules/dagster")
-    oss_root_ref = "${DAGSTER_GIT_REPO_DIR}/" if is_internal else ""
-    resolved_oss_root = os.environ["DAGSTER_GIT_REPO_DIR"].rstrip("/")
-    resolved_internal_root = os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"].rstrip("/")
-    dep_list = re.sub(f"-e file://{resolved_oss_root}/(.+)", f"-e {oss_root_ref}\\1", raw_dep_list)
-    dep_list = re.sub(f"-e file://{resolved_internal_root}/(.+)", "-e \\1", dep_list)
+
+    if os.path.exists("python_modules/dagster"):  # in oss
+        resolved_oss_root = os.getcwd()
+        dep_list = re.sub(f"-e file://{resolved_oss_root}/(.+)", "-e \\1", raw_dep_list)
+    else:  # in internal
+        resolved_oss_root = os.environ["DAGSTER_GIT_REPO_DIR"].rstrip("/")
+        resolved_internal_root = os.getcwd()
+        dep_list = re.sub(
+            f"-e file://{resolved_oss_root}/(.+)", "-e ${DAGSTER_GIT_REPO_DIR}/\\1", raw_dep_list
+        )
+        dep_list = re.sub(f"-e file://{resolved_internal_root}/(.+)", "-e \\1", dep_list)
+
     with open(get_env_path(env, "requirements-pinned.txt"), "w") as f:
         f.write(dep_list)
 
@@ -346,7 +364,6 @@ def run_pyright(
     pinned_deps: bool,
     venv_python: str,
 ) -> RunResult:
-    normalize_env(env, rebuild, pinned_deps, venv_python)
     with temp_pyright_config_file(env, unannotated) as config_path:
         base_pyright_cmd = " ".join(
             [
@@ -502,17 +519,25 @@ if __name__ == "__main__":
         env_path_map = map_paths_to_envs(params["targets"])
     else:
         env_path_map = {env: None for env in params["targets"]}
-    run_results = [
-        run_pyright(
-            env,
-            paths=env_path_map[env],
-            rebuild=params["rebuild"],
-            unannotated=params["unannotated"],
-            pinned_deps=params["update_pins"],
-            venv_python=params["venv_python"],
-        )
-        for env in env_path_map
-    ]
-    merged_result = reduce(merge_pyright_results, run_results)
-    print_output(merged_result, params["json"])
-    sys.exit(merged_result["returncode"])
+
+    for env in env_path_map:
+        normalize_env(env, params["rebuild"], params["update_pins"], params["venv_python"])
+    if params["skip_typecheck"]:
+        print("Successfully built environments. Skipping typecheck.")
+    elif len(env_path_map) == 0:
+        print("No paths to analyze. Skipping typecheck.")
+    elif not params["skip_typecheck"]:
+        run_results = [
+            run_pyright(
+                env,
+                paths=env_path_map[env],
+                rebuild=params["rebuild"],
+                unannotated=params["unannotated"],
+                pinned_deps=params["update_pins"],
+                venv_python=params["venv_python"],
+            )
+            for env in env_path_map
+        ]
+        merged_result = reduce(merge_pyright_results, run_results)
+        print_output(merged_result, params["json"])
+        sys.exit(merged_result["returncode"])

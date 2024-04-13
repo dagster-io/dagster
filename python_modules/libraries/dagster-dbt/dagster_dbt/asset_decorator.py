@@ -28,8 +28,10 @@ from dagster._utils.warnings import (
 )
 
 from .asset_utils import (
+    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
+    DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_SELECT_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
-    MANIFEST_METADATA_KEY,
     default_asset_check_fn,
     default_code_version_fn,
     get_deps,
@@ -175,7 +177,35 @@ def dbt_assets(
                 yield from dbt.cli(["run"], context=context).stream()
                 yield from dbt.cli(["test"], context=context).stream()
 
-        Customizing the Dagster asset metadata inferred from a dbt project using :py:class:`~dagster_dbt.DagsterDbtTranslator`:
+        Accessing the dbt event stream alongside the Dagster event stream:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                dbt_cli_invocation = dbt.cli(["build"], context=context)
+
+                # Each dbt event is structured: https://docs.getdbt.com/reference/events-logging
+                for dbt_event in dbt_invocation.stream_raw_events():
+                    for dagster_event in dbt_event.to_default_asset_events(
+                        manifest=dbt_invocation.manifest,
+                        dagster_dbt_translator=dbt_invocation.dagster_dbt_translator,
+                        context=dbt_invocation.context,
+                        target_path=dbt_invocation.target_path,
+                    ):
+                        # Manipulate `dbt_event`
+                        ...
+
+                        # Then yield the Dagster event
+                        yield dagster_event
+
+        Customizing the Dagster asset definition metadata inferred from a dbt project using :py:class:`~dagster_dbt.DagsterDbtTranslator`:
 
         .. code-block:: python
 
@@ -320,21 +350,21 @@ def dbt_assets(
         dagster_dbt_translator=dagster_dbt_translator,
     )
 
-    if op_tags and "dagster-dbt/select" in op_tags:
+    if op_tags and DAGSTER_DBT_SELECT_METADATA_KEY in op_tags:
         raise DagsterInvalidDefinitionError(
-            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            f"To specify a dbt selection, use the 'select' argument, not '{DAGSTER_DBT_SELECT_METADATA_KEY}'"
             " with op_tags"
         )
 
-    if op_tags and "dagster-dbt/exclude" in op_tags:
+    if op_tags and DAGSTER_DBT_EXCLUDE_METADATA_KEY in op_tags:
         raise DagsterInvalidDefinitionError(
-            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            f"To specify a dbt exclusion, use the 'exclude' argument, not '{DAGSTER_DBT_EXCLUDE_METADATA_KEY}'"
             " with op_tags"
         )
 
     resolved_op_tags = {
-        **({"dagster-dbt/select": select} if select else {}),
-        **({"dagster-dbt/exclude": exclude} if exclude else {}),
+        **({DAGSTER_DBT_SELECT_METADATA_KEY: select} if select else {}),
+        **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude} if exclude else {}),
         **(op_tags if op_tags else {}),
     }
 
@@ -383,9 +413,16 @@ def get_dbt_multi_asset_args(
     check_specs: Sequence[AssetCheckSpec] = []
 
     dbt_unique_id_and_resource_types_by_asset_key: Dict[AssetKey, Tuple[Set[str], Set[str]]] = {}
+    dbt_group_resource_props_by_group_name: Dict[str, Dict[str, Any]] = {
+        dbt_group_resource_props["name"]: dbt_group_resource_props
+        for dbt_group_resource_props in manifest["groups"].values()
+    }
 
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
+        dbt_group_resource_props = dbt_group_resource_props_by_group_name.get(
+            dbt_resource_props.get("group")
+        )
 
         output_name = dagster_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
@@ -402,11 +439,18 @@ def get_dbt_multi_asset_args(
             io_manager_key=io_manager_key,
             description=dagster_dbt_translator.get_description(dbt_resource_props),
             is_required=False,
-            metadata={  # type: ignore
+            metadata={
                 **dagster_dbt_translator.get_metadata(dbt_resource_props),
-                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
+            owners=dagster_dbt_translator.get_owners(
+                {
+                    **dbt_resource_props,
+                    **({"group": dbt_group_resource_props} if dbt_group_resource_props else {}),
+                }
+            ),
+            tags=dagster_dbt_translator.get_tags(dbt_resource_props),
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
             code_version=default_code_version_fn(dbt_resource_props),
             freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
@@ -422,7 +466,7 @@ def get_dbt_multi_asset_args(
         ]
         for test_unique_id in test_unique_ids:
             check_spec = default_asset_check_fn(
-                manifest, dbt_nodes, dagster_dbt_translator, asset_key, unique_id, test_unique_id
+                manifest, dbt_nodes, dagster_dbt_translator, asset_key, test_unique_id
             )
             if check_spec:
                 check_specs.append(check_spec)

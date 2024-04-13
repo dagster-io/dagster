@@ -1,10 +1,10 @@
 ---
-title: "Lesson 2: Requirements"
+title: "Lesson 2: Setup requirements"
 module: 'dagster_dbt'
 lesson: '2'
 ---
 
-## Requirements
+## Setup requirements
 
 To complete this course, you’ll need:
 
@@ -20,6 +20,12 @@ To complete this course, you’ll need:
    python --version
    pip --version
    ```
+- **To install `dagster` locally.** We'll be using part of the Dagster CLI to generate a project for us, so we'll need to install it first. Run the following:
+
+  ```shell
+  pip install dagster
+  dagster --version
+  ```
 
 ---
 
@@ -30,5 +36,5 @@ Even if you’ve already completed the Dagster Essentials course, you should sti
 Run the following to clone the project:
 
 ```bash
-git clone https://github.com/dagster-io/project-dagster-university -b module/dagster-and-dbt-starter dagster-and-dbt
+dagster project from-example --name project-dagster-university --example project_du_dbt_starter
 ```

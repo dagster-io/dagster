@@ -23,12 +23,14 @@ from dagster._serdes.serdes import (
     _WHITELIST_MAP,
     NamedTupleSerializer,
     PackableValue,
+    PydanticModelSerializer,
     UnpackContext,
     UnpackedValue,
     WhitelistMap,
     deserialize_value,
     whitelist_for_serdes,
 )
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .partition import PartitionsDefinition, SerializedPartitionsSubset
 
@@ -181,10 +183,10 @@ def deserialize_serialized_partitions_subset_to_asset_subset(
         # partitions def has changed since storage time
         return AssetSubset.empty(asset_key, partitions_def)
 
-    return AssetSubset(asset_key, value=serialized.deserialize(partitions_def))
+    return AssetSubset(asset_key=asset_key, value=serialized.deserialize(partitions_def))
 
 
-class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
+class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer):
     """This handles backcompat for the old AutoMaterializeAssetEvaluation objects, turning them into
     AssetConditionEvaluationWithRunIds objects.
     """
@@ -204,7 +206,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         if serialized is None:
             # Confusingly, we used `None` to indicate "all of an unpartitioned asset" in the old
             # serialization scheme
-            return AssetSubset(asset_key, True)
+            return AssetSubset(asset_key=asset_key, value=True)
         return deserialize_serialized_partitions_subset_to_asset_subset(
             serialized, asset_key, self.partitions_def
         )
@@ -215,7 +217,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         from .asset_condition.asset_condition import AssetConditionSnapshot, RuleCondition
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
-        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
 
         return AssetConditionSnapshot(
             class_name=RuleCondition.__name__,
@@ -347,8 +349,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             # since the evaluation was stored. Instead, we just use an empty subset.
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
         else:
-            true_subset = evaluation.true_subset._replace(
-                value=not evaluation.true_subset.bool_value
+            true_subset = evaluation.true_subset.copy(
+                update={"value": not evaluation.true_subset.bool_value}
             )
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(

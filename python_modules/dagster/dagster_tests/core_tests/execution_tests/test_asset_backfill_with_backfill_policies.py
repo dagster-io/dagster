@@ -1,5 +1,6 @@
 import math
-from unittest.mock import MagicMock
+from contextlib import ExitStack
+from unittest.mock import MagicMock, patch
 
 import pendulum
 import pytest
@@ -14,8 +15,12 @@ from dagster import (
     WeeklyPartitionsDefinition,
     asset,
 )
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterBackfillFailedError
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -1002,3 +1007,70 @@ def test_run_request_partition_order():
         PartitionKeyRange("2023-10-03", "2023-10-04"),
         PartitionKeyRange("2023-10-05", "2023-10-06"),
     ]
+
+
+# 0 turns off batching
+# 2 will require multiple batches to fulfill the backfill
+# 10 will require a single to fulfill the backfill
+@pytest.mark.parametrize("batch_size", [0, 2, 10])
+@pytest.mark.parametrize("throw_store_event_batch_error", [False, True])
+def test_single_run_backfill_full_execution(
+    batch_size: int, throw_store_event_batch_error: bool, capsys, monkeypatch
+):
+    time_now = pendulum.now("UTC")
+
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def partitioned_asset():
+        return {"a": 1, "b": 2}
+
+    assets_by_repo_name = {
+        "repo": [
+            partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=None,
+        asset_graph=asset_graph,
+        asset_selection=[
+            partitioned_asset.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=time_now,
+    )
+
+    with instance_for_test() as instance:
+        with ExitStack() as stack:
+            monkeypatch.setenv("DAGSTER_EVENT_BATCH_SIZE", str(batch_size))
+            if throw_store_event_batch_error:
+                stack.enter_context(
+                    patch(
+                        "dagster._core.storage.event_log.base.EventLogStorage.store_event_batch",
+                        side_effect=Exception("failed"),
+                    )
+                )
+            run_backfill_to_completion(
+                asset_graph,
+                assets_by_repo_name,
+                backfill_data,
+                [],
+                instance,
+            )
+            events = instance.get_event_records(
+                EventRecordsFilter(
+                    asset_key=partitioned_asset.key,
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                )
+            )
+            assert len(events) == 4
+
+            if batch_size > 0 and throw_store_event_batch_error:
+                stderr = capsys.readouterr().err
+                assert "Exception while storing event batch" in stderr
+                assert (
+                    "Falling back to storing multiple single-event storage requests...\n" in stderr
+                )

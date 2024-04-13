@@ -50,7 +50,7 @@ const buildGraphNodeMock = (definitionOverrides: Partial<AssetNode>): GraphNode 
     assetKey: MockAssetKey,
     jobNames: ['__ASSET_JOB_1'],
     opNames: ['asset1'],
-    groupName: null,
+    groupName: 'default',
     graphName: null,
     isPartitioned: false,
     isObservable: false,

@@ -7,7 +7,6 @@ import styled, {CSSObject} from 'styled-components';
 
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {AssetLatestRunSpinner} from './AssetRunLinking';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
@@ -28,15 +27,16 @@ interface Props {
 }
 
 export const AssetNode = React.memo(({definition, selected}: Props) => {
-  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
   const {liveData} = useAssetLiveData(definition.assetKey);
-
   return (
     <AssetInsetForHoverEffect>
-      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        style={{minHeight: 24}}
+      >
+        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
         <ChangedReasonsTag
           changedReasons={definition.changedReasons}
           assetKey={definition.assetKey}
@@ -44,21 +44,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
       </Box>
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
-          <AssetName $isSource={isSource}>
-            <span style={{marginTop: 1}}>
-              <Icon name={isSource ? 'source_asset' : 'asset'} />
-            </span>
-            <div
-              data-tooltip={displayName}
-              data-tooltip-style={isSource ? NameTooltipStyleSource : NameTooltipStyle}
-              style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
-            >
-              {withMiddleTruncation(displayName, {
-                maxLength: ASSET_NODE_NAME_MAX_LENGTH,
-              })}
-            </div>
-            <div style={{flex: 1}} />
-          </AssetName>
+          <AssetNameRow definition={definition} />
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
               <AssetDescription $color={Colors.textDefault()}>
@@ -82,6 +68,28 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
     </AssetInsetForHoverEffect>
   );
 }, isEqual);
+
+export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
+
+  return (
+    <AssetName $isSource={definition.isSource}>
+      <span style={{marginTop: 1}}>
+        <Icon name={definition.isSource ? 'source_asset' : 'asset'} />
+      </span>
+      <div
+        data-tooltip={displayName}
+        data-tooltip-style={definition.isSource ? NameTooltipStyleSource : NameTooltipStyle}
+        style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
+      >
+        {withMiddleTruncation(displayName, {
+          maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+        })}
+      </div>
+      <div style={{flex: 1}} />
+    </AssetName>
+  );
+};
 
 const AssetNodeRowBox = styled(Box)`
   white-space: nowrap;
@@ -179,6 +187,9 @@ export const AssetNodeMinimal = ({
   const isChanged = definition.changedReasons.length;
   const isStale = isAssetStale(liveData);
 
+  const queuedRuns = liveData?.unstartedRunIds.length;
+  const inProgressRuns = liveData?.inProgressRunIds.length;
+
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
@@ -193,6 +204,8 @@ export const AssetNodeMinimal = ({
             $isSource={isSource}
             $background={background}
             $border={border}
+            $inProgress={!!inProgressRuns}
+            $isQueued={!!queuedRuns}
           >
             {isChanged ? (
               <MinimalNodeChangedDot
@@ -200,12 +213,7 @@ export const AssetNodeMinimal = ({
                 assetKey={assetKey}
               />
             ) : null}
-            {isStale ? (
-              <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} include="upstream" />
-            ) : null}
-            <AssetNodeSpinnerContainer>
-              <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-            </AssetNodeSpinnerContainer>
+            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
             <MinimalName style={{fontSize: 28}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 20})}
             </MinimalName>
@@ -244,7 +252,7 @@ export const ASSET_NODE_FRAGMENT = gql`
   }
 `;
 
-const AssetInsetForHoverEffect = styled.div`
+export const AssetInsetForHoverEffect = styled.div`
   padding: 10px 4px 2px 4px;
   height: 100%;
 
@@ -253,7 +261,7 @@ const AssetInsetForHoverEffect = styled.div`
   }
 `;
 
-const AssetNodeContainer = styled.div<{$selected: boolean}>`
+export const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: pointer;
   padding: 6px;
@@ -264,7 +272,11 @@ const AssetNodeShowOnHover = styled.span`
   display: none;
 `;
 
-const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
+export const AssetNodeBox = styled.div<{
+  $isSource: boolean;
+  $selected: boolean;
+  $noScale?: boolean;
+}>`
   ${(p) =>
     p.$isSource
       ? `border: 2px dashed ${p.$selected ? Colors.accentGrayHover() : Colors.accentGray()}`
@@ -280,7 +292,7 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   &:hover {
     ${(p) => !p.$selected && `border: 2px solid ${Colors.lineageNodeBorderHover()};`};
     box-shadow: ${Colors.shadowDefault()} 0px 1px 4px 0px;
-    scale: 1.03;
+    scale: ${(p) => (p.$noScale ? '1' : '1.03')};
     ${AssetNodeShowOnHover} {
       display: initial;
     }
@@ -323,12 +335,6 @@ const AssetName = styled.div<{$isSource: boolean}>`
   border-top-right-radius: 8px;
 `;
 
-const AssetNodeSpinnerContainer = styled.div`
-  top: 50%;
-  position: absolute;
-  transform: translate(8px, -16px);
-`;
-
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
   height: 100%;
 `;
@@ -338,13 +344,59 @@ const MinimalAssetNodeBox = styled.div<{
   $selected: boolean;
   $background: string;
   $border: string;
+  $inProgress: boolean;
+  $isQueued: boolean;
 }>`
   background: ${(p) => p.$background};
+  overflow: hidden;
   ${(p) =>
     p.$isSource
       ? `border: 4px dashed ${p.$selected ? Colors.accentGray() : p.$border}`
       : `border: 4px solid ${p.$selected ? Colors.lineageNodeBorderSelected() : p.$border}`};
+  ${(p) =>
+    p.$inProgress
+      ? `
+      background-color: ${p.$background};
+      &::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        background-image: linear-gradient(90deg, ${Colors.replaceAlpha(
+          p.$background,
+          0,
+        )} 0, ${Colors.replaceAlpha(p.$background, 0)} 0%, ${Colors.replaceAlpha(
+          p.$background,
+          0.2,
+        )});
+        animation: shimmer 1.5s infinite;
+        content: '';
+      }
 
+      @keyframes shimmer {
+        100% {
+          transform: translateX(100%);
+        }
+      }
+  `
+      : ''}
+
+  ${(p) =>
+    p.$isQueued
+      ? `
+        animation: pulse 0.75s infinite alternate; 
+        @keyframes pulse {
+          0% {
+            border-color: ${Colors.replaceAlpha(p.$border, 0.2)};
+          }
+          100% {
+            border-color: ${Colors.replaceAlpha(p.$border, 1)};
+          }
+        }
+      `
+      : ''}
   border-radius: 16px;
   position: relative;
   padding: 2px;

@@ -6,7 +6,7 @@ from dagster._core.definitions.auto_materialize_sensor_definition import (
 
 
 @pytest.mark.parametrize(
-    "selection", [AssetSelection.all(), AssetSelection.keys("asset1", "asset2")]
+    "selection", [AssetSelection.all(), AssetSelection.assets("asset1", "asset2")]
 )
 def test_constructor(selection):
     tags = {"apple": "banana", "orange": "kiwi"}

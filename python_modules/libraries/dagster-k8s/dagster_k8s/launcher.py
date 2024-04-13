@@ -240,7 +240,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         }
         if run.external_job_origin:
             labels["dagster/code-location"] = (
-                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                run.external_job_origin.repository_origin.code_location_origin.location_name
             )
 
         job = construct_dagster_k8s_job(
@@ -256,7 +256,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     "name": "DAGSTER_RUN_JOB_NAME",
                     "value": job_origin.job_name,
                 },
-                *container_context.env,
             ],
         )
 
@@ -343,9 +342,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Run was not terminated successfully; delete_job returned {}".format(
-                        termination_result
-                    ),
+                    message=f"Run was not terminated successfully; delete_job returned {termination_result}",
                     dagster_run=run,
                     cls=self.__class__,
                 )

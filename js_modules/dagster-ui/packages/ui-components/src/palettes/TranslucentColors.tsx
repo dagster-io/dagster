@@ -1,4 +1,5 @@
 export const TranslucentColors = {
+  Blue10: 'rgba(79, 67, 221, 0.10)',
   Blue12: 'rgba(79, 67, 221, 0.12)',
   Blue15: 'rgba(79, 67, 221, 0.15)',
   Blue20: 'rgba(79, 67, 221, 0.20)',

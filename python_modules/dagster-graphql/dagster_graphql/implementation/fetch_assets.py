@@ -28,7 +28,6 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
     PartitionRangeStatus,
@@ -43,6 +42,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalAssetNode
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
@@ -211,7 +211,7 @@ def get_asset_nodes_by_asset_key(
 
     stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
-        asset_graph=lambda: RemoteAssetGraph.from_workspace(graphene_info.context),
+        asset_graph=lambda: graphene_info.context.asset_graph,
     )
 
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
@@ -223,7 +223,11 @@ def get_asset_nodes_by_asset_key(
         _, _, preexisting_asset_node = asset_nodes_by_asset_key.get(
             external_asset_node.asset_key, (None, None, None)
         )
-        if preexisting_asset_node is None or preexisting_asset_node.is_source:
+        # If an asset node is already in the dict, we only overwrite it if that preexisting node is
+        # not executable in some manner (i.e. it is a source asset that is not an observable)
+        if preexisting_asset_node is None or (
+            preexisting_asset_node.is_source and not preexisting_asset_node.is_observable
+        ):
             if asset_keys is None or external_asset_node.asset_key in asset_keys:
                 asset_nodes_by_asset_key[external_asset_node.asset_key] = (
                     repo_loc,
@@ -413,6 +417,7 @@ def get_partition_subsets(
     instance: DagsterInstance,
     asset_key: AssetKey,
     dynamic_partitions_loader: DynamicPartitionsStore,
+    asset_record: Optional[AssetRecord],
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
@@ -425,7 +430,11 @@ def get_partition_subsets(
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
-            instance, asset_key, partitions_def, dynamic_partitions_loader
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_loader,
+            asset_record,
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)

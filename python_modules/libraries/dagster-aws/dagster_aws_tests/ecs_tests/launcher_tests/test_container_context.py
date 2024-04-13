@@ -146,6 +146,7 @@ def test_merge(
             ],
         },
     ]
+    assert merged.server_health_check == other_secrets_container_context.server_health_check
     assert merged.run_sidecar_containers == [
         {
             "name": "OtherRunAgent",

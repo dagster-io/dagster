@@ -46,6 +46,10 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'account_circle';
     case AssetFilterSearchResultType.AssetGroup:
       return 'asset_group';
+    case AssetFilterSearchResultType.ComputeKind:
+      return 'tag';
+    case AssetFilterSearchResultType.Tag:
+      return 'tag';
     default:
       return 'source';
   }
@@ -57,6 +61,8 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Code location';
     case AssetFilterSearchResultType.ComputeKind:
       return 'Compute kind';
+    case AssetFilterSearchResultType.Tag:
+      return 'Tag';
     case AssetFilterSearchResultType.Owner:
       return 'Owner';
     case AssetFilterSearchResultType.AssetGroup:
@@ -118,7 +124,7 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] 
   return labelComponents;
 }
 
-const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
+export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
 
@@ -149,14 +155,17 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
             $interactive={false}
             $textColor={Colors.textDefault()}
           >
-            <Icon
-              name={iconForType(item.type)}
-              color={isHighlight ? Colors.textDefault() : Colors.textLight()}
-            />
-            {isAssetFilterSearchResultType(item.type) && (
-              <Caption>{assetFilterPrefixString(item.type)}:&nbsp;</Caption>
-            )}
-            {labelComponents.map((component) => component)}
+            <Box flex={{gap: 4}}>
+              <Icon
+                name={iconForType(item.type)}
+                color={isHighlight ? Colors.textDefault() : Colors.textLight()}
+              />
+              {isAssetFilterSearchResultType(item.type) && (
+                <Caption>{assetFilterPrefixString(item.type)}:</Caption>
+              )}
+              <div>{labelComponents.map((component) => component)}</div>
+              {item.repoPath && <Caption>in {item.repoPath}</Caption>}
+            </Box>
           </StyledTag>
           <div style={{marginLeft: '8px'}}>
             <Description isHighlight={isHighlight}>
@@ -169,23 +178,22 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
   );
 });
 
-interface Props {
+export interface SearchResultsProps {
   highlight: number;
   onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
   queryString: string;
   results: Fuse.FuseResult<SearchResult>[];
-  filterResults: Fuse.FuseResult<SearchResult>[];
 }
 
-export const SearchResults = (props: Props) => {
-  const {highlight, onClickResult, queryString, results, filterResults} = props;
+export const SearchResults = (props: SearchResultsProps) => {
+  const {highlight, onClickResult, queryString, results} = props;
 
-  if (!results.length && !filterResults.length && queryString) {
+  if (!results.length && queryString) {
     return <NoResults>No results</NoResults>;
   }
 
   return (
-    <List hasResults={!!results.length || !!filterResults.length}>
+    <SearchResultsList hasResults={!!results.length}>
       {results.map((result, ii) => (
         <SearchResultItem
           key={result.item.href}
@@ -194,36 +202,21 @@ export const SearchResults = (props: Props) => {
           onClickResult={onClickResult}
         />
       ))}
-      {filterResults.length > 0 ? (
-        <>
-          <MatchingFiltersHeader>Matching filters</MatchingFiltersHeader>
-          {filterResults.map((result, ii) => (
-            <SearchResultItem
-              key={result.item.href}
-              isHighlight={highlight === ii + results.length}
-              result={result}
-              onClickResult={onClickResult}
-            />
-          ))}
-        </>
-      ) : (
-        <></>
-      )}
-    </List>
+    </SearchResultsList>
   );
 };
 
-const NoResults = styled.div`
+export const NoResults = styled.div`
   color: ${Colors.textLighter()};
   font-size: 16px;
   padding: 16px;
 `;
 
-interface ListProps {
+interface SearchResultsListProps {
   hasResults: boolean;
 }
 
-const List = styled.ul<ListProps>`
+export const SearchResultsList = styled.ul<SearchResultsListProps>`
   max-height: calc(60vh - 48px);
   margin: 0;
   padding: ${({hasResults}) => (hasResults ? '4px 0' : 'none')};
@@ -231,26 +224,18 @@ const List = styled.ul<ListProps>`
   overflow-y: auto;
   background-color: ${Colors.backgroundDefault()};
   box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
-  border-radius: 4px;
+  border-radius: 0 0 4px 4px;
 `;
 
 interface HighlightableTextProps {
   readonly isHighlight: boolean;
 }
 
-const MatchingFiltersHeader = styled.li`
-  background-color: ${Colors.backgroundDefault()};
-  padding: 8px 12px;
-  border-bottom: 1px solid ${Colors.backgroundGray()};
-  color: ${Colors.textLight()};
-  font-weight: 500;
-`;
-
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
   background-color: ${({isHighlight}) =>
-    isHighlight ? Colors.backgroundLight() : Colors.backgroundDefault()};
-  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentLime() : 'transparent')} 4px 0 0
+    isHighlight ? Colors.backgroundLightHover() : Colors.backgroundDefault()};
+  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentBlue() : 'transparent')} 4px 0 0
     inset;
   color: ${Colors.textLight()};
   display: flex;
@@ -260,7 +245,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${Colors.backgroundLight()};
+    background-color: ${Colors.backgroundLighter()};
   }
 `;
 

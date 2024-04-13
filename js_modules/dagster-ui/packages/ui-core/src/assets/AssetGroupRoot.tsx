@@ -12,13 +12,13 @@ import {
   AssetGroupMetadataQuery,
   AssetGroupMetadataQueryVariables,
 } from './types/AssetGroupRoot.types';
+import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {AssetGroupSelector, ChangeReason} from '../graphql/types';
+import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {
   ExplorerPath,
@@ -27,7 +27,6 @@ import {
 } from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -89,48 +88,15 @@ export const AssetGroupRoot = ({
     [history],
   );
 
-  const [filters, setFilters] = useQueryPersistedState<{
-    computeKindTags?: string[];
-    changedInBranch?: ChangeReason[];
-  }>({
-    encode: ({computeKindTags, changedInBranch}) => ({
-      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
-      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
-    }),
-    decode: (qs) => ({
-      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
-      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
-    }),
-  });
+  const assetFilterState = useAssetDefinitionFilterState();
 
-  const {visibleRepos} = React.useContext(WorkspaceContext);
-  const hideNodesMatchingInLineage = React.useCallback(
-    (node: AssetNodeForGraphQueryFragment) => {
-      if (
-        !visibleRepos.some(
-          (repo) =>
-            repo.repositoryLocation.name === node.repository.location.name &&
-            repo.repository.name === node.repository.name,
-        )
-      ) {
-        return true;
-      }
-
-      if (filters.changedInBranch?.length) {
-        if (node.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))) {
-          return false;
-        }
-        return true;
-      }
-
-      return false;
-    },
-    [filters, visibleRepos],
-  );
-
+  const {filterFn} = assetFilterState;
   const fetchOptions = React.useMemo(
-    () => ({groupSelector, hideNodesMatching: hideNodesMatchingInLineage}),
-    [groupSelector, hideNodesMatchingInLineage],
+    () => ({
+      groupSelector,
+      hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => !filterFn(node),
+    }),
+    [groupSelector, filterFn],
   );
 
   const lineageOptions = React.useMemo(
@@ -164,8 +130,7 @@ export const AssetGroupRoot = ({
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
-          filters={filters}
-          setFilters={setFilters}
+          assetFilterState={assetFilterState}
         />
       ) : (
         <AssetsCatalogTable

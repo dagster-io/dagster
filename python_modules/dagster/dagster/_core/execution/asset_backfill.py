@@ -28,7 +28,7 @@ from dagster._core.definitions.asset_daemon_context import (
     build_run_requests_with_backfill_policies,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.asset_selection import KeysAssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -237,7 +237,7 @@ class AssetBackfillData(NamedTuple):
             # Find the root assets of the unreachable targets. Any targeted partition in these
             # assets becomes part of the root subset
             unreachable_target_root_subset = unreachable_targets.filter_asset_keys(
-                AssetSelection.keys(*unreachable_targets.asset_keys)
+                KeysAssetSelection(selected_keys=list(unreachable_targets.asset_keys))
                 .sources()
                 .resolve(instance_queryer.asset_graph)
             )
@@ -276,7 +276,9 @@ class AssetBackfillData(NamedTuple):
         }
 
         root_partitioned_asset_keys = (
-            AssetSelection.keys(*target_partitioned_asset_keys).sources().resolve(asset_graph)
+            KeysAssetSelection(selected_keys=list(target_partitioned_asset_keys))
+            .sources()
+            .resolve(asset_graph)
         )
 
         # Return the targeted partitions for the root partitioned asset keys
@@ -516,7 +518,9 @@ class AssetBackfillData(NamedTuple):
             }
 
             root_partitioned_asset_keys = (
-                AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
+                KeysAssetSelection(selected_keys=list(partitioned_asset_keys))
+                .sources()
+                .resolve(asset_graph)
             )
             root_partitions_defs = {
                 asset_graph.get(asset_key).partitions_def
@@ -883,8 +887,7 @@ def execute_asset_backfill_iteration(
     logger.info(f"Evaluating asset backfill {backfill.backfill_id}")
 
     workspace_context = workspace_process_context.create_request_context()
-
-    asset_graph = RemoteAssetGraph.from_workspace(workspace_context)
+    asset_graph = workspace_context.asset_graph
 
     if not backfill.is_asset_backfill:
         check.failed("Backfill must be an asset backfill")

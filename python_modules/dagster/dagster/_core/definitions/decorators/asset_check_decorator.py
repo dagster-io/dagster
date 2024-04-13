@@ -1,16 +1,23 @@
-from typing import AbstractSet, Any, Callable, Iterable, Mapping, Optional, Set, Tuple, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
-from dagster._annotations import experimental
 from dagster._config import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_checks import (
-    AssetChecksDefinition,
-    AssetChecksDefinitionInputOutputProps,
-)
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.assets import AssetsDefinition
@@ -21,6 +28,9 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
+from dagster._utils.warnings import (
+    disable_dagster_warnings,
+)
 
 from ..input import In
 from .asset_decorator import (
@@ -89,7 +99,6 @@ def _build_asset_check_input(
     )
 
 
-@experimental
 def asset_check(
     *,
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
@@ -104,6 +113,7 @@ def asset_check(
     compute_kind: Optional[str] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    metadata: Optional[Mapping[str, Any]] = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -138,6 +148,7 @@ def asset_check(
         compute_kind (Optional[str]): A string to represent the kind of computation that executes
             the check, e.g. "dbt" or "spark".
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the check.
+        metadata (Optional[Mapping[str, Any]]): A dictionary of static metadata for the check.
 
 
     Produces an :py:class:`AssetChecksDefinition` object.
@@ -200,6 +211,7 @@ def asset_check(
             asset=asset_key,
             additional_deps=additional_ins_and_deps,
             blocking=blocking,
+            metadata=metadata,
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
@@ -232,19 +244,128 @@ def asset_check(
             retry_policy=retry_policy,
         )(fn)
 
-        checks_def = AssetChecksDefinition(
+        return AssetChecksDefinition.create(
+            keys_by_input_name={
+                input_tuple[0]: asset_key
+                for asset_key, input_tuple in input_tuples_by_asset_key.items()
+            },
             node_def=op_def,
             resource_defs=wrap_resources_for_execution(resource_defs),
-            specs=[spec],
-            input_output_props=AssetChecksDefinitionInputOutputProps(
-                asset_keys_by_input_name={
-                    input_tuple[0]: asset_key
-                    for asset_key, input_tuple in input_tuples_by_asset_key.items()
-                },
-                asset_check_keys_by_output_name={op_def.output_defs[0].name: spec.key},
-            ),
+            check_specs_by_output_name={op_def.output_defs[0].name: spec},
+            can_subset=False,
         )
 
-        return checks_def
+    return inner
+
+
+MultiAssetCheckFunctionReturn: TypeAlias = Iterable[AssetCheckResult]
+MultiAssetCheckFunction: TypeAlias = Callable[..., MultiAssetCheckFunctionReturn]
+
+
+def multi_asset_check(
+    *,
+    name: Optional[str] = None,
+    specs: Sequence[AssetCheckSpec],
+    description: Optional[str] = None,
+    can_subset: bool = False,
+    compute_kind: Optional[str] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
+    retry_policy: Optional[RetryPolicy] = None,
+    config_schema: Optional[UserConfigSchema] = None,
+) -> Callable[[Callable[..., Any]], AssetChecksDefinition]:
+    """Defines a set of asset checks that can be executed together with the same op.
+
+    Args:
+        specs (Sequence[AssetCheckSpec]): Specs for the asset checks.
+        name (Optional[str]): The name of the op. If not specified, the name of the decorated
+            function will be used.
+        description (Optional[str]): Description of the op.
+        required_resource_keys (Optional[Set[str]]): A set of keys for resources that are required
+            by the function that execute the checks. These can alternatively be specified by
+            including resource-typed parameters in the function signature.
+        config_schema (Optional[ConfigSchema): The configuration schema for the asset checks' underlying
+            op. If set, Dagster will check that config provided for the op matches this schema and fail
+            if it does not. If not set, Dagster will accept any config provided for the op.
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that executes the checks.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
+        compute_kind (Optional[str]): A string to represent the kind of computation that executes
+            the checks, e.g. "dbt" or "spark".
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the checks.
+        can_subset (bool): Whether the op can emit results for a subset of the asset checks
+            keys, based on the context.selected_asset_check_keys argument. Defaults to False.
+
+
+    Examples:
+        .. code-block:: python
+
+            @multi_asset_check(
+                specs=[
+                    AssetCheckSpec("enough_rows", asset="asset1"),
+                    AssetCheckSpec("no_dupes", asset="asset1"),
+                    AssetCheckSpec("enough_rows", asset="asset2"),
+                ],
+            )
+            def checks():
+                yield AssetCheckResult(passed=True, asset_key="asset1", check_name="enough_rows")
+                yield AssetCheckResult(passed=False, asset_key="asset1", check_name="no_dupes")
+                yield AssetCheckResult(passed=True, asset_key="asset2", check_name="enough_rows")
+
+    """
+    required_resource_keys = check.opt_set_param(
+        required_resource_keys, "required_resource_keys", of_type=str
+    )
+    resource_defs = wrap_resources_for_execution(
+        check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
+    )
+    config_schema = check.opt_mapping_param(
+        config_schema,  # type: ignore
+        "config_schema",
+        additional_message="Only dicts are supported for asset config_schema.",
+    )
+
+    def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
+        op_name = name or fn.__name__
+        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+        op_required_resource_keys = required_resource_keys - arg_resource_keys
+
+        outs = {
+            spec.get_python_identifier(): Out(None, is_required=not can_subset) for spec in specs
+        }
+        input_tuples_by_asset_key = build_asset_ins(
+            fn=fn,
+            asset_ins={},
+            deps={spec.asset_key for spec in specs}
+            | {dep.asset_key for spec in specs for dep in spec.additional_deps or []},
+        )
+
+        with disable_dagster_warnings():
+            op_def = _Op(
+                name=op_name,
+                description=description,
+                ins=dict(input_tuples_by_asset_key.values()),
+                out=outs,
+                required_resource_keys=op_required_resource_keys,
+                tags={
+                    **({"kind": compute_kind} if compute_kind else {}),
+                    **(op_tags or {}),
+                },
+                config_schema=config_schema,
+                retry_policy=retry_policy,
+            )(fn)
+
+        return AssetChecksDefinition.create(
+            node_def=op_def,
+            resource_defs=wrap_resources_for_execution(resource_defs),
+            keys_by_input_name={
+                input_tuple[0]: asset_key
+                for asset_key, input_tuple in input_tuples_by_asset_key.items()
+            },
+            check_specs_by_output_name={spec.get_python_identifier(): spec for spec in specs},
+            can_subset=can_subset,
+        )
 
     return inner

@@ -18,13 +18,13 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.workspace.workspace import IWorkspace
 
 from .backfill_policy import BackfillPolicy
 from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph, BaseAssetNode
@@ -62,8 +62,12 @@ class RemoteAssetNode(BaseAssetNode):
     ##### COMMON ASSET NODE INTERFACE
 
     @property
-    def group_name(self) -> Optional[str]:
-        return self._priority_node.group_name
+    def description(self) -> Optional[str]:
+        return self._priority_node.op_description
+
+    @property
+    def group_name(self) -> str:
+        return self._priority_node.group_name or DEFAULT_GROUP_NAME
 
     @cached_property
     def is_materializable(self) -> bool:
@@ -84,6 +88,14 @@ class RemoteAssetNode(BaseAssetNode):
     @property
     def metadata(self) -> ArbitraryMetadataMapping:
         return self._priority_node.metadata
+
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self._priority_node.tags or {}
+
+    @property
+    def owners(self) -> Sequence[str]:
+        return self._priority_node.owners or []
 
     @property
     def is_partitioned(self) -> bool:
@@ -209,46 +221,6 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         self._asset_check_execution_sets_by_key = asset_check_execution_sets_by_key
 
     @classmethod
-    def from_workspace(cls, context: IWorkspace) -> "RemoteAssetGraph":
-        code_locations = (
-            location_entry.code_location
-            for location_entry in context.get_workspace_snapshot().values()
-            if location_entry.code_location
-        )
-        repos = (
-            repo
-            for code_location in code_locations
-            for repo in code_location.get_repositories().values()
-        )
-        repo_handle_external_asset_nodes: Sequence[
-            Tuple[RepositoryHandle, "ExternalAssetNode"]
-        ] = []
-        asset_checks: Sequence["ExternalAssetCheck"] = []
-
-        for repo in repos:
-            for external_asset_node in repo.get_external_asset_nodes():
-                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
-
-            asset_checks.extend(repo.get_external_asset_checks())
-
-        return cls.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
-            external_asset_checks=asset_checks,
-        )
-
-    @classmethod
-    def from_external_repository(
-        cls, external_repository: ExternalRepository
-    ) -> "RemoteAssetGraph":
-        return cls.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=[
-                (external_repository.handle, asset_node)
-                for asset_node in external_repository.get_external_asset_nodes()
-            ],
-            external_asset_checks=external_repository.get_external_asset_checks(),
-        )
-
-    @classmethod
     def from_repository_handles_and_external_asset_nodes(
         cls,
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
@@ -271,18 +243,23 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         repo_node_pairs_by_key: Dict[
             AssetKey, List[Tuple[RepositoryHandle, "ExternalAssetNode"]]
         ] = defaultdict(list)
-        for repo_handle, node in repo_handle_external_asset_nodes:
-            repo_node_pairs_by_key[node.asset_key].append((repo_handle, node))
 
         # Build the dependency graph of asset keys.
         all_keys = {node.asset_key for _, node in repo_handle_external_asset_nodes}
         upstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
         downstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
-        for _, node in repo_handle_external_asset_nodes:
+
+        for repo_handle, node in repo_handle_external_asset_nodes:
+            repo_node_pairs_by_key[node.asset_key].append((repo_handle, node))
             for dep in node.dependencies:
                 upstream[node.asset_key].add(dep.upstream_asset_key)
                 downstream[dep.upstream_asset_key].add(node.asset_key)
+
         dep_graph: DependencyGraph[AssetKey] = {"upstream": upstream, "downstream": downstream}
+
+        check_keys_by_asset_key: Dict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        for c in external_asset_checks:
+            check_keys_by_asset_key[c.asset_key].add(c.key)
 
         # Build the set of RemoteAssetNodes in topological order so that each node can hold
         # references to its parents.
@@ -293,7 +270,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
                 child_keys=dep_graph["downstream"][key],
                 execution_set_keys=execution_sets_by_key[key],
                 repo_node_pairs=repo_node_pairs,
-                check_keys={check.key for check in external_asset_checks if check.asset_key == key},
+                check_keys=check_keys_by_asset_key[key],
             )
             for key, repo_node_pairs in repo_node_pairs_by_key.items()
         }

@@ -104,7 +104,7 @@ The following table contains the environment variables we need to create in Dags
 ---
 
 - `DAGSTER_ENVIRONMENT`
-- Set this to `prod`.
+- Set this to `prod`. This will be used by your dbt resource to decide which target to use.
 
 ---
 
@@ -124,7 +124,7 @@ The following table contains the environment variables we need to create in Dags
 ---
 
 - `S3_BUCKET_NAME`
-- The name of the S3 bucket, by default `"s3://dagster-university/"`
+- The name of the S3 bucket, by default `"s3://dagster-university/"`, for the S3 bucket where your taxi data will be stored.
 
 {% /table %}
 

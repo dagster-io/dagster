@@ -13,6 +13,7 @@ export type AssetCheckExecutionFragment = {
     __typename: 'AssetCheckEvaluation';
     severity: Types.AssetCheckSeverity;
     timestamp: number;
+    description: string | null;
     targetMaterialization: {
       __typename: 'AssetCheckEvaluationTargetMaterializationData';
       timestamp: number;
@@ -86,6 +87,20 @@ export type AssetCheckExecutionFragment = {
           description: string | null;
         }
       | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
+      | {
           __typename: 'TableMetadataEntry';
           label: string;
           description: string | null;
@@ -132,6 +147,12 @@ export type AssetCheckExecutionFragment = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   } | null;
@@ -157,6 +178,7 @@ export type AssetCheckDetailsQuery = {
       __typename: 'AssetCheckEvaluation';
       severity: Types.AssetCheckSeverity;
       timestamp: number;
+      description: string | null;
       targetMaterialization: {
         __typename: 'AssetCheckEvaluationTargetMaterializationData';
         timestamp: number;
@@ -230,6 +252,20 @@ export type AssetCheckDetailsQuery = {
             description: string | null;
           }
         | {
+            __typename: 'TableColumnLineageMetadataEntry';
+            label: string;
+            description: string | null;
+            lineage: Array<{
+              __typename: 'TableColumnLineageEntry';
+              columnName: string;
+              columnDeps: Array<{
+                __typename: 'TableColumnDep';
+                columnName: string;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }>;
+            }>;
+          }
+        | {
             __typename: 'TableMetadataEntry';
             label: string;
             description: string | null;
@@ -276,6 +312,12 @@ export type AssetCheckDetailsQuery = {
             };
           }
         | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+        | {
+            __typename: 'TimestampMetadataEntry';
+            timestamp: number;
+            label: string;
+            description: string | null;
+          }
         | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
       >;
     } | null;

@@ -95,7 +95,7 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
   }, [key, value]);
 
   const ValueWrapper = ({children}: {children: React.ReactNode}) =>
-    tag.link ? <Link to={tag.link}>{children}</Link> : <>{children}</>;
+    tag.link ? <Link to={tag.link}>{children}</Link> : <span>{children}</span>;
 
   const tooltipValue = displayedKey ? `${displayedKey}: ${displayValue}` : displayValue;
 

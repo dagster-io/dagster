@@ -11,7 +11,6 @@ from .events import (
     CoercibleToAssetKey,
 )
 from .freshness_policy import FreshnessPolicy
-from .metadata import RawMetadataMapping
 from .utils import validate_definition_tags
 
 if TYPE_CHECKING:
@@ -92,8 +91,8 @@ class AssetSpec(
             not provided, the name "default" is used.
         code_version (Optional[str]): The version of the code for this specific asset,
             overriding the code version of the materialization function
-        freshness_policy (Optional[FreshnessPolicy]): A policy which indicates how up to date this
-            asset is intended to be.
+        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
+            to date this asset is intended to be.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
@@ -110,7 +109,7 @@ class AssetSpec(
         *,
         deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         description: Optional[str] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
         skippable: bool = False,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,

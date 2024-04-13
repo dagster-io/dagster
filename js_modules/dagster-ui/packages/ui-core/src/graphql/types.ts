@@ -145,7 +145,9 @@ export type AssetBackfillTargetPartitions = {
 
 export type AssetCheck = {
   __typename: 'AssetCheck';
+  additionalAssetKeys: Array<AssetKey>;
   assetKey: AssetKey;
+  blocking: Scalars['Boolean']['output'];
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']['output']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
@@ -163,6 +165,7 @@ export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
   assetKey: AssetKey;
   checkName: Scalars['String']['output'];
+  description: Maybe<Scalars['String']['output']>;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -176,9 +179,11 @@ export type AssetCheckEvaluation = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   severity: AssetCheckSeverity;
@@ -428,7 +433,7 @@ export type AssetNode = {
   freshnessInfo: Maybe<AssetFreshnessInfo>;
   freshnessPolicy: Maybe<FreshnessPolicy>;
   graphName: Maybe<Scalars['String']['output']>;
-  groupName: Maybe<Scalars['String']['output']>;
+  groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
@@ -453,9 +458,11 @@ export type AssetNode = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   op: Maybe<SolidDefinition>;
@@ -735,9 +742,11 @@ export type CapturedLogsMetadata = {
 
 export enum ChangeReason {
   CODE_VERSION = 'CODE_VERSION',
-  INPUTS = 'INPUTS',
+  DEPENDENCIES = 'DEPENDENCIES',
+  METADATA = 'METADATA',
   NEW = 'NEW',
   PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
+  TAGS = 'TAGS',
 }
 
 export type ClaimedConcurrencySlot = {
@@ -1040,9 +1049,11 @@ export type DagsterType = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Maybe<Scalars['String']['output']>;
@@ -1131,9 +1142,11 @@ export type DisplayableEvent = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
 };
@@ -1204,9 +1217,11 @@ export type EngineEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -1343,7 +1358,6 @@ export type EventTag = {
 export type ExecutionMetadata = {
   parentRunId?: InputMaybe<Scalars['String']['input']>;
   rootRunId?: InputMaybe<Scalars['String']['input']>;
-  runId?: InputMaybe<Scalars['String']['input']>;
   tags?: InputMaybe<Array<ExecutionTag>>;
 };
 
@@ -1442,9 +1456,11 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     outputName: Scalars['String']['output'];
@@ -1540,9 +1556,11 @@ export type ExpectationResult = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   success: Scalars['Boolean']['output'];
@@ -1565,9 +1583,11 @@ export type FailureMetadata = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
 };
@@ -1669,9 +1689,11 @@ export type HandledOutputEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     outputName: Scalars['String']['output'];
@@ -1737,9 +1759,11 @@ export type IPipelineSnapshot = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   modes: Array<Mode>;
@@ -1805,9 +1829,11 @@ export type InputDefinition = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Scalars['String']['output'];
@@ -2025,9 +2051,11 @@ export type Job = IPipelineSnapshot &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -2212,9 +2240,11 @@ export type ListDagsterType = DagsterType &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     name: Maybe<Scalars['String']['output']>;
@@ -2254,9 +2284,11 @@ export type LoadedInputEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -2418,9 +2450,11 @@ export type MaterializationEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     partition: Maybe<Scalars['String']['output']>;
@@ -2793,9 +2827,11 @@ export type NullableDagsterType = DagsterType &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     name: Maybe<Scalars['String']['output']>;
@@ -2841,9 +2877,11 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   op: ObjectStoreOperationType;
@@ -2879,9 +2917,11 @@ export type ObservationEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     partition: Maybe<Scalars['String']['output']>;
@@ -2918,9 +2958,11 @@ export type OutputDefinition = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Scalars['String']['output'];
@@ -3236,9 +3278,11 @@ export type Pipeline = IPipelineSnapshot &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -3460,9 +3504,11 @@ export type PipelineSnapshot = IPipelineSnapshot &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     modes: Array<Mode>;
@@ -3887,9 +3933,11 @@ export type RegularDagsterType = DagsterType & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   name: Maybe<Scalars['String']['output']>;
@@ -4104,9 +4152,11 @@ export type ResourceInitFailureEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4140,9 +4190,11 @@ export type ResourceInitStartedEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4176,9 +4228,11 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -4229,6 +4283,7 @@ export type Run = PipelineRun & {
   hasDeletePermission: Scalars['Boolean']['output'];
   hasReExecutePermission: Scalars['Boolean']['output'];
   hasTerminatePermission: Scalars['Boolean']['output'];
+  hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobName: Scalars['String']['output'];
   mode: Scalars['String']['output'];
@@ -4239,6 +4294,7 @@ export type Run = PipelineRun & {
   pipelineSnapshotId: Maybe<Scalars['String']['output']>;
   repositoryOrigin: Maybe<RepositoryOrigin>;
   resolvedOpSelection: Maybe<Array<Scalars['String']['output']>>;
+  rootConcurrencyKeys: Maybe<Array<Scalars['String']['output']>>;
   rootRunId: Maybe<Scalars['String']['output']>;
   runConfig: Scalars['RunConfigData']['output'];
   runConfigYaml: Scalars['String']['output'];
@@ -4437,6 +4493,7 @@ export type RunOrError = PythonError | Run | RunNotFoundError;
 
 export type RunQueueConfig = {
   __typename: 'RunQueueConfig';
+  isOpConcurrencyAware: Maybe<Scalars['Boolean']['output']>;
   maxConcurrentRuns: Scalars['Int']['output'];
   tagConcurrencyLimitsYaml: Maybe<Scalars['String']['output']>;
 };
@@ -4888,9 +4945,11 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   status: AssetConditionEvaluationStatus;
@@ -4991,9 +5050,11 @@ export type StepWorkerStartedEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -5027,9 +5088,11 @@ export type StepWorkerStartingEvent = DisplayableEvent &
       | PathMetadataEntry
       | PipelineRunMetadataEntry
       | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
       | TableMetadataEntry
       | TableSchemaMetadataEntry
       | TextMetadataEntry
+      | TimestampMetadataEntry
       | UrlMetadataEntry
     >;
     runId: Scalars['String']['output'];
@@ -5102,6 +5165,25 @@ export type TableColumnConstraints = {
   nullable: Scalars['Boolean']['output'];
   other: Array<Scalars['String']['output']>;
   unique: Scalars['Boolean']['output'];
+};
+
+export type TableColumnDep = {
+  __typename: 'TableColumnDep';
+  assetKey: AssetKey;
+  columnName: Scalars['String']['output'];
+};
+
+export type TableColumnLineageEntry = {
+  __typename: 'TableColumnLineageEntry';
+  columnDeps: Array<TableColumnDep>;
+  columnName: Scalars['String']['output'];
+};
+
+export type TableColumnLineageMetadataEntry = MetadataEntry & {
+  __typename: 'TableColumnLineageMetadataEntry';
+  description: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  lineage: Array<TableColumnLineageEntry>;
 };
 
 export type TableConstraints = {
@@ -5226,6 +5308,13 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimestampMetadataEntry = MetadataEntry & {
+  __typename: 'TimestampMetadataEntry';
+  description: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
+};
+
 export type TypeCheck = DisplayableEvent & {
   __typename: 'TypeCheck';
   description: Maybe<Scalars['String']['output']>;
@@ -5243,9 +5332,11 @@ export type TypeCheck = DisplayableEvent & {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   success: Scalars['Boolean']['output'];
@@ -5280,9 +5371,11 @@ export type UnpartitionedAssetConditionEvaluationNode = {
     | PathMetadataEntry
     | PipelineRunMetadataEntry
     | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
     | TableMetadataEntry
     | TableSchemaMetadataEntry
     | TextMetadataEntry
+    | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -5595,12 +5688,17 @@ export const buildAssetCheck = (
   relationshipsToOmit.add('AssetCheck');
   return {
     __typename: 'AssetCheck',
+    additionalAssetKeys:
+      overrides && overrides.hasOwnProperty('additionalAssetKeys')
+        ? overrides.additionalAssetKeys!
+        : [],
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    blocking: overrides && overrides.hasOwnProperty('blocking') ? overrides.blocking! : true,
     canExecuteIndividually:
       overrides && overrides.hasOwnProperty('canExecuteIndividually')
         ? overrides.canExecuteIndividually!
@@ -5633,6 +5731,8 @@ export const buildAssetCheckEvaluation = (
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
     checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'sed',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quia',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     severity:
@@ -7627,7 +7727,6 @@ export const buildExecutionMetadata = (
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'autem',
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'ut',
-    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'dolor',
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
@@ -12476,6 +12575,10 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('hasTerminatePermission')
         ? overrides.hasTerminatePermission!
         : true,
+    hasUnconstrainedRootNodes:
+      overrides && overrides.hasOwnProperty('hasUnconstrainedRootNodes')
+        ? overrides.hasUnconstrainedRootNodes!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -12512,6 +12615,10 @@ export const buildRun = (
     resolvedOpSelection:
       overrides && overrides.hasOwnProperty('resolvedOpSelection')
         ? overrides.resolvedOpSelection!
+        : [],
+    rootConcurrencyKeys:
+      overrides && overrides.hasOwnProperty('rootConcurrencyKeys')
+        ? overrides.rootConcurrencyKeys!
         : [],
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'fugit',
     runConfig: overrides && overrides.hasOwnProperty('runConfig') ? overrides.runConfig! : 'quas',
@@ -12853,6 +12960,10 @@ export const buildRunQueueConfig = (
   relationshipsToOmit.add('RunQueueConfig');
   return {
     __typename: 'RunQueueConfig',
+    isOpConcurrencyAware:
+      overrides && overrides.hasOwnProperty('isOpConcurrencyAware')
+        ? overrides.isOpConcurrencyAware!
+        : false,
     maxConcurrentRuns:
       overrides && overrides.hasOwnProperty('maxConcurrentRuns')
         ? overrides.maxConcurrentRuns!
@@ -14090,6 +14201,53 @@ export const buildTableColumnConstraints = (
   };
 };
 
+export const buildTableColumnDep = (
+  overrides?: Partial<TableColumnDep>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnDep'} & TableColumnDep => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnDep');
+  return {
+    __typename: 'TableColumnDep',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    columnName:
+      overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'vitae',
+  };
+};
+
+export const buildTableColumnLineageEntry = (
+  overrides?: Partial<TableColumnLineageEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnLineageEntry'} & TableColumnLineageEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnLineageEntry');
+  return {
+    __typename: 'TableColumnLineageEntry',
+    columnDeps: overrides && overrides.hasOwnProperty('columnDeps') ? overrides.columnDeps! : [],
+    columnName: overrides && overrides.hasOwnProperty('columnName') ? overrides.columnName! : 'aut',
+  };
+};
+
+export const buildTableColumnLineageMetadataEntry = (
+  overrides?: Partial<TableColumnLineageMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TableColumnLineageMetadataEntry'} & TableColumnLineageMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnLineageMetadataEntry');
+  return {
+    __typename: 'TableColumnLineageMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'vero',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'iusto',
+    lineage: overrides && overrides.hasOwnProperty('lineage') ? overrides.lineage! : [],
+  };
+};
+
 export const buildTableConstraints = (
   overrides?: Partial<TableConstraints>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -14387,6 +14545,21 @@ export const buildTimePartitionStatuses = (
   return {
     __typename: 'TimePartitionStatuses',
     ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
+  };
+};
+
+export const buildTimestampMetadataEntry = (
+  overrides?: Partial<TimestampMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TimestampMetadataEntry'} & TimestampMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimestampMetadataEntry');
+  return {
+    __typename: 'TimestampMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolores',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'fuga',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 9.36,
   };
 };
 

@@ -23,16 +23,17 @@ from .external_data import (
     ExternalPartitionConfigData as ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData as ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData as ExternalPartitionNamesData,
-    ExternalPartitionSetData as ExternalPartitionSetData,
     ExternalPartitionSetExecutionParamData as ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData as ExternalPartitionTagsData,
     ExternalPresetData as ExternalPresetData,
     ExternalRepositoryData as ExternalRepositoryData,
     ExternalRepositoryErrorData as ExternalRepositoryErrorData,
-    ExternalScheduleData as ExternalScheduleData,
     ExternalScheduleExecutionErrorData as ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData as ExternalSensorExecutionErrorData,
     ExternalTargetData as ExternalTargetData,
+    PartitionSetSnap as PartitionSetSnap,
+    ScheduleSnap as ScheduleSnap,
+    SensorSnap as SensorSnap,
     external_job_data_from_def as external_job_data_from_def,
     external_repository_data_from_def as external_repository_data_from_def,
 )
@@ -44,12 +45,12 @@ from .historical import HistoricalJob as HistoricalJob
 from .origin import (
     IN_PROCESS_NAME as IN_PROCESS_NAME,
     CodeLocationOrigin as CodeLocationOrigin,
-    ExternalInstigatorOrigin as ExternalInstigatorOrigin,
-    ExternalJobOrigin as ExternalJobOrigin,
-    ExternalRepositoryOrigin as ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteInstigatorOrigin as RemoteInstigatorOrigin,
+    RemoteJobOrigin as RemoteJobOrigin,
+    RemoteRepositoryOrigin as RemoteRepositoryOrigin,
 )
 
 # ruff: isort: split

@@ -17,7 +17,7 @@ export type AssetCatalogTableQuery = {
             __typename: 'AssetNode';
             id: string;
             changedReasons: Array<Types.ChangeReason>;
-            groupName: string | null;
+            groupName: string;
             opNames: Array<string>;
             isSource: boolean;
             isObservable: boolean;
@@ -30,6 +30,7 @@ export type AssetCatalogTableQuery = {
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
             >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -61,7 +62,7 @@ export type AssetCatalogGroupTableQuery = {
     __typename: 'AssetNode';
     id: string;
     changedReasons: Array<Types.ChangeReason>;
-    groupName: string | null;
+    groupName: string;
     opNames: Array<string>;
     isSource: boolean;
     isObservable: boolean;
@@ -74,6 +75,7 @@ export type AssetCatalogGroupTableQuery = {
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -87,7 +89,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   changedReasons: Array<Types.ChangeReason>;
-  groupName: string | null;
+  groupName: string;
   opNames: Array<string>;
   isSource: boolean;
   isObservable: boolean;
@@ -100,6 +102,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   repository: {
     __typename: 'Repository';
     id: string;

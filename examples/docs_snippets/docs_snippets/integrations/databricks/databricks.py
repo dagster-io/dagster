@@ -37,7 +37,7 @@ def scope_define_databricks_custom_asset():
 
     materialize_databricks_table = define_asset_job(
         name="materialize_databricks_table",
-        selection=AssetSelection.keys("my_databricks_table"),
+        selection=AssetSelection.assets(my_databricks_table),
     )
 
     # end_define_databricks_custom_asset
@@ -97,7 +97,7 @@ def scope_schedule_databricks():
 
     materialize_databricks_table = define_asset_job(
         name="materialize_databricks_table",
-        selection=AssetSelection.keys("my_databricks_table"),
+        selection=AssetSelection.assets(my_databricks_table),
     )
 
     @job

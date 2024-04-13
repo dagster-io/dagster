@@ -70,7 +70,7 @@ def pending_repo():
         define_cacheable_and_uncacheable_assets(),
         define_asset_job(
             "all_asset_job",
-            selection=AssetSelection.keys(
+            selection=AssetSelection.assets(
                 AssetKey("a"), AssetKey("b"), AssetKey("upstream"), AssetKey("downstream")
             ),
         ),
@@ -187,7 +187,7 @@ def test_resolve_no_resources():
                     ),
                 ]
 
-            resource_dependent_repo_no_resources.compute_repository_definition()
+            resource_dependent_repo_no_resources.compute_repository_definition().get_all_jobs()
         except DagsterInvalidDefinitionError as e:
             # Make sure we get an error for the cacheable asset in particular
             assert "res_midstream" in str(e)

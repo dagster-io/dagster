@@ -48,7 +48,7 @@ from ..errors import (
     DagsterUnknownPartitionError,
 )
 from .config import ConfigMapping
-from .utils import validate_tags
+from .utils import normalize_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -109,11 +109,15 @@ class ScheduleType(Enum):
         return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
 
     def __gt__(self, other: "ScheduleType") -> bool:
-        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
+        check.inst_param(
+            other, "other", ScheduleType, "Cannot compare ScheduleType with non-ScheduleType"
+        )
         return self.ordinal > other.ordinal
 
     def __lt__(self, other: "ScheduleType") -> bool:
-        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
+        check.inst_param(
+            other, "other", ScheduleType, "Cannot compare ScheduleType with non-ScheduleType"
+        )
         return self.ordinal < other.ordinal
 
 
@@ -726,7 +730,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             user_tags = self._tags_for_partition_key_fn(partition_key)
         else:
             user_tags = {}
-        user_tags = validate_tags(user_tags, allow_reserved_tags=False)
+        user_tags = normalize_tags(user_tags, allow_reserved_tags=False).tags
 
         system_tags = {
             **self.partitions_def.get_tags_for_partition_key(partition_key),

@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.instance import DagsterInstance
-    from dagster._core.remote_representation.origin import ExternalJobOrigin
+    from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import (
         AutoMaterializeAssetEvaluationRecord,
         InstigatorState,
@@ -344,7 +344,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         return self._storage.run_storage.set_cursor_values(pairs)
 
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None:
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "RemoteJobOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
 
 

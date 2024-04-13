@@ -43,6 +43,7 @@ from dagster_polars_tests.utils import get_saved_path
             pl.UInt32,
             pl.UInt64,
             pl.Datetime("ns", None),
+            pl.Decimal,
         ],
         min_size=5,
         allow_infinities=False,

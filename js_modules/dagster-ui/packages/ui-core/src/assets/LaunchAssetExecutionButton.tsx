@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
-import React from 'react';
+import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -19,7 +19,7 @@ import {
   ADDITIONAL_REQUIRED_KEYS_WARNING,
   MULTIPLE_DEFINITIONS_WARNING,
 } from './AssetDefinedInMultipleReposNotice';
-import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
+import {CalculateUnsyncedDialog} from './CalculateUnsyncedDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
@@ -36,6 +36,7 @@ import {
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
@@ -187,8 +188,16 @@ export const LaunchAssetExecutionButton = ({
 
   const {MaterializeButton} = useLaunchPadHooks();
 
-  const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
+  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
     React.useState<boolean>(false);
+
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeMaterializeAction) {
+    return null;
+  }
 
   const options = optionsForButton(scope);
   const firstOption = options[0]!;
@@ -216,10 +225,10 @@ export const LaunchAssetExecutionButton = ({
 
   return (
     <>
-      <CalculateChangedAndMissingDialog
-        isOpen={!!showCalculatingChangedAndMissingDialog}
+      <CalculateUnsyncedDialog
+        isOpen={showCalculatingUnsyncedDialog}
         onClose={() => {
-          setShowCalculatingChangedAndMissingDialog(false);
+          setShowCalculatingUnsyncedDialog(false);
         }}
         assets={inScope}
         onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {
@@ -267,7 +276,7 @@ export const LaunchAssetExecutionButton = ({
                 <MenuItem
                   text="Materialize unsynced"
                   icon="changes_present"
-                  onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
+                  onClick={() => setShowCalculatingUnsyncedDialog(true)}
                 />
               ) : null}
               <MenuItem

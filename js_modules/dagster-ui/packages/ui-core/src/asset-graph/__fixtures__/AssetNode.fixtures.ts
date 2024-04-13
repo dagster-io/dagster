@@ -68,8 +68,10 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
   changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
-    ChangeReason.INPUTS,
+    ChangeReason.DEPENDENCIES,
     ChangeReason.PARTITIONS_DEFINITION,
+    ChangeReason.TAGS,
+    ChangeReason.METADATA,
   ],
 });
 
@@ -319,7 +321,20 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
-  staleCauses: [MockStaleReasonCode, MockStaleReasonData],
+  staleCauses: [
+    MockStaleReasonCode,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+  ],
   assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',

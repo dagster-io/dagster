@@ -1,15 +1,15 @@
 ---
-title: "OpenAI + Dagster"
-description: The `dagster-openai` library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights.
+title: "OpenAI & Dagster | Dagster Docs"
+description: "The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights."
 ---
 
-# OpenAI + Dagster (Experimental)
+# OpenAI & Dagster (Experimental)
 
 <Note>
   This feature is considered <strong>experimental</strong>.
 </Note>
 
-The `dagster-openai` library allows you to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in [Dagster Insights](/dagster-cloud/insights).
+The `dagster-openai` library allows you to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in [Dagster Insights](/dagster-plus/insights).
 
 Using this library's <PyObject module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).
 
@@ -98,7 +98,7 @@ defs = Definitions(
 )
 ```
 
-After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster Cloud](/dagster-cloud), your usage metadata will also be available in [Dagster Insights](/dagster-cloud/insights). Refer to the [Viewing and materializing assets in the UI guide](https://docs.dagster.io/concepts/assets/software-defined-assets#viewing-and-materializing-assets-in-the-ui) for more information.
+After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/dagster-plus), your usage metadata will also be available in [Dagster Insights](/dagster-plus/insights). Refer to the [Viewing and materializing assets in the UI guide](https://docs.dagster.io/concepts/assets/software-defined-assets#viewing-and-materializing-assets-in-the-ui) for more information.
 
 ---
 

@@ -208,6 +208,16 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
     return "No python changes"
 
 
+def skip_if_no_pyright_requirements_txt_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.match("pyright/*/requirements.txt") for path in ChangedFiles.all):
+        return None
+
+    return "No pyright requirements.txt changes"
+
+
 def skip_if_no_yaml_changes():
     if not is_feature_branch():
         return None

@@ -73,7 +73,7 @@ def asset(
     ins: Optional[Mapping[str, AssetIn]] = ...,
     deps: Optional[Iterable[CoercibleToAssetDep]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
-    tags: Optional[Mapping[str, Optional[Mapping[str, str]]]] = ...,
+    tags: Optional[Mapping[str, str]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
@@ -115,7 +115,7 @@ def asset(
     ins: Optional[Mapping[str, AssetIn]] = None,
     deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
-    tags: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
@@ -198,8 +198,8 @@ def asset(
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can return None, which will not be materialized to
             storage and will halt execution of downstream assets.
-        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
-            with respect to its root data.
+        freshness_policy (FreshnessPolicy): (Deprecated) A constraint telling Dagster how often this
+            asset is intended to be updated with respect to its root data.
         auto_materialize_policy (AutoMaterializePolicy): (Experimental) Configure Dagster to automatically materialize
             this asset according to its FreshnessPolicy and when upstream dependencies change.
         backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
@@ -577,7 +577,7 @@ def multi_asset(
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         can_subset (bool): If this asset's computation can emit a subset of the asset
-            keys based on the context.selected_assets argument. Defaults to False.
+            keys based on the context.selected_asset_keys argument. Defaults to False.
         resource_defs (Optional[Mapping[str, object]]):
             (Experimental) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
@@ -660,8 +660,7 @@ def multi_asset(
         elif specs:
             output_tuples_by_asset_key = {}
             for asset_spec in specs:
-                # output names are asset keys joined with _
-                output_name = "_".join(asset_spec.key.path)
+                output_name = asset_spec.key.to_python_identifier()
                 output_tuples_by_asset_key[asset_spec.key] = (
                     output_name,
                     Out(
@@ -717,8 +716,20 @@ def multi_asset(
                 ),
             )
             output_tuples_by_asset_key = build_asset_outs(asset_out_map)
+
+            # validate that the asset_ins are a subset of the upstream asset_deps.
+            upstream_internal_asset_keys = set().union(*asset_deps.values())
+            asset_in_keys = set(asset_ins.keys())
+            if asset_deps and not asset_in_keys.issubset(upstream_internal_asset_keys):
+                invalid_asset_in_keys = asset_in_keys - upstream_internal_asset_keys
+                check.failed(
+                    f"Invalid asset dependencies: `{invalid_asset_in_keys}` specified as asset"
+                    " inputs, but are not specified in `internal_asset_deps`. Asset inputs must"
+                    " be associated with an output produced by the asset."
+                )
+
             # validate that the asset_deps make sense
-            valid_asset_deps = set(asset_ins.keys()) | set(output_tuples_by_asset_key.keys())
+            valid_asset_deps = asset_in_keys | set(output_tuples_by_asset_key.keys())
             for out_name, asset_keys in asset_deps.items():
                 if asset_out_map and out_name not in asset_out_map:
                     check.failed(

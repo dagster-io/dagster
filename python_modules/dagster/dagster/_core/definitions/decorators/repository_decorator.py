@@ -24,7 +24,6 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from ..asset_checks import AssetChecksDefinition
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..job_definition import JobDefinition
@@ -136,7 +135,6 @@ class _Repository:
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,
-                        AssetChecksDefinition,
                     ),
                 ):
                     bad_defns.append((i, type(definition)))
@@ -187,9 +185,9 @@ class _Repository:
             repository_data = repository_definitions
         else:
             raise DagsterInvalidDefinitionError(
-                "Bad return value of type {type_} from repository construction function: must "
+                f"Bad return value of type {type(repository_definitions)} from repository construction function: must "
                 "return list, dict, or RepositoryData. See the @repository decorator docstring for "
-                "details and examples".format(type_=type(repository_definitions)),
+                "details and examples",
             )
 
         if isinstance(repository_definitions, list) and repository_data is None:

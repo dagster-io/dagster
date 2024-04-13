@@ -570,7 +570,7 @@ def test_construct_dagster_k8s_job_with_deep_merge():
         pass
 
     job_user_defined_k8s_config = get_user_defined_k8s_config(user_defined_deep_merge_job.tags)
-    assert job_user_defined_k8s_config.merge_behavior == K8sConfigMergeBehavior.SHALLOW
+    assert job_user_defined_k8s_config.merge_behavior == K8sConfigMergeBehavior.DEEP
 
     @op(
         tags={

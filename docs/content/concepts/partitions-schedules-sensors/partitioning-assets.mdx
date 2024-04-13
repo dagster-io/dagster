@@ -33,23 +33,6 @@ Before continuing, you should be familiar with:
 
 ---
 
-## Relevant APIs
-
-| Name                                                               | Description                                                                       |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| <PyObject object="PartitionsDefinition" />                         | Superclass - defines the set of partitions that can be materialized for an asset. |
-| <PyObject object="HourlyPartitionsDefinition" />                   | A partitions definition with a partition for each hour.                           |
-| <PyObject object="DailyPartitionsDefinition" />                    | A partitions definition with a partition for each day.                            |
-| <PyObject object="WeeklyPartitionsDefinition" />                   | A partitions definition with a partition for each week.                           |
-| <PyObject object="MonthlyPartitionsDefinition" />                  | A partitions definition with a partition for each month.                          |
-| <PyObject object="StaticPartitionsDefinition" />                   | A partitions definition with a fixed set of partitions.                           |
-| <PyObject object="MultiPartitionsDefinition" />                    | A partitions definition with multiple dimensions.                                 |
-| <PyObject object="MultiPartitionKey" />                            | A multi-dimensional partition key.                                                |
-| <PyObject object="DynamicPartitionsDefinition" />                  | A partitions definition whose partitions can be dynamically added and removed.    |
-| <PyObject object="AssetExecutionContext" method="partition_key" /> | The partition key for the current run, which can be accessed in the computation.  |
-
----
-
 ## Defining partitioned assets
 
 A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
@@ -82,7 +65,6 @@ In the following sections, we'll demonstrate a few additional ways to partition 
 
 - [**Multi-dimensionally partitioning assets**](#multi-dimensionally-partitioned-assets), for when you want assets to be partitioned by multiple dimensions
 - [**Dynamically partitioning assets**](#dynamically-partitioned-assets), for when you don't know the partition set before defining assets
-- [**Defining partitioned assets to use partitioned I/O managers**](#partitioned-assets-with-partitioned-io-managers), for when you want an I/O manager to handle partitioned asset output
 
 ### Multi-dimensionally partitioned assets
 
@@ -163,7 +145,7 @@ Partition keys can be added and removed for a given dynamic partition set. For e
 
 ```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_2 endbefore=end_dynamic_partitions_2
 images_job = define_asset_job(
-    "images_job", AssetSelection.keys("images"), partitions_def=images_partitions_def
+    "images_job", AssetSelection.assets("images"), partitions_def=images_partitions_def
 )
 
 
@@ -186,32 +168,6 @@ def image_sensor(context: SensorEvaluationContext):
         ],
     )
 ```
-
-### Partitioned assets with partitioned I/O managers
-
-<Note>
-  <strong>Heads up!</strong> Familiarity with{" "}
-  <a href="/concepts/io-management/io-managers">I/O managers</a> is required for
-  this section.
-</Note>
-
-Asset functions can write data out to files, but they can also delegate the writing operation to an [I/O manager](/concepts/io-management/io-managers). Dagster's [built-in I/O managers](/concepts/io-management/io-managers#built-in-io-managers) support handling partitioned assets, but you can also [write your own I/O manager](/concepts/io-management/io-managers#handling-partitioned-assets) if you want additional customization.
-
-For example, this example demonstrates how to define an asset that relies on an I/O manager to store its output:
-
-```python file=/concepts/partitions_schedules_sensors/partitioned_asset_uses_io_manager.py
-import pandas as pd
-
-from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
-
-
-@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-def my_daily_partitioned_asset(context: AssetExecutionContext) -> pd.DataFrame:
-    partition_date_str = context.partition_key
-    return pd.read_csv(f"coolweatherwebsite.com/weather_obs&date={partition_date_str}")
-```
-
-If using the default I/O manager, materializing partition `2022-07-23` of this asset would store the output `DataFrame` in a pickle file at a path like `my_daily_partitioned_asset/2022-07-23`.
 
 ### Recommended partition limits
 
@@ -403,12 +359,55 @@ height={1618}
 
 ---
 
-## See it in action
+## Examples
 
 For more examples of partitions, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 
 - [Defining partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/core/items.py)
 - [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)
+
+### Partitioned assets with partitioned I/O managers
+
+<Note>
+  <strong>Heads up!</strong> Familiarity with{" "}
+  <a href="/concepts/io-management/io-managers">I/O managers</a> is required for
+  this section.
+</Note>
+
+Asset functions can write data out to files, but they can also delegate the writing operation to an [I/O manager](/concepts/io-management/io-managers). Dagster's [built-in I/O managers](/concepts/io-management/io-managers#built-in-io-managers) support handling partitioned assets, but you can also [write your own I/O manager](/concepts/io-management/io-managers#handling-partitioned-assets) if you want additional customization.
+
+For example, the following demonstrates how to define an asset that relies on an I/O manager to store its output:
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset_uses_io_manager.py
+import pandas as pd
+
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
+
+
+@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+def my_daily_partitioned_asset(context: AssetExecutionContext) -> pd.DataFrame:
+    partition_date_str = context.partition_key
+    return pd.read_csv(f"coolweatherwebsite.com/weather_obs&date={partition_date_str}")
+```
+
+If using the default I/O manager, materializing partition `2022-07-23` of this asset would store the output `DataFrame` in a pickle file at a path like `my_daily_partitioned_asset/2022-07-23`.
+
+---
+
+## Relevant APIs
+
+| Name                                                               | Description                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| <PyObject object="PartitionsDefinition" />                         | Superclass - defines the set of partitions that can be materialized for an asset. |
+| <PyObject object="HourlyPartitionsDefinition" />                   | A partitions definition with a partition for each hour.                           |
+| <PyObject object="DailyPartitionsDefinition" />                    | A partitions definition with a partition for each day.                            |
+| <PyObject object="WeeklyPartitionsDefinition" />                   | A partitions definition with a partition for each week.                           |
+| <PyObject object="MonthlyPartitionsDefinition" />                  | A partitions definition with a partition for each month.                          |
+| <PyObject object="StaticPartitionsDefinition" />                   | A partitions definition with a fixed set of partitions.                           |
+| <PyObject object="MultiPartitionsDefinition" />                    | A partitions definition with multiple dimensions.                                 |
+| <PyObject object="MultiPartitionKey" />                            | A multi-dimensional partition key.                                                |
+| <PyObject object="DynamicPartitionsDefinition" />                  | A partitions definition whose partitions can be dynamically added and removed.    |
+| <PyObject object="AssetExecutionContext" method="partition_key" /> | The partition key for the current run, which can be accessed in the computation.  |
 
 ---
 

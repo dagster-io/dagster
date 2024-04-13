@@ -138,6 +138,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -189,6 +203,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -304,6 +324,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -352,6 +386,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -467,6 +507,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -518,6 +572,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -617,6 +677,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -668,6 +742,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -764,6 +844,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -812,6 +906,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -900,6 +1000,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -951,6 +1065,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -1103,6 +1223,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1151,6 +1285,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1286,6 +1426,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1334,6 +1488,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1452,6 +1612,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1500,6 +1674,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1596,6 +1776,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -1647,6 +1841,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -1742,6 +1942,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1790,6 +2004,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1887,6 +2107,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1935,6 +2169,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2041,6 +2281,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -2089,6 +2343,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2185,6 +2445,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -2233,6 +2507,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2412,6 +2692,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -2463,6 +2757,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -2560,6 +2860,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -2608,6 +2922,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2704,6 +3024,20 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -2752,6 +3086,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2890,6 +3230,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -2938,6 +3292,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -3053,6 +3413,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -3101,6 +3475,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -3211,6 +3591,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -3259,6 +3653,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -3358,6 +3758,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -3406,6 +3820,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -3502,6 +3922,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -3550,6 +3984,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -3633,6 +4073,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -3681,6 +4135,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -3833,6 +4293,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -3881,6 +4355,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4011,6 +4491,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -4059,6 +4553,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4172,6 +4672,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -4220,6 +4734,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4311,6 +4831,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -4359,6 +4893,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -4454,6 +4994,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -4502,6 +5056,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4594,6 +5154,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -4642,6 +5216,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4743,6 +5323,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -4791,6 +5385,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4882,6 +5482,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -4930,6 +5544,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -5104,6 +5724,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -5152,6 +5786,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -5249,6 +5889,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -5297,6 +5951,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -5388,6 +6048,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -5436,6 +6110,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -5587,6 +6267,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -5638,6 +6332,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -5753,6 +6453,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -5801,6 +6515,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -5916,6 +6636,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -5967,6 +6701,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -6066,6 +6806,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -6117,6 +6871,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -6213,6 +6973,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -6261,6 +7035,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6349,6 +7129,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -6400,6 +7194,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -6552,6 +7352,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -6600,6 +7414,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6735,6 +7555,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -6783,6 +7617,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6901,6 +7741,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -6949,6 +7803,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7045,6 +7905,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -7096,6 +7970,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -7191,6 +8071,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7239,6 +8133,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7336,6 +8236,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7384,6 +8298,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7490,6 +8410,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7538,6 +8472,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7634,6 +8574,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7682,6 +8636,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7861,6 +8821,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -7912,6 +8886,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -8009,6 +8989,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -8057,6 +9051,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -8153,6 +9153,20 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -8201,6 +9215,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }

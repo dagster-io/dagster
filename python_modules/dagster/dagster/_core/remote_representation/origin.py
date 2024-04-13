@@ -395,8 +395,11 @@ class GrpcServerCodeLocationOrigin(
 
 
 # Different storage field name for backcompat
-@whitelist_for_serdes(storage_field_names={"code_location_origin": "repository_location_origin"})
-class ExternalRepositoryOrigin(
+@whitelist_for_serdes(
+    storage_name="ExternalRepositoryOrigin",
+    storage_field_names={"code_location_origin": "repository_location_origin"},
+)
+class RemoteRepositoryOrigin(
     NamedTuple(
         "_ExternalRepositoryOrigin",
         [("code_location_origin", CodeLocationOrigin), ("repository_name", str)],
@@ -407,7 +410,7 @@ class ExternalRepositoryOrigin(
     """
 
     def __new__(cls, code_location_origin: CodeLocationOrigin, repository_name: str):
-        return super(ExternalRepositoryOrigin, cls).__new__(
+        return super(RemoteRepositoryOrigin, cls).__new__(
             cls,
             check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin),
             check.str_param(repository_name, "repository_name"),
@@ -424,36 +427,40 @@ class ExternalRepositoryOrigin(
     def get_label(self) -> str:
         return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
-    def get_job_origin(self, job_name: str) -> "ExternalJobOrigin":
-        return ExternalJobOrigin(self, job_name)
+    def get_job_origin(self, job_name: str) -> "RemoteJobOrigin":
+        return RemoteJobOrigin(self, job_name)
 
-    def get_instigator_origin(self, instigator_name: str) -> "ExternalInstigatorOrigin":
-        return ExternalInstigatorOrigin(self, instigator_name)
+    def get_instigator_origin(self, instigator_name: str) -> "RemoteInstigatorOrigin":
+        return RemoteInstigatorOrigin(self, instigator_name)
 
-    def get_partition_set_origin(self, partition_set_name: str) -> "ExternalPartitionSetOrigin":
-        return ExternalPartitionSetOrigin(self, partition_set_name)
+    def get_partition_set_origin(self, partition_set_name: str) -> "RemotePartitionSetOrigin":
+        return RemotePartitionSetOrigin(self, partition_set_name)
 
 
 @whitelist_for_serdes(
-    storage_name="ExternalPipelineOrigin", storage_field_names={"job_name": "pipeline_name"}
+    storage_name="ExternalPipelineOrigin",
+    storage_field_names={
+        "repository_origin": "external_repository_origin",
+        "job_name": "pipeline_name",
+    },
 )
-class ExternalJobOrigin(
+class RemoteJobOrigin(
     NamedTuple(
-        "_ExternalJobOrigin",
-        [("external_repository_origin", ExternalRepositoryOrigin), ("job_name", str)],
+        "_RemoteJobOrigin",
+        [("repository_origin", RemoteRepositoryOrigin), ("job_name", str)],
     )
 ):
-    """Serializable representation of an ExternalPipeline that can be used to
+    """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, job_name: str):
-        return super(ExternalJobOrigin, cls).__new__(
+    def __new__(cls, repository_origin: RemoteRepositoryOrigin, job_name: str):
+        return super(RemoteJobOrigin, cls).__new__(
             cls,
             check.inst_param(
-                external_repository_origin,
-                "external_repository_origin",
-                ExternalRepositoryOrigin,
+                repository_origin,
+                "repository_origin",
+                RemoteRepositoryOrigin,
             ),
             check.str_param(job_name, "job_name"),
         )
@@ -463,7 +470,7 @@ class ExternalJobOrigin(
 
     @property
     def location_name(self) -> str:
-        return self.external_repository_origin.code_location_origin.location_name
+        return self.repository_origin.code_location_origin.location_name
 
 
 @whitelist_for_serdes(
@@ -473,33 +480,36 @@ class ExternalJobOrigin(
     # our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
     # deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
     storage_name="ExternalJobOrigin",
-    storage_field_names={"instigator_name": "job_name"},
+    storage_field_names={
+        "repository_origin": "external_repository_origin",
+        "instigator_name": "job_name",
+    },
 )
-class ExternalInstigatorOrigin(
+class RemoteInstigatorOrigin(
     NamedTuple(
-        "_ExternalInstigatorOrigin",
-        [("external_repository_origin", ExternalRepositoryOrigin), ("instigator_name", str)],
+        "_RemoteInstigatorOrigin",
+        [("repository_origin", RemoteRepositoryOrigin), ("instigator_name", str)],
     )
 ):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, instigator_name: str):
-        return super(ExternalInstigatorOrigin, cls).__new__(
+    def __new__(cls, repository_origin: RemoteRepositoryOrigin, instigator_name: str):
+        return super(RemoteInstigatorOrigin, cls).__new__(
             cls,
             check.inst_param(
-                external_repository_origin,
-                "external_repository_origin",
-                ExternalRepositoryOrigin,
+                repository_origin,
+                "repository_origin",
+                RemoteRepositoryOrigin,
             ),
             check.str_param(instigator_name, "instigator_name"),
         )
 
     def get_selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.external_repository_origin.code_location_origin.location_name,
-            self.external_repository_origin.repository_name,
+            self.repository_origin.code_location_origin.location_name,
+            self.repository_origin.repository_name,
             self.instigator_name,
         )
 
@@ -507,24 +517,27 @@ class ExternalInstigatorOrigin(
         return create_snapshot_id(self)
 
 
-@whitelist_for_serdes
-class ExternalPartitionSetOrigin(
+@whitelist_for_serdes(
+    storage_name="ExternalPartitionSetOrigin",
+    storage_field_names={"repository_origin": "external_repository_origin"},
+)
+class RemotePartitionSetOrigin(
     NamedTuple(
         "_PartitionSetOrigin",
-        [("external_repository_origin", ExternalRepositoryOrigin), ("partition_set_name", str)],
+        [("repository_origin", RemoteRepositoryOrigin), ("partition_set_name", str)],
     )
 ):
     """Serializable representation of an ExternalPartitionSet that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, partition_set_name: str):
-        return super(ExternalPartitionSetOrigin, cls).__new__(
+    def __new__(cls, repository_origin: RemoteRepositoryOrigin, partition_set_name: str):
+        return super(RemotePartitionSetOrigin, cls).__new__(
             cls,
             check.inst_param(
-                external_repository_origin,
-                "external_repository_origin",
-                ExternalRepositoryOrigin,
+                repository_origin,
+                "repository_origin",
+                RemoteRepositoryOrigin,
             ),
             check.str_param(partition_set_name, "partition_set_name"),
         )
@@ -535,8 +548,8 @@ class ExternalPartitionSetOrigin(
     @property
     def selector(self) -> PartitionSetSelector:
         return PartitionSetSelector(
-            self.external_repository_origin.code_location_origin.location_name,
-            self.external_repository_origin.repository_name,
+            self.repository_origin.code_location_origin.location_name,
+            self.repository_origin.repository_name,
             self.partition_set_name,
         )
 

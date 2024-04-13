@@ -48,7 +48,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.partition import PartitionKeyRange
+from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     PartitionKeysTimeWindowPartitionsSubset,
@@ -77,9 +77,9 @@ from dagster._core.remote_representation.external_data import (
     external_partitions_definition_from_def,
 )
 from dagster._core.remote_representation.origin import (
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
@@ -92,8 +92,13 @@ from dagster._core.storage.event_log.migration import (
 )
 from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -116,8 +121,8 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
             create_run_for_test(
                 instance,
                 run_id=run_id,
-                external_job_origin=ExternalJobOrigin(
-                    ExternalRepositoryOrigin(
+                external_job_origin=RemoteJobOrigin(
+                    RemoteRepositoryOrigin(
                         InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
                                 executable_path=sys.executable,
@@ -257,20 +262,31 @@ def _default_loggers(event_callback):
 
 # This exists to create synthetic events to test the store
 def _synthesize_events(
-    ops_fn, run_id=None, check_success=True, instance=None, run_config=None
+    ops_fn_or_assets, run_id=None, check_success=True, instance=None, run_config=None, tags=None
 ) -> Tuple[List[EventLogEntry], JobExecutionResult]:
     events = []
 
     def _append_event(event):
         events.append(event)
 
-    @job(
-        resource_defs=_default_resources(),
-        logger_defs=_default_loggers(_append_event),
-        executor_def=in_process_executor,
-    )
-    def a_job():
-        ops_fn()
+    if isinstance(ops_fn_or_assets, list):  # assets
+        job_def = Definitions(
+            assets=ops_fn_or_assets,
+            loggers=_default_loggers(_append_event),
+            resources=_default_resources(),
+            executor=in_process_executor,
+        ).get_implicit_job_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
+        assert job_def
+        a_job = job_def
+    else:  # op_fn
+
+        @job(
+            resource_defs=_default_resources(),
+            logger_defs=_default_loggers(_append_event),
+            executor_def=in_process_executor,
+        )
+        def a_job():
+            ops_fn_or_assets()
 
     result = None
 
@@ -283,7 +299,9 @@ def _synthesize_events(
             **(run_config if run_config else {}),
         }
 
-        dagster_run = instance.create_run_for_job(a_job, run_id=run_id, run_config=run_config)
+        dagster_run = instance.create_run_for_job(
+            a_job, run_id=run_id, run_config=run_config, tags=tags
+        )
         result = execute_run(InMemoryJob(a_job), dagster_run, instance)
 
         if check_success:
@@ -488,7 +506,7 @@ class TestEventLogStorage:
         instance: DagsterInstance,
         storage: EventLogStorage,
     ):
-        runs = ["foo", "bar", "baz"]
+        runs = [make_new_run_id() for _ in range(3)]
         if instance:
             for run in runs:
                 create_run_for_test(instance, run_id=run)
@@ -598,14 +616,15 @@ class TestEventLogStorage:
         instance: DagsterInstance,
         storage: EventLogStorage,
     ):
-        with create_and_delete_test_runs(instance, ["other_run"]):
+        other_run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [other_run_id]):
             # two runs events to ensure pagination is not affected by other runs
             storage.store_event(create_test_event_log_record("A", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(0), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(0), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("B", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(1), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(1), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("C", run_id=test_run_id))
-            storage.store_event(create_test_event_log_record(str(2), run_id="other_run"))
+            storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
             assert len(storage.get_logs_for_run(test_run_id)) == 4
@@ -1107,6 +1126,38 @@ class TestEventLogStorage:
             assert record.event_log_entry.dagster_event.asset_key == asset_key
             assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
 
+    def test_asset_materialization_range(self, storage, test_run_id):
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+        class DummyIOManager(IOManager):
+            def handle_output(self, context, obj):
+                pass
+
+            def load_input(self, context):
+                return 1
+
+        @asset(partitions_def=partitions_def, io_manager_def=DummyIOManager())
+        def foo():
+            return {"a": 1, "b": 2}
+
+        with instance_for_test() as instance:
+            if not storage.has_instance:
+                storage.register_instance(instance)
+
+            events, _ = _synthesize_events(
+                [foo],
+                instance=instance,
+                run_id=test_run_id,
+                tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+            )
+            materializations = [
+                e for e in events if e.dagster_event.event_type == "ASSET_MATERIALIZATION"
+            ]
+            storage.store_event_batch(materializations)
+
+            result = storage.fetch_materializations(foo.key, limit=100)
+            assert len(result.records) == 2
+
     def test_asset_materialization_null_key_fails(self):
         with pytest.raises(check.CheckError):
             AssetMaterialization(asset_key=None)
@@ -1530,6 +1581,7 @@ class TestEventLogStorage:
             pytest.skip()
 
         asset_key = AssetKey(["path", "to", "asset_one"])
+        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
 
         events = []
 
@@ -1566,7 +1618,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="1",
+                    run_id=run_id_1,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1584,7 +1636,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="2",
+                    run_id=run_id_2,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1600,7 +1652,7 @@ class TestEventLogStorage:
                 InMemoryJob(a_job),
                 instance.create_run_for_job(
                     a_job,
-                    run_id="3",
+                    run_id=run_id_3,
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
                 instance,
@@ -1628,7 +1680,7 @@ class TestEventLogStorage:
                 DagsterEventType.RUN_SUCCESS,
                 DagsterEventType.RUN_SUCCESS,
             ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
 
             # use tz-naive cursor
             filtered_records = storage.get_event_records(
@@ -1645,7 +1697,7 @@ class TestEventLogStorage:
                 DagsterEventType.RUN_SUCCESS,
                 DagsterEventType.RUN_SUCCESS,
             ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
 
             # use invalid cursor
             with pytest.raises(
@@ -1914,8 +1966,8 @@ class TestEventLogStorage:
             if not storage.has_instance:
                 storage.register_instance(created_instance)
 
-            one_run_id = "one_run_id"
-            two_run_id = "two_run_id"
+            one_run_id = make_new_run_id()
+            two_run_id = make_new_run_id()
             events_one, _ = _synthesize_events(
                 lambda: one_asset_op(), run_id=one_run_id, instance=created_instance
             )
@@ -1941,7 +1993,7 @@ class TestEventLogStorage:
                     assert not storage.has_asset_key(AssetKey("asset_1"))
                     assert log_count == len(storage.get_logs_for_run(one_run_id))
 
-                    one_run_id = "one_run_id_2"
+                    one_run_id = make_new_run_id()
                     events_one, _ = _synthesize_events(
                         lambda: one_asset_op(),
                         run_id=one_run_id,
@@ -1972,8 +2024,8 @@ class TestEventLogStorage:
                 assert len(asset_keys) == 1
                 migrate_asset_key_data(storage)
 
-                two_first_run_id = "first"
-                two_second_run_id = "second"
+                two_first_run_id = make_new_run_id()
+                two_second_run_id = make_new_run_id()
                 events_two, _ = _synthesize_events(
                     lambda: two_asset_ops(),
                     run_id=two_first_run_id,

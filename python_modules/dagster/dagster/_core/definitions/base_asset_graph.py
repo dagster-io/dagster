@@ -30,6 +30,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -82,7 +83,11 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def group_name(self) -> Optional[str]: ...
+    def description(self) -> Optional[str]: ...
+
+    @property
+    @abstractmethod
+    def group_name(self) -> str: ...
 
     @property
     @abstractmethod
@@ -99,6 +104,18 @@ class BaseAssetNode(ABC):
     @property
     @abstractmethod
     def is_executable(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def metadata(self) -> ArbitraryMetadataMapping: ...
+
+    @property
+    @abstractmethod
+    def tags(self) -> Mapping[str, str]: ...
+
+    @property
+    @abstractmethod
+    def owners(self) -> Sequence[str]: ...
 
     @property
     @abstractmethod
@@ -167,9 +184,6 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get(self, asset_key: AssetKey) -> T_AssetNode:
         return self._asset_nodes_by_key[asset_key]
 
-    def get_for_check(self, asset_key: AssetCheckKey) -> T_AssetNode:
-        return self._asset_nodes_by_check_key[asset_key]
-
     @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
         return {
@@ -235,9 +249,13 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @cached_property
     def root_materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Materializable asset keys that have no materializable parents."""
-        from .asset_selection import AssetSelection
+        from .asset_selection import KeysAssetSelection
 
-        return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
+        return (
+            KeysAssetSelection(selected_keys=list(self.materializable_asset_keys))
+            .roots()
+            .resolve(self)
+        )
 
     @cached_property
     def root_executable_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -249,6 +267,11 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @property
     @abstractmethod
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]: ...
+
+    @cached_property
+    def orphan_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        """Asset check keys that target an asset with no corresponding executable definition in the graph."""
+        return {k for k in self.asset_check_keys if k.asset_key not in self.executable_asset_keys}
 
     @cached_property
     def all_partitions_defs(self) -> Sequence[PartitionsDefinition]:
@@ -328,7 +351,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         parent_partitions_def = self.get(parent_asset_key).partitions_def
 
         if parent_partitions_def is None:
-            return ValidAssetSubset(parent_asset_key, value=child_asset_subset.size > 0)
+            return ValidAssetSubset(asset_key=parent_asset_key, value=child_asset_subset.size > 0)
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
         parent_partitions_subset = (
@@ -341,7 +364,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             )
         ).partitions_subset
 
-        return ValidAssetSubset(parent_asset_key, value=parent_partitions_subset)
+        return ValidAssetSubset(asset_key=parent_asset_key, value=parent_partitions_subset)
 
     def get_child_asset_subset(
         self,
@@ -366,7 +389,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                 return ValidAssetSubset.empty(child_asset_key, child_partitions_def)
 
         if child_partitions_def is None:
-            return ValidAssetSubset(child_asset_key, value=parent_asset_subset.size > 0)
+            return ValidAssetSubset(asset_key=child_asset_key, value=parent_asset_subset.size > 0)
         else:
             partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
             child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
@@ -376,7 +399,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                 dynamic_partitions_store=dynamic_partitions_store,
                 current_time=current_time,
             )
-            return ValidAssetSubset(child_asset_key, value=child_partitions_subset)
+            return ValidAssetSubset(asset_key=child_asset_key, value=child_partitions_subset)
 
     def get_children_partitions(
         self,

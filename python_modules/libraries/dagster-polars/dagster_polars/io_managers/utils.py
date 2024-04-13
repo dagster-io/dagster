@@ -141,19 +141,23 @@ def get_polars_metadata(
     Returns:
         Dict[str, MetadataValue]: metadata about df
     """
-    assert context.metadata is not None
+    assert context.definition_metadata is not None
 
-    schema_metadata = get_metadata_schema(df, descriptions=context.metadata.get("descriptions"))
+    schema_metadata = get_metadata_schema(
+        df, descriptions=context.definition_metadata.get("descriptions")
+    )
 
     metadata = {}
+
+    metadata["dagster/column_schema"] = schema_metadata
 
     if isinstance(df, pl.DataFrame):
         table_metadata = get_table_metadata(
             context=context,
             df=df,
             schema=schema_metadata,
-            n_rows=context.metadata.get("n_rows", 5),
-            fraction=context.metadata.get("fraction"),
+            n_rows=context.definition_metadata.get("n_rows", 5),
+            fraction=context.definition_metadata.get("fraction"),
         )
 
         df_stats = df.describe()
@@ -165,11 +169,9 @@ def get_polars_metadata(
             fraction=None,
         )
 
-        metadata["columns"] = table_metadata
+        metadata["table"] = table_metadata
         metadata["stats"] = stats_metadata
         metadata["row_count"] = MetadataValue.int(df.shape[0])
         metadata["estimated_size_mb"] = MetadataValue.float(df.estimated_size(unit="mb"))
-    else:
-        metadata["columns"] = schema_metadata
 
     return metadata

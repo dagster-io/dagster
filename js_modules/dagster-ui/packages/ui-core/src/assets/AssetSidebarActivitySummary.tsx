@@ -16,8 +16,7 @@ import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
-import {isRunlessEvent} from './isRunlessEvent';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {RecentAssetEvents} from './useRecentAssetEvents';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
@@ -27,6 +26,7 @@ interface Props {
   liveData?: LiveDataForNode;
   isSourceAsset: boolean;
   stepKey: string;
+  recentEvents: RecentAssetEvents;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
@@ -39,13 +39,10 @@ export const AssetSidebarActivitySummary = ({
   isSourceAsset,
   liveData,
   stepKey,
+  recentEvents,
 }: Props) => {
-  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
-    useRecentAssetEvents(
-      asset.assetKey,
-      {},
-      {assetHasDefinedPartitions: !!asset.partitionDefinition},
-    );
+  const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
+    recentEvents;
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
@@ -106,15 +103,7 @@ export const AssetSidebarActivitySummary = ({
 
       {loadedPartitionKeys.length > 1 ? null : (
         <>
-          <SidebarSection
-            title={
-              !isSourceAsset
-                ? displayedEvent && isRunlessEvent(displayedEvent)
-                  ? 'Last reported materialization'
-                  : 'Materialization in last run'
-                : 'Observation in last run'
-            }
-          >
+          <SidebarSection title={!isSourceAsset ? 'Latest materialization' : 'Latest observation'}>
             {displayedEvent ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
                 <LatestMaterializationMetadata

@@ -1,4 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
+import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
 import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation} from 'react-router-dom';
@@ -15,10 +17,9 @@ import {
 } from './AssetNodeOverview';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
-import {AssetPlots} from './AssetPlots';
+import {AssetPlotsPage} from './AssetPlotsPage';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
-import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {ChangedReasonsTag} from './ChangedReasons';
@@ -58,17 +59,18 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 interface Props {
   assetKey: AssetKey;
   trace?: PageLoadTrace;
+  headerBreadcrumbs: BreadcrumbProps[];
 }
 
-export const AssetView = ({assetKey, trace}: Props) => {
+export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
-  const {tabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
-  const {flagUseNewOverviewPage, flagUseNewAutomationPage} = useFeatureFlags();
+  const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
+  const {flagUseNewOverviewPage} = useFeatureFlags();
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
-  const tabList = useMemo(() => tabBuilder({definition, params}), [definition, params, tabBuilder]);
+  const tabList = useTabBuilder({definition, params});
 
   const defaultTab = flagUseNewOverviewPage
     ? 'overview'
@@ -206,7 +208,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
       return <AssetLoadingDefinitionState />;
     }
     return (
-      <AssetPlots
+      <AssetPlotsPage
         assetKey={assetKey}
         assetHasDefinedPartitions={!!definition?.partitionDefinition}
         params={params}
@@ -219,15 +221,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
-    if (flagUseNewAutomationPage) {
-      return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
-    }
-    return (
-      <AssetAutomaterializePolicyPageOld
-        assetKey={assetKey}
-        assetHasDefinedPartitions={!!definition?.partitionDefinition}
-      />
-    );
+    return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
   };
 
   const renderChecksTab = () => {
@@ -287,6 +281,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
     >
       <AssetPageHeader
         assetKey={assetKey}
+        headerBreadcrumbs={headerBreadcrumbs}
         tags={
           <AssetViewPageHeaderTags
             definition={definition}
@@ -366,7 +361,7 @@ function getQueryForVisibleAssets(
     return {query: `+"${token}"+`, requestedDepth: 1};
   }
   if (view === 'lineage') {
-    const defaultDepth = lineageScope === 'neighbors' ? 2 : 5;
+    const defaultDepth = 1;
     const requestedDepth = Number(lineageDepth) || defaultDepth;
     const depthStr = '+'.repeat(requestedDepth);
 

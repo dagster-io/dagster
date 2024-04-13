@@ -18,7 +18,9 @@ def test_execution_plan_error_grpc(instance: DagsterInstance):
 
         with pytest.raises(
             DagsterUserCodeProcessError,
-            match=re.escape('Assets provided in asset_selection argument ["fake"] do not exist'),
+            match=re.escape(
+                "AssetKey(s) ['fake'] were selected, but no AssetsDefinition objects supply these keys."
+            ),
         ):
             sync_get_external_execution_plan_grpc(
                 api_client,

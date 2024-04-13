@@ -42,6 +42,7 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import code_location from '../icon-svgs/code_location.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
+import column_lineage from '../icon-svgs/column_lineage.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
@@ -53,6 +54,7 @@ import datatype_number from '../icon-svgs/datatype_number.svg';
 import datatype_string from '../icon-svgs/datatype_string.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
+import dollar_sign from '../icon-svgs/dollar_sign.svg';
 import done from '../icon-svgs/done.svg';
 import dot from '../icon-svgs/dot.svg';
 import dot_filled from '../icon-svgs/dot_filled.svg';
@@ -80,6 +82,7 @@ import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
 import gitlab from '../icon-svgs/gitlab.svg';
+import globe from '../icon-svgs/globe.svg';
 import graduation_cap from '../icon-svgs/graduation_cap.svg';
 import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
@@ -87,6 +90,7 @@ import graph_horizontal from '../icon-svgs/graph_horizontal.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import graph_vertical from '../icon-svgs/graph_vertical.svg';
+import help_circle from '../icon-svgs/help_circle.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass from '../icon-svgs/hourglass.svg';
@@ -115,6 +119,7 @@ import no_access from '../icon-svgs/no_access.svg';
 import notifications from '../icon-svgs/notifications.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
+import pagerduty from '../icon-svgs/pagerduty.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
 import panel_show_both from '../icon-svgs/panel_show_both.svg';
 import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
@@ -221,6 +226,7 @@ export const Icons = {
 
   // Other custom icons
   toggle_whitespace,
+  help_circle,
   panel_show_top,
   panel_show_left,
   panel_show_right,
@@ -239,11 +245,13 @@ export const Icons = {
   tag,
   slack,
   ms_teams,
+  pagerduty,
   github,
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
   gitlab,
+  globe,
   graduation_cap,
   youtube,
   arrow_indent,
@@ -284,8 +292,10 @@ export const Icons = {
   console: console_icon,
   content_copy,
   collapse_arrows,
+  column_lineage,
   corporate_fare,
   delete: deleteSVG,
+  dollar_sign,
   done,
   dot,
   dot_filled,
@@ -367,7 +377,11 @@ export const Icons = {
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([(slack as any).src, (ms_teams as any).src]);
+const SVGS_WITH_COLORS = new Set([
+  (slack as any).src,
+  (ms_teams as any).src,
+  (pagerduty as any).src,
+]);
 
 export type IconName = keyof typeof Icons;
 

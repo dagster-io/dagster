@@ -14,6 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
@@ -222,11 +223,11 @@ def direct_invocation_result(
         # try-except handles "vanilla" asset and op invocation (generators and async handled in
         # _type_check_output_wrapper)
 
-        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)  # type: ignore (pyright bug)
+        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)  # type: ignore # (pyright bug)
 
         result = invoke_compute_fn(
             fn=compute_fn.decorated_fn,
-            context=bound_context,  # type: ignore (pyright bug)
+            context=bound_context,  # type: ignore # (pyright bug)
             kwargs=input_dict,
             context_arg_provided=compute_fn.has_context_arg(),
             config_arg_cls=(
@@ -234,9 +235,9 @@ def direct_invocation_result(
             ),
             resource_args=resource_arg_mapping,
         )
-        return _type_check_output_wrapper(op_def, result, bound_context)  # type: ignore (pyright bug)
+        return _type_check_output_wrapper(op_def, result, bound_context)  # type: ignore # (pyright bug)
     except Exception:
-        bound_context.unbind()  # type: ignore (pyright bug)
+        bound_context.unbind()  # type: ignore # (pyright bug)
         raise
 
 
@@ -365,15 +366,27 @@ def _key_for_result(result: AssetResult, context: "BaseDirectExecutionContext") 
 
 
 def _output_name_for_result_obj(
-    event: AssetResult,
+    event: Union[AssetResult, AssetCheckResult],
     context: "BaseDirectExecutionContext",
 ):
     if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
             f"Op {context.per_invocation_properties.alias} does not have an assets definition."
         )
-    asset_key = _key_for_result(event, context)
-    return context.per_invocation_properties.assets_def.get_output_name_for_asset_key(asset_key)
+
+    if isinstance(event, AssetResult):
+        asset_key = _key_for_result(event, context)
+        return context.per_invocation_properties.assets_def.get_output_name_for_asset_key(asset_key)
+    elif isinstance(event, AssetCheckResult):
+        check_names_by_asset_key = {}
+        for spec in context.per_invocation_properties.assets_def.check_specs:
+            if spec.asset_key not in check_names_by_asset_key:
+                check_names_by_asset_key[spec.asset_key] = []
+            check_names_by_asset_key[spec.asset_key].append(spec.name)
+
+        return context.per_invocation_properties.assets_def.get_output_name_for_asset_check_key(
+            event.resolve_target_check_key(check_names_by_asset_key)
+        )
 
 
 def _handle_gen_event(
@@ -388,7 +401,7 @@ def _handle_gen_event(
         (AssetMaterialization, AssetObservation, ExpectationResult),
     ):
         return event
-    elif isinstance(event, AssetResult):
+    elif isinstance(event, (AssetResult, AssetCheckResult)):
         output_name = _output_name_for_result_obj(event, context)
         outputs_seen.add(output_name)
         return event

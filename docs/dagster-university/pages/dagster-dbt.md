@@ -5,6 +5,7 @@ title: Dagster + dbt
 # Dagster + dbt
 
 - Lesson 1: Introduction
+  - [About this course](/dagster-dbt/lesson-1/0-about-this-course)
   - [What's dbt?](/dagster-dbt/lesson-1/1-whats-dbt)
   - [Why use dbt and Dagster together?](/dagster-dbt/lesson-1/2-why-use-dbt-and-dagster-together)
   - [How do dbt models relate to Dagster assets?](/dagster-dbt/lesson-1/3-how-do-dbt-models-relate-to-dagster-assets)

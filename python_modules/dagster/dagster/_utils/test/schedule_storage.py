@@ -14,8 +14,8 @@ from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.remote_representation import (
-    ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -70,7 +70,7 @@ class TestScheduleStorage:
 
     @staticmethod
     def fake_repo_target():
-        return ExternalRepositoryOrigin(
+        return RemoteRepositoryOrigin(
             ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
@@ -732,7 +732,9 @@ class TestScheduleStorage:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
-        condition_snapshot = AssetConditionSnapshot("foo", "bar", "")
+        condition_snapshot = AssetConditionSnapshot(
+            class_name="foo", description="bar", unique_id=""
+        )
 
         for _ in range(2):  # test idempotency
             storage.add_auto_materialize_asset_evaluations(
@@ -755,8 +757,8 @@ class TestScheduleStorage:
                         end_timestamp=1,
                         subsets_with_metadata=[
                             AssetSubsetWithMetadata(
-                                AssetSubset(asset_key=AssetKey("asset_two"), value=True),
-                                {"foo": MetadataValue.text("bar")},
+                                subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                                metadata={"foo": MetadataValue.text("bar")},
                             )
                         ],
                         child_evaluations=[],
@@ -836,7 +838,9 @@ class TestScheduleStorage:
         # add a mix of keys - one that already is using the unique index and one that is not
 
         eval_one = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            condition_snapshot=AssetConditionSnapshot(
+                class_name="foo", description="bar", unique_id=""
+            ),
             start_timestamp=0,
             end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
@@ -846,7 +850,9 @@ class TestScheduleStorage:
         ).with_run_ids(set())
 
         eval_asset_three = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            condition_snapshot=AssetConditionSnapshot(
+                class_name="foo", description="bar", unique_id=""
+            ),
             start_timestamp=0,
             end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
@@ -886,15 +892,20 @@ class TestScheduleStorage:
         subset = partitions_def.empty_subset().with_partition_keys(["a"])
         asset_subset = AssetSubset(asset_key=AssetKey("asset_two"), value=subset)
         asset_subset_with_metadata = AssetSubsetWithMetadata(
-            asset_subset,
-            {"foo": MetadataValue.text("bar"), "baz": MetadataValue.asset(AssetKey("asset_one"))},
+            subset=asset_subset,
+            metadata={
+                "foo": MetadataValue.text("bar"),
+                "baz": MetadataValue.asset(AssetKey("asset_one")),
+            },
         )
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
                 AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    condition_snapshot=AssetConditionSnapshot(
+                        class_name="foo", description="bar", unique_id=""
+                    ),
                     start_timestamp=0,
                     end_timestamp=1,
                     true_subset=asset_subset,
@@ -928,7 +939,9 @@ class TestScheduleStorage:
             evaluation_id=11,
             asset_evaluations=[
                 AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    condition_snapshot=AssetConditionSnapshot(
+                        class_name="foo", description="bar", unique_id=""
+                    ),
                     start_timestamp=0,
                     end_timestamp=1,
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),

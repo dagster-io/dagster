@@ -315,7 +315,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             context.log.warning(self.get_missing_optional_input_log_message(context, path))
             return None
 
-        assert context.metadata is not None
+        assert context.definition_metadata is not None
 
         metadata: Optional[StorageMetadata] = None
 
@@ -326,7 +326,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         else:
             ldf, metadata = self.scan_df_from_path(path=path, context=context, with_metadata=True)
 
-        columns = context.metadata.get("columns")
+        columns = context.definition_metadata.get("columns")
         if columns is not None:
             context.log.debug(f"Loading {columns=}")
             ldf = ldf.select(columns)
@@ -335,10 +335,10 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             context.upstream_output is not None
             and context.upstream_output.asset_info is not None
             and context.upstream_output.asset_info.partitions_def is not None
-            and context.upstream_output.metadata is not None
+            and context.upstream_output.definition_metadata is not None
             and partition_key is not None
         ):
-            partition_by = context.upstream_output.metadata.get("partition_by")
+            partition_by = context.upstream_output.definition_metadata.get("partition_by")
 
             # we can only support automatically filtering by 1 column
             # otherwise we would have been dealing with a multi-partition key
@@ -425,8 +425,8 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             Any: The object loaded from the partition.
         """
         allow_missing_partitions = (
-            context.metadata.get("allow_missing_partitions", False)
-            if context.metadata is not None
+            context.definition_metadata.get("allow_missing_partitions", False)
+            if context.definition_metadata is not None
             else False
         )
 

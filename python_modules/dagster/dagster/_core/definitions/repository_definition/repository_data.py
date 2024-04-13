@@ -16,7 +16,6 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
@@ -33,6 +32,7 @@ from .valid_definitions import RepositoryListDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
+    from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
@@ -275,7 +275,7 @@ class CachingRepositoryData(RepositoryData):
             asset_checks_defs_by_key,
             "assets_checks_defs_by_key",
             key_type=AssetCheckKey,
-            value_type=AssetChecksDefinition,
+            value_type=AssetsDefinition,
         )
         check.mapping_param(
             top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition

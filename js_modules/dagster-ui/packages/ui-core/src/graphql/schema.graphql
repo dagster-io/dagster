@@ -661,7 +661,7 @@ type AssetNode {
   freshnessPolicy: FreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
-  groupName: String
+  groupName: String!
   owners: [AssetOwner!]!
   id: ID!
   isExecutable: Boolean!
@@ -717,8 +717,10 @@ enum BackfillPolicyType {
 enum ChangeReason {
   NEW
   CODE_VERSION
-  INPUTS
+  DEPENDENCIES
   PARTITIONS_DEFINITION
+  TAGS
+  METADATA
 }
 
 type AssetDependency {
@@ -901,6 +903,8 @@ type AssetCheck {
   jobNames: [String!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
+  blocking: Boolean!
+  additionalAssetKeys: [AssetKey!]!
 }
 
 type AssetCheckExecution {
@@ -927,6 +931,7 @@ type AssetCheckEvaluation {
   targetMaterialization: AssetCheckEvaluationTargetMaterializationData
   metadataEntries: [MetadataEntry!]!
   severity: AssetCheckSeverity!
+  description: String
   success: Boolean!
 }
 
@@ -1418,6 +1423,8 @@ type Run implements PipelineRun {
   hasTerminatePermission: Boolean!
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
+  rootConcurrencyKeys: [String!]
+  hasUnconstrainedRootNodes: Boolean!
 }
 
 type AssetCheckhandle {
@@ -2194,7 +2201,6 @@ input AssetKeyInput {
 }
 
 input ExecutionMetadata {
-  runId: String
   tags: [ExecutionTag!]
   rootRunId: String
   parentRunId: String
@@ -2384,6 +2390,7 @@ type Instance {
 type RunQueueConfig {
   maxConcurrentRuns: Int!
   tagConcurrencyLimitsYaml: String
+  isOpConcurrencyAware: Boolean
 }
 
 type ConcurrencyKeyInfo {
@@ -2565,6 +2572,12 @@ interface MetadataEntry {
   description: String
 }
 
+type TableColumnLineageMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  lineage: [TableColumnLineageEntry!]!
+}
+
 type TableSchemaMetadataEntry implements MetadataEntry {
   label: String!
   description: String
@@ -2667,6 +2680,12 @@ type JobMetadataEntry implements MetadataEntry {
 type NullMetadataEntry implements MetadataEntry {
   label: String!
   description: String
+}
+
+type TimestampMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  timestamp: Float!
 }
 
 scalar Cursor
@@ -3098,6 +3117,16 @@ type TableColumnConstraints {
 
 type TableConstraints {
   other: [String!]!
+}
+
+type TableColumnDep {
+  assetKey: AssetKey!
+  columnName: String!
+}
+
+type TableColumnLineageEntry {
+  columnName: String!
+  columnDeps: [TableColumnDep!]!
 }
 
 type PipelineTag {

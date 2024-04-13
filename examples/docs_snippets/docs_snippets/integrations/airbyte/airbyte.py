@@ -171,7 +171,7 @@ def scope_add_downstream_assets():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
@@ -222,7 +222,7 @@ def scope_add_downstream_assets_w_deps():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
@@ -272,7 +272,7 @@ def scope_add_downstream_assets_cloud():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
@@ -329,7 +329,7 @@ def scope_add_downstream_assets_cloud_with_deps():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )

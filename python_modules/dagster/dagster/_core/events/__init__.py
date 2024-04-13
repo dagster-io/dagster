@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+import uuid
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -243,6 +244,12 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
 
+# These are the only events currently supported in `EventLogStorage.store_event_batch`
+BATCH_WRITABLE_EVENTS = {
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.ASSET_OBSERVATION,
+}
+
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
@@ -327,7 +334,15 @@ def _validate_event_specific_data(
     return event_specific_data
 
 
-def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
+def generate_event_batch_id():
+    return str(uuid.uuid4())
+
+
+def log_step_event(
+    step_context: IStepContext,
+    event: "DagsterEvent",
+    batch_metadata: Optional["DagsterEventBatchMetadata"],
+) -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
@@ -335,6 +350,7 @@ def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
         level=log_level,
         msg=event.message or f"{event_type} for step {step_context.step.key}",
         dagster_event=event,
+        batch_metadata=batch_metadata,
     )
 
 
@@ -393,6 +409,11 @@ class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
         )
 
 
+class DagsterEventBatchMetadata(NamedTuple):
+    id: str
+    is_end: bool
+
+
 @whitelist_for_serdes(
     serializer=DagsterEventSerializer,
     storage_field_names={
@@ -439,6 +460,7 @@ class DagsterEvent(
         step_context: IStepContext,
         event_specific_data: Optional["EventSpecificData"] = None,
         message: Optional[str] = None,
+        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
     ) -> "DagsterEvent":
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
@@ -452,7 +474,7 @@ class DagsterEvent(
             pid=os.getpid(),
         )
 
-        log_step_event(step_context, event)
+        log_step_event(step_context, event, batch_metadata)
 
         return event
 
@@ -951,9 +973,7 @@ class DagsterEvent(
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_RESTARTED,
             step_context=step_context,
-            message='Started re-execution (attempt # {n}) of step "{step_key}".'.format(
-                step_key=step_context.step.key, n=previous_attempts + 1
-            ),
+            message=f'Started re-execution (attempt # {previous_attempts + 1}) of step "{step_context.step.key}".',
         )
 
     @staticmethod
@@ -964,10 +984,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_SUCCESS,
             step_context=step_context,
             event_specific_data=success,
-            message='Finished execution of step "{step_key}" in {duration}.'.format(
-                step_key=step_context.step.key,
-                duration=format_duration(success.duration_ms),
-            ),
+            message=f'Finished execution of step "{step_context.step.key}" in {format_duration(success.duration_ms)}.',
         )
 
     @staticmethod
@@ -982,6 +999,7 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: AssetMaterialization,
+        batch_metadata: Optional[DagsterEventBatchMetadata] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -994,16 +1012,20 @@ class DagsterEvent(
                     label_clause=f" {materialization.label}" if materialization.label else ""
                 )
             ),
+            batch_metadata=batch_metadata,
         )
 
     @staticmethod
     def asset_observation(
-        step_context: IStepContext, observation: AssetObservation
+        step_context: IStepContext,
+        observation: AssetObservation,
+        batch_metadata: Optional[DagsterEventBatchMetadata] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_OBSERVATION,
             step_context=step_context,
             event_specific_data=AssetObservationData(observation),
+            batch_metadata=batch_metadata,
         )
 
     @staticmethod
@@ -1296,13 +1318,7 @@ class DagsterEvent(
             ObjectStoreOperationType(object_store_operation_result.op)
             == ObjectStoreOperationType.CP_OBJECT
         ):
-            message = (
-                "Copied intermediate object for input {value_name} from {key} to {dest_key}"
-            ).format(
-                value_name=value_name,
-                key=object_store_operation_result.key,
-                dest_key=object_store_operation_result.dest_key,
-            )
+            message = f"Copied intermediate object for input {value_name} from {object_store_operation_result.key} to {object_store_operation_result.dest_key}"
         else:
             message = ""
 

@@ -38,6 +38,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
@@ -129,6 +130,34 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
 
     # the asset dependency structure should stay the same
     assert subbed.asset_deps == abc_.asset_deps
+
+
+def test_subset_with_checks():
+    @multi_asset(
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
+        check_specs=[AssetCheckSpec("check1", asset="a"), AssetCheckSpec("check2", asset="b")],
+        can_subset=True,
+    )
+    def abc_(context, in1, in2, in3): ...
+
+    a, b, c = AssetKey("a"), AssetKey("b"), AssetKey("c")
+    check1, check2 = AssetCheckKey(a, "check1"), AssetCheckKey(b, "check2")
+
+    subbed = abc_.subset_for({a, b, c}, selected_asset_check_keys={check1, check2})
+    assert subbed.check_specs_by_output_name == abc_.check_specs_by_output_name
+    assert len(subbed.check_specs_by_output_name) == 2
+    assert len(list(subbed.check_specs)) == 2
+    assert subbed.node_check_specs_by_output_name == abc_.node_check_specs_by_output_name
+
+    subbed = abc_.subset_for({a, b}, selected_asset_check_keys={check1})
+    assert len(subbed.check_specs_by_output_name) == 1
+    assert len(list(subbed.check_specs)) == 1
+    assert len(subbed.node_check_specs_by_output_name) == 2
+
+    subbed_again = subbed.subset_for({a, b}, selected_asset_check_keys=set())
+    assert len(subbed_again.check_specs_by_output_name) == 0
+    assert len(list(subbed_again.check_specs)) == 0
+    assert len(subbed_again.node_check_specs_by_output_name) == 2
 
 
 def test_retain_group():
@@ -1863,7 +1892,22 @@ def test_multi_asset_nodes_out_names():
         pass
 
     assert len(users.op.output_defs) == 2
-    assert {out_def.name for out_def in users.op.output_defs} == {"sales_users", "marketing_users"}
+    assert {out_def.name for out_def in users.op.output_defs} == {
+        "sales__users",
+        "marketing__users",
+    }
+
+
+def test_multi_asset_dependencies_captured_in_internal_asset_deps() -> None:
+    @asset
+    def my_upstream_asset() -> int:
+        return 1
+
+    with pytest.raises(CheckError, match="inputs must be associated with an output"):
+
+        @multi_asset(outs={"asset_one": AssetOut()}, internal_asset_deps={"asset_one": set()})
+        def my_multi_asset(my_upstream_asset: int) -> int:
+            return my_upstream_asset + 1
 
 
 def test_asset_spec_deps():

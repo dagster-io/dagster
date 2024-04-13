@@ -17,7 +17,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.assets_job import (
+from dagster._core.definitions.asset_job import (
     ASSET_BASE_JOB_PREFIX,
 )
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
@@ -299,14 +299,20 @@ class RepositoryDefinition:
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
             base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
-            if all(base_job.asset_layer.is_executable_for_asset(key) for key in asset_keys):
+            asset_layer = base_job.asset_layer
+            if all(
+                asset_layer.has(key) and asset_layer.get(key).is_executable for key in asset_keys
+            ):
                 return base_job
         else:
             i = 0
             while self.has_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
                 base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
-
-                if all(base_job.asset_layer.is_executable_for_asset(key) for key in asset_keys):
+                asset_layer = base_job.asset_layer
+                if all(
+                    asset_layer.has(key) and asset_layer.get(key).is_executable
+                    for key in asset_keys
+                ):
                     return base_job
 
                 i += 1
@@ -405,10 +411,10 @@ class RepositoryDefinition:
     def asset_graph(self) -> AssetGraph:
         return AssetGraph.from_assets(
             [
-                *list(dict.fromkeys(self.assets_defs_by_key.values())),
+                *list(set(self.assets_defs_by_key.values())),
                 *self.source_assets_by_key.values(),
+                *list(set(self.asset_checks_defs_by_key.values())),
             ],
-            list(dict.fromkeys(self.asset_checks_defs_by_key.values())),
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be

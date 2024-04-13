@@ -215,7 +215,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\] and check keys \[\], but"
                 r" attempted to "
-                r"select only \[AssetKey\(\['a'\]\)\]",
+                r"select only assets \[AssetKey\(\['a'\]\)\] and checks \[\]",
             ),
         ),
     ],
@@ -236,7 +236,7 @@ def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
         ("a+", "a,b"),
         ("+c", "b,c"),
         (["a", "c"], "a,c"),
-        (AssetSelection.keys("a", "c") | AssetSelection.keys("c", "b"), "a,b,c"),
+        (AssetSelection.assets("a", "c") | AssetSelection.assets("c", "b"), "a,b,c"),
     ],
 )
 def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
@@ -316,25 +316,25 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
         (["+core/models/a", "core/models/b+"], "start,a,b,c,d", ["core", "models"]),
         (["*core/models/c", "core/models/final"], "b,c,final", ["core", "models"]),
         (AssetSelection.all(), "start,a,b,c,d,e,f,final", None),
-        (AssetSelection.keys("a", "b", "c"), "a,b,c", None),
-        (AssetSelection.keys("f").upstream(depth=1), "f,d,e", None),
-        (AssetSelection.keys("f").upstream(depth=2), "f,d,e,c,a,b", None),
-        (AssetSelection.keys("start").downstream(), "start,a,d,f,final", None),
+        (AssetSelection.assets("a", "b", "c"), "a,b,c", None),
+        (AssetSelection.assets("f").upstream(depth=1), "f,d,e", None),
+        (AssetSelection.assets("f").upstream(depth=2), "f,d,e,c,a,b", None),
+        (AssetSelection.assets("start").downstream(), "start,a,d,f,final", None),
         (
-            AssetSelection.keys("a").upstream(depth=1)
-            | AssetSelection.keys("b").downstream(depth=1),
+            AssetSelection.assets("a").upstream(depth=1)
+            | AssetSelection.assets("b").downstream(depth=1),
             "start,a,b,c,d",
             None,
         ),
         (
-            AssetSelection.keys("c").upstream() | AssetSelection.keys("final"),
+            AssetSelection.assets("c").upstream() | AssetSelection.assets("final"),
             "b,c,final",
             None,
         ),
         (AssetSelection.all(), "start,a,b,c,d,e,f,final", ["core", "models"]),
         (
-            AssetSelection.keys("core/models/a").upstream(depth=1)
-            | AssetSelection.keys("core/models/b").downstream(depth=1),
+            AssetSelection.assets("core/models/a").upstream(depth=1)
+            | AssetSelection.assets("core/models/b").downstream(depth=1),
             "start,a,b,c,d",
             ["core", "models"],
         ),
@@ -366,7 +366,6 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
 
     # now build the subset job
     job = create_test_asset_job(final_assets, selection=job_selection)
-
     with instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
@@ -448,7 +447,7 @@ def test_define_selection_job_assets_definition_selection():
     all_assets = [asset1, asset2, asset3]
 
     job1 = create_test_asset_job(all_assets, selection=[asset1, asset2])
-    asset_keys = list(job1.asset_layer.asset_keys)
+    asset_keys = list(job1.asset_layer.executable_asset_keys)
     assert len(asset_keys) == 2
     assert set(asset_keys) == {asset1.key, asset2.key}
     job1.execute_in_process()
@@ -550,11 +549,11 @@ def test_config():
     "selection,config",
     [
         (
-            AssetSelection.keys("other_config_asset"),
+            AssetSelection.assets("other_config_asset"),
             {"other_config_asset": {"config": {"val": 3}}},
         ),
         (
-            AssetSelection.keys("other_config_asset").upstream(depth=1),
+            AssetSelection.assets("other_config_asset").upstream(depth=1),
             {
                 "config_asset": {"config": {"val": 2}},
                 "other_config_asset": {"config": {"val": 3}},

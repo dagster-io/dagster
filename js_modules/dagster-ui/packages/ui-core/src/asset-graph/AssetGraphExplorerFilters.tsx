@@ -3,10 +3,11 @@ import React, {useContext} from 'react';
 
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {FeatureFlag, featureEnabled} from '../app/Flags';
-import {AssetGroupSelector, ChangeReason} from '../graphql/types';
+import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
 import {useFilters} from '../ui/Filters';
-import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
+import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {
@@ -16,52 +17,50 @@ import {
 import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-type OptionalFilters =
-  | {
-      assetGroups?: null;
-      setGroupFilters?: null;
-      visibleAssetGroups?: null;
-      computeKindTags?: null;
-      setComputeKindTags?: null;
-      changedInBranch?: null;
-      setChangedInBranch?: null;
-    }
-  | {
-      assetGroups?: AssetGroupSelector[];
-      visibleAssetGroups?: AssetGroupSelector[];
-      setGroupFilters?: (groups: AssetGroupSelector[]) => void;
-      computeKindTags?: string[];
-      setComputeKindTags?: (s: string[]) => void;
-      changedInBranch?: ChangeReason[];
-      setChangedInBranch?: (s: ChangeReason[]) => void;
-    };
-
 type Props = {
   nodes: GraphNode[];
   clearExplorerPath: () => void;
   explorerPath: string;
   isGlobalGraph: boolean;
-} & OptionalFilters;
+  assetFilterState?: AssetFilterState;
+};
+
+const defaultState = {filters: {}} as Partial<AssetFilterState> & {
+  filters: Partial<AssetFilterState['filters']>;
+};
 
 export function useAssetGraphExplorerFilters({
   nodes,
   isGlobalGraph,
-  assetGroups,
-  visibleAssetGroups,
-  setGroupFilters,
-  computeKindTags,
-  setComputeKindTags,
   explorerPath,
   clearExplorerPath,
-  changedInBranch,
-  setChangedInBranch,
+  assetFilterState,
 }: Props) {
+  const allAssetTags = useAssetTagsForAssets(nodes);
+
   const {allRepos} = useContext(WorkspaceContext);
 
-  const reposFilter = useCodeLocationFilter();
+  const {
+    filters: {changedInBranch, computeKindTags, repos, owners, groups, tags},
+    setAssetTags,
+    setChangedInBranch,
+    setComputeKindTags,
+    setGroups,
+    setOwners,
+    setRepos,
+  } = assetFilterState || defaultState;
+
+  const reposFilter = useCodeLocationFilter(repos && setRepos ? {repos, setRepos} : undefined);
 
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
-  const groupsFilter = useAssetGroupFilter({visibleAssetGroups, assetGroups, setGroupFilters});
+
+  const allAssetGroups = useAssetGroupsForAssets(nodes);
+
+  const groupsFilter = useAssetGroupFilter({
+    assetGroups: groups,
+    allAssetGroups,
+    setGroups,
+  });
 
   const allComputeKindTags = useAssetKindTagsForAssets(nodes);
 
@@ -70,25 +69,35 @@ export function useAssetGraphExplorerFilters({
     computeKindTags,
     setComputeKindTags,
   });
+
+  const tagsFilter = useAssetTagFilter({
+    allAssetTags,
+    tags,
+    setTags: setAssetTags,
+  });
+
+  const allAssetOwners = useAssetOwnersForAssets(nodes);
+  const ownerFilter = useAssetOwnerFilter({
+    allAssetOwners,
+    owners,
+    setOwners,
+  });
+
   const filters: FilterObject[] = [];
 
   if (allRepos.length > 1 && isGlobalGraph) {
     filters.push(reposFilter);
   }
-  if (assetGroups && setGroupFilters) {
+  if (allAssetGroups) {
     filters.push(groupsFilter);
   }
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
-  if (
-    changedInBranch &&
-    featureEnabled(FeatureFlag.flagExperimentalBranchDiff) &&
-    isBranchDeployment
-  ) {
+  if (changedInBranch && isBranchDeployment) {
     filters.push(changedFilter);
   }
-  if (setComputeKindTags) {
-    filters.push(kindTagsFilter);
-  }
+  filters.push(kindTagsFilter);
+  filters.push(tagsFilter);
+  filters.push(ownerFilter);
   const {button, activeFiltersJsx} = useFilters({filters});
   if (!filters.length) {
     return {button: null, activeFiltersJsx: null};

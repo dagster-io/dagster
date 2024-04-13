@@ -1,11 +1,18 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
+from functools import cached_property
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
+    from dagster._core.remote_representation.external_data import (
+        ExternalAssetCheck,
+        ExternalAssetNode,
+    )
+    from dagster._core.remote_representation.handle import RepositoryHandle
 
 
 # For locations that are loaded asynchronously
@@ -47,6 +54,37 @@ class IWorkspace(ABC):
     @abstractmethod
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         pass
+
+    @cached_property
+    def asset_graph(self) -> "RemoteAssetGraph":
+        """Returns a workspace scoped RemoteAssetGraph."""
+        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+
+        code_locations = (
+            location_entry.code_location
+            for location_entry in self.get_workspace_snapshot().values()
+            if location_entry.code_location
+        )
+        repos = (
+            repo
+            for code_location in code_locations
+            for repo in code_location.get_repositories().values()
+        )
+        repo_handle_external_asset_nodes: Sequence[
+            Tuple["RepositoryHandle", "ExternalAssetNode"]
+        ] = []
+        asset_checks: Sequence["ExternalAssetCheck"] = []
+
+        for repo in repos:
+            for external_asset_node in repo.get_external_asset_nodes():
+                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
+
+            asset_checks.extend(repo.get_external_asset_checks())
+
+        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
+            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
+            external_asset_checks=asset_checks,
+        )
 
 
 def location_status_from_location_entry(

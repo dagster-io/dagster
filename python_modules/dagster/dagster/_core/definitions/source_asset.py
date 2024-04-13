@@ -51,6 +51,8 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
 )
 
+from .utils import validate_definition_tags
+
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import (
         DecoratedOpFunction,
@@ -154,6 +156,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
 @experimental_param(param="freshness_policy")
+@experimental_param(param="tags")
 class SourceAsset(ResourceAddable):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
@@ -178,6 +181,8 @@ class SourceAsset(ResourceAddable):
             must be provided.
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
     """
 
     key: PublicAttr[AssetKey]
@@ -194,6 +199,7 @@ class SourceAsset(ResourceAddable):
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
     freshness_policy: Optional[FreshnessPolicy]
+    tags: Optional[Mapping[str, str]]
 
     def __init__(
         self,
@@ -210,6 +216,7 @@ class SourceAsset(ResourceAddable):
         *,
         auto_observe_interval_minutes: Optional[float] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        tags: Optional[Mapping[str, str]] = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
         # asset. If we were to make this public, then we would have a canonical public
@@ -226,6 +233,7 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
+        self.tags = validate_definition_tags(tags) or {}
 
         resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         if io_manager_def:
@@ -380,6 +388,7 @@ class SourceAsset(ResourceAddable):
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
                 freshness_policy=self.freshness_policy,
+                tags=self.tags,
                 _required_resource_keys=self._required_resource_keys,
             )
 
@@ -404,6 +413,7 @@ class SourceAsset(ResourceAddable):
                 resource_defs=self.resource_defs,
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
+                tags=self.tags,
                 _required_resource_keys=self._required_resource_keys,
             )
 

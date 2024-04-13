@@ -3,7 +3,7 @@ import time
 from typing import Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
-from dagster._core.definitions.assets_job import is_base_asset_job_name
+from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
@@ -81,6 +81,7 @@ def _get_job_execution_data_from_run_request(
         repository_name=repo_handle.repository_name,
         job_name=job_name,
         asset_selection=run_request.asset_selection,
+        asset_check_selection=run_request.asset_check_keys,
         op_selection=None,
     )
 
@@ -192,7 +193,7 @@ def _create_asset_run(
         # likely is outdated and targeting the wrong job, refetch the asset
         # graph from the workspace
         workspace = workspace_process_context.create_request_context()
-        asset_graph = RemoteAssetGraph.from_workspace(workspace)
+        asset_graph = workspace.asset_graph
 
     check.failed(
         f"Failed to target asset selection {run_request.asset_selection} in run after retrying."
@@ -297,7 +298,7 @@ def submit_asset_runs_in_chunks(
         chunk_submitted_runs: List[Tuple[RunRequest, DagsterRun]] = []
         retryable_error_raised = False
 
-        logger.critical(f"{chunk_size}, {chunk_start}, {len(run_request_chunk)}")
+        logger.debug(f"{chunk_size}, {chunk_start}, {len(run_request_chunk)}")
 
         # submit each run in the chunk
         for chunk_idx, run_request in enumerate(run_request_chunk):

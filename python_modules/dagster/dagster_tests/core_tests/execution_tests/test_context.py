@@ -1,6 +1,7 @@
 import dagster._check as check
 import pytest
 from dagster import (
+    AssetCheckExecutionContext,
     AssetCheckResult,
     AssetExecutionContext,
     AssetOut,
@@ -11,19 +12,28 @@ from dagster import (
     Output,
     asset,
     asset_check,
+    define_asset_job,
+    execute_job,
     graph_asset,
     graph_multi_asset,
     job,
     materialize,
     multi_asset,
     op,
+    reconstructable,
+    repository,
 )
+from dagster._check import CheckError
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import raise_exception_on_warnings
+from dagster._core.test_utils import instance_for_test, raise_exception_on_warnings
 
 
 def test_op_execution_context():
@@ -41,6 +51,52 @@ def test_op_execution_context():
         ctx_op()
 
     assert foo.execute_in_process().success
+
+
+@op
+def repo_context_op(context: OpExecutionContext):
+    check.inst(context.repository_def, RepositoryDefinition)
+
+
+@job
+def foo_repo_context():
+    repo_context_op()
+
+
+def test_op_execution_repo_context():
+    with pytest.raises(CheckError, match="No repository definition was set on the step context"):
+        foo_repo_context.execute_in_process()
+
+    recon_job = reconstructable(foo_repo_context)
+
+    with instance_for_test() as instance:
+        result = execute_job(recon_job, instance)
+        assert result.success
+
+
+@asset
+def repo_context_asset(context: AssetExecutionContext):
+    check.inst(context.repository_def, RepositoryDefinition)
+
+
+@repository
+def asset_context_repo():
+    return [repo_context_asset, define_asset_job("asset_selection_job", selection="*")]
+
+
+def get_repo_context_asset_selection_job():
+    return asset_context_repo.get_job("asset_selection_job")
+
+
+def test_asset_execution_repo_context():
+    with pytest.raises(CheckError, match="No repository definition was set on the step context"):
+        materialize([repo_context_asset])
+
+    recon_job = reconstructable(get_repo_context_asset_selection_job)
+
+    with instance_for_test() as instance:
+        result = execute_job(recon_job, instance)
+        assert result.success
 
 
 def test_instance_check():
@@ -320,21 +376,37 @@ def test_context_provided_to_asset_check():
 
     @asset_check(asset=to_check)
     def no_annotation(context):
-        assert isinstance(context, AssetExecutionContext)
+        assert isinstance(context, AssetCheckExecutionContext)
+        assert context.check_specs == [
+            AssetCheckSpec(
+                "no_annotation",
+                asset=to_check.key,
+            )
+        ]
 
     execute_assets_and_checks(assets=[to_check], asset_checks=[no_annotation])
 
     @asset_check(asset=to_check)
     def asset_annotation(context: AssetExecutionContext):
-        assert isinstance(context, AssetExecutionContext)
+        pass
 
-    execute_assets_and_checks(assets=[to_check], asset_checks=[asset_annotation])
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot annotate @asset_check `context` parameter with type AssetExecutionContext",
+    ):
+        execute_assets_and_checks(assets=[to_check], asset_checks=[asset_annotation])
 
     @asset_check(asset=to_check)
     def op_annotation(context: OpExecutionContext):
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check
         assert not isinstance(context, AssetExecutionContext)
+
+    execute_assets_and_checks(assets=[to_check], asset_checks=[op_annotation])
+
+    @asset_check(asset=to_check)
+    def check_annotation(context: AssetCheckExecutionContext):
+        assert not isinstance(context, AssetCheckExecutionContext)
 
     execute_assets_and_checks(assets=[to_check], asset_checks=[op_annotation])
 
@@ -387,7 +459,7 @@ def test_context_provided_to_blocking_asset_check():
 def test_error_on_invalid_context_annotation():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="must be annotated with AssetExecutionContext, OpExecutionContext, or left blank",
+        match="must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank",
     ):
 
         @op
@@ -396,7 +468,7 @@ def test_error_on_invalid_context_annotation():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="must be annotated with AssetExecutionContext, OpExecutionContext, or left blank",
+        match="must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank",
     ):
 
         @asset

@@ -209,6 +209,31 @@ def scope_custom_group_name_dagster_dbt_translator():
     # end_custom_group_name_dagster_dbt_translator
 
 
+def scope_custom_owners_dagster_dbt_translator():
+    # start_custom_owners_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional, Sequence
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_owners(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[Sequence[str]]:
+            return ["owner@company.com", "team:data@company.com"]
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_owners_dagster_dbt_translator
+
+
 def scope_custom_description_dagster_dbt_translator():
     # start_custom_description_dagster_dbt_translator
     import textwrap
@@ -258,6 +283,36 @@ def scope_custom_metadata_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_custom_metadata_dagster_dbt_translator
+
+
+def scope_custom_tags_dagster_dbt_translator():
+    # start_custom_tags_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+            dbt_tags = dbt_resource_props.get("tags", [])
+            dagster_tags = {}
+            for tag in dbt_tags:
+                key, _, value = tag.partition("=")
+
+                dagster_tags[key] = value if value else "__dagster_no_value"
+
+            return dagster_tags
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_tags_dagster_dbt_translator
 
 
 def scope_custom_auto_materialize_policy_dagster_dbt_translator():
@@ -310,8 +365,8 @@ def scope_custom_freshness_policy_dagster_dbt_translator():
     # end_custom_freshness_policy_dagster_dbt_translator
 
 
-def scope_enable_asset_check_dagster_dbt_translator():
-    # start_enable_asset_check_dagster_dbt_translator
+def scope_disable_asset_check_dagster_dbt_translator():
+    # start_disable_asset_check_dagster_dbt_translator
     from pathlib import Path
     from dagster import AssetExecutionContext
     from dagster_dbt import (
@@ -323,7 +378,7 @@ def scope_enable_asset_check_dagster_dbt_translator():
 
     manifest_path = Path("path/to/dbt_project/target/manifest.json")
     dagster_dbt_translator = DagsterDbtTranslator(
-        settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
     )
 
     @dbt_assets(
@@ -333,4 +388,4 @@ def scope_enable_asset_check_dagster_dbt_translator():
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
-    # end_enable_asset_check_dagster_dbt_translator
+    # end_disable_asset_check_dagster_dbt_translator

@@ -3,6 +3,7 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
@@ -45,7 +46,9 @@ describe('AssetTable', () => {
         return (
           <MemoryRouter>
             <MockedProvider mocks={MOCKS}>
-              <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+              <WorkspaceProvider>
+                <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+              </WorkspaceProvider>
             </MockedProvider>
           </MemoryRouter>
         );

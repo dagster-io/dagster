@@ -3,14 +3,16 @@ import * as React from 'react';
 
 import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
-import {showSharedToaster} from '../app/DomUtils';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
   AssetKeysDialog,
   AssetKeysDialogEmptyState,
   AssetKeysDialogHeader,
 } from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
-import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {MenuLink} from '../ui/MenuLink';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
 export type AssetNodeMenuProps = {
@@ -31,7 +33,10 @@ export const useAssetNodeMenu = ({
   const upstream = Object.keys(graphData.upstream[node.id] ?? {});
   const downstream = Object.keys(graphData.downstream[node.id] ?? {});
 
-  const {onClick, loading, launchpadElement} = useMaterializationAction();
+  const {executeItem, launchpadElement} = useExecuteAssetMenuItem(
+    node.assetKey.path,
+    node.definition,
+  );
 
   const [showParents, setShowParents] = React.useState(false);
 
@@ -45,27 +50,36 @@ export const useAssetNodeMenu = ({
     onChangeExplorerPath({...explorerPath, opsQuery: nextOpsQuery}, 'push');
   }
 
+  const {liveData} = useAssetLiveData(node.assetKey, 'context-menu');
+
+  const isSource = node.definition.isSource;
+  const lastMaterializationRunID = liveData?.lastMaterialization?.runId;
+  const lastObservationID = liveData?.lastObservation?.runId;
+
   return {
     menu: (
       <Menu>
-        <MenuItem
-          icon="materialization"
-          text={
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <span>Materialize</span>
-              {loading ? <Spinner purpose="body-text" /> : null}
-            </Box>
-          }
-          onClick={async (e) => {
-            await showSharedToaster({
-              intent: 'primary',
-              message: 'Initiating materialization',
-              icon: 'materialization',
-            });
-            onClick([node.assetKey], e, false);
-          }}
+        <MenuLink
+          to={assetDetailsPathForKey(node.assetKey)}
+          text="View asset details"
+          icon="asset"
         />
-        {upstream.length || downstream.length ? <MenuDivider /> : null}
+        {node.definition?.isExecutable ? (
+          <MenuLink
+            icon="history"
+            disabled={!lastMaterializationRunID && !lastObservationID}
+            to={`/runs/${lastMaterializationRunID || lastObservationID}`}
+            text={
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                View latest {isSource ? 'observation' : 'materialization'}
+                {liveData ? null : <Spinner purpose="caption-text" />}
+              </Box>
+            }
+          />
+        ) : null}
+        <MenuDivider />
+        {executeItem}
+        {executeItem && (upstream.length || downstream.length) ? <MenuDivider /> : null}
         {upstream.length ? (
           <MenuItem
             text={`View parents (${upstream.length})`}

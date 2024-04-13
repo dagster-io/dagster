@@ -17,8 +17,8 @@ custom_condition_scenarios = [
                 # not ((not missing) | (parent_updated)) ->
                 # it starts missing, and with no parents updated, so this evaluates to true
                 ~(
-                    ~RuleCondition(AutoMaterializeRule.materialize_on_missing())
-                    & RuleCondition(AutoMaterializeRule.materialize_on_parent_updated())
+                    ~RuleCondition(rule=AutoMaterializeRule.materialize_on_missing())
+                    & RuleCondition(rule=AutoMaterializeRule.materialize_on_parent_updated())
                 )
             )
         ),

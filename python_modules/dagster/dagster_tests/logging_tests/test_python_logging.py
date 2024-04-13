@@ -403,7 +403,7 @@ def test_failure_logging(managed_loggers, reset_logging):
         orig_handle_new_event = instance.handle_new_event
 
         # run still succeeds even if user-generated logger writes fail
-        def _fake_handle_new_event(event):
+        def _fake_handle_new_event(event, *, batch_metadata=None):
             # fail all user-generated log calls
             if not event.dagster_event:
                 raise Exception("failed writing user-generated event")

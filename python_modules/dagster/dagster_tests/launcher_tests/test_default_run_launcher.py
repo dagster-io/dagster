@@ -27,6 +27,7 @@ from dagster._core.test_utils import (
     poll_for_finished_run,
     poll_for_step_start,
 )
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.client import DagsterGrpcClient
@@ -181,6 +182,7 @@ def test_successful_run(
 def test_successful_run_from_pending(
     instance: DagsterInstance, pending_workspace: WorkspaceRequestContext
 ):
+    run_id = make_new_run_id()
     code_location = pending_workspace.get_code_location("test2")
     external_job = code_location.get_repository("pending").get_full_external_job(
         "my_cool_asset_job"
@@ -207,7 +209,7 @@ def test_successful_run_from_pending(
 
     created_run = instance.create_run(
         job_name="my_cool_asset_job",
-        run_id="xyzabc",
+        run_id=run_id,
         run_config=None,
         resolved_op_selection=None,
         step_keys_to_execute=None,
@@ -757,7 +759,7 @@ def test_engine_events(
 
 def test_not_initialized():
     run_launcher = DefaultRunLauncher()
-    run_id = "dummy"
+    run_id = make_new_run_id()
 
     assert run_launcher.join() is None
     assert run_launcher.terminate(run_id) is False

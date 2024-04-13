@@ -80,14 +80,10 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         target_type = "job" if len(loadable_jobs) > 1 else "pipeline"
         raise DagsterInvariantViolationError(
             (
-                'No repository and more than one {target_type} found in "{module_name}". If you'
-                " load a file or module directly it must have only one {target_type} in scope."
-                " Found {target_type}s defined in variables or decorated functions:"
-                " {pipeline_symbols}."
-            ).format(
-                module_name=module.__name__,
-                pipeline_symbols=repr([p.attribute for p in loadable_jobs]),
-                target_type=target_type,
+                f'No repository and more than one {target_type} found in "{module.__name__}". If you'
+                f" load a file or module directly it must have only one {target_type} in scope."
+                f" Found {target_type}s defined in variables or decorated functions:"
+                f" {[p.attribute for p in loadable_jobs]!r}."
             )
         )
 
@@ -99,13 +95,10 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     elif len(loadable_graphs) > 1:
         raise DagsterInvariantViolationError(
             (
-                'More than one graph found in "{module_name}". '
+                f'More than one graph found in "{module.__name__}". '
                 "If you load a file or module directly and it has no repositories, jobs, or "
                 "pipelines in scope, it must have no more than one graph in scope. "
-                "Found graphs defined in variables or decorated functions: {graph_symbols}."
-            ).format(
-                module_name=module.__name__,
-                graph_symbols=repr([g.attribute for g in loadable_graphs]),
+                f"Found graphs defined in variables or decorated functions: {[g.attribute for g in loadable_graphs]!r}."
             )
         )
 

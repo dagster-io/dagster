@@ -173,7 +173,7 @@ def resolve_step_output_versions(
     pipeline_def: JobDefinition,
     execution_plan: "ExecutionPlan",
     resolved_run_config: ResolvedRunConfig,
-):
+) -> Mapping[StepOutputHandle, Optional[str]]:
     step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])

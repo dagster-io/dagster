@@ -21,7 +21,7 @@ from dagster._core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
 )
-from dagster._core.remote_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test, environ
@@ -285,8 +285,8 @@ class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
 
         backfill = PartitionBackfill(
             backfill_id=make_new_backfill_id(),
-            partition_set_origin=ExternalPartitionSetOrigin(
-                external_repository_origin=repository.get_external_origin(),
+            partition_set_origin=RemotePartitionSetOrigin(
+                repository_origin=repository.get_external_origin(),
                 partition_set_name="integer_partition",
             ),
             status=BulkActionStatus.REQUESTED,
@@ -555,7 +555,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         # since launching the run will cause test process will hang forever.
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        asset_graph = RemoteAssetGraph.from_external_repository(repository)
+        asset_graph = repository.asset_graph
         _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
 
         # Launch the run that runs forever
@@ -793,7 +793,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        asset_graph = RemoteAssetGraph.from_external_repository(repository)
+        asset_graph = repository.asset_graph
 
         _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
 
@@ -836,7 +836,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
     def test_asset_backfill_status_with_upstream_failure(self, graphql_context):
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        asset_graph = RemoteAssetGraph.from_external_repository(repository)
+        asset_graph = repository.asset_graph
 
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),

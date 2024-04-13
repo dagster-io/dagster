@@ -24,14 +24,32 @@ import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
 type StaleDataForNode = {
-  staleCauses?: LiveDataForNode['staleCauses'];
-  staleStatus?: LiveDataForNode['staleStatus'];
-};
-export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
-  liveData && liveData.staleStatus === StaleStatus.MISSING;
+  staleCauses: LiveDataForNode['staleCauses'];
+  staleStatus: LiveDataForNode['staleStatus'];
 
-export const isAssetStale = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
-  liveData && liveData.staleStatus === StaleStatus.STALE;
+  // May be omitted when showing staleness for a single partition
+  partitionStats?: LiveDataForNode['partitionStats'];
+};
+
+export const isAssetMissing = (
+  liveData?: Pick<StaleDataForNode, 'staleStatus' | 'partitionStats'>,
+) => {
+  if (!liveData) {
+    return false;
+  }
+  const {partitionStats, staleStatus} = liveData;
+
+  return partitionStats
+    ? partitionStats.numPartitions -
+        partitionStats.numMaterializing -
+        partitionStats.numMaterialized >
+        0
+    : staleStatus === StaleStatus.MISSING;
+};
+
+export const isAssetStale = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) => {
+  return liveData && liveData.staleStatus === StaleStatus.STALE;
+};
 
 const LABELS = {
   self: {
@@ -72,14 +90,12 @@ function getCollapsedHeaderLabel(isSelf: boolean, category: StaleCauseCategory, 
 
 export const StaleReasonsLabel = ({
   liveData,
-  include,
   assetKey,
 }: {
   assetKey: AssetKeyInput;
-  include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
 }) => {
-  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
+  if (!isAssetStale(liveData)) {
     return null;
   }
 
@@ -87,13 +103,11 @@ export const StaleReasonsLabel = ({
     <Body color={Colors.textYellow()}>
       <Popover
         position="top"
-        content={
-          <StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} include={include} />
-        }
+        content={<StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} />}
         interactionKind="hover"
         className="chunk-popover-target"
       >
-        {Object.keys(groupedCauses(assetKey, include, liveData)).join(', ')}
+        {Object.keys(groupedCauses(assetKey, liveData)).join(', ')}
       </Popover>
     </Body>
   );
@@ -103,25 +117,25 @@ export const StaleReasonsLabel = ({
 export const StaleReasonsTag = ({
   assetKey,
   liveData,
-  include = 'all',
   onClick,
 }: {
   assetKey: AssetKeyInput;
   liveData?: StaleDataForNode;
-  include?: 'all' | 'upstream' | 'self';
   onClick?: () => void;
 }) => {
-  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
+  const grouped = groupedCauses(assetKey, liveData);
+  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+  if (!totalCauses) {
     return <div />;
   }
-  const label = <Caption>Unsynced ({numberFormatter.format(liveData.staleCauses.length)})</Caption>;
+  const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
   return (
     <Box
       flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
       padding={{horizontal: 4}}
       style={{height: 24}}
     >
-      <StaleCausesPopover assetKey={assetKey} liveData={liveData} include={include}>
+      <StaleCausesPopover assetKey={assetKey} liveData={liveData}>
         <BaseTag
           fillColor={Colors.backgroundYellow()}
           textColor={Colors.textYellow()}
@@ -144,19 +158,15 @@ export const StaleReasonsTag = ({
 export const StaleCausesPopover = ({
   liveData,
   assetKey,
-  include,
   children,
 }: {
   assetKey: AssetKeyInput;
   liveData?: StaleDataForNode;
-  include?: 'all' | 'upstream' | 'self';
   children: React.ReactNode;
 }) => {
   return (
     <Popover
-      content={
-        <StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} include={include} />
-      }
+      content={<StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} />}
       position="top-left"
       interactionKind="hover"
       className="chunk-popover-target"
@@ -166,17 +176,11 @@ export const StaleCausesPopover = ({
   );
 };
 
-function groupedCauses(
-  assetKey: AssetKeyInput,
-  include: 'all' | 'upstream' | 'self',
-  liveData?: StaleDataForNode,
-) {
-  const all = (liveData?.staleCauses || [])
-    .map((cause) => {
-      const target = isEqual(assetKey.path, cause.key.path) ? 'self' : 'upstream';
-      return {...cause, target, label: LABELS[target][cause.category]};
-    })
-    .filter((cause) => include === 'all' || include === cause.target);
+function groupedCauses(assetKey: AssetKeyInput, liveData?: StaleDataForNode) {
+  const all = (liveData?.staleCauses || []).map((cause) => {
+    const target = isEqual(assetKey.path, cause.key.path) ? 'self' : 'upstream';
+    return {...cause, target, label: LABELS[target][cause.category]};
+  });
 
   return groupBy(all, (cause) => cause.label);
 }
@@ -184,21 +188,19 @@ function groupedCauses(
 const StaleCausesPopoverSummary = ({
   assetKey,
   liveData,
-  include = 'all',
 }: {
   assetKey: AssetKeyInput;
   liveData?: StaleDataForNode;
-  include?: 'all' | 'upstream' | 'self';
 }) => {
-  const grouped = groupedCauses(assetKey, include, liveData);
-  const totalCauses = liveData?.staleCauses?.length;
+  const grouped = groupedCauses(assetKey, liveData);
+  const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
 
   if (!totalCauses) {
-    // Should never happen since the parent of this component should check that the asset is stale before rendering the popover
+    // Can happen if the parent didn't checked the grouped causes
     return <div />;
   }
   return (
-    <Box flex={{direction: 'column'}}>
+    <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
       <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
         <Subtitle2>
           {numberFormatter.format(totalCauses)} {ifPlural(totalCauses, 'change', 'changes')} since
@@ -273,14 +275,12 @@ const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses'
 export const MinimalNodeStaleDot = ({
   liveData,
   assetKey,
-  include = 'all',
 }: {
   liveData?: StaleDataForNode;
   assetKey: AssetKeyInput;
-  include?: 'all' | 'upstream' | 'self';
 }) => {
   return (
-    <StaleCausesPopover liveData={liveData} assetKey={assetKey} include={include}>
+    <StaleCausesPopover liveData={liveData} assetKey={assetKey}>
       <MinimalNodeStaleDotElement />
     </StaleCausesPopover>
   );

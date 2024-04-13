@@ -287,12 +287,15 @@ def test_pydantic_snowflake_resource_duplicate_auth():
 
 def test_fetch_last_updated_timestamps_empty():
     with pytest.raises(CheckError):
-        fetch_last_updated_timestamps(snowflake_connection={}, schema="TESTSCHEMA", tables=[])
+        fetch_last_updated_timestamps(
+            snowflake_connection={}, schema="TESTSCHEMA", database="TESTDB", tables=[]
+        )
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.integration
-def test_fetch_last_updated_timestamps():
+@pytest.mark.parametrize("db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"])
+def test_fetch_last_updated_timestamps(db_str: str):
     start_time = pendulum.now("UTC").timestamp()
     table_name = "the_table"
     with temporary_snowflake_table() as table_name:
@@ -301,8 +304,15 @@ def test_fetch_last_updated_timestamps():
         def freshness_observe(snowflake: SnowflakeResource) -> ObserveResult:
             with snowflake.get_connection() as conn:
                 freshness_for_table = fetch_last_updated_timestamps(
-                    snowflake_connection=conn, schema="TESTSCHEMA", tables=[table_name]
-                )[table_name].timestamp()
+                    snowflake_connection=conn,
+                    database="TESTDB",
+                    tables=[
+                        table_name.lower()
+                    ],  # Snowflake table names are expected uppercase. Test that lowercase also works.
+                    schema="TESTSCHEMA",
+                )[
+                    table_name.lower()
+                ].timestamp()  # Expect that table name is returned in the same case it was passed in.
                 return ObserveResult(
                     data_version=DataVersion("foo"),
                     metadata={"freshness": FloatMetadataValue(freshness_for_table)},
@@ -317,8 +327,7 @@ def test_fetch_last_updated_timestamps():
                     account=os.getenv("SNOWFLAKE_ACCOUNT"),
                     user=os.environ["SNOWFLAKE_USER"],
                     password=os.getenv("SNOWFLAKE_PASSWORD"),
-                    database="TESTDB",
-                    schema="TESTSCHEMA",
+                    database="TESTDB" if db_str is None else db_str,
                 )
             },
         )

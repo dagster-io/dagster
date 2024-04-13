@@ -7,11 +7,10 @@ from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
@@ -51,7 +50,7 @@ class PartitionBackfill(
             ("error", Optional[SerializableErrorInfo]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
             # fields that are only used by job backfills
-            ("partition_set_origin", Optional[ExternalPartitionSetOrigin]),
+            ("partition_set_origin", Optional[RemotePartitionSetOrigin]),
             ("partition_names", Optional[Sequence[str]]),
             ("last_submitted_partition_name", Optional[str]),
             ("reexecution_steps", Optional[Sequence[str]]),
@@ -70,7 +69,7 @@ class PartitionBackfill(
         backfill_timestamp: float,
         error: Optional[SerializableErrorInfo] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
-        partition_set_origin: Optional[ExternalPartitionSetOrigin] = None,
+        partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
         partition_names: Optional[Sequence[str]] = None,
         last_submitted_partition_name: Optional[str] = None,
         reexecution_steps: Optional[Sequence[str]] = None,
@@ -98,7 +97,7 @@ class PartitionBackfill(
             check.opt_inst_param(error, "error", SerializableErrorInfo),
             check.opt_nullable_sequence_param(asset_selection, "asset_selection", of_type=AssetKey),
             check.opt_inst_param(
-                partition_set_origin, "partition_set_origin", ExternalPartitionSetOrigin
+                partition_set_origin, "partition_set_origin", RemotePartitionSetOrigin
             ),
             check.opt_nullable_sequence_param(partition_names, "partition_names", of_type=str),
             check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
@@ -154,7 +153,7 @@ class PartitionBackfill(
             if self.serialized_asset_backfill_data:
                 return AssetBackfillData.is_valid_serialization(
                     self.serialized_asset_backfill_data,
-                    RemoteAssetGraph.from_workspace(workspace),
+                    workspace.asset_graph,
                 )
             else:
                 return True
@@ -171,7 +170,7 @@ class PartitionBackfill(
             return []
 
         if self.is_asset_backfill:
-            asset_graph = RemoteAssetGraph.from_workspace(workspace)
+            asset_graph = workspace.asset_graph
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -188,7 +187,7 @@ class PartitionBackfill(
             return None
 
         if self.is_asset_backfill:
-            asset_graph = RemoteAssetGraph.from_workspace(workspace)
+            asset_graph = workspace.asset_graph
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -205,7 +204,7 @@ class PartitionBackfill(
             return None
 
         if self.is_asset_backfill:
-            asset_graph = RemoteAssetGraph.from_workspace(workspace)
+            asset_graph = workspace.asset_graph
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -220,7 +219,7 @@ class PartitionBackfill(
             return 0
 
         if self.is_asset_backfill:
-            asset_graph = RemoteAssetGraph.from_workspace(workspace)
+            asset_graph = workspace.asset_graph
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -238,7 +237,7 @@ class PartitionBackfill(
             return []
 
         if self.is_asset_backfill:
-            asset_graph = RemoteAssetGraph.from_workspace(workspace)
+            asset_graph = workspace.asset_graph
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:

@@ -2,7 +2,7 @@ from contextlib import ExitStack
 from typing import Any, Dict, Mapping, Optional, Type, cast
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.job_definition import (
@@ -19,6 +19,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import normalize_renamed_param
 
 from .io_manager import IOManager
 
@@ -65,6 +66,11 @@ class AssetValueLoader:
         ):
             self._resource_instance_cache[built_resource_key] = built_resource
 
+    @deprecated_param(
+        param="metadata",
+        breaking_version="2.0",
+        additional_warn_text="Use `input_definition_metadata` instead.",
+    )
     @public
     def load_asset_value(
         self,
@@ -72,8 +78,10 @@ class AssetValueLoader:
         *,
         python_type: Optional[Type[object]] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        input_definition_metadata: Optional[Dict[str, Any]] = None,
         resource_config: Optional[Mapping[str, Any]] = None,
+        # deprecated
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> object:
         """Loads the contents of an asset as a Python object.
 
@@ -84,7 +92,7 @@ class AssetValueLoader:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
-            metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
+            input_definition_metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
                 (is equivalent to setting the metadata argument in `In` or `AssetIn`).
             resource_config (Optional[Any]): A dictionary of resource configurations to be passed
                 to the :py:class:`IOManager`.
@@ -94,7 +102,7 @@ class AssetValueLoader:
         """
         asset_key = AssetKey.from_coercible(asset_key)
         resource_config = resource_config or {}
-        output_metadata = {}
+        output_definition_metadata = {}
 
         if asset_key in self._assets_defs_by_key:
             assets_def = self._assets_defs_by_key[asset_key]
@@ -106,7 +114,7 @@ class AssetValueLoader:
             io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
             io_manager_def = resource_defs[io_manager_key]
             name = assets_def.get_output_name_for_asset_key(asset_key)
-            output_metadata = assets_def.metadata_by_key[asset_key]
+            output_definition_metadata = assets_def.metadata_by_key[asset_key]
             op_def = assets_def.get_op_def_for_asset_key(asset_key)
             asset_partitions_def = assets_def.partitions_def
         else:
@@ -135,7 +143,7 @@ class AssetValueLoader:
             dagster_type=resolve_dagster_type(python_type),
             upstream_output=build_output_context(
                 name=name,
-                metadata=output_metadata,
+                definition_metadata=output_definition_metadata,
                 asset_key=asset_key,
                 op_def=op_def,
                 resource_config=resource_config,
@@ -150,7 +158,9 @@ class AssetValueLoader:
             ),
             asset_partitions_def=asset_partitions_def,
             instance=self._instance,
-            metadata=metadata,
+            definition_metadata=normalize_renamed_param(
+                input_definition_metadata, "input_definition_metadata", metadata, "metadata"
+            ),
         )
 
         return io_manager.load_input(input_context)

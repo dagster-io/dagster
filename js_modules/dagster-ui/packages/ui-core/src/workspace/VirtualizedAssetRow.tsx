@@ -183,9 +183,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                   {!liveData && type !== 'folder' ? 'Loading' : '\u2013'}
                 </div>
               )}
-              {liveData && (
-                <StaleReasonsLabel assetKey={{path}} liveData={liveData} include="all" />
-              )}
+              {liveData && <StaleReasonsLabel assetKey={{path}} liveData={liveData} />}
             </Box>
           )}
         </RowCell>

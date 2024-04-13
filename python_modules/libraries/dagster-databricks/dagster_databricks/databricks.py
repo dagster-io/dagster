@@ -564,7 +564,7 @@ class DatabricksJobRunner:
                 new_cluster["instance_pool_id"] = nodes["instance_pool_id"]
 
                 if "driver_instance_pool_id" in nodes:
-                    new_cluster["driver_node_type_id"] = nodes["driver_node_type_id"]
+                    new_cluster["driver_instance_pool_id"] = nodes["driver_instance_pool_id"]
             else:
                 node_types = nodes["node_types"]
                 new_cluster["node_type_id"] = node_types["node_type_id"]

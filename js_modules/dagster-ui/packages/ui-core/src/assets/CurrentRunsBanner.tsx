@@ -36,25 +36,27 @@ export const CurrentRunsBanner = ({
               icon={<Spinner purpose="body-text" />}
               title={
                 <div style={{fontWeight: 400}}>
-                  {inProgressRunIds.length > 0 && (
+                  {inProgressRunIds.length > 1 && (
                     <>
-                      {inProgressRunIds.map((id) => (
-                        <Fragment key={id}>
-                          Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
-                        </Fragment>
-                      ))}{' '}
-                      {inProgressRunIds.length === 1 ? 'is' : 'are'} currently refreshing this
+                      Runs <RunIdLinks ids={inProgressRunIds} /> are currently refreshing this
                       asset.
                     </>
                   )}
-                  {unstartedRunIds.length > 0 && (
+                  {inProgressRunIds.length === 1 && (
                     <>
-                      {unstartedRunIds.map((id) => (
-                        <Fragment key={id}>
-                          Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
-                        </Fragment>
-                      ))}{' '}
-                      {unstartedRunIds.length === 1 ? 'has' : 'have'} started and will refresh this
+                      Run <RunIdLinks ids={inProgressRunIds} /> is currently refreshing this asset.
+                    </>
+                  )}
+                  {inProgressRunIds.length && unstartedRunIds.length ? ' ' : ''}
+                  {unstartedRunIds.length > 1 && (
+                    <>
+                      Runs <RunIdLinks ids={unstartedRunIds} /> have started and will refresh this
+                      asset.
+                    </>
+                  )}
+                  {unstartedRunIds.length === 1 && (
+                    <>
+                      Run <RunIdLinks ids={unstartedRunIds} /> has started and will refresh this
                       asset.
                     </>
                   )}
@@ -68,3 +70,13 @@ export const CurrentRunsBanner = ({
     </>
   );
 };
+
+const RunIdLinks = ({ids}: {ids: string[]}) =>
+  ids.length <= 4
+    ? ids.map((id, idx) => (
+        <Fragment key={id}>
+          <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
+          {idx < ids.length - 1 ? ', ' : ' '}
+        </Fragment>
+      ))
+    : '';

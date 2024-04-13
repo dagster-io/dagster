@@ -31,6 +31,7 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
@@ -88,6 +89,15 @@ class TeamAssetOwner(NamedTuple):
 
 
 AssetOwner = Union[UserAssetOwner, TeamAssetOwner]
+
+
+def asset_owner_to_str(owner: AssetOwner) -> str:
+    if isinstance(owner, UserAssetOwner):
+        return owner.email
+    elif isinstance(owner, TeamAssetOwner):
+        return owner.team
+    else:
+        check.failed(f"Unexpected owner type {type(owner)}")
 
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
@@ -165,7 +175,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetKey,
         )
 
-        check.opt_mapping_param(
+        self._check_specs_by_output_name = check.opt_mapping_param(
             check_specs_by_output_name,
             "check_specs_by_output_name",
             key_type=str,
@@ -245,13 +255,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 # otherwise, use the selected checks
                 self._selected_asset_check_keys = selected_asset_check_keys
 
-        self._check_specs_by_output_name = {
-            name: spec
-            for name, spec in (check_specs_by_output_name or {}).items()
-            if spec.key in self._selected_asset_check_keys
-        }
         self._check_specs_by_key = {
-            spec.key: spec for spec in self._check_specs_by_output_name.values()
+            spec.key: spec
+            for spec in self._check_specs_by_output_name.values()
+            if spec.key in self._selected_asset_check_keys
         }
 
         self._can_subset = can_subset
@@ -374,7 +381,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, owners in (owners_by_key or {}).items()
         }
 
-    @staticmethod
     def dagster_internal_init(
         *,
         keys_by_input_name: Mapping[str, AssetKey],
@@ -899,6 +905,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def has_keys(self) -> bool:
         return len(self.keys) > 0
 
+    @property
+    def has_check_keys(self) -> bool:
+        return len(self.check_keys) > 0
+
     @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
@@ -921,8 +931,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._keys_by_input_name
 
     @property
-    def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+    def node_check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+        """AssetCheckSpec for each output on the underlying NodeDefinition."""
         return self._check_specs_by_output_name
+
+    @property
+    def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+        return {
+            name: spec
+            for name, spec in self._check_specs_by_output_name.items()
+            if spec.key in self._selected_asset_check_keys
+        }
 
     def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
         return self._check_specs_by_key[asset_check_key]
@@ -944,8 +963,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
     @property
+    def asset_and_check_keys(self) -> AbstractSet["AssetKeyOrCheckKey"]:
+        return set(self.keys).union(self.check_keys)
+
+    @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
+        upstream_keys = {
+            *(dep_key for key in self.keys for dep_key in self.asset_deps[key]),
+            *(spec.asset_key for spec in self.check_specs if spec.asset_key not in self.keys),
+        }
+
         return {
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
@@ -1030,7 +1057,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         Returns:
             Iterable[AssetsCheckSpec]:
         """
-        return self._check_specs_by_output_name.values()
+        return self.check_specs_by_output_name.values()
 
     @property
     def check_keys(self) -> AbstractSet[AssetCheckKey]:
@@ -1087,6 +1114,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         raise DagsterInvariantViolationError(
             f"Asset key {key.to_user_string()} not found in AssetsDefinition"
+        )
+
+    def get_output_name_for_asset_check_key(self, key: AssetCheckKey) -> str:
+        for output_name, spec in self._check_specs_by_output_name.items():
+            if key == spec.key:
+                return output_name
+
+        raise DagsterInvariantViolationError(
+            f"Asset check key {key.to_user_string()} not found in AssetsDefinition"
         )
 
     def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
@@ -1279,7 +1315,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             is_subset=self.is_subset,
             check_specs_by_output_name=check_specs_by_output_name
             if check_specs_by_output_name
-            else self.check_specs_by_output_name,
+            else self._check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys
             if selected_asset_check_keys
             else self._selected_asset_check_keys,
@@ -1292,7 +1328,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self,
         selected_asset_keys: AbstractSet[AssetKey],
         selected_asset_check_keys: AbstractSet[AssetCheckKey],
-    ):
+    ) -> SubselectedGraphDefinition:
         from dagster._core.definitions.graph_definition import GraphDefinition
 
         if not isinstance(self.node_def, GraphDefinition):
@@ -1382,7 +1418,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 out_asset_key: set(self._keys_by_input_name.values())
                 for out_asset_key in subsetted_keys_by_output_name.values()
             }
-
             replaced_attributes = dict(
                 keys_by_input_name=subsetted_keys_by_input_name,
                 keys_by_output_name=subsetted_keys_by_output_name,
@@ -1471,6 +1506,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 resource_defs=self.resource_defs,
                 partitions_def=self.partitions_def,
                 group_name=self.group_names_by_key[key],
+                tags=self.tags_by_key.get(key),
             )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
@@ -1509,7 +1545,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @cached_property
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
-        return non_secure_md5_hash_str((json.dumps(sorted(self.keys))).encode("utf-8"))
+        return non_secure_md5_hash_str(
+            (json.dumps(sorted(self.keys) + sorted(self.check_keys))).encode("utf-8")
+        )
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()

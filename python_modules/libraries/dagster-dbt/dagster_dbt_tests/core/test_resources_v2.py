@@ -6,10 +6,6 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 import pytest
 from dagster import (
-    AssetMaterialization,
-    FloatMetadataValue,
-    IntMetadataValue,
-    TextMetadataValue,
     job,
     materialize,
     op,
@@ -20,9 +16,9 @@ from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
-    DbtCliEventMessage,
     DbtCliResource,
 )
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from dbt.version import __version__ as dbt_version
 from packaging import version
@@ -106,6 +102,13 @@ def test_dbt_cli_failure() -> None:
 
     dbt = DbtCliResource(project_dir=os.fspath(test_exceptions_path), target="error_dev")
 
+    with pytest.raises(
+        DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
+    ):
+        dbt.cli(["parse"]).wait()
+
+    project = DbtProject(project_dir=os.fspath(test_exceptions_path), target="error_dev")
+    dbt = DbtCliResource(project_dir=project)
     with pytest.raises(
         DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
     ):
@@ -355,21 +358,6 @@ def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict
     assert result.success
 
 
-def test_dbt_cli_adapter_metadata(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
-) -> None:
-    @dbt_assets(manifest=test_jaffle_shop_manifest)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        # For `dbt-duckdb`, the `rows_affected` metadata is only emitted for seed files.
-        for event in dbt.cli(["seed"], context=context).stream():
-            assert event.metadata.get("rows_affected")
-
-            yield event
-
-    result = materialize([my_dbt_assets], resources={"dbt": dbt})
-    assert result.success
-
-
 def test_dbt_cli_asset_selection(
     test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
 ) -> None:
@@ -443,6 +431,37 @@ def test_dbt_cli_default_selection(
     assert result.success
 
 
+def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -> None:
+    monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "prod")
+
+    project = DbtProject(project_dir=test_jaffle_shop_path, state_path=Path("state", testrun_uid))
+    dbt = DbtCliResource(project_dir=project)
+
+    dbt.cli(["--quiet", "parse"], target_path=project.target_path).wait()
+
+    @dbt_assets(manifest=project.manifest_path)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    # Defer will not work since the manifest is not in the state directory.
+    monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "staging")
+    result = materialize(
+        [my_dbt_assets], resources={"dbt": dbt}, selection="orders", raise_on_error=False
+    )
+    assert not result.success
+
+    # Defer works after copying the manifest into the state directory.
+    assert project.state_path
+    project.state_path.mkdir(parents=True, exist_ok=True)
+    shutil.copy(project.manifest_path, project.state_path.joinpath("manifest.json"))
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt}, selection="orders")
+    assert result.success
+
+
 def test_dbt_cli_op_execution(
     test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
 ) -> None:
@@ -458,121 +477,8 @@ def test_dbt_cli_op_execution(
     assert result.success
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {},
-        {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "model",
-                "node_status": "failure",
-                "node_finished_at": "2024-01-01T00:00:00Z",
-                "meta": {},
-            },
-        },
-        {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "macro",
-                "node_status": "success",
-                "node_finished_at": "2024-01-01T00:00:00Z",
-                "meta": {},
-            },
-        },
-        {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "model",
-                "node_status": "failure",
-                "meta": {},
-            },
-        },
-        {
-            "node_info": {
-                "materialized": "test",
-                "unique_id": "a.b.c",
-                "resource_type": "test",
-                "node_status": "success",
-                "meta": {},
-            },
-        },
-    ],
-    ids=[
-        "node info missing",
-        "node status failure",
-        "not refable",
-        "not successful execution",
-        "not finished test execution",
-    ],
-)
-def test_no_default_asset_events_emitted(data: dict) -> None:
-    asset_events = DbtCliEventMessage(
-        raw_event={
-            "info": {
-                "name": "NodeFinished",
-                "level": "info",
-                "invocation_id": "1-2-3",
-            },
-            "data": data,
-        },
-        event_history_metadata={},
-    ).to_default_asset_events(manifest={"nodes": {"a.b.c": {}}})
-
-    assert list(asset_events) == []
-
-
-def test_to_default_asset_output_events() -> None:
-    raw_event = {
-        "info": {
-            "name": "NodeFinished",
-            "level": "info",
-            "invocation_id": "1-2-3",
-        },
-        "data": {
-            "node_info": {
-                "materialized": "table",
-                "unique_id": "a.b.c",
-                "resource_type": "model",
-                "node_name": "node_name",
-                "node_status": "success",
-                "node_started_at": "2024-01-01T00:00:00Z",
-                "node_finished_at": "2024-01-01T00:01:00Z",
-                "meta": {},
-            },
-            "run_result": {
-                "adapter_response": {
-                    "rows_affected": 100,
-                }
-            },
-        },
-    }
-    manifest = {
-        "nodes": {
-            "a.b.c": {
-                "meta": {
-                    "dagster": {
-                        "asset_key": ["a", "b", "c"],
-                    },
-                },
-            },
-        },
-    }
-
-    asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event, event_history_metadata={}).to_default_asset_events(
-            manifest=manifest
-        )
-    )
-
-    assert len(asset_events) == 1
-    assert all(isinstance(e, AssetMaterialization) for e in asset_events)
-    assert asset_events[0].metadata == {
-        "unique_id": TextMetadataValue("a.b.c"),
-        "invocation_id": TextMetadataValue("1-2-3"),
-        "Execution Duration": FloatMetadataValue(60.0),
-        "rows_affected": IntMetadataValue(100),
-    }
+def test_dbt_adapter(dbt: DbtCliResource) -> None:
+    assert dbt.cli(["compile"]).adapter
+    assert dbt.cli(["build"]).adapter
+    assert dbt.cli(["parse"]).adapter
+    assert dbt.cli(["source", "freshness"]).adapter

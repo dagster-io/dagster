@@ -63,7 +63,7 @@ from dagster._utils.warnings import normalize_renamed_param
 from ..decorator_utils import (
     get_function_params,
 )
-from .asset_selection import AssetSelection
+from .asset_selection import AssetSelection, KeysAssetSelection
 from .graph_definition import GraphDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
@@ -81,6 +81,7 @@ if TYPE_CHECKING:
     from dagster import ResourceDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.remote_representation.origin import CodeLocationOrigin
 
 
 @whitelist_for_serdes
@@ -135,6 +136,7 @@ class SensorEvaluationContext:
         resources (Optional[Dict[str, Any]]): A dict of resource keys to resource
             definitions to be made available during sensor execution.
         last_sensor_start_time (float): The last time that the sensor was started (UTC).
+        code_location_origin (Optional[CodeLocationOrigin]): The code location that the sensor is in.
 
     Example:
         .. code-block:: python
@@ -161,11 +163,13 @@ class SensorEvaluationContext:
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
         definitions: Optional["Definitions"] = None,
         last_sensor_start_time: Optional[float] = None,
+        code_location_origin: Optional["CodeLocationOrigin"] = None,
         # deprecated param
         last_completion_time: Optional[float] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
+        from dagster._core.remote_representation.origin import CodeLocationOrigin
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -185,6 +189,9 @@ class SensorEvaluationContext:
             check.opt_inst_param(definitions, "definitions", Definitions),
             check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
             error_on_none=False,
+        )
+        self._code_location_origin = check.opt_inst_param(
+            code_location_origin, "code_location_origin", CodeLocationOrigin
         )
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
@@ -252,6 +259,7 @@ class SensorEvaluationContext:
                 **wrap_resources_for_execution(resources_dict),
             },
             last_sensor_start_time=self._last_sensor_start_time,
+            code_location_origin=self.code_location_origin,
         )
 
     @public
@@ -401,6 +409,11 @@ class SensorEvaluationContext:
     def repository_def(self) -> Optional["RepositoryDefinition"]:
         """Optional[RepositoryDefinition]: The RepositoryDefinition that this sensor resides in."""
         return self._repository_def
+
+    @property
+    def code_location_origin(self) -> Optional["CodeLocationOrigin"]:
+        """Optional[CodeLocationOrigin]: The CodeLocation that this sensor resides in."""
+        return self._code_location_origin
 
     @property
     def log(self) -> logging.Logger:
@@ -793,8 +806,7 @@ class SensorDefinition(IHasInternalInit):
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
-            item = result[0]
-            check.inst(item, (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
+            item = check.inst(result[0], (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
@@ -1276,7 +1288,7 @@ def _run_requests_with_base_asset_jobs(
             asset_keys = run_request.asset_selection
 
             unexpected_asset_keys = (
-                AssetSelection.keys(*asset_keys) - outer_asset_selection
+                KeysAssetSelection(selected_keys=asset_keys) - outer_asset_selection
             ).resolve(asset_graph)
             if unexpected_asset_keys:
                 raise DagsterInvalidSubsetError(

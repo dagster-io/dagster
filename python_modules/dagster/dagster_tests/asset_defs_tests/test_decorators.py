@@ -876,8 +876,10 @@ def test_graph_asset_decorator_no_args():
     assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
-@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `FreshnessPolicy` is deprecated")
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
+@ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_graph_asset_with_args():
     @resource
@@ -1041,8 +1043,10 @@ def test_graph_asset_w_config_mapping():
     assert result.output_for_node("bar", "first_asset") == 1
 
 
-@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `FreshnessPolicy` is deprecated")
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
+@ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 @ignore_warning("Parameter `resource_defs`")
 def test_graph_multi_asset_decorator():
     @resource
@@ -1228,6 +1232,8 @@ def test_multi_asset_with_bare_resource():
 
 
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
+@ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 def test_multi_asset_with_auto_materialize_policy():
     @multi_asset(
         outs={

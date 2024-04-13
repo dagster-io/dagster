@@ -13,13 +13,15 @@ import {
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
+import {useContext} from 'react';
 
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetKeyInput} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
@@ -30,7 +32,7 @@ type Asset = AssetTableFragment;
 interface Props {
   view: AssetViewType;
   assets: Asset[];
-  refreshState: QueryRefreshState;
+  refreshState: RefreshState;
   actionBarComponents: React.ReactNode;
   belowActionBarComponents: React.ReactNode;
   prefixPath: string[];
@@ -197,7 +199,11 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
     permissions: {canWipeAssets},
   } = useUnscopedPermissions();
 
-  if (!canWipeAssets) {
+  const {
+    featureContext: {canSeeWipeMaterializationAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canWipeAssets || !canSeeWipeMaterializationAction) {
     return null;
   }
 

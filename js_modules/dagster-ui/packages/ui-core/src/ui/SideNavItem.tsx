@@ -1,13 +1,14 @@
-import {Box, Colors, IconWrapper, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Colors, IconWrapper, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 interface SideNavItemInterface {
   key: string;
   icon: React.ReactNode;
   label: React.ReactNode;
+  disabled?: boolean;
   rightElement?: React.ReactNode;
-  tooltip?: React.ReactNode;
+  tooltip?: string;
   onClick?: () => void;
 }
 
@@ -30,7 +31,7 @@ interface Props {
 
 export const SideNavItem = (props: Props) => {
   const {active = false, item} = props;
-  const {type, icon, label, rightElement} = item;
+  const {type, icon, label, rightElement, tooltip = '', disabled = false} = item;
   const content = (
     <Box
       padding={{vertical: 4, left: 12, right: 8}}
@@ -44,26 +45,36 @@ export const SideNavItem = (props: Props) => {
     </Box>
   );
 
-  if (type === 'link') {
+  if (type === 'link' && !disabled) {
     return (
-      <StyledSideNavLink to={item.path} $active={active}>
-        {content}
-      </StyledSideNavLink>
+      <Tooltip canShow={!!tooltip} content={tooltip} placement="right" display="block">
+        <StyledSideNavLink to={item.path} $active={active}>
+          {content}
+        </StyledSideNavLink>
+      </Tooltip>
     );
   }
 
-  return <StyledSideNavButton onClick={item.onClick}>{content}</StyledSideNavButton>;
+  return (
+    <Tooltip canShow={!!tooltip} content={tooltip} placement="right" display="block">
+      <StyledSideNavButton $active={active} disabled={disabled} onClick={item.onClick}>
+        {content}
+      </StyledSideNavButton>
+    </Tooltip>
+  );
 };
 
-const StyledSideNavLink = styled(Link)<{$active: boolean}>`
+const sharedSideNavItemStyle = css<{$active: boolean}>`
   background-color: ${({$active}) => ($active ? Colors.backgroundBlue() : 'transparent')};
   border-radius: 8px;
   color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
   display: block;
+  font-size: 14px;
   line-height: 20px;
   text-decoration: none;
   transition: 100ms background-color linear;
   user-select: none;
+  width: 100%;
 
   :focus {
     outline: none;
@@ -86,30 +97,10 @@ const StyledSideNavLink = styled(Link)<{$active: boolean}>`
   }
 `;
 
-const StyledSideNavButton = styled(UnstyledButton)`
-  background-color: transparent;
-  border-radius: 8px;
-  color: ${Colors.textDefault()};
-  display: block;
-  line-height: 20px;
-  text-decoration: none;
-  transition: 100ms background-color linear;
-  user-select: none;
-  width: 100%;
+const StyledSideNavLink = styled(Link)<{$active: boolean}>`
+  ${sharedSideNavItemStyle}
+`;
 
-  :focus {
-    outline: none;
-    background-color: ${Colors.backgroundLight()};
-  }
-
-  :hover,
-  :active {
-    background-color: ${Colors.backgroundLightHover()};
-    color: ${Colors.textDefault()};
-    text-decoration: none;
-  }
-
-  ${IconWrapper} {
-    background-color: ${Colors.textDefault()};
-  }
+const StyledSideNavButton = styled(UnstyledButton)<{$active: boolean}>`
+  ${sharedSideNavItemStyle}
 `;

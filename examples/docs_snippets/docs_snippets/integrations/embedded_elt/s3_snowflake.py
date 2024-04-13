@@ -1,8 +1,8 @@
 # pyright: reportCallIssue=none
 # pyright: reportOptionalMemberAccess=none
 
+# start_storage_config
 from dagster_embedded_elt.sling import (
-    DagsterSlingTranslator,
     SlingConnectionResource,
     SlingResource,
     sling_assets,
@@ -20,8 +20,6 @@ target = SlingConnectionResource(
     role="role",
 )
 
-
-# start_storage_config
 source = SlingConnectionResource(
     name="MY_S3",
     type="s3",
@@ -47,10 +45,7 @@ replication_config = {
 
 @sling_assets(replication_config=replication_config)
 def my_assets(context, sling: SlingResource):
-    yield from sling.replicate(
-        replication_config=replication_config,
-        dagster_sling_translator=DagsterSlingTranslator(),
-    )
+    yield from sling.replicate(context=context)
 
 
 # end_storage_config

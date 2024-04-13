@@ -282,7 +282,9 @@ class DagsterDaemonController(AbstractContextManager):
                 self._logger.exception("Daemon controller surpassed workspace freshness tolerance.")
                 raise
             else:
-                self._logger.exception("Daemon controller failed to refresh workspace. Still within freshness tolerance.")
+                self._logger.exception(
+                    "Daemon controller failed to refresh workspace. Still within freshness tolerance."
+                )
         return last_workspace_update_time
 
     def check_daemon_loop(self) -> None:
