@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from dagster import (
     DagsterInstance,
@@ -10,7 +10,6 @@ from dagster import (
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey
-from dagster._core.events.log import EventLogEntry
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.remote_representation.external_data import (
     ExternalAssetDependedBy,
@@ -19,7 +18,6 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.storage.dagster_run import RunRecord, RunsFilter
-from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
@@ -179,46 +177,6 @@ class BatchRunLoader:
         records = self._instance.get_run_records(RunsFilter(run_ids=list(self._run_ids)))
         for record in records:
             self._records[record.dagster_run.run_id] = record
-
-
-class BatchAssetRecordLoader:
-    """A batch loader that fetches asset records.  This loader is expected to be
-    instantiated with a set of asset keys.
-    """
-
-    def __init__(self, instance: DagsterInstance, asset_keys: Iterable[AssetKey]):
-        self._instance = instance
-        self._asset_keys: List[AssetKey] = list(asset_keys)
-        self._fetched = False
-        self._asset_records: Mapping[AssetKey, Optional[AssetRecord]] = {}
-
-    def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
-        if asset_key not in self._asset_keys:
-            check.failed(
-                f"Asset key {asset_key} not recognized for this loader.  Expected one of:"
-                f" {self._asset_keys}"
-            )
-
-        if not self._fetched:
-            self._fetch()
-
-        return self._asset_records.get(asset_key)
-
-    def get_latest_materialization_for_asset_key(
-        self, asset_key: AssetKey
-    ) -> Optional[EventLogEntry]:
-        asset_record = self.get_asset_record(asset_key)
-        if not asset_record:
-            return None
-
-        return asset_record.asset_entry.last_materialization
-
-    def _fetch(self) -> None:
-        self._fetched = True
-        self._asset_records = {
-            record.asset_entry.asset_key: record
-            for record in self._instance.get_asset_records(self._asset_keys)
-        }
 
 
 class CrossRepoAssetDependedByLoader:

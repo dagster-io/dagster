@@ -41,6 +41,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+from .batch_asset_record_loader import BatchAssetRecordLoader
 from .load_target import WorkspaceLoadTarget
 from .permissions import (
     PermissionResult,
@@ -311,6 +312,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
         return None
 
+    @property
+    @abstractmethod
+    def asset_record_loader(self) -> BatchAssetRecordLoader:
+        pass
+
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
@@ -333,6 +339,12 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
             read_only_locations, "read_only_locations"
         )
         self._checked_permissions: Set[str] = set()
+
+        self._asset_record_loader = BatchAssetRecordLoader(self._instance, {})
+
+    @property
+    def asset_record_loader(self) -> BatchAssetRecordLoader:
+        return self._asset_record_loader
 
     @property
     def instance(self) -> DagsterInstance:
