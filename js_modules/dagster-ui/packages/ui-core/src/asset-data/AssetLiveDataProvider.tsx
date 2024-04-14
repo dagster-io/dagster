@@ -64,11 +64,10 @@ export function useAssetsLiveData(
   const completeDataByNode = useMemo(() => {
     const data: Record<string, LiveDataForNodeWithStaleData> = {};
     Object.keys(baseDataByNode).forEach((key) => {
-      if (staleDataByNode[key] && baseDataByNode[key]) {
-        data[key] = {
-          ...staleDataByNode[key],
-          ...baseDataByNode[key],
-        };
+      const baseData = baseDataByNode[key];
+      const staleData = staleDataByNode[key];
+      if (staleData && baseData) {
+        data[key] = {...staleData, ...baseData};
       }
     });
     return data;
