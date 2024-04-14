@@ -27,7 +27,6 @@ export type AssetNodeLiveFragment = {
   __typename: 'AssetNode';
   id: string;
   opNames: Array<string>;
-  staleStatus: Types.StaleStatus | null;
   repository: {__typename: 'Repository'; id: string};
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   assetMaterializations: Array<{
@@ -61,13 +60,6 @@ export type AssetNodeLiveFragment = {
         }>;
       };
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
-  staleCauses: Array<{
-    __typename: 'StaleCause';
-    reason: string;
-    category: Types.StaleCauseCategory;
-    key: {__typename: 'AssetKey'; path: Array<string>};
-    dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
-  }>;
   partitionStats: {
     __typename: 'PartitionStats';
     numMaterialized: number;
@@ -119,7 +111,6 @@ export type AssetGraphLiveQuery = {
     __typename: 'AssetNode';
     id: string;
     opNames: Array<string>;
-    staleStatus: Types.StaleStatus | null;
     repository: {__typename: 'Repository'; id: string};
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     assetMaterializations: Array<{
@@ -153,13 +144,6 @@ export type AssetGraphLiveQuery = {
           }>;
         };
     freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
-    staleCauses: Array<{
-      __typename: 'StaleCause';
-      reason: string;
-      category: Types.StaleCauseCategory;
-      key: {__typename: 'AssetKey'; path: Array<string>};
-      dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
-    }>;
     partitionStats: {
       __typename: 'PartitionStats';
       numMaterialized: number;

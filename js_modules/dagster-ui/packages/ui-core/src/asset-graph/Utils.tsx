@@ -13,8 +13,9 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-} from '../asset-data/types/AssetLiveDataProvider.types';
-import {RunStatus, StaleStatus} from '../graphql/types';
+} from '../asset-data/types/AssetBaseDataProvider.types';
+import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import {RunStatus} from '../graphql/types';
 
 /**
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
@@ -151,8 +152,8 @@ export interface LiveDataForNode {
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
-  staleStatus: StaleStatus | null;
-  staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
+  // staleStatus: StaleStatus | null;
+  // staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
   assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
     numMaterialized: number;
@@ -163,7 +164,12 @@ export interface LiveDataForNode {
   opNames: string[];
 }
 
-export const MISSING_LIVE_DATA: LiveDataForNode = {
+export type LiveDataForNodeWithStaleData = LiveDataForNode & {
+  staleStatus: AssetStaleDataFragment['staleStatus'];
+  staleCauses: AssetStaleDataFragment['staleCauses'];
+};
+
+export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
@@ -226,8 +232,6 @@ export const buildLiveDataForNode = (
       assetNode.assetChecksOrError.__typename === 'AssetChecks'
         ? assetNode.assetChecksOrError.checks
         : [],
-    staleStatus: assetNode.staleStatus,
-    staleCauses: assetNode.staleCauses,
     stepKey: stepKeyForAsset(assetNode),
     freshnessInfo: assetNode.freshnessInfo,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
