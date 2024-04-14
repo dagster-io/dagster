@@ -35,18 +35,20 @@ describe('AssetNode', () => {
         : JSON.parse(scenario.definition.id);
 
       function SetCacheEntry() {
-        const key = tokenForAssetKey(definitionCopy.assetKey);
-        const entry = {[key]: scenario.liveData!};
-        const {staleStatus, staleCauses} = scenario.liveData!;
-        const staleEntry = {
-          [key]: buildAssetNode({
-            assetKey: definitionCopy.assetKey,
-            staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
-            staleStatus,
-          }),
-        };
-        AssetStaleStatusData.manager._updateCache(staleEntry);
-        AssetBaseData.manager._updateCache(entry);
+        if (scenario.liveData) {
+          const key = tokenForAssetKey(definitionCopy.assetKey);
+          const entry = {[key]: scenario.liveData!};
+          const {staleStatus, staleCauses} = scenario.liveData!;
+          const staleEntry = {
+            [key]: buildAssetNode({
+              assetKey: definitionCopy.assetKey,
+              staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
+              staleStatus,
+            }),
+          };
+          AssetStaleStatusData.manager._updateCache(staleEntry);
+          AssetBaseData.manager._updateCache(entry);
+        }
         return null;
       }
 
