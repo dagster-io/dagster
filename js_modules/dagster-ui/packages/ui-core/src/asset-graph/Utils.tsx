@@ -152,8 +152,6 @@ export interface LiveDataForNode {
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
-  // staleStatus: StaleStatus | null;
-  // staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
   assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
     numMaterialized: number;
