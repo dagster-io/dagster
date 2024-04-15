@@ -67,7 +67,7 @@ export const ASSET_STALE_STATUS_QUERY = gql`
     }
   }
   query AssetStaleStatusDataQuery($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+    assetNodes(assetKeys: $assetKeys) {
       id
       ...AssetStaleDataFragment
     }
