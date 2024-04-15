@@ -147,6 +147,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
         )
       ) {
         AssetBaseData.manager.invalidateCache();
+        AssetStaleStatusData.manager.invalidateCache();
       }
     });
     return unobserve;
