@@ -178,6 +178,11 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     value === undefined ? 'asc' : value,
   );
 
+  const doesAnyAssetHavePartitions = React.useMemo(
+    () => data?.assetNodes?.some((node) => !!node.partitionDefinition),
+    [data],
+  );
+
   const partitions: Partition[] = React.useMemo(() => {
     const retrieved =
       data?.partitionSetOrError.__typename === 'PartitionSet' &&
@@ -269,6 +274,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     showCustomAlert({
       body: <PythonErrorInfo error={error} />,
     });
+  }
+
+  if (assetSelection?.length && !doesAnyAssetHavePartitions) {
+    return null;
   }
 
   // Note: We don't want this Suggest to be a fully "controlled" React component.
