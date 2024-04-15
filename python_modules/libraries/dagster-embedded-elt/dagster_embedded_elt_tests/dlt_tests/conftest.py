@@ -7,8 +7,8 @@ import pytest
 from dlt import Pipeline
 
 
-@pytest.fixture(autouse=True, scope="function")
-def dlt_pipeline() -> Generator[Pipeline, None, None]:
+@pytest.fixture(name="dlt_pipeline", autouse=True, scope="function")
+def dlt_pipeline_fixture() -> Generator[Pipeline, None, None]:
     # `pipeline_name` must match the `id` used in the `temporary_duckdb_file` path, as that is how
     # dlt determines the file name of the destination
     id = uuid.uuid4()
