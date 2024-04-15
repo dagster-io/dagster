@@ -26,7 +26,7 @@ def test_base_dlt_op(dlt_pipeline: Pipeline) -> None:
     assert res.success
     assert len(res.get_asset_materialization_events()) == 2
 
-    duckdb_path = dlt_pipeline.pipeline_name + ".duckdb"
+    duckdb_path = f"{dlt_pipeline.pipeline_name}.duckdb"
     with duckdb.connect(database=duckdb_path, read_only=True) as conn:
         row = conn.execute("select count(*) from example.repos").fetchone()
         assert row and row[0] == 3
