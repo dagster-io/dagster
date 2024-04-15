@@ -89,11 +89,29 @@ Column-level lineage is currently supported for the dbt integration. Refer to th
 
 ## Viewing column lineage in the Dagster UI
 
-1. Open the **Asset details** page.
-2. In the **Columns** section of the **Overview** tab, click the [TODO]() icon next to the column.
-3. The graph will display the column's asset and column dependencies:
+1. In the Dagster UI, open the **Asset details** page for an asset with column-level lineage enabled.
+2. Navigate to the **Overview** tab if it isn't already open.
+3. In the **Columns** section, click the **branch** icon in the row of the column you want to view. The icon is on the far right side of the row:
 
-   ![todo]()
+   <!-- ![Highlighted column lineage icon in the Asset details page of the Dagster UI](/images/concepts/metadata-tags/column-lineage-icon.png) -->
+
+   <Image
+   alt="Highlighted column lineage icon in the Asset details page of the Dagster UI"
+   src="/images/concepts/metadata-tags/column-lineage-icon.png"
+   width={905}
+   height={193}
+   />
+
+The graph will display the column's asset and column dependencies:
+
+<!-- ![Column lineage for a credit_utilization column in the Dagster UI](/images/concepts/metadata-tags/column-level-lineage.png) -->
+
+<Image
+alt="Column lineage for a credit_utilization column in the Dagster UI"
+src="/images/concepts/metadata-tags/column-level-lineage.png"
+width={2640}
+height={1276}
+/>
 
 To view another column's lineage, click the **Column** dropdown and select another column.
 
