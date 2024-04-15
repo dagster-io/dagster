@@ -25,6 +25,7 @@ from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
+from dagster._utils.security import non_secure_md5_hash_str
 
 from ..asset_subset import AssetSubset, ValidAssetSubset
 from ..auto_materialize_rule import AutoMaterializeRule
@@ -288,7 +289,7 @@ class AssetCondition(ABC, DagsterModel):
             self.__class__.__name__,
             *[child.unique_id for child in self.children],
         ]
-        return hashlib.md5("".join(parts).encode()).hexdigest()
+        return non_secure_md5_hash_str("".join(parts).encode())
 
     @abstractmethod
     def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
@@ -412,7 +413,7 @@ class RuleCondition(AssetCondition):
     @property
     def unique_id(self) -> str:
         parts = [self.rule.__class__.__name__, self.description]
-        return hashlib.md5("".join(parts).encode()).hexdigest()
+        return non_secure_md5_hash_str("".join(parts).encode())
 
     @property
     def description(self) -> str:
