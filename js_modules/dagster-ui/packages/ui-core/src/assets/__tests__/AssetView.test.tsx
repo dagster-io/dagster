@@ -2,14 +2,12 @@ import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {
-  ASSETS_GRAPH_LIVE_QUERY,
-  AssetLiveDataProvider,
-} from '../../asset-data/AssetLiveDataProvider';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetBaseDataProvider';
+import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
-} from '../../asset-data/types/AssetLiveDataProvider.types';
+} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,

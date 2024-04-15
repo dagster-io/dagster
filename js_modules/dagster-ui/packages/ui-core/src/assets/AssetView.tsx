@@ -42,7 +42,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
   GraphData,
-  LiveDataForNode,
+  LiveDataForNodeWithStaleData,
   nodeDependsOnSelf,
   toGraphId,
   tokenForAssetKey,
@@ -512,7 +512,7 @@ const AssetViewPageHeaderTags = ({
   onShowUpstream,
 }: {
   definition: AssetViewDefinitionNodeFragment | null;
-  liveData?: LiveDataForNode;
+  liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
 }) => {
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
