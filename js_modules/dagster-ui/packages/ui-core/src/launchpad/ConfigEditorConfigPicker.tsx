@@ -179,7 +179,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   );
 
   const doesAnyAssetHavePartitions = React.useMemo(
-    () => !!data?.assetNodes?.find((node) => !!node.partitionDefinition),
+    () => data?.assetNodes?.some((node) => !!node.partitionDefinition),
     [data],
   );
 
