@@ -172,7 +172,7 @@ Change Tracking can detect when an asset's tags have changed, whether they've be
 <TabGroup>
 <TabItem name="Asset in the Dagster UI">
 
-In this example, the `returns` asset has a **Changed in branch** label indicating it has changed tags.
+In this example, the `fruits_in_stock` asset has a **Changed in branch** label indicating it has changed tags.
 
 Click the **Asset definition** tab to see the code change that created this label.
 
@@ -194,7 +194,7 @@ height={490}
 def fruits_in_stock(): ...
 ```
 
-**In the pull request**, we added a new tag to `fruits_in_stock`:
+**In the pull request**, we added the `type: perishable` tag to `fruits_in_stock`:
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_tags.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(tags={"section": "produce", "type": "perishable"})
@@ -213,7 +213,7 @@ Change Tracking can detect when an asset's metadata has changed, whether it's be
 <TabGroup>
 <TabItem name="Asset in the Dagster UI">
 
-In this example, the `returns` asset has a **Changed in branch** label indicating it has changed metadata.
+In this example, the `produtcs` asset has a **Changed in branch** label indicating it has changed metadata.
 
 Click the **Asset definition** tab to see the code change that created this label.
 
@@ -235,7 +235,7 @@ height={490}
 def products(): ...
 ```
 
-**In the pull request**, we update the value of one of the pieces of metadata on `products`:
+**In the pull request**, we update the value of the `expected_columns` metadata on `products`:
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_metadata.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(metadata={"expected_columns": ["sku", "price", "supplier", "backstock"]})
