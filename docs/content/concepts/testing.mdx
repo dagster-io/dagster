@@ -128,16 +128,28 @@ For more information, check out the [Resources](/concepts/resources) sections.
 
 ---
 
-## Examples
+## Testing asset checks
 
-Check out the following test examples:
+Functions decorated with <PyObject object="asset_check" decorator /> can be directly invoked. For example:
 
-- [Ops](#testing-ops)
-- [Software-defined assets](#testing-software-defined-assets)
-- [Multiple software-defined assets defined together](#testing-multiple-software-defined-assets-together)
-- [Job execution with config](#testing-job-execution-with-config)
-- [Event stream](#testing-event-stream)
-- [Jobs with top-level inputs](#testing-jobs-with-top-level-inputs)
+```python file=/concepts/assets/asset_checks/test_asset_check.py
+from dagster import asset_check, AssetCheckResult
+
+
+@asset_check(asset=orders)
+def orders_id_has_no_nulls():
+    orders_df = pd.read_csv("orders.csv")
+    num_null_order_ids = orders_df["order_id"].isna().sum()
+    return AssetCheckResult(
+        passed=bool(num_null_order_ids == 0),
+    )
+
+
+def test_orders_check():
+    assert orders_id_has_no_nulls().passed
+```
+
+---
 
 ### Testing ops
 
