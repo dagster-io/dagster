@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from dagster import (
     AssetsDefinition,
@@ -19,7 +19,7 @@ def dlt_assets(
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dlt_dagster_translator: DagsterDltTranslator = DagsterDltTranslator(),
-) -> Callable[..., AssetsDefinition]:
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
     Args:
@@ -76,9 +76,12 @@ def dlt_assets(
                 yield from dlt.run(context=context)
 
     """
-
-    def inner(fn) -> AssetsDefinition:
-        specs = [
+    return multi_asset(
+        name=name,
+        group_name=group_name,
+        compute_kind="dlt",
+        can_subset=True,
+        specs=[
             AssetSpec(
                 key=dlt_dagster_translator.get_asset_key(dlt_source_resource),
                 deps=dlt_dagster_translator.get_deps_asset_keys(dlt_source_resource),
@@ -92,10 +95,5 @@ def dlt_assets(
                 },
             )
             for dlt_source_resource in dlt_source.resources.values()
-        ]
-        assets_definition = multi_asset(
-            specs=specs, name=name, group_name=group_name, compute_kind="dlt", can_subset=True
-        )(fn)
-        return assets_definition
-
-    return inner
+        ],
+    )

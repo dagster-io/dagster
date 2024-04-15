@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
-import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
   AssetKeysDialog,
@@ -50,7 +50,7 @@ export const useAssetNodeMenu = ({
     onChangeExplorerPath({...explorerPath, opsQuery: nextOpsQuery}, 'push');
   }
 
-  const {liveData} = useAssetLiveData(node.assetKey, 'context-menu');
+  const {liveData} = useAssetBaseData(node.assetKey, 'context-menu');
 
   const isSource = node.definition.isSource;
   const lastMaterializationRunID = liveData?.lastMaterialization?.runId;

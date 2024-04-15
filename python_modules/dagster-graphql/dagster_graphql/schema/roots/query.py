@@ -92,7 +92,7 @@ from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.fetch_ticks import get_instigation_ticks
 from ...implementation.loader import (
-    BatchMaterializationLoader,
+    BatchAssetRecordLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -939,7 +939,7 @@ class GrapheneQuery(graphene.ObjectType):
         if not results:
             return []
 
-        materialization_loader = BatchMaterializationLoader(
+        asset_record_loader = BatchAssetRecordLoader(
             instance=graphene_info.context.instance,
             asset_keys=[node.assetKey for node in results],
         )
@@ -969,7 +969,7 @@ class GrapheneQuery(graphene.ObjectType):
                 node.external_repository,
                 node.external_asset_node,
                 asset_checks_loader=asset_checks_loader,
-                materialization_loader=materialization_loader,
+                asset_record_loader=asset_record_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
