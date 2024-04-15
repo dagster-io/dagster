@@ -43,7 +43,7 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     )
     assert res.success
 
-    temporary_duckdb_path = dlt_pipeline.pipeline_name + ".duckdb"
+    temporary_duckdb_path = f"{dlt_pipeline.pipeline_name}.duckdb"
     with duckdb.connect(database=temporary_duckdb_path, read_only=True) as conn:
         row = conn.execute("select count(*) from example.repos").fetchone()
         assert row and row[0] == 3
