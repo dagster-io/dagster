@@ -142,7 +142,7 @@ def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
     assert len(asset_materializations) == 1
 
     found_asset_keys = [
-        mat.event_specific_data.materialization.asset_key
-        for mat in asset_materializations  # pyright: ignore
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
     ]
     assert found_asset_keys == [AssetKey(["dlt_pipeline_repo_issues"])]
