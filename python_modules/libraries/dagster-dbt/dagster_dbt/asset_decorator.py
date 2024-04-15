@@ -66,7 +66,7 @@ def dbt_assets(
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
-) -> Callable[..., AssetsDefinition]:
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
     :py:meth:`~dagster_dbt.DbtCliResource.cli` method, Dagster events are emitted by calling
@@ -375,24 +375,19 @@ def dbt_assets(
     ):
         backfill_policy = BackfillPolicy.single_run()
 
-    def inner(fn) -> AssetsDefinition:
-        asset_definition = multi_asset(
-            outs=outs,
-            name=name,
-            internal_asset_deps=internal_asset_deps,
-            deps=deps,
-            required_resource_keys=required_resource_keys,
-            compute_kind="dbt",
-            partitions_def=partitions_def,
-            can_subset=True,
-            op_tags=resolved_op_tags,
-            check_specs=check_specs,
-            backfill_policy=backfill_policy,
-        )(fn)
-
-        return asset_definition
-
-    return inner
+    return multi_asset(
+        outs=outs,
+        name=name,
+        internal_asset_deps=internal_asset_deps,
+        deps=deps,
+        required_resource_keys=required_resource_keys,
+        compute_kind="dbt",
+        partitions_def=partitions_def,
+        can_subset=True,
+        op_tags=resolved_op_tags,
+        check_specs=check_specs,
+        backfill_policy=backfill_policy,
+    )
 
 
 def get_dbt_multi_asset_args(
