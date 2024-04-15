@@ -13,17 +13,6 @@ We believe the underlying fact is that data applications encode much of their bu
 
 This page demonstrates how Dagster addresses these challenges:
 
-
----
-
-## Relevant APIs
-
-| Name                                                               | Description                                                                                                                           |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.                           |
-| <PyObject object="build_op_context"  />                            | A method to construct an <PyObject object="OpExecutionContext" />, typically to provide to the invocation of an op for testing.       |
-| <PyObject object="build_asset_context"  />                         | A method to construct an <PyObject object="AssetExecutionContext" />, typically to provide to the invocation of an asset for testing. |
-| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                                      |
 - It provides convenient ways to write [unit tests in data applications](#unit-tests-in-data-applications)
 - It allows you to [separate business logic from environments](#separating-business-logic-from-environments) and, therefore, write lightweight tests
 
@@ -519,15 +508,16 @@ def wires_input(x):
 ```
 
 Turn the graph into a job by calling <PyObject object="GraphDefinition" method="to_job" />, and provide a value to the input `x` using the `input_values` argument:
+## APIs in this guide
 
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_top_level_input_job endbefore=end_top_level_input_job
-the_job = wires_input.to_job(input_values={"x": 5})
-```
+| Name                                                               | Description                                                                                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.                           |
+| <PyObject object="build_op_context"  />                            | A method to construct an <PyObject object="OpExecutionContext" />, typically to provide to the invocation of an op for testing.       |
+| <PyObject object="build_asset_context"  />                         | A method to construct an <PyObject object="AssetExecutionContext" />, typically to provide to the invocation of an asset for testing. |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of assets for testing.                                                                       |
 
-You can also provide input values using <PyObject object="JobDefinition" method="execute_in_process" /> or <PyObject object="GraphDefinition" method="execute_in_process" />:
-
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_execute_in_process_input endbefore=end_execute_in_process_input
-graph_result = wires_input.execute_in_process(input_values={"x": 5})
+---
 
 job_result = the_job.execute_in_process(
     input_values={"x": 6}
