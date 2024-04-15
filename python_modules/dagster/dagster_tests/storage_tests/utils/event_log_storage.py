@@ -1165,13 +1165,9 @@ class TestEventLogStorage:
         @op
         def materialize(_):
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 1}, partition="1")
-            time.sleep(0.1)
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 2}, partition="2")
-            time.sleep(0.1)
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 3}, partition="3")
-            time.sleep(0.1)
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 4}, partition="4")
-            time.sleep(0.1)
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 5}, partition="5")
             yield Output(1)
 
@@ -1290,13 +1286,9 @@ class TestEventLogStorage:
         @op
         def observe(_):
             yield AssetObservation(asset_key=asset_key, metadata={"count": 1}, partition="1")
-            time.sleep(0.1)
             yield AssetObservation(asset_key=asset_key, metadata={"count": 2}, partition="2")
-            time.sleep(0.1)
             yield AssetObservation(asset_key=asset_key, metadata={"count": 3}, partition="3")
-            time.sleep(0.1)
             yield AssetObservation(asset_key=asset_key, metadata={"count": 4}, partition="4")
-            time.sleep(0.1)
             yield AssetObservation(asset_key=asset_key, metadata={"count": 5}, partition="5")
             yield Output(1)
 
