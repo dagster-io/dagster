@@ -276,7 +276,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     });
   }
 
-  if (!doesAnyAssetHavePartitions) {
+  if (assetSelection.length && !doesAnyAssetHavePartitions) {
     return null;
   }
 
