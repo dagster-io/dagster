@@ -479,6 +479,18 @@ class DagsterInstance(DynamicPartitionsStore):
             self._secrets_loader.register_instance(self)
 
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
+        # Fetch backcompat version of instance ref that points to the dagster_cloud
+        # module to ensure compatibility with older versions of agent/user code.
+        if ref and ref.custom_instance_class_data:
+            module_elems = ref.custom_instance_class_data.module_name.split(".")
+            if "dagster_plus" == module_elems[0]:
+                self._ref = ref._replace(
+                    custom_instance_class_data=ConfigurableClassData(
+                        module_name=".".join(["dagster_cloud", *module_elems[1:]]),
+                        class_name=ref.custom_instance_class_data.class_name,
+                        config_yaml=ref.custom_instance_class_data.config_yaml,
+                    )
+                )
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
@@ -673,19 +685,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def get_ref(self) -> InstanceRef:
         if self._ref:
-            # Fetch backcompat version of instance ref that points to the dagster_cloud
-            # module to ensure compatibility with older versions of agent/user code.
-            if self._ref.custom_instance_class_data:
-                module_elems = self._ref.custom_instance_class_data.module_name.split(".")
-                if "dagster_plus" == module_elems[0]:
-                    return self._ref._replace(
-                        custom_instance_class_data=ConfigurableClassData(
-                            module_name=".".join(["dagster_cloud", *module_elems[1:]]),
-                            class_name=self._ref.custom_instance_class_data.class_name,
-                            config_yaml=self._ref.custom_instance_class_data.config_yaml,
-                        )
-                    )
-
             return self._ref
 
         check.failed(

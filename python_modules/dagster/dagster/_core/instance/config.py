@@ -50,12 +50,14 @@ def dagster_instance_class_from_code_pointer(
             try:
                 return cast(
                     Type["DagsterInstance"],
-                    dagster_instance_class_from_code_pointer(
+                    class_from_code_pointer(
                         ".".join(["dagster_plus", *module_elems[1:]]),
                         class_name,
                     ),
                 )
             except Exception:
+                logger = logging.getLogger("dagster")
+                logger.exception("Error importing DagsterInstance class from dagster_plus module")
                 raise e
         else:
             raise e
