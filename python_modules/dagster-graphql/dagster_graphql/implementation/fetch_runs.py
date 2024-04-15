@@ -26,6 +26,8 @@ from dagster._core.storage.tags import TagType, get_tag_type
 from .external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
+    from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
+
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.execution import GrapheneExecutionPlan
@@ -158,7 +160,9 @@ IN_PROGRESS_STATUSES = [
 
 
 def get_assets_latest_info(
-    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+    graphene_info: "ResolveInfo",
+    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
+    asset_record_loader: "BatchAssetRecordLoader",
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 
@@ -175,7 +179,7 @@ def get_assets_latest_info(
 
     asset_nodes = get_asset_nodes_by_asset_key(graphene_info, asset_keys)
 
-    asset_records = instance.get_asset_records(asset_keys)
+    asset_records = asset_record_loader.get_asset_records(asset_keys)
 
     latest_materialization_by_asset = {
         asset_record.asset_entry.asset_key: (

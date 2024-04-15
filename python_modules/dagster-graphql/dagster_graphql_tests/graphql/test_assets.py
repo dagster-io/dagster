@@ -1716,6 +1716,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
 
+        graphql_context.asset_record_loader.clear_cache()
+
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
 
@@ -1733,6 +1735,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetsLatestInfo"]
+
         result = get_response_by_asset(result.data["assetsLatestInfo"])
 
         assert result["asset_1"]["latestRun"]["id"] == first_run_id
@@ -1741,6 +1744,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_2"]["latestMaterialization"] is None
         assert result["asset_3"]["latestRun"]["id"] == first_run_id
         assert result["asset_3"]["latestMaterialization"] is None
+
+        graphql_context.asset_record_loader.clear_cache()
 
         # Confirm that asset selection is respected
         run_id = _create_run(
