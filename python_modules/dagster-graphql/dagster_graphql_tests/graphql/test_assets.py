@@ -378,6 +378,36 @@ GET_ASSET_OBSERVATIONS = """
     }
 """
 
+
+GET_LAST_ASSET_OBSERVATIONS = """
+    query AssetGraphQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                assetObservations(limit: 1) {
+                    label
+                    description
+                    runOrError {
+                        ... on Run {
+                            jobName
+                        }
+                    }
+                    assetKey {
+                        path
+                    }
+                    metadataEntries {
+                        label
+                        description
+                        ... on TextMetadataEntry {
+                            text
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+
 HAS_ASSET_CHECKS = """
     query AssetNodeQuery {
         assetNodes {
@@ -1642,6 +1672,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         observations = result.data["assetOrError"]["assetObservations"]
 
         assert observations
+        assert len(observations) == 2
         assert observations[0]["runOrError"]["jobName"] == "observation_job"
 
         asset_key_path = observations[0]["assetKey"]["path"]
@@ -1650,7 +1681,33 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         metadata = observations[0]["metadataEntries"]
         assert metadata
-        assert metadata[0]["text"] == "FOO"
+        assert metadata[0]["text"] == "BAR"
+
+        assert observations[0]["label"] == "asset_yields_observation"
+
+        assert observations[1]["metadataEntries"][0]["text"] == "FOO"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LAST_ASSET_OBSERVATIONS,
+            variables={"assetKey": {"path": ["asset_yields_observation"]}},
+        )
+
+        assert result.data
+        assert result.data["assetOrError"]
+        observations = result.data["assetOrError"]["assetObservations"]
+
+        assert observations
+        assert len(observations) == 1
+        assert observations[0]["runOrError"]["jobName"] == "observation_job"
+
+        asset_key_path = observations[0]["assetKey"]["path"]
+        assert asset_key_path
+        assert asset_key_path == ["asset_yields_observation"]
+
+        metadata = observations[0]["metadataEntries"]
+        assert metadata
+        assert metadata[0]["text"] == "BAR"
 
         assert observations[0]["label"] == "asset_yields_observation"
 

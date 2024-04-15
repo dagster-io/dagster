@@ -657,6 +657,25 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         except ValueError:
             before_timestamp = None
+
+        if (
+            graphene_info.context.instance.event_log_storage.asset_records_have_last_observation
+            and self._asset_record_loader
+            and limit == 1
+            and not partitions
+            and not before_timestamp
+        ):
+            latest_observation_event = (
+                self._asset_record_loader.get_latest_observation_for_asset_key(
+                    self._external_asset_node.asset_key
+                )
+            )
+
+            if not latest_observation_event:
+                return []
+
+            return [GrapheneObservationEvent(event=latest_observation_event)]
+
         return [
             GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
