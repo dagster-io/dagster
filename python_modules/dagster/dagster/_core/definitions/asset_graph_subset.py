@@ -279,7 +279,7 @@ class AssetGraphSubset(NamedTuple):
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
             if not asset_graph.has(asset_key):
-                # Asset had a partitions definition at storage time, but no longer does
+                # Asset had a definition at storage time, but no longer does
                 return False
 
             partitions_def = asset_graph.get(asset_key).partitions_def
