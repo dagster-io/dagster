@@ -1,18 +1,17 @@
 import duckdb
 from dagster import OpExecutionContext, job, op
 from dagster_embedded_elt.dlt import DagsterDltResource
+from dlt import Pipeline
 
-from .constants import EXAMPLE_PIPELINE_DUCKDB
+from .dlt_test_sources.duckdb_with_transformer import pipeline
 
 
-def test_base_dlt_op(setup_dlt_pipeline) -> None:
-    dlt_source, dlt_pipeline = setup_dlt_pipeline
-
+def test_base_dlt_op(dlt_pipeline: Pipeline) -> None:
     @op(out={})
     def my_dlt_op_yield_events(context: OpExecutionContext, dlt_resource: DagsterDltResource):
         yield from dlt_resource.run(
             context=context,
-            dlt_source=dlt_source,
+            dlt_source=pipeline(),
             dlt_pipeline=dlt_pipeline,
         )
 
@@ -23,10 +22,12 @@ def test_base_dlt_op(setup_dlt_pipeline) -> None:
     res = my_dlt_op_yield_events_job.execute_in_process(
         resources={"dlt_resource": DagsterDltResource()}
     )
+
     assert res.success
     assert len(res.get_asset_materialization_events()) == 2
 
-    with duckdb.connect(database=EXAMPLE_PIPELINE_DUCKDB, read_only=True) as conn:
+    duckdb_path = dlt_pipeline.pipeline_name + ".duckdb"
+    with duckdb.connect(database=duckdb_path, read_only=True) as conn:
         row = conn.execute("select count(*) from example.repos").fetchone()
         assert row and row[0] == 3
 
