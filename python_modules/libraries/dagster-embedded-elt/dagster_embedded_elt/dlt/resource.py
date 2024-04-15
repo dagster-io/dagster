@@ -130,13 +130,12 @@ class DagsterDltResource(ConfigurableResource):
                 first_asset_metadata.get(META_KEY_TRANSLATOR), DagsterDltTranslator
             )
 
-        else:
-            dlt_source = check.not_none(
-                dlt_source, "dlt_source is a required parameter in an op context"
-            )
-            dlt_pipeline = check.not_none(
-                dlt_pipeline, "dlt_pipeline is a required parameter in an op context"
-            )
+        dlt_source = check.not_none(
+            dlt_source, "dlt_source is a required parameter in an op context"
+        )
+        dlt_pipeline = check.not_none(
+            dlt_pipeline, "dlt_pipeline is a required parameter in an op context"
+        )
 
         # Default to base translator if undefined
         dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
