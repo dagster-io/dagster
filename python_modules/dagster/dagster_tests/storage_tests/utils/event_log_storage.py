@@ -459,7 +459,7 @@ class TestEventLogStorage:
             assert storage.is_persistent
 
     def test_log_storage_run_not_found(self, storage):
-        assert storage.get_logs_for_run("bar") == []
+        assert storage.get_logs_for_run(make_new_run_id()) == []
 
     def can_wipe(self):
         # Whether the storage is allowed to wipe the event log
