@@ -74,6 +74,74 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
 @experimental
 class DbtProject(DagsterModel):
+    """Representation of a dbt project and related settings that assist with managing manifest.json preparation.
+
+    By default, using this helps achieve a setup where:
+    * during development, reload the manifest at run time to pick up any changes.
+    * when deployed, expect a manifest that was created at build time to reduce start-up time.
+
+    The cli ``dagster-dbt project prepare-for-deployment`` can be used as part of the deployment process to
+    handle manifest.json preparation.
+
+    This object can be passed directly to :py:class:`~dagster_dbt.DbtCliResource`.
+
+    Args:
+        project_dir (Union[str, Path]):
+            The directory of the dbt project.
+        target_path (Union[str, Path]):
+            The path, relative to the project directory, to output artifacts.
+            Default: "target"
+        target (Optional[str]):
+            The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
+        packaged_project_dir (Optional[Union[str, Path]]):
+            A directory that will contain a copy of the dbt project and the manifest.json
+            when the artifacts have been built. The prepare method will handle syncing
+            the project_path to this directory.
+            This is useful when the dbt project needs to be part of the python package data
+            like when deploying using PEX.
+        state_path (Optional[Union[str, Path]]):
+            The path, relative to the project directory, to reference artifacts from another run.
+        manifest_preparer (Optional[DbtManifestPreparer]):
+            A object for ensuring that manifest.json is in the right state at
+            the right times.
+            Default: DagsterDbtManifestPreparer
+
+    Examples:
+        Creating a DbtProject with by referencing the dbt project directory:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster_dbt import DbtProject
+
+            my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+        Creating a DbtProject that changes target based on environment variables and uses manged state artifacts:
+
+        .. code-block:: python
+
+            import os
+            from pathlib import Path
+            from dagster_dbt import DbtProject
+
+
+            def get_env():
+                if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT", "") == "1":
+                    return "BRANCH"
+                if os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME", "") == "prod":
+                    return "PROD"
+                return "LOCAL"
+
+
+            dbt_project = DbtProject(
+                project_dir=Path('path/to/dbt_project'),
+                state_path="target/managed_state",
+                target=get_env(),
+            )
+
+    """
+
     project_dir: Path
     target_path: Path
     target: Optional[str]
@@ -92,29 +160,6 @@ class DbtProject(DagsterModel):
         state_path: Optional[Union[Path, str]] = None,
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
-        """Representation of a dbt project.
-
-        Args:
-            project_path (Union[str, Path]):
-                The directory of the dbt project.
-            target_path (Union[str, Path]):
-                The path, relative to the project directory, to output artifacts.
-                Default: "target"
-            target (Optional[str]):
-                The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
-            packaged_project_dir (Optional[Union[str, Path]]):
-                A directory that will contain a copy of the dbt project and the manifest.json
-                when the artifacts have been built. The prepare method will handle syncing
-                the project_path to this directory.
-                This is useful when the dbt project needs to be part of the python package data
-                like when deploying using PEX.
-            state_path (Optional[Union[str, Path]]):
-                The path, relative to the project directory, to reference artifacts from another run.
-            manifest_preparer (Optional[DbtManifestPreparer]):
-                A object for ensuring that manifest.json is in the right state at
-                the right times.
-                Default: DagsterDbtManifestPreparer
-        """
         project_dir = Path(project_dir)
         if not project_dir.exists():
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
