@@ -8,7 +8,7 @@ ARG DAGSTER_VERSION
 ENV VIRTUAL_ENV=/usr/local
 RUN pip install -U uv
 RUN uv pip install \
-    dagster==${DAGSTER_VERSION} \
+    dagster==${DAGSTER_VERSION} --prerelease=allow \
     dagster-azure \
     dagster-postgres \
     dagster-k8s \
