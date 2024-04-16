@@ -36,6 +36,6 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_datadog_tests*"]),
     python_requires=">=3.8,<3.13",
-    install_requires=["dagster==1.7.2rc0", "datadog"],
+    install_requires=[f"dagster{pin}", "datadog"],
     zip_safe=False,
 )
