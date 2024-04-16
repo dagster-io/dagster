@@ -27,6 +27,8 @@ Dagster allows you to define and execute checks on your software-defined assets.
 
 .. autoclass:: AssetChecksDefinition
 
+.. autoclass:: AssetCheckExecutionContext
+
 .. autofunction:: build_last_update_freshness_checks 
 
 .. autofunction:: build_time_partition_freshness_checks 
