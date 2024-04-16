@@ -13,15 +13,20 @@ from dagster._core.instance import DagsterInstance
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
 
+# Constants
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
 DEFAULT_FRESHNESS_TIMEZONE = "UTC"
-LOWER_BOUND_DELTA_METADATA_KEY = "dagster/lower_bound_delta"
-DEADLINE_CRON_METADATA_KEY = "dagster/deadline_cron"
-FRESHNESS_TIMEZONE_METADATA_KEY = "dagster/freshness_timezone"
+
+# Top-level metadata keys
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
 OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY = "dagster/overdue_deadline_timestamp"
 OVERDUE_SECONDS_METADATA_KEY = "dagster/overdue_seconds"
+
+# dagster/freshness_params inner keys
+LOWER_BOUND_DELTA_PARAM_KEY = "lower_bound_delta"
+DEADLINE_CRON_PARAM_KEY = "deadline_cron"
+TIMEZONE_PARAM_KEY = "timezone"
 
 
 def ensure_no_duplicate_assets(

@@ -29,11 +29,11 @@ from ..decorators import sensor
 from ..run_request import RunRequest
 from ..sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
 from .utils import (
-    DEADLINE_CRON_METADATA_KEY,
+    DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_TIMEZONE,
     FRESHNESS_PARAMS_METADATA_KEY,
-    FRESHNESS_TIMEZONE_METADATA_KEY,
-    LOWER_BOUND_DELTA_METADATA_KEY,
+    LOWER_BOUND_DELTA_PARAM_KEY,
+    TIMEZONE_PARAM_KEY,
     ensure_freshness_checks,
     ensure_no_duplicate_asset_checks,
 )
@@ -186,13 +186,13 @@ def get_metadata(check_spec: AssetCheckSpec) -> Mapping[str, Any]:
 
 
 def get_freshness_cron(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(DEADLINE_CRON_METADATA_KEY)
+    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(DEADLINE_CRON_PARAM_KEY)
 
 
 def get_freshness_cron_timezone(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(FRESHNESS_TIMEZONE_METADATA_KEY)
+    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(TIMEZONE_PARAM_KEY)
 
 
 def get_lower_bound_delta(metadata: Mapping[str, Any]) -> Optional[datetime.timedelta]:
-    float_delta: float = metadata[FRESHNESS_PARAMS_METADATA_KEY].get(LOWER_BOUND_DELTA_METADATA_KEY)
+    float_delta: float = metadata[FRESHNESS_PARAMS_METADATA_KEY].get(LOWER_BOUND_DELTA_PARAM_KEY)
     return datetime.timedelta(seconds=float_delta) if float_delta else None
