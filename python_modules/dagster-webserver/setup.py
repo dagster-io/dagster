@@ -46,8 +46,8 @@ setup(
     install_requires=[
         # cli
         "click>=7.0,<9.0",
-        "dagster==1.7.2rc1",
-        "dagster-graphql==1.7.2rc1",
+        f"dagster{pin}",
+        f"dagster-graphql{pin}",
         "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
         "uvicorn[standard]",
     ],
