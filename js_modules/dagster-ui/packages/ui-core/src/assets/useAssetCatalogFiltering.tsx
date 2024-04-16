@@ -117,7 +117,6 @@ export function useAssetCatalogFiltering(
   return {
     searchPath,
     activeFiltersJsx: components.activeFiltersJsx,
-    filterValues: filters,
     filterButton: components.button,
     filterInput,
     isFiltered,
