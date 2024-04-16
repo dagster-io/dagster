@@ -106,7 +106,7 @@ export const layoutAssetGraph = (
   console.log({graphs});
   const layouts = graphs.map((graph) => layoutAssetGraphImpl(graph, opts));
   // try {
-  return layouts[0]!;
+  return layouts;
   // } catch (e) {
   //   try {
   //     return layoutAssetGraphImpl(graphData, {
