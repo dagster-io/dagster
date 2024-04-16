@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["dagster_k8s_tests*"]),
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.7.2rc1",
+        f"dagster{pin}",
         "kubernetes",
         # exclude a google-auth release that added an overly restrictive urllib3 pin that confuses dependency resolvers
         "google-auth!=2.23.1",
