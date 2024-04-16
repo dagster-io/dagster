@@ -592,3 +592,19 @@ pre[class="noop"] {
 td {
   word-break:break-word
 }
+
+.n {
+  font-weight: 700;
+}
+
+.prose strong {
+  font-weight: 700;
+}
+
+.prose p {
+  line-height: 1.75em;
+}
+
+dl, dl * {
+  overflow-wrap: break-word;
+}
