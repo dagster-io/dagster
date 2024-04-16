@@ -30,6 +30,7 @@ import {Link} from 'react-router-dom';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
+import {ConcurrencyTable} from './VirtualizedInstanceConcurrencyTable';
 import {
   ConcurrencyKeyDetailsQuery,
   ConcurrencyKeyDetailsQueryVariables,
@@ -96,7 +97,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
           </Box>
           <ConcurrencyLimits
             instanceConfig={data.instance.info}
-            limits={data.instance.concurrencyLimits}
+            concurrencyKeys={data.instance.concurrencyLimits.map((limit) => limit.concurrencyKey)}
             hasSupport={data.instance.supportsConcurrencyLimits}
             refetch={queryResult.refetch}
             minValue={data.instance.minConcurrencyLimitValue}
@@ -138,7 +139,6 @@ type DialogAction =
   | {
       actionType: 'edit';
       concurrencyKey: string;
-      concurrencyLimit: number;
     }
   | {
       actionType: 'delete';
@@ -259,14 +259,14 @@ const RunConcurrencyLimitHeader = ({
 export const ConcurrencyLimits = ({
   instanceConfig,
   hasSupport,
-  limits,
+  concurrencyKeys,
   refetch,
   minValue,
   maxValue,
   selectedKey,
   onSelectKey,
 }: {
-  limits: ConcurrencyLimitFragment[];
+  concurrencyKeys: string[];
   refetch: () => void;
   instanceConfig?: string | null;
   hasSupport?: boolean;
@@ -280,19 +280,15 @@ export const ConcurrencyLimits = ({
     onSelectKey(undefined);
   }, [onSelectKey]);
 
-  const limitsByKey = Object.fromEntries(
-    limits.map(({concurrencyKey, slotCount}) => [concurrencyKey, slotCount]),
-  );
-
-  const sortedLimits = React.useMemo(() => {
-    return [...limits].sort((a, b) => COMMON_COLLATOR.compare(a.concurrencyKey, b.concurrencyKey));
-  }, [limits]);
+  const sortedKeys = React.useMemo(() => {
+    return [...concurrencyKeys].sort((a, b) => COMMON_COLLATOR.compare(a, b));
+  }, [concurrencyKeys]);
 
   const onAdd = () => {
     setAction({actionType: 'add'});
   };
   const onEdit = (concurrencyKey: string) => {
-    setAction({actionType: 'edit', concurrencyKey, concurrencyLimit: limitsByKey[concurrencyKey]!});
+    setAction({actionType: 'edit', concurrencyKey});
   };
   const onDelete = (concurrencyKey: string) => {
     setAction({actionType: 'delete', concurrencyKey});
@@ -337,7 +333,7 @@ export const ConcurrencyLimits = ({
   return (
     <>
       <ConcurrencyLimitHeader onAdd={onAdd} />
-      {limits.length === 0 ? (
+      {concurrencyKeys.length === 0 ? (
         <Box margin={24}>
           <NonIdealState
             icon="error"
@@ -351,47 +347,12 @@ export const ConcurrencyLimits = ({
           />
         </Box>
       ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th style={{width: '260px'}}>Concurrency key</th>
-              <th style={{width: '20%'}}>Total slots</th>
-              <th style={{width: '20%'}}>Assigned steps</th>
-              <th style={{width: '20%'}}>Pending steps</th>
-              <th style={{width: '20%'}}>All steps</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedLimits.map((limit) => (
-              <tr key={limit.concurrencyKey}>
-                <td>{limit.concurrencyKey}</td>
-                <td>{limit.slotCount}</td>
-                <td>{limit.pendingSteps.filter((x) => !!x.assignedTimestamp).length}</td>
-                <td>{limit.pendingSteps.filter((x) => !x.assignedTimestamp).length}</td>
-                <td>
-                  <span style={{marginRight: 16}}>{limit.pendingSteps.length}</span>
-                  <Tag intent="primary" interactive>
-                    <ButtonLink
-                      onClick={() => {
-                        onSelectKey(limit.concurrencyKey);
-                      }}
-                    >
-                      View all
-                    </ButtonLink>
-                  </Tag>
-                </td>
-                <td>
-                  <ConcurrencyLimitActionMenu
-                    concurrencyKey={limit.concurrencyKey}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+        <ConcurrencyTable
+          concurrencyKeys={sortedKeys}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onSelect={onSelectKey}
+        />
       )}
       <AddConcurrencyLimitDialog
         open={action?.actionType === 'add'}
@@ -445,35 +406,6 @@ const ConcurrencyLimitHeader = ({onAdd}: {onAdd?: () => void}) => (
     ) : null}
   </Box>
 );
-
-const ConcurrencyLimitActionMenu = ({
-  concurrencyKey,
-  onDelete,
-  onEdit,
-}: {
-  concurrencyKey: string;
-  onEdit: (key: string) => void;
-  onDelete: (key: string) => void;
-}) => {
-  return (
-    <Popover
-      content={
-        <Menu>
-          <MenuItem icon="edit" text="Edit" onClick={() => onEdit(concurrencyKey)} />
-          <MenuItem
-            icon="delete"
-            intent="danger"
-            text="Delete"
-            onClick={() => onDelete(concurrencyKey)}
-          />
-        </Menu>
-      }
-      position="bottom-left"
-    >
-      <Button icon={<Icon name="expand_more" />} />
-    </Popover>
-  );
-};
 
 const isValidLimit = (
   concurrencyLimit?: string,
@@ -988,7 +920,7 @@ const PendingStepRow = ({
   );
 };
 
-export const CONCURRENCY_STEP_FRAGMENT = gql`
+const CONCURRENCY_STEP_FRAGMENT = gql`
   fragment ConcurrencyStepFragment on PendingConcurrencyStep {
     runId
     stepKey
@@ -997,7 +929,7 @@ export const CONCURRENCY_STEP_FRAGMENT = gql`
     priority
   }
 `;
-export const CONCURRENCY_LIMIT_FRAGMENT = gql`
+const CONCURRENCY_LIMIT_FRAGMENT = gql`
   fragment ConcurrencyLimitFragment on ConcurrencyKeyInfo {
     concurrencyKey
     slotCount
@@ -1011,7 +943,7 @@ export const CONCURRENCY_LIMIT_FRAGMENT = gql`
   }
   ${CONCURRENCY_STEP_FRAGMENT}
 `;
-export const RUN_QUEUE_CONFIG_FRAGMENT = gql`
+const RUN_QUEUE_CONFIG_FRAGMENT = gql`
   fragment RunQueueConfigFragment on RunQueueConfig {
     maxConcurrentRuns
     tagConcurrencyLimitsYaml
@@ -1031,12 +963,11 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
       minConcurrencyLimitValue
       maxConcurrencyLimitValue
       concurrencyLimits {
-        ...ConcurrencyLimitFragment
+        concurrencyKey
       }
     }
   }
 
-  ${CONCURRENCY_LIMIT_FRAGMENT}
   ${RUN_QUEUE_CONFIG_FRAGMENT}
 `;
 
