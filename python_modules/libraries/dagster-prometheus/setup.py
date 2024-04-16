@@ -34,6 +34,6 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_prometheus_tests*"]),
     python_requires=">=3.8,<3.13",
-    install_requires=[f"dagster{pin}", "prometheus_client"],
+    install_requires=["dagster==1.7.2rc0", "prometheus_client"],
     zip_safe=False,
 )
