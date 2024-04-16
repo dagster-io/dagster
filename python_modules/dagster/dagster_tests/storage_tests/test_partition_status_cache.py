@@ -572,6 +572,85 @@ def test_failure_cache_in_progress_runs():
         )
 
 
+def test_cache_deleted_runs():
+    partitions_def = StaticPartitionsDefinition(["good1", "good2"])
+
+    @asset(partitions_def=partitions_def)
+    def asset1(context):
+        pass
+
+    asset_key = AssetKey("asset1")
+    asset_graph = AssetGraph.from_assets([asset1])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
+
+    with instance_for_test() as created_instance:
+        asset_job.execute_in_process(instance=created_instance, partition_key="good1")
+
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get(asset_key).partitions_def
+        )
+        assert cached_status
+        assert cached_status.latest_storage_id
+        assert cached_status.partitions_def_id
+        assert cached_status.serialized_materialized_partition_subset
+
+        materialized_keys = list(
+            partitions_def.deserialize_subset(
+                cached_status.serialized_materialized_partition_subset
+            ).get_partition_keys()
+        )
+        assert len(materialized_keys) == 1
+        assert "good1" in materialized_keys
+
+        run_1 = create_run_for_test(created_instance)
+        created_instance.event_log_storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_1.run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetMaterializationPlannedData(
+                        asset_key=asset_key, partition="good1"
+                    ),
+                ),
+            )
+        )
+
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get(asset_key).partitions_def
+        )
+
+        assert cached_status.deserialize_in_progress_partition_subsets(
+            partitions_def
+        ).get_partition_keys() == {"good1"}
+
+        created_instance.delete_run(run_1.run_id)
+
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get(asset_key).partitions_def
+        )
+        assert not cached_status.earliest_in_progress_materialization_event_id
+
+        materialized_keys = list(
+            partitions_def.deserialize_subset(
+                cached_status.serialized_materialized_partition_subset
+            ).get_partition_keys()
+        )
+        assert len(materialized_keys) == 1
+        assert "good1" in materialized_keys
+
+        assert (
+            cached_status.deserialize_in_progress_partition_subsets(
+                partitions_def
+            ).get_partition_keys()
+            == set()
+        )
+
+
 def test_cache_cancelled_runs():
     partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
 
