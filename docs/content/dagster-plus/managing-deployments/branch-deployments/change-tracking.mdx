@@ -27,6 +27,8 @@ Change Tracking can detect the following changes to assets:
 - [Code versions](#code-versions)
 - [Upstream dependencies](#upstream-dependencies)
 - [Partitions definitions](#partitions-definitions)
+- [Tags](#tags)
+- [Metadata](#metadata)
 
 ### New assets
 
@@ -156,6 +158,88 @@ def weekly_orders(): ...
 ```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))
 def weekly_orders(): ...
+```
+
+---
+
+</TabItem>
+</TabGroup>
+
+### Tags
+
+Change Tracking can detect when an [asset's tags](/concepts/metadata-tags/tags) have changed, whether they've been added, modified, or removed.
+
+<TabGroup>
+<TabItem name="Asset in the Dagster UI">
+
+In this example, the `fruits_in_stock` asset has a **Changed in branch** label indicating it has changed tags.
+
+Click the **Asset definition** tab to see the code change that created this label.
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-tags.png"
+width={1154}
+height={490}
+/>
+
+---
+
+</TabItem>
+<TabItem name="Asset definition">
+
+**In the main branch**, we have a `fruits_in_stock` asset:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_tags.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
+@asset(tags={"section": "produce"})
+def fruits_in_stock(): ...
+```
+
+**In the pull request**, we added the `type: perishable` tag to `fruits_in_stock`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_tags.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
+@asset(tags={"section": "produce", "type": "perishable"})
+def fruits_in_stock(): ...
+```
+
+---
+
+</TabItem>
+</TabGroup>
+
+### Metadata
+
+Change Tracking can detect when an [asset's definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) has changed, whether it's been added, modified, or removed.
+
+<TabGroup>
+<TabItem name="Asset in the Dagster UI">
+
+In this example, the `produtcs` asset has a **Changed in branch** label indicating it has changed metadata.
+
+Click the **Asset definition** tab to see the code change that created this label.
+
+<Image
+src="/images/dagster-cloud/managing-deployments/change-tracking-metadata.png"
+width={1154}
+height={490}
+/>
+
+---
+
+</TabItem>
+<TabItem name="Asset definition">
+
+**In the main branch**, we have a `products` asset:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_metadata.py startafter=start_main_deployment endbefore=end_main_deployment dedent=4
+@asset(metadata={"expected_columns": ["sku", "price", "supplier"]})
+def products(): ...
+```
+
+**In the pull request**, we update the value of the `expected_columns` metadata on `products`:
+
+```python file=/dagster_cloud/branch_deployments/change_tracking_metadata.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
+@asset(metadata={"expected_columns": ["sku", "price", "supplier", "backstock"]})
+def products(): ...
 ```
 
 </TabItem>
