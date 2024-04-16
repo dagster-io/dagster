@@ -20,7 +20,7 @@ def build_column_schema_change_checks(
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
     severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
 ) -> Sequence[AssetChecksDefinition]:
-    """Returns asset checks that pass if the the column schema of the asset's latest materialization
+    """Returns asset checks that pass if the column schema of the asset's latest materialization
     is the same as the column schema of the asset's previous materialization.
 
     Args:

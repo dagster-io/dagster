@@ -3620,14 +3620,14 @@ nux:
 ### New
 
 - Tags can now be provided to an asset reconciliation sensor and will be applied to all RunRequests returned by the sensor.
-- If you don’t explicitly specify a DagsterType on a graph input, but all the inner inputs that the graph input maps to have the same DagsterType, the graph input’s DagsterType will be set to the the DagsterType of the inner inputs.
+- If you don’t explicitly specify a DagsterType on a graph input, but all the inner inputs that the graph input maps to have the same DagsterType, the graph input’s DagsterType will be set to the DagsterType of the inner inputs.
 - [dagster-airbyte] `load_assets_from_airbyte_project` now caches the project data generated at repo load time so it does not have to be regenerated in subprocesses.
 - [dagster-airbyte] Output table schema metadata is now generated at asset definition time when using `load_assets_from_airbyte_instance` or `load_assets_from_airbyte_project`.
 - [dagit] The run timeline now groups all jobs by repository. You can collapse or expand each repository in this view by clicking the repository name. This state will be preserved locally. You can also hold `Shift` while clicking the repository name, and all repository groups will be collapsed or expanded accordingly.
 - [dagit] In the launchpad view, a “Remove all” button is now available once you have accrued three or more tabs for that job, to make it easier to clear stale configuration tabs from view.
 - [dagit] When scrolling through the asset catalog, the toolbar is now sticky. This makes it simpler to select multiple assets and materialize them without requiring you to scroll back to the top of the page.
 - [dagit] A “Materialize” option has been added to the action menu on individual rows in the asset catalog view.
-- [dagster-aws] The `EcsRunLauncher` now allows you to pass in a dictionary in the `task_definition` config field that specifies configuration for the task definition of the launched run, including role ARNs and a list of sidecar containers to include. Previously, the task definition could only be configured by passing in a task definition ARN or by basing the the task definition off of the task definition of the ECS task launching the run. See the [docs](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher) for the full set of available config.
+- [dagster-aws] The `EcsRunLauncher` now allows you to pass in a dictionary in the `task_definition` config field that specifies configuration for the task definition of the launched run, including role ARNs and a list of sidecar containers to include. Previously, the task definition could only be configured by passing in a task definition ARN or by basing the task definition off of the task definition of the ECS task launching the run. See the [docs](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher) for the full set of available config.
 
 ### Bugfixes
 

@@ -382,7 +382,7 @@ class AssetCondition(ABC, DagsterModel):
     def updated_since_cron(cron_schedule: str, timezone: str = "UTC") -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition when it has been updated
         since the latest tick of the given cron schedule. For partitioned assets with a time
-        component, this can only be true for the the most recent partition.
+        component, this can only be true for the most recent partition.
         """
         from ..auto_materialize_rule import AutoMaterializeRule
 

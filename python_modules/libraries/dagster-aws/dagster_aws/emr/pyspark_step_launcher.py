@@ -345,7 +345,7 @@ class EmrPySparkStepLauncher(StepLauncher):
     ):
         """We want to wait for the EMR steps to complete, and while that's happening, we want to
         yield any events that have been written to S3 for us by the remote process.
-        After the the EMR steps complete, we want a final chance to fetch events before finishing
+        After the EMR steps complete, we want a final chance to fetch events before finishing
         the step.
         """
         done = False
