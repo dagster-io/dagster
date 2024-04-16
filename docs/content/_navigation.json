@@ -292,6 +292,10 @@
                 "path": "/concepts/metadata-tags/asset-metadata"
               },
               {
+                "title": "Column-level lineage",
+                "path": "/concepts/metadata-tags/asset-metadata/column-level-lineage"
+              },
+              {
                 "title": "Op job metadata",
                 "path": "/concepts/metadata-tags/op-job-metadata"
               },

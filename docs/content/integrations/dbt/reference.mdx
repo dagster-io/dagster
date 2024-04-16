@@ -658,15 +658,16 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ---
 
-## Emit column-level metadata as materialization metadata <Experimental />
+## Emit column-level lineage as materialization metadata
 
 <Note>
   <strong>
-    Emitting column-level metadata as materialization metadata is currently an
+    Emitting column-level lineage as materialization metadata is currently an
     experimental feature.{" "}
   </strong>{" "}
-  To use this feature, you'll need to be on at least `dagster>=1.6.12` and
-  `dagster-dbt>=0.22.12`.
+  To use this feature, you'll need to be on at least <code>dagster>=1.7.0</code>{" "}
+  and
+  <code>dagster-dbt>=0.23.0</code>.
 </Note>
 
 Dagster allows you to emit column-level metadata, like column schema and column dependencies, as [materialization metadata](/concepts/metadata-tags/asset-metadata).

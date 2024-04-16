@@ -28,6 +28,7 @@ Dagster supports attaching a few different types of definition metadata:
 
 - [**Arbitrary metadata**](#arbitrary-metadata-using-the-metadata-parameter), such as the storage location of the table produced by the asset
 - [**Asset owners**](#asset-owners), which are the people and/or teams who own the asset
+- [**Column-level lingeage**](#column-level-lineage),
 
 ### Arbitrary metadata using the metadata parameter
 
@@ -90,6 +91,8 @@ Attaching materialization metadata to an asset is accomplished by returning a <P
 
 When specifying values, use the <PyObject object="MetadataValue" /> utility class to wrap the data, ensuring it displays correctly in the UI. Values can also be primitive Python types, which Dagster will convert to the appropriate <PyObject object="MetadataValue" />.
 
+### Arbitrary metadata
+
 In the following example, we added a row count and preview to a `topstories` asset:
 
 ```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py lines=3-5,13,16-42
@@ -125,6 +128,10 @@ def topstories(context: AssetExecutionContext) -> MaterializeResult:
         }
     )
 ```
+
+### Column-level lineage
+
+For assets that produce database tables, column-level lineage can be a powerful tool for improving collaboration and debugging issues. Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform. Refer to the [Column-level lineage documentation](/concepts/metadata-tags/asset-metadata/column-level-lineage) for more information.
 
 ---
 
