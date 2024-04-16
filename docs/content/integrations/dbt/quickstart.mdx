@@ -1,0 +1,70 @@
+---
+title: "Quickstart: Run your dbt project with Dagster in 3 steps"
+description: Get started swiftly with this simple dbt + Dagster example.
+---
+
+# Quickstart: Run your dbt project with Dagster in 3 steps
+
+---
+
+## Step 1: Setup your environment
+
+{% note %} **Note**: We strongly recommend installing Dagster inside a Python virtualenv. Visit the [Dagster](/getting-started/install) installation docs for more info. {% /note %}
+
+Install dbt, Dagster, and the Dagster webserver/UI\*\*. Run the following to install everything using pip:
+
+```shell
+pip install dagster-dbt dagster-webserver
+```
+
+The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/install) installation docs for more info.
+
+---
+
+## Step 2: Create your code location file
+
+```python startafter=start_example endbefore=end_example file=/integrations/dbt/quickstart.py
+from pathlib import Path
+
+from dagster import AssetExecutionContext, Definitions
+from dagster_dbt import (
+    DbtCliResource,
+    DbtProject,
+    build_schedule_from_dbt_selection,
+    dbt_assets,
+)
+
+my_project = DbtProject(
+    project_dir=Path(__file__).joinpath("..", "jaffle_shop").resolve(),
+)
+
+
+@dbt_assets(manifest=my_project.manifest_path)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+
+
+my_schedule = build_schedule_from_dbt_selection(
+    [my_dbt_assets],
+    job_name="materialize_dbt_models",
+    cron_schedule="0 0 * * *",
+    dbt_select="fqn:*",
+)
+
+
+defs = Definitions(
+    assets=[my_dbt_assets],
+    schedules=[my_schedule],
+    resources={
+        "dbt": DbtCliResource(project_dir=my_project),
+    },
+)
+```
+
+---
+
+## Step 3: Run the project
+
+```shell
+dagster dev -f definitions.py
+```
