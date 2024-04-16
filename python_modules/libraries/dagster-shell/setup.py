@@ -34,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_shell_tests*"]),
     python_requires=">=3.8,<3.13",
-    install_requires=["dagster==1.7.2rc1"],
+    install_requires=[f"dagster{pin}"],
     extras_require={"test": ["psutil"]},
     zip_safe=False,
 )
