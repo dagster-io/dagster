@@ -20,11 +20,11 @@ Dagster uses this metadata to display the column's upstream and downstream depen
 
 ---
 
-## Enabling column lineage
+## Enabling column-level lineage
 
 ### For assets defined in Dagster
 
-To enable column lineage on Dagster assets that produce database tables, you'll need to:
+To enable column-level lineage on Dagster assets that produce database tables, you'll need to:
 
 1. Return a <PyObject object="MaterializeResult" /> object containing a `metadata` parameter
 2. In `metadata`, use the `dagster/column_lineage` key to create a <PyObject object="TableColumnLineage" /> object
@@ -88,7 +88,7 @@ Column-level lineage is currently supported for the dbt integration. Refer to th
 
 ---
 
-## Viewing column lineage in the Dagster UI
+## Viewing column-level lineage in the Dagster UI
 
 <Note>Viewing column lineage in the UI is a Dagster+ feature.</Note>
 
@@ -105,7 +105,7 @@ Column-level lineage is currently supported for the dbt integration. Refer to th
    height={193}
    />
 
-The graph will display the column's asset and column dependencies:
+The graph will display the column's column dependencies, grouped by asset:
 
 <!-- ![Column lineage for a credit_utilization column in the Dagster UI](/images/concepts/metadata-tags/column-level-lineage.png) -->
 
