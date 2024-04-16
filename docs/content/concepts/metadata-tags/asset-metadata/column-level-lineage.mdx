@@ -28,7 +28,7 @@ To enable column-level lineage on Dagster assets that produce database tables, y
 
 1. Return a <PyObject object="MaterializeResult" /> object containing a `metadata` parameter
 2. In `metadata`, use <PyObject object="TableColumnLineage" displayText="TableColumnLineage.deps_by_column" /> to define a list of columns
-3. For each column, use <PyObject object="TableColumnDep" /> to define its dependencies. This object accepts `asset_key` and `column_name` arguments, allow you to specify the name of the asset and column that make up the dependency.
+3. For each column, use <PyObject object="TableColumnDep" /> to define the column's lineage. This object accepts `asset_key` and `column_name` arguments, allow you to specify the name of the asset and column that make up the dependency.
 
 Let's take a look at an example:
 
