@@ -185,10 +185,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return self._asset_record_cache[asset_key]
 
     def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
-        if self.asset_graph.get(asset_key).is_observable:
-            return DagsterEventType.ASSET_OBSERVATION
-        else:
+        if self.asset_graph.get(asset_key).is_materializable:
             return DagsterEventType.ASSET_MATERIALIZATION
+        else:
+            return DagsterEventType.ASSET_OBSERVATION
 
     @cached_method
     def _get_latest_materialization_or_observation_record(
@@ -204,7 +204,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             and asset_partition.partition_key is None
             and not (
                 self.asset_graph.has(asset_partition.asset_key)
-                and self.asset_graph.get(asset_partition.asset_key).is_observable
+                and not self.asset_graph.get(asset_partition.asset_key).is_materializable
             )
         ):
             asset_record = self.get_asset_record(asset_partition.asset_key)
@@ -807,7 +807,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not updated_after_cursor:
             return set()
         if after_cursor is None or (
-            not self.asset_graph.get(asset_key).is_observable
+            self.asset_graph.get(asset_key).is_materializable
             and not respect_materialization_data_versions
         ):
             return updated_after_cursor
