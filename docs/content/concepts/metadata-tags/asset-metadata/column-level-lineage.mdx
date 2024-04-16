@@ -24,7 +24,7 @@ Dagster uses this metadata to display the column's upstream and downstream depen
 
 ### For assets defined in Dagster
 
-To enable column lineage on Dagster assets that produce database tables, you'll need to:
+To enable column-level lineage on Dagster assets that produce database tables, you'll need to:
 
 1. Return a <PyObject object="MaterializeResult" /> object containing a `metadata` parameter
 2. In `metadata`, use <PyObject object="TableColumnLineage" displayText="TableColumnLineage.deps_by_column" /> to define a list of columns
