@@ -36,7 +36,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.7.2rc2",
         "graphene>=3,<4",
         "gql[requests]>=3,<4",
         "requests",
