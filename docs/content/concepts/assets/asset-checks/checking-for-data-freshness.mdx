@@ -144,7 +144,7 @@ This model uses data from past materializations/observations to determine if dat
 In the following example, we'll use `build_anomaly_detection_freshness_checks` to accomplish this:
 
 ```python
-from dagster_cloud import build_anomaly_detection_freshness_checks
+from dagster_cloud.anomaly_detection import build_anomaly_detection_freshness_checks
 
 freshness_checks = build_anomaly_detection_freshness_checks(
   assets=[source_tables], params=None
