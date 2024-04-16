@@ -93,9 +93,9 @@ Creating an alert policy can be done using the Dagster+ UI or in code.
 4. Click **Save policy**.
 
 </TabItem>
-<TabItem name="dagster-plus CLI">
+<TabItem name="dagster-cloud CLI">
 
-#### dagster-plus CLI
+#### dagster-cloud CLI
 
 To define a PagerDuty alert policy in code, use the `notification_service.pagerduty.integration_key` key to provide the integration key. For example:
 
@@ -115,13 +115,13 @@ alert_policies:
         integration_key: "<pagerduty_integration_key>"
 ```
 
-Then, use the `dagster-plus` CLI to set the alert policies for the deployment:
+Then, use the `dagster-cloud` CLI to set the alert policies for the deployment:
 
 ```bash file=/dagster_cloud/alerts/cli_commands.yaml startafter=start_set_alerts endbefore=end_set_alerts
 dagster-plus deployment alert-policies sync -a /path/to/alert_policies.yaml
 ```
 
-Refer to the [Managing alerts using the `dagster-plus` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
+Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
 
 </TabItem>
 </TabGroup>
