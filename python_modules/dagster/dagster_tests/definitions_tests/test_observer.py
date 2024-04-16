@@ -106,6 +106,11 @@ def test_multi_observer() -> None:
     }
 
 
+"""
+This section exists to allow you to dagster dev this_file.py to see everything work together.
+"""
+
+
 class WebhookObserver(ObserverDefinition):
     def observe(self, context: ObserverEvaluationContext) -> ObserverEvaluationResult:
         cursor_val = int(context.cursor) + 1 if context.cursor else 1
