@@ -275,8 +275,10 @@ def test_assets_require_service():
 
 Functions decorated with <PyObject object="asset_check" decorator /> can be directly invoked. For example:
 
-```python file=/concepts/assets/asset_checks/test_asset_check.py
-from dagster import asset_check, AssetCheckResult
+```python file=/concepts/assets/asset_checks/test_asset_check.py startafter=start endbefore=end
+import pandas as pd
+
+from dagster import AssetCheckResult, asset_check
 
 
 @asset_check(asset=orders)
