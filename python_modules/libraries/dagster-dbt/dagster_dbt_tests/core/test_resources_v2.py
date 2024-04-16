@@ -451,6 +451,7 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
     result = materialize(
         [my_dbt_assets], resources={"dbt": dbt}, selection="orders", raise_on_error=False
     )
+    assert len(dbt.get_state_args()) == 0
     assert not result.success
 
     # Defer works after copying the manifest into the state directory.
@@ -460,6 +461,8 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
 
     result = materialize([my_dbt_assets], resources={"dbt": dbt}, selection="orders")
     assert result.success
+
+    assert len(dbt.get_state_args()) == 2
 
 
 def test_dbt_cli_op_execution(
