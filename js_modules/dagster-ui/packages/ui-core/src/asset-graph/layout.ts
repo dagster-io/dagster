@@ -1,6 +1,13 @@
 import * as dagre from 'dagre';
 
-import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
+import {
+  GraphData,
+  GraphId,
+  GraphNode,
+  findUnconnectedGraphs,
+  groupIdForNode,
+  isGroupId,
+} from './Utils';
 import {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';
 
@@ -95,20 +102,23 @@ export const layoutAssetGraph = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
-  try {
-    return layoutAssetGraphImpl(graphData, opts);
-  } catch (e) {
-    try {
-      return layoutAssetGraphImpl(graphData, {
-        ...opts,
-        overrides: {
-          ranker: 'longest-path',
-        },
-      });
-    } catch (e) {
-      return layoutAssetGraphImpl(graphData, {...opts, overrides: {ranker: 'network-simplex'}});
-    }
-  }
+  const graphs = findUnconnectedGraphs(graphData);
+  console.log({graphs});
+  const layouts = graphs.map((graph) => layoutAssetGraphImpl(graph, opts));
+  // try {
+  return layouts[0]!;
+  // } catch (e) {
+  //   try {
+  //     return layoutAssetGraphImpl(graphData, {
+  //       ...opts,
+  //       overrides: {
+  //         ranker: 'longest-path',
+  //       },
+  //     });
+  //   } catch (e) {
+  //     return layoutAssetGraphImpl(graphData, {...opts, overrides: {ranker: 'network-simplex'}});
+  //   }
+  // }
 };
 
 export const layoutAssetGraphImpl = (
