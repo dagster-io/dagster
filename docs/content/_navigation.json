@@ -292,7 +292,7 @@
                 "path": "/concepts/metadata-tags/asset-metadata"
               },
               {
-                "title": "Asset column-level lineage",
+                "title": "Column-level lineage",
                 "path": "/concepts/metadata-tags/asset-metadata/column-level-lineage"
               },
               {
