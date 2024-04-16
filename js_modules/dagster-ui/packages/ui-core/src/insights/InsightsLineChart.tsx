@@ -39,7 +39,6 @@ interface Props {
   highlightKey: string | null;
   onHighlightKey?: (key: string | null) => void;
   emptyState?: React.ReactNode;
-  appearance?: 'minimal' | 'full';
 }
 
 const SPINNER_WAIT_MSEC = 2000;
@@ -58,7 +57,6 @@ export const InsightsLineChart = (props: Props) => {
     highlightKey,
     onHighlightKey,
     emptyState,
-    appearance = 'full',
   } = props;
   const dataValues = React.useMemo(() => Object.values(datapoints), [datapoints]);
   const dataEntries = React.useMemo(() => Object.entries(datapoints), [datapoints]);
@@ -84,7 +82,7 @@ export const InsightsLineChart = (props: Props) => {
   const formatDateTime = useFormatDateTime();
 
   // Don't show the y axis while loading datapoints, to avoid jumping renders.
-  const showYAxis = appearance === 'full' && dataValues.length > 0;
+  const showYAxis = dataValues.length > 0;
 
   const data = React.useMemo(() => {
     return {
@@ -243,14 +241,14 @@ export const InsightsLineChart = (props: Props) => {
         x: {
           display: true,
           grid: {
-            display: appearance === 'minimal',
+            display: false,
           },
           title: {
-            display: appearance === 'full',
+            display: true,
             color: Colors.textLighter(),
           },
           ticks: {
-            display: appearance === 'full',
+            display: true,
             color: Colors.textLighter(),
             font: {
               size: 14,
@@ -270,7 +268,7 @@ export const InsightsLineChart = (props: Props) => {
         yCost,
       },
     };
-  }, [yCount, yCost, onHover, renderTooltipFn, formatDateTime, appearance]);
+  }, [yCount, yCost, onHover, renderTooltipFn, formatDateTime]);
 
   const emptyContent = () => {
     const anyDatapoints = Object.keys(datapoints).length > 0;
