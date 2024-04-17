@@ -84,7 +84,7 @@ A query includes a list of clauses. Clauses are separated by commas, except in t
         <code>ASSET_KEY*</code>
       </td>
       <td>
-        An asterisk (<code>*</code>) preceding an asset key selects an asset and
+        An asterisk (<code>*</code>) following an asset key selects an asset and
         all of its downstream dependencies
       </td>
     </tr>
@@ -109,14 +109,12 @@ A query includes a list of clauses. Clauses are separated by commas, except in t
       </td>
       <td>
         A plus sign (<code>+</code>) following an asset key selects an asset and
-        one layer upstream of the asset.
+        one layer downstream of the asset.
         <br></br>
         <br></br>
         Including multiple <code>+</code>s will select that number of downstream
         layers from the asset. For example, <code>ASSET_KEY++</code> will select
-        the asset and two downstream layers of dependencies. Any number of <code>
-          +
-        </code>s is supported.
+        the asset and two downstream layers of dependencies. Any number of <code>+</code>s is supported.
       </td>
     </tr>
   </tbody>
