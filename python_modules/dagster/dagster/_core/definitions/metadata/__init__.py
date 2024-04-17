@@ -17,7 +17,6 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -25,6 +24,7 @@ import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, experimental, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
+from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -1224,7 +1224,7 @@ class MetadataEntry(
 T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
 
 
-class NamespacedMetadataSet(ABC, BaseModel, frozen=True):
+class NamespacedMetadataSet(ABC, DagsterModel):
     """Extend this class to define a set of metadata fields in the same namespace.
 
     Supports splatting to a dictionary that can be placed inside a metadata argument along with
@@ -1294,7 +1294,7 @@ class NamespacedMetadataSet(ABC, BaseModel, frozen=True):
         return cls(**kwargs)
 
 
-class TableMetadataSet(NamespacedMetadataSet, frozen=True):
+class TableMetadataSet(NamespacedMetadataSet):
     """Metadata entries that apply to definitions, observations, or materializations of assets that
     are tables.
 
