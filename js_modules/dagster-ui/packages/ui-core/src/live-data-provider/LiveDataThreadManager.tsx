@@ -6,7 +6,7 @@ type Listener<T> = (stringKey: string, data?: T | undefined) => void;
 
 export class LiveDataThreadManager<T> {
   protected static _instance: LiveDataThreadManager<any>;
-  private threads: Partial<Record<LiveDataThreadID, LiveDataThread<T>>>;
+  private threads: Record<LiveDataThreadID, LiveDataThread<T>>;
   private lastFetchedOrRequested: Record<
     string,
     {fetched: number; requested?: undefined} | {requested: number; fetched?: undefined} | null

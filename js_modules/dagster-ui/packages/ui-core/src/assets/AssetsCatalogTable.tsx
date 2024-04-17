@@ -100,6 +100,7 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
     return {
       assets,
       error,
+      loading: !assets && !error,
       query: groupSelector ? groupQuery : assetsQuery,
     };
   }, [assets, assetsQuery, error, groupQuery, groupSelector]);
