@@ -960,6 +960,7 @@ class DbtCliResource(ConfigurableResource):
         target: Optional[str] = None,
         dbt_executable: str = DBT_EXECUTABLE,
         state_path: Optional[str] = None,
+        **kwargs,  # allow custom subclasses to add fields
     ):
         if isinstance(project_dir, DbtProject):
             if not state_path and project_dir.state_path:
@@ -979,6 +980,7 @@ class DbtCliResource(ConfigurableResource):
             target=target,  # type: ignore
             dbt_executable=dbt_executable,  # type: ignore
             state_path=state_path,  # type: ignore
+            **kwargs,
         )
 
     @classmethod
