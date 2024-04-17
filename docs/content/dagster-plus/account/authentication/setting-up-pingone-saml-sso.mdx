@@ -78,11 +78,11 @@ To complete the steps in this guide, you'll need:
 
       - **ACS URLS** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-            https://<organization_name>.dagster.plus/auth/saml/consume
+            https://<organization_name>.dagster.cloud/auth/saml/consume
 
       - **Assertion Validity Duration**: Type `60`.
 
-      In the following example, the organization’s name is `hooli` and the Dagster+ domain is `https://hooli.dagster.plus`:
+      In the following example, the organization’s name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
 
       <Image
       alt="Service Provider Details"
@@ -140,7 +140,7 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
    ```shell
    dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
      --api-token=<user_token> \
-     --url https://<organization_name>.dagster.plus
+     --url https://<organization_name>.dagster.cloud
    ```
 
 ---
@@ -173,7 +173,7 @@ Lastly, you'll test your SSO configuration:
 
 ### Testing a service provider-initiated login
 
-1. Navigate to your Dagster+ sign in page at `https://<organization_name>.dagster.plus`
+1. Navigate to your Dagster+ sign in page at `https://<organization_name>.dagster.cloud`
 
 2. Click the **Sign in with SSO** button.
 

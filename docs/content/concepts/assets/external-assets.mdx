@@ -193,7 +193,7 @@ Refer to the following tabs for examples using `curl` and Python to communicate 
 
 ```bash
 curl --request POST \
-    --url https://{organization}.dagster.plus/{deployment}/report_asset_materialization/{asset_key} \
+    --url https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key} \
     --header 'Content-Type: application/json' \
     --header 'Dagster-Cloud-Api-Token: {token}' \
     --data '{
@@ -236,7 +236,7 @@ curl --request POST \
 ```python
 import requests
 
-url = f"https://{organization}.dagster.plus/{deployment}/report_asset_materialization/{asset_key}"
+url = f"https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key}"
 payload = { "metadata": { "source": "From python script" } }
 headers = { "Content-Type": "application/json", "Dagster-Cloud-Api-Token": "{token}" }
 

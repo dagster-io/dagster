@@ -20,7 +20,7 @@ To complete the steps in this guide, you'll need:
 - A Dagster+ account
 - Access to the [Dagster+ Insights feature](/dagster-plus/insights)
 - A Dagster+ [user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens)
-- Your deployment-scoped Dagster+ deployment URL. For example: `dagster-university.dagster.plus/prod`
+- Your deployment-scoped Dagster+ deployment URL. For example: `dagster-university.dagster.cloud/prod`
 
 ---
 
@@ -72,7 +72,7 @@ query AssetMetrics($metricName: String, $after: Float, $before: Float) {
 
 
 def get_client():
-    url = "YOUR_ORG.dagster.plus/prod"  # Your deployment-scoped url
+    url = "YOUR_ORG.dagster.cloud/prod"  # Your deployment-scoped url
     user_token = "YOUR_TOKEN"  # A token generated from Organization Settings > Tokens
     return DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
 
@@ -98,7 +98,7 @@ To use this example yourself, replace the values of `url` and `user_token` in th
 
 ```python
 def get_client():
-    url = "YOUR_ORG.dagster.plus/prod"  # Your deployment-scoped url
+    url = "YOUR_ORG.dagster.cloud/prod"  # Your deployment-scoped url
     user_token = "YOUR_TOKEN"  # A token generated from Organization Settings > Tokens
     return DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
 ```
@@ -111,7 +111,7 @@ Refer to the [Reference section](#reference) for more info about the endpoints a
 
 For the full GraphQL API reference:
 
-1. Navigate to <https://YOUR_ORG.dagster.plus/prod/graphql>, replacing `YOUR_ORG` with your organization name. For example: `https://dagster-university.dagster.plus/prod/graphql`
+1. Navigate to <https://YOUR_ORG.dagster.cloud/prod/graphql>, replacing `YOUR_ORG` with your organization name. For example: `https://dagster-university.dagster.cloud/prod/graphql`
 2. Click the **Schema** tab.
 
 ### Available top-level queries
