@@ -279,9 +279,6 @@ class AssetCondition(ABC, DagsterModel):
             )
     """
 
-    class Config:
-        keep_untouched = (functools.cached_property,)
-
     @property
     def unique_id(self) -> str:
         parts = [
