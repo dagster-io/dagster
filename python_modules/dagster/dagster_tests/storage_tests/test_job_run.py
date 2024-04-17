@@ -4,15 +4,15 @@ import dagster._check as check
 import pytest
 from dagster._check import CheckError
 from dagster._core.code_pointer import ModuleCodePointer
-from dagster._core.host_representation.origin import (
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
-    InProcessCodeLocationOrigin,
-)
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
+)
+from dagster._core.remote_representation.origin import (
+    InProcessCodeLocationOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -26,8 +26,8 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 def test_queued_job_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
-    fake_job_origin = ExternalJobOrigin(
-        ExternalRepositoryOrigin(
+    fake_job_origin = RemoteJobOrigin(
+        RemoteRepositoryOrigin(
             InProcessCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable,

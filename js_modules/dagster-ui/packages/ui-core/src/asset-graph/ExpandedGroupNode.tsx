@@ -53,13 +53,12 @@ export const ExpandedGroupNode = ({
           )}
         </GroupNodeHeaderBox>
       </ContextMenuWrapper>
-      <GroupOutline $minimal={minimal} />
       {dialog}
     </div>
   );
 };
 
-const GroupOutline = styled.div<{$minimal: boolean}>`
+export const GroupOutline = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;
@@ -71,6 +70,7 @@ const GroupOutline = styled.div<{$minimal: boolean}>`
   pointer-events: none;
 
   border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  border-top: 0;
 `;
 
 const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
@@ -85,7 +85,6 @@ const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
   border-radius: 8px;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  border-bottom: 0;
   position: relative;
   transition:
     background 100ms linear,

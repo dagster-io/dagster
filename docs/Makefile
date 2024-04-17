@@ -1,5 +1,5 @@
 docs_ruff:
-	-ruff --fix ../examples/docs_snippets
+	-ruff check --fix ../examples/docs_snippets
 	ruff format ../examples/docs_snippets
 
 apidoc-build:

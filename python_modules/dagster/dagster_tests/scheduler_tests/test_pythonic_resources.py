@@ -124,7 +124,7 @@ def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY
     return ModuleTarget(
         module_name="dagster_tests.scheduler_tests.test_pythonic_resources",
         attribute=None,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 

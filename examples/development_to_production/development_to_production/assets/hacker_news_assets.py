@@ -1,12 +1,14 @@
 import pandas as pd
-from dagster import asset, Config
+from dagster import Config, asset
 from dagster_snowflake import SnowflakeResource
-from ..resources import HNAPIClient
 from snowflake.connector.pandas_tools import write_pandas
-import requests
+
+from ..resources import HNAPIClient
+
 
 class ItemsConfig(Config):
     base_item_id: int
+
 
 CREATE_TABLE_QUERY = """
 create table if not exists {table_name} (
@@ -48,12 +50,8 @@ where type = '{item_type}'
 """
 
 
-
-
 @asset
-def items(
-    config: ItemsConfig, snowflake_resource: SnowflakeResource, hn_client: HNAPIClient
-):
+def items(config: ItemsConfig, snowflake_resource: SnowflakeResource, hn_client: HNAPIClient):
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
     max_id = hn_client.fetch_max_item_id()
@@ -62,10 +60,7 @@ def items(
     for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
         rows.append(hn_client.fetch_item_by_id(item_id))
 
-
-    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
-        subset=["id"]
-    )
+    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
 
     # Upload data to Snowflake as a dataframe

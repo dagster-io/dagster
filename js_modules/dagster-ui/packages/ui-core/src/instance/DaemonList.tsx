@@ -8,7 +8,9 @@ import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
 import {AutoMaterializeExperimentalTag} from '../assets/AutoMaterializePolicyPage/AutoMaterializeExperimentalBanner';
+import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
+import {testId} from '../testing/testId';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 interface DaemonLabelProps {
@@ -47,6 +49,8 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
   const assetDaemon = daemonStatuses?.filter((daemon) => daemon.daemonType === 'ASSET')[0];
   const nonAssetDaemons = daemonStatuses?.filter((daemon) => daemon.daemonType !== 'ASSET');
 
+  const hasGlobalAMP = useAutoMaterializeSensorFlag() === 'has-global-amp';
+
   const confirm = useConfirmation();
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
@@ -55,8 +59,8 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
     <Table>
       <thead>
         <tr>
-          <th style={{width: '25%'}}>Daemon</th>
-          <th style={{width: '30%'}}>Status</th>
+          <th style={{width: '30%'}}>Daemon</th>
+          <th style={{width: '20%'}}>Status</th>
           {showTimestampColumn && <th>Last heartbeat</th>}
         </tr>
       </thead>
@@ -70,8 +74,10 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
                   <AutoMaterializeExperimentalTag />
                 </Box>
                 {automaterialize.loading ? (
-                  <Spinner purpose="body-text" />
-                ) : (
+                  <div data-testid={testId('loading-spinner')}>
+                    <Spinner purpose="body-text" />
+                  </div>
+                ) : hasGlobalAMP ? (
                   <Checkbox
                     format="switch"
                     checked={!automaterialize.paused}
@@ -88,7 +94,7 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
                       automaterialize.setPaused(!checked);
                     }}
                   />
-                )}
+                ) : null}
               </Box>
             </td>
             <td>

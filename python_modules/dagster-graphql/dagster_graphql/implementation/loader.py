@@ -7,11 +7,12 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events.log import EventLogEntry
-from dagster._core.host_representation import ExternalRepository
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
@@ -315,6 +316,7 @@ class CrossRepoAssetDependedByLoader:
                         )
                     ],
                     depended_by=[],
+                    execution_type=AssetExecutionType.UNEXECUTABLE,
                 )
 
         return sink_assets, external_asset_deps

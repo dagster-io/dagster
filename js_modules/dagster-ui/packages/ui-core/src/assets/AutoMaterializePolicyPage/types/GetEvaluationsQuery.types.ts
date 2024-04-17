@@ -81,6 +81,20 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -127,6 +141,12 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -202,6 +222,20 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -248,6 +282,12 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -420,6 +460,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -468,6 +522,12 @@ export type AssetConditionEvaluationRecordFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -560,6 +620,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -612,6 +686,12 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -625,8 +705,8 @@ export type AssetConditionEvaluationRecordFragment = {
 
 export type GetEvaluationsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  limit: Types.Scalars['Int'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type GetEvaluationsQuery = {
@@ -780,6 +860,20 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'TableColumnLineageMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        lineage: Array<{
+                          __typename: 'TableColumnLineageEntry';
+                          columnName: string;
+                          columnDeps: Array<{
+                            __typename: 'TableColumnDep';
+                            columnName: string;
+                            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                          }>;
+                        }>;
+                      }
+                    | {
                         __typename: 'TableMetadataEntry';
                         label: string;
                         description: string | null;
@@ -834,6 +928,12 @@ export type GetEvaluationsQuery = {
                     | {
                         __typename: 'TextMetadataEntry';
                         text: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number;
                         label: string;
                         description: string | null;
                       }
@@ -926,6 +1026,20 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'TableColumnLineageMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        lineage: Array<{
+                          __typename: 'TableColumnLineageEntry';
+                          columnName: string;
+                          columnDeps: Array<{
+                            __typename: 'TableColumnDep';
+                            columnName: string;
+                            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                          }>;
+                        }>;
+                      }
+                    | {
                         __typename: 'TableMetadataEntry';
                         label: string;
                         description: string | null;
@@ -984,6 +1098,12 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'UrlMetadataEntry';
                         url: string;
                         label: string;
@@ -1001,8 +1121,8 @@ export type GetEvaluationsQuery = {
 
 export type GetEvaluationsSpecificPartitionQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  evaluationId: Types.Scalars['Int'];
-  partition: Types.Scalars['String'];
+  evaluationId: Types.Scalars['Int']['input'];
+  partition: Types.Scalars['String']['input'];
 }>;
 
 export type GetEvaluationsSpecificPartitionQuery = {
@@ -1127,6 +1247,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -1175,6 +1309,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -1267,6 +1407,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -1315,6 +1469,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }

@@ -5,6 +5,7 @@ Revises: 7cba9eeaaf1d
 Create Date: 2021-03-17 16:38:09.418235
 
 """
+
 from dagster._core.storage.migration.utils import add_asset_details_column
 
 # revision identifiers, used by Alembic.

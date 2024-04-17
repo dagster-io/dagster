@@ -96,3 +96,11 @@ class DagsterDbtCliOutputsNotFoundError(DagsterDbtError):
 
 class DagsterDbtCloudJobInvariantViolationError(DagsterDbtError, DagsterInvariantViolationError):
     """Represents an error when a dbt Cloud job is not supported by the ``dagster-dbt`` library."""
+
+
+class DagsterDbtProjectNotFoundError(DagsterDbtError):
+    """Error when the specified project directory can not be found."""
+
+
+class DagsterDbtManifestNotPreparedError(DagsterDbtError):
+    """Error when we expect manifest.json to be compiled already but it is absent."""

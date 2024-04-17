@@ -5,7 +5,7 @@ import {useMemo} from 'react';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -14,7 +14,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
  * limit could cause random partitions to disappear if materializations were out of order.
  */
 export function useRecentAssetEvents(
-  assetKey: AssetKey,
+  assetKey: AssetKey | undefined,
   params: AssetViewParams,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
@@ -41,21 +41,22 @@ export function useRecentAssetEvents(
   const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
     ASSET_EVENTS_QUERY,
     {
+      skip: !assetKey,
       variables: loadUsingPartitionKeys
         ? {
-            assetKey: {path: assetKey.path},
+            assetKey: {path: assetKey?.path ?? []},
             before,
             partitionInLast: 120,
           }
         : {
-            assetKey: {path: assetKey.path},
+            assetKey: {path: assetKey?.path ?? []},
             before,
             limit: 100,
           },
     },
   );
 
-  return useMemo(() => {
+  const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];
@@ -78,7 +79,11 @@ export function useRecentAssetEvents(
       xAxis,
     };
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
+
+  return value;
 }
+
+export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
 
 export const ASSET_MATERIALIZATION_FRAGMENT = gql`
   fragment AssetMaterializationFragment on MaterializationEvent {

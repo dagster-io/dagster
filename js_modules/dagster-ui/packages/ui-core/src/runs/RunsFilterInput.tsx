@@ -513,6 +513,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const createdDateFilter = useTimeRangeFilter({
     name: 'Created date',
+    activeFilterTerm: 'Created',
     icon: 'date',
     state: useMemo(() => {
       const before = tokens.find((token) => token.token === 'created_date_before');

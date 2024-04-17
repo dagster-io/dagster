@@ -1,9 +1,9 @@
 ---
-title: "dbt + Dagster"
+title: "dbt & Dagster | Dagster Docs"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
-# dbt + Dagster
+# dbt & Dagster
 
 <Note>
   <b>Using Dagster Cloud?</b> Automatically load your dbt models as Dagster
@@ -26,7 +26,7 @@ Dagster's [Software-defined Asset](/concepts/assets/software-defined-assets) app
 
 An asset graph like this:
 
-<!-- Note: This is also used in /getting-started/overview -->
+<!-- Note: This is also used in /getting-started/overview and Lesson 1 of DU's Dagster + dbt module -->
 
 <!-- ![Dagster graph with dbt, Fivetran, and TensorFlow](/images/integrations/dbt/dagster-dbt-fivetran-tensorflow.png) -->
 
@@ -62,8 +62,7 @@ def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     compute_kind="tensorflow",
     deps=[get_asset_key_for_model([dbt_project_assets], "daily_order_summary")],
 )
-def predicted_orders():
-    ...
+def predicted_orders(): ...
 ```
 
 ---

@@ -1,15 +1,22 @@
-import {Box, Icon} from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import {Box} from '@dagster-io/ui-components';
+import React, {useContext} from 'react';
 
 import {GraphNode} from './Utils';
-import {AssetGroupSelector} from '../graphql/types';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
+import {CloudOSSContext} from '../app/CloudOSSContext';
+import {FeatureFlag, featureEnabled} from '../app/Flags';
+import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useFilters} from '../ui/Filters';
+import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
+import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {
+  useAssetKindTagsForAssets,
+  useComputeKindTagFilter,
+} from '../ui/Filters/useComputeKindTagFilter';
 import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 type OptionalFilters =
   | {
@@ -18,25 +25,39 @@ type OptionalFilters =
       visibleAssetGroups?: null;
       computeKindTags?: null;
       setComputeKindTags?: null;
+      changedInBranch?: null;
+      setChangedInBranch?: null;
+      allAssetTags?: null;
+      assetTags?: null;
+      setAssetTags?: null;
+      allOwners?: null;
+      owners?: null;
+      setOwners: null;
     }
   | {
-      assetGroups: AssetGroupSelector[];
-      visibleAssetGroups: AssetGroupSelector[];
-      setGroupFilters: (groups: AssetGroupSelector[]) => void;
-      computeKindTags: string[];
-      setComputeKindTags: (s: string[]) => void;
+      assetGroups?: AssetGroupSelector[];
+      visibleAssetGroups?: AssetGroupSelector[];
+      setGroupFilters?: (groups: AssetGroupSelector[]) => void;
+      computeKindTags?: string[];
+      setComputeKindTags?: (s: string[]) => void;
+      changedInBranch?: ChangeReason[];
+      setChangedInBranch?: (s: ChangeReason[]) => void;
+      assetTags?: DefinitionTag[];
+      setAssetTags?: (s: DefinitionTag[]) => void;
+      owners?: AssetOwner[];
+      setOwners?: (owners: AssetOwner[]) => void;
     };
 
 type Props = {
   nodes: GraphNode[];
   clearExplorerPath: () => void;
   explorerPath: string;
+  isGlobalGraph: boolean;
 } & OptionalFilters;
-
-const emptyArray: any[] = [];
 
 export function useAssetGraphExplorerFilters({
   nodes,
+  isGlobalGraph,
   assetGroups,
   visibleAssetGroups,
   setGroupFilters,
@@ -44,105 +65,73 @@ export function useAssetGraphExplorerFilters({
   setComputeKindTags,
   explorerPath,
   clearExplorerPath,
+  changedInBranch,
+  setChangedInBranch,
+  assetTags,
+  setAssetTags,
+  owners,
+  setOwners,
 }: Props) {
+  const allAssetTags = useAssetTagsForAssets(nodes);
+
   const {allRepos} = useContext(WorkspaceContext);
 
   const reposFilter = useCodeLocationFilter();
 
-  const groupsFilter = useStaticSetFilter<AssetGroupSelector>({
-    name: 'Asset Groups',
-    icon: 'asset_group',
-    allValues: (assetGroups || []).map((group) => ({
-      key: group.groupName,
-      value:
-        visibleAssetGroups?.find(
-          (visibleGroup) =>
-            visibleGroup.groupName === group.groupName &&
-            visibleGroup.repositoryName === group.repositoryName &&
-            visibleGroup.repositoryLocationName === group.repositoryLocationName,
-        ) ?? group,
-      match: [group.groupName],
-    })),
-    menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="repo" />
-        <TruncatedTextWithFullTextOnHover
-          tooltipText={
-            value.groupName +
-            ' - ' +
-            buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)
-          }
-          text={
-            <>
-              {value.groupName}
-              <span style={{opacity: 0.5, paddingLeft: '4px'}}>
-                {buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)}
-              </span>
-            </>
-          }
-        />
-      </Box>
-    ),
-    getStringValue: (group) => group.groupName,
-    getTooltipText: (group) =>
-      group.groupName +
-      ' - ' +
-      buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
+  const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
+  const groupsFilter = useAssetGroupFilter({visibleAssetGroups, assetGroups, setGroupFilters});
 
-    state: useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
-    onStateChanged: (values) => {
-      if (setGroupFilters) {
-        setGroupFilters(Array.from(values));
-      }
-    },
+  const allComputeKindTags = useAssetKindTagsForAssets(nodes);
+
+  const kindTagsFilter = useComputeKindTagFilter({
+    allComputeKindTags,
+    computeKindTags,
+    setComputeKindTags,
   });
 
-  const allKindTags = useMemo(
-    () =>
-      Array.from(
-        new Set(nodes.map((node) => node.definition.computeKind).filter((v) => v) as string[]),
-      ),
-    [nodes],
-  );
+  const tagsFilter = useAssetTagFilter({
+    allAssetTags,
+    tags: assetTags,
+    setTags: setAssetTags,
+  });
 
-  const kindTagsFilter = useStaticSetFilter<string>({
-    name: 'Compute kind',
-    icon: 'tag',
-    allValues: useMemo(
-      () =>
-        allKindTags.map((value) => ({
-          value,
-          match: [value],
-        })),
-      [allKindTags],
-    ),
-    menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="tag" />
-        <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
-      </Box>
-    ),
-    getStringValue: (value) => value,
-    state: computeKindTags ?? emptyArray,
-    onStateChanged: (values) => {
-      setComputeKindTags?.(Array.from(values));
-    },
+  const allAssetOwners = useAssetOwnersForAssets(nodes);
+  const ownerFilter = useAssetOwnerFilter({
+    allAssetOwners,
+    owners,
+    setOwners,
   });
 
   const filters: FilterObject[] = [];
-  if (allRepos.length > 1) {
+
+  if (allRepos.length > 1 && isGlobalGraph) {
     filters.push(reposFilter);
   }
   if (assetGroups) {
     filters.push(groupsFilter);
   }
-  filters.push(kindTagsFilter);
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (
+    changedInBranch &&
+    featureEnabled(FeatureFlag.flagExperimentalBranchDiff) &&
+    isBranchDeployment
+  ) {
+    filters.push(changedFilter);
+  }
+  if (setComputeKindTags) {
+    filters.push(kindTagsFilter);
+  }
+  if (setAssetTags) {
+    filters.push(tagsFilter);
+  }
+  if (setOwners) {
+    filters.push(ownerFilter);
+  }
   const {button, activeFiltersJsx} = useFilters({filters});
-  if (allRepos.length <= 1 && !assetGroups) {
+  if (!filters.length) {
     return {button: null, activeFiltersJsx: null};
   }
+
   return {
     button,
     filterBar:

@@ -95,7 +95,7 @@ describe('timestampToString', () => {
 
   it('resolves to the same memoization key for the same config', () => {
     const expectedKey =
-      '1615708800000-en-US-America/Chicago-{"showTimezone":false,"showSeconds":false}-Automatic';
+      '1615708800000-en-US-America/Chicago-{"showTimezone":false,"showSeconds":false,"showMsec":false}-Automatic';
 
     expect(
       resolveTimestampKey({

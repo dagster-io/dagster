@@ -55,7 +55,7 @@ height={917}
 There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the [Asset Details](/concepts/webserver/ui#asset-details) page. Check our API docs for <PyObject object="MetadataValue" /> for more details on the types of event metadata available.
 
 ```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
-from dagster import AssetMaterialization, AssetObservation, MetadataValue, op
+from dagster import AssetObservation, MetadataValue, op
 
 
 @op
@@ -75,7 +75,6 @@ def observes_dataset_op(context: OpExecutionContext):
             },
         )
     )
-    context.log_event(AssetMaterialization(asset_key="my_dataset"))
     return remote_storage_path
 ```
 
@@ -93,7 +92,7 @@ height={1146}
 If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
 ```python file=/concepts/assets/observations.py startafter=start_partitioned_asset_observation endbefore=end_partitioned_asset_observation
-from dagster import AssetMaterialization, Config, op, OpExecutionContext
+from dagster import Config, op, OpExecutionContext
 
 
 class MyOpConfig(Config):

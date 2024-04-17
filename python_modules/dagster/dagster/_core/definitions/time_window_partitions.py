@@ -234,6 +234,14 @@ class TimeWindow(NamedTuple):
     start: PublicAttr[datetime]
     end: PublicAttr[datetime]
 
+    @property
+    def is_empty(self) -> bool:
+        return self.start == self.end
+
+    @staticmethod
+    def empty() -> "TimeWindow":
+        return TimeWindow(start=datetime.max, end=datetime.max)
+
 
 @whitelist_for_serdes(
     field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
@@ -1625,16 +1633,13 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
     SERIALIZATION_VERSION = 1
 
     @abstractproperty
-    def included_time_windows(self) -> Sequence[TimeWindow]:
-        ...
+    def included_time_windows(self) -> Sequence[TimeWindow]: ...
 
     @abstractproperty
-    def num_partitions(self) -> int:
-        ...
+    def num_partitions(self) -> int: ...
 
     @abstractproperty
-    def partitions_def(self) -> TimeWindowPartitionsDefinition:
-        ...
+    def partitions_def(self) -> TimeWindowPartitionsDefinition: ...
 
     def _get_partition_time_windows_not_in_subset(
         self,
@@ -1704,22 +1709,18 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         return partition_keys
 
     @abstractproperty
-    def first_start(self) -> datetime:
-        ...
+    def first_start(self) -> datetime: ...
 
     @abstractproperty
-    def is_empty(self) -> bool:
-        ...
+    def is_empty(self) -> bool: ...
 
     @abstractmethod
-    def cheap_ends_before(self, dt: datetime, dt_cron_schedule: str) -> bool:
-        ...
+    def cheap_ends_before(self, dt: datetime, dt_cron_schedule: str) -> bool: ...
 
     @abstractmethod
     def with_partitions_def(
         self, partitions_def: TimeWindowPartitionsDefinition
-    ) -> "BaseTimeWindowPartitionsSubset":
-        ...
+    ) -> "BaseTimeWindowPartitionsSubset": ...
 
     def get_partition_key_ranges(
         self,
@@ -2048,7 +2049,7 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.host_representation.external_data import (
+        from dagster._core.remote_representation.external_data import (
             external_time_window_partitions_definition_from_def,
         )
 
@@ -2210,7 +2211,7 @@ class TimeWindowPartitionsSubset(
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.host_representation.external_data import (
+        from dagster._core.remote_representation.external_data import (
             external_time_window_partitions_definition_from_def,
         )
 

@@ -3,9 +3,10 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 import dagster._check as check
 import graphene
 from dagster import AssetCheckKey
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
@@ -52,6 +53,7 @@ from ...implementation.external import (
 )
 from ...implementation.fetch_asset_checks import fetch_asset_check_executions
 from ...implementation.fetch_assets import (
+    get_additional_required_keys,
     get_asset,
     get_asset_node,
     get_asset_node_definition_collisions,
@@ -102,6 +104,7 @@ from ...implementation.utils import (
 )
 from ..asset_checks import GrapheneAssetCheckExecution
 from ..asset_graph import (
+    GrapheneAssetKey,
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
     GrapheneAssetNodeDefinitionCollision,
@@ -417,9 +420,15 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve an asset node by asset key.",
     )
 
+    assetNodeAdditionalRequiredKeys = graphene.Field(
+        non_null_list(GrapheneAssetKey),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+        description="Retrieve a list of additional asset keys that must be materialized with the provided selection (due to @multi_assets with can_subset=False constraints.)",
+    )
+
     assetNodeDefinitionCollisions = graphene.Field(
         non_null_list(GrapheneAssetNodeDefinitionCollision),
-        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
         description=(
             "Retrieve a list of asset keys where two or more repos provide an asset definition."
             " Note: Assets should "
@@ -794,7 +803,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runTagsOrError(
         self,
         graphene_info: ResolveInfo,
-        tagKeys: Optional[List[str]] = None,
+        tagKeys: List[str],
         valuePrefix: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -941,16 +950,18 @@ class GrapheneQuery(graphene.ObjectType):
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-        def load_asset_graph() -> ExternalAssetGraph:
+        def load_asset_graph() -> RemoteAssetGraph:
             if repo is not None:
-                return ExternalAssetGraph.from_external_repository(repo)
+                return repo.asset_graph
             else:
-                return ExternalAssetGraph.from_workspace(graphene_info.context)
+                return graphene_info.context.asset_graph
 
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
             asset_graph=load_asset_graph,
         )
+
+        base_deployment_context = graphene_info.context.get_base_deployment_context()
 
         nodes = [
             GrapheneAssetNode(
@@ -962,6 +973,15 @@ class GrapheneQuery(graphene.ObjectType):
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
+                # base_deployment_context will be None if we are not in a branch deployment
+                asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                    code_location_name=node.repository_location.name,
+                    repository_name=node.external_repository.name,
+                    branch_workspace=graphene_info.context,
+                    base_workspace=base_deployment_context,
+                )
+                if base_deployment_context is not None
+                else None,
             )
             for node in results
         ]
@@ -989,10 +1009,20 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
 
+    def resolve_assetNodeAdditionalRequiredKeys(
+        self,
+        graphene_info: ResolveInfo,
+        assetKeys: Sequence[GrapheneAssetKeyInput],
+    ):
+        assert assetKeys is not None
+        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
+        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
+        return get_additional_required_keys(graphene_info, asset_keys)
+
     def resolve_assetNodeDefinitionCollisions(
         self,
         graphene_info: ResolveInfo,
-        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
+        assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         assert assetKeys is not None
         raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)

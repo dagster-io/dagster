@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import NamedTuple, Optional, cast
+from typing import List, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -160,6 +160,26 @@ class TimeWindowPartitionMapping(
             start_offset=-self.end_offset,
             current_time=current_time,
         ).partitions_subset
+
+    def _merge_time_windows(self, time_windows: Sequence[TimeWindow]) -> Sequence[TimeWindow]:
+        """Takes a list of potentially-overlapping TimeWindows and merges any overlapping windows."""
+        if not time_windows:
+            return []
+
+        sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start.timestamp())
+        merged_time_windows: List[TimeWindow] = [sorted_time_windows[0]]
+
+        for window in sorted_time_windows[1:]:
+            last_window = merged_time_windows[-1]
+            # window starts before the end of the previous one
+            if window.start.timestamp() <= last_window.end.timestamp():
+                merged_time_windows[-1] = TimeWindow(
+                    last_window.start, max(last_window.end, window.end, key=lambda d: d.timestamp())
+                )
+            else:
+                merged_time_windows.append(window)
+
+        return merged_time_windows
 
     def _map_partitions(
         self,
@@ -326,7 +346,9 @@ class TimeWindowPartitionMapping(
 
         return UpstreamPartitionsResult(
             TimeWindowPartitionsSubset(
-                to_partitions_def, num_partitions=None, included_time_windows=filtered_time_windows
+                to_partitions_def,
+                num_partitions=None,
+                included_time_windows=self._merge_time_windows(filtered_time_windows),
             ),
             sorted(list(required_but_nonexistent_partition_keys)),
         )

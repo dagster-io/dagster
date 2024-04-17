@@ -197,12 +197,8 @@ def create_fields_not_defined_error(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED,
         message=(
-            'Received unexpected config entries "{undefined_fields}" {path_msg}. '
-            'Expected: "{available_fields}."'
-        ).format(
-            undefined_fields=undefined_fields,
-            path_msg=get_friendly_path_msg(context.stack),
-            available_fields=available_fields,
+            f'Received unexpected config entries "{undefined_fields}" {get_friendly_path_msg(context.stack)}. '
+            f'Expected: "{available_fields}."'
         ),
         error_data=FieldsNotDefinedErrorData(field_names=undefined_fields),
     )
@@ -214,10 +210,7 @@ def create_enum_type_mismatch_error(context: ContextData, config_value: object) 
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message="Value {path_msg} for enum type {type_name} must be a string".format(
-            type_name=context.config_type_snap.given_name,
-            path_msg=get_friendly_path_msg(context.stack),
-        ),
+        message=f"Value {get_friendly_path_msg(context.stack)} for enum type {context.config_type_snap.given_name} must be a string",
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
 
@@ -228,11 +221,7 @@ def create_enum_value_missing_error(context: ContextData, config_value: object) 
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message="Value {path_msg} not in enum type {type_name} got {config_value}".format(
-            config_value=config_value,
-            type_name=context.config_type_snap.given_name,
-            path_msg=get_friendly_path_msg(context.stack),
-        ),
+        message=f"Value {get_friendly_path_msg(context.stack)} not in enum type {context.config_type_snap.given_name} got {config_value}",
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
 
@@ -366,13 +355,8 @@ def create_scalar_error(context: ContextData, config_value: object) -> Evaluatio
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message=(
-            'Invalid scalar {path_msg}. Value "{config_value}" of type '
-            '"{type}" is not valid for expected type "{type_name}".'.format(
-                path_msg=get_friendly_path_msg(context.stack),
-                type_name=context.config_type_snap.given_name,
-                config_value=config_value,
-                type=type(config_value),
-            )
+            f'Invalid scalar {get_friendly_path_msg(context.stack)}. Value "{config_value}" of type '
+            f'"{type(config_value)}" is not valid for expected type "{context.config_type_snap.given_name}".'
         ),
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
@@ -410,12 +394,8 @@ def create_selector_multiple_fields_error(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
         message=(
-            "You can only specify a single field {path_msg}. You specified {incoming_fields}. "
-            "The available fields are {defined_fields}"
-        ).format(
-            incoming_fields=incoming_fields,
-            defined_fields=defined_fields,
-            path_msg=get_friendly_path_msg(context.stack),
+            f"You can only specify a single field {get_friendly_path_msg(context.stack)}. You specified {incoming_fields}. "
+            f"The available fields are {defined_fields}"
         ),
         error_data=SelectorTypeErrorData(
             config_type_snap=context.config_type_snap, incoming_fields=incoming_fields
@@ -434,9 +414,9 @@ def create_selector_multiple_fields_no_field_selected_error(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
         message=(
-            "Must specify a field {path_msg} if more than one field is defined. "
-            "Defined fields: {defined_fields}"
-        ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
+            f"Must specify a field {get_friendly_path_msg(context.stack)} if more than one field is defined. "
+            f"Defined fields: {defined_fields}"
+        ),
         error_data=SelectorTypeErrorData(
             config_type_snap=context.config_type_snap, incoming_fields=[]
         ),
@@ -465,8 +445,8 @@ def create_selector_unspecified_value_error(context: ContextData) -> EvaluationE
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
         message=(
-            "Must specify the required field {path_msg}. Defined fields: {defined_fields}"
-        ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
+            f"Must specify the required field {get_friendly_path_msg(context.stack)}. Defined fields: {defined_fields}"
+        ),
         error_data=SelectorTypeErrorData(
             config_type_snap=context.config_type_snap, incoming_fields=[]
         ),
@@ -499,11 +479,7 @@ def create_failed_post_processing_error(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FAILED_POST_PROCESSING,
         message=(
-            "Post processing {path_msg} of original value {original_value} failed:\n{error}".format(
-                path_msg=get_friendly_path_msg(context.stack),
-                original_value=original_value,
-                error=error_data.to_string(),
-            )
+            f"Post processing {get_friendly_path_msg(context.stack)} of original value {original_value} failed:\n{error_data.to_string()}"
         ),
         error_data=error_data,
     )

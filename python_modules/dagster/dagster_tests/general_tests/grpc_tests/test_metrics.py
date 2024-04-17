@@ -7,11 +7,11 @@ import time
 from typing import Any
 
 import pytest
-from dagster._core.host_representation import ExternalRepositoryOrigin
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import RemoteRepositoryOrigin
+from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
     instance_for_test,
 )
@@ -49,7 +49,7 @@ def test_metrics_retrieval_annotations():
 
 
 def _launch_sensor_execution(
-    repo_origin: ExternalRepositoryOrigin, client: DagsterGrpcClient, instance: DagsterInstance
+    repo_origin: RemoteRepositoryOrigin, client: DagsterGrpcClient, instance: DagsterInstance
 ):
     client.external_sensor_execution(
         sensor_execution_args=SensorExecutionArgs(
@@ -91,7 +91,7 @@ def test_ping_metrics_retrieval(provide_flag: bool):
         client = DagsterGrpcClient(port=port)
 
         with instance_for_test() as instance:
-            repo_origin = ExternalRepositoryOrigin(
+            repo_origin = RemoteRepositoryOrigin(
                 code_location_origin=GrpcServerCodeLocationOrigin(port=port, host="localhost"),
                 repository_name="the_repo",
             )

@@ -115,7 +115,7 @@ export type ScheduleRootQuery = {
 
 export type PreviousRunsForScheduleQueryVariables = Types.Exact<{
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type PreviousRunsForScheduleQuery = {
@@ -140,6 +140,8 @@ export type PreviousRunsForScheduleQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          rootConcurrencyKeys: Array<string> | null;
+          hasUnconstrainedRootNodes: boolean;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;

@@ -647,6 +647,7 @@ type AssetNode {
     limit: Int
   ): [ObservationEvent!]!
   backfillPolicy: BackfillPolicy
+  changedReasons: [ChangeReason!]!
   computeKind: String
   configField: ConfigTypeField
   dataVersion(partition: String): String
@@ -660,7 +661,8 @@ type AssetNode {
   freshnessPolicy: FreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
-  groupName: String
+  groupName: String!
+  owners: [AssetOwner!]!
   id: ID!
   isExecutable: Boolean!
   isObservable: Boolean!
@@ -673,6 +675,7 @@ type AssetNode {
   assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
+  tags: [DefinitionTag!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
@@ -709,6 +712,13 @@ type BackfillPolicy {
 enum BackfillPolicyType {
   SINGLE_RUN
   MULTI_RUN
+}
+
+enum ChangeReason {
+  NEW
+  CODE_VERSION
+  INPUTS
+  PARTITIONS_DEFINITION
 }
 
 type AssetDependency {
@@ -756,6 +766,16 @@ enum AutoMaterializeDecisionType {
   MATERIALIZE
   SKIP
   DISCARD
+}
+
+union AssetOwner = UserAssetOwner | TeamAssetOwner
+
+type UserAssetOwner {
+  email: String!
+}
+
+type TeamAssetOwner {
+  team: String!
 }
 
 union AssetPartitionStatuses =
@@ -808,6 +828,11 @@ type PartitionStats {
   numPartitions: Int!
   numFailed: Int!
   numMaterializing: Int!
+}
+
+type DefinitionTag {
+  key: String!
+  value: String!
 }
 
 type PartitionDefinition {
@@ -902,6 +927,7 @@ type AssetCheckEvaluation {
   targetMaterialization: AssetCheckEvaluationTargetMaterializationData
   metadataEntries: [MetadataEntry!]!
   severity: AssetCheckSeverity!
+  description: String
   success: Boolean!
 }
 
@@ -1393,6 +1419,8 @@ type Run implements PipelineRun {
   hasTerminatePermission: Boolean!
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
+  rootConcurrencyKeys: [String!]
+  hasUnconstrainedRootNodes: Boolean!
 }
 
 type AssetCheckhandle {
@@ -2053,7 +2081,7 @@ type Repository {
   origin: RepositoryOrigin!
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
-  sensors: [Sensor!]!
+  sensors(sensorType: SensorType): [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
@@ -2082,6 +2110,16 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
+}
+
+enum SensorType {
+  STANDARD
+  RUN_STATUS
+  ASSET
+  MULTI_ASSET
+  FRESHNESS_POLICY
+  AUTO_MATERIALIZE
+  UNKNOWN
 }
 
 type AssetGroup {
@@ -2159,7 +2197,6 @@ input AssetKeyInput {
 }
 
 input ExecutionMetadata {
-  runId: String
   tags: [ExecutionTag!]
   rootRunId: String
   parentRunId: String
@@ -2343,12 +2380,13 @@ type Instance {
   maxConcurrencyLimitValue: Int!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
-  useAutomationPolicySensors: Boolean!
+  useAutoMaterializeSensors: Boolean!
 }
 
 type RunQueueConfig {
   maxConcurrentRuns: Int!
   tagConcurrencyLimitsYaml: String
+  isOpConcurrencyAware: Boolean
 }
 
 type ConcurrencyKeyInfo {
@@ -2530,6 +2568,12 @@ interface MetadataEntry {
   description: String
 }
 
+type TableColumnLineageMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  lineage: [TableColumnLineageEntry!]!
+}
+
 type TableSchemaMetadataEntry implements MetadataEntry {
   label: String!
   description: String
@@ -2632,6 +2676,12 @@ type JobMetadataEntry implements MetadataEntry {
 type NullMetadataEntry implements MetadataEntry {
   label: String!
   description: String
+}
+
+type TimestampMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  timestamp: Float!
 }
 
 scalar Cursor
@@ -2893,19 +2943,10 @@ type SensorMetadata {
   assetKeys: [AssetKey!]
 }
 
-enum SensorType {
-  STANDARD
-  RUN_STATUS
-  ASSET
-  MULTI_ASSET
-  FRESHNESS_POLICY
-  AUTOMATION_POLICY
-  UNKNOWN
-}
-
 type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
+  assets: [Asset!]!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
@@ -3074,6 +3115,16 @@ type TableConstraints {
   other: [String!]!
 }
 
+type TableColumnDep {
+  assetKey: AssetKey!
+  columnName: String!
+}
+
+type TableColumnLineageEntry {
+  columnName: String!
+  columnDeps: [TableColumnDep!]!
+}
+
 type PipelineTag {
   key: String!
   value: String!
@@ -3158,7 +3209,8 @@ type Query {
     loadMaterializations: Boolean = false
   ): [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
-  assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]): [AssetNodeDefinitionCollision!]!
+  assetNodeAdditionalRequiredKeys(assetKeys: [AssetKeyInput!]!): [AssetKey!]!
+  assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]!): [AssetNodeDefinitionCollision!]!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   assetBackfillPreview(params: AssetBackfillPreviewParams!): [AssetPartitions!]!
   partitionBackfillsOrError(

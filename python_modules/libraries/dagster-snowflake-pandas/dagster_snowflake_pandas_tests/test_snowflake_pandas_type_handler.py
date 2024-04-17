@@ -748,3 +748,37 @@ def test_self_dependent_asset(io_manager):
                 conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}").fetch_pandas_all()
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_quoted_identifiers_asset(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+
+        @asset(
+            key_prefix=SCHEMA,
+            name=table_name,
+        )
+        def illegal_column_name(context: AssetExecutionContext) -> DataFrame:
+            return DataFrame(
+                {
+                    "5foo": [1, 2, 3],  # columns that start with numbers need to be quoted
+                    "column with a space": [1, 2, 3],
+                    "column_with_punctuation!": [1, 2, 3],
+                    "by": [1, 2, 3],  # reserved
+                }
+            )
+
+        resource_defs = {"io_manager": io_manager}
+        res = materialize(
+            [illegal_column_name],
+            resources=resource_defs,
+        )
+
+        assert res.success

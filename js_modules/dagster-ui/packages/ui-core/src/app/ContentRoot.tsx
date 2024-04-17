@@ -3,11 +3,12 @@ import {Suspense, lazy, memo, useEffect, useRef} from 'react';
 import {Route, Switch, useLocation} from 'react-router-dom';
 
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
+import {AssetsOverview} from '../assets/AssetsOverview';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
+const AutomationRoot = lazy(() => import('../automation/AutomationRoot'));
 const FallthroughRoot = lazy(() => import('./FallthroughRoot'));
-const AssetsCatalogRoot = lazy(() => import('../assets/AssetsCatalogRoot'));
 const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
@@ -18,6 +19,8 @@ const RunsRoot = lazy(() => import('../runs/RunsRoot'));
 const ScheduledRunListRoot = lazy(() => import('../runs/ScheduledRunListRoot'));
 const SnapshotRoot = lazy(() => import('../snapshots/SnapshotRoot'));
 const GuessJobLocationRoot = lazy(() => import('../workspace/GuessJobLocationRoot'));
+const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
+const JobsRoot = lazy(() => import('../jobs/JobsRoot'));
 
 export const ContentRoot = memo(() => {
   const {pathname} = useLocation();
@@ -39,7 +42,7 @@ export const ContentRoot = memo(() => {
           <Route path="/assets(/?.*)">
             <Suspense fallback={<div />}>
               <AssetFeatureProvider>
-                <AssetsCatalogRoot />
+                <AssetsOverview headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]} />
               </AssetFeatureProvider>
             </Suspense>
           </Route>
@@ -96,6 +99,21 @@ export const ContentRoot = memo(() => {
           <Route path="/overview">
             <Suspense fallback={<div />}>
               <OverviewRoot />
+            </Suspense>
+          </Route>
+          <Route path="/jobs">
+            <Suspense fallback={<div />}>
+              <JobsRoot />
+            </Suspense>
+          </Route>
+          <Route path="/automation">
+            <Suspense fallback={<div />}>
+              <AutomationRoot />
+            </Suspense>
+          </Route>
+          <Route path="/settings">
+            <Suspense fallback={<div />}>
+              <SettingsRoot />
             </Suspense>
           </Route>
           <Route path="*">

@@ -1,9 +1,9 @@
 ---
-title: Transitioning Data Pipelines from Development to Production | Dagster
+title: "Transitioning data pipelines from development to production | Dagster Docs"
 description: This guide walks through how to transition your data pipelines from local development to production
 ---
 
-# Transitioning Data Pipelines from Development to Production
+# Transitioning data pipelines from development to production
 
 In this guide, we'll walk through how to transition your data pipelines from local development to staging and production deployments.
 
@@ -20,13 +20,11 @@ Using a few Dagster concepts, we can easily tackle this task! Here’s an overvi
 | [Resources](/concepts/resources)                    | A resource is an object that typically models a connection to a external service. Resources can be shared between assets and different implementations of resources can be used depending on the environment. For example, a resource may provide methods to send messages in Slack. |
 | [Run config](/concepts/configuration/config-schema) | Assets and resources sometimes require configuration to set certain values, like the password to a database. Run config allows you to set these values at run time. In this guide, we'll also use an API to set some default run configuration.                                      |
 
-<!-- - [I/O managers](/concepts/io-management/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager. -->
-
 Using these Dagster concepts we will:
 
 - Write three assets, including the full Hacker News dataset, data about comments, and data about stories
-- Use Dagster's Snowflake I/O manager to store the datasets in [Snowflake](https://www.snowflake.com/)
-- Set up our Dagster code so that the configuration for the Snowflake I/O manager is automatically supplied based on the environment where the code is running
+- Use Dagster's Snowflake resource (<PyObject object="SnowflakeResource" module="dagster_snowflake" />) to handle the connection to Snowflake[Snowflake](https://www.snowflake.com/)
+- Set up our Dagster code so that the configuration for the Snowflake resource is automatically supplied based on the environment where the code is running
 
 ---
 
@@ -49,7 +47,7 @@ pip install -e .
 In this section, we'll:
 
 - Write the assets
-- Add run configuration for the Snowflake I/O manager
+- Add run configuration for the Snowflake resource
 - Materialize assets in the Dagster UI
 
 ### Step 1: Write the assets
@@ -127,7 +125,6 @@ def items(config: ItemsConfig, snowflake_resource: SnowflakeResource):
             conn=conn,
             df=result,
             table_name="items",
-            schema=snowflake_resource.schema,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
@@ -140,7 +137,7 @@ def comments(snowflake_resource: SnowflakeResource):
     table_name = "comments"
     item_type = "comment"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY(
+    create_table = CREATE_UPDATE_TABLE_QUERY.format(
         table_name=table_name,
         item_type=item_type,
     )
@@ -155,7 +152,7 @@ def stories(snowflake_resource: SnowflakeResource):
     table_name = "stories"
     item_type = "story"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY(
+    create_table = CREATE_UPDATE_TABLE_QUERY.format(
         table_name=table_name,
         item_type=item_type,
     )
@@ -166,7 +163,7 @@ def stories(snowflake_resource: SnowflakeResource):
 
 ### Step 2: Add run configuration
 
-Next, we'll add the assets to our project's <PyObject object="Definitions" /> object and materialize them via the UI. We'll pass our credentials to the `SnowflakePandasIOManager`.
+Next, we'll add the assets to our project's <PyObject object="Definitions" /> object and materialize them via the UI. We'll pass our credentials to the <PyObject object="SnowflakeResource" module="dagster_snowflake" />.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # __init__.py
@@ -194,11 +191,13 @@ defs = Definitions(assets=[items, comments, stories], resources=resources)
 
 When we start the UI, we'll see an asset graph that looks like this:
 
+<!-- ![Snowflake assets in the Dagster UI](/images/guides/development_to_production/hacker_news_asset_graph.png) -->
+
 <Image
-alt="alt"
+alt="Snowflake assets in the Dagster UI"
 src="/images/guides/development_to_production/hacker_news_asset_graph.png"
-width={1538}
-height={730}
+width={3020}
+height={1734}
 />
 
 ### Step 3: Materialize the assets
@@ -212,7 +211,7 @@ width={2304}
 height={1064}
 />
 
-While we defined our assets as Pandas DataFrames, the Snowflake I/O manager automatically translated the data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case, three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
+When we materialized the assets, Dagster used the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> to connect to Snowflake. Once connected, the SQL queries in contained in the function body of each asset was executed to create the `ITEMS`, `COMMENTS`, and `STORIES` tables.
 
 ---
 
@@ -220,20 +219,20 @@ While we defined our assets as Pandas DataFrames, the Snowflake I/O manager auto
 
 In this section, we'll:
 
-- Modify the configuration for the Snowflake I/O manager to handle staging and production environments
+- Modify the configuration for the Snowflake resource to handle staging and production environments
 - Discuss different options for managing a staging environment
 
 Now that our assets work locally, we can start the deployment process! We'll first set up our assets for production and then discuss the options for our staging deployment.
 
 ### Step 1: Configure production
 
-We want to store the assets in a production Snowflake database, so we need to update the configuration for the `SnowflakePandasIOManager`.
+We want to store the assets in a production Snowflake database, so we need to update the configuration for the <PyObject object="SnowflakeResource" module="dagster_snowflake" />.
 
 However, if we were to only update the values we set for local development, we'd run into an issue: the next time someone wants to work on these assets, they'll need to remember to change the configuration back to the local values. This means a production asset could be accidentally overwritten during local development.
 
 #### Step 1.1: Create environment-dependent configuration
 
-Instead, let's set up the configuration for resources to depend on the current environment:
+Instead, let's set up the configuration for the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> to depend on the current environment:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v2.py startafter=start endbefore=end
 # __init__.py
@@ -279,9 +278,9 @@ Even though we now have environment-dependent configuration, there are still a f
 1. Developers need to remember to change the `user`, `password`, and `schema` values when developing locally
 2. Passwords are being stored in code
 
-Using environment variables, we can easily solve both of these problems. <PyObject object="EnvVar"/> allows us to source configuration for resources from environment variables.
+Using environment variables, we can easily solve both of these problems. <PyObject object="EnvVar" /> allows us to source configuration for resources from environment variables.
 
-Now, we can store the Snowflake configuration values as environment variables and point the I/O manager to them:
+Now, we can store the Snowflake configuration values as environment variables and point the resource to them:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
 # __init__.py
@@ -342,11 +341,11 @@ resources = {
 
 ---
 
-## Advanced: Unit tests with stubs and mocks
+## Advanced: Using stubs and mocks in tests
 
-You may have noticed a missing step in the development workflow presented in this guide — unit tests! While the main purpose of this guide is to help you transition your code from local to production deployment, unit testing is still an important part of the development cycle. In this section, we'll explore a pattern you may find useful when writing your own unit tests.
+You may have noticed a missing step in the development workflow presented in this guide — tests! While the main purpose of this guide is to help you transition your code from local to production deployment, testing is still an important part of the development cycle. In this section, we'll explore a pattern you may find useful when writing your own tests.
 
-When writing unit tests for the `items` asset, we could make more precise assertions if we knew exactly what data we'd receive from Hacker News. If we refactor our interactions with the Hacker News API as a resource, we can leverage Dagster's resource system to provide a stub resource in our unit tests.
+When writing tests for the `items` asset, we could make more precise assertions if we knew exactly what data we'd receive from Hacker News. If we refactor our interactions with the Hacker News API as a resource, we can leverage Dagster's resource system to provide a stub resource in our tests.
 
 Before we get into the implementation, let's go over some best practices:
 
@@ -360,13 +359,13 @@ In many cases, interacting with an external service directly in assets or ops is
 We recommend refactoring code to use resources in the following cases:
 
 - Multiple assets or ops need to interact with the service in a consistent way
-- Different implementations of a service need to be used in certain scenarios (ie. a staging environment, or unit tests)
+- Different implementations of a service need to be used in certain scenarios (ie. a staging environment or tests)
 
 ### When to use stub resources
 
-Determining when it makes sense to stub a resource for a unit test can be a topic of much debate. In some cases, it would be too complicated to write and maintain a stub. For example, mocking a database like Snowflake with a lightweight database could be difficult because the SQL syntax and runtime behavior may vary.
+Determining when it makes sense to stub a resource for a test can be a topic of much debate. In some cases, it would be too complicated to write and maintain a stub. For example, mocking a database like Snowflake with a lightweight database could be difficult because the SQL syntax and runtime behavior may vary.
 
-In general, if a resource is relatively simple, writing a stub can be helpful for unit testing the assets and ops that use the resource.
+In general, if a resource is relatively simple, writing a stub can be helpful for testing the assets and ops that use the resource.
 
 We'll start by writing the "real" Hacker News API Client:
 
@@ -432,7 +431,6 @@ def items(
             conn=conn,
             df=result,
             table_name="items",
-            schema=snowflake_resource.schema,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
@@ -498,17 +496,32 @@ Now we can use the stub Hacker News resource to test that the `items` asset tran
 
 
 def test_items():
-    hn_dataset = items(
-        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
-        hn_client=StubHNClient(),
+    test_snowflake = (
+        SnowflakeResource(
+            account="abc1234.us-east-1",
+            user="test@company.com",
+            password=os.getenv("TEST_SNOWFLAKE_PASSWORD"),
+            database="TEST",
+            schema="HACKER_NEWS",
+        ),
     )
-    assert isinstance(hn_dataset, pd.DataFrame)
+    try:
+        items(
+            config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
+            hn_client=StubHNClient(),
+            snowflake_resource=test_snowflake,
+        )
+        with test_snowflake.get_connection() as conn:
+            hn_dataset = conn.cursor.execute("select * from ITEMS").fetch_pandas_all()
+            assert isinstance(hn_dataset, pd.DataFrame)
+            expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
+                columns={"by": "user_id"}
+            )
+            assert (hn_dataset == expected_data).all().all()
 
-    expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
-        columns={"by": "user_id"}
-    )
-
-    assert (hn_dataset == expected_data).all().all()
+    finally:
+        with test_snowflake.get_connection() as conn:
+            conn.cursor.execute("drop table if exists ITEMS")
 ```
 
 ---

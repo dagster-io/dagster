@@ -12,6 +12,7 @@ Why not pickle?
 * This isn't meant to replace pickle in the conditions that pickle is reasonable to use
   (in memory, not human readable, etc) just handle the json case effectively.
 """
+
 import collections.abc
 import dataclasses
 from abc import ABC, abstractmethod
@@ -175,6 +176,10 @@ class WhitelistMap(NamedTuple):
         )
         self.object_serializers[name] = serializer
         deserializer_name = storage_name or name
+        if deserializer_name in self.object_deserializers:
+            raise SerdesUsageError(
+                f"Multiple deserializers registered for storage name `{deserializer_name}`"
+            )
         self.object_deserializers[deserializer_name] = serializer
         if old_storage_names:
             for old_storage_name in old_storage_names:
@@ -232,8 +237,7 @@ T_Scalar = TypeVar("T_Scalar", bound=Union[str, int, float, bool, None])
 
 
 @overload
-def whitelist_for_serdes(__cls: T_Type) -> T_Type:
-    ...
+def whitelist_for_serdes(__cls: T_Type) -> T_Type: ...
 
 
 @overload
@@ -248,8 +252,7 @@ def whitelist_for_serdes(
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
     is_pickleable: bool = True,
-) -> Callable[[T_Type], T_Type]:
-    ...
+) -> Callable[[T_Type], T_Type]: ...
 
 
 def whitelist_for_serdes(
@@ -532,8 +535,7 @@ class ObjectSerializer(Serializer, Generic[T]):
         self.field_serializers = field_serializers or {}
 
     @abstractmethod
-    def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]:
-        ...
+    def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]: ...
 
     def unpack(
         self,
@@ -634,8 +636,7 @@ class ObjectSerializer(Serializer, Generic[T]):
 
     @property
     @abstractmethod
-    def constructor_param_names(self) -> Sequence[str]:
-        ...
+    def constructor_param_names(self) -> Sequence[str]: ...
 
     def get_storage_name(self) -> str:
         return self.storage_name or self.klass.__name__
@@ -696,8 +697,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: UnpackedValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        ...
+    ) -> PackableValue: ...
 
     @abstractmethod
     def pack(
@@ -705,8 +705,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: Any,
         whitelist_map: WhitelistMap,
         descent_path: str,
-    ) -> JsonSerializableValue:
-        ...
+    ) -> JsonSerializableValue: ...
 
 
 class SetToSequenceFieldSerializer(FieldSerializer):
@@ -748,8 +747,7 @@ def pack_value(
     val: T_Scalar,
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> T_Scalar:
-    ...
+) -> T_Scalar: ...
 
 
 @overload  # for all the types that serialize to JSON object
@@ -765,8 +763,7 @@ def pack_value(
     ],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Mapping[str, JsonSerializableValue]:
-    ...
+) -> Mapping[str, JsonSerializableValue]: ...
 
 
 @overload
@@ -774,8 +771,7 @@ def pack_value(
     val: Sequence[PackableValue],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Sequence[JsonSerializableValue]:
-    ...
+) -> Sequence[JsonSerializableValue]: ...
 
 
 def pack_value(
@@ -895,8 +891,7 @@ def deserialize_value(
     val: str,
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -904,8 +899,7 @@ def deserialize_value(
     val: str,
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -913,8 +907,7 @@ def deserialize_value(
     val: str,
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def deserialize_value(
@@ -1012,8 +1005,7 @@ def unpack_value(
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -1022,8 +1014,7 @@ def unpack_value(
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -1032,8 +1023,7 @@ def unpack_value(
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def unpack_value(
@@ -1132,14 +1122,14 @@ def _check_serdes_tuple_class_invariants(
         for extra_param_index in range(len(klass._fields), len(value_params) - 1):
             if value_params[extra_param_index].default == Parameter.empty:
                 error_msg = (
-                    'Parameter "{param_name}" is a parameter to the __new__ '
+                    f'Parameter "{value_params[extra_param_index].name}" is a parameter to the __new__ '
                     "method but is not a field in this namedtuple. The only "
                     "reason why this should exist is that "
                     "it is a field that used to exist (we refer to this as the graveyard) "
                     "but no longer does. However it might exist in historical storage. This "
                     "parameter existing ensures that serdes continues to work. However these "
                     "must come at the end and have a default value for pickling to work."
-                ).format(param_name=value_params[extra_param_index].name)
+                )
                 raise SerdesUsageError(_with_header(error_msg))
 
 

@@ -670,8 +670,8 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a JobDefinition (or JobDefinition for legacy"
-        " code). Received a {type}".format(str=pointer.describe(), type=type(target))
+        f"CodePointer ({pointer.describe()}) must resolve to a JobDefinition (or JobDefinition for legacy"
+        f" code). Received a {type(target)}"
     )
 
 
@@ -679,15 +679,13 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> "RepositoryDefinition":
-    ...
+) -> "RepositoryDefinition": ...
 
 
 @overload
 def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
-) -> None:
-    ...
+) -> None: ...
 
 
 def repository_def_from_target_def(

@@ -31,21 +31,20 @@ When Dagster terminates a run, the run moves into CANCELING status and sends a t
 
 ## General run timeouts
 
-After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). `MAX_RUNTIME_SECONDS_TAG` can be used to set a timeout on a per-run basis. If the run exceeds this timeout, and run monitoring is enabled, it will be marked as failed.
+After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). The `dagster/max_runtime` tag can be used to set a timeout in seconds on a per-run basis. If the run exceeds this timeout, and run monitoring is enabled, it will be marked as failed.
 
 The below code example shows how to set a run timeout of 10 seconds on a per-job basis:
 
 ```python file=/deploying/monitoring_daemon/run_timeouts.py startafter=start_timeout
-from dagster import MAX_RUNTIME_SECONDS_TAG, define_asset_job, job
+from dagster import define_asset_job, job
 
 
-@job(tags={MAX_RUNTIME_SECONDS_TAG: 10})
-def my_job():
-    ...
+@job(tags={"dagster/max_runtime": 10})
+def my_job(): ...
 
 
 asset_job = define_asset_job(
-    name="some_job", selection="*", tags={MAX_RUNTIME_SECONDS_TAG: 10}
+    name="some_job", selection="*", tags={"dagster/max_runtime": 10}
 )
 # end_timeout
 ```

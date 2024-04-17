@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 
-import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 
 const AssetSubsetFragment = gql`
   fragment AssetSubsetFragment on AssetSubset {

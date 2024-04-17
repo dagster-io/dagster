@@ -140,12 +140,12 @@ class MultiAssetSensorContextCursor:
                 break
             else:
                 partition_key, event_id, trailing_unconsumed_partitioned_event_ids = cursor_list
-                self._cursor_component_by_asset_key[
-                    str_asset_key
-                ] = MultiAssetSensorAssetCursorComponent(
-                    latest_consumed_event_partition=partition_key,
-                    latest_consumed_event_id=event_id,
-                    trailing_unconsumed_partitioned_event_ids=trailing_unconsumed_partitioned_event_ids,
+                self._cursor_component_by_asset_key[str_asset_key] = (
+                    MultiAssetSensorAssetCursorComponent(
+                        latest_consumed_event_partition=partition_key,
+                        latest_consumed_event_id=event_id,
+                        trailing_unconsumed_partitioned_event_ids=trailing_unconsumed_partitioned_event_ids,
+                    )
                 )
 
                 self.initial_latest_consumed_event_ids_by_asset_key[str_asset_key] = event_id
@@ -249,27 +249,22 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
         self._monitored_asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
-            repo_assets = self._repository_def.assets_defs_by_key.values()
-            repo_source_assets = self._repository_def.source_assets_by_key.values()
-            self._monitored_asset_keys = list(
-                monitored_assets.resolve([*repo_assets, *repo_source_assets])
-            )
+            repo_assets = self._repository_def.asset_graph.assets_defs
+            self._monitored_asset_keys = list(monitored_assets.resolve(repo_assets))
         else:
             self._monitored_asset_keys = monitored_assets
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
         self._partitions_def_by_asset_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
+        asset_graph = self._repository_def.asset_graph
         for asset_key in self._monitored_asset_keys:
-            assets_def = self._repository_def.assets_defs_by_key.get(asset_key)
+            assets_def = (
+                asset_graph.get(asset_key).assets_def if asset_graph.has(asset_key) else None
+            )
             self._assets_by_key[asset_key] = assets_def
 
-            source_asset_def = self._repository_def.source_assets_by_key.get(asset_key)
             self._partitions_def_by_asset_key[asset_key] = (
-                assets_def.partitions_def
-                if assets_def
-                else source_asset_def.partitions_def
-                if source_asset_def
-                else None
+                assets_def.partitions_def if assets_def else None
             )
 
         # Cursor object with utility methods for updating and retrieving cursor information.
@@ -427,9 +422,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 and record.asset_entry.last_materialization_record.storage_id
                 > (self._get_cursor(record.asset_entry.asset_key).latest_consumed_event_id or 0)
             ):
-                asset_event_records[
-                    record.asset_entry.asset_key
-                ] = record.asset_entry.last_materialization_record
+                asset_event_records[record.asset_entry.asset_key] = (
+                    record.asset_entry.last_materialization_record
+                )
 
         return asset_event_records
 
@@ -678,7 +673,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         repo_def = cast(RepositoryDefinition, self._repository_def)
-        repository_assets = repo_def.assets_defs_by_key
         if asset_key in self._assets_by_key:
             asset_def = self._assets_by_key[asset_key]
             if asset_def is None:
@@ -689,8 +683,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 )
             else:
                 return asset_def
-        elif asset_key in repository_assets:
-            return repository_assets[asset_key]
+        elif repo_def.asset_graph.has(asset_key):
+            return repo_def.asset_graph.get(asset_key).assets_def
         else:
             raise DagsterInvalidInvocationError(
                 f"Asset key {asset_key} not monitored in sensor and does not exist in target jobs"
@@ -814,9 +808,9 @@ class MultiAssetSensorCursorAdvances:
             if materialization:
                 self._advanced_record_ids_by_key[asset_key].add(materialization.storage_id)
 
-                self._partition_key_by_record_id[
-                    materialization.storage_id
-                ] = materialization.partition_key
+                self._partition_key_by_record_id[materialization.storage_id] = (
+                    materialization.partition_key
+                )
 
     def get_cursor_with_advances(
         self,
@@ -1040,9 +1034,7 @@ def build_multi_asset_sensor_context(
         if isinstance(monitored_assets, AssetSelection):
             asset_keys = cast(
                 List[AssetKey],
-                list(
-                    monitored_assets.resolve(list(set(repository_def.assets_defs_by_key.values())))
-                ),
+                list(monitored_assets.resolve(list(set(repository_def.asset_graph.assets_defs)))),
             )
         else:
             asset_keys = monitored_assets

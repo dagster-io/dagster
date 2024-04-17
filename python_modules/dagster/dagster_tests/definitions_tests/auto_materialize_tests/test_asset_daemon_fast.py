@@ -20,7 +20,7 @@ from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 # FAST auto materialize tests
 #############################
 #
-# Run the auto materialize scenarios, but use an InternalAssetGraph instead of External to speed things up.
+# Run the auto materialize scenarios, but use an AssetGraph instead of RemoteAssetGraph to speed things up.
 
 
 @pytest.mark.parametrize(
@@ -98,7 +98,7 @@ def test_bad_partition_key():
     materialization_job.execute_in_process(instance=instance)
 
     scenario = AssetReconciliationScenario(
-        assets=assets, unevaluated_runs=[], asset_selection=AssetSelection.keys("hourly2")
+        assets=assets, unevaluated_runs=[], asset_selection=AssetSelection.assets("hourly2")
     )
     run_requests, _, _ = scenario.do_sensor_scenario(instance)
     assert len(run_requests) == 0

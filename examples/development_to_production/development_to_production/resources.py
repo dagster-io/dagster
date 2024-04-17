@@ -1,20 +1,18 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Sequence
 
-from dagster._config.pythonic_config.resource import ConfigurableResource
 import requests
+from dagster._config.pythonic_config.resource import ConfigurableResource
 
 
 class HNClient(ABC):
     """Base class for a Hacker News Client."""
 
     @abstractmethod
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
-        ...
+    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]: ...
 
     @abstractmethod
-    def fetch_max_item_id(self) -> int:
-        ...
+    def fetch_max_item_id(self) -> int: ...
 
     @property
     def item_field_names(self) -> Sequence[str]:
@@ -63,7 +61,7 @@ class StubHNClient(HNClient, ConfigurableResource):
                 "score": 5,
                 "title": "the first comment",
                 "descendants": 1,
-                "url": "foo"
+                "url": "foo",
             },
             2: {
                 "id": 2,
@@ -76,7 +74,7 @@ class StubHNClient(HNClient, ConfigurableResource):
                 "score": 7,
                 "title": "an awesome story",
                 "descendants": 1,
-                "url": "bar"
+                "url": "bar",
             },
         }
 

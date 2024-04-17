@@ -209,7 +209,7 @@ def get_schedule_next_tick(
     if not schedule_state.is_running:
         return None
 
-    repository_origin = schedule_state.origin.external_repository_origin
+    repository_origin = schedule_state.origin.repository_origin
     if not graphene_info.context.has_code_location(
         repository_origin.code_location_origin.location_name
     ):

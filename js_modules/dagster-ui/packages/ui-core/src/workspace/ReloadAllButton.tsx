@@ -9,7 +9,13 @@ import {
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
 
-export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
+interface Props {
+  icon?: React.ComponentProps<typeof Button>['icon'];
+  label?: React.ReactNode;
+}
+
+export const ReloadAllButton = (props: Props) => {
+  const {icon = <Icon name="refresh" />, label = 'Reload all'} = props;
   const {
     permissions: {canReloadWorkspace},
     disabledReasons,
@@ -25,7 +31,7 @@ export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
   if (!canReloadWorkspace) {
     return (
       <Tooltip content={disabledReasons.canReloadWorkspace}>
-        <Button outlined icon={<Icon name="refresh" />} disabled>
+        <Button outlined icon={icon} disabled>
           {label}
         </Button>
       </Tooltip>
@@ -34,7 +40,7 @@ export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
 
   return (
     <>
-      <Button outlined onClick={tryReload} icon={<Icon name="refresh" />} loading={reloading}>
+      <Button outlined onClick={tryReload} icon={icon} loading={reloading}>
         {label}
       </Button>
       {errorLocationId ? (

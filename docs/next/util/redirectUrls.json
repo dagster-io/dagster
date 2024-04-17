@@ -637,7 +637,12 @@
   },
   {
     "source": "/dagster-cloud/account/setting-up-alerts",
-    "destination": "/dagster-cloud/managing-deployments/setting-up-alerts",
+    "destination": "/dagster-cloud/managing-deployments/alerts",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
+    "destination": "/dagster-cloud/managing-deployments/alerts",
     "statusCode": 302
   },
   {
@@ -748,6 +753,11 @@
   {
     "source": "/:version(\\d+.\\d+.\\d+)/:slug*",
     "destination": "/:slug*",
+    "statusCode": 302
+  },
+  {
+    "source": "/getting-started/hello-dagster",
+    "destination": "/getting-started/quickstart",
     "statusCode": 302
   }
 ]

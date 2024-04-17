@@ -1,9 +1,10 @@
 import * as React from 'react';
 
-import {AssetTabConfig, AssetTabConfigInput, buildAssetTabs} from './AssetTabs';
-import {AssetChecksBanner} from './asset-checks/AssetChecksBanner';
-import {AssetKey} from './types';
+import {AssetTabConfig, AssetTabConfigInput, useAssetTabs} from './AssetTabs';
+import {AssetKey, AssetViewParams} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {GraphData} from '../asset-graph/Utils';
+import {AssetKeyInput} from '../graphql/types';
 
 export type AssetViewFeatureInput = {
   selectedTab: string;
@@ -12,15 +13,28 @@ export type AssetViewFeatureInput = {
 };
 
 type AssetFeatureContextType = {
-  tabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
+  LineageOptions?: React.ComponentType<{
+    assetKey: AssetKeyInput;
+    params: AssetViewParams;
+    setParams: (params: AssetViewParams) => void;
+  }>;
+  LineageGraph?: React.ComponentType<{
+    params: AssetViewParams;
+    assetKey: AssetKeyInput;
+    assetGraphData: GraphData;
+  }>;
+
+  useTabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
   renderFeatureView: (input: AssetViewFeatureInput) => React.ReactNode;
-  AssetChecksBanner: React.ComponentType<Record<string, never>>;
+  AssetColumnLinksCell: (input: {column: string | null}) => React.ReactNode;
 };
 
 export const AssetFeatureContext = React.createContext<AssetFeatureContextType>({
-  tabBuilder: () => [],
+  useTabBuilder: () => [],
   renderFeatureView: () => <span />,
-  AssetChecksBanner: () => <span />,
+  AssetColumnLinksCell: () => undefined,
+  LineageOptions: undefined,
+  LineageGraph: undefined,
 });
 
 const renderFeatureView = () => <span />;
@@ -28,9 +42,11 @@ const renderFeatureView = () => <span />;
 export const AssetFeatureProvider = ({children}: {children: React.ReactNode}) => {
   const value = React.useMemo(() => {
     return {
-      tabBuilder: buildAssetTabs,
+      useTabBuilder: useAssetTabs,
       renderFeatureView,
-      AssetChecksBanner,
+      AssetColumnLinksCell: () => undefined,
+      LineageOptions: undefined,
+      LineageGraph: undefined,
     };
   }, []);
 

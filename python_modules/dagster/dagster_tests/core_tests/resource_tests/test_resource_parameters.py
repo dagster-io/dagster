@@ -6,8 +6,8 @@ from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resour
 from dagster._check import ParameterCheckError
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -153,7 +153,7 @@ def test_assets():
         {"foo": ResourceDefinition.hardcoded_resource("blah")},
     )
 
-    assert build_assets_job("the_job", transformed_assets).execute_in_process().success
+    assert materialize(transformed_assets).success
     assert executed["the_asset"]
     assert executed["the_other_asset"]
     assert executed["the_third_asset"]
@@ -175,7 +175,7 @@ def test_multi_assets():
     )[0]
     assert isinstance(transformed_assets, AssetsDefinition)
 
-    assert build_assets_job("the_job", [transformed_assets]).execute_in_process().success
+    assert materialize([transformed_assets]).success
     assert executed["two_assets"]
 
 
@@ -292,15 +292,10 @@ def test_asset_with_structured_config():
     )[0]
     assert isinstance(transformed_asset, AssetsDefinition)
 
-    assert (
-        build_assets_job(
-            "the_job",
-            [transformed_asset],
-            config={"ops": {"the_asset": {"config": {"a_string": "foo", "an_int": 2}}}},
-        )
-        .execute_in_process()
-        .success
-    )
+    assert materialize(
+        [transformed_asset],
+        run_config={"ops": {"the_asset": {"config": {"a_string": "foo", "an_int": 2}}}},
+    ).success
     assert executed["the_asset"]
 
 
@@ -333,6 +328,6 @@ def test_no_err_builtin_annotations():
         {"foo": ResourceDefinition.hardcoded_resource("blah")},
     )
 
-    assert build_assets_job("the_job", transformed_assets).execute_in_process().success
+    assert materialize(transformed_assets).success
     assert executed["the_asset"]
     assert executed["the_other_asset"]

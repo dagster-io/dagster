@@ -15,15 +15,13 @@ def usable_as_dagster_type(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     loader: Optional["DagsterTypeLoader"] = ...,
-) -> Callable[[T_Type], T_Type]:
-    ...
+) -> Callable[[T_Type], T_Type]: ...
 
 
 @overload
 def usable_as_dagster_type(
     name: T_Type,
-) -> T_Type:
-    ...
+) -> T_Type: ...
 
 
 def usable_as_dagster_type(

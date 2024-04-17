@@ -266,8 +266,8 @@ class DagsterType(RequiresResources):
 
     def get_inner_type_for_fan_in(self) -> "DagsterType":
         check.failed(
-            "DagsterType {name} does not support fan-in, should have checked supports_fan_in before"
-            " calling getter.".format(name=self.display_name)
+            f"DagsterType {self.display_name} does not support fan-in, should have checked supports_fan_in before"
+            " calling getter."
         )
 
     def get_resource_requirements(
@@ -330,8 +330,8 @@ class BuiltinScalarDagsterType(DagsterType):
 
 
 def _typemismatch_error_str(value: object, expected_type_desc: str) -> str:
-    return 'Value "{value}" of python type "{python_type}" must be a {type_desc}.'.format(
-        value=value, python_type=type(value).__name__, type_desc=expected_type_desc
+    return (
+        f'Value "{value}" of python type "{type(value).__name__}" must be a {expected_type_desc}.'
     )
 
 
@@ -998,9 +998,9 @@ def construct_dagster_type_dictionary(
             if type_dict_by_name[dagster_type.unique_name] is not dagster_type:
                 raise DagsterInvalidDefinitionError(
                     (
-                        'You have created two dagster types with the same name "{type_name}". '
+                        f'You have created two dagster types with the same name "{dagster_type.display_name}". '
                         "Dagster types have must have unique names."
-                    ).format(type_name=dagster_type.display_name)
+                    )
                 )
 
         if isinstance(node_def, GraphDefinition):

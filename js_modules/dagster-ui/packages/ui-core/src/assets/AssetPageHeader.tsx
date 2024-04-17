@@ -15,10 +15,13 @@ import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
+import {AnchorButton} from '../ui/AnchorButton';
 
-type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
+type Props = {assetKey: {path: string[]}; headerBreadcrumbs: BreadcrumbProps[]} & Partial<
+  React.ComponentProps<typeof PageHeader>
+>;
 
-export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
+export const AssetPageHeader = ({assetKey, headerBreadcrumbs, ...extra}: Props) => {
   const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
   const [didCopy, setDidCopy] = React.useState(false);
@@ -43,7 +46,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
   }, [copy, copyableString]);
 
   const breadcrumbs = React.useMemo(() => {
-    const list: BreadcrumbProps[] = [{text: 'Assets', href: '/assets'}];
+    const list: BreadcrumbProps[] = [...headerBreadcrumbs];
 
     assetKey.path.reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
@@ -52,7 +55,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
     }, '/assets');
 
     return list;
-  }, [assetKey.path]);
+  }, [assetKey.path, headerBreadcrumbs]);
 
   return (
     <PageHeader
@@ -69,15 +72,18 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
                 <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
               </Heading>
             )}
+            $numHeaderBreadcrumbs={headerBreadcrumbs.length}
           />
-          <Tooltip placement="bottom" content="Copy asset key">
-            <CopyButton onClick={performCopy}>
-              <Icon
-                name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                color={Colors.accentGray()}
-              />
-            </CopyButton>
-          </Tooltip>
+          {copyableString ? (
+            <Tooltip placement="bottom" content="Copy asset key">
+              <CopyButton onClick={performCopy}>
+                <Icon
+                  name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
+                  color={Colors.accentGray()}
+                />
+              </CopyButton>
+            </Tooltip>
+          ) : undefined}
         </Box>
       }
       {...extra}
@@ -114,8 +120,15 @@ export const AssetGlobalLineageLink = () => (
   </Link>
 );
 
-const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
-  & li:not(:first-child)::after {
+export const AssetGlobalLineageButton = () => (
+  <AnchorButton intent="primary" icon={<Icon name="schema" />} to="/asset-groups">
+    View lineage
+  </AnchorButton>
+);
+
+// Only add slashes within the asset key path
+const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
+  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
     background: none;
     font-size: 20px;
     font-weight: bold;

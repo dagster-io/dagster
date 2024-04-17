@@ -10,13 +10,15 @@ pyright:
 	python scripts/run-pyright.py --all
 
 install_pyright:
-	pip install -e 'python_modules/dagster[pyright]'
+	pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
 
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
 
+# Skip typecheck so that this can be used to test if all requirements can successfully be resolved
+# in CI independently of typechecking.
 rebuild_pyright_pins:
-	python scripts/run-pyright.py --update-pins
+	python scripts/run-pyright.py --update-pins --skip-typecheck
 
 quick_pyright:
 	python scripts/run-pyright.py --diff
@@ -25,7 +27,7 @@ unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
 
 ruff:
-	-ruff --fix .
+	-ruff check --fix .
 	ruff format .
 
 check_ruff:

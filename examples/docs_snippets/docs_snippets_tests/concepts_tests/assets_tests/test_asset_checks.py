@@ -28,7 +28,7 @@ def test_execute(defs):
 
 def test_factory():
     checks = [make_check(check_blob) for check_blob in check_blobs]
-    assert [c.spec.key for c in checks] == [
+    assert [next(iter(c.check_keys)) for c in checks] == [
         AssetCheckKey(
             AssetKey(["orders"]),
             "orders_id_has_no_nulls",

@@ -2525,6 +2525,24 @@
             ],
             "additionalProperties": false
         },
+        "BlockOpConcurrencyLimitedRuns": {
+            "title": "BlockOpConcurrencyLimitedRuns",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "opConcurrencySlotBuffer": {
+                    "title": "Opconcurrencyslotbuffer",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "enabled",
+                "opConcurrencySlotBuffer"
+            ]
+        },
         "QueuedRunCoordinatorConfig": {
             "title": "QueuedRunCoordinatorConfig",
             "type": "object",
@@ -2590,6 +2608,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "blockOpConcurrencyLimitedRuns": {
+                    "title": "BlockOpConcurrencyLimitedRuns",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/BlockOpConcurrencyLimitedRuns"
                         },
                         {
                             "type": "null"

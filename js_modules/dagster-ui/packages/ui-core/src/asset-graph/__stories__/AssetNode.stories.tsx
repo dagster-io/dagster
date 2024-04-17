@@ -1,6 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
+import React from 'react';
 
+import {FeatureFlag, setFeatureFlags} from '../../app/Flags';
 import {AssetLiveDataProvider, factory} from '../../asset-data/AssetLiveDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey} from '../../graphql/types';
@@ -22,7 +24,7 @@ export const LiveStates = () => {
       ...scenario.definition,
       assetKey: {
         ...scenario.definition.assetKey,
-        path: [],
+        path: [] as string[],
       },
     };
     definitionCopy.assetKey.path = scenario.liveData
@@ -52,19 +54,22 @@ export const LiveStates = () => {
           >
             <AssetNode definition={definitionCopy} selected={false} />
           </div>
-          <div style={{position: 'relative', width: dimensions.width, height: 82}}>
-            <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
+          <div style={{position: 'relative', width: dimensions.width, height: 104}}>
+            <div style={{position: 'absolute', width: dimensions.width}}>
               <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
             </div>
           </div>
           <code>
             <strong>{scenario.title}</strong>
-            <pre>{JSON.stringify(scenario.liveData, null, 2)}</pre>
           </code>
         </Box>
       </>
     );
   };
+
+  React.useEffect(() => {
+    setFeatureFlags([FeatureFlag.flagExperimentalBranchDiff]);
+  }, []);
 
   return (
     <MockedProvider>

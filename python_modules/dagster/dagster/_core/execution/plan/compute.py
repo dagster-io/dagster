@@ -36,6 +36,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext,
     AssetExecutionContext,
     OpExecutionContext,
 )
@@ -120,18 +121,14 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
     ):
         raise DagsterInvariantViolationError(
             (
-                "Compute function for {described_node} yielded a value of type {type_} "
+                f"Compute function for {step_context.describe_op()} yielded a value of type {type(event)} "
                 "rather than an instance of Output, AssetMaterialization, or ExpectationResult."
-                " Values yielded by {node_type}s must be wrapped in one of these types. If your "
-                "{node_type} has a single output and yields no other events, you may want to use "
-                "`return` instead of `yield` in the body of your {node_type} compute function. If "
+                f" Values yielded by {step_context.op_def.node_type_str}s must be wrapped in one of these types. If your "
+                f"{step_context.op_def.node_type_str} has a single output and yields no other events, you may want to use "
+                f"`return` instead of `yield` in the body of your {step_context.op_def.node_type_str} compute function. If "
                 "you are already using `return`, and you expected to return a value of type "
-                "{type_}, you may be inadvertently returning a generator rather than the value "
+                f"{type(event)}, you may be inadvertently returning a generator rather than the value "
                 # f"you expected. Value is {str(event[0])}"
-            ).format(
-                described_node=step_context.describe_op(),
-                type_=type(event),
-                node_type=step_context.op_def.node_type_str,
             )
         )
 
@@ -156,19 +153,16 @@ def _yield_compute_results(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext],
+    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
 ) -> Iterator[OpOutputUnion]:
     user_event_generator = compute_fn(compute_context, inputs)
 
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
             (
-                "Compute function for {described_node} returned an Output rather than "
-                "yielding it. The compute_fn of the {node_type} must yield "
+                f"Compute function for {step_context.describe_op()} returned an Output rather than "
+                f"yielding it. The compute_fn of the {step_context.op_def.node_type_str} must yield "
                 "its results"
-            ).format(
-                described_node=step_context.describe_op(),
-                node_type=step_context.op_def.node_type_str,
             )
         )
 
@@ -191,19 +185,19 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if compute_context.has_events():
-            yield from compute_context.consume_events()
+        if compute_context.op_execution_context.has_events():
+            yield from compute_context.op_execution_context.consume_events()
         yield _validate_event(event, step_context)
 
-    if compute_context.has_events():
-        yield from compute_context.consume_events()
+    if compute_context.op_execution_context.has_events():
+        yield from compute_context.op_execution_context.consume_events()
 
 
 def execute_core_compute(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext],
+    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
 ) -> Iterator[OpOutputUnion]:
     """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.

@@ -40,12 +40,21 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
+import code_location from '../icon-svgs/code_location.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
+import column_lineage from '../icon-svgs/column_lineage.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import corporate_fare from '../icon-svgs/corporate_fare.svg';
+import dash from '../icon-svgs/dash.svg';
+import datatype_array from '../icon-svgs/datatype_array.svg';
+import datatype_bool from '../icon-svgs/datatype_bool.svg';
+import datatype_number from '../icon-svgs/datatype_number.svg';
+import datatype_string from '../icon-svgs/datatype_string.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
+import dollar_sign from '../icon-svgs/dollar_sign.svg';
 import done from '../icon-svgs/done.svg';
 import dot from '../icon-svgs/dot.svg';
 import dot_filled from '../icon-svgs/dot_filled.svg';
@@ -73,10 +82,14 @@ import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
 import gitlab from '../icon-svgs/gitlab.svg';
+import globe from '../icon-svgs/globe.svg';
+import graduation_cap from '../icon-svgs/graduation_cap.svg';
 import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
+import graph_horizontal from '../icon-svgs/graph_horizontal.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
+import graph_vertical from '../icon-svgs/graph_vertical.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass from '../icon-svgs/hourglass.svg';
@@ -97,11 +110,15 @@ import materialization from '../icon-svgs/materialization.svg';
 import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
+import ms_teams from '../icon-svgs/ms_teams.svg';
 import multi_asset from '../icon-svgs/multi_asset.svg';
+import new_in_branch from '../icon-svgs/new_in_branch.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
+import notifications from '../icon-svgs/notifications.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
+import pagerduty from '../icon-svgs/pagerduty.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
 import panel_show_both from '../icon-svgs/panel_show_both.svg';
 import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
@@ -113,6 +130,7 @@ import partition_failure from '../icon-svgs/partition_failure.svg';
 import partition_missing from '../icon-svgs/partition_missing.svg';
 import partition_stale from '../icon-svgs/partition_stale.svg';
 import partition_success from '../icon-svgs/partition_success.svg';
+import password from '../icon-svgs/password.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -129,10 +147,12 @@ import source from '../icon-svgs/source.svg';
 import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
+import stacks from '../icon-svgs/stacks.svg';
 import star from '../icon-svgs/star.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
 import status from '../icon-svgs/status.svg';
-import subtract from '../icon-svgs/subtract.svg';
+import sticky_note from '../icon-svgs/sticky_note.svg';
+import sync_alt from '../icon-svgs/sync_alt.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
 import tag from '../icon-svgs/tag.svg';
@@ -146,6 +166,7 @@ import unfold_more from '../icon-svgs/unfold_more.svg';
 import vertical_align_bottom from '../icon-svgs/vertical_align_bottom.svg';
 import vertical_align_center from '../icon-svgs/vertical_align_center.svg';
 import vertical_align_top from '../icon-svgs/vertical_align_top.svg';
+import view_column from '../icon-svgs/view_column.svg';
 import view_list from '../icon-svgs/view_list.svg';
 import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
@@ -173,6 +194,10 @@ export const Icons = {
   backfill,
   badge,
   date,
+  datatype_array,
+  datatype_bool,
+  datatype_string,
+  datatype_number,
   expectation,
   execute,
   materialization,
@@ -212,15 +237,20 @@ export const Icons = {
   chat_support,
   changes_present,
   concept_book,
+  dash,
   open_in_new,
   folder,
   tag,
   slack,
+  ms_teams,
+  pagerduty,
   github,
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
   gitlab,
+  globe,
+  graduation_cap,
   youtube,
   arrow_indent,
   editor_role,
@@ -230,6 +260,8 @@ export const Icons = {
   graph_downstream,
   graph_upstream,
   graph_neighbors,
+  graph_horizontal,
+  graph_vertical,
 
   // Material icons
   add,
@@ -254,10 +286,14 @@ export const Icons = {
   chevron_right,
   chevron_left,
   close,
+  code_location,
   console: console_icon,
   content_copy,
   collapse_arrows,
+  column_lineage,
+  corporate_fare,
   delete: deleteSVG,
+  dollar_sign,
   done,
   dot,
   dot_filled,
@@ -292,8 +328,11 @@ export const Icons = {
   menu,
   menu_book,
   more_horiz,
+  new_in_branch,
   nightlight,
   no_access,
+  notifications,
+  password,
   people,
   refresh,
   replay,
@@ -304,12 +343,14 @@ export const Icons = {
   settings_backup_restore,
   sort_by_alpha,
   source,
-  subtract,
   speed,
   splitscreen,
+  stacks,
   star,
   star_outline,
   status,
+  sticky_note,
+  sync_alt,
   sync_problem,
   table_view,
   timer,
@@ -319,6 +360,7 @@ export const Icons = {
   unfold_less,
   unfold_more,
   view_list,
+  view_column,
   visibility,
   visibility_off,
   warning,
@@ -333,7 +375,11 @@ export const Icons = {
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([(slack as any).src]);
+const SVGS_WITH_COLORS = new Set([
+  (slack as any).src,
+  (ms_teams as any).src,
+  (pagerduty as any).src,
+]);
 
 export type IconName = keyof typeof Icons;
 

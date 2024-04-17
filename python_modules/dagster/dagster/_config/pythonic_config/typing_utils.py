@@ -111,6 +111,7 @@ class BaseResourceMeta(BaseConfigMeta):
         for field in annotations:
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
+
                 if (
                     get_origin(annotations[field])
                     == LateBoundTypesForResourceTypeChecking.get_resource_rep_type()
@@ -173,7 +174,7 @@ class TypecheckAllowPartialResourceInitParams:
     def __set_name__(self, _owner, name):
         self._assigned_name = name
 
-    def __get__(self: Self, obj: Any, __owner: Any) -> Self:
+    def __get__(self: Self, obj: Any, owner: Any) -> Self:
         # no-op implementation (only used to affect type signature)
         return cast(Self, getattr(obj, self._assigned_name))
 

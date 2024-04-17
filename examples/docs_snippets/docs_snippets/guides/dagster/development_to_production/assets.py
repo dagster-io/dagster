@@ -65,7 +65,6 @@ where type = '{item_type}'
 """
 
 
-
 @asset
 def items(config: ItemsConfig, snowflake_resource: SnowflakeResource):
     """Items from the Hacker News API: each is a story or a comment on a story."""
@@ -114,7 +113,6 @@ def comments(snowflake_resource: SnowflakeResource):
         conn.cursor().execute(update_table)
 
 
-
 @asset(deps=[items])
 def stories(snowflake_resource: SnowflakeResource):
     """Stories from the Hacker News API."""
@@ -131,7 +129,6 @@ def stories(snowflake_resource: SnowflakeResource):
         conn.cursor().execute(create_table)
         conn.cursor().execute(clear_table)
         conn.cursor().execute(update_table)
-
 
 
 # end_assets

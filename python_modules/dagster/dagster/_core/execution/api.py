@@ -23,7 +23,7 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -128,10 +128,8 @@ def execute_run_iterator(
             dagster_run.status == DagsterRunStatus.STARTED
             or dagster_run.status == DagsterRunStatus.STARTING,
             desc=(
-                "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
-                "resuming from a run worker failure".format(
-                    dagster_run.job_name, dagster_run.run_id, dagster_run.status
-                )
+                f"Run of {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected STARTED or STARTING because it's "
+                "resuming from a run worker failure"
             ),
         )
 
@@ -220,9 +218,7 @@ def execute_run(
     check.invariant(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
-        desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.job_name, dagster_run.run_id, dagster_run.status
-        ),
+        desc=f"Run {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected NOT_STARTED or STARTING",
     )
     if (
         dagster_run.resolved_op_selection
@@ -818,18 +814,21 @@ def job_execution_iterator(
                     job_context,
                     "Execution was interrupted unexpectedly. "
                     "No user initiated termination request was found, treating as failure.",
-                    job_canceled_info,
+                    failure_reason=RunFailureReason.UNEXPECTED_TERMINATION,
+                    error_info=job_canceled_info,
                 )
         elif job_exception_info:
             event = DagsterEvent.job_failure(
                 job_context,
                 "An exception was thrown during execution.",
-                job_exception_info,
+                failure_reason=RunFailureReason.RUN_EXCEPTION,
+                error_info=job_exception_info,
             )
         elif failed_steps:
             event = DagsterEvent.job_failure(
                 job_context,
                 f"Steps failed: {failed_steps}.",
+                failure_reason=RunFailureReason.STEP_FAILURE,
             )
         else:
             event = DagsterEvent.job_success(job_context)

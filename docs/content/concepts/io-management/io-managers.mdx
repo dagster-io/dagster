@@ -52,7 +52,7 @@ If you find yourself writing the same code at the start and end of each asset or
 
 However, I/O managers are not required, nor are they the best option in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but doesn't need to load that table in memory in order to execute the query:
 
-```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
+```python file=/concepts/io_management/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
 @asset(deps=[orders])
 def returns():
     conn = get_snowflake_connection()
@@ -405,8 +405,7 @@ class ExternalIOManager(IOManager):
         # setup stateful cache
         self._cache = {}
 
-    def handle_output(self, context: OutputContext, obj):
-        ...
+    def handle_output(self, context: OutputContext, obj): ...
 
     def load_input(self, context: InputContext):
         if context.asset_key in self._cache:
@@ -732,9 +731,9 @@ In this case, the table names are encoded in the job definition. If, instead, yo
 ```python file=/concepts/io_management/metadata.py startafter=io_manager_start_marker endbefore=io_manager_end_marker
 class MyIOManager(ConfigurableIOManager):
     def handle_output(self, context: OutputContext, obj):
-        if context.metadata:
-            table_name = context.metadata["table"]
-            schema = context.metadata["schema"]
+        if context.definition_metadata:
+            table_name = context.definition_metadata["table"]
+            schema = context.definition_metadata["schema"]
             write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
         else:
             raise Exception(
@@ -742,9 +741,9 @@ class MyIOManager(ConfigurableIOManager):
             )
 
     def load_input(self, context: InputContext):
-        if context.upstream_output and context.upstream_output.metadata:
-            table_name = context.upstream_output.metadata["table"]
-            schema = context.upstream_output.metadata["schema"]
+        if context.upstream_output and context.upstream_output.definition_metadata:
+            table_name = context.upstream_output.definition_metadata["table"]
+            schema = context.upstream_output.definition_metadata["schema"]
             return read_dataframe_from_table(name=table_name, schema=schema)
         else:
             raise Exception("Upstream output doesn't have schema and metadata set")

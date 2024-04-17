@@ -3,8 +3,8 @@ import sys
 from typing import Iterator, Optional
 
 import pytest
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -56,7 +56,7 @@ def workspace_load_target(
     return ModuleTarget(
         module_name=f"dagster_tests.scheduler_tests.{module}",
         attribute=attribute,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 

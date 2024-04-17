@@ -1,0 +1,77 @@
+import {Box, Icon} from '@dagster-io/ui-components';
+import {useState} from 'react';
+import {useLocation} from 'react-router-dom';
+
+import {UserSettingsDialog} from '../app/UserSettingsDialog/UserSettingsDialog';
+import {getVisibleFeatureFlagRows} from '../app/getVisibleFeatureFlagRows';
+import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
+
+const items: SideNavItemConfig[] = [
+  {
+    key: 'code-locations',
+    type: 'link',
+    icon: <Icon name="code_location" />,
+    label: 'Code locations',
+    path: '/settings/locations',
+  },
+  {
+    key: 'daemons',
+    type: 'link',
+    icon: <Icon name="sync_alt" />,
+    label: 'Daemons',
+    path: '/settings/daemons',
+  },
+  {
+    key: 'concurrency-limits',
+    type: 'link',
+    icon: <Icon name="stacks" />,
+    label: 'Concurrency limits',
+    path: '/settings/concurrency',
+  },
+  {
+    key: 'config',
+    type: 'link',
+    icon: <Icon name="tune" />,
+    label: 'Configuration (read-only)',
+    path: '/settings/config',
+  },
+];
+
+export const SettingsLeftPane = () => {
+  const {pathname} = useLocation();
+  const [showUserSettings, setShowUserSettings] = useState(false);
+
+  const userSettingsItem: SideNavItemConfig = {
+    key: 'user-settings',
+    type: 'button',
+    icon: <Icon name="account_circle" />,
+    label: 'User settings',
+    onClick: () => setShowUserSettings(true),
+  };
+
+  return (
+    <Box padding={12}>
+      <Box padding={{bottom: 12}}>
+        {items.map((item) => {
+          return (
+            <SideNavItem
+              key={item.key}
+              item={item}
+              active={item.type === 'link' && pathname === item.path}
+            />
+          );
+        })}
+      </Box>
+      <Box padding={{top: 16}} border="top">
+        <>
+          <SideNavItem item={userSettingsItem} />
+          <UserSettingsDialog
+            isOpen={showUserSettings}
+            onClose={() => setShowUserSettings(false)}
+            visibleFlags={getVisibleFeatureFlagRows()}
+          />
+        </>
+      </Box>
+    </Box>
+  );
+};

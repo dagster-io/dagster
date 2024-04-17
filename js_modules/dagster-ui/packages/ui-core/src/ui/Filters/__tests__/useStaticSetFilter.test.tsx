@@ -1,5 +1,5 @@
 import {IconName} from '@dagster-io/ui-components';
-import {render} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
 import {act, renderHook} from '@testing-library/react-hooks';
 
 import {useStaticSetFilter} from '../useStaticSetFilter';
@@ -85,7 +85,34 @@ describe('useStaticSetFilter', () => {
     expect(cherry).not.toHaveClass('active');
   });
 
-  it('renders filtered results based on query', () => {
+  it('does not render "Select all" if allowMultipleSelections is false', async () => {
+    const filter = renderHook(() =>
+      useStaticSetFilter({
+        ...testFilterProps,
+        allowMultipleSelections: false,
+      }),
+    );
+    const results = filter.result.current.getResults('a');
+    const {getByText, queryByText} = render(
+      <>
+        {results.map((r) => (
+          <span key={r.key}>{r.label}</span>
+        ))}
+      </>,
+    );
+
+    const apple = getByText('apple');
+    const banana = getByText('banana');
+    const cherry = queryByText('cherry');
+    const selectAll = queryByText('Select all');
+
+    expect(apple).toBeVisible();
+    expect(banana).toBeVisible();
+    expect(cherry).not.toBeInTheDocument();
+    expect(selectAll).not.toBeInTheDocument();
+  });
+
+  it('renders filtered results based on query and select all takes the query into account', async () => {
     const filter = renderHook(() => useStaticSetFilter(testFilterProps));
     const results = filter.result.current.getResults('a');
     const {getByText, queryByText} = render(
@@ -99,10 +126,35 @@ describe('useStaticSetFilter', () => {
     const apple = getByText('apple');
     const banana = getByText('banana');
     const cherry = queryByText('cherry');
+    const selectAll = screen.getByText('Select all');
 
-    expect(apple).toBeInTheDocument();
-    expect(banana).toBeInTheDocument();
+    expect(apple).toBeVisible();
+    expect(banana).toBeVisible();
     expect(cherry).not.toBeInTheDocument();
+
+    expect(filter.result.current.state).toEqual(new Set(['banana']));
+
+    expect(selectAll).toBeVisible();
+
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+
+    expect(filter.result.current.state).toEqual(new Set(['banana', 'apple']));
+
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+
+    expect(filter.result.current.state).toEqual(new Set([]));
+
+    select(filter, 'cherry');
+
+    expect(filter.result.current.state).toEqual(new Set(['cherry']));
+
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+
+    expect(filter.result.current.state).toEqual(new Set(['cherry', 'banana', 'apple']));
+
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+
+    expect(filter.result.current.state).toEqual(new Set(['cherry']));
   });
 
   it('reflects initial state', async () => {
@@ -127,6 +179,10 @@ describe('useStaticSetFilter', () => {
     );
     const results = filter.result.current.getResults('');
     results.forEach((result) => {
+      if (typeof result.value === 'symbol') {
+        // ignore the "select all symbol"
+        return;
+      }
       expect(result.key).toEqual(result.value.toUpperCase());
     });
   });

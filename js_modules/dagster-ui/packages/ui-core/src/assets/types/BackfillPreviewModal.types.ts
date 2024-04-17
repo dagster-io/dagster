@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type BackfillPreviewQueryVariables = Types.Exact<{
-  partitionNames: Array<Types.Scalars['String']> | Types.Scalars['String'];
+  partitionNames: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 

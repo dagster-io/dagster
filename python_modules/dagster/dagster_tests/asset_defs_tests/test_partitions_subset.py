@@ -196,3 +196,20 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
         round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))  # type: ignore
         assert isinstance(round_trip_subset, TimeWindowPartitionsSubset)
         assert set(round_trip_subset.get_partition_keys()) == set(all_subset.get_partition_keys())
+
+
+def test_partitions_set_short_circuiting() -> None:
+    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    default_ps = DefaultPartitionsSubset({"a", "b", "c"})
+    all_ps = AllPartitionsSubset(static_partitions_def, Mock(), pendulum.now("UTC"))
+
+    # Test short-circuiting of |. Returns the same AllPartionsSubset
+    or_result = default_ps | all_ps
+    assert or_result is all_ps
+
+    # Test short-circuiting of &. Returns the same DefaultPartitionsSubset
+    and_result = default_ps & all_ps
+    assert and_result is default_ps
+
+    # Test short-circuiting of -. Returns an empty DefaultPartitionsSubset
+    assert (default_ps - all_ps) == DefaultPartitionsSubset.empty_subset()

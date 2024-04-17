@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 import tempfile
@@ -6,6 +7,7 @@ from dagster import EnvVar, asset, file_relative_path, materialize
 from dagster._core.test_utils import environ
 from dagster_embedded_elt.sling import SlingMode, SlingResource
 from dagster_embedded_elt.sling.resources import (
+    SlingConnectionResource,
     SlingSourceConnection,
     SlingTargetConnection,
 )
@@ -112,3 +114,66 @@ def test_env_var_for_permissive_field():
                     )
                 },
             )
+
+
+def test_sling_resource_env_with_source_target():
+    source = SlingSourceConnection(type="duckdb", connection_string="duckdb://localhost:5000")
+    target = SlingTargetConnection(type="postgres", host="abchost.com", port="420")
+
+    sling_resource = SlingResource(source_connection=source, target_connection=target)
+
+    env = sling_resource.prepare_environment()
+    assert json.loads(env["SLING_SOURCE"]) == {"type": "duckdb", "url": "duckdb://localhost:5000"}
+    assert json.loads(env["SLING_TARGET"]) == {
+        "type": "postgres",
+        "host": "abchost.com",
+        "port": "420",
+    }
+
+
+def test_sling_resource_env_with_connection_resources():
+    connections = [
+        SlingConnectionResource(
+            name="CLOUD_PRODUCTION",
+            type="postgres",
+            host="CLOUD_PROD_READ_REPLICA_POSTGRES_HOST",
+            user="CLOUD_PROD_POSTGRES_USER",
+            database="dagster",
+        ),
+        SlingConnectionResource(
+            name="SLING_DB",
+            type="snowflake",
+            host="SNOWFLAKE_ACCOUNT",
+            user="SNOWFLAKE_SLING_USER",
+            password=EnvVar("SNOWFLAKE_SLING_PASSWORD"),
+            database="sling",
+        ),
+    ]
+
+    sling_resource = SlingResource(connections=connections)
+    env = sling_resource.prepare_environment()
+
+    assert json.loads(env["CLOUD_PRODUCTION"]) == {
+        "name": "CLOUD_PRODUCTION",
+        "type": "postgres",
+        "host": "CLOUD_PROD_READ_REPLICA_POSTGRES_HOST",
+        "user": "CLOUD_PROD_POSTGRES_USER",
+        "database": "dagster",
+    }
+
+    assert json.loads(env["SLING_DB"]) == {
+        "name": "SLING_DB",
+        "type": "snowflake",
+        "host": "SNOWFLAKE_ACCOUNT",
+        "user": "SNOWFLAKE_SLING_USER",
+        "password": EnvVar("SNOWFLAKE_SLING_PASSWORD"),
+        "database": "sling",
+    }
+
+
+def test_sling_resource_prepares_environment_variables():
+    sling_resource = SlingResource(connections=[])
+
+    env = sling_resource.prepare_environment()
+    assert "SLING_SOURCE" not in env
+    assert "SLING_TARGET" not in env
