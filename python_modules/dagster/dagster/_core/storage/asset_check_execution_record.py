@@ -2,8 +2,7 @@ import enum
 from typing import NamedTuple, Optional
 
 import dagster._check as check
-from dagster import EventLogEntry
-from dagster._core.events import DagsterEventType
+from dagster._core.events.log import DagsterEventType, EventLogEntry
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
 

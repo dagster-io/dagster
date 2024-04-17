@@ -1140,11 +1140,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
-            (
-                self._asset_record_loader.get_asset_record(asset_key)
-                if self._asset_record_loader
-                else next(iter(graphene_info.context.instance.get_asset_records([asset_key])), None)
-            ),
+            self._asset_record_loader,
             partitions_def,
         )
 
@@ -1174,13 +1170,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 graphene_info.context.instance,
                 asset_key,
                 self._dynamic_partitions_loader,
-                (
-                    self._asset_record_loader.get_asset_record(self._external_asset_node.asset_key)
-                    if self._asset_record_loader
-                    else next(
-                        iter(graphene_info.context.instance.get_asset_records([asset_key])), None
-                    )
-                ),
+                self._asset_record_loader,
                 (
                     self._external_asset_node.partitions_def_data.get_partitions_definition()
                     if self._external_asset_node.partitions_def_data

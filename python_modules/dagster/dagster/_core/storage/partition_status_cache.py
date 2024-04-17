@@ -32,6 +32,7 @@ from dagster._serdes.serdes import deserialize_value
 
 if TYPE_CHECKING:
     from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 
 
 CACHEABLE_PARTITION_TYPES = (
@@ -223,12 +224,14 @@ def get_validated_partition_keys(
     return validated_partitions
 
 
-def _get_last_planned_storage_id(
+def get_last_planned_storage_id(
     instance: DagsterInstance, asset_key: AssetKey, asset_record: Optional["AssetRecord"]
-):
+) -> int:
     if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id():
         return (
-            asset_record.asset_entry.last_planned_materialization_storage_id if asset_record else 0
+            (asset_record.asset_entry.last_planned_materialization_storage_id or 0)
+            if asset_record
+            else 0
         )
 
     info = instance.get_latest_planned_materialization_info(asset_key)
@@ -253,13 +256,13 @@ def _build_status_cache(
         asset_record.asset_entry.last_materialization_storage_id if asset_record else None
     )
 
-    last_planned_materialization_storage_id = _get_last_planned_storage_id(
+    last_planned_materialization_storage_id = get_last_planned_storage_id(
         instance, asset_key, asset_record
     )
 
     latest_storage_id = max(
-        last_materialization_storage_id if last_materialization_storage_id else 0,
-        last_planned_materialization_storage_id if last_planned_materialization_storage_id else 0,
+        last_materialization_storage_id or 0,
+        last_planned_materialization_storage_id or 0,
     )
     if not latest_storage_id:
         return None
@@ -328,7 +331,7 @@ def _build_status_cache(
         asset_key,
         partitions_def,
         dynamic_partitions_store,
-        asset_record=asset_record,
+        last_planned_materialization_storage_id=last_planned_materialization_storage_id,
         failed_partitions=failed_partitions,
         after_storage_id=cached_in_progress_cursor,
     )
@@ -350,7 +353,7 @@ def build_failed_and_in_progress_partition_subset(
     asset_key: AssetKey,
     partitions_def: PartitionsDefinition,
     dynamic_partitions_store: DynamicPartitionsStore,
-    asset_record: Optional["AssetRecord"],
+    last_planned_materialization_storage_id: int,
     failed_partitions: Optional[Set[str]] = None,
     after_storage_id: Optional[int] = None,
 ) -> Tuple[PartitionsSubset, PartitionsSubset, Optional[int]]:
@@ -358,11 +361,6 @@ def build_failed_and_in_progress_partition_subset(
     in_progress_partitions: Set[str] = set()
 
     incomplete_materializations = {}
-
-    # Pass this in instead from both callsites
-    last_planned_materialization_storage_id = _get_last_planned_storage_id(
-        instance, asset_key, asset_record
-    )
 
     # Fetch incomplete materializations if there have been any planned materializations since the
     # cursor
@@ -427,10 +425,15 @@ def build_failed_and_in_progress_partition_subset(
 def get_and_update_asset_status_cache_value(
     instance: DagsterInstance,
     asset_key: AssetKey,
-    asset_record: Optional["AssetRecord"],
     partitions_def: Optional[PartitionsDefinition],
     dynamic_partitions_loader: Optional[DynamicPartitionsStore] = None,
+    batch_asset_record_loader: Optional["BatchAssetRecordLoader"] = None,
 ) -> Optional[AssetStatusCacheValue]:
+    if batch_asset_record_loader:
+        asset_record = batch_asset_record_loader.get_asset_record(asset_key)
+    else:
+        asset_record = next(iter(instance.get_asset_records(asset_keys=[asset_key])), None)
+
     if asset_record is None:
         stored_cache_value = None
     else:

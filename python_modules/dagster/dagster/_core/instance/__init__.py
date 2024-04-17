@@ -2186,12 +2186,9 @@ class DagsterInstance(DynamicPartitionsStore):
             get_and_update_asset_status_cache_value,
         )
 
-        asset_record = next(iter(self.get_asset_records(asset_keys=[asset_key])), None)
-
         cached_value = get_and_update_asset_status_cache_value(
             self,
             asset_key,
-            asset_record,
             partitions_def,
         )
 

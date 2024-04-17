@@ -1,11 +1,9 @@
 from typing import Iterable, Mapping, Optional, Sequence, Set
 
-from dagster import (
-    DagsterInstance,
-    _check as check,
-)
+import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.base import AssetRecord
 
 
@@ -31,7 +29,7 @@ class BatchAssetRecordLoader:
             )
 
         if asset_key in self._unfetched_asset_keys:
-            self._fetch()
+            self.fetch()
 
         return self._asset_records.get(asset_key)
 
@@ -39,6 +37,9 @@ class BatchAssetRecordLoader:
         """For use in tests."""
         self._unfetched_asset_keys = self._unfetched_asset_keys.union(self._asset_records.keys())
         self._asset_records = {}
+
+    def has_cached_asset_record(self, asset_key: AssetKey):
+        return asset_key in self._asset_records
 
     def get_asset_records(self, asset_keys: Sequence[AssetKey]) -> Sequence[AssetRecord]:
         records = [self.get_asset_record(asset_key) for asset_key in asset_keys]
@@ -65,7 +66,7 @@ class BatchAssetRecordLoader:
 
         return asset_record.asset_entry.last_observation
 
-    def _fetch(self) -> None:
+    def fetch(self) -> None:
         if not self._unfetched_asset_keys:
             return
 

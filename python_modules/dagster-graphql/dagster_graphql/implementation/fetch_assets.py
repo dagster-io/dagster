@@ -42,15 +42,16 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalAssetNode
-from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
+    get_last_planned_storage_id,
     get_materialized_multipartitions,
     get_validated_partition_keys,
     is_cacheable_partition_type,
 )
+from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 from dagster_graphql.implementation.loader import (
@@ -414,7 +415,7 @@ def get_partition_subsets(
     instance: DagsterInstance,
     asset_key: AssetKey,
     dynamic_partitions_loader: DynamicPartitionsStore,
-    asset_record: Optional[AssetRecord],
+    batch_asset_record_loader: Optional[BatchAssetRecordLoader],
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
@@ -429,9 +430,9 @@ def get_partition_subsets(
         updated_cache_value = get_and_update_asset_status_cache_value(
             instance,
             asset_key,
-            asset_record,
             partitions_def,
             dynamic_partitions_loader,
+            batch_asset_record_loader,
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
@@ -470,12 +471,19 @@ def get_partition_subsets(
             else partitions_def.empty_subset()
         )
 
+        if batch_asset_record_loader:
+            asset_record = batch_asset_record_loader.get_asset_record(asset_key)
+        else:
+            asset_record = next(iter(instance.get_asset_records(asset_keys=[asset_key])), None)
+
         failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
             instance,
             asset_key,
             partitions_def,
             dynamic_partitions_loader,
-            asset_record=asset_record,
+            last_planned_materialization_storage_id=get_last_planned_storage_id(
+                instance, asset_key, asset_record
+            ),
         )
 
         return materialized_subset, failed_subset, in_progress_subset
