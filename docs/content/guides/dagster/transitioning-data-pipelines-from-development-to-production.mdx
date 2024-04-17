@@ -252,7 +252,7 @@ resources = {
     "production": {
         "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
-            user="system@company.com",
+            user="dev@company.com",
             # password in config is bad practice
             password="company_super_secret_password",
             database="PRODUCTION",
@@ -341,11 +341,11 @@ resources = {
 
 ---
 
-## Advanced: Unit tests with stubs and mocks
+## Advanced: Using stubs and mocks in tests
 
-You may have noticed a missing step in the development workflow presented in this guide — unit tests! While the main purpose of this guide is to help you transition your code from local to production deployment, unit testing is still an important part of the development cycle. In this section, we'll explore a pattern you may find useful when writing your own unit tests.
+You may have noticed a missing step in the development workflow presented in this guide — tests! While the main purpose of this guide is to help you transition your code from local to production deployment, testing is still an important part of the development cycle. In this section, we'll explore a pattern you may find useful when writing your own tests.
 
-When writing unit tests for the `items` asset, we could make more precise assertions if we knew exactly what data we'd receive from Hacker News. If we refactor our interactions with the Hacker News API as a resource, we can leverage Dagster's resource system to provide a stub resource in our unit tests.
+When writing tests for the `items` asset, we could make more precise assertions if we knew exactly what data we'd receive from Hacker News. If we refactor our interactions with the Hacker News API as a resource, we can leverage Dagster's resource system to provide a stub resource in our tests.
 
 Before we get into the implementation, let's go over some best practices:
 
@@ -359,13 +359,13 @@ In many cases, interacting with an external service directly in assets or ops is
 We recommend refactoring code to use resources in the following cases:
 
 - Multiple assets or ops need to interact with the service in a consistent way
-- Different implementations of a service need to be used in certain scenarios (ie. a staging environment, or unit tests)
+- Different implementations of a service need to be used in certain scenarios (ie. a staging environment or tests)
 
 ### When to use stub resources
 
-Determining when it makes sense to stub a resource for a unit test can be a topic of much debate. In some cases, it would be too complicated to write and maintain a stub. For example, mocking a database like Snowflake with a lightweight database could be difficult because the SQL syntax and runtime behavior may vary.
+Determining when it makes sense to stub a resource for a test can be a topic of much debate. In some cases, it would be too complicated to write and maintain a stub. For example, mocking a database like Snowflake with a lightweight database could be difficult because the SQL syntax and runtime behavior may vary.
 
-In general, if a resource is relatively simple, writing a stub can be helpful for unit testing the assets and ops that use the resource.
+In general, if a resource is relatively simple, writing a stub can be helpful for testing the assets and ops that use the resource.
 
 We'll start by writing the "real" Hacker News API Client:
 
@@ -496,17 +496,32 @@ Now we can use the stub Hacker News resource to test that the `items` asset tran
 
 
 def test_items():
-    hn_dataset = items(
-        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
-        hn_client=StubHNClient(),
+    test_snowflake = (
+        SnowflakeResource(
+            account="abc1234.us-east-1",
+            user="test@company.com",
+            password=os.getenv("TEST_SNOWFLAKE_PASSWORD"),
+            database="TEST",
+            schema="HACKER_NEWS",
+        ),
     )
-    assert isinstance(hn_dataset, pd.DataFrame)
+    try:
+        items(
+            config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
+            hn_client=StubHNClient(),
+            snowflake_resource=test_snowflake,
+        )
+        with test_snowflake.get_connection() as conn:
+            hn_dataset = conn.cursor.execute("select * from ITEMS").fetch_pandas_all()
+            assert isinstance(hn_dataset, pd.DataFrame)
+            expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
+                columns={"by": "user_id"}
+            )
+            assert (hn_dataset == expected_data).all().all()
 
-    expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
-        columns={"by": "user_id"}
-    )
-
-    assert (hn_dataset == expected_data).all().all()
+    finally:
+        with test_snowflake.get_connection() as conn:
+            conn.cursor.execute("drop table if exists ITEMS")
 ```
 
 ---
