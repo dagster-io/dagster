@@ -68,23 +68,27 @@ class ItemsConfig(Config):
     base_item_id: int
 
 
-CREATE_UPDATE_TABLE_QUERY = """
+CREATE_TABLE_QUERY = """
 create table if not exists {table_name} (
-    id varchar,
-    parent varchar,
-    time datetime,
+    id number,
+    parent number,
+    time number,
     type varchar,
     user_id varchar,
     text varchar,
-    kids varchar,
-    score double,
+    kids variant,
+    score number,
     title varchar,
-    descendants varchar,
+    descendants number,
     url varchar
 );
+"""
 
+CLEAR_TABLE_QUERY = """
 delete from {table_name} where id = id;
+"""
 
+UPDATE_TABLE_QUERY = """
 insert into {table_name}
 select
     id,
@@ -124,10 +128,12 @@ def items(config: ItemsConfig, snowflake_resource: SnowflakeResource):
         write_pandas(
             conn=conn,
             df=result,
-            table_name="items",
+            table_name="ITEMS",
+            schema=snowflake_resource.schema_,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
+            quote_identifiers=False,
         )
 
 
@@ -137,13 +143,16 @@ def comments(snowflake_resource: SnowflakeResource):
     table_name = "comments"
     item_type = "comment"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY.format(
+    create_table = CREATE_TABLE_QUERY.format(
         table_name=table_name,
-        item_type=item_type,
     )
+    clear_table = CLEAR_TABLE_QUERY.format(table_name=table_name)
+    update_table = UPDATE_TABLE_QUERY.format(table_name=table_name, item_type=item_type)
 
     with snowflake_resource.get_connection() as conn:
-        conn.cursor.execute(create_table)
+        conn.cursor().execute(create_table)
+        conn.cursor().execute(clear_table)
+        conn.cursor().execute(update_table)
 
 
 @asset(deps=[items])
@@ -152,13 +161,16 @@ def stories(snowflake_resource: SnowflakeResource):
     table_name = "stories"
     item_type = "story"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY.format(
+    create_table = CREATE_TABLE_QUERY.format(
         table_name=table_name,
-        item_type=item_type,
     )
+    clear_table = CLEAR_TABLE_QUERY.format(table_name=table_name)
+    update_table = UPDATE_TABLE_QUERY.format(table_name=table_name, item_type=item_type)
 
     with snowflake_resource.get_connection() as conn:
-        conn.cursor.execute(create_table)
+        conn.cursor().execute(create_table)
+        conn.cursor().execute(clear_table)
+        conn.cursor().execute(update_table)
 ```
 
 ### Step 2: Add run configuration
@@ -179,7 +191,7 @@ resources = {
         user="me@company.com",
         # password in config is bad practice
         password="my_super_secret_password",
-        database="LOCAL",
+        database="TESTDB",
         schema="ALICE",
     ),
 }
@@ -245,7 +257,7 @@ resources = {
             user="me@company.com",
             # password in config is bad practice
             password="my_super_secret_password",
-            database="LOCAL",
+            database="TESTDB",
             schema="ALICE",
         ),
     },
@@ -292,7 +304,7 @@ resources = {
             account="abc1234.us-east-1",
             user=EnvVar("DEV_SNOWFLAKE_USER"),
             password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
-            database="LOCAL",
+            database="TESTDB",
             schema=EnvVar("DEV_SNOWFLAKE_SCHEMA"),
         ),
     },
@@ -430,10 +442,12 @@ def items(
         write_pandas(
             conn=conn,
             df=result,
-            table_name="items",
+            table_name="ITEMS",
+            schema=snowflake_resource.schema_,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
+            quote_identifiers=False,
         )
 ```
 
@@ -464,18 +478,38 @@ Now we can write a stubbed version of the Hacker News resource. We want to make 
 # resources.py
 
 
-class StubHNClient:
+class StubHNClient(ConfigurableResource):
     """Hacker News Client that returns fake data."""
 
-    def __init__(self):
-        self.data = {
+    @property
+    def data(self):
+        return {
             1: {
                 "id": 1,
+                "parent": 8,
+                "time": 1713377516,
                 "type": "comment",
-                "title": "the first comment",
                 "by": "user1",
+                "text": "first!",
+                "kids": [13],
+                "score": 5,
+                "title": "the first comment",
+                "descendants": 1,
+                "url": "foo",
             },
-            2: {"id": 2, "type": "story", "title": "an awesome story", "by": "user2"},
+            2: {
+                "id": 2,
+                "parent": 7,
+                "time": 1713377517,
+                "type": "story",
+                "by": "user2",
+                "text": "Once upon a time...",
+                "kids": [15],
+                "score": 7,
+                "title": "an awesome story",
+                "descendants": 1,
+                "url": "bar",
+            },
         }
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
@@ -486,7 +520,7 @@ class StubHNClient:
 
     @property
     def item_field_names(self) -> list:
-        return ["id", "type", "title", "by"]
+        return list(self.data.keys())
 ```
 
 Now we can use the stub Hacker News resource to test that the `items` asset transforms the data in the way we expect:
@@ -495,33 +529,48 @@ Now we can use the stub Hacker News resource to test that the `items` asset tran
 # test_assets.py
 
 
-def test_items():
-    test_snowflake = (
-        SnowflakeResource(
-            account="abc1234.us-east-1",
-            user="test@company.com",
-            password=os.getenv("TEST_SNOWFLAKE_PASSWORD"),
-            database="TEST",
-            schema="HACKER_NEWS",
-        ),
+@pytest.fixture(scope="module")
+def snowflake_resource():
+    resource = SnowflakeResource(
+        account="abc1234.us-east-1",
+        user=os.getenv("DEV_SNOWFLAKE_USER"),
+        password=os.getenv("DEV_SNOWFLAKE_PASSWORD"),
+        database="TESTDB",
+        schema=os.getenv("DEV_SNOWFLAKE_SCHEMA"),
     )
-    try:
-        items(
-            config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
-            hn_client=StubHNClient(),
-            snowflake_resource=test_snowflake,
-        )
-        with test_snowflake.get_connection() as conn:
-            hn_dataset = conn.cursor.execute("select * from ITEMS").fetch_pandas_all()
-            assert isinstance(hn_dataset, pd.DataFrame)
-            expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
-                columns={"by": "user_id"}
-            )
-            assert (hn_dataset == expected_data).all().all()
 
-    finally:
-        with test_snowflake.get_connection() as conn:
-            conn.cursor.execute("drop table if exists ITEMS")
+    yield resource
+
+    # clean up tables from tests
+    with resource.get_connection() as conn:
+        conn.cursor().execute(
+            f"drop table if exists {resource.database}.{resource.schema_}.ITEMS"
+        )
+
+
+def test_items():
+    items(
+        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
+        hn_client=StubHNClient(),
+        snowflake_resource=snowflake_resource,
+    )
+    with snowflake_resource.get_connection() as conn:
+        hn_dataset = (
+            conn.cursor()
+            .execute(
+                f"select * from {snowflake_resource.database}.{snowflake_resource.schema_}.ITEMS"
+            )
+            .fetch_pandas_all()
+        )
+        assert isinstance(hn_dataset, pd.DataFrame)
+        expected_data = (
+            pd.DataFrame(StubHNClient().data.values())
+            .rename(columns={"by": "user_id"})
+            .rename(str.upper, copy=False, axis="columns")
+        )
+        assert (hn_dataset["ID"] == expected_data["ID"]).all()
+        assert (hn_dataset["TITLE"] == expected_data["TITLE"]).all()
+        assert (hn_dataset["USER_ID"] == expected_data["USER_ID"]).all()
 ```
 
 ---
