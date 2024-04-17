@@ -1,40 +1,57 @@
 import pandas as pd
 from dagster import build_asset_context
+import os
+import pytest
 
-from development_to_production.assets import comments, items, stories
+from development_to_production.assets import comments, items, stories, ItemsConfig
 from development_to_production.resources import StubHNClient
+from dagster_snowflake import SnowflakeResource
 
-
-def test_items():
-    context = build_asset_context(
-        resources={"hn_client": StubHNClient()},
-        asset_config={"N": StubHNClient().fetch_max_item_id()},
+@pytest.fixture(scope="module")
+def snowflake_resource():
+    resource = SnowflakeResource(
+        account="abc1234.us-east-1",
+        user=os.getenv("DEV_SNOWFLAKE_USER"),
+        password=os.getenv("DEV_SNOWFLAKE_PASSWORD"),
+        database="TESTDB",
+        schema=os.getenv("DEV_SNOWFLAKE_SCHEMA"),
     )
-    hn_dataset = items(context)
-    assert isinstance(hn_dataset, pd.DataFrame)
 
-    expected_data = pd.DataFrame(StubHNClient().data.values()).rename(columns={"by": "user_id"})
+    yield resource
 
-    assert (hn_dataset == expected_data).all().all()
-
-
-def test_comments():
-    mock_data = pd.DataFrame({"id": [1, 2, 3], "type": ["comment", "story", "comment"]})
-    out_data = comments(mock_data)
-
-    out_ids = out_data["id"].tolist()
-
-    assert 1 in out_ids
-    assert 2 not in out_ids
-    assert 3 in out_ids
+    # clean up tables from tests
+    with resource.get_connection() as conn:
+        conn.cursor().execute(f"drop table if exists {resource.database}.{resource.schema_}.ITEMS")
+        conn.cursor().execute(f"drop table if exists {resource.database}.{resource.schema_}.COMMENTS")
+        conn.cursor().execute(f"drop table if exists {resource.database}.{resource.schema_}.STORIES")
 
 
-def test_stories():
-    mock_data = pd.DataFrame({"id": [1, 2, 3], "type": ["story", "story", "comment"]})
-    out_data = stories(mock_data)
+def test_assets(snowflake_resource):
+    items(
+        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
+        hn_client=StubHNClient(),
+        snowflake_resource=snowflake_resource
+    )
+    with snowflake_resource.get_connection() as conn:
+        hn_dataset = conn.cursor().execute(f"select * from {snowflake_resource.database}.{snowflake_resource.schema_}.ITEMS").fetch_pandas_all()
+        assert isinstance(hn_dataset, pd.DataFrame)
+        expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
+            columns={"by": "user_id"}
+        ).rename(str.upper, copy=False, axis="columns")
+        assert (hn_dataset["ID"] == expected_data["ID"]).all()
+        assert (hn_dataset["TITLE"] == expected_data["TITLE"]).all()
+        assert (hn_dataset["USER_ID"] == expected_data["USER_ID"]).all()
 
-    out_ids = out_data["id"].tolist()
+    comments(snowflake_resource=snowflake_resource)
+    with snowflake_resource.get_connection() as conn:
+        comments_df = conn.cursor().execute(f"select * from {snowflake_resource.database}.{snowflake_resource.schema_}.COMMENTS").fetch_pandas_all()
+        assert isinstance(comments_df, pd.DataFrame)
+        assert 1 in comments_df["ID"].tolist()
+        assert 2 not in comments_df["ID"].tolist()
 
-    assert 1 in out_ids
-    assert 1 in out_ids
-    assert 3 not in out_ids
+    stories(snowflake_resource=snowflake_resource)
+    with snowflake_resource.get_connection() as conn:
+        stories_df = conn.cursor().execute(f"select * from {snowflake_resource.database}.{snowflake_resource.schema_}.STORIES").fetch_pandas_all()
+        assert isinstance(stories_df, pd.DataFrame)
+        assert 1 not in stories_df["ID"].tolist()
+        assert 2 in stories_df["ID"].tolist()

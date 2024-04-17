@@ -1,7 +1,7 @@
 import os
 
 from dagster import Definitions, EnvVar
-from dagster_snowflake_pandas import SnowflakePandasIOManager
+from dagster_snowflake import SnowflakeResource
 
 from development_to_production.assets import comments, items, stories
 from development_to_production.resources import HNAPIClient
@@ -9,17 +9,17 @@ from development_to_production.resources import HNAPIClient
 resource_defs = {
     "local": {
         "hn_client": HNAPIClient(),
-        "snowflake_io_manager": SnowflakePandasIOManager(
+         "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user=EnvVar("DEV_SNOWFLAKE_USER"),
             password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
-            database="LOCAL",
+            database="TESTDB",
             schema=EnvVar("DEV_SNOWFLAKE_SCHEMA"),
         ),
     },
     "staging": {
         "hn_client": HNAPIClient(),
-        "snowflake_io_manager": SnowflakePandasIOManager(
+         "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="system@company.com",
             password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
@@ -29,7 +29,7 @@ resource_defs = {
     },
     "production": {
         "hn_client": HNAPIClient(),
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="system@company.com",
             password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),

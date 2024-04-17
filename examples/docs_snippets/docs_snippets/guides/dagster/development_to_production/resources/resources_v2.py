@@ -6,20 +6,39 @@ from dagster import ConfigurableResource
 # resources.py
 
 
-class StubHNClient:
+class StubHNClient(ConfigurableResource):
     """Hacker News Client that returns fake data."""
 
-    def __init__(self):
-        self.data = {
+    @property
+    def data(self):
+        return {
             1: {
                 "id": 1,
+                "parent": 8,
+                "time": 1713377516,
                 "type": "comment",
-                "title": "the first comment",
                 "by": "user1",
+                "text": "first!",
+                "kids": [13],
+                "score": 5,
+                "title": "the first comment",
+                "descendants": 1,
+                "url": "foo"
             },
-            2: {"id": 2, "type": "story", "title": "an awesome story", "by": "user2"},
+            2: {
+                "id": 2,
+                "parent": 7,
+                "time": 1713377517,
+                "type": "story",
+                "by": "user2",
+                "text": "Once upon a time...",
+                "kids": [15],
+                "score": 7,
+                "title": "an awesome story",
+                "descendants": 1,
+                "url": "bar"
+            },
         }
-
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         return self.data.get(item_id)
 
@@ -28,7 +47,7 @@ class StubHNClient:
 
     @property
     def item_field_names(self) -> list:
-        return ["id", "type", "title", "by"]
+        return list(self.data.keys())
 
 
 # end_mock

@@ -36,11 +36,12 @@ def items(
         write_pandas(
             conn=conn,
             df=result,
-            table_name="items",
-            schema=snowflake_resource.schema,
+            table_name="ITEMS",
+            schema=snowflake_resource.schema_,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
+            quote_identifiers=False,
         )
 
 

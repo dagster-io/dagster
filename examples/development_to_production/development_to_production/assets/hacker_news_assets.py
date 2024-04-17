@@ -1,44 +1,118 @@
 import pandas as pd
-from dagster import asset
+from dagster import asset, Config
+from dagster_snowflake import SnowflakeResource
+from ..resources import HNAPIClient
+from snowflake.connector.pandas_tools import write_pandas
+import requests
+
+class ItemsConfig(Config):
+    base_item_id: int
+
+CREATE_TABLE_QUERY = """
+create table if not exists {table_name} (
+    id number,
+    parent number,
+    time number,
+    type varchar,
+    user_id varchar,
+    text varchar,
+    kids variant,
+    score number,
+    title varchar,
+    descendants number,
+    url varchar
+);
+"""
+
+CLEAR_TABLE_QUERY = """
+delete from {table_name} where id = id;
+"""
 
 
-@asset(
-    config_schema={"N": int},
-    required_resource_keys={"hn_client"},
-    io_manager_key="snowflake_io_manager",
-)
-def items(context) -> pd.DataFrame:
+UPDATE_TABLE_QUERY = """
+insert into {table_name}
+select
+    id,
+    parent,
+    time,
+    type,
+    user_id,
+    text,
+    kids,
+    score,
+    title,
+    descendants,
+    url
+from items
+where type = '{item_type}'
+"""
+
+
+
+
+@asset
+def items(
+    config: ItemsConfig, snowflake_resource: SnowflakeResource, hn_client: HNAPIClient
+):
     """Items from the Hacker News API: each is a story or a comment on a story."""
-    hn_client = context.resources.hn_client
-
-    max_id = hn_client.fetch_max_item_id()
     rows = []
-    log_count = 0
-    # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - context.op_execution_context.op_config["N"] + 1, max_id + 1):
-        rows.append(hn_client.fetch_item_by_id(item_id))
-        log_count += 1
-        if log_count >= 50:
-            context.log.info("Fetched 50 items.")
-            log_count = 0
+    max_id = hn_client.fetch_max_item_id()
 
-    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(subset=["id"])
+    # Hacker News API is 1-indexed, so adjust range by 1
+    for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
+        rows.append(hn_client.fetch_item_by_id(item_id))
+
+
+    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
+        subset=["id"]
+    )
     result.rename(columns={"by": "user_id"}, inplace=True)
 
-    return result
+    # Upload data to Snowflake as a dataframe
+    with snowflake_resource.get_connection() as conn:
+        write_pandas(
+            conn=conn,
+            df=result,
+            table_name="ITEMS",
+            schema=snowflake_resource.schema_,
+            database=snowflake_resource.database,
+            auto_create_table=True,
+            use_logical_type=True,
+            quote_identifiers=False,
+        )
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def comments(items: pd.DataFrame) -> pd.DataFrame:
+@asset(deps=[items])
+def comments(snowflake_resource: SnowflakeResource):
     """Comments from the Hacker News API."""
-    return items[items["type"] == "comment"]
+    table_name = "comments"
+    item_type = "comment"
+
+    create_table = CREATE_TABLE_QUERY.format(
+        table_name=table_name,
+    )
+    clear_table = CLEAR_TABLE_QUERY.format(table_name=table_name)
+    update_table = UPDATE_TABLE_QUERY.format(table_name=table_name, item_type=item_type)
+
+    with snowflake_resource.get_connection() as conn:
+        conn.cursor().execute(create_table)
+        conn.cursor().execute(clear_table)
+        conn.cursor().execute(update_table)
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def stories(items: pd.DataFrame) -> pd.DataFrame:
+@asset(deps=[items])
+def stories(snowflake_resource: SnowflakeResource):
     """Stories from the Hacker News API."""
-    return items[items["type"] == "story"]
+    table_name = "stories"
+    item_type = "story"
+
+    create_table = CREATE_TABLE_QUERY.format(
+        table_name=table_name,
+    )
+    clear_table = CLEAR_TABLE_QUERY.format(table_name=table_name)
+    update_table = UPDATE_TABLE_QUERY.format(table_name=table_name, item_type=item_type)
+
+    with snowflake_resource.get_connection() as conn:
+        conn.cursor().execute(create_table)
+        conn.cursor().execute(clear_table)
+        conn.cursor().execute(update_table)

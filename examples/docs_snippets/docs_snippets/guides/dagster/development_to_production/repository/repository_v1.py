@@ -12,7 +12,7 @@ resources = {
         user="me@company.com",
         # password in config is bad practice
         password="my_super_secret_password",
-        database="LOCAL",
+        database="TESTDB",
         schema="ALICE",
     ),
 }

@@ -26,23 +26,27 @@ class ItemsConfig(Config):
     base_item_id: int
 
 
-CREATE_UPDATE_TABLE_QUERY = """
+CREATE_TABLE_QUERY = """
 create table if not exists {table_name} (
-    id varchar,
-    parent varchar,
-    time datetime,
+    id number,
+    parent number,
+    time number,
     type varchar,
     user_id varchar,
     text varchar,
-    kids varchar,
-    score double,
+    kids variant,
+    score number,
     title varchar,
-    descendants varchar,
+    descendants number,
     url varchar
 );
+"""
 
+CLEAR_TABLE_QUERY = """
 delete from {table_name} where id = id;
+"""
 
+UPDATE_TABLE_QUERY = """
 insert into {table_name}
 select
     id,
@@ -59,6 +63,7 @@ select
 from items
 where type = '{item_type}'
 """
+
 
 
 @asset
@@ -82,11 +87,12 @@ def items(config: ItemsConfig, snowflake_resource: SnowflakeResource):
         write_pandas(
             conn=conn,
             df=result,
-            table_name="items",
-            schema=snowflake_resource.schema,
+            table_name="ITEMS",
+            schema=snowflake_resource.schema_,
             database=snowflake_resource.database,
             auto_create_table=True,
             use_logical_type=True,
+            quote_identifiers=False,
         )
 
 
@@ -96,13 +102,17 @@ def comments(snowflake_resource: SnowflakeResource):
     table_name = "comments"
     item_type = "comment"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY(
+    create_table = CREATE_TABLE_QUERY.format(
         table_name=table_name,
-        item_type=item_type,
     )
+    clear_table = CLEAR_TABLE_QUERY.format(table_name=table_name)
+    update_table = UPDATE_TABLE_QUERY.format(table_name=table_name, item_type=item_type)
 
     with snowflake_resource.get_connection() as conn:
-        conn.cursor.execute(create_table)
+        conn.cursor().execute(create_table)
+        conn.cursor().execute(clear_table)
+        conn.cursor().execute(update_table)
+
 
 
 @asset(deps=[items])
@@ -111,13 +121,17 @@ def stories(snowflake_resource: SnowflakeResource):
     table_name = "stories"
     item_type = "story"
 
-    create_table = CREATE_UPDATE_TABLE_QUERY(
+    create_table = CREATE_TABLE_QUERY.format(
         table_name=table_name,
-        item_type=item_type,
     )
+    clear_table = CLEAR_TABLE_QUERY.format(table_name=table_name)
+    update_table = UPDATE_TABLE_QUERY.format(table_name=table_name, item_type=item_type)
 
     with snowflake_resource.get_connection() as conn:
-        conn.cursor.execute(create_table)
+        conn.cursor().execute(create_table)
+        conn.cursor().execute(clear_table)
+        conn.cursor().execute(update_table)
+
 
 
 # end_assets

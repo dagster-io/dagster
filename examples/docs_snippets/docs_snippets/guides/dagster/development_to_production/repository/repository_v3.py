@@ -15,7 +15,7 @@ resources = {
             account="abc1234.us-east-1",
             user=EnvVar("DEV_SNOWFLAKE_USER"),
             password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
-            database="LOCAL",
+            database="TESTDB",
             schema=EnvVar("DEV_SNOWFLAKE_SCHEMA"),
         ),
     },
