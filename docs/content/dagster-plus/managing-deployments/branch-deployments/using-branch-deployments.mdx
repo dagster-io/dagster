@@ -93,7 +93,7 @@ After the above has occurred:
 
    ```shell
    BRANCH_DEPLOYMENT_NAME=$(
-       dagster-plus branch-deployment create-or-update \
+       dagster-cloud branch-deployment create-or-update \
            --organization $ORGANIZATION_NAME \
            --api-token $DAGSTER_CLOUD_API_TOKEN \
            --git-repo-name $REPOSITORY_NAME \
@@ -106,7 +106,7 @@ After the above has occurred:
 2. Deploy the code to the branch deployment:
 
    ```shell
-   dagster-plus workspace add-location \
+   dagster-cloud workspace add-location \
        --organization $ORGANIZATION_NAME \
        --deployment $BRANCH_DEPLOYMENT_NAME \
        --api-token $DAGSTER_CLOUD_API_TOKEN \

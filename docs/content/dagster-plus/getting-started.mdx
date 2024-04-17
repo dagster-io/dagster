@@ -163,7 +163,7 @@ For **Serverless deployments**, there are two ways to deploy your code to Dagste
 
 - [**Start from a template**](#use-a-template) - Use one of our quickstart templates to get up and running. All templates come with CI/CD already configured and will be cloned to a new GitHub repository.
 
-- [**Import an existing project**](#import-an-existing-project) - Import an existing GitHub repository using our GitHub integration or the [dagster-plus CLI](/dagster-plus/managing-deployments/dagster-plus-cli). **Note**: If using the GitHub integration, Dagster+ will automatically set up CI/CD for you.
+- [**Import an existing project**](#import-an-existing-project) - Import an existing GitHub repository using our GitHub integration or the [dagster-cloud CLI](/dagster-plus/managing-deployments/dagster-plus-cli). **Note**: If using the GitHub integration, Dagster+ will automatically set up CI/CD for you.
 
 #### Use a template
 
@@ -206,7 +206,7 @@ When finished, [continue to Step 5](#step-5-set-up-environment-variables-and-sec
 
 #### Import an existing project
 
-If you have existing Dagster code, you can use Dagster's GitHub / Gitlab app or the `dagster-plus` CLI.
+If you have existing Dagster code, you can use Dagster's GitHub / Gitlab app or the `dagster-cloud` CLI.
 
 <TabGroup>
 <TabItem name="GitHub">
@@ -455,7 +455,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 
    This command updates the code locations in Dagster+. Once this finishes successfully, you should be able to see the code locations under the **Deployments** tab in Dagster+.
 
-**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-plus CLI guide](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments) for more info.
+**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments) for more info.
 
 When finished, [continue to the next step](#step-5-set-up-environment-variables-and-secrets).
 
