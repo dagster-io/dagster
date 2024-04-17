@@ -271,12 +271,12 @@ After you've committed the file to the project, come back to Dagster+ to complet
 When finished, [continue to Step 5](#step-5-set-up-environment-variables-and-secrets).
 
 </TabItem>
-<TabItem name="dagster-plus CLI">
+<TabItem name="dagster-cloud CLI">
 
-##### dagster-plus CLI
+##### dagster-cloud CLI
 
 <Note>
-  <strong>Heads up!</strong> Using the <code>dagster-plus</code> CLI requires a
+  <strong>Heads up!</strong> Using the <code>dagster-cloud</code> CLI requires a
   recent version of Python 3 and Docker.
 </Note>
 
@@ -288,22 +288,22 @@ To complete this step using the CLI, you can use your own Dagster code or the [D
 
 After you've finished setting up your local project, move on to deploying using the CLI:
 
-1. To install the `dagster-plus` CLI, run:
+1. To install the `dagster-cloud` CLI, run:
 
    ```shell
-   pip install dagster-plus
+   pip install dagster-cloud
    ```
 
 2. Next, you'll need to authenticate to Dagster+. Run the following command and follow the prompts to log in:
 
    ```shell
-   dagster-plus config setup
+   dagster-cloud config setup
    ```
 
 3. After you've successfully authenticated, run the following to deploy your code to Dagster+:
 
    ```shell
-   dagster-plus serverless deploy \
+   dagster-cloud serverless deploy \
          --location-name "<LOCATION_NAME>" \       # name of the code loation
          --package-name "<PACKAGE_NAME>" \           # name of the Python package associated with the code location
    ```
@@ -354,7 +354,7 @@ When finished, [continue to the next step](#step-4-configure-cicd-for-your-proje
 To finish setting up your Hybrid deployment, you'll configure CI/CD for your Dagster project. How this is accomplished depends on your CI/CD provider:
 
 - **GitHub** - If using GitHub, you can use our GitHub Action workflow to set up CI/CD for your project.
-- **Another CI/CD provider** - If you're not using GitHub, you can configure CI/CD using the `dagster-plus` CLI.
+- **Another CI/CD provider** - If you're not using GitHub, you can configure CI/CD using the `dagster-cloud` CLI.
 
 <TabGroup>
 <TabItem name="GitHub Actions">
@@ -394,7 +394,7 @@ When finished, [continue to the next step](#step-5-set-up-environment-variables-
 
 ### Other CI/CD provider
 
-For continuous integration using a CI/CD provider other than GitHub, your system should use the `dagster-plus ci` subcommand to deploy code locations to Dagster+.
+For continuous integration using a CI/CD provider other than GitHub, your system should use the `dagster-cloud ci` subcommand to deploy code locations to Dagster+.
 
 Ensure that you have created a `dagster_cloud.yaml` file as described in [the quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/). For detailed documentation about this file see the [`dagster_cloud.yaml` reference](/dagster-plus/managing-deployments/dagster-cloud-yaml). The following steps are typically implemented in the CI/CD workflow:
 
@@ -407,7 +407,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 2. Run the configuration check:
 
    ```shell
-   dagster-plus ci check --project-dir=.
+   dagster-cloud ci check --project-dir=.
    ```
 
    This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` and connection to Dagster+.
@@ -415,14 +415,14 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 3. Initialize the build session:
 
    ```shell
-   dagster-plus ci init --project-dir=.
+   dagster-cloud ci init --project-dir=.
    ```
 
    This reads the `dagster_cloud.yaml` configuration and initializes the `DAGSTER_BUILD_STATEDIR`.
 
 4. Build and upload Docker images for your code locations.
 
-   The Docker image should contain a Python environment with `dagster`, `dagster-plus`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our quickstart repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
+   The Docker image should contain a Python environment with `dagster`, `dagster-cloud`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our quickstart repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
 
    It is a good idea to use a unique image tag for each Docker build. You can build one image per code location or a shared image for multiple code locations. As an example image tag, you can use the git commit SHA:
 
@@ -433,8 +433,8 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
    Use this tag to build and upload your Docker image, for example:
 
    ```shell
-   docker build . -t ghcr.io/org/dagster-plus-image:$IMAGE_TAG
-   docker push ghcr.io/org/dagster-plus-image:$IMAGE_TAG
+   docker build . -t ghcr.io/org/dagster-cloud-image:$IMAGE_TAG
+   docker push ghcr.io/org/dagster-cloud-image:$IMAGE_TAG
    ```
 
    The upload step is specific to your Docker container registry and will require authentication. The only requirement is that the registry you upload to must match the registry specified in `dagster_cloud.yaml`.
@@ -442,7 +442,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 5. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
 
    ```shell
-   dagster-plus ci set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
+   dagster-cloud ci set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
    ```
 
    This command does not deploy the code location but just updates the local state in `DAGSTER_BUILD_STATEDIR`.
@@ -450,7 +450,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 6. Deploy to Dagster+:
 
    ```shell
-   dagster-plus ci deploy
+   dagster-cloud ci deploy
    ```
 
    This command updates the code locations in Dagster+. Once this finishes successfully, you should be able to see the code locations under the **Deployments** tab in Dagster+.

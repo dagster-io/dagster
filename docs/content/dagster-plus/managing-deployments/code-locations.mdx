@@ -6,7 +6,7 @@ title: "Managing code locations in Dagster+ | Dagster Docs"
 
 <Note>This guide is applicable to Dagster+.</Note>
 
-In this guide, we'll cover the requirements for Dagster code, how to add code in Dagster+, and how to add code using the `dagster-plus` CLI.
+In this guide, we'll cover the requirements for Dagster code, how to add code in Dagster+, and how to add code using the `dagster-cloud` CLI.
 
 A [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) is recommended to configure code locations for Dagster+.
 
@@ -36,7 +36,7 @@ To work with Dagster+, your Dagster code:
 
 - **Must be loaded from a single entry point, either a Python file or package.** This entry point can load repositories from other files or packages.
 
-- **Must run in an environment where the `dagster` and [`dagster-plus`](/dagster-plus/managing-deployments/dagster-plus-cli) 0.13.2 or later Python packages are installed.**
+- **Must run in an environment where the `dagster` and [`dagster-cloud`](/dagster-plus/managing-deployments/dagster-plus-cli) 0.13.2 or later Python packages are installed.**
 
 - **If using [Hybrid Deployment](/dagster-plus/deployment/hybrid)**:
 
@@ -184,9 +184,9 @@ When prompted, confirm the deletion.
 
 ---
 
-## Managing code locations using the dagster-plus CLI
+## Managing code locations using the dagster-cloud CLI
 
-You can also use the `dagster-plus workspace` CLI commands to:
+You can also use the `dagster-cloud workspace` CLI commands to:
 
 - [Add and update code locations](#adding-and-updating-code-locations)
 - [Delete code locations](#deleting-code-locations-1)
@@ -213,7 +213,7 @@ dagster-cloud workspace add-location --from example_location.yaml
 Instead of creating a YAML file, you may also pass these values inline as command line options:
 
 ```shell
-dagster-plus workspace add-location test_location \
+dagster-cloud workspace add-location test_location \
     --image dagster/dagster-cloud-examples:latest \
     --package-name dagster_cloud_examples
 ```
@@ -221,7 +221,7 @@ dagster-plus workspace add-location test_location \
 You may also selectively overwrite parts of your YAML input using inline options:
 
 ```shell
-dagster-plus workspace add-location \
+dagster-cloud workspace add-location \
     --from example_location.yaml \
     --image dagster/dagster-cloud-examples:1d9c5d
 ```
@@ -229,7 +229,7 @@ dagster-plus workspace add-location \
 The arguments to the `add-location` and `update-location` commands are similar to the [keys in the YAML config editor in the **Deployment** tab](#adding-code-locations). To see all available options, run:
 
 ```shell
-dagster-plus workspace add-location --help
+dagster-cloud workspace add-location --help
 ```
 
 **Note**: If updating an existing code location, the full set of information about the location must be specified even if only one piece of configuration is modified.
@@ -239,12 +239,12 @@ dagster-plus workspace add-location --help
 Delete an existing code location from Dagster+ using the `delete-location` command:
 
 ```shell
-dagster-plus workspace delete-location <LOCATION_NAME>
+dagster-cloud workspace delete-location <LOCATION_NAME>
 ```
 
 ### Syncing the workspace
 
-You can also keep the YAML configuration for your entire workspace in a [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file and use the `dagster-plus sync` command to reconcile the workspace config in Dagster+ with that local file.
+You can also keep the YAML configuration for your entire workspace in a [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file and use the `dagster-cloud sync` command to reconcile the workspace config in Dagster+ with that local file.
 
 For example, if you have the following `dagster_cloud.yaml` file:
 
@@ -266,5 +266,5 @@ locations:
 Reconcile the above file with Dagster+'s remote workspace by running:
 
 ```shell
-dagster-plus workspace sync -w dagster_cloud.yaml
+dagster-cloud workspace sync -w dagster_cloud.yaml
 ```

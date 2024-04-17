@@ -22,7 +22,7 @@ To complete the steps in this guide, you'll need:
 - **The following in Google**:
   - An existing Google account
   - [Workspace Admin permissions](https://support.google.com/a/answer/6365252?hl=en\&ref_topic=4388346)
-- **To install the [`dagster-plus` CLI](/dagster-plus/managing-deployments/dagster-plus-cli)**
+- **To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-plus-cli)**
 - **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens)
@@ -136,10 +136,10 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 
 3. In the modal that displays, click **Download metadata** to start the download. Save the file to your computer.
 
-4. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-plus` CLI:
+4. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
 
    ```shell
-   dagster-plus organization settings saml upload-identity-provider-metadata <the_path/to/metadata> \
+   dagster-cloud organization settings saml upload-identity-provider-metadata <the_path/to/metadata> \
       --api-token=<user_token> \
       --url https://<your_organization_name>.dagster.plus
    ```

@@ -20,7 +20,7 @@ In this guide, you'll configure Azure Active Directory (AD) to use single sign-o
 To complete the steps in this guide, you'll need:
 
 - **An existing Azure AD account**
-- **To install the [`dagster-plus` CLI](/dagster-plus/managing-deployments/dagster-plus-cli)**
+- **To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-plus-cli)**
 - **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens)
@@ -95,10 +95,10 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
 ## Step 3: Upload the SAML metadata to Dagster+
 
-After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-plus` CLI:
+After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
 
 ```shell
-dagster-plus organization settings saml upload-identity-provider-metadata <path/to/metadata> \
+dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
    --api-token=<user_token> \
    --url https://<organization_name>.dagster.plus
 ```
