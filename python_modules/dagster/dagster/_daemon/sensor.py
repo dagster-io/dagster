@@ -35,7 +35,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
@@ -54,9 +54,10 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
@@ -225,8 +226,8 @@ class SensorLaunchContext(AbstractContextManager):
 
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
         if exception_value and not isinstance(exception_value, GeneratorExit):
-            error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.update_state(TickStatus.FAILURE, error=error_data)
+            error_info = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
+            self.update_state(TickStatus.FAILURE, error=error_info)
 
         self._write()
 
@@ -470,8 +471,11 @@ def _process_tick_generator(
             )
 
     except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.exception(f"Sensor daemon caught an error for sensor {external_sensor.name}")
+        error_info = DaemonErrorCapture.on_exception(
+            exc_info=sys.exc_info(),
+            logger=logger,
+            log_message=f"Sensor daemon caught an error for sensor {external_sensor.name}",
+        )
 
     yield error_info
 
@@ -537,7 +541,7 @@ def _submit_run_request(
     code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
-        repository_name=sensor_origin.external_repository_origin.repository_name,
+        repository_name=sensor_origin.repository_origin.repository_name,
         job_name=target_data.job_name,
         op_selection=target_data.op_selection,
         asset_selection=run_request.asset_selection,
@@ -566,8 +570,11 @@ def _submit_run_request(
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
         logger.info(f"Completed launch of run {run.run_id} for {external_sensor.name}")
     except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")
+        error_info = DaemonErrorCapture.on_exception(
+            exc_info=sys.exc_info(),
+            logger=logger,
+            log_message=f"Run {run.run_id} created successfully but failed to launch",
+        )
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
     return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)
@@ -579,7 +586,7 @@ def _get_code_location_for_sensor(
 ) -> CodeLocation:
     sensor_origin = external_sensor.get_external_origin()
     return workspace_process_context.create_request_context().get_code_location(
-        sensor_origin.external_repository_origin.code_location_origin.location_name
+        sensor_origin.repository_origin.code_location_origin.location_name
     )
 
 
@@ -912,8 +919,8 @@ def _fetch_existing_runs(
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
             run.external_job_origin is not None
-            and run.external_job_origin.external_repository_origin.get_selector_id()
-            == external_sensor.get_external_origin().external_repository_origin.get_selector_id()
+            and run.external_job_origin.repository_origin.get_selector_id()
+            == external_sensor.get_external_origin().repository_origin.get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):
             valid_runs.append(run)
@@ -982,7 +989,9 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    job_tags = validate_tags(external_job.tags or {}, allow_reserved_tags=False)
+    job_tags = normalize_tags(
+        external_job.tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
+    ).tags
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
         # this gets applied in the sensor definition too, but we apply it here for backcompat

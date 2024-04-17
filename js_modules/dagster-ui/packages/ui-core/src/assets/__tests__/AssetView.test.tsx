@@ -2,14 +2,12 @@ import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {
-  ASSETS_GRAPH_LIVE_QUERY,
-  AssetLiveDataProvider,
-} from '../../asset-data/AssetLiveDataProvider';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetBaseDataProvider';
+import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
-} from '../../asset-data/types/AssetLiveDataProvider.types';
+} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
@@ -22,12 +20,14 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {AssetView} from '../AssetView';
 import {
   AssetViewDefinitionNonSDA,
   AssetViewDefinitionSDA,
   AssetViewDefinitionSourceAsset,
   LatestMaterializationTimestamp,
+  RootWorkspaceWithOneLocation,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -57,6 +57,7 @@ describe('AssetView', () => {
     return (
       <MockedProvider
         mocks={[
+          RootWorkspaceWithOneLocation,
           AssetViewDefinitionSDA,
           AssetViewDefinitionNonSDA,
           AssetViewDefinitionSourceAsset,
@@ -72,11 +73,13 @@ describe('AssetView', () => {
           }),
         ]}
       >
-        <AssetLiveDataProvider>
-          <MemoryRouter initialEntries={[path]}>
-            <AssetView assetKey={assetKey} />
-          </MemoryRouter>
-        </AssetLiveDataProvider>
+        <WorkspaceProvider>
+          <AssetLiveDataProvider>
+            <MemoryRouter initialEntries={[path]}>
+              <AssetView assetKey={assetKey} headerBreadcrumbs={[]} />
+            </MemoryRouter>
+          </AssetLiveDataProvider>
+        </WorkspaceProvider>
       </MockedProvider>
     );
   };

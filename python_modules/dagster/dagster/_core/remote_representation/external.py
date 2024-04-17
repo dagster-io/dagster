@@ -40,10 +40,10 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation.origin import (
-    ExternalInstigatorOrigin,
-    ExternalJobOrigin,
-    ExternalPartitionSetOrigin,
-    ExternalRepositoryOrigin,
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemotePartitionSetOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnapshot
@@ -59,17 +59,17 @@ from .external_data import (
     ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
-    ExternalPartitionSetData,
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalResourceData,
     ExternalResourceValue,
-    ExternalScheduleData,
-    ExternalSensorData,
     ExternalSensorMetadata,
     ExternalTargetData,
     NestedResource,
+    PartitionSetSnap,
     ResourceJobUsageEntry,
+    ScheduleSnap,
+    SensorSnap,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .job_index import JobIndex
@@ -241,7 +241,7 @@ class ExternalRepository:
                         default_sensor_asset_selection - check.not_none(sensor.asset_selection)
                     )
 
-                default_sensor_data = ExternalSensorData(
+                default_sensor_data = SensorSnap(
                     name=self.get_default_auto_materialize_sensor_name(),
                     job_name=None,
                     op_selection=None,
@@ -333,7 +333,7 @@ class ExternalRepository:
             RepositorySelector(self._handle.location_name, self._handle.repository_name)
         )
 
-    def get_external_origin(self) -> ExternalRepositoryOrigin:
+    def get_external_origin(self) -> RemoteRepositoryOrigin:
         return self.handle.get_external_origin()
 
     def get_python_origin(self) -> RepositoryPythonOrigin:
@@ -547,7 +547,7 @@ class ExternalJob(RepresentedJob):
         repository_python_origin = self.repository_handle.get_python_origin()
         return JobPythonOrigin(self.name, repository_python_origin)
 
-    def get_external_origin(self) -> ExternalJobOrigin:
+    def get_external_origin(self) -> RemoteJobOrigin:
         return self.handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:
@@ -710,9 +710,9 @@ class ExternalResource:
 
 
 class ExternalSchedule:
-    def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):
+    def __init__(self, external_schedule_data: ScheduleSnap, handle: RepositoryHandle):
         self._external_schedule_data = check.inst_param(
-            external_schedule_data, "external_schedule_data", ExternalScheduleData
+            external_schedule_data, "external_schedule_data", ScheduleSnap
         )
         self._handle = InstigatorHandle(
             self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
@@ -758,7 +758,7 @@ class ExternalSchedule:
     def handle(self) -> InstigatorHandle:
         return self._handle
 
-    def get_external_origin(self) -> ExternalInstigatorOrigin:
+    def get_external_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:
@@ -835,9 +835,9 @@ class ExternalSchedule:
 
 
 class ExternalSensor:
-    def __init__(self, external_sensor_data: ExternalSensorData, handle: RepositoryHandle):
+    def __init__(self, external_sensor_data: SensorSnap, handle: RepositoryHandle):
         self._external_sensor_data = check.inst_param(
-            external_sensor_data, "external_sensor_data", ExternalSensorData
+            external_sensor_data, "external_sensor_data", SensorSnap
         )
         self._handle = InstigatorHandle(
             self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
@@ -892,7 +892,7 @@ class ExternalSensor:
     @property
     def min_interval_seconds(self) -> int:
         if (
-            isinstance(self._external_sensor_data, ExternalSensorData)
+            isinstance(self._external_sensor_data, SensorSnap)
             and self._external_sensor_data.min_interval
         ):
             return self._external_sensor_data.min_interval
@@ -902,7 +902,7 @@ class ExternalSensor:
     def run_tags(self) -> Mapping[str, str]:
         return self._external_sensor_data.run_tags
 
-    def get_external_origin(self) -> ExternalInstigatorOrigin:
+    def get_external_origin(self) -> RemoteInstigatorOrigin:
         return self._handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:
@@ -986,11 +986,9 @@ class ExternalSensor:
 
 
 class ExternalPartitionSet:
-    def __init__(
-        self, external_partition_set_data: ExternalPartitionSetData, handle: RepositoryHandle
-    ):
+    def __init__(self, external_partition_set_data: PartitionSetSnap, handle: RepositoryHandle):
         self._external_partition_set_data = check.inst_param(
-            external_partition_set_data, "external_partition_set_data", ExternalPartitionSetData
+            external_partition_set_data, "external_partition_set_data", PartitionSetSnap
         )
         self._handle = PartitionSetHandle(
             external_partition_set_data.name, check.inst_param(handle, "handle", RepositoryHandle)
@@ -1016,7 +1014,7 @@ class ExternalPartitionSet:
     def repository_handle(self) -> RepositoryHandle:
         return self._handle.repository_handle
 
-    def get_external_origin(self) -> ExternalPartitionSetOrigin:
+    def get_external_origin(self) -> RemotePartitionSetOrigin:
         return self._handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:

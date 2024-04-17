@@ -35,6 +35,7 @@ from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -45,6 +46,9 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import (
@@ -198,6 +202,7 @@ class ExecutionData(NamedTuple):
     scoped_resources_builder: ScopedResourcesBuilder
     resolved_run_config: ResolvedRunConfig
     job_def: JobDefinition
+    repository_def: Optional[RepositoryDefinition]
 
 
 class IStepContext(IPlanContext):
@@ -345,6 +350,14 @@ class PlanExecutionContext(IPlanContext):
     @property
     def job_def(self) -> JobDefinition:
         return self._execution_data.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        check.invariant(
+            self._execution_data.repository_def is not None,
+            "No repository definition was set on the step context",
+        )
+        return cast(RepositoryDefinition, self._execution_data.repository_def)
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
@@ -556,10 +569,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._step_launcher: Optional[StepLauncher] = None
         if len(step_launcher_resources) > 1:
             raise DagsterInvariantViolationError(
-                "Multiple required resources for {described_op} have inherited StepLauncher"
-                "There should be at most one step launcher resource per {node_type}.".format(
-                    described_op=self.describe_op(), node_type=self.op_def.node_type_str
-                )
+                f"Multiple required resources for {self.describe_op()} have inherited StepLauncher"
+                f"There should be at most one step launcher resource per {self.op_def.node_type_str}."
             )
         elif len(step_launcher_resources) == 1:
             self._step_launcher = step_launcher_resources[0]
@@ -629,6 +640,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._execution_data.job_def
 
     @property
+    def repository_def(self) -> RepositoryDefinition:
+        check.invariant(
+            self._execution_data.repository_def is not None,
+            "No repository definition was set on the step context",
+        )
+        return cast(RepositoryDefinition, self._execution_data.repository_def)
+
+    @property
     def op(self) -> OpNode:
         return self.job_def.get_op(self._step.node_handle)
 
@@ -650,7 +669,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
-    def get_output_context(self, step_output_handle: StepOutputHandle) -> OutputContext:
+    def get_output_context(
+        self,
+        step_output_handle: StepOutputHandle,
+        output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    ) -> OutputContext:
         return get_output_context(
             self.execution_plan,
             self.job_def,
@@ -661,13 +684,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resources=None,
             version=self.execution_plan.get_version_for_step_output_handle(step_output_handle),
+            output_metadata=output_metadata,
         )
 
     def for_input_manager(
         self,
         name: str,
         config: Any,
-        metadata: Any,
+        definition_metadata: Any,
         dagster_type: DagsterType,
         source_handle: Optional[StepOutputHandle] = None,
         resource_config: Any = None,
@@ -716,7 +740,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             name=name,
             op_def=self.op_def,
             config=config,
-            metadata=metadata,
+            definition_metadata=definition_metadata,
             upstream_output=upstream_output,
             dagster_type=dagster_type,
             log_manager=self.log,
@@ -1379,6 +1403,10 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeLoaderContext, self).job_def
+
+    @property
+    def repository_def(self) -> "RepositoryDefinition":
+        return super(DagsterTypeLoaderContext, self).repository_def
 
     @public
     @property

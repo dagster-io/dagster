@@ -1,15 +1,15 @@
 ---
-title: Testing against production with Dagster Cloud Branch Deployments | Dagster
+title: Testing against production with Dagster+ Branch Deployments | Dagster
 description: This guide illustrates a workflow that enables testing Dagster code in your cloud environment without impacting your production data.
 ---
 
-# Testing against production with Dagster Cloud Branch Deployments
+# Testing against production with Dagster+ Branch Deployments
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
+<Note>This guide is applicable to Dagster+.</Note>
 
-This guide details a workflow to test Dagster code in your cloud environment without impacting your production data. To highlight this functionality, we’ll leverage Dagster Cloud branch deployments and a Snowflake database to:
+This guide details a workflow to test Dagster code in your cloud environment without impacting your production data. To highlight this functionality, we’ll leverage Dagster+ branch deployments and a Snowflake database to:
 
-- Execute code on a feature branch directly on Dagster Cloud
+- Execute code on a feature branch directly on Dagster+
 - Read and write to a unique per-branch clone of our Snowflake data
 
 With these tools, we can merge changes with confidence in the impact on our data platform and with the assurance that our code will execute as intended.
@@ -33,17 +33,16 @@ Here’s an overview of the main concepts we’ll be using:
     Transitioning data pipelines from development to production
   </a>{" "}
   guide, illustrating a workflow for staging deployments. We’ll use the examples
-  from this guide to build a workflow atop Dagster Cloud’s branch deployment
-  feature.
+  from this guide to build a workflow atop Dagster+’s branch deployment feature.
 </Note>
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster Cloud account
-- An existing Branch Deployments setup that uses [GitHub actions](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
+- A Dagster+ account
+- An existing Branch Deployments setup that uses [GitHub actions](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/branch-deployments.yaml`) or a Gitlab CI/CD file (e.g. `.gitlab-ci.yml`)
   - Dockerfile that installs your Dagster project
-- User permissions in Dagster Cloud that allow you to [access Branch Deployments](/dagster-cloud/account/managing-users/managing-user-roles-permissions)
+- User permissions in Dagster+ that allow you to [access Branch Deployments](/dagster-plus/account/managing-users/managing-user-roles-permissions)
 
 ---
 
@@ -126,7 +125,7 @@ At runtime, we’d like to determine which environment our code is running in: b
 
 To ensure we can't accidentally write to production from within our branch deployment, we’ll use a different set of credentials from production and write to our database clone.
 
-Dagster automatically sets certain [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
+Dagster automatically sets certain [environment variables](/dagster-plus/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
 
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
 
@@ -170,7 +169,7 @@ defs = Definitions(
 )
 ```
 
-Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info about available environment variables.
+Refer to the [Dagster+ environment variables documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info about available environment variables.
 
 ---
 
@@ -367,7 +366,7 @@ deploy-docker-branch:
     ...
 
     # Add a step to launch the job cloning the prod db
-    - dagster-cloud job launch
+    - dagster-plus job launch
       --url "$DAGSTER_CLOUD_URL/$DEPLOYMENT_NAME"
       --api-token "$DAGSTER_CLOUD_API_TOKEN"
       --location "location_name_containing_clone_prod_job"
@@ -483,7 +482,7 @@ close_branch:
     ...
 
     # Add a step to launch the job dropping the cloned db
-    - dagster-cloud job launch
+    - dagster-plus job launch
       --url "$DAGSTER_CLOUD_URL/$DEPLOYMENT_NAME"
       --api-token "$DAGSTER_CLOUD_API_TOKEN"
       --location "location_name_containing_drop_prod_clone_job"

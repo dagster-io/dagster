@@ -523,6 +523,21 @@ GET_ASSET_OP = """
     }
 """
 
+GET_ASSET_IS_OBSERVABLE = """
+    query AssetQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                definition {
+                    assetKey {
+                        path
+                    }
+                    isObservable
+                }
+            }
+        }
+    }
+"""
+
 GET_OP_ASSETS = """
     query OpQuery($repositorySelector: RepositorySelector!, $opName: String!) {
         repositoryOrError(repositorySelector: $repositorySelector) {
@@ -1701,6 +1716,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
 
+        graphql_context.asset_record_loader.clear_cache()
+
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
 
@@ -1718,6 +1735,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetsLatestInfo"]
+
         result = get_response_by_asset(result.data["assetsLatestInfo"])
 
         assert result["asset_1"]["latestRun"]["id"] == first_run_id
@@ -1726,6 +1744,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_2"]["latestMaterialization"] is None
         assert result["asset_3"]["latestRun"]["id"] == first_run_id
         assert result["asset_3"]["latestMaterialization"] is None
+
+        graphql_context.asset_record_loader.clear_cache()
 
         # Confirm that asset selection is respected
         run_id = _create_run(
@@ -2874,6 +2894,20 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
         )
         assert result_dependent_keys == dependent_asset_keys
 
+    def test_cross_repo_observable_source_asset(self, graphql_context: WorkspaceRequestContext):
+        """Ensure that when retrieving an asset that is observable in one repo and not in another,
+        we correctly represent it as observable when retrieving information about the asset key in
+        general.
+        """
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_IS_OBSERVABLE,
+            variables={"assetKey": {"path": ["sometimes_observable_source_asset"]}},
+        )
+        asset = result.data["assetOrError"]
+        assert asset["definition"]["assetKey"]["path"] == ["sometimes_observable_source_asset"]
+        assert asset["definition"]["isObservable"] is True
+
 
 def get_partitioned_asset_repo():
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
@@ -2906,13 +2940,13 @@ def get_partitioned_asset_repo():
     def partitioned_asset_repo():
         return [
             abc_asset,
-            define_asset_job("abc_asset_job", AssetSelection.keys("abc_asset")),
+            define_asset_job("abc_asset_job", AssetSelection.assets("abc_asset")),
             daily_asset,
-            define_asset_job("daily_asset_job", AssetSelection.keys("daily_asset")),
+            define_asset_job("daily_asset_job", AssetSelection.assets("daily_asset")),
             multipartitions_asset,
             define_asset_job(
                 "multipartitions_job",
-                AssetSelection.keys("multipartitions_asset"),
+                AssetSelection.assets("multipartitions_asset"),
                 partitions_def=multipartitions_def,
             ),
         ]

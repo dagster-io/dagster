@@ -1484,7 +1484,7 @@ def test_empty_asset_job():
     def b(a):
         pass
 
-    empty_selection = AssetSelection.keys("a", "b") - AssetSelection.keys("a", "b")
+    empty_selection = AssetSelection.assets("a", "b") - AssetSelection.assets("a", "b")
     assert empty_selection.resolve([a, b]) == set()
 
     empty_job = define_asset_job("empty_job", selection=empty_selection).resolve(
@@ -1973,15 +1973,21 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         ),
         executor_def=None,
         resource_defs={},
+        logger_defs={},
     )
     assert len(jobs) == 3
-    assert {job_def.name for job_def in jobs} == {
+    assert jobs.keys() == {"__ASSET_JOB_0", "__ASSET_JOB_1", "__ASSET_JOB_2"}
+
+    resolved_jobs = {job_name: job_lambda() for job_name, job_lambda in jobs.items()}
+
+    assert {job_def.name for job_name, job_def in resolved_jobs.items()} == {
         "__ASSET_JOB_0",
         "__ASSET_JOB_1",
         "__ASSET_JOB_2",
     }
     assert {
-        frozenset([node_def.name for node_def in job_def.all_node_defs]) for job_def in jobs
+        frozenset([node_def.name for node_def in job_def.all_node_defs])
+        for job_name, job_def in resolved_jobs.items()
     } == {
         frozenset(["daily_asset", "daily_asset2", "unpartitioned_asset"]),
         frozenset(["hourly_asset", "unpartitioned_asset"]),
@@ -2016,12 +2022,10 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
         ),
         executor_def=None,
         resource_defs={},
+        logger_defs={},
     )
     assert len(jobs) == 2
-    assert {job_def.name for job_def in jobs} == {
-        "__ASSET_JOB_0",
-        "__ASSET_JOB_1",
-    }
+    assert jobs.keys() == {"__ASSET_JOB_0", "__ASSET_JOB_1"}
 
 
 def test_get_base_asset_jobs_multiple_partitions_defs_and_asset_checks_and_observables():
@@ -2422,7 +2426,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\] and check keys \[\], but"
                 r" attempted to "
-                r"select only \[AssetKey\(\['a'\]\)\]",
+                r"select only assets \[AssetKey\(\['a'\]\)\] and checks \[\]",
             ),
         ),
     ],

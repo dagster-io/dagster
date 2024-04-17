@@ -1,6 +1,6 @@
 .. currentmodule:: dagster
 
-Asset Checks (Experimental)
+Asset Checks
 ===========================
 
 Dagster allows you to define and execute checks on your software-defined assets. Each asset check verifies some property of a data asset, e.g. that is has no null values in a particular column.
@@ -27,9 +27,10 @@ Dagster allows you to define and execute checks on your software-defined assets.
 
 .. autoclass:: AssetChecksDefinition
 
-.. autofunction:: build_freshness_checks_for_non_partitioned_assets
+.. autofunction:: build_last_update_freshness_checks 
 
-.. autofunction:: build_freshness_checks_for_time_window_partitioned_assets
+.. autofunction:: build_time_partition_freshness_checks 
 
 .. autofunction:: build_sensor_for_freshness_checks 
-    
+
+.. autofunction:: build_column_schema_change_checks

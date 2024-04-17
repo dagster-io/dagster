@@ -13,6 +13,7 @@ from dagster._core.event_api import EventLogRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import ERROR_FRAGMENT
 from dagster_graphql.test.utils import (
@@ -36,6 +37,10 @@ query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int) {
                     name
                     description
                     canExecuteIndividually
+                    blocking
+                    additionalAssetKeys {
+                        path
+                    }
                 }
             }
         }
@@ -282,6 +287,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                                 "name": "my_check",
                                 "description": "asset_1 check",
                                 "canExecuteIndividually": "CAN_EXECUTE",
+                                "blocking": True,
+                                "additionalAssetKeys": [
+                                    {"path": ["asset_2"]},
+                                ],
                             }
                         ]
                     },
@@ -304,6 +313,8 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                                 "name": "my_check",
                                 "description": None,
                                 "canExecuteIndividually": "REQUIRES_MATERIALIZATION",
+                                "blocking": False,
+                                "additionalAssetKeys": [],
                             }
                         ]
                     },
@@ -438,11 +449,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
-        create_run_for_test(graphql_context.instance, run_id="foo")
+        run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
+        create_run_for_test(graphql_context.instance, run_id=run_id_one)
 
         graphql_context.instance.event_log_storage.store_event(
             _planned_event(
-                "foo",
+                run_id_one,
                 AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
             )
         )
@@ -455,7 +467,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert res.data == {
             "assetCheckExecutions": [
                 {
-                    "runId": "foo",
+                    "runId": run_id_one,
                     "status": "IN_PROGRESS",
                     "evaluation": None,
                 }
@@ -466,14 +478,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
         graphql_context.instance.event_log_storage.store_event(
             _evaluation_event(
-                "foo",
+                run_id_one,
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
                     passed=True,
                     metadata={"foo": MetadataValue.text("bar")},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
-                        storage_id=42, run_id="bizbuz", timestamp=3.3
+                        storage_id=42, run_id=run_id_two, timestamp=3.3
                     ),
                     severity=AssetCheckSeverity.ERROR,
                     description="evaluation description",
@@ -490,14 +502,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert res.data == {
             "assetCheckExecutions": [
                 {
-                    "runId": "foo",
+                    "runId": run_id_one,
                     "status": "SUCCEEDED",
                     "evaluation": {
                         "timestamp": evaluation_timestamp,
                         "severity": "ERROR",
                         "targetMaterialization": {
                             "storageId": 42,
-                            "runId": "bizbuz",
+                            "runId": run_id_two,
                             "timestamp": 3.3,
                         },
                         "metadataEntries": [
@@ -512,31 +524,34 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
     def test_asset_check_events(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
-        create_run_for_test(graphql_context.instance, run_id="foo")
+        run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
+        create_run_for_test(graphql_context.instance, run_id=run_id_one)
 
         graphql_context.instance.event_log_storage.store_event(
             _planned_event(
-                "foo",
+                run_id_one,
                 AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
             )
         )
         graphql_context.instance.event_log_storage.store_event(
             _evaluation_event(
-                "foo",
+                run_id_one,
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
                     passed=True,
                     metadata={"foo": MetadataValue.text("bar")},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
-                        storage_id=42, run_id="bizbuz", timestamp=3.3
+                        storage_id=42, run_id=run_id_two, timestamp=3.3
                     ),
                     severity=AssetCheckSeverity.ERROR,
                 ),
             )
         )
 
-        res = execute_dagster_graphql(graphql_context, GET_LOGS_FOR_RUN, variables={"runId": "foo"})
+        res = execute_dagster_graphql(
+            graphql_context, GET_LOGS_FOR_RUN, variables={"runId": run_id_one}
+        )
         assert res.data == {
             "logsForRun": {
                 "__typename": "EventConnection",
@@ -1305,11 +1320,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
     def test_deleted_run(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
-        run = create_run_for_test(graphql_context.instance, run_id="foo")
+        run_id = make_new_run_id()
+        run = create_run_for_test(graphql_context.instance, run_id=run_id)
 
         graphql_context.instance.event_log_storage.store_event(
             _planned_event(
-                "foo",
+                run_id,
                 AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
             )
         )
@@ -1324,7 +1340,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert res.data == {
             "assetCheckExecutions": [
                 {
-                    "runId": "foo",
+                    "runId": run_id,
                     "status": "SKIPPED",
                     "evaluation": None,
                 }

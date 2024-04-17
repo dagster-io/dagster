@@ -63,9 +63,9 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.events import DagsterEventType
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation import (
-    ExternalInstigatorOrigin,
-    ExternalRepositoryOrigin,
     ExternalSensor,
+    RemoteInstigatorOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.origin import (
@@ -120,7 +120,7 @@ def check_a():
     return AssetCheckResult(passed=True)
 
 
-asset_job = define_asset_job("abc", selection=AssetSelection.keys("c", "b").upstream())
+asset_job = define_asset_job("abc", selection=AssetSelection.assets("c", "b").upstream())
 
 asset_and_check_job = define_asset_job(
     "asset_and_check_job",
@@ -310,19 +310,20 @@ def backlog_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(monitored_assets=AssetSelection.keys("asset_c").upstream(include_self=False))
+@multi_asset_sensor(monitored_assets=AssetSelection.assets("asset_c").upstream(include_self=False))
 def asset_selection_sensor(context):
     assert context.asset_keys == [AssetKey("asset_b")]
     assert context.latest_materialization_records_by_key().keys() == {AssetKey("asset_b")}
 
 
-@sensor(asset_selection=AssetSelection.keys("asset_a", "asset_b"))
+@sensor(asset_selection=AssetSelection.assets("asset_a", "asset_b"))
 def targets_asset_selection_sensor():
     return [RunRequest(), RunRequest(asset_selection=[AssetKey("asset_b")])]
 
 
 @multi_asset_sensor(
-    monitored_assets=AssetSelection.keys("asset_b"), request_assets=AssetSelection.keys("asset_c")
+    monitored_assets=AssetSelection.assets("asset_b"),
+    request_assets=AssetSelection.assets("asset_c"),
 )
 def multi_asset_sensor_targets_asset_selection(context):
     asset_events = context.latest_materialization_records_by_key()
@@ -351,7 +352,7 @@ def hourly_asset_3():
 
 hourly_asset_job = define_asset_job(
     "hourly_asset_job",
-    AssetSelection.keys("hourly_asset_3"),
+    AssetSelection.assets("hourly_asset_3"),
     partitions_def=hourly_partitions_def_2022,
 )
 
@@ -365,7 +366,7 @@ def weekly_asset():
 
 
 weekly_asset_job = define_asset_job(
-    "weekly_asset_job", AssetSelection.keys("weekly_asset"), partitions_def=weekly_partitions_def
+    "weekly_asset_job", AssetSelection.assets("weekly_asset"), partitions_def=weekly_partitions_def
 )
 
 
@@ -682,7 +683,7 @@ def multipartitioned_with_two_dynamic_dims():
     pass
 
 
-@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+@sensor(asset_selection=AssetSelection.assets(multipartitioned_with_two_dynamic_dims.key))
 def success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
@@ -695,7 +696,7 @@ def success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(con
     )
 
 
-@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+@sensor(asset_selection=AssetSelection.assets(multipartitioned_with_two_dynamic_dims.key))
 def error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
@@ -720,7 +721,9 @@ def multipartitioned_asset_with_static_time_dimensions():
     pass
 
 
-@sensor(asset_selection=AssetSelection.keys(multipartitioned_asset_with_static_time_dimensions.key))
+@sensor(
+    asset_selection=AssetSelection.assets(multipartitioned_asset_with_static_time_dimensions.key)
+)
 def multipartitions_with_static_time_dimensions_run_requests_sensor(context):
     return SensorResult(
         run_requests=[
@@ -1156,7 +1159,7 @@ def test_sensors_keyed_on_selector_not_origin(
 
         existing_origin = external_sensor.get_external_origin()
 
-        code_location_origin = existing_origin.external_repository_origin.code_location_origin
+        code_location_origin = existing_origin.repository_origin.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
             executable_path="/different/executable_path"
@@ -1164,7 +1167,7 @@ def test_sensors_keyed_on_selector_not_origin(
 
         # Change metadata on the origin that shouldn't matter for execution
         modified_origin = existing_origin._replace(
-            external_repository_origin=existing_origin.external_repository_origin._replace(
+            repository_origin=existing_origin.repository_origin._replace(
                 code_location_origin=code_location_origin._replace(
                     loadable_target_origin=modified_loadable_target_origin
                 )
@@ -1205,9 +1208,9 @@ def test_bad_load_sensor_repository(
         valid_origin = external_sensor.get_external_origin()
 
         # Swap out a new repository name
-        invalid_repo_origin = ExternalInstigatorOrigin(
-            ExternalRepositoryOrigin(
-                valid_origin.external_repository_origin.code_location_origin,
+        invalid_repo_origin = RemoteInstigatorOrigin(
+            RemoteRepositoryOrigin(
+                valid_origin.repository_origin.code_location_origin,
                 "invalid_repo_name",
             ),
             valid_origin.instigator_name,
@@ -1240,8 +1243,8 @@ def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
         valid_origin = external_sensor.get_external_origin()
 
         # Swap out a new repository name
-        invalid_repo_origin = ExternalInstigatorOrigin(
-            valid_origin.external_repository_origin,
+        invalid_repo_origin = RemoteInstigatorOrigin(
+            valid_origin.repository_origin,
             "invalid_sensor",
         )
 
@@ -1430,7 +1433,7 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
                 [run.run_id],
             )
 
-            assert f"Run {run.run_id} created successfully but failed to launch:" in caplog.text
+            assert f"Run {run.run_id} created successfully but failed to launch" in caplog.text
 
             assert "The entire purpose of this is to throw on launch" in caplog.text
 

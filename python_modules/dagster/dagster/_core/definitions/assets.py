@@ -175,7 +175,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetKey,
         )
 
-        check.opt_mapping_param(
+        self._check_specs_by_output_name = check.opt_mapping_param(
             check_specs_by_output_name,
             "check_specs_by_output_name",
             key_type=str,
@@ -255,9 +255,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 # otherwise, use the selected checks
                 self._selected_asset_check_keys = selected_asset_check_keys
 
-        self._check_specs_by_output_name = {
-            name: spec for name, spec in (check_specs_by_output_name or {}).items()
-        }
         self._check_specs_by_key = {
             spec.key: spec
             for spec in self._check_specs_by_output_name.values()
@@ -966,6 +963,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
     @property
+    def asset_and_check_keys(self) -> AbstractSet["AssetKeyOrCheckKey"]:
+        return set(self.keys).union(self.check_keys)
+
+    @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = {
             *(dep_key for key in self.keys for dep_key in self.asset_deps[key]),
@@ -1056,7 +1057,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         Returns:
             Iterable[AssetsCheckSpec]:
         """
-        return self._check_specs_by_output_name.values()
+        return self.check_specs_by_output_name.values()
 
     @property
     def check_keys(self) -> AbstractSet[AssetCheckKey]:
@@ -1113,6 +1114,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         raise DagsterInvariantViolationError(
             f"Asset key {key.to_user_string()} not found in AssetsDefinition"
+        )
+
+    def get_output_name_for_asset_check_key(self, key: AssetCheckKey) -> str:
+        for output_name, spec in self._check_specs_by_output_name.items():
+            if key == spec.key:
+                return output_name
+
+        raise DagsterInvariantViolationError(
+            f"Asset check key {key.to_user_string()} not found in AssetsDefinition"
         )
 
     def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
@@ -1305,7 +1315,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             is_subset=self.is_subset,
             check_specs_by_output_name=check_specs_by_output_name
             if check_specs_by_output_name
-            else self.check_specs_by_output_name,
+            else self._check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys
             if selected_asset_check_keys
             else self._selected_asset_check_keys,
@@ -1535,7 +1545,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @cached_property
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
-        return non_secure_md5_hash_str((json.dumps(sorted(self.keys))).encode("utf-8"))
+        return non_secure_md5_hash_str(
+            (json.dumps(sorted(self.keys) + sorted(self.check_keys))).encode("utf-8")
+        )
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()

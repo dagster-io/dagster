@@ -27,7 +27,7 @@ def images(context: AssetExecutionContext): ...
 
 
 images_job = define_asset_job(
-    "images_job", AssetSelection.keys("images"), partitions_def=images_partitions_def
+    "images_job", AssetSelection.assets("images"), partitions_def=images_partitions_def
 )
 
 

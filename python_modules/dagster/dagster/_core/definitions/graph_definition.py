@@ -52,6 +52,7 @@ from .node_container import create_execution_structure, normalize_dependency_dic
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .resource_requirement import ResourceRequirement
+from .utils import NormalizedTags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -82,10 +83,10 @@ def _check_node_defs_arg(
             continue
         elif callable(node_def):
             raise DagsterInvalidDefinitionError(
-                """You have passed a lambda or function {func} into {name} that is
+                f"""You have passed a lambda or function {node_def.__name__} into {graph_name} that is
                 not a node. You have likely forgetten to annotate this function with
                 the @op or @graph decorators.'
-                """.format(name=graph_name, func=node_def.__name__)
+                """
             )
         else:
             raise DagsterInvalidDefinitionError(f"Invalid item in node list: {node_def!r}")
@@ -207,7 +208,7 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
         input_assets: Optional[
             Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
@@ -596,7 +597,7 @@ class GraphDefinition(NodeDefinition):
         config: Optional[
             Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
         ] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,

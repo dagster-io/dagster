@@ -1,6 +1,6 @@
 import shutil
 import time
-from typing import Dict
+from datetime import datetime
 
 import polars as pl
 import polars.testing as pl_testing
@@ -10,6 +10,9 @@ from dagster import (
     AssetIn,
     Config,
     DagsterInstance,
+    DailyPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     OpExecutionContext,
     RunConfig,
     StaticPartitionsDefinition,
@@ -43,6 +46,7 @@ from dagster_polars_tests.utils import get_saved_path
             pl.UInt32,
             pl.UInt64,
             pl.Datetime("ns", None),
+            pl.Decimal,
         ],
         min_size=5,
         allow_infinities=False,
@@ -293,19 +297,11 @@ def test_polars_delta_native_partitioning(
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
-    lenghts = {}
-
     @asset(io_manager_def=manager)
-    def downstream_load_multiple_partitions(upstream_partitioned: Dict[str, pl.LazyFrame]) -> None:
-        for partition, _ldf in upstream_partitioned.items():
-            assert isinstance(_ldf, pl.LazyFrame), type(_ldf)
-            _df = _ldf.collect()
-            assert (_df.select(pl.col("partition").eq(partition).alias("eq")))["eq"].all()
-            lenghts[partition] = len(_df)
-
-        assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
-
-    saved_path = None
+    def downstream_load_multiple_partitions_as_single_df(
+        upstream_partitioned: pl.DataFrame,
+    ) -> None:
+        assert set(upstream_partitioned["partition"].unique()) == {"a", "b"}
 
     for partition_key in ["a", "b"]:
         result = materialize(
@@ -318,24 +314,55 @@ def test_polars_delta_native_partitioning(
         ), saved_path  # DeltaLake should handle partitioning!
         assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
 
-    assert saved_path is not None
-    written_df = pl.read_delta(saved_path)
-
-    assert len(written_df) == len(df) * 2
-    assert set(written_df["partition"].unique()) == {"a", "b"}
-
     materialize(
         [
             upstream_partitioned.to_source_asset(),
-            downstream_load_multiple_partitions,
+            downstream_load_multiple_partitions_as_single_df,
         ],
     )
+
+
+def test_polars_delta_native_multi_partitions(
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+):
+    manager = polars_delta_io_manager
+    df = df_for_delta
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition(start_date=datetime(2024, 1, 1)),
+            "category": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(
+        io_manager_def=manager,
+        partitions_def=partitions_def,
+        metadata={"partition_by": {"time": "date", "category": "category"}},
+    )
+    def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
+        partition_key = context.partition_key
+        assert isinstance(partition_key, MultiPartitionKey)
+        return df.with_columns(
+            pl.lit(partition_key.keys_by_dimension["time"])
+            .str.strptime(pl.Date, "%Y-%m-%d")
+            .alias("date"),
+            pl.lit(partition_key.keys_by_dimension["category"]).alias("category"),
+        )
 
     @asset(io_manager_def=manager)
     def downstream_load_multiple_partitions_as_single_df(
         upstream_partitioned: pl.DataFrame,
     ) -> None:
-        assert set(upstream_partitioned["partition"].unique()) == {"a", "b"}
+        assert set(upstream_partitioned["category"].unique()) == {"a", "b"}
+        assert set(upstream_partitioned["date"].unique()) == {
+            datetime(2024, 1, 1).date(),
+            datetime(2024, 1, 2).date(),
+        }
+
+    for date in ["2024-01-01", "2024-01-02"]:
+        for category in ["a", "b"]:
+            materialize([upstream_partitioned], partition_key=f"{category}|{date}")
 
     materialize(
         [

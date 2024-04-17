@@ -21,6 +21,7 @@ from dagster import (
     SourceAsset,
     asset,
     asset_check,
+    build_op_context,
     define_asset_job,
     multi_asset_check,
     observable_source_asset,
@@ -799,3 +800,44 @@ def test_target_materialization_observable_source_asset():
     assert check_eval.check_name == "check1"
 
     assert check_eval.target_materialization_data is None
+
+
+def test_direct_invocation():
+    @asset_check(asset="asset1")
+    def check1():
+        return AssetCheckResult(passed=True)
+
+    result = check1()
+    assert isinstance(result, AssetCheckResult)
+    assert result.passed
+
+
+def test_direct_invocation_with_context():
+    @asset_check(asset="asset1")
+    def check1(context):
+        return AssetCheckResult(passed=True)
+
+    result = check1(build_op_context())
+    assert isinstance(result, AssetCheckResult)
+    assert result.passed
+
+
+def test_multi_check_direct_invocation():
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset="asset1"),
+            AssetCheckSpec("check2", asset="asset1"),
+            AssetCheckSpec("check3", asset="asset2"),
+        ]
+    )
+    def checks():
+        yield AssetCheckResult(passed=True, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=False, asset_key="asset1", check_name="check2")
+        yield AssetCheckResult(passed=True, asset_key="asset2")
+
+    results = list(checks())
+    assert len(results) == 3
+    assert all(isinstance(result, AssetCheckResult) for result in results)
+    assert results[0].passed
+    assert not results[1].passed
+    assert results[2].passed

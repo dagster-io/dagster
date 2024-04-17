@@ -90,6 +90,7 @@ import graph_horizontal from '../icon-svgs/graph_horizontal.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import graph_vertical from '../icon-svgs/graph_vertical.svg';
+import help_circle from '../icon-svgs/help_circle.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass from '../icon-svgs/hourglass.svg';
@@ -118,6 +119,7 @@ import no_access from '../icon-svgs/no_access.svg';
 import notifications from '../icon-svgs/notifications.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
+import pagerduty from '../icon-svgs/pagerduty.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
 import panel_show_both from '../icon-svgs/panel_show_both.svg';
 import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
@@ -224,6 +226,7 @@ export const Icons = {
 
   // Other custom icons
   toggle_whitespace,
+  help_circle,
   panel_show_top,
   panel_show_left,
   panel_show_right,
@@ -242,6 +245,7 @@ export const Icons = {
   tag,
   slack,
   ms_teams,
+  pagerduty,
   github,
   github_pr_open,
   github_pr_closed,
@@ -373,7 +377,11 @@ export const Icons = {
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([(slack as any).src, (ms_teams as any).src]);
+const SVGS_WITH_COLORS = new Set([
+  (slack as any).src,
+  (ms_teams as any).src,
+  (pagerduty as any).src,
+]);
 
 export type IconName = keyof typeof Icons;
 

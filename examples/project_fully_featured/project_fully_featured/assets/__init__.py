@@ -29,8 +29,7 @@ recommender_assets = load_assets_from_package_module(
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-    @classmethod
-    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         return super().get_asset_key(dbt_resource_props).with_prefix("snowflake")
 
 

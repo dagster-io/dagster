@@ -38,7 +38,7 @@ from .tags import (
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
-    from dagster._core.remote_representation.origin import ExternalJobOrigin
+    from dagster._core.remote_representation.origin import RemoteJobOrigin
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatus")
@@ -100,7 +100,7 @@ FINISHED_STATUSES = [
 # Run statuses for runs that can be safely canceled.
 # Does not include the other unfinished statuses for the following reasons:
 # STARTING: Control has been ceded to the run worker, which will eventually move the run to a STARTED.
-# NOT_STARTED: Mostly replaced with STARTING. Runs are only here in the the brief window between
+# NOT_STARTED: Mostly replaced with STARTING. Runs are only here in the brief window between
 # creating the run and launching or enqueueing it.
 CANCELABLE_RUN_STATUSES = [DagsterRunStatus.STARTED, DagsterRunStatus.QUEUED]
 
@@ -265,20 +265,20 @@ class DagsterRun(
         "_DagsterRun",
         [
             ("job_name", PublicAttr[str]),
-            ("run_id", str),
-            ("run_config", Mapping[str, object]),
+            ("run_id", PublicAttr[str]),
+            ("run_config", PublicAttr[Mapping[str, object]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("status", DagsterRunStatus),
-            ("tags", Mapping[str, str]),
+            ("tags", PublicAttr[Mapping[str, str]]),
             ("root_run_id", Optional[str]),
             ("parent_run_id", Optional[str]),
             ("job_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
-            ("external_job_origin", Optional["ExternalJobOrigin"]),
+            ("external_job_origin", Optional["RemoteJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
             ("run_op_concurrency", Optional[RunOpConcurrency]),
@@ -287,6 +287,13 @@ class DagsterRun(
 ):
     """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
+
+    Attributes:
+        job_name (str): The name of the job executed in this run
+        run_id (str): The ID of the run
+        run_config (Mapping[str, object]): The config for the run
+        tags (Mapping[str, str]): The tags applied to the run
+
     """
 
     def __new__(
@@ -305,7 +312,7 @@ class DagsterRun(
         parent_run_id: Optional[str] = None,
         job_snapshot_id: Optional[str] = None,
         execution_plan_snapshot_id: Optional[str] = None,
-        external_job_origin: Optional["ExternalJobOrigin"] = None,
+        external_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
@@ -334,13 +341,13 @@ class DagsterRun(
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
-        from dagster._core.remote_representation.origin import ExternalJobOrigin
+        from dagster._core.remote_representation.origin import RemoteJobOrigin
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
                 external_job_origin,
                 "external_job_origin",
-                ExternalJobOrigin,
+                RemoteJobOrigin,
                 "external_job_origin is required for queued runs",
             )
 
@@ -368,7 +375,7 @@ class DagsterRun(
                 execution_plan_snapshot_id, "execution_plan_snapshot_id"
             ),
             external_job_origin=check.opt_inst_param(
-                external_job_origin, "external_job_origin", ExternalJobOrigin
+                external_job_origin, "external_job_origin", RemoteJobOrigin
             ),
             job_code_origin=check.opt_inst_param(
                 job_code_origin, "job_code_origin", JobPythonOrigin
@@ -385,20 +392,18 @@ class DagsterRun(
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
-            from dagster._core.remote_representation.origin import ExternalJobOrigin
 
-            check.inst(
+            check.not_none(
                 self.external_job_origin,
-                ExternalJobOrigin,
                 "external_pipeline_origin is required for queued runs",
             )
 
         return self._replace(status=status)
 
-    def with_job_origin(self, origin: "ExternalJobOrigin") -> Self:
-        from dagster._core.remote_representation.origin import ExternalJobOrigin
+    def with_job_origin(self, origin: "RemoteJobOrigin") -> Self:
+        from dagster._core.remote_representation.origin import RemoteJobOrigin
 
-        check.inst_param(origin, "origin", ExternalJobOrigin)
+        check.inst_param(origin, "origin", RemoteJobOrigin)
         return self._replace(external_job_origin=origin)
 
     def with_tags(self, tags: Mapping[str, str]) -> Self:
@@ -416,7 +421,7 @@ class DagsterRun(
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from the Dagster UI.
             repository_tags[REPOSITORY_LABEL_TAG] = (
-                self.external_job_origin.external_repository_origin.get_label()
+                self.external_job_origin.repository_origin.get_label()
             )
 
         if not self.tags:

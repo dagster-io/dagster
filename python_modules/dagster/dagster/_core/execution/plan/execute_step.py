@@ -331,12 +331,8 @@ def do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: A
         return TypeCheck(
             success=False,
             description=(
-                "Type checks must return TypeCheck. Type check for type {type_name} returned "
-                "value of type {return_type} when checking runtime value of type {dagster_type}."
-            ).format(
-                type_name=dagster_type.display_name,
-                return_type=type(type_check),
-                dagster_type=type(value),
+                f"Type checks must return TypeCheck. Type check for type {dagster_type.display_name} returned "
+                f"value of type {type(type_check)} when checking runtime value of type {type(value)}."
             ),
         )
     return type_check
@@ -767,7 +763,7 @@ def _store_output(
 ) -> Iterator[DagsterEvent]:
     output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
-    output_context = step_context.get_output_context(step_output_handle)
+    output_context = step_context.get_output_context(step_output_handle, output.metadata)
 
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}

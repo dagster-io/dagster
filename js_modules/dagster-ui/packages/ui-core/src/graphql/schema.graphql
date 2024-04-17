@@ -717,8 +717,10 @@ enum BackfillPolicyType {
 enum ChangeReason {
   NEW
   CODE_VERSION
-  INPUTS
+  DEPENDENCIES
   PARTITIONS_DEFINITION
+  TAGS
+  METADATA
 }
 
 type AssetDependency {
@@ -901,6 +903,8 @@ type AssetCheck {
   jobNames: [String!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
+  blocking: Boolean!
+  additionalAssetKeys: [AssetKey!]!
 }
 
 type AssetCheckExecution {
@@ -2197,7 +2201,6 @@ input AssetKeyInput {
 }
 
 input ExecutionMetadata {
-  runId: String
   tags: [ExecutionTag!]
   rootRunId: String
   parentRunId: String

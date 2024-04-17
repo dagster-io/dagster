@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Set
+from typing import Any, Dict, Mapping, Optional, Sequence, Set
 
 import pytest
 from dagster import (
@@ -21,9 +21,9 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.definitions.assets import UserAssetOwner
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.storage.tags import TAG_NO_VALUE
 from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
@@ -245,7 +245,11 @@ def test_io_manager_key(
     expected_io_manager_key = DEFAULT_IO_MANAGER_KEY if io_manager_key is None else io_manager_key
 
     for output_def in my_dbt_assets.node_def.output_defs:
-        assert output_def.io_manager_key == expected_io_manager_key
+        if output_def.name in my_dbt_assets.keys_by_output_name:
+            assert output_def.io_manager_key == expected_io_manager_key
+        else:  # asset checks don't use io managers
+            assert output_def.name in my_dbt_assets.check_specs_by_output_name
+            assert output_def.io_manager_key == DEFAULT_IO_MANAGER_KEY
 
 
 @pytest.mark.parametrize(
@@ -286,8 +290,7 @@ def test_backfill_policy(
     expected_backfill_policy: BackfillPolicy,
 ) -> None:
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_freshness_policy(cls, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
             # Disable freshness policies when using static partitions
             return None
 
@@ -378,13 +381,12 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
 
 def test_with_asset_key_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
             return super().get_asset_key(dbt_resource_props).with_prefix("prefix")
 
     @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
     def my_dbt_assets(): ...
 
@@ -423,10 +425,9 @@ def test_with_partition_mappings(
         start_offset=-8, end_offset=-9
     )
 
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_partition_mapping(
-            cls,
+            self,
             dbt_resource_props: Mapping[str, Any],
             dbt_parent_resource_props: Mapping[str, Any],
         ) -> Optional[PartitionMapping]:
@@ -438,7 +439,7 @@ def test_with_partition_mappings(
 
     @dbt_assets(
         manifest=test_meta_config_manifest,
-        dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
         partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"),
     )
     def my_dbt_assets(): ...
@@ -465,13 +466,12 @@ def test_with_partition_mappings(
 def test_with_description_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_description = "customized description"
 
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_description(self, _: Mapping[str, Any]) -> str:
             return expected_description
 
     @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
     def my_dbt_assets(): ...
 
@@ -482,13 +482,12 @@ def test_with_description_replacements(test_jaffle_shop_manifest: Dict[str, Any]
 def test_with_metadata_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_metadata = {"customized": "metadata"}
 
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_metadata(self, _: Mapping[str, Any]) -> Mapping[str, Any]:
             return expected_metadata
 
     @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
     def my_dbt_assets(): ...
 
@@ -499,13 +498,12 @@ def test_with_metadata_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -
 def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_tags = {"customized": "tag"}
 
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_tags(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:
             return expected_tags
 
     @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
     def my_dbt_assets(): ...
 
@@ -513,16 +511,31 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> Non
         assert metadata["customized"] == "tag"
 
 
+def test_with_owner_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    expected_owners = [UserAssetOwner("custom@custom.com")]
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_owners(self, _: Mapping[str, Any]) -> Optional[Sequence[str]]:
+            return [owner.email for owner in expected_owners]
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+    def my_dbt_assets(): ...
+
+    for owners in my_dbt_assets.owners_by_key.values():
+        assert owners == expected_owners
+
+
 def test_with_group_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_group = "customized_group"
 
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_group_name(self, _: Mapping[str, Any]) -> Optional[str]:
             return expected_group
 
     @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
     def my_dbt_assets(): ...
 
@@ -533,15 +546,12 @@ def test_with_group_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> N
 def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
 
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_freshness_policy(
-            cls, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[FreshnessPolicy]:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
             return expected_freshness_policy
 
     @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
     def my_dbt_assets(): ...
 
@@ -554,15 +564,14 @@ def test_with_auto_materialize_policy_replacements(
 ) -> None:
     expected_auto_materialize_policy = AutoMaterializePolicy.eager()
 
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_auto_materialize_policy(
-            cls, dbt_resource_props: Mapping[str, Any]
+            self, _: Mapping[str, Any]
         ) -> Optional[AutoMaterializePolicy]:
             return expected_auto_materialize_policy
 
     @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
     def my_dbt_assets(): ...
 
@@ -620,13 +629,13 @@ def test_dbt_config_group(test_meta_config_manifest: Dict[str, Any]) -> None:
         # If a model has a Dagster group name specified under `meta`, use that.
         AssetKey(["customized", "staging", "customers"]): "customized_dagster_group",
         # If a model has a dbt group name specified under `group`, use that.
-        AssetKey(["customized", "staging", "orders"]): "customized_dbt_group",
+        AssetKey(["customized", "staging", "orders"]): "customized_dbt_model_group",
         # If a model has both a Dagster group and dbt group, use the Dagster group.
         AssetKey(["customized", "staging", "payments"]): "customized_dagster_group",
         AssetKey(["orders"]): "default",
-        AssetKey(["raw_customers"]): "default",
-        AssetKey(["raw_orders"]): "default",
-        AssetKey(["raw_payments"]): "default",
+        AssetKey(["raw_customers"]): "customized_dbt_seed_group",
+        AssetKey(["raw_orders"]): "customized_dbt_seed_group",
+        AssetKey(["raw_payments"]): "customized_dbt_seed_group",
     }
 
 
@@ -634,12 +643,32 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 
-    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {
-        "foo": TAG_NO_VALUE,
-        "bar-baz": TAG_NO_VALUE,
-    }
+    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {"foo": "", "bar-baz": ""}
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
         assert my_dbt_assets.tags_by_key[asset_key] == {}
+
+
+def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
+    expected_dbt_model_owners = [UserAssetOwner("kafka@amerika.com")]
+    expected_dbt_seed_owners = [UserAssetOwner("kafka@judgment.com")]
+    expected_dagster_owners = [UserAssetOwner("kafka@castle.com")]
+
+    @dbt_assets(manifest=test_meta_config_manifest)
+    def my_dbt_assets(): ...
+
+    assert my_dbt_assets.owners_by_key == {
+        AssetKey(["customers"]): [],
+        # If a model has Dagster owners specified under `meta`, use that.
+        AssetKey(["customized", "staging", "customers"]): [],
+        # If a model has a dbt owner specified under `group`, use that.
+        AssetKey(["customized", "staging", "orders"]): expected_dbt_model_owners,
+        # If a model has both Dagster owners and a dbt owner, use the Dagster owner.
+        AssetKey(["customized", "staging", "payments"]): expected_dagster_owners,
+        AssetKey(["orders"]): [],
+        AssetKey(["raw_customers"]): expected_dbt_seed_owners,
+        AssetKey(["raw_orders"]): expected_dbt_seed_owners,
+        AssetKey(["raw_payments"]): expected_dbt_seed_owners,
+    }
 
 
 def test_dbt_with_downstream_asset_via_definition(test_meta_config_manifest: Dict[str, Any]):
@@ -828,8 +857,7 @@ def test_dbt_with_invalid_self_dependencies(
 
 def test_dbt_with_duplicate_asset_keys(test_meta_config_manifest: Dict[str, Any]) -> None:
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
             asset_key = super().get_asset_key(dbt_resource_props)
             if asset_key in [AssetKey("orders"), AssetKey("customers")]:
                 return AssetKey(["duplicate"])
@@ -882,8 +910,7 @@ def test_dbt_with_duplicate_source_asset_keys(
 
     # Duplicate dbt model asset keys are still not allowed.
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
             asset_key = super().get_asset_key(dbt_resource_props)
             if asset_key in [AssetKey("orders"), AssetKey("customers")]:
                 return AssetKey(["duplicate"])

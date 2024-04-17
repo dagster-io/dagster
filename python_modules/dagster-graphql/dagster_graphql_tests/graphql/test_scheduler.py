@@ -4,8 +4,8 @@ import sys
 import pendulum
 import pytest
 from dagster._core.remote_representation import (
-    ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -327,7 +327,7 @@ def _get_unloadable_schedule_origin(name):
         python_file=__file__,
         working_directory=working_directory,
     )
-    return ExternalRepositoryOrigin(
+    return RemoteRepositoryOrigin(
         InProcessCodeLocationOrigin(loadable_target_origin), "fake_repository"
     ).get_instigator_origin(name)
 

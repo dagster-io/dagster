@@ -23,6 +23,7 @@ import {
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -303,7 +304,11 @@ export const AllIndividualEventsButton = ({
   children: React.ReactNode;
   disabled?: boolean;
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [_open, setOpen] = useQueryPersistedState({
+    queryKey: 'showAllEvents',
+    decode: (qs) => (qs.showAllEvents === 'true' ? true : false),
+    encode: (b) => ({showAllEvents: b || undefined}),
+  });
   const [focused, setFocused] = React.useState<AssetEventGroup | undefined>();
   const groups = React.useMemo(
     () =>
@@ -315,6 +320,7 @@ export const AllIndividualEventsButton = ({
       })),
     [events],
   );
+
   const title = () => {
     if (hasPartitions && events[0]) {
       const partition = events[0].partition;
@@ -324,6 +330,8 @@ export const AllIndividualEventsButton = ({
     }
     return `Materialization and observation events`;
   };
+
+  const open = _open && !disabled;
 
   return (
     <>

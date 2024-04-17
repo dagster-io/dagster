@@ -187,9 +187,7 @@ def execute_run_host_mode(
     check.invariant(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
-        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.job_name, dagster_run.run_id, dagster_run.status
-        ),
+        desc=f"Pipeline run {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected NOT_STARTED or STARTING",
     )
 
     recon_job = recon_job.get_subset(

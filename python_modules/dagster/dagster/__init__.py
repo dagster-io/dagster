@@ -117,6 +117,7 @@ from dagster._core.definitions.asset_check_spec import (
     AssetCheckSpec as AssetCheckSpec,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition as AssetChecksDefinition
+from dagster._core.definitions.asset_condition import AssetCondition as AssetCondition
 from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
@@ -210,14 +211,14 @@ from dagster._core.definitions.external_asset import (
     external_asset_from_spec as external_asset_from_spec,
     external_assets_from_specs as external_assets_from_specs,
 )
-from dagster._core.definitions.freshness_checks.non_partitioned import (
-    build_freshness_checks_for_non_partitioned_assets as build_freshness_checks_for_non_partitioned_assets,
+from dagster._core.definitions.freshness_checks.last_update import (
+    build_last_update_freshness_checks as build_last_update_freshness_checks,
 )
 from dagster._core.definitions.freshness_checks.sensor import (
     build_sensor_for_freshness_checks as build_sensor_for_freshness_checks,
 )
-from dagster._core.definitions.freshness_checks.time_window_partitioned import (
-    build_freshness_checks_for_time_window_partitioned_assets as build_freshness_checks_for_time_window_partitioned_assets,
+from dagster._core.definitions.freshness_checks.time_partition import (
+    build_time_partition_freshness_checks as build_time_partition_freshness_checks,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy_sensor_definition import (
@@ -280,6 +281,8 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.metadata.table import (
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
+    TableColumnDep as TableColumnDep,
+    TableColumnLineage as TableColumnLineage,
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
@@ -574,7 +577,6 @@ from dagster._core.storage.partition_status_cache import (
 from dagster._core.storage.tags import (
     MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG,
     MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG,
-    TAG_NO_VALUE as TAG_NO_VALUE,
 )
 from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
 from dagster._core.types.config_schema import (

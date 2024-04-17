@@ -1,12 +1,15 @@
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import (
+    AssetCheckKey,
+    AssetCheckSeverity,
+)
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -20,7 +23,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
 
 
-@experimental
 class AssetCheckResult(
     NamedTuple(
         "_AssetCheckResult",
@@ -76,23 +78,17 @@ class AssetCheckResult(
             description=check.opt_str_param(description, "description"),
         )
 
-    def to_asset_check_evaluation(
-        self, step_context: "StepExecutionContext"
-    ) -> AssetCheckEvaluation:
-        spec_check_names_by_asset_key = (
-            step_context.job_def.asset_layer.check_names_by_asset_key_by_node_handle.get(
-                step_context.node_handle.root
-            )
-        )
-
-        if not spec_check_names_by_asset_key:
+    def resolve_target_check_key(
+        self, check_names_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[str]]]
+    ) -> AssetCheckKey:
+        if not check_names_by_asset_key:
             raise DagsterInvariantViolationError(
                 "Received unexpected AssetCheckResult. No AssetCheckSpecs were found for this step."
                 "You may need to set `check_specs` on the asset decorator, or you may be emitting an "
                 "AssetCheckResult that isn't in the subset passed in `context.selected_asset_check_keys`."
             )
 
-        asset_keys_with_specs = spec_check_names_by_asset_key.keys()
+        asset_keys_with_specs = check_names_by_asset_key.keys()
 
         if self.asset_key is not None:
             if self.asset_key not in asset_keys_with_specs:
@@ -106,16 +102,16 @@ class AssetCheckResult(
             resolved_asset_key = self.asset_key
 
         else:
-            if len(spec_check_names_by_asset_key) > 1:
+            if len(check_names_by_asset_key) > 1:
                 raise DagsterInvariantViolationError(
                     "AssetCheckResult didn't specify an asset key, but there are multiple assets"
                     " to choose from:"
-                    f" {[asset_key.to_user_string() for asset_key in spec_check_names_by_asset_key.keys()]}"
+                    f" {[asset_key.to_user_string() for asset_key in check_names_by_asset_key.keys()]}"
                 )
 
             resolved_asset_key = next(iter(asset_keys_with_specs))
 
-        check_names_with_specs = spec_check_names_by_asset_key[resolved_asset_key]
+        check_names_with_specs = check_names_by_asset_key[resolved_asset_key]
         if self.check_name is not None:
             if self.check_name not in check_names_with_specs:
                 raise DagsterInvariantViolationError(
@@ -136,7 +132,20 @@ class AssetCheckResult(
 
             resolved_check_name = next(iter(check_names_with_specs))
 
-        input_asset_info = step_context.get_input_asset_version_info(resolved_asset_key)
+        return AssetCheckKey(asset_key=resolved_asset_key, name=resolved_check_name)
+
+    def to_asset_check_evaluation(
+        self, step_context: "StepExecutionContext"
+    ) -> AssetCheckEvaluation:
+        check_names_by_asset_key = (
+            step_context.job_def.asset_layer.check_names_by_asset_key_by_node_handle.get(
+                step_context.node_handle.root
+            )
+        )
+
+        check_key = self.resolve_target_check_key(check_names_by_asset_key)
+
+        input_asset_info = step_context.get_input_asset_version_info(check_key.asset_key)
         from dagster._core.events import DagsterEventType
 
         if (
@@ -152,23 +161,11 @@ class AssetCheckResult(
             target_materialization_data = None
 
         return AssetCheckEvaluation(
-            check_name=resolved_check_name,
-            asset_key=resolved_asset_key,
+            check_name=check_key.name,
+            asset_key=check_key.asset_key,
             passed=self.passed,
             metadata=self.metadata,
             target_materialization_data=target_materialization_data,
             severity=self.severity,
             description=self.description,
         )
-
-    def get_spec_python_identifier(
-        self, *, asset_key: Optional[AssetKey] = None, check_name: Optional[str] = None
-    ) -> str:
-        """Returns a string uniquely identifying the asset check spec associated with this result.
-        This is used for the output name associated with an `AssetCheckResult`.
-        """
-        asset_key = asset_key or self.asset_key
-        check_name = check_name or self.check_name
-        assert asset_key is not None, "Asset key must be provided if not set on spec"
-        assert asset_key is not None, "Asset key must be provided if not set on spec"
-        return f"{asset_key.to_python_identifier()}_{self.check_name}"

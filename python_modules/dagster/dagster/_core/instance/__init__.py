@@ -16,7 +16,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Final,
     Generic,
     Iterable,
     List,
@@ -73,7 +72,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import PrintFn, traced
+from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import (
@@ -103,13 +102,6 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 # actually using this constants.
 RUNLESS_RUN_ID = ""
 RUNLESS_JOB_NAME = ""
-
-# Sets the number of events that will be buffered before being written to the event log. Only
-# applies to explicitly batched events. Currently this defaults to 0, which turns off batching
-# entirely (multiple store_event calls are made instead of store_event_batch). This makes batching
-# opt-in.
-EVENT_BATCH_SIZE: Final = int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
-
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
@@ -143,9 +135,9 @@ if TYPE_CHECKING:
     from dagster._core.remote_representation import (
         CodeLocation,
         ExternalJob,
-        ExternalJobOrigin,
         ExternalSensor,
         HistoricalJob,
+        RemoteJobOrigin,
     )
     from dagster._core.remote_representation.external import ExternalSchedule
     from dagster._core.run_coordinator import RunCoordinator
@@ -191,8 +183,19 @@ if TYPE_CHECKING:
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
 
+# Sets the number of events that will be buffered before being written to the event log. Only
+# applies to explicitly batched events. Currently this defaults to 0, which turns off batching
+# entirely (multiple store_event calls are made instead of store_event_batch). This makes batching
+# opt-in.
+#
+# Note that we don't store the value in the constant so that it can be changed without a process
+# restart.
+def _get_event_batch_size() -> int:
+    return int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
+
+
 def _is_batch_writing_enabled() -> bool:
-    return EVENT_BATCH_SIZE > 0
+    return _get_event_batch_size() > 0
 
 
 def _check_run_equality(
@@ -572,17 +575,17 @@ class DagsterInstance(DynamicPartitionsStore):
         if not os.path.isabs(dagster_home_path):
             raise DagsterInvariantViolationError(
                 (
-                    '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
+                    f'$DAGSTER_HOME "{dagster_home_path}" must be an absolute path. Dagster requires this '
                     "environment variable to be set to an existing directory in your filesystem."
-                ).format(dagster_home_path)
+                )
             )
 
         if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
             raise DagsterInvariantViolationError(
                 (
-                    '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
+                    f'$DAGSTER_HOME "{dagster_home_path}" is not a directory or does not exist. Dagster requires this'
                     " environment variable to be set to an existing directory in your filesystem"
-                ).format(dagster_home_path)
+                )
             )
 
         return DagsterInstance.from_config(dagster_home_path)
@@ -1137,7 +1140,7 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id: Optional[str] = None,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        external_job_origin: Optional["ExternalJobOrigin"] = None,
+        external_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
@@ -1220,7 +1223,7 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet["AssetCheckKey"]] = None,
         op_selection: Optional[Sequence[str]] = None,
-        external_job_origin: Optional["ExternalJobOrigin"] = None,
+        external_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # https://github.com/dagster-io/dagster/issues/2403
@@ -1481,13 +1484,13 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
         resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
-        external_job_origin: Optional["ExternalJobOrigin"],
+        external_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
         asset_job_partitions_def: Optional["PartitionsDefinition"] = None,
     ) -> DagsterRun:
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
-        from dagster._core.definitions.utils import validate_tags
-        from dagster._core.remote_representation.origin import ExternalJobOrigin
+        from dagster._core.definitions.utils import normalize_tags
+        from dagster._core.remote_representation.origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 
         check.str_param(job_name, "job_name")
@@ -1499,7 +1502,7 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(status, "status", DagsterRunStatus)
         check.opt_mapping_param(tags, "tags", key_type=str)
 
-        validated_tags = validate_tags(tags)
+        validated_tags = normalize_tags(tags, warn_on_deprecated_tags=False).tags
 
         check.opt_str_param(root_run_id, "root_run_id")
         check.opt_str_param(parent_run_id, "parent_run_id")
@@ -1512,6 +1515,9 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(
             execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
         )
+
+        if run_id and not is_uuid(run_id):
+            check.failed(f"run_id must be a valid UUID. Got {run_id}")
 
         if root_run_id or parent_run_id:
             check.invariant(
@@ -1588,7 +1594,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # If these are not set the created run will never be able to be relaunched from
         # the information just in the run or in another process.
 
-        check.opt_inst_param(external_job_origin, "external_job_origin", ExternalJobOrigin)
+        check.opt_inst_param(external_job_origin, "external_job_origin", RemoteJobOrigin)
         check.opt_inst_param(job_code_origin, "job_code_origin", JobPythonOrigin)
 
         dagster_run = self._construct_run_with_snapshots(
@@ -1763,11 +1769,8 @@ class DagsterInstance(DynamicPartitionsStore):
 
             if field_diff:
                 raise DagsterRunConflict(
-                    "Found conflicting existing run with same id {run_id}. Runs differ in:"
-                    "\n{field_diff}".format(
-                        run_id=dagster_run.run_id,
-                        field_diff=_format_field_diff(field_diff),
-                    ),
+                    f"Found conflicting existing run with same id {dagster_run.run_id}. Runs differ in:"
+                    f"\n{_format_field_diff(field_diff)}",
                 )
             return candidate_run  # type: ignore  # (possible none)
 
@@ -2385,7 +2388,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Events may optionally be sent with `batch_metadata`. If batch writing is enabled, then
         events sent with `batch_metadata` will not trigger an immediate write. Instead, they will be
         kept in a batch-specific buffer (identified by `batch_metadata.id`) until either the buffer
-        reaches the EVENT_BATCH_SIZE or the end of the batch is reached (signaled by
+        reaches the event batch size or the end of the batch is reached (signaled by
         `batch_metadata.is_end`). When this point is reached, all events in the buffer will be sent
         to the storage layer in a single batch. If an error occurrs during batch writing, then we
         fall back to iterative individual event writes.
@@ -2399,7 +2402,7 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             batch_id, is_batch_end = batch_metadata.id, batch_metadata.is_end
             self._event_buffer[batch_id].append(event)
-            if is_batch_end or len(self._event_buffer[batch_id]) == EVENT_BATCH_SIZE:
+            if is_batch_end or len(self._event_buffer[batch_id]) == _get_event_batch_size():
                 events = self._event_buffer[batch_id]
                 del self._event_buffer[batch_id]
             else:
@@ -2592,7 +2595,6 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             run_id (str): The id of the run.
         """
-        from dagster._core.remote_representation import ExternalJobOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)
@@ -2601,14 +2603,12 @@ class DagsterInstance(DynamicPartitionsStore):
                 f"Could not load run {run_id} that was passed to submit_run"
             )
 
-        check.inst(
+        check.not_none(
             run.external_job_origin,
-            ExternalJobOrigin,
             "External pipeline origin must be set for submitted runs",
         )
-        check.inst(
+        check.not_none(
             run.job_code_origin,
-            JobPythonOrigin,
             "Python origin must be set for submitted runs",
         )
 

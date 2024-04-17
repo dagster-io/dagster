@@ -1,5 +1,7 @@
 # pyright: reportPrivateImportUsage=false
 
+import datetime
+
 import pendulum
 import pytest
 from dagster import (
@@ -9,8 +11,8 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.freshness_checks.non_partitioned import (
-    build_freshness_checks_for_non_partitioned_assets,
+from dagster._core.definitions.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
 )
 from dagster._core.definitions.freshness_checks.sensor import (
     FreshnessCheckSensorCursor,
@@ -29,37 +31,37 @@ def test_params() -> None:
     def my_asset():
         pass
 
-    checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_asset], maximum_lag_minutes=10
+    check = build_last_update_freshness_checks(
+        assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
     # Only essential params
     result = build_sensor_for_freshness_checks(
-        freshness_checks=checks,
+        freshness_checks=[check],
     )
     assert result.name == "freshness_checks_sensor"
 
     # All params (valid)
     result = build_sensor_for_freshness_checks(
-        freshness_checks=checks, minimum_interval_seconds=10, name="my_sensor"
+        freshness_checks=[check], minimum_interval_seconds=10, name="my_sensor"
     )
 
     # Duplicate checks
     with pytest.raises(CheckError, match="duplicate asset checks"):
         build_sensor_for_freshness_checks(
-            freshness_checks=[*checks, *checks],
+            freshness_checks=[check, check],
         )
 
     # Invalid interval
     with pytest.raises(CheckError, match="Interval must be a positive integer"):
         build_sensor_for_freshness_checks(
-            freshness_checks=checks,
+            freshness_checks=[check],
             minimum_interval_seconds=-1,
         )
 
 
-def test_maximum_lag_minutes() -> None:
-    """Test the case where we have an asset partitioned with a maximum lag. Ensure that the sensor
+def test_lower_bound_delta() -> None:
+    """Test the case where we have an asset partitioned with a lower bound delta. Ensure that the sensor
     provides expected run requests in all cases.
     """
 
@@ -71,21 +73,21 @@ def test_maximum_lag_minutes() -> None:
     def my_other_asset():
         pass
 
-    ten_minute_checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_asset], maximum_lag_minutes=10
+    ten_minute_check = build_last_update_freshness_checks(
+        assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
-    twenty_minute_checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_other_asset], maximum_lag_minutes=20
+    twenty_minute_check = build_last_update_freshness_checks(
+        assets=[my_other_asset], lower_bound_delta=datetime.timedelta(minutes=20)
     )
 
     sensor = build_sensor_for_freshness_checks(
-        freshness_checks=[*ten_minute_checks, *twenty_minute_checks],
+        freshness_checks=[ten_minute_check, twenty_minute_check],
     )
 
     defs = Definitions(
         sensors=[sensor],
         assets=[my_asset, my_other_asset],
-        asset_checks=[*ten_minute_checks, *twenty_minute_checks],
+        asset_checks=[ten_minute_check, twenty_minute_check],
     )
 
     context = build_sensor_context(
@@ -126,7 +128,7 @@ def test_maximum_lag_minutes() -> None:
             }
         )
 
-    # Advance time within the maximum_lag_minutes window, and ensure we don't get a run_request.
+    # Advance time within the lower_bound_delta window, and ensure we don't get a run_request.
     freeze_datetime = freeze_datetime.add(minutes=5)
     with pendulum_freeze_time(freeze_datetime):
         result = sensor(context)
@@ -144,7 +146,7 @@ def test_maximum_lag_minutes() -> None:
             }
         )
 
-    # Advance time past the maximum_lag_minutes window for the first asset, and ensure we get a run_request.
+    # Advance time past the lower_bound_delta window for the first asset, and ensure we get a run_request.
     freeze_datetime = freeze_datetime.add(minutes=6)
     with pendulum_freeze_time(freeze_datetime):
         result = sensor(context)
@@ -179,30 +181,32 @@ def test_freshness_cron() -> None:
     def my_ahead_asset():
         pass
 
-    utc_checks = build_freshness_checks_for_non_partitioned_assets(
-        assets=[my_utc_asset], freshness_cron="0 0 * * *", maximum_lag_minutes=10
+    utc_check = build_last_update_freshness_checks(
+        assets=[my_utc_asset],
+        deadline_cron="0 0 * * *",
+        lower_bound_delta=datetime.timedelta(minutes=10),
     )
-    behind_checks = build_freshness_checks_for_non_partitioned_assets(
+    behind_check = build_last_update_freshness_checks(
         assets=[my_behind_asset],
-        freshness_cron="0 0 * * *",
-        maximum_lag_minutes=10,
-        freshness_cron_timezone="Etc/GMT-5",
+        deadline_cron="0 0 * * *",
+        lower_bound_delta=datetime.timedelta(minutes=10),
+        timezone="Etc/GMT-5",
     )
-    ahead_checks = build_freshness_checks_for_non_partitioned_assets(
+    ahead_check = build_last_update_freshness_checks(
         assets=[my_ahead_asset],
-        freshness_cron="0 0 * * *",
-        maximum_lag_minutes=10,
-        freshness_cron_timezone="Etc/GMT+5",
+        deadline_cron="0 0 * * *",
+        lower_bound_delta=datetime.timedelta(minutes=10),
+        timezone="Etc/GMT+5",
     )
 
     sensor = build_sensor_for_freshness_checks(
-        freshness_checks=[*utc_checks, *behind_checks, *ahead_checks],
+        freshness_checks=[utc_check, behind_check, ahead_check],
     )
 
     defs = Definitions(
         sensors=[sensor],
         assets=[my_utc_asset, my_behind_asset, my_ahead_asset],
-        asset_checks=[*utc_checks, *behind_checks, *ahead_checks],
+        asset_checks=[utc_check, behind_check, ahead_check],
     )
 
     context = build_sensor_context(

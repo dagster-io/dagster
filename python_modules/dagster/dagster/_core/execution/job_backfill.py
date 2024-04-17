@@ -17,7 +17,7 @@ from dagster._core.remote_representation.external_data import (
     ExternalPartitionExecutionParamData,
     ExternalPartitionSetExecutionParamData,
 )
-from dagster._core.remote_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
@@ -104,14 +104,14 @@ def execute_job_backfill_iteration(
 def _check_repo_has_partition_set(
     workspace_process_context: IWorkspaceProcessContext, backfill_job: PartitionBackfill
 ) -> None:
-    origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
+    origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
 
-    location_name = origin.external_repository_origin.code_location_origin.location_name
+    location_name = origin.repository_origin.code_location_origin.location_name
 
     workspace = workspace_process_context.create_request_context()
     code_location = workspace.get_code_location(location_name)
 
-    repo_name = origin.external_repository_origin.repository_name
+    repo_name = origin.repository_origin.repository_name
     if not code_location.has_repository(repo_name):
         raise DagsterBackfillFailedError(
             f"Could not find repository {repo_name} in location {code_location.name} to "
@@ -175,9 +175,9 @@ def submit_backfill_runs(
     partition_names: Optional[Sequence[str]] = None,
 ) -> Iterable[Optional[str]]:
     """Returns the run IDs of the submitted runs."""
-    origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
+    origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
 
-    repository_origin = origin.external_repository_origin
+    repository_origin = origin.repository_origin
     repo_name = repository_origin.repository_name
     location_name = repository_origin.code_location_origin.location_name
 

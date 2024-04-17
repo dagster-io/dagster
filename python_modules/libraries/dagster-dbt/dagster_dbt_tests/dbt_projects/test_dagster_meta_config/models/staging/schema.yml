@@ -1,9 +1,10 @@
 version: 2
 
 groups:
-  - name: customized_dbt_group
+  - name: customized_dbt_model_group
     owner:
       name: Karl Rossmann
+      email: kafka@amerika.com
 
 models:
   - name: stg_customers
@@ -20,7 +21,7 @@ models:
 
   - name: stg_orders
     config:
-      group: customized_dbt_group
+      group: customized_dbt_model_group
       meta:
         dagster:
           asset_key: ["customized", "staging", "orders"]
@@ -37,11 +38,12 @@ models:
 
   - name: stg_payments
     config:
-      group: customized_dbt_group
+      group: customized_dbt_model_group
       meta:
         dagster:
           asset_key: ["customized", "staging", "payments"]
           group: customized_dagster_group
+          owners: ["kafka@castle.com"]
     columns:
       - name: payment_id
         tests:

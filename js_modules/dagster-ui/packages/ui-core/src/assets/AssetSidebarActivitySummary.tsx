@@ -16,15 +16,14 @@ import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
-import {isRunlessEvent} from './isRunlessEvent';
 import {RecentAssetEvents} from './useRecentAssetEvents';
-import {LiveDataForNode} from '../asset-graph/Utils';
+import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
 interface Props {
   asset: SidebarAssetFragment;
-  liveData?: LiveDataForNode;
+  liveData?: LiveDataForNodeWithStaleData;
   isSourceAsset: boolean;
   stepKey: string;
   recentEvents: RecentAssetEvents;
@@ -104,15 +103,7 @@ export const AssetSidebarActivitySummary = ({
 
       {loadedPartitionKeys.length > 1 ? null : (
         <>
-          <SidebarSection
-            title={
-              !isSourceAsset
-                ? displayedEvent && isRunlessEvent(displayedEvent)
-                  ? 'Last reported materialization'
-                  : 'Materialization in last run'
-                : 'Observation in last run'
-            }
-          >
+          <SidebarSection title={!isSourceAsset ? 'Latest materialization' : 'Latest observation'}>
             {displayedEvent ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
                 <LatestMaterializationMetadata

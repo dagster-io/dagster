@@ -74,6 +74,7 @@ from .auto_materializing.repo_1 import (
 from .auto_materializing.repo_2 import (
     auto_materialize_repo_2 as auto_materialize_repo_2,
 )
+from .freshness_checks import get_freshness_defs_pile
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
@@ -139,6 +140,7 @@ def toys_repository():
         + get_toys_schedules()
         + get_toys_sensors()
         + get_checks_and_assets()
+        + get_freshness_defs_pile()
     )
 
 

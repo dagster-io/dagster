@@ -4,23 +4,16 @@ import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster_dbt import (
-    DagsterDbtTranslator,
-    DagsterDbtTranslatorSettings,
     build_dbt_asset_selection,
 )
 from dagster_dbt.asset_decorator import dbt_assets
 
-dagster_dbt_translator_with_checks = DagsterDbtTranslator(
-    settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
-)
+pytest.importorskip("dbt.version", "1.6")
 
 
 @pytest.fixture(name="my_dbt_assets", scope="module")
 def my_dbt_assets_fixture(test_asset_checks_manifest: Dict[str, Any]) -> AssetsDefinition:
-    @dbt_assets(
-        manifest=test_asset_checks_manifest,
-        dagster_dbt_translator=dagster_dbt_translator_with_checks,
-    )
+    @dbt_assets(manifest=test_asset_checks_manifest)
     def my_dbt_assets(): ...
 
     return my_dbt_assets
@@ -53,6 +46,8 @@ ALL_CHECK_KEYS = {
     for asset_name, check_name in [
         ("customers", "not_null_customers_customer_id"),
         ("customers", "unique_customers_customer_id"),
+        ("customers", "singular_test_with_single_dependency"),
+        ("customers", "singular_test_with_meta_and_multiple_dependencies"),
         (
             "orders",
             "accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
@@ -140,6 +135,8 @@ def test_excluding_tests(my_dbt_assets: AssetsDefinition, asset_graph: AssetGrap
             [
                 "not_null_customers_customer_id",
                 "unique_customers_customer_id",
+                "singular_test_with_single_dependency",
+                "singular_test_with_meta_and_multiple_dependencies",
                 "relationships_orders_customer_id__customer_id__ref_customers_",
                 "relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_",
             ]

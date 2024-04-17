@@ -27,7 +27,7 @@ This guide covers:
 This starter kit includes:
 
 - Basics of creating, connecting, and testing [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) in Dagster.
-- Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata), etc.
+- Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/metadata-tags/asset-metadata), etc.
 - [S3 I/O manager](https://docs.dagster.io/deployment/guides/aws#using-s3-for-io-management) to load the datasets in S3 and read from it, which [uses environment variables](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) to handle the AWS credentials.
 - [S3 resource](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.s3.S3Resource) to interact with S3 instance inside an asset, which also requires setting up credentials.
 - A [schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) defined to run a job that generates assets daily.
@@ -185,7 +185,7 @@ Note: You'll find a `path` metadata attached to every asset. This is because ass
 
 Finally, let's refresh our plots every day so we can monitor popular topics over time. To do so, we can use [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#schedules).
 
-We've defined a daily schedule and job in [`quickstart_aws/repository.py`](./quickstart_aws/repository.py) for all assets that are defined in the [`quickstart_aws/assets/`](./quickstart_aws/assets) module.
+We've defined a daily schedule and job in [`quickstart_aws/definitions.py`](./quickstart_aws/definitions.py) for all assets that are defined in the [`quickstart_aws/assets/`](./quickstart_aws/assets) module.
 
 Now, let's turn on the daily schedule within Dagster.
 

@@ -65,7 +65,7 @@ def execute_check_for_asset(
 ) -> ExecuteInProcessResult:
     the_job = define_asset_job(
         name="test_asset_job",
-        selection=AssetSelection.checks(*asset_checks),
+        selection=AssetSelection.checks(*(asset_checks or [])),
     )
 
     defs = Definitions(assets=assets, asset_checks=asset_checks, jobs=[the_job])
@@ -80,6 +80,7 @@ def assert_check_result(
     severity: AssetCheckSeverity,
     expected_pass: bool,
     description_match: Optional[str] = None,
+    metadata_match: Optional[dict] = None,
 ) -> None:
     result = execute_check_for_asset(
         assets=[the_asset],
@@ -94,6 +95,10 @@ def assert_check_result(
         description = result.get_asset_check_evaluations()[0].description
         assert description
         assert description_match in description
+    if metadata_match:
+        metadata = result.get_asset_check_evaluations()[0].metadata
+        assert metadata
+        assert metadata == metadata_match
 
 
 def add_new_event(
@@ -101,10 +106,15 @@ def add_new_event(
     asset_key: AssetKey,
     partition_key: Optional[str] = None,
     is_materialization: bool = True,
+    override_timestamp: Optional[float] = None,
 ):
     klass = AssetMaterialization if is_materialization else AssetObservation
     metadata = (
-        {"dagster/last_updated_timestamp": TimestampMetadataValue(pendulum.now("UTC").timestamp())}
+        {
+            "dagster/last_updated_timestamp": TimestampMetadataValue(
+                pendulum.now("UTC").timestamp() if not override_timestamp else override_timestamp
+            )
+        }
         if not is_materialization
         else None
     )

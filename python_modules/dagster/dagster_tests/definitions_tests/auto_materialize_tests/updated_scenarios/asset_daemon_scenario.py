@@ -42,8 +42,8 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
 from dagster._core.remote_representation.origin import (
-    ExternalInstigatorOrigin,
-    ExternalRepositoryOrigin,
+    RemoteInstigatorOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -294,8 +294,8 @@ class AssetDaemonScenarioState(ScenarioState):
         if not self.sensor_name:
             return None
         code_location_origin = get_code_location_origin(self.scenario_spec)
-        return ExternalInstigatorOrigin(
-            external_repository_origin=ExternalRepositoryOrigin(
+        return RemoteInstigatorOrigin(
+            repository_origin=RemoteRepositoryOrigin(
                 code_location_origin=code_location_origin,
                 repository_name=SINGLETON_REPOSITORY_NAME,
             ),
@@ -446,7 +446,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     leaf_eval.subsets_with_metadata
                     # backcompat as previously we stored None metadata for any true evaluation
                     or (
-                        [AssetSubsetWithMetadata(leaf_eval.true_subset, {})]
+                        [AssetSubsetWithMetadata(subset=leaf_eval.true_subset, metadata={})]
                         if leaf_eval.true_subset.size
                         else []
                     )

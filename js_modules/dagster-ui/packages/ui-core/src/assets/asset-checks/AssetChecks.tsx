@@ -17,7 +17,7 @@ import {
 } from '@dagster-io/ui-components';
 import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useContext} from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -46,14 +46,13 @@ import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {MetadataEntries} from '../../metadata/MetadataEntry';
+import {Description} from '../../pipelines/Description';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
-import {AssetFeatureContext} from '../AssetFeatureContext';
 import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
 import {AssetKey} from '../types';
 
@@ -87,13 +86,6 @@ export const AssetChecks = ({
       COMMON_COLLATOR.compare(a.name, b.name),
     );
   }, [data]);
-
-  const {AssetChecksBanner} = useContext(AssetFeatureContext);
-
-  const [didDismissAssetChecksBanner, setDidDismissAssetChecksBanner] = useStateWithStorage(
-    'asset-checks-experimental-banner',
-    (json) => !!json,
-  );
 
   const [searchValue, setSearchValue] = React.useState('');
 
@@ -165,19 +157,8 @@ export const AssetChecks = ({
   const lastExecution = selectedCheck.executionForLatestMaterialization;
   const targetMaterialization = lastExecution?.evaluation?.targetMaterialization;
 
-  console.log({lastExecution});
-
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
-      {didDismissAssetChecksBanner ? null : (
-        <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
-          <AssetChecksBanner
-            onClose={() => {
-              setDidDismissAssetChecksBanner(true);
-            }}
-          />
-        </Box>
-      )}
       <Box flex={{direction: 'row', grow: 1}} style={{position: 'relative'}}>
         <Box flex={{direction: 'column'}} style={{minWidth: 294, width: '20%'}} border="right">
           <Box
@@ -297,7 +278,7 @@ export const AssetChecks = ({
             >
               {lastExecution?.evaluation?.description ? (
                 <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
-                  <Body2>{lastExecution.evaluation.description}</Body2>
+                  <Description description={lastExecution.evaluation.description} maxHeight={260} />
                 </Box>
               ) : null}
               <Box padding={{top: 12}} flex={{direction: 'column', gap: 12}}>

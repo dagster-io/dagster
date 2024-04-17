@@ -1,3 +1,4 @@
+import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 
@@ -17,7 +18,7 @@ export const useAssetTagFilter = ({
   tags?: null | DefinitionTag[];
   setTags?: null | ((s: DefinitionTag[]) => void);
 }) => {
-  const memoizedState = useMemo(() => tags?.map(memoizedDefinitionTag), [tags]);
+  const memoizedState = useMemo(() => tags?.map(buildDefinitionTag), [tags]);
   return useStaticSetFilter<DefinitionTag>({
     name: 'Tag',
     icon: 'tag',
@@ -37,20 +38,21 @@ export const useAssetTagFilter = ({
         />
       );
     },
-    getStringValue: ({value, key}) => `${value}: ${key}`,
+    getStringValue: ({value, key}) => `${key}: ${value}`,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setTags?.(Array.from(values));
     },
     matchType: 'all-of',
+    canSelectAll: false,
   });
 };
 
-const memoizedDefinitionTag = memoize(
+export const buildDefinitionTag = memoize(
   (tag: DefinitionTag) => {
     return tag;
   },
-  (tag) => JSON.stringify(tag),
+  (tag) => [tag.key, tag.value].join('|@-@|'),
 );
 
 export function useAssetTagsForAssets(
@@ -64,7 +66,14 @@ export function useAssetTagsForAssets(
             .flatMap((a) => a.definition?.tags.map((tag) => JSON.stringify(tag)) ?? [])
             .filter((o) => o),
         ),
-      ).map((jsonTag) => memoizedDefinitionTag(JSON.parse(jsonTag))),
+      )
+        .map((jsonTag) => buildDefinitionTag(JSON.parse(jsonTag)))
+        .sort((a, b) =>
+          // Sort by key then by value
+          a.key.localeCompare(b.key) === 0
+            ? a.value.localeCompare(b.value)
+            : a.key.localeCompare(b.key),
+        ),
     [assets],
   );
 }
@@ -72,8 +81,9 @@ export function useAssetTagsForAssets(
 export function doesFilterArrayMatchValueArray<T, V>(
   filterArray: T[],
   valueArray: V[],
-  isMatch: (value1: T, value2: V) => boolean = (val1, val2) =>
-    JSON.stringify(val1) === JSON.stringify(val2),
+  isMatch: (value1: T, value2: V) => boolean = (val1, val2) => {
+    return isEqual(val1, val2);
+  },
 ) {
   if (filterArray.length && !valueArray.length) {
     return false;
@@ -81,6 +91,6 @@ export function doesFilterArrayMatchValueArray<T, V>(
   return !filterArray.some(
     (filterTag) =>
       // If no asset tags match this filter tag return true
-      !valueArray.find((value) => !isMatch(filterTag, value)),
+      !valueArray.find((value) => isMatch(filterTag, value)),
   );
 }

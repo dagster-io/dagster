@@ -13,19 +13,8 @@ We believe the underlying fact is that data applications encode much of their bu
 
 This page demonstrates how Dagster addresses these challenges:
 
-- It provides convenient ways to write [Unit Tests in Data Applications](#unit-tests-in-data-applications).
-- It allows you to [Separate Business Logic from Environments](#separating-business-logic-from-environments) and, therefore, write lightweight tests.
-
----
-
-## Relevant APIs
-
-| Name                                                               | Description                                                                                                                           |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.                           |
-| <PyObject object="build_op_context"  />                            | A method to construct an <PyObject object="OpExecutionContext" />, typically to provide to the invocation of an op for testing.       |
-| <PyObject object="build_asset_context"  />                         | A method to construct an <PyObject object="AssetExecutionContext" />, typically to provide to the invocation of an asset for testing. |
-| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                                      |
+- It provides convenient ways to write [unit tests in data applications](#unit-tests-in-data-applications)
+- It allows you to [separate business logic from environments](#separating-business-logic-from-environments) and, therefore, write lightweight tests
 
 ---
 
@@ -58,8 +47,6 @@ def test_job():
     assert result.output_for_node("add_two") == 3
     assert result.output_for_node("subtract") == -1
 ```
-
-You can find more unit test examples in the [Examples](#examples) section below.
 
 ---
 
@@ -135,164 +122,15 @@ def run_in_prod():
     download_job.execute_in_process()
 ```
 
-For more information, check out the [Resources](/concepts/resources) sections.
+For more information, refer to the [Resources](/concepts/resources) documentation.
 
 ---
 
-## Examples
+## Testing Software-defined Assets
 
-Check out the following test examples:
-
-- [Ops](#testing-ops)
-- [Software-defined assets](#testing-software-defined-assets)
-- [Multiple software-defined assets defined together](#testing-multiple-software-defined-assets-together)
-- [Job execution with config](#testing-job-execution-with-config)
-- [Event stream](#testing-event-stream)
-- [Jobs with top-level inputs](#testing-jobs-with-top-level-inputs)
-
-### Testing ops
-
-While using the <PyObject object="op" decorator /> decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
-
-Consider the following op.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_invocation_op_marker endbefore=end_invocation_op_marker
-@op
-def my_op_to_test():
-    return 5
-```
-
-Since it has no arguments, we can invoke it directly.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_marker endbefore=end_test_op_marker
-def test_op_with_invocation():
-    assert my_op_to_test() == 5
-```
-
-Consider the following op with inputs.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_invocation_op_inputs_marker endbefore=end_invocation_op_inputs_marker
-@op
-def my_op_with_inputs(x, y):
-    return x + y
-```
-
-We can directly provide values for these inputs to the invocation.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_with_inputs_marker endbefore=end_test_op_with_inputs_marker
-def test_inputs_op_with_invocation():
-    assert my_op_with_inputs(5, 6) == 11
-```
-
-#### Testing ops with config
-
-If your op has a config schema, you can pass a config value to the invocation. The following op relies on attached config:
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_config endbefore=end_op_requires_config
-from dagster import Config
-
-
-class MyOpConfig(Config):
-    my_int: int
-
-
-@op
-def op_requires_config(config: MyOpConfig):
-    return config.my_int * 2
-```
-
-That config can be passed to the invocation.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_invocation_config endbefore=end_op_invocation_config
-def test_op_with_config():
-    assert op_requires_config(MyOpConfig(my_int=5)) == 10
-```
-
-#### Testing ops with resources
-
-If your op requires resources, you can specify them as arguments when invoking the op.
-
-Consider the following op, which requires a resource `foo`.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_foo_marker endbefore=end_op_requires_foo_marker
-from dagster import ConfigurableResource
-
-
-class FooResource(ConfigurableResource):
-    my_string: str
-
-
-@op
-def op_requires_foo(foo: FooResource):
-    return f"found {foo.my_string}"
-```
-
-We can directly instantiate and pass an instance of the resource to the invocation.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_resource_marker endbefore=end_test_op_resource_marker
-def test_op_with_resource():
-    assert op_requires_foo(FooResource(my_string="bar")) == "found bar"
-```
-
-Note that when directly invoking ops, I/O managers specified on inputs and outputs are not used.
-
-#### Testing ops with complex resources
-
-If your ops rely on more complex resources, such as those that build separate clients, a common pattern is to use tools such as the `mock` library to fake your resource and associated client.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state_ops endbefore=end_new_resource_testing_with_state_ops dedent=4
-from dagster import ConfigurableResource, op
-import mock
-
-class MyClient:
-    ...
-
-    def query(self, body: str): ...
-
-class MyClientResource(ConfigurableResource):
-    username: str
-    password: str
-
-    def get_client(self):
-        return MyClient(self.username, self.password)
-
-@op
-def my_op(client: MyClientResource):
-    return client.get_client().query("SELECT * FROM my_table")
-
-def test_my_op():
-    class FakeClient:
-        def query(self, body: str):
-            assert body == "SELECT * FROM my_table"
-            return "my_result"
-
-    mocked_client_resource = mock.Mock()
-    mocked_client_resource.get_client.return_value = FakeClient()
-
-    assert my_op(mocked_client_resource) == "my_result"
-```
-
-#### Testing ops that rely on context
-
-Finally, if your op relies on context, you can build and pass a context. The following op uses the context logger:
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_context_marker endbefore=end_op_requires_context_marker
-@op
-def context_op(context: OpExecutionContext):
-    context.log.info(f"My run ID is {context.run_id}")
-```
-
-We can build a context and pass it to the invocation using the <PyObject object="build_op_context" /> utility:
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_invocation_context_marker endbefore=end_op_invocation_context_marker
-def test_op_with_context():
-    context = build_op_context()
-    context_op(context)
-```
-
-### Testing software-defined assets
-
-Similar to ops, <PyObject object="asset" decorator />-decorated functions can be directly invoked. Doing so invokes the underlying op computation.
+<PyObject object="asset" decorator />
+-decorated functions can be directly invoked, which will invoke the underlying op
+computation.
 
 A basic asset, with no dependencies:
 
@@ -326,7 +164,7 @@ def test_asset_with_inputs():
     assert asset_with_inputs(5, 6) == 11
 ```
 
-#### Testing assets with config
+### Testing assets with config
 
 If your asset has a config schema, you can pass a config value to the invocation. The following asset relies on attached config:
 
@@ -348,7 +186,7 @@ def test_asset_requires_config():
     ...
 ```
 
-#### Testing assets with resources
+### Testing assets with resources
 
 If your asset requires resources, you can specify them as arguments when invoking the asset directly.
 
@@ -376,7 +214,7 @@ def test_asset_requires_bar():
 
 In order to test assets which rely on complex resources, such as those that build separate clients, a common pattern is to use tools such as the `mock` library to fake your resource and associated client. See the section on [Testing ops with complex resources](#testing-ops-with-complex-resources) for an example.
 
-### Testing multiple software-defined assets together
+### Testing multiple assets together
 
 You may want to test multiple assets together, to more closely mirror actual materialization. This can be done using the <PyObject object="materialize_to_memory" /> method, which loads the materialized results of assets into memory:
 
@@ -431,6 +269,173 @@ def test_assets_require_service():
     ...
 ```
 
+---
+
+## Testing asset checks
+
+Functions decorated with <PyObject object="asset_check" decorator /> can be directly invoked. For example:
+
+```python file=/concepts/assets/asset_checks/test_asset_check.py startafter=start endbefore=end
+import pandas as pd
+
+from dagster import AssetCheckResult, asset_check
+
+
+@asset_check(asset=orders)
+def orders_id_has_no_nulls():
+    return AssetCheckResult(passed=True)
+
+
+def test_orders_check():
+    assert orders_id_has_no_nulls().passed
+```
+
+---
+
+## Testing ops
+
+While using the <PyObject object="op" decorator /> decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
+
+Consider the following op.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_invocation_op_marker endbefore=end_invocation_op_marker
+@op
+def my_op_to_test():
+    return 5
+```
+
+Since it has no arguments, we can invoke it directly.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_marker endbefore=end_test_op_marker
+def test_op_with_invocation():
+    assert my_op_to_test() == 5
+```
+
+Consider the following op with inputs.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_invocation_op_inputs_marker endbefore=end_invocation_op_inputs_marker
+@op
+def my_op_with_inputs(x, y):
+    return x + y
+```
+
+We can directly provide values for these inputs to the invocation.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_with_inputs_marker endbefore=end_test_op_with_inputs_marker
+def test_inputs_op_with_invocation():
+    assert my_op_with_inputs(5, 6) == 11
+```
+
+### Testing ops with config
+
+If your op has a config schema, you can pass a config value to the invocation. The following op relies on attached config:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_config endbefore=end_op_requires_config
+from dagster import Config
+
+
+class MyOpConfig(Config):
+    my_int: int
+
+
+@op
+def op_requires_config(config: MyOpConfig):
+    return config.my_int * 2
+```
+
+That config can be passed to the invocation.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_invocation_config endbefore=end_op_invocation_config
+def test_op_with_config():
+    assert op_requires_config(MyOpConfig(my_int=5)) == 10
+```
+
+### Testing ops with resources
+
+If your op requires resources, you can specify them as arguments when invoking the op.
+
+Consider the following op, which requires a resource `foo`.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_foo_marker endbefore=end_op_requires_foo_marker
+from dagster import ConfigurableResource
+
+
+class FooResource(ConfigurableResource):
+    my_string: str
+
+
+@op
+def op_requires_foo(foo: FooResource):
+    return f"found {foo.my_string}"
+```
+
+We can directly instantiate and pass an instance of the resource to the invocation.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_resource_marker endbefore=end_test_op_resource_marker
+def test_op_with_resource():
+    assert op_requires_foo(FooResource(my_string="bar")) == "found bar"
+```
+
+Note that when directly invoking ops, I/O managers specified on inputs and outputs are not used.
+
+### Testing ops with complex resources
+
+If your ops rely on more complex resources, such as those that build separate clients, a common pattern is to use tools such as the `mock` library to fake your resource and associated client.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state_ops endbefore=end_new_resource_testing_with_state_ops dedent=4
+from dagster import ConfigurableResource, op
+import mock
+
+class MyClient:
+    ...
+
+    def query(self, body: str): ...
+
+class MyClientResource(ConfigurableResource):
+    username: str
+    password: str
+
+    def get_client(self):
+        return MyClient(self.username, self.password)
+
+@op
+def my_op(client: MyClientResource):
+    return client.get_client().query("SELECT * FROM my_table")
+
+def test_my_op():
+    class FakeClient:
+        def query(self, body: str):
+            assert body == "SELECT * FROM my_table"
+            return "my_result"
+
+    mocked_client_resource = mock.Mock()
+    mocked_client_resource.get_client.return_value = FakeClient()
+
+    assert my_op(mocked_client_resource) == "my_result"
+```
+
+### Testing ops that rely on context
+
+Finally, if your op relies on context, you can build and pass a context. The following op uses the context logger:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_context_marker endbefore=end_op_requires_context_marker
+@op
+def context_op(context: OpExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
+```
+
+We can build a context and pass it to the invocation using the <PyObject object="build_op_context" /> utility:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_invocation_context_marker endbefore=end_op_invocation_context_marker
+def test_op_with_context():
+    context = build_op_context()
+    context_op(context)
+```
+
+---
+
+## Testing jobs
+
 ### Testing job execution with config
 
 Sometimes, you may want to test with different configuration. You can execute job with a specified run config via the `run_config`:
@@ -456,7 +461,43 @@ def test_job_with_config():
     assert result.output_for_node("subtract") == -2
 ```
 
-### Testing event stream
+### Testing jobs with top-level inputs
+
+You can wire inputs from the top-level of a job to the constituent ops. Consider the following op and graph:
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_top_level_input_graph endbefore=end_top_level_input_graph
+from dagster import graph, op
+
+
+@op
+def op_with_input(x):
+    return do_something(x)
+
+
+@graph
+def wires_input(x):
+    op_with_input(x)
+```
+
+Turn the graph into a job by calling <PyObject object="GraphDefinition" method="to_job" />, and provide a value to the input `x` using the `input_values` argument:
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_top_level_input_job endbefore=end_top_level_input_job
+the_job = wires_input.to_job(input_values={"x": 5})
+```
+
+You can also provide input values using <PyObject object="JobDefinition" method="execute_in_process" /> or <PyObject object="GraphDefinition" method="execute_in_process" />:
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_execute_in_process_input endbefore=end_execute_in_process_input
+graph_result = wires_input.execute_in_process(input_values={"x": 5})
+
+job_result = the_job.execute_in_process(
+    input_values={"x": 6}
+)  # Overrides existing input value
+```
+
+---
+
+## Testing the event stream
 
 The event stream is the most generic way that an op communicates what happened during its computation. Ops communicate events for starting, input/output type checking, and user-provided events such as expectations, materializations, and outputs.
 
@@ -500,36 +541,44 @@ def test_event_stream():
     assert materialization.label == "persisted_string"
 ```
 
-### Testing jobs with top-level inputs
+---
 
-You can wire inputs from the top-level of a job to the constituent ops. Consider the following op and graph:
+## APIs in this guide
 
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_top_level_input_graph endbefore=end_top_level_input_graph
-from dagster import graph, op
+| Name                                                               | Description                                                                                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.                           |
+| <PyObject object="build_op_context"  />                            | A method to construct an <PyObject object="OpExecutionContext" />, typically to provide to the invocation of an op for testing.       |
+| <PyObject object="build_asset_context"  />                         | A method to construct an <PyObject object="AssetExecutionContext" />, typically to provide to the invocation of an asset for testing. |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of assets for testing.                                                                       |
 
+---
 
-@op
-def op_with_input(x):
-    return do_something(x)
+## Related
 
-
-@graph
-def wires_input(x):
-    op_with_input(x)
-```
-
-Turn the graph into a job by calling <PyObject object="GraphDefinition" method="to_job" />, and provide a value to the input `x` using the `input_values` argument:
-
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_top_level_input_job endbefore=end_top_level_input_job
-the_job = wires_input.to_job(input_values={"x": 5})
-```
-
-You can also provide input values using <PyObject object="JobDefinition" method="execute_in_process" /> or <PyObject object="GraphDefinition" method="execute_in_process" />:
-
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_execute_in_process_input endbefore=end_execute_in_process_input
-graph_result = wires_input.execute_in_process(input_values={"x": 5})
-
-job_result = the_job.execute_in_process(
-    input_values={"x": 6}
-)  # Overrides existing input value
-```
+<ArticleList>
+  <ArticleListItem
+    title="Software-defined Assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset checks"
+    href="/concepts/assets/asset-checks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Ops"
+    href="/concepts/ops-jobs-graphs/ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Jobs"
+    href="/concepts/ops-jobs-graphs/jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Graphs"
+    href="/concepts/ops-jobs-graphs/graphs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Resources"
+    href="/concepts/resources"
+  ></ArticleListItem>
+</ArticleList>

@@ -13,11 +13,15 @@ export const RoundedButton = styled.button`
   height: 32px;
   text-align: left;
   display: block;
-  padding: 0 8px 0 4px;
+  padding: 0 8px;
   user-select: none;
 
   &:focus,
   &:active {
     outline: none;
+  }
+
+  &:hover {
+    background-color: ${Colors.navButtonHover()};
   }
 `;

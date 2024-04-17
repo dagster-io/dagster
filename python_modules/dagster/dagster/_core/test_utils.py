@@ -53,7 +53,6 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.remote_representation.origin import (
-    ExternalJobOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
@@ -426,7 +425,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def submit_run(self, context: SubmitRunContext):
         dagster_run = context.dagster_run
-        check.inst(dagster_run.external_job_origin, ExternalJobOrigin)
+        check.not_none(dagster_run.external_job_origin)
         self._queue.append(dagster_run)
         return dagster_run
 

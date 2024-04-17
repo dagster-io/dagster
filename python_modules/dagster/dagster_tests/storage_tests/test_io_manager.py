@@ -33,18 +33,22 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.events import Output
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.execution.context.output import get_output_context
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext, get_output_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import make_new_run_id
 
 
 def test_io_manager_with_config():
@@ -376,7 +380,7 @@ def test_step_subset_with_custom_paths():
         for evt in events:
             assert not evt.is_failure
 
-        run_id = "my_run_id"
+        run_id = make_new_run_id()
         # when a path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations
@@ -1133,3 +1137,99 @@ def test_telemetry_dagster_io_manager():
         return MyIOManager()
 
     assert my_io_manager._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_metadata_in_io_manager():
+    expected_metadata = {"foo": "bar"}
+
+    class MyDefinitionMetadataIOManager(IOManager):
+        def handle_output(self, context: OutputContext, obj):
+            assert context.definition_metadata == expected_metadata
+
+        def load_input(self, context: InputContext):
+            assert context.upstream_output
+            assert context.upstream_output.definition_metadata == expected_metadata
+
+    class MyOutputMetadataIOManager(IOManager):
+        def handle_output(self, context: OutputContext, obj):
+            normalized_metadata = (
+                {
+                    key: value if isinstance(value, str) else value.text
+                    for key, value in context.output_metadata.items()
+                }
+                if context.output_metadata
+                else None
+            )
+            assert normalized_metadata == expected_metadata
+
+        def load_input(self, context: InputContext):
+            assert context.upstream_output
+            assert context.upstream_output.output_metadata == {}
+
+    class MyAllMetadataIOManager(IOManager):
+        def handle_output(self, context: OutputContext, obj):
+            normalized_metadata = (
+                {
+                    key: value if isinstance(value, str) else value.text
+                    for key, value in context.output_metadata.items()
+                }
+                if context.output_metadata
+                else None
+            )
+            assert normalized_metadata == expected_metadata
+
+            assert context.definition_metadata == expected_metadata
+
+        def load_input(self, context: InputContext):
+            assert context.upstream_output
+            assert context.upstream_output.output_metadata == {}
+            assert context.upstream_output.definition_metadata == expected_metadata
+
+    @asset(metadata=expected_metadata)
+    def metadata_on_def():
+        return 1
+
+    @asset
+    def downstream_1(metadata_on_def) -> None:
+        return None
+
+    materialize(
+        [metadata_on_def, downstream_1], resources={"io_manager": MyDefinitionMetadataIOManager()}
+    )
+
+    @asset
+    def metadata_on_output():
+        return Output(1, metadata=expected_metadata)
+
+    @asset
+    def downstream_2(metadata_on_output) -> None:
+        return None
+
+    materialize(
+        [metadata_on_output, downstream_2], resources={"io_manager": MyOutputMetadataIOManager()}
+    )
+
+    @asset
+    def metadata_added_to_context(context: AssetExecutionContext):
+        context.add_output_metadata(expected_metadata)
+
+    @asset
+    def downstream_3(metadata_added_to_context) -> None:
+        return None
+
+    materialize(
+        [metadata_added_to_context, downstream_3],
+        resources={"io_manager": MyOutputMetadataIOManager()},
+    )
+
+    @asset(metadata=expected_metadata)
+    def override_metadata(context: AssetExecutionContext):
+        context.add_output_metadata(expected_metadata)
+
+    @asset
+    def downstream_4(override_metadata) -> None:
+        return None
+
+    materialize(
+        [override_metadata, downstream_4], resources={"io_manager": MyAllMetadataIOManager()}
+    )

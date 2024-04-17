@@ -6,7 +6,7 @@ import requests.exceptions
 from dagster import DagsterRunStatus
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
@@ -143,7 +143,7 @@ class DagsterGraphQLClient:
             "Either a mode and run_config or a preset must be specified in order to "
             f"submit the pipeline {pipeline_name} for execution",
         )
-        tags = validate_tags(tags)
+        tags = normalize_tags(tags).tags
 
         pipeline_or_job = "Job" if is_using_job_op_graph_apis else "Pipeline"
 

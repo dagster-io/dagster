@@ -17,9 +17,11 @@ import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {AnchorButton} from '../ui/AnchorButton';
 
-type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
+type Props = {assetKey: {path: string[]}; headerBreadcrumbs: BreadcrumbProps[]} & Partial<
+  React.ComponentProps<typeof PageHeader>
+>;
 
-export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
+export const AssetPageHeader = ({assetKey, headerBreadcrumbs, ...extra}: Props) => {
   const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
   const [didCopy, setDidCopy] = React.useState(false);
@@ -44,7 +46,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
   }, [copy, copyableString]);
 
   const breadcrumbs = React.useMemo(() => {
-    const list: BreadcrumbProps[] = [{text: 'Assets', href: '/assets'}];
+    const list: BreadcrumbProps[] = [...headerBreadcrumbs];
 
     assetKey.path.reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
@@ -53,7 +55,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
     }, '/assets');
 
     return list;
-  }, [assetKey.path]);
+  }, [assetKey.path, headerBreadcrumbs]);
 
   return (
     <PageHeader
@@ -70,6 +72,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
                 <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
               </Heading>
             )}
+            $numHeaderBreadcrumbs={headerBreadcrumbs.length}
           />
           {copyableString ? (
             <Tooltip placement="bottom" content="Copy asset key">
@@ -123,8 +126,9 @@ export const AssetGlobalLineageButton = () => (
   </AnchorButton>
 );
 
-const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
-  & li:not(:first-child)::after {
+// Only add slashes within the asset key path
+const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
+  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
     background: none;
     font-size: 20px;
     font-weight: bold;
@@ -137,6 +141,7 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
 
 const BreadcrumbLink = styled(Link)`
   color: ${Colors.textLight()};
+  white-space: nowrap;
 
   :hover,
   :active {

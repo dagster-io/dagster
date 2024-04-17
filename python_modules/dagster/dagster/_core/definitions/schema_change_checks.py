@@ -11,7 +11,7 @@ from .asset_key import AssetKey, CoercibleToAssetKey
 from .assets import AssetsDefinition, SourceAsset
 from .decorators.asset_check_decorator import multi_asset_check
 from .events import AssetMaterialization
-from .metadata import TableColumn, TableMetadataEntries, TableSchema
+from .metadata import TableColumn, TableMetadataSet, TableSchema
 
 
 @experimental
@@ -20,7 +20,7 @@ def build_column_schema_change_checks(
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
     severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
 ) -> Sequence[AssetChecksDefinition]:
-    """Returns asset checks that pass if the the column schema of the asset's latest materialization
+    """Returns asset checks that pass if the column schema of the asset's latest materialization
     is the same as the column schema of the asset's previous materialization.
 
     Args:
@@ -69,8 +69,8 @@ def build_column_schema_change_checks(
                     AssetMaterialization, prev_record.asset_materialization
                 ).metadata
 
-                column_schema = TableMetadataEntries.extract(metadata).column_schema
-                prev_column_schema = TableMetadataEntries.extract(prev_metadata).column_schema
+                column_schema = TableMetadataSet.extract(metadata).column_schema
+                prev_column_schema = TableMetadataSet.extract(prev_metadata).column_schema
                 if column_schema is None:
                     yield AssetCheckResult(
                         passed=False,

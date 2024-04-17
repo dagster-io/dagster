@@ -1,5 +1,5 @@
 import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
-import {Fragment, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import {Fragment, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
@@ -28,6 +28,7 @@ type Args<TValue> = {
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
   selectAllText?: React.ReactNode;
+  canSelectAll?: boolean;
   menuWidth?: number | string;
   closeOnSelect?: boolean;
 };
@@ -55,6 +56,7 @@ export function useStaticSetFilter<TValue>({
   matchType = 'any-of',
   closeOnSelect = false,
   selectAllText,
+  canSelectAll = true,
 }: Args<TValue>): StaticSetFilter<TValue> {
   const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
 
@@ -69,13 +71,20 @@ export function useStaticSetFilter<TValue>({
   // This filter can be used as both a controlled and an uncontrolled component necessitating an innerState for the uncontrolled case.
   const [innerState, setState] = useState(() => new Set(state || []));
 
-  useEffect(() => {
-    onStateChanged?.(innerState);
+  const isFirstRenderRef = useRef(true);
+
+  useLayoutEffect(() => {
+    if (!isFirstRenderRef.current) {
+      onStateChanged?.(innerState);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [innerState]);
 
   useEffect(() => {
-    setState(state ? new Set(state) : new Set());
+    if (!isFirstRenderRef.current) {
+      setState(state ? new Set(state) : new Set());
+    }
+    isFirstRenderRef.current = false;
   }, [state]);
 
   const currentQueryRef = useRef<string>('');
@@ -120,7 +129,7 @@ export function useStaticSetFilter<TValue>({
               value,
             }));
         }
-        if (allowMultipleSelections && results.length) {
+        if (allowMultipleSelections && results.length > 1 && canSelectAll) {
           return [
             {
               label: (

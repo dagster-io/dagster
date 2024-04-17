@@ -21,8 +21,6 @@ from upath import UPath
 from dagster_azure.adls2.resources import ADLS2Resource
 from dagster_azure.adls2.utils import ResourceNotFoundError
 
-_LEASE_DURATION = 60  # One minute
-
 
 class PickledObjectADLS2IOManager(UPathIOManager):
     def __init__(
@@ -32,7 +30,11 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         blob_client: Any,
         lease_client_constructor: Any,
         prefix: str = "dagster",
+        lease_duration: int = 60,
     ):
+        if lease_duration != -1 and (lease_duration < 15 or lease_duration > 60):
+            raise ValueError("lease_duration must be -1 (unlimited) or between 15 and 60")
+
         self.adls2_client = adls2_client
         self.file_system_client = self.adls2_client.get_file_system_client(file_system)
         # We also need a blob client to handle copying as ADLS doesn't have a copy API yet
@@ -41,7 +43,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         self.prefix = check.str_param(prefix, "prefix")
 
         self.lease_client_constructor = lease_client_constructor
-        self.lease_duration = _LEASE_DURATION
+        self.lease_duration = lease_duration
         self.file_system_client.get_file_system_properties()
         super().__init__(base_path=UPath(self.prefix))
 
@@ -74,12 +76,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return True
 
     def _uri_for_path(self, path: UPath, protocol: str = "abfss://") -> str:
-        return "{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}".format(
-            protocol=protocol,
-            filesystem=self.file_system_client.file_system_name,
-            account=self.file_system_client.account_name,
-            key=path.as_posix(),
-        )
+        return f"{protocol}{self.file_system_client.file_system_name}@{self.file_system_client.account_name}.dfs.core.windows.net/{path.as_posix()}"
 
     @contextmanager
     def _acquire_lease(self, client: Any, is_rm: bool = False) -> Iterator[str]:

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {useFeatureFlags} from './Flags';
 import {LayoutContext} from './LayoutProvider';
 import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
 
@@ -11,6 +12,7 @@ interface Props {
 
 export const App = ({banner, children}: Props) => {
   const {nav} = React.useContext(LayoutContext);
+  const {flagSettingsPage} = useFeatureFlags();
 
   const onClickMain = React.useCallback(() => {
     if (nav.isSmallScreen) {
@@ -20,8 +22,12 @@ export const App = ({banner, children}: Props) => {
 
   return (
     <Container>
-      <LeftNav />
-      <Main $smallScreen={nav.isSmallScreen} $navOpen={nav.isOpen} onClick={onClickMain}>
+      {flagSettingsPage ? null : <LeftNav />}
+      <Main
+        $smallScreen={nav.isSmallScreen}
+        $navOpen={nav.isOpen && !flagSettingsPage}
+        onClick={onClickMain}
+      >
         <div>{banner}</div>
         <ChildContainer>{children}</ChildContainer>
       </Main>

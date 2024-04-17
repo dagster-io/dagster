@@ -1,6 +1,7 @@
 # pyright: reportCallIssue=none
 # pyright: reportOptionalMemberAccess=none
 
+# start_storage_config
 from dagster_embedded_elt.sling import (
     SlingConnectionResource,
     SlingResource,
@@ -19,8 +20,6 @@ target = SlingConnectionResource(
     role="role",
 )
 
-
-# start_storage_config
 source = SlingConnectionResource(
     name="MY_S3",
     type="s3",

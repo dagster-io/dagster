@@ -145,14 +145,18 @@ def test_subset_with_checks():
 
     subbed = abc_.subset_for({a, b, c}, selected_asset_check_keys={check1, check2})
     assert subbed.check_specs_by_output_name == abc_.check_specs_by_output_name
+    assert len(subbed.check_specs_by_output_name) == 2
+    assert len(list(subbed.check_specs)) == 2
     assert subbed.node_check_specs_by_output_name == abc_.node_check_specs_by_output_name
 
     subbed = abc_.subset_for({a, b}, selected_asset_check_keys={check1})
     assert len(subbed.check_specs_by_output_name) == 1
+    assert len(list(subbed.check_specs)) == 1
     assert len(subbed.node_check_specs_by_output_name) == 2
 
     subbed_again = subbed.subset_for({a, b}, selected_asset_check_keys=set())
     assert len(subbed_again.check_specs_by_output_name) == 0
+    assert len(list(subbed_again.check_specs)) == 0
     assert len(subbed_again.node_check_specs_by_output_name) == 2
 
 
@@ -1892,6 +1896,18 @@ def test_multi_asset_nodes_out_names():
         "sales__users",
         "marketing__users",
     }
+
+
+def test_multi_asset_dependencies_captured_in_internal_asset_deps() -> None:
+    @asset
+    def my_upstream_asset() -> int:
+        return 1
+
+    with pytest.raises(CheckError, match="inputs must be associated with an output"):
+
+        @multi_asset(outs={"asset_one": AssetOut()}, internal_asset_deps={"asset_one": set()})
+        def my_multi_asset(my_upstream_asset: int) -> int:
+            return my_upstream_asset + 1
 
 
 def test_asset_spec_deps():

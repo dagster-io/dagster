@@ -12,7 +12,7 @@ from dagster import (
     define_asset_job,
     materialize,
 )
-from dagster._core.definitions.metadata import TableMetadataEntries
+from dagster._core.definitions.metadata import TableMetadataSet
 
 
 def execute_checks(asset_checks, instance=None) -> ExecuteInProcessResult:
@@ -32,11 +32,11 @@ def assert_expected_schema_change(
 ):
     @asset(name="asset1")
     def old():
-        return MaterializeResult(metadata=dict(TableMetadataEntries(column_schema=old_schema)))
+        return MaterializeResult(metadata=dict(TableMetadataSet(column_schema=old_schema)))
 
     @asset(name="asset1")
     def new():
-        return MaterializeResult(metadata=dict(TableMetadataEntries(column_schema=new_schema)))
+        return MaterializeResult(metadata=dict(TableMetadataSet(column_schema=new_schema)))
 
     instance = DagsterInstance.ephemeral()
     materialize([old], instance=instance)

@@ -5,7 +5,7 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
-    ExternalRepositoryOrigin,
+    RemoteRepositoryOrigin,
 )
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class RepositoryHandle(
         return self.code_location_origin.location_name
 
     def get_external_origin(self):
-        return ExternalRepositoryOrigin(
+        return RemoteRepositoryOrigin(
             self.code_location_origin,
             self.repository_name,
         )

@@ -48,10 +48,10 @@ import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
+import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
-import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PageLoadTrace} from '../performance';
@@ -65,27 +65,14 @@ import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipel
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
-
-type Filters = {
-  groups?: AssetGroupSelector[];
-  computeKindTags?: string[];
-  changedInBranch?: ChangeReason[];
-  tags?: DefinitionTag[];
-  owners?: AssetOwner[];
-};
-type OptionalFilters =
-  | {
-      filters: Filters;
-      setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-    }
-  | {filters?: null; setFilters?: null};
 
 type Props = {
   options: GraphExplorerOptions;
   setOptions?: (options: GraphExplorerOptions) => void;
+
+  assetFilterState?: AssetFilterState;
 
   fetchOptions: AssetGraphFetchScope;
 
@@ -94,54 +81,19 @@ type Props = {
   onNavigateToSourceAssetNode: (node: AssetLocation) => void;
   isGlobalGraph?: boolean;
   trace?: PageLoadTrace;
-} & OptionalFilters;
+};
 
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
-
-const emptyArray: any[] = [];
 
 export const AssetGraphExplorer = (props: Props) => {
   const {fetchResult, assetGraphData, fullAssetGraphData, graphQueryItems, allAssetKeys} =
     useAssetGraphData(props.explorerPath.opsQuery, {
       ...props.fetchOptions,
-      computeKinds: props.filters?.computeKindTags,
+      computeKinds: props.assetFilterState?.filters.computeKindTags,
     });
 
-  const {visibleRepos} = React.useContext(WorkspaceContext);
-
-  const assetGroups: AssetGroupSelector[] = React.useMemo(() => {
-    return visibleRepos.flatMap((repo) =>
-      repo.repository.assetGroups.map((g) => ({
-        groupName: g.groupName,
-        repositoryLocationName: repo.repositoryLocation.name,
-        repositoryName: repo.repository.name,
-      })),
-    );
-  }, [visibleRepos]);
-
   const {explorerPath, onChangeExplorerPath} = props;
-
-  const {filters, setFilters} = props;
-
-  const {setComputeKindTags, setGroupFilters, setChangedInBranch, setOwners, setAssetTags} =
-    React.useMemo(() => {
-      function makeSetter<T extends keyof Filters>(field: T) {
-        return (value: Filters[T]) => {
-          setFilters?.((filters) => ({
-            ...filters,
-            [field]: value,
-          }));
-        };
-      }
-      return {
-        setComputeKindTags: makeSetter('computeKindTags'),
-        setGroupFilters: makeSetter('groups'),
-        setChangedInBranch: makeSetter('changedInBranch'),
-        setOwners: makeSetter('owners'),
-        setAssetTags: makeSetter('tags'),
-      };
-    }, [setFilters]);
 
   const {button, filterBar} = useAssetGraphExplorerFilters({
     nodes: React.useMemo(
@@ -149,16 +101,7 @@ export const AssetGraphExplorer = (props: Props) => {
       [fullAssetGraphData],
     ),
     isGlobalGraph: !!props.isGlobalGraph,
-    assetGroups,
-    visibleAssetGroups: React.useMemo(() => props.filters?.groups || [], [props.filters?.groups]),
-    setGroupFilters: filters?.groups ? setGroupFilters : undefined,
-    computeKindTags: filters?.computeKindTags || emptyArray,
-    setComputeKindTags: filters?.computeKindTags ? setComputeKindTags : undefined,
-    changedInBranch: React.useMemo(
-      () => filters?.changedInBranch || [],
-      [filters?.changedInBranch],
-    ),
-    setChangedInBranch: filters?.changedInBranch ? setChangedInBranch : undefined,
+    assetFilterState: props.assetFilterState,
     explorerPath: explorerPath.opsQuery,
     clearExplorerPath: React.useCallback(() => {
       onChangeExplorerPath(
@@ -169,10 +112,6 @@ export const AssetGraphExplorer = (props: Props) => {
         'push',
       );
     }, [explorerPath, onChangeExplorerPath]),
-    assetTags: filters?.tags || emptyArray,
-    setAssetTags: filters?.tags ? setAssetTags : undefined,
-    owners: filters?.owners || emptyArray,
-    setOwners: filters?.owners ? setOwners : undefined,
   });
 
   return (
@@ -235,8 +174,7 @@ const AssetGraphExplorerWithData = ({
   allAssetKeys,
   filterButton,
   filterBar,
-  filters,
-  setFilters,
+  assetFilterState,
   isGlobalGraph = false,
   trace,
 }: WithDataProps) => {
@@ -493,16 +431,13 @@ const AssetGraphExplorerWithData = ({
   const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    setFilters?.({
-      ...filters,
-      groups: [
-        {
-          groupName: group.groupName,
-          repositoryName: group.repositoryName,
-          repositoryLocationName: group.repositoryLocationName,
-        },
-      ],
-    });
+    assetFilterState?.setGroups([
+      {
+        groupName: group.groupName,
+        repositoryName: group.repositoryName,
+        repositoryLocationName: group.repositoryLocationName,
+      },
+    ]);
   };
 
   const areAllGroupsCollapsed = expandedGroups.length === 0;
@@ -703,6 +638,7 @@ const AssetGraphExplorerWithData = ({
       identifier="asset-graph-explorer"
       firstInitialPercent={70}
       firstMinSize={400}
+      secondMinSize={400}
       first={
         <ErrorBoundary region="graph">
           {graphQueryItems.length === 0 ? (
@@ -876,6 +812,7 @@ const AssetGraphExplorerWithData = ({
         identifier="explorer-wrapper"
         firstMinSize={300}
         firstInitialPercent={0}
+        secondMinSize={400}
         first={
           showSidebar ? (
             <AssetGraphExplorerSidebar

@@ -483,7 +483,7 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
     @final
     def get_opened_payload(self) -> PipesOpenedData:
         """Return a payload containing information about the external process to be passed back to
-        the the orchestration process. This should contain information that cannot be known before
+        the orchestration process. This should contain information that cannot be known before
         the external process is launched.
 
         This method should not be overridden by users. Instead, users should

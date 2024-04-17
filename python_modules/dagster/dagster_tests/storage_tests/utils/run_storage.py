@@ -19,8 +19,8 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.remote_representation import (
-    ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.snap import create_job_snapshot_id
@@ -91,7 +91,7 @@ class TestRunStorage:
     @staticmethod
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
-        return ExternalRepositoryOrigin(
+        return RemoteRepositoryOrigin(
             ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
@@ -936,7 +936,7 @@ class TestRunStorage:
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete")
 
-        run_id = "some_run_id"
+        run_id = make_new_run_id()
         run = DagsterRun(run_id=run_id, job_name="a_pipeline", tags={"foo": "bar"})
 
         storage.add_run(run)
@@ -949,7 +949,7 @@ class TestRunStorage:
         assert dict(storage.get_run_tags(tag_keys=["foo"])) == {}
 
     def test_write_conflicting_run_id(self, storage: RunStorage):
-        double_run_id = "double_run_id"
+        double_run_id = make_new_run_id()
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         run = DagsterRun(run_id=double_run_id, job_name=job_def.name)

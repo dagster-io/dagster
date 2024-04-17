@@ -180,6 +180,11 @@ def _build_airbyte_assets_from_metadata(
                     else None
                 ),
                 dagster_type=Nothing,
+                auto_materialize_policy=assets_defn_meta.auto_materialize_policies_by_output_name.get(
+                    k, None
+                )
+                if assets_defn_meta.auto_materialize_policies_by_output_name
+                else None,
             )
             for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
         },
@@ -227,6 +232,7 @@ def build_airbyte_assets(
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     stream_to_asset_map: Optional[Mapping[str, str]] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Sequence[AssetsDefinition]:
     """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
@@ -247,6 +253,7 @@ def build_airbyte_assets(
         freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
         stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
             This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
+        auto_materialize_policy (Optional[AutoMaterializePolicy]): An auto materialization policy to apply to the assets.
     """
     if upstream_assets is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
@@ -270,6 +277,7 @@ def build_airbyte_assets(
                 else None
             ),
             freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
         )
         for table in tables
     }
@@ -774,8 +782,8 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 check.invariant(
                     len(state_files) <= 1,
-                    "More than one state file found for connection {} in {}, specify a workspace_id"
-                    " to disambiguate".format(connection_name, connection_dir),
+                    f"More than one state file found for connection {connection_name} in {connection_dir}, specify a workspace_id"
+                    " to disambiguate",
                 )
                 state_file = state_files[0]
 

@@ -88,8 +88,8 @@ def launch_reexecution_from_parent_run(
     )
     origin = check.not_none(parent_run.external_job_origin)
     selector = JobSubsetSelector(
-        location_name=origin.external_repository_origin.code_location_origin.location_name,
-        repository_name=origin.external_repository_origin.repository_name,
+        location_name=origin.repository_origin.code_location_origin.location_name,
+        repository_name=origin.repository_origin.repository_name,
         job_name=parent_run.job_name,
         asset_selection=parent_run.asset_selection,
         asset_check_selection=parent_run.asset_check_selection,

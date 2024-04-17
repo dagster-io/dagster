@@ -120,28 +120,26 @@ setup(
     extras_require={
         "docker": ["docker"],
         "test": [
-            "buildkite-test-collector ; python_version>='3.8'",
+            "buildkite-test-collector",
             "docker",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mock==3.0.5",
             "mypy-protobuf",
             "objgraph",
             "pytest-cov==2.10.1",
-            "pytest-dependency==0.5.1",
             "pytest-mock==3.3.1",
             "pytest-rerunfailures==10.0",
-            "pytest-runner==5.2",
-            "pytest-xdist==3.3.1",
+            "pytest-xdist==3.5.0",
             "pytest>=7.0.1",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
             "tox==3.25.0",
-            "morefs[asynclocal]; python_version>='3.8'",
+            "morefs[asynclocal]",
             "rapidfuzz",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
-            "pyright==1.1.349",
+            "pyright==1.1.356",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -165,7 +163,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.3.0",
+            "ruff==0.3.4",
         ],
     },
     entry_points={

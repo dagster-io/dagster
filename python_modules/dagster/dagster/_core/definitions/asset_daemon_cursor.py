@@ -160,7 +160,7 @@ def get_backcompat_asset_condition_evaluation_state(
         max_storage_id=latest_storage_id,
         # the only information we need to preserve from the previous cursor is the handled subset
         extra_state_by_unique_id={
-            RuleCondition(MaterializeOnMissingRule()).unique_id: handled_root_subset,
+            RuleCondition(rule=MaterializeOnMissingRule()).unique_id: handled_root_subset,
         }
         if handled_root_subset and handled_root_subset.size > 0
         else {},
@@ -241,7 +241,9 @@ def backcompat_deserialize_asset_daemon_cursor_str(
         if not latest_evaluation_result:
             partitions_def = asset_graph.get(asset_key).partitions_def if asset_graph else None
             latest_evaluation_result = AssetConditionEvaluation(
-                condition_snapshot=AssetConditionSnapshot("", "", ""),
+                condition_snapshot=AssetConditionSnapshot(
+                    class_name="", description="", unique_id=""
+                ),
                 true_subset=AssetSubset.empty(asset_key, partitions_def),
                 candidate_subset=AssetSubset.empty(asset_key, partitions_def),
                 start_timestamp=None,

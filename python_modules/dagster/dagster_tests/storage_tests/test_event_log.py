@@ -22,6 +22,7 @@ from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.sql import create_engine
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
+from dagster._core.utils import make_new_run_id
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy.engine import Connection
 
@@ -65,25 +66,30 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             storage.get_logs_for_run("foo")
 
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):
-        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("foo")))
-        with storage.run_connection("foo") as conn:
+        run_id_1, run_id_2 = [make_new_run_id() for _ in range(2)]
+        SqlEventLogStorageMetadata.create_all(
+            create_engine(storage.conn_string_for_shard(run_id_1))
+        )
+        with storage.run_connection(run_id_1) as conn:
             event_insert = SqlEventLogStorageTable.insert().values(
-                run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
+                run_id=run_id_1, event="{bar}", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
 
         with pytest.raises(DagsterEventLogInvalidForRun):
-            storage.get_logs_for_run("foo")
+            storage.get_logs_for_run(run_id_1)
 
-        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("bar")))
+        SqlEventLogStorageMetadata.create_all(
+            create_engine(storage.conn_string_for_shard(run_id_2))
+        )
 
-        with storage.run_connection("bar") as conn:
+        with storage.run_connection(run_id_2) as conn:
             event_insert = SqlEventLogStorageTable.insert().values(
-                run_id="bar", event="3", dagster_event_type=None, timestamp=None
+                run_id=run_id_2, event="3", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
         with pytest.raises(DagsterEventLogInvalidForRun):
-            storage.get_logs_for_run("bar")
+            storage.get_logs_for_run(run_id_2)
 
     def cmd(self, exceptions, tmpdir_path):
         storage = SqliteEventLogStorage(tmpdir_path)

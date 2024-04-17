@@ -76,7 +76,7 @@ from .inputs import (
     UnresolvedMappedStepInput,
 )
 from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
-from .state import KnownExecutionState, StepOutputVersionData
+from .state import KnownExecutionState
 from .step import (
     ExecutionStep,
     IExecutionStep,
@@ -714,9 +714,7 @@ class ExecutionPlan(
 
     @property
     def step_output_versions(self) -> Mapping[StepOutputHandle, str]:
-        return StepOutputVersionData.get_version_dict_from_list(
-            self.known_state.step_output_versions if self.known_state else []
-        )
+        return self.known_state.step_output_versions if self.known_state else {}
 
     @property
     def step_keys_to_execute(self) -> Sequence[str]:
@@ -749,7 +747,7 @@ class ExecutionPlan(
 
     def get_executable_step_by_key(self, key: str) -> ExecutionStep:
         step = self.get_step_by_key(key)
-        return cast(ExecutionStep, check.inst(step, ExecutionStep))
+        return check.inst(step, ExecutionStep)
 
     def get_all_steps_in_topo_order(self) -> Sequence[IExecutionStep]:
         return [step for step_level in self.get_all_steps_by_level() for step in step_level]
@@ -867,11 +865,10 @@ class ExecutionPlan(
         # If step output versions were provided when constructing the subset plan, add them to the
         # known state.
         if len(step_output_versions) > 0:
-            versions = StepOutputVersionData.get_version_list_from_dict(step_output_versions)  # type: ignore  # (possible none)
             if self.known_state:
-                known_state = self.known_state._replace(step_output_versions=versions)
+                known_state = self.known_state._replace(step_output_versions=step_output_versions)
             else:
-                known_state = KnownExecutionState(step_output_versions=versions)
+                known_state = KnownExecutionState(step_output_versions=step_output_versions)  # type: ignore  # (possible none)
         else:
             known_state = self.known_state
 
@@ -1126,11 +1123,8 @@ class ExecutionPlan(
             if step_snap.kind == StepKind.COMPUTE:
                 step: IExecutionStep = ExecutionStep(
                     check.inst(
-                        cast(
-                            Union[StepHandle, ResolvedFromDynamicStepHandle],
-                            step_snap.step_handle,
-                        ),
-                        ttype=(StepHandle, ResolvedFromDynamicStepHandle),
+                        step_snap.step_handle,
+                        (StepHandle, ResolvedFromDynamicStepHandle),
                     ),
                     job_name,
                     step_inputs,  # type: ignore  # (plain StepInput only)
@@ -1140,8 +1134,8 @@ class ExecutionPlan(
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
                     check.inst(
-                        cast(UnresolvedStepHandle, step_snap.step_handle),
-                        ttype=UnresolvedStepHandle,
+                        step_snap.step_handle,
+                        UnresolvedStepHandle,
                     ),
                     job_name,
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedMappedStepInput only)
@@ -1150,7 +1144,7 @@ class ExecutionPlan(
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
-                    check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
+                    check.inst(step_snap.step_handle, StepHandle),
                     job_name,
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedCollectStepInput only)
                     step_outputs,

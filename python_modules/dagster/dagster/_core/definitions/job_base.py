@@ -6,6 +6,7 @@ from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from .job_definition import JobDefinition
+    from .repository_definition import RepositoryDefinition
 
 
 class IJob(ABC):
@@ -17,6 +18,10 @@ class IJob(ABC):
 
     @abstractmethod
     def get_definition(self) -> "JobDefinition":
+        pass
+
+    @abstractmethod
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
         pass
 
     @abstractmethod
@@ -58,6 +63,9 @@ class InMemoryJob(IJob):
 
     def get_definition(self) -> "JobDefinition":
         return self._job_def
+
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
+        return None
 
     def get_subset(
         self,

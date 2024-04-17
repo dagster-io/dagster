@@ -315,11 +315,8 @@ def _get_dbt_op(
         required_resource_keys={dbt_resource_key},
     )
     def _dbt_op(context: OpExecutionContext, config: DbtOpConfig):
-        dbt_resource: Union[DbtCliResource, DbtCliClient] = getattr(
-            context.resources, dbt_resource_key
-        )
-        check.inst(
-            dbt_resource,
+        dbt_resource = check.inst(
+            dbt_resource := getattr(context.resources, dbt_resource_key),
             (DbtCliResource, DbtCliClient),
             "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
             f" object, but is a {type(dbt_resource)}",

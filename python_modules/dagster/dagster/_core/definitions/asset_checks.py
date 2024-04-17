@@ -6,7 +6,7 @@ from typing import (
 )
 
 from dagster import _check as check
-from dagster._annotations import experimental
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
@@ -63,7 +63,7 @@ def has_only_asset_checks(assets_def: AssetsDefinition) -> bool:
     return len(assets_def.keys) == 0 and len(assets_def.check_keys) > 0
 
 
-@experimental
+@deprecated(breaking_version="1.8", additional_warn_text="Use @asset_check(blocking=True) instead")
 def build_asset_with_blocking_check(
     asset_def: "AssetsDefinition",
     checks: Sequence["AssetsDefinition"],

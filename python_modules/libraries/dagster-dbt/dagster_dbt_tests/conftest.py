@@ -57,11 +57,13 @@ def disable_openblas_threading_affinity_fixture() -> None:
 def _create_dbt_invocation(project_dir: Path, build_project: bool = False) -> DbtCliInvocation:
     dbt = DbtCliResource(project_dir=os.fspath(project_dir), global_config_flags=["--quiet"])
 
-    dbt.cli(["deps"]).wait()
+    if not project_dir.joinpath("dbt_packages").exists():
+        dbt.cli(["deps"], raise_on_error=False).wait()
+
     dbt_invocation = dbt.cli(["compile"]).wait()
 
     if build_project:
-        dbt.cli(["build"], raise_on_error=False).wait()
+        dbt.cli(["build", "--exclude", "resource_type:test"], raise_on_error=False).wait()
 
     return dbt_invocation
 

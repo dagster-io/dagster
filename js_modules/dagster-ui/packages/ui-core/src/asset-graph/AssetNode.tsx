@@ -36,7 +36,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         style={{minHeight: 24}}
       >
-        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
+        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
         <ChangedReasonsTag
           changedReasons={definition.changedReasons}
           assetKey={definition.assetKey}
@@ -185,7 +185,7 @@ export const AssetNodeMinimal = ({
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   const isChanged = definition.changedReasons.length;
-  const isStale = isAssetStale(assetKey, liveData, 'upstream');
+  const isStale = isAssetStale(liveData);
 
   const queuedRuns = liveData?.unstartedRunIds.length;
   const inProgressRuns = liveData?.inProgressRunIds.length;
@@ -213,9 +213,7 @@ export const AssetNodeMinimal = ({
                 assetKey={assetKey}
               />
             ) : null}
-            {isStale ? (
-              <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} include="upstream" />
-            ) : null}
+            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
             <MinimalName style={{fontSize: 28}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 20})}
             </MinimalName>

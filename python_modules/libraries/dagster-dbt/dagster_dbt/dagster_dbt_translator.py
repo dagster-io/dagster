@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 from dagster import (
     AssetKey,
@@ -14,7 +14,6 @@ from dagster._core.definitions.asset_key import (
     check_opt_coercible_to_asset_key_prefix_param,
 )
 from dagster._core.definitions.utils import is_valid_definition_tag_key
-from dagster._core.storage.tags import TAG_NO_VALUE
 
 from .asset_utils import (
     default_asset_key_fn,
@@ -23,6 +22,7 @@ from .asset_utils import (
     default_freshness_policy_fn,
     default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props,
+    default_owners_from_dbt_resource_props,
 )
 
 
@@ -32,12 +32,12 @@ class DagsterDbtTranslatorSettings:
 
     Args:
         enable_asset_checks (bool): Whether to load dbt tests as Dagster asset checks.
-            Defaults to False.
+            Defaults to True.
         enable_duplicate_source_asset_keys (bool): Whether to allow dbt sources with duplicate
             Dagster asset keys. Defaults to False.
     """
 
-    enable_asset_checks: bool = False
+    enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
 
 
@@ -64,9 +64,8 @@ class DagsterDbtTranslator:
 
         return self._settings
 
-    @classmethod
     @public
-    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster asset key that represents that resource.
 
@@ -95,8 +94,7 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+                    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
                         return super().get_asset_key(dbt_resource_props).with_prefix("prefix")
 
             Adding a prefix to the default asset key generated for each dbt resource, but only for dbt sources:
@@ -110,8 +108,7 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+                    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
                         asset_key = super().get_asset_key(dbt_resource_props)
 
                         if dbt_resource_props["resource_type"] == "source":
@@ -121,10 +118,9 @@ class DagsterDbtTranslator:
         """
         return default_asset_key_fn(dbt_resource_props)
 
-    @classmethod
     @public
     def get_partition_mapping(
-        cls,
+        self,
         dbt_resource_props: Mapping[str, Any],
         dbt_parent_resource_props: Mapping[str, Any],
     ) -> Optional[PartitionMapping]:
@@ -152,9 +148,8 @@ class DagsterDbtTranslator:
         """
         return None
 
-    @classmethod
     @public
-    def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
+    def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster description for that resource.
 
@@ -180,15 +175,13 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
+                    def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
                         return "custom description"
         """
         return default_description_fn(dbt_resource_props)
 
-    @classmethod
     @public
-    def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
+    def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster metadata for that resource.
 
@@ -214,15 +207,13 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
+                    def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
                         return {"custom": "metadata"}
         """
         return default_metadata_from_dbt_resource_props(dbt_resource_props)
 
-    @classmethod
     @public
-    def get_tags(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+    def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster tags for that resource.
 
@@ -255,16 +246,14 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_tags(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+                    def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
                         return {"custom": "tag"}
         """
         tags = dbt_resource_props.get("tags", [])
-        return {tag: TAG_NO_VALUE for tag in tags if is_valid_definition_tag_key(tag)}
+        return {tag: "" for tag in tags if is_valid_definition_tag_key(tag)}
 
-    @classmethod
     @public
-    def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster group name for that resource.
 
@@ -290,16 +279,46 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+                    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
                         return "custom_group_prefix" + dbt_resource_props.get("config", {}).get("group")
         """
         return default_group_from_dbt_resource_props(dbt_resource_props)
 
-    @classmethod
+    @public
+    def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Optional[Sequence[str]]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster owners for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        This method can be overridden to provide custom owners for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[Sequence[str]]: A set of Dagster owners.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Optional[Sequence[str]]:
+                        return ["user@owner.com", "team:team@owner.com"]
+        """
+        return default_owners_from_dbt_resource_props(dbt_resource_props)
+
     @public
     def get_freshness_policy(
-        cls, dbt_resource_props: Mapping[str, Any]
+        self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[FreshnessPolicy]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.FreshnessPolicy` for that resource.
@@ -328,8 +347,7 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_freshness_policy(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+                    def get_freshness_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
                         return FreshnessPolicy(maximum_lag_minutes=60)
 
             Set a custom freshness policy for dbt resources with a specific tag:
@@ -342,8 +360,7 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_freshness_policy(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+                    def get_freshness_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
                         freshness_policy = None
                         if "my_custom_tag" in dbt_resource_props.get("tags", []):
                             freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
@@ -352,10 +369,9 @@ class DagsterDbtTranslator:
         """
         return default_freshness_policy_fn(dbt_resource_props)
 
-    @classmethod
     @public
     def get_auto_materialize_policy(
-        cls, dbt_resource_props: Mapping[str, Any]
+        self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.AutoMaterializePolicy` for that resource.
@@ -384,8 +400,7 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_auto_materialize_policy(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[AutoMaterializePolicy]:
+                    def get_auto_materialize_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutoMaterializePolicy]:
                         return AutoMaterializePolicy.eager()
 
             Set a custom auto-materialize policy for dbt resources with a specific tag:
@@ -398,8 +413,7 @@ class DagsterDbtTranslator:
 
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    @classmethod
-                    def get_auto_materialize_policy(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[AutoMaterializePolicy]:
+                    def get_auto_materialize_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutoMaterializePolicy]:
                         auto_materialize_policy = None
                         if "my_custom_tag" in dbt_resource_props.get("tags", []):
                             auto_materialize_policy = AutoMaterializePolicy.eager()

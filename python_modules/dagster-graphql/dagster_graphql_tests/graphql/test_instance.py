@@ -1,5 +1,6 @@
 from typing import Any
 
+from dagster._core.utils import make_new_run_id
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -112,7 +113,7 @@ class TestInstanceSettings(BaseTestSuite):
         assert foo["pendingSteps"] == []
 
         # claim a slot
-        run_id = "fake_run_id"
+        run_id = make_new_run_id()
         instance.event_log_storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
         foo = _fetch_limits("foo")
         assert foo["concurrencyKey"] == "foo"
@@ -157,8 +158,8 @@ class TestInstanceSettings(BaseTestSuite):
         storage.set_concurrency_slots("foo", 1)
 
         # claim the slot
-        run_id = "fake_run_id"
-        run_id_2 = "fake_run_id_2"
+        run_id = make_new_run_id()
+        run_id_2 = make_new_run_id()
         storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
         # add pending steps
         storage.claim_concurrency_slot("foo", run_id, "fake_step_key_2")
@@ -209,8 +210,8 @@ class TestInstanceSettings(BaseTestSuite):
         storage.set_concurrency_slots("foo", 1)
 
         # claim the slot
-        run_id = "fake_run_id"
-        run_id_2 = "fake_run_id_2"
+        run_id = make_new_run_id()
+        run_id_2 = make_new_run_id()
         storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
         # add pending steps
         storage.claim_concurrency_slot("foo", run_id, "fake_step_key_2")

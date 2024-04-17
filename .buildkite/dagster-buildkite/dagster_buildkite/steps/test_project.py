@@ -66,10 +66,8 @@ def build_test_project_steps() -> List[GroupStep]:
                 "docker push $${TEST_PROJECT_IMAGE}",
             )
             .on_python_image(
-                "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
-                    python_version=AvailablePythonVersion.V3_8,  # py version can be bumped when rebuilt
-                    image_version=BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
-                ),
+                # py version can be bumped when rebuilt
+                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_8}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
                 [
                     "AIRFLOW_HOME",
                     "AWS_ACCOUNT_ID",

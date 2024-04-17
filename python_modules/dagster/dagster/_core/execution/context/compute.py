@@ -44,6 +44,9 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
@@ -93,6 +96,11 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     @abstractmethod
     def job_def(self) -> JobDefinition:
         """The job being executed."""
+
+    @property
+    @abstractmethod
+    def repository_def(self) -> RepositoryDefinition:
+        """The Dagster repository containing the job being executed."""
 
     @property
     @abstractmethod
@@ -175,9 +183,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @property
     def dagster_run(self) -> DagsterRun:
-        """PipelineRun: The current pipeline run."""
+        """DagsterRun: The current run."""
         return self._step_execution_context.dagster_run
 
+    @public
     @property
     def run(self) -> DagsterRun:
         """DagsterRun: The current run."""
@@ -232,8 +241,13 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def job_def(self) -> JobDefinition:
-        """JobDefinition: The currently executing pipeline."""
+        """JobDefinition: The currently executing job."""
         return self._step_execution_context.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        """RepositoryDefinition: The Dagster repository for the currently executing job."""
+        return self._step_execution_context.repository_def
 
     @public
     @property
@@ -1344,7 +1358,7 @@ USE_OP_CONTEXT = [
 
 
 def _get_deprecation_kwargs(attr: str) -> Mapping[str, Any]:
-    deprecation_kwargs = {"breaking_version": "1.8.0"}
+    deprecation_kwargs = {"breaking_version": "a future release"}
     deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
 
     if attr in ALTERNATE_METHODS:
@@ -1439,6 +1453,11 @@ class AssetExecutionContext(OpExecutionContext):
         Returns: JobDefinition.
         """
         return self.op_execution_context.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        """RepositoryDefinition: The Dagster repository for the currently executing job."""
+        return self.op_execution_context.repository_def
 
     ######## Deprecated methods
 
@@ -1847,6 +1866,11 @@ class AssetCheckExecutionContext:
         Returns: JobDefinition.
         """
         return self.op_execution_context.job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        """RepositoryDefinition: The Dagster repository for the currently executing job."""
+        return self.op_execution_context.repository_def
 
     #### check related
     @public

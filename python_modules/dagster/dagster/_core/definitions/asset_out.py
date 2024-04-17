@@ -11,7 +11,6 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
-from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
@@ -65,8 +64,8 @@ class AssetOut(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
         code_version (Optional[str]): The version of the code that generates this asset.
-        freshness_policy (Optional[FreshnessPolicy]): A policy which indicates how up to date this
-            asset is intended to be.
+        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
+            to date this asset is intended to be.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
@@ -85,7 +84,7 @@ class AssetOut(
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,

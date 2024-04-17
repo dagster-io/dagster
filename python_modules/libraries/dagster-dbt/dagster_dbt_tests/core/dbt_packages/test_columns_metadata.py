@@ -9,18 +9,18 @@ from dagster import (
     AssetKey,
     AssetSelection,
     TableColumn,
+    TableColumnDep,
+    TableColumnLineage,
     TableSchema,
     materialize,
 )
-from dagster._core.definitions.metadata import TableMetadataEntries
-from dagster._core.definitions.metadata.table import (
-    TableColumnDep,
-    TableColumnLineage,
-)
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dbt.version import __version__ as dbt_version
 from packaging import version
+from pytest_mock import MockFixture
+from sqlglot import Dialect
 
 from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
 
@@ -37,7 +37,7 @@ def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_schema
+        not TableMetadataSet.extract(event.materialization.metadata).column_schema
         for event in result.get_asset_materialization_events()
     )
 
@@ -55,7 +55,7 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     assert result.success
 
     table_schema_by_asset_key = {
-        event.materialization.asset_key: TableMetadataEntries.extract(
+        event.materialization.asset_key: TableMetadataSet.extract(
             event.materialization.metadata
         ).column_schema
         for event in result.get_asset_materialization_events()
@@ -101,7 +101,35 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_lineage
+        not TableMetadataSet.extract(event.materialization.metadata).column_lineage
+        for event in result.get_asset_materialization_events()
+    )
+
+
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.6.0"),
+    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
+)
+def test_exception_column_lineage(
+    mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+) -> None:
+    mocker.patch(
+        "dagster_dbt.core.resources_v2.DbtCliEventMessage._build_column_lineage_metadata",
+        side_effect=Exception("An error occurred"),
+    )
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+
+    assert result.success
+    assert all(
+        not TableMetadataSet.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
 
@@ -127,22 +155,45 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
         "--select select_star_customers",
     ],
 )
+@pytest.mark.parametrize(
+    "sql_dialect",
+    [
+        "bigquery",
+        "clickhouse",
+        "databricks",
+        "duckdb",
+        "redshift",
+        "snowflake",
+        "trino",
+    ],
+)
 def test_column_lineage(
-    test_metadata_manifest: Dict[str, Any], asset_key_selection: Optional[AssetKey]
+    test_metadata_manifest: Dict[str, Any],
+    sql_dialect: str,
+    asset_key_selection: Optional[AssetKey],
 ) -> None:
-    @dbt_assets(manifest=test_metadata_manifest)
+    # Simulate the parsing of the SQL into a different dialect.
+    assert Dialect.get_or_raise(sql_dialect)
+
+    manifest = test_metadata_manifest.copy()
+    manifest["metadata"]["adapter_type"] = sql_dialect
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+
+    @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
     result = materialize(
         [my_dbt_assets],
-        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
-        selection=asset_key_selection and AssetSelection.keys(asset_key_selection),
+        resources={"dbt": dbt},
+        selection=asset_key_selection and AssetSelection.assets(asset_key_selection),
     )
     assert result.success
 
     column_lineage_by_asset_key = {
-        event.materialization.asset_key: TableMetadataEntries.extract(
+        event.materialization.asset_key: TableMetadataSet.extract(
             event.materialization.metadata
         ).column_lineage
         for event in result.get_asset_materialization_events()
@@ -172,13 +223,17 @@ def test_column_lineage(
         AssetKey(["stg_customers"]): TableColumnLineage(
             deps_by_column={
                 "customer_id": [
-                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="id")
+                    TableColumnDep(asset_key=AssetKey(["raw_source_customers"]), column_name="id")
                 ],
                 "first_name": [
-                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="first_name")
+                    TableColumnDep(
+                        asset_key=AssetKey(["raw_source_customers"]), column_name="first_name"
+                    )
                 ],
                 "last_name": [
-                    TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="last_name")
+                    TableColumnDep(
+                        asset_key=AssetKey(["raw_source_customers"]), column_name="last_name"
+                    )
                 ],
             }
         ),
@@ -211,19 +266,43 @@ def test_column_lineage(
                     TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="status")
                 ],
                 "credit_card_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "coupon_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "bank_transfer_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "gift_card_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                    TableColumnDep(
+                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
+                    ),
                 ],
                 "amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                ],
+            }
+        ),
+        AssetKey(["duplicate_column_dep_orders"]): TableColumnLineage(
+            deps_by_column={
+                "amount_2x": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="amount")],
+            }
+        ),
+        AssetKey(["incremental_orders"]): TableColumnLineage(
+            deps_by_column={
+                "order_id": [
+                    TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_id")
                 ],
             }
         ),
@@ -281,6 +360,16 @@ def test_column_lineage(
                         asset_key=AssetKey(["customers"]), column_name="customer_lifetime_value"
                     )
                 ],
+            }
+        ),
+        AssetKey(["count_star_customers"]): TableColumnLineage(
+            deps_by_column={
+                "count_star": [],
+            }
+        ),
+        AssetKey(["count_star_implicit_alias_customers"]): TableColumnLineage(
+            deps_by_column={
+                "count_star()": [],
             }
         ),
     }

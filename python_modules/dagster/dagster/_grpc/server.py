@@ -54,7 +54,7 @@ from dagster._core.remote_representation.external_data import (
     external_job_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.remote_representation.origin import ExternalRepositoryOrigin
+from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
@@ -502,7 +502,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _get_repo_for_origin(
         self,
-        external_repo_origin: ExternalRepositoryOrigin,
+        external_repo_origin: RemoteRepositoryOrigin,
     ) -> RepositoryDefinition:
         loaded_repos = check.not_none(self._loaded_repositories)
         if external_repo_origin.repository_name not in loaded_repos.definitions_by_name:
@@ -562,7 +562,7 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
-            self._get_repo_for_origin(execution_plan_args.job_origin.external_repository_origin),
+            self._get_repo_for_origin(execution_plan_args.job_origin.repository_origin),
             execution_plan_args.job_origin.job_name,
             execution_plan_args,
         )
@@ -734,7 +734,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_pipeline_subset_result = serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
-                        job_subset_snapshot_args.job_origin.external_repository_origin
+                        job_subset_snapshot_args.job_origin.repository_origin
                     ),
                     job_subset_snapshot_args.job_origin.job_name,
                     job_subset_snapshot_args.op_selection,
@@ -760,7 +760,7 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             repository_origin = deserialize_value(
                 request.serialized_repository_python_origin,
-                ExternalRepositoryOrigin,
+                RemoteRepositoryOrigin,
             )
 
             return serialize_value(
@@ -789,7 +789,7 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             repository_origin = deserialize_value(
                 request.serialized_repository_origin,
-                ExternalRepositoryOrigin,
+                RemoteRepositoryOrigin,
             )
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
@@ -1018,7 +1018,7 @@ class DagsterApiServer(DagsterApiServicer):
 
             # reconstructable required for handing execution off to subprocess
             recon_repo = check.not_none(self._loaded_repositories).reconstructables_by_name[
-                execute_external_job_args.job_origin.external_repository_origin.repository_name
+                execute_external_job_args.job_origin.repository_origin.repository_name
             ]
             recon_job = recon_repo.get_reconstructable_job(
                 execute_external_job_args.job_origin.job_name

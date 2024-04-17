@@ -15,7 +15,7 @@ from dagster._core.remote_representation import (
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalJobData
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import ExternalRepositoryOrigin
+from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes.serdes import deserialize_value
@@ -107,7 +107,7 @@ def test_giant_external_repository_streaming_grpc():
 
 def test_defer_snapshots(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
-        repo_origin = ExternalRepositoryOrigin(
+        repo_origin = RemoteRepositoryOrigin(
             code_location.origin,
             "bar_repo",
         )

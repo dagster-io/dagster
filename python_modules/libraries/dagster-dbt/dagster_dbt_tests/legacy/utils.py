@@ -21,10 +21,10 @@ def assert_assets_match_project(
     def_outputs = sorted(set(assets_op.output_dict.keys()))
     expected_outputs = sorted(
         [
-            "model_dagster_dbt_test_project_sort_by_calories",
             "model_dagster_dbt_test_project_least_caloric",
-            "model_dagster_dbt_test_project_sort_hot_cereals_by_calories",
+            "model_dagster_dbt_test_project_sort_by_calories",
             "model_dagster_dbt_test_project_sort_cold_cereals_by_calories",
+            "model_dagster_dbt_test_project_sort_hot_cereals_by_calories",
         ]
         + (
             [

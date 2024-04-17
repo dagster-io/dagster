@@ -63,7 +63,7 @@ from dagster._utils.warnings import normalize_renamed_param
 from ..decorator_utils import (
     get_function_params,
 )
-from .asset_selection import AssetSelection
+from .asset_selection import AssetSelection, KeysAssetSelection
 from .graph_definition import GraphDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
@@ -806,8 +806,7 @@ class SensorDefinition(IHasInternalInit):
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
-            item = result[0]
-            check.inst(item, (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
+            item = check.inst(result[0], (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
@@ -1289,7 +1288,7 @@ def _run_requests_with_base_asset_jobs(
             asset_keys = run_request.asset_selection
 
             unexpected_asset_keys = (
-                AssetSelection.keys(*asset_keys) - outer_asset_selection
+                KeysAssetSelection(selected_keys=asset_keys) - outer_asset_selection
             ).resolve(asset_graph)
             if unexpected_asset_keys:
                 raise DagsterInvalidSubsetError(

@@ -51,8 +51,8 @@ from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation import (
     ExternalRepository,
-    ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -183,7 +183,7 @@ def config_job():
 
 def _unloadable_partition_set_origin():
     working_directory = os.path.dirname(__file__)
-    return ExternalRepositoryOrigin(
+    return RemoteRepositoryOrigin(
         InProcessCodeLocationOrigin(
             LoadableTargetOrigin(
                 executable_path=sys.executable,

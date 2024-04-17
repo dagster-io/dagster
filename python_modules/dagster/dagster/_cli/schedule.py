@@ -79,9 +79,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for schedule_origin_id in added_schedules:
         print_fn(
             click.style(
-                "  + {name} (add) [{id}]".format(
-                    name=external_schedules_dict[schedule_origin_id].name, id=schedule_origin_id
-                ),
+                f"  + {external_schedules_dict[schedule_origin_id].name} (add) [{schedule_origin_id}]",
                 fg="green",
             )
         )
@@ -106,10 +104,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for schedule_origin_id in removed_schedules:
         print_fn(
             click.style(
-                "  - {name} (delete) [{id}]".format(
-                    name=schedule_states_dict[schedule_origin_id].instigator_name,
-                    id=schedule_origin_id,
-                ),
+                f"  - {schedule_states_dict[schedule_origin_id].instigator_name} (delete) [{schedule_origin_id}]",
                 fg="red",
             )
         )
@@ -414,9 +409,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 )
                 if schedule_state is not None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
-                        "Cannot restart a schedule {name} because is not currently running".format(
-                            name=schedule_state.instigator_name
-                        )
+                        f"Cannot restart a schedule {schedule_state.instigator_name} because is not currently running"
                     )
 
                 try:

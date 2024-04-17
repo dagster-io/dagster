@@ -26,6 +26,9 @@ import dagster._check as check
 from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
 from dagster._core.definitions.job_base import IJob
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster._core.events import DagsterEvent, RunFailureReason
@@ -94,6 +97,10 @@ class ContextCreationData(NamedTuple):
     def job_def(self) -> JobDefinition:
         return self.job.get_definition()
 
+    @property
+    def repository_def(self) -> Optional[RepositoryDefinition]:
+        return self.job.get_repository_definition()
+
 
 def create_context_creation_data(
     job: IJob,
@@ -139,6 +146,7 @@ def create_execution_data(
         scoped_resources_builder=scoped_resources_builder,
         resolved_run_config=context_creation_data.resolved_run_config,
         job_def=context_creation_data.job_def,
+        repository_def=context_creation_data.repository_def,
     )
 
 

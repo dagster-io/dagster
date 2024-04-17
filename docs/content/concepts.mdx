@@ -38,7 +38,7 @@ An asset is an object in persistent storage, such as a table, file, or persisted
     href="/concepts/assets/asset-selection-syntax"
   ></ArticleListItem>
   <ArticleListItem
-    title="Asset checks (Experimental)"
+    title="Asset checks"
     href="/concepts/assets/asset-checks"
   ></ArticleListItem>
   <ArticleListItem
@@ -151,7 +151,7 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Advanced concepts
 
-### Ops
+### Ops and jobs
 
 Ops typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
 
@@ -190,20 +190,24 @@ An op graph is a set of interconnected ops or sub-graphs. While individual ops t
     title="Dynamic op graphs"
     href="/concepts/ops-jobs-graphs/dynamic-graphs"
   ></ArticleListItem>
-</ArticleList>
-
-### Job execution, metadata, & tags
-
-Learn to execute op and asset jobs, and apply metadata and tags.
-
-<ArticleList>
   <ArticleListItem
     title="Job execution"
     href="/concepts/ops-jobs-graphs/job-execution"
   ></ArticleListItem>
+</ArticleList>
+
+### Metadata & tags
+
+Apply tags and metadata to organize your project and provide useful context to other members of your team.
+
+<ArticleList>
   <ArticleListItem
-    title="Metadata and tags"
-    href="/concepts/ops-jobs-graphs/metadata-tags"
+    title="Tags"
+    href="/concepts/metadata-tags/tags"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op job metadata"
+    href="/concepts/metadata-tags/op-job-metadata"
   ></ArticleListItem>
 </ArticleList>
 
