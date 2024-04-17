@@ -2,21 +2,20 @@ import {
   Box,
   Colors,
   Icon,
+  Popover,
   Spinner,
+  Subtitle2,
   Tag,
   TagIntent,
-  Subtitle2,
-  Popover,
 } from '@dagster-io/ui-components';
-import qs from 'qs';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
 
-import {LiveDataForNode} from '../../asset-graph/Utils';
-import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity, AssetKey} from '../../graphql/types';
 import {CheckStatusRow} from './AssetCheckStatusTag';
 import {assertUnreachable} from '../../app/Util';
 import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
+import {LiveDataForNode} from '../../asset-graph/Utils';
+import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity, AssetKey} from '../../graphql/types';
 
 type AssetCheckIconType =
   | Exclude<
