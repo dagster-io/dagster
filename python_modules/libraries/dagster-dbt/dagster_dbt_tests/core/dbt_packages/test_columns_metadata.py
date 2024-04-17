@@ -78,6 +78,30 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     assert table_schema_by_asset_key == expected_table_schema_by_asset_key
 
 
+def test_exception_column_schema(
+    mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+) -> None:
+    mocker.patch(
+        "dagster_dbt.core.resources_v2.default_metadata_from_dbt_resource_props",
+        side_effect=Exception("An error occurred"),
+    )
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+
+    assert result.success
+    assert all(
+        not TableMetadataSet.extract(event.materialization.metadata).column_schema
+        for event in result.get_asset_materialization_events()
+    )
+
+
 @pytest.mark.skipif(
     version.parse(dbt_version) < version.parse("1.6.0"),
     reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",

@@ -217,8 +217,23 @@ class DbtCliEventMessage:
         unique_id: str = event_node_info["unique_id"]
         invocation_id: str = self.raw_event["info"]["invocation_id"]
         dbt_resource_props = manifest["nodes"][unique_id]
+
+        column_schema_metadata = {}
+        try:
+            column_schema_metadata = default_metadata_from_dbt_resource_props(
+                self._event_history_metadata
+            )
+        except Exception as e:
+            logger.warning(
+                "An error occurred while building column schema metadata from event history"
+                f" `{self._event_history_metadata}` for the dbt resource"
+                f" `{dbt_resource_props['original_file_path']}`."
+                " Column schema metadata will not be included in the event.\n\n"
+                f"Exception: {e}"
+            )
+
         default_metadata = {
-            **default_metadata_from_dbt_resource_props(self._event_history_metadata),
+            **column_schema_metadata,
             "unique_id": unique_id,
             "invocation_id": invocation_id,
         }
