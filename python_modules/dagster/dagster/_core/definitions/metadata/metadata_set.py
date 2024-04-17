@@ -1,20 +1,35 @@
 from abc import ABC, abstractmethod
-from typing import (
-    AbstractSet,
-    Any,
-    Mapping,
-    Optional,
-    Type,
-)
+from functools import lru_cache
+from typing import AbstractSet, Any, Mapping, Optional, Type
 
 from typing_extensions import TypeVar
 
+from dagster import _check as check
 from dagster._model import DagsterModel
 from dagster._model.pydantic_compat_layer import model_fields
+from dagster._utils.typing_api import flatten_annotation_unions
 
 from .metadata_value import MetadataValue, TableColumnLineage, TableSchema
 
 T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
+
+
+# Python types that have a MetadataValue types that directly wraps them
+DIRECTLY_WRAPPED_METADATA_TYPES = {
+    str,
+    float,
+    int,
+    bool,
+    TableSchema,
+    TableColumnLineage,
+    type(None),
+}
+
+T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
+
+
+def is_raw_metadata_type(t: Type) -> bool:
+    return issubclass(t, MetadataValue) or t in DIRECTLY_WRAPPED_METADATA_TYPES
 
 
 class NamespacedMetadataSet(ABC, DagsterModel):
@@ -28,6 +43,20 @@ class NamespacedMetadataSet(ABC, DagsterModel):
         my_metadata: NamespacedMetadataSet = ...
         return MaterializeResult(metadata={**my_metadata, ...})
     """
+
+    def __init__(self, *args, **kwargs):
+        for field_name in model_fields(self).keys():
+            annotation_types = self._get_accepted_types_for_field(field_name)
+            invalid_annotation_types = {
+                annotation_type
+                for annotation_type in annotation_types
+                if not is_raw_metadata_type(annotation_type)
+            }
+            if invalid_annotation_types:
+                check.failed(
+                    f"Type annotation for field '{field_name}' includes invalid metadata type(s): {invalid_annotation_types}"
+                )
+        super().__init__(*args, **kwargs)
 
     @classmethod
     @abstractmethod
@@ -82,9 +111,34 @@ class NamespacedMetadataSet(ABC, DagsterModel):
             if len(splits) == 2:
                 namespace, key = splits
                 if namespace == cls.namespace() and key in model_fields(cls):
-                    kwargs[key] = value.value if isinstance(value, MetadataValue) else value
+                    kwargs[key] = cls._extract_value(field_name=key, value=value)
 
         return cls(**kwargs)
+
+    @classmethod
+    def _extract_value(cls, field_name: str, value: Any) -> Any:
+        """Based on type annotation, potentially coerce the metadata value to its inner value.
+
+        E.g. if the annotation is Optional[float] and the value is FloatMetadataValue, construct
+        the MetadataSet using the inner float.
+        """
+        if isinstance(value, MetadataValue):
+            annotation = model_fields(cls)[field_name].annotation
+            annotation_acceptable_types = set(flatten_annotation_unions(annotation))
+            if (
+                type(value) not in annotation_acceptable_types
+                and type(value.value) in annotation_acceptable_types
+            ):
+                check.invariant(type(value.value) in DIRECTLY_WRAPPED_METADATA_TYPES)
+                return value.value
+
+        return value
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def _get_accepted_types_for_field(cls, field_name: str) -> AbstractSet[Type]:
+        annotation = model_fields(cls)[field_name].annotation
+        return set(flatten_annotation_unions(annotation))
 
 
 class TableMetadataSet(NamespacedMetadataSet):
