@@ -23,7 +23,7 @@ class StubHNClient(ConfigurableResource):
                 "score": 5,
                 "title": "the first comment",
                 "descendants": 1,
-                "url": "foo"
+                "url": "foo",
             },
             2: {
                 "id": 2,
@@ -36,9 +36,10 @@ class StubHNClient(ConfigurableResource):
                 "score": 7,
                 "title": "an awesome story",
                 "descendants": 1,
-                "url": "bar"
+                "url": "bar",
             },
         }
+
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         return self.data.get(item_id)
 
