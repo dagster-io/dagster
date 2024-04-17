@@ -78,7 +78,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     () => groupedAssets.flatMap((group) => group.assets.map((asset) => asset.key)) ?? [],
     [groupedAssets],
   );
-  const {liveDataByNode} = useAssetsBaseData(orderedAssets);
+  const {liveDataByNode} = useAssetsBaseData(orderedAssets, 'OverviewAssetsRoot');
   const trace = usePageLoadTrace('OverviewAssetsRoot');
   const isFullyLoaded = Object.keys(liveDataByNode).length === orderedAssets.length;
   React.useEffect(() => {
@@ -231,10 +231,7 @@ function VirtualRow({height, start, group}: RowProps) {
     [group.assets],
   );
 
-  const {liveDataByNode} = useAssetsBaseData(
-    assetKeys,
-    (group.groupName ?? 'overview-assets-root') as any,
-  );
+  const {liveDataByNode} = useAssetsBaseData(assetKeys);
   const trace = usePageLoadTrace('OverviewAssetsRoot:GroupBatch');
 
   const statuses = React.useMemo(() => {
