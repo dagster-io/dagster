@@ -1015,7 +1015,7 @@ def test_run_request_partition_order():
 @pytest.mark.parametrize("batch_size", [0, 2, 10])
 @pytest.mark.parametrize("throw_store_event_batch_error", [False, True])
 def test_single_run_backfill_full_execution(
-    batch_size: int, throw_store_event_batch_error: bool, capsys
+    batch_size: int, throw_store_event_batch_error: bool, capsys, monkeypatch
 ):
     time_now = pendulum.now("UTC")
 
@@ -1045,7 +1045,7 @@ def test_single_run_backfill_full_execution(
 
     with instance_for_test() as instance:
         with ExitStack() as stack:
-            stack.enter_context(patch("dagster._core.instance.EVENT_BATCH_SIZE", new=batch_size))
+            monkeypatch.setenv("DAGSTER_EVENT_BATCH_SIZE", str(batch_size))
             if throw_store_event_batch_error:
                 stack.enter_context(
                     patch(

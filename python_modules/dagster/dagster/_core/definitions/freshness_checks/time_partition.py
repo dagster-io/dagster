@@ -8,10 +8,10 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from ..asset_checks import AssetChecksDefinition
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import CoercibleToAssetKey
+from .shared_builder import build_freshness_checks_for_assets
 from .utils import (
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
-    build_freshness_checks_for_assets,
 )
 
 
@@ -22,8 +22,8 @@ def build_time_partition_freshness_checks(
     deadline_cron: str,
     timezone: str = DEFAULT_FRESHNESS_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
-) -> Sequence[AssetChecksDefinition]:
-    r"""For each provided time-window partitioned asset, constructs a freshness check definition.
+) -> AssetChecksDefinition:
+    r"""Construct an `AssetChecksDefinition` that checks the freshness of the provided assets.
 
     This check passes if the asset is considered "fresh" by the time that execution begins. We
     consider an asset to be "fresh" if there exists a record for the most recent partition, once
@@ -47,6 +47,16 @@ def build_time_partition_freshness_checks(
 
     The check will fail at runtime if a non-time-window partitioned asset is passed in.
 
+    The check result will contain the following metadata:
+    "dagster/freshness_params": A dictionary containing the parameters used to construct the
+    check.
+    "dagster/last_updated_time": (Only present if the asset has been observed/materialized before)
+    The time of the most recent update to the asset.
+    "dagster/overdue_seconds": (Only present if asset is overdue) The number of seconds that the
+    asset is overdue by.
+    "dagster/overdue_deadline_timestamp": The timestamp that we are expecting the asset to have
+    arrived by. This is the timestamp of the most recent tick of the cron schedule.
+
     Examples:
         .. code-block:: python
 
@@ -55,7 +65,7 @@ def build_time_partition_freshness_checks(
             # of 9:00 AM UTC
             from .somewhere import my_daily_scheduled_assets_def
 
-            checks = build_time_partition_freshness_checks(
+            checks_def = build_time_partition_freshness_checks(
                 [my_daily_scheduled_assets_def],
                 deadline_cron="0 9 * * *",
             )
@@ -71,8 +81,8 @@ def build_time_partition_freshness_checks(
             not provided, defaults to "UTC".
 
     Returns:
-        Sequence[AssetChecksDefinition]: A list of `AssetChecksDefinition` objects, each
-            corresponding to an asset in the `assets` parameter.
+        AssetChecksDefinition: An `AssetChecksDefinition` object, which can execute a freshness
+            check for each provided asset.
     """
     return build_freshness_checks_for_assets(
         assets=assets,

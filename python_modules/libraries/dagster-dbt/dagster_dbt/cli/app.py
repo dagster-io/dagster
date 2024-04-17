@@ -1,16 +1,19 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
+from dagster._core.code_pointer import load_python_file
+from dagster._core.definitions.load_assets_from_modules import find_objects_in_module_of_types
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
 
+from ..dbt_project import DbtProject
 from ..include import STARTER_PROJECT_PATH
 from ..version import __version__ as dagster_dbt_version
 
@@ -25,7 +28,7 @@ app = typer.Typer(
 project_app = typer.Typer(
     name="project",
     no_args_is_help=True,
-    help="Commands to initialize a new Dagster project with an existing dbt project.",
+    help="Commands for using a dbt project in Dagster.",
     add_completion=False,
 )
 app.add_typer(project_app)
@@ -103,7 +106,8 @@ def copy_scaffold(
     project_name: str,
     dagster_project_dir: Path,
     dbt_project_dir: Path,
-    use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_state: bool,
+    use_experimental_dbt_project: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
     dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
@@ -121,11 +125,12 @@ def copy_scaffold(
         for target in profile["outputs"].values()
     ]
 
-    shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
+    shutil.copytree(
+        src=STARTER_PROJECT_PATH,
+        dst=dagster_project_dir,
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
     dagster_project_dir.joinpath("__init__.py").unlink()
-
-    if use_dbt_project_package_data_dir:
-        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
 
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
@@ -148,17 +153,23 @@ def copy_scaffold(
 
             env.get_template(template_path).stream(
                 dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,
-                dbt_project_name=dbt_project_name,
+                dbt_project_name=f"{dbt_project_name}_project",
                 dbt_parse_command=dbt_parse_command,
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
-                use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+                use_experimental_dbt_state=use_experimental_dbt_state,
+                use_experimental_dbt_project=use_experimental_dbt_project,
             ).dump(destination_path)
 
             path.unlink()
 
     dagster_project_dir.joinpath("scaffold").rename(dagster_project_dir.joinpath(project_name))
+
+    if use_experimental_dbt_project:
+        dagster_project_dir.joinpath(project_name, "constants.py").unlink()
+    else:
+        dagster_project_dir.joinpath(project_name, "project.py").unlink()
 
 
 def _check_and_error_on_package_conflicts(project_name: str) -> None:
@@ -224,11 +235,22 @@ def project_scaffold_command(
             hidden=True,
         ),
     ] = False,
-    use_dbt_project_package_data_dir: Annotated[
+    use_experimental_dbt_state: Annotated[
         bool,
         typer.Option(
             default=...,
-            help="Controls whether the dbt project package data directory is used.",
+            help="Controls whether `DbtProject` is used with dbt state.",
+            is_flag=True,
+            hidden=True,
+        ),
+    ] = False,
+    use_experimental_dbt_project: Annotated[
+        bool,
+        typer.Option(
+            ...,
+            "--use-experimental-dbt-project",
+            "--use-dbt-project-package-data-dir",
+            help="Controls whether `DbtProject` is used.",
             is_flag=True,
             hidden=True,
         ),
@@ -245,17 +267,23 @@ def project_scaffold_command(
     )
     console.print(
         f"Initializing Dagster project [bold green]{project_name}[/bold green] in the current"
-        f" working directory for dbt project directory [bold green]{dbt_project_dir}[/bold green]"
+        f" working directory for dbt project directory [bold green]{dbt_project_dir}[/bold green].",
     )
 
     dagster_project_dir = Path.cwd().joinpath(project_name)
+    use_experimental_dbt_project = use_experimental_dbt_project or use_experimental_dbt_state
 
     copy_scaffold(
         project_name=project_name,
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
-        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+        use_experimental_dbt_state=use_experimental_dbt_state,
+        use_experimental_dbt_project=use_experimental_dbt_project,
     )
+
+    dagster_dev_command = "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev"
+    if use_experimental_dbt_project:
+        dagster_dev_command = "dagster dev"
 
     console.print(
         "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
@@ -264,13 +292,88 @@ def project_scaffold_command(
             code="\n".join(
                 [
                     f"cd '{dagster_project_dir}'",
-                    "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev",
+                    dagster_dev_command,
                 ]
             ),
             lexer="bash",
             padding=1,
         ),
     )
+
+
+def prepare_for_deployment(project: DbtProject) -> None:
+    """A method that can be called as part of the deployment process."""
+    if project.manifest_preparer:
+        console.print(
+            f"Preparing project [bold green]{project.project_dir}[/bold green] for deployment with [bold green]{project.manifest_preparer.prepare.__qualname__}[/bold green]."
+        )
+        project.manifest_preparer.prepare(project)
+        console.print("Project preparation complete.")
+
+    if project.packaged_project_dir:
+        sync_project_to_packaged_dir(project)
+
+
+def sync_project_to_packaged_dir(
+    project: DbtProject,
+) -> None:
+    """Sync a `DbtProject`s `project_dir` directory to its `packaged_project_dir`."""
+    if project.packaged_project_dir is None:
+        raise Exception(
+            "sync_project_to_packaged_dir should only be called if `packaged_project_dir` is set."
+        )
+
+    console.print(
+        "Syncing project to package data directory"
+        f" [bold green]{project.packaged_project_dir}[/bold green]."
+    )
+    if project.packaged_project_dir.exists():
+        console.print(
+            f"Removing existing contents at [bold red]{project.packaged_project_dir}[/bold red]."
+        )
+        shutil.rmtree(project.packaged_project_dir)
+
+    # Determine if the package data dir is within the project dir, and ignore
+    # that path if so.
+    rel_path = Path(os.path.relpath(project.packaged_project_dir, project.project_dir))
+    rel_ignore = ""
+    if len(rel_path.parts) > 0 and rel_path.parts[0] != "..":
+        rel_ignore = rel_path.parts[0]
+
+    console.print(
+        f"Copying [bold green]{project.project_dir}[/bold green] to"
+        f" [bold green]{project.packaged_project_dir}[/bold green]."
+    )
+    shutil.copytree(
+        src=project.project_dir,
+        dst=project.packaged_project_dir,
+        ignore=shutil.ignore_patterns(
+            "*.git*",
+            "*partial_parse.msgpack",
+            rel_ignore,
+        ),
+    )
+    console.print("Sync complete.")
+
+
+@project_app.command(name="prepare-for-deployment")
+def project_prepare_for_deployment_command(
+    file: Annotated[
+        str,
+        typer.Option(
+            help="The file containing DbtProject definitions to prepare.",
+        ),
+    ],
+) -> None:
+    """This command will invoke ``prepare_for_deployment`` on :py:class:`DbtProject` found in the target module or file."""
+    console.print(
+        f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
+    )
+
+    contents = load_python_file(file, working_directory=None)
+    dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(contents, types=DbtProject)
+    for project in dbt_projects:
+        prepare_for_deployment(project)
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)

@@ -12,6 +12,7 @@ import {LiveDataThreadManager} from './LiveDataThreadManager';
 export function liveDataFactory<T, R>(
   useHooks: () => R,
   queryKeys: (keys: string[], result: R) => Promise<Record<string, T>>,
+  batchSize?: number,
 ) {
   const resultsFromUseHook: {current: R | undefined} = {current: undefined};
   const manager = new LiveDataThreadManager((keys: string[]) => {
@@ -21,7 +22,7 @@ export function liveDataFactory<T, R>(
       );
     }
     return queryKeys(keys, resultsFromUseHook.current);
-  });
+  }, batchSize);
 
   const LiveDataRefreshContext = React.createContext<{
     isGloballyRefreshing: boolean;

@@ -19,6 +19,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     cast,
@@ -37,14 +38,14 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
+    TableColumnDep,
+    TableColumnLineage,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.metadata import (
-    TableColumnDep,
-    TableColumnLineage,
-    TableMetadataEntries,
+    TableMetadataSet,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dagster._utils.warnings import disable_dagster_warnings
@@ -53,6 +54,7 @@ from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
+from dbt.events.functions import cleanup_event_logger
 from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -86,6 +88,7 @@ from ..dbt_manifest import (
     DbtManifestParam,
     validate_manifest,
 )
+from ..dbt_project import DbtProject
 from ..errors import DagsterDbtCliRuntimeError
 from ..utils import (
     ASSET_RESOURCE_TYPES,
@@ -391,19 +394,24 @@ class DbtCliEventMessage:
             )
 
         node_sql_path = target_path.joinpath(
-            "run", manifest["metadata"]["project_name"], dbt_resource_props["original_file_path"]
+            "compiled",
+            manifest["metadata"]["project_name"],
+            dbt_resource_props["original_file_path"],
         )
         optimized_node_ast = cast(
             exp.Query,
             optimize(
-                parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect).expression,
+                parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
                 schema=sqlglot_mapping_schema,
                 dialect=sql_dialect,
             ),
         )
 
         # 2. Retrieve the column names from the current node.
-        column_names = optimized_node_ast.named_selects
+        schema_column_names = {
+            column.lower() for column in self._event_history_metadata["columns"].keys()
+        }
+        sqlglot_column_names = set(optimized_node_ast.named_selects)
 
         # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
         dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
@@ -421,9 +429,29 @@ class DbtCliEventMessage:
                 parent_dbt_resource_props
             )
 
+        normalized_sqlglot_column_names = {
+            sqlglot_column.lower() for sqlglot_column in sqlglot_column_names
+        }
+        implicit_alias_column_names = {
+            column
+            for column in schema_column_names
+            if column not in normalized_sqlglot_column_names
+        }
+
         deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
-        for column_name in column_names:
-            column_deps: Sequence[TableColumnDep] = []
+        if implicit_alias_column_names:
+            logger.warning(
+                "The following columns are implicitly aliased and will be marked with an "
+                f" empty list column dependencies: `{implicit_alias_column_names}`."
+            )
+
+            deps_by_column = {column: [] for column in implicit_alias_column_names}
+
+        for column_name in sqlglot_column_names:
+            if column_name.lower() not in schema_column_names:
+                continue
+
+            column_deps: Set[TableColumnDep] = set()
             for sqlglot_lineage_node in lineage(
                 column=column_name,
                 sql=optimized_node_ast,
@@ -449,21 +477,19 @@ class DbtCliEventMessage:
                     continue
 
                 # Add the column dependency.
-                column_deps.append(
+                column_deps.add(
                     TableColumnDep(
                         asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
                         column_name=parent_column_name,
                     )
                 )
 
-            deps_by_column[column_name.lower()] = column_deps
+            deps_by_column[column_name.lower()] = list(column_deps)
 
         # 4. Render the lineage as metadata.
         with disable_dagster_warnings():
             return dict(
-                TableMetadataEntries(
-                    column_lineage=TableColumnLineage(deps_by_column=deps_by_column)
-                )
+                TableMetadataSet(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
             )
 
 
@@ -814,6 +840,8 @@ class DbtCliResource(ConfigurableResource):
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
         dbt_executable (str): The path to the dbt executable. By default, this is `dbt`.
+        state_path (Optional[str]): The path, relative to the project directory, to a directory of
+            dbt artifacts to be used with `--state` / `--defer-state`.
 
     Examples:
         Creating a dbt resource with only a reference to ``project_dir``:
@@ -914,6 +942,44 @@ class DbtCliResource(ConfigurableResource):
         default=DBT_EXECUTABLE,
         description="The path to the dbt executable.",
     )
+    state_path: Optional[str] = Field(
+        description=(
+            "The path, relative to the project directory, to a directory of dbt artifacts to be"
+            " used with --state / --defer-state."
+            " This can be used with methods such as get_defer_args to allow for a @dbt_assets to"
+            " use defer in the appropriate environments."
+        )
+    )
+
+    def __init__(
+        self,
+        project_dir: Union[str, DbtProject],
+        global_config_flags: Optional[List[str]] = None,
+        profiles_dir: Optional[str] = None,
+        profile: Optional[str] = None,
+        target: Optional[str] = None,
+        dbt_executable: str = DBT_EXECUTABLE,
+        state_path: Optional[str] = None,
+    ):
+        if isinstance(project_dir, DbtProject):
+            if not state_path and project_dir.state_path:
+                state_path = os.fspath(project_dir.state_path)
+
+            if not target and project_dir.target:
+                target = project_dir.target
+
+            project_dir = os.fspath(project_dir.project_dir)
+
+        # static typing doesn't understand whats going on here, thinks these fields dont exist
+        super().__init__(
+            project_dir=project_dir,  # type: ignore
+            global_config_flags=global_config_flags or [],  # type: ignore
+            profiles_dir=profiles_dir,  # type: ignore
+            profile=profile,  # type: ignore
+            target=target,  # type: ignore
+            dbt_executable=dbt_executable,  # type: ignore
+            state_path=state_path,  # type: ignore
+        )
 
     @classmethod
     def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
@@ -1001,6 +1067,13 @@ class DbtCliResource(ConfigurableResource):
 
         return values
 
+    @validator("state_path")
+    def validate_state_path(cls, state_path: Optional[str]) -> Optional[str]:
+        if state_path is None:
+            return None
+
+        return os.fspath(Path(state_path).absolute().resolve())
+
     def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
         """Get a unique target path for the dbt CLI invocation.
 
@@ -1029,11 +1102,29 @@ class DbtCliResource(ConfigurableResource):
         project = load_project(self.project_dir, False, profile, {})
         config = RuntimeConfig.from_parts(project, profile, flags)
 
+        cleanup_event_logger()
         register_adapter(config)
         adapter = cast(BaseAdapter, get_adapter(config))
         # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
         reset_adapters()
         return adapter
+
+    def get_defer_args(self) -> Sequence[str]:
+        """Build the defer arguments for the dbt CLI command, using the supplied state directory.
+        If no state directory is supplied, or the state directory does not have a manifest for.
+        comparison, an empty list of arguments is returned.
+
+        Returns:
+            Sequence[str]: The defer arguements for the dbt CLI command.
+        """
+        if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
+            return []
+
+        state_flag = "--defer-state"
+        if version.parse(dbt_version) < version.parse("1.6.0"):
+            state_flag = "--state"
+
+        return ["--defer", state_flag, self.state_path]
 
     @public
     def cli(

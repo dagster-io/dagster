@@ -38,7 +38,7 @@ from dagster import (
 from dagster._core.definitions.decorators.asset_decorator import (
     _validate_and_assign_output_names_to_check_specs,
 )
-from dagster._core.definitions.metadata import TableMetadataEntries
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 from dbt.version import __version__ as dbt_version
@@ -411,7 +411,7 @@ def default_metadata_from_dbt_resource_props(
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
         return dict(
-            TableMetadataEntries(
+            TableMetadataSet(
                 column_schema=TableSchema(
                     columns=[
                         TableColumn(

@@ -347,26 +347,31 @@ def build_failed_and_in_progress_partition_subset(
     if incomplete_materializations:
         to_fetch = list(set([run_id for run_id, _event_id in incomplete_materializations.values()]))
         finished_runs = {}
+        unfinished_runs = {}
+
         while to_fetch:
             chunk = to_fetch[:RUN_FETCH_BATCH_SIZE]
             to_fetch = to_fetch[RUN_FETCH_BATCH_SIZE:]
-            for r in instance.get_runs(
-                filters=RunsFilter(
-                    run_ids=chunk,
-                    statuses=FINISHED_STATUSES,
-                )
-            ):
-                finished_runs[r.run_id] = r.status
+            for r in instance.get_runs(filters=RunsFilter(run_ids=chunk)):
+                if r.status in FINISHED_STATUSES:
+                    finished_runs[r.run_id] = r.status
+                else:
+                    unfinished_runs[r.run_id] = r.status
+
         for partition, (run_id, event_id) in incomplete_materializations.items():
             if run_id in finished_runs:
                 status = finished_runs.get(run_id)
                 if status == DagsterRunStatus.FAILURE:
                     failed_partitions.add(partition)
-            else:
+            elif run_id in unfinished_runs:
                 in_progress_partitions.add(partition)
                 # If the run is not finished, keep track of the event id so we can check on it next time
                 if cursor is None or event_id < cursor:
                     cursor = event_id
+            else:
+                # Runs that are neither finished nor unfinished must have been deleted, so are
+                # considered neither in-progress nor failed
+                pass
 
     return (
         (

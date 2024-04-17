@@ -44,7 +44,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {assetKey, definition} = graphNode;
-  const {liveData} = useAssetLiveData(assetKey);
+  const {liveData} = useAssetLiveData(assetKey, 'sidebar');
   const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
   const partitionHealthData = usePartitionHealthData(
     [assetKey],

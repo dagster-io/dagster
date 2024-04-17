@@ -137,6 +137,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
     jobNames = non_null_list(graphene.String)
     executionForLatestMaterialization = graphene.Field(GrapheneAssetCheckExecution)
     canExecuteIndividually = graphene.NonNull(GrapheneAssetCheckCanExecuteIndividually)
+    blocking = graphene.NonNull(graphene.Boolean)
+    additionalAssetKeys = non_null_list(GrapheneAssetKey)
 
     class Meta:
         name = "AssetCheck"
@@ -172,6 +174,15 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     def resolve_canExecuteIndividually(self, _) -> GrapheneAssetCheckCanExecuteIndividually:
         return self._can_execute_individually
+
+    def resolve_blocking(self, _) -> bool:
+        return self._asset_check.blocking
+
+    def resolve_additionalAssetKeys(self, _) -> Sequence[GrapheneAssetKey]:
+        return [
+            GrapheneAssetKey(path=asset_key.path)
+            for asset_key in self._asset_check.additional_asset_keys
+        ]
 
 
 class GrapheneAssetChecks(graphene.ObjectType):

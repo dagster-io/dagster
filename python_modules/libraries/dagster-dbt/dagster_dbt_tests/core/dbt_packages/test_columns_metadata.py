@@ -9,14 +9,12 @@ from dagster import (
     AssetKey,
     AssetSelection,
     TableColumn,
+    TableColumnDep,
+    TableColumnLineage,
     TableSchema,
     materialize,
 )
-from dagster._core.definitions.metadata import TableMetadataEntries
-from dagster._core.definitions.metadata.table import (
-    TableColumnDep,
-    TableColumnLineage,
-)
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dbt.version import __version__ as dbt_version
@@ -39,7 +37,7 @@ def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_schema
+        not TableMetadataSet.extract(event.materialization.metadata).column_schema
         for event in result.get_asset_materialization_events()
     )
 
@@ -57,7 +55,7 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     assert result.success
 
     table_schema_by_asset_key = {
-        event.materialization.asset_key: TableMetadataEntries.extract(
+        event.materialization.asset_key: TableMetadataSet.extract(
             event.materialization.metadata
         ).column_schema
         for event in result.get_asset_materialization_events()
@@ -103,7 +101,7 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_lineage
+        not TableMetadataSet.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
 
@@ -131,7 +129,7 @@ def test_exception_column_lineage(
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_lineage
+        not TableMetadataSet.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
 
@@ -195,7 +193,7 @@ def test_column_lineage(
     assert result.success
 
     column_lineage_by_asset_key = {
-        event.materialization.asset_key: TableMetadataEntries.extract(
+        event.materialization.asset_key: TableMetadataSet.extract(
             event.materialization.metadata
         ).column_lineage
         for event in result.get_asset_materialization_events()
@@ -296,6 +294,18 @@ def test_column_lineage(
                 ],
             }
         ),
+        AssetKey(["duplicate_column_dep_orders"]): TableColumnLineage(
+            deps_by_column={
+                "amount_2x": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="amount")],
+            }
+        ),
+        AssetKey(["incremental_orders"]): TableColumnLineage(
+            deps_by_column={
+                "order_id": [
+                    TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_id")
+                ],
+            }
+        ),
         AssetKey(["customers"]): TableColumnLineage(
             deps_by_column={
                 "customer_id": [
@@ -355,6 +365,11 @@ def test_column_lineage(
         AssetKey(["count_star_customers"]): TableColumnLineage(
             deps_by_column={
                 "count_star": [],
+            }
+        ),
+        AssetKey(["count_star_implicit_alias_customers"]): TableColumnLineage(
+            deps_by_column={
+                "count_star()": [],
             }
         ),
     }

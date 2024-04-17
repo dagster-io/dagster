@@ -42,6 +42,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalAssetNode
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
@@ -416,6 +417,7 @@ def get_partition_subsets(
     instance: DagsterInstance,
     asset_key: AssetKey,
     dynamic_partitions_loader: DynamicPartitionsStore,
+    asset_record: Optional[AssetRecord],
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
@@ -428,7 +430,11 @@ def get_partition_subsets(
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
-            instance, asset_key, partitions_def, dynamic_partitions_loader
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_loader,
+            asset_record,
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)

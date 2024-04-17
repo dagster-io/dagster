@@ -10,7 +10,6 @@ import {
 } from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
-import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput, ChangeReason} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
@@ -22,8 +21,7 @@ export const ChangedReasonsTag = ({
   changedReasons?: ChangeReason[];
   assetKey: AssetKeyInput;
 }) => {
-  const flagExperimentalBranchDiff = featureEnabled(FeatureFlag.flagExperimentalBranchDiff);
-  if (!changedReasons?.length || !flagExperimentalBranchDiff) {
+  if (!changedReasons?.length) {
     return null;
   }
   return (
@@ -47,10 +45,6 @@ export const ChangedReasonsPopover = ({
   assetKey: AssetKeyInput;
   children: React.ReactNode;
 }) => {
-  const flagExperimentalBranchDiff = featureEnabled(FeatureFlag.flagExperimentalBranchDiff);
-  if (!flagExperimentalBranchDiff) {
-    return null;
-  }
   const modifiedChanges = changedReasons.filter((reason) => reason !== ChangeReason.NEW);
   function getDescription(change: ChangeReason) {
     switch (change) {
@@ -58,10 +52,14 @@ export const ChangedReasonsPopover = ({
         return '';
       case ChangeReason.CODE_VERSION:
         return 'has a changed code version';
-      case ChangeReason.INPUTS:
+      case ChangeReason.DEPENDENCIES:
         return 'has changed dependencies';
       case ChangeReason.PARTITIONS_DEFINITION:
         return 'has a changed partition definition';
+      case ChangeReason.TAGS:
+        return 'has changed tags';
+      case ChangeReason.METADATA:
+        return 'has changed metadata';
     }
   }
   return (
@@ -106,10 +104,6 @@ export const MinimalNodeChangedDot = ({
   changedReasons: ChangeReason[];
   assetKey: AssetKeyInput;
 }) => {
-  const flagExperimentalBranchDiff = featureEnabled(FeatureFlag.flagExperimentalBranchDiff);
-  if (!flagExperimentalBranchDiff) {
-    return null;
-  }
   return (
     <ChangedReasonsPopover changedReasons={changedReasons} assetKey={assetKey}>
       <MinimalNodeChangedDotContainer />

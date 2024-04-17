@@ -141,6 +141,7 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: numbe
 
 const BreadcrumbLink = styled(Link)`
   color: ${Colors.textLight()};
+  white-space: nowrap;
 
   :hover,
   :active {

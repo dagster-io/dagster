@@ -66,7 +66,7 @@ def dbt_assets(
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
-) -> Callable[..., AssetsDefinition]:
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
     :py:meth:`~dagster_dbt.DbtCliResource.cli` method, Dagster events are emitted by calling
@@ -177,7 +177,35 @@ def dbt_assets(
                 yield from dbt.cli(["run"], context=context).stream()
                 yield from dbt.cli(["test"], context=context).stream()
 
-        Customizing the Dagster asset metadata inferred from a dbt project using :py:class:`~dagster_dbt.DagsterDbtTranslator`:
+        Accessing the dbt event stream alongside the Dagster event stream:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                dbt_cli_invocation = dbt.cli(["build"], context=context)
+
+                # Each dbt event is structured: https://docs.getdbt.com/reference/events-logging
+                for dbt_event in dbt_invocation.stream_raw_events():
+                    for dagster_event in dbt_event.to_default_asset_events(
+                        manifest=dbt_invocation.manifest,
+                        dagster_dbt_translator=dbt_invocation.dagster_dbt_translator,
+                        context=dbt_invocation.context,
+                        target_path=dbt_invocation.target_path,
+                    ):
+                        # Manipulate `dbt_event`
+                        ...
+
+                        # Then yield the Dagster event
+                        yield dagster_event
+
+        Customizing the Dagster asset definition metadata inferred from a dbt project using :py:class:`~dagster_dbt.DagsterDbtTranslator`:
 
         .. code-block:: python
 
@@ -347,24 +375,19 @@ def dbt_assets(
     ):
         backfill_policy = BackfillPolicy.single_run()
 
-    def inner(fn) -> AssetsDefinition:
-        asset_definition = multi_asset(
-            outs=outs,
-            name=name,
-            internal_asset_deps=internal_asset_deps,
-            deps=deps,
-            required_resource_keys=required_resource_keys,
-            compute_kind="dbt",
-            partitions_def=partitions_def,
-            can_subset=True,
-            op_tags=resolved_op_tags,
-            check_specs=check_specs,
-            backfill_policy=backfill_policy,
-        )(fn)
-
-        return asset_definition
-
-    return inner
+    return multi_asset(
+        outs=outs,
+        name=name,
+        internal_asset_deps=internal_asset_deps,
+        deps=deps,
+        required_resource_keys=required_resource_keys,
+        compute_kind="dbt",
+        partitions_def=partitions_def,
+        can_subset=True,
+        op_tags=resolved_op_tags,
+        check_specs=check_specs,
+        backfill_policy=backfill_policy,
+    )
 
 
 def get_dbt_multi_asset_args(

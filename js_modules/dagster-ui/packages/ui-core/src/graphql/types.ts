@@ -145,7 +145,9 @@ export type AssetBackfillTargetPartitions = {
 
 export type AssetCheck = {
   __typename: 'AssetCheck';
+  additionalAssetKeys: Array<AssetKey>;
   assetKey: AssetKey;
+  blocking: Scalars['Boolean']['output'];
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']['output']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
@@ -740,9 +742,11 @@ export type CapturedLogsMetadata = {
 
 export enum ChangeReason {
   CODE_VERSION = 'CODE_VERSION',
-  INPUTS = 'INPUTS',
+  DEPENDENCIES = 'DEPENDENCIES',
+  METADATA = 'METADATA',
   NEW = 'NEW',
   PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
+  TAGS = 'TAGS',
 }
 
 export type ClaimedConcurrencySlot = {
@@ -5684,12 +5688,17 @@ export const buildAssetCheck = (
   relationshipsToOmit.add('AssetCheck');
   return {
     __typename: 'AssetCheck',
+    additionalAssetKeys:
+      overrides && overrides.hasOwnProperty('additionalAssetKeys')
+        ? overrides.additionalAssetKeys!
+        : [],
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    blocking: overrides && overrides.hasOwnProperty('blocking') ? overrides.blocking! : true,
     canExecuteIndividually:
       overrides && overrides.hasOwnProperty('canExecuteIndividually')
         ? overrides.canExecuteIndividually!

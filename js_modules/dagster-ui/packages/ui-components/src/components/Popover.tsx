@@ -106,6 +106,7 @@ export const Popover = (props: Props) => {
     <Popover2
       minimal
       autoFocus={false}
+      enforceFocus={false}
       {...props}
       popoverClassName={`dagster-popover ${props.popoverClassName}`}
       modifiers={deepmerge(

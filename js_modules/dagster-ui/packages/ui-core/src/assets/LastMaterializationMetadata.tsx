@@ -12,7 +12,7 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
-import {LiveDataForNode, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {LiveDataForNodeWithStaleData, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {isCanonicalColumnLineageEntry} from '../metadata/TableSchema';
@@ -31,7 +31,7 @@ export const LatestMaterializationMetadata = ({
 }: {
   assetKey: AssetKeyInput;
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
-  liveData: LiveDataForNode | undefined;
+  liveData: LiveDataForNodeWithStaleData | undefined;
   definition: Pick<AssetViewDefinitionNodeFragment, 'changedReasons'>;
 }) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;

@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from datetime import datetime
 from functools import partial
 
@@ -31,6 +32,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._config.pythonic_config.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.errors import (
@@ -647,6 +649,10 @@ def test_missing_required_output_generator_async():
         asyncio.run(get_results())
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12) and USING_PYDANTIC_1,
+    reason="something with py3.12 and pydantic1 and sqlite",
+)
 def test_missing_required_output_return():
     @op(
         out={

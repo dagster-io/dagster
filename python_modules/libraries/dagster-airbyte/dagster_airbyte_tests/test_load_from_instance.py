@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 
 import pytest
@@ -48,6 +49,7 @@ def airbyte_instance_fixture(request):
             )
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 12), reason="something with py3.12 and sqlite")
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize(
@@ -242,6 +244,8 @@ def test_load_from_instance(
         AutoMaterializePolicy.lazy() if connection_to_auto_materialize_policy_fn else None
     )
     auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    if expected_auto_materialize_policy:
+        assert auto_materialize_policies_by_key
     assert all(
         auto_materialize_policies_by_key[key] == expected_auto_materialize_policy
         for key in auto_materialize_policies_by_key
