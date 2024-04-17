@@ -69,12 +69,16 @@ defs = Definitions(
 Including the jobs in a <PyObject object="Definitions"/> object located at the top level of a Python module or file makes asset jobs available to the UI, GraphQL, and the command line. The Dagster tool loads that module as a code location. If you include schedules or sensors, the [code location](/concepts/code-locations) will automatically include jobs that those schedules or sensors target.
 
 ```python file=/concepts/assets/jobs_to_definitions.py
-from dagster import Definitions, asset, define_asset_job
+from dagster import Definitions, MaterializeResult, asset, define_asset_job
 
 
 @asset
 def number_asset():
-    return [1, 2, 3]
+    yield MaterializeResult(
+        metadata={
+            "number": 1,
+        }
+    )
 
 
 number_asset_job = define_asset_job(name="number_asset_job", selection="number_asset")
