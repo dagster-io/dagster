@@ -43,11 +43,11 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
-from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.metadata import (
     TableMetadataSet,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
+from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.adapters.base.impl import BaseAdapter
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters

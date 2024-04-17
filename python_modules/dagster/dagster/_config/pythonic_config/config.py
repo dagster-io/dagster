@@ -33,19 +33,19 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-from .conversion_utils import _convert_pydantic_field, safe_is_subclass
-from .pydantic_compat_layer import (
+from dagster._model.pydantic_compat_layer import (
     USING_PYDANTIC_2,
     ModelFieldCompat,
     PydanticUndefined,
     model_config,
     model_fields,
 )
+from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
+
+from .attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
+from .conversion_utils import _convert_pydantic_field, safe_is_subclass
 from .type_check_utils import is_literal
 from .typing_utils import BaseConfigMeta
 
