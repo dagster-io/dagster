@@ -62,7 +62,7 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
    Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-       https://<organization_name>.dagster.plus/auth/saml/consume
+       https://<organization_name>.dagster.cloud/auth/saml/consume
 
 5. Click **Set additional URLs**.
 
@@ -100,7 +100,7 @@ After you've downloaded the SAML metadata file, upload it to Dagster+ using the 
 ```shell
 dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
    --api-token=<user_token> \
-   --url https://<organization_name>.dagster.plus
+   --url https://<organization_name>.dagster.cloud
 ```
 
 ---
@@ -129,7 +129,7 @@ Lastly, you'll test your SSO configuration:
 
 ### Testing a service provider-initiated login
 
-1. Navigate to your Dagster+ sign in page at `https://<organization_name>.dagster.plus`
+1. Navigate to your Dagster+ sign in page at `https://<organization_name>.dagster.cloud`
 
 2. Click the **Sign in with SSO** button.
 
