@@ -134,7 +134,7 @@ These methods of limiting concurrency can be used individually or together. For 
 
 How you limit the overall number of concurrent runs in a deployment depends on whether you're using Dagster+ or Dagster Open Source:
 
-- **Dagster+**: Use the [Dagster+ UI or the `dagster-plus` CLI][cloud-deployment-settings]
+- **Dagster+**: Use the [Dagster+ UI or the `dagster-cloud` CLI][cloud-deployment-settings]
 - **Dagster Open Source**: Use your instance's `dagster.yaml`
 
 To enable this limit, use `run_queue.max_concurrent_runs`. For example, the following would limit the number of concurrent runs for the deployment to 15:
@@ -157,7 +157,7 @@ When defining a value for `max_concurrent_runs`, keep the following in mind:
 
 How you limit specific runs based on tags depends on whether you're using Dagster+ or Dagster Open Source:
 
-- **Dagster+**: Use the [Dagster+ UI or the `dagster-plus` CLI][cloud-deployment-settings]
+- **Dagster+**: Use the [Dagster+ UI or the `dagster-cloud` CLI][cloud-deployment-settings]
 - **Dagster Open Source**: Use your instance's `dagster.yaml`
 
 To enable this limit, use `run_queue.tag_concurrency_limits`. This key accepts a list of tags and their corresponding concurrency limits.
@@ -423,7 +423,7 @@ The concurrency key should match the name that the op/asset is tagged with. For 
 
 A default concurrency limit can be configured for the instance, for any concurrency keys that do not have an explicit limit set:
 
-- **Dagster+**: Use the [Dagster+ UI or the `dagster-plus` CLI][cloud-deployment-settings]
+- **Dagster+**: Use the [Dagster+ UI or the `dagster-cloud` CLI][cloud-deployment-settings]
 - **Dagster Open Source**: Use your instance's `dagster.yaml`
 
 To enable this default value, use `concurrency.default_op_concurrency_limit`. For example, the following would set the default concurrency value for the deployment to 1:
