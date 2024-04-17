@@ -10,10 +10,6 @@ from typing import (
 import pydantic
 from pydantic import BaseModel
 
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-
 USING_PYDANTIC_1 = int(pydantic.__version__.split(".")[0]) == 1
 USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
 
