@@ -13,9 +13,7 @@ def test_items():
     hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
 
-    expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
-        columns={"by": "user_id"}
-    )
+    expected_data = pd.DataFrame(StubHNClient().data.values()).rename(columns={"by": "user_id"})
 
     assert (hn_dataset == expected_data).all().all()
 

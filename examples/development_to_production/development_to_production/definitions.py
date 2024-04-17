@@ -40,6 +40,4 @@ resources = {
 }
 deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-defs = Definitions(
-    assets=[items, comments, stories], resources=resources[deployment_name]
-)
+defs = Definitions(assets=[items, comments, stories], resources=resources[deployment_name])
