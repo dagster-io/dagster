@@ -1,9 +1,9 @@
 from typing import Sequence
 
-from dagster import AssetKey, AssetSpec, Definitions, asset
+from dagster import AssetKey, Definitions, asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.observer_definition import (
-    ObserverDefinition,
+    Observer,
     ObserverEvaluationContext,
     ObserverEvaluationResult,
 )
@@ -11,7 +11,7 @@ from dagster._core.definitions.sensor_definition import build_sensor_context
 
 
 def test_simplest_observer() -> None:
-    class HardcodedObserver(ObserverDefinition):
+    class HardcodedObserver(Observer):
         def observe(self, context: ObserverEvaluationContext) -> ObserverEvaluationResult:
             cursor_val = int(context.cursor) + 1 if context.cursor else 1
 
@@ -19,7 +19,7 @@ def test_simplest_observer() -> None:
 
     hardcoded_observer = HardcodedObserver()
 
-    @asset(deps=[hardcoded_observer.spec])
+    @asset(deps=[hardcoded_observer.observed_key])
     def downstream(): ...
 
     defs = Definitions(
@@ -43,11 +43,11 @@ def test_simplest_observer() -> None:
 
 
 def test_single_observer() -> None:
-    class S3BucketObserver(ObserverDefinition):
+    class S3BucketObserver(Observer):
         def __init__(self, s3_bucket: str):
             super().__init__(
                 name=f"s3_bucket_{s3_bucket}_observer",
-                specs=[AssetSpec(key=AssetKey(["s3", s3_bucket]))],
+                observed_keys=[AssetKey(["s3", s3_bucket])],
             )
 
         def observe(self, context: ObserverEvaluationContext) -> ObserverEvaluationResult:
@@ -57,7 +57,7 @@ def test_single_observer() -> None:
 
     xyz_bucket_observer = S3BucketObserver("some_bucket")
 
-    @asset(deps=[xyz_bucket_observer.spec])
+    @asset(deps=[xyz_bucket_observer.observed_key])
     def downstream(): ...
 
     defs = Definitions(
@@ -73,11 +73,11 @@ def test_single_observer() -> None:
 
 
 def test_multi_observer() -> None:
-    class S3BucketsObserver(ObserverDefinition):
+    class S3BucketsObserver(Observer):
         def __init__(self, name: str, s3_buckets: Sequence[str]):
             super().__init__(
                 name=name,
-                specs=[AssetSpec(key=AssetKey(["s3", b])) for b in s3_buckets],
+                observed_keys=[AssetKey(["s3", b]) for b in s3_buckets],
             )
 
         def observe(self, context: ObserverEvaluationContext) -> ObserverEvaluationResult:
@@ -87,7 +87,7 @@ def test_multi_observer() -> None:
 
     multi_observer = S3BucketsObserver("multi_observer", ["a", "b"])
 
-    @asset(deps=[*multi_observer.specs])
+    @asset(deps=[*multi_observer.observed_key])
     def downstream(): ...
 
     defs = Definitions(
@@ -111,7 +111,7 @@ This section exists to allow you to dagster dev this_file.py to see everything w
 """
 
 
-class WebhookObserver(ObserverDefinition):
+class WebhookObserver(Observer):
     def observe(self, context: ObserverEvaluationContext) -> ObserverEvaluationResult:
         cursor_val = int(context.cursor) + 1 if context.cursor else 1
 
@@ -121,7 +121,9 @@ class WebhookObserver(ObserverDefinition):
 my_webhook_observer = WebhookObserver()
 
 
-@asset(deps=[my_webhook_observer.spec], auto_materialize_policy=AutoMaterializePolicy.eager())
+@asset(
+    deps=[my_webhook_observer.observed_key], auto_materialize_policy=AutoMaterializePolicy.eager()
+)
 def downstream() -> None: ...
 
 

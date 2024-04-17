@@ -4,12 +4,9 @@ from typing import Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.events import AssetObservation
-from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import SensorDefinition, SensorEvaluationContext
 from dagster._model import DagsterModel
@@ -30,18 +27,20 @@ class ObserverEvaluationResult(DagsterModel):
     updated: bool
 
 
-class ObserverDefinition(ABC):
+class Observer(ABC):
     name: str
-    specs: Sequence[AssetSpec]
+    observed_keys: Sequence[AssetKey]
 
-    def __init__(self, name: Optional[str] = None, specs: Optional[Sequence[AssetSpec]] = None):
+    def __init__(
+        self, name: Optional[str] = None, observed_keys: Optional[Sequence[AssetKey]] = None
+    ):
         self.name = name or self.__class__.__name__
-        self.specs = specs or [AssetSpec(key=AssetKey(["_dagster_external", self.name]))]
+        self.observed_keys = observed_keys or [AssetKey(["_dagster_external", self.name])]
 
     @property
-    def spec(self) -> AssetSpec:
-        check.invariant(len(self.specs) == 1)
-        return self.specs[0]
+    def observed_key(self) -> AssetKey:
+        check.invariant(len(self.observed_keys) == 1)
+        return self.observed_keys[0]
 
     @abstractmethod
     def observe(self, context: ObserverEvaluationContext) -> ObserverEvaluationResult:
@@ -53,7 +52,7 @@ class ObserverDefinition(ABC):
                 cursor=observe_result.cursor,
                 asset_events=[
                     AssetObservation(
-                        asset_key=self.spec.key,
+                        asset_key=self.observed_key,
                         tags={DATA_VERSION_TAG: str(random.randint(0, 100000000))},
                     )
                 ],
@@ -71,7 +70,3 @@ class ObserverDefinition(ABC):
             return self._get_sensor_result(observe_result)
 
         return _sensor
-
-    def _external_assets(self) -> Sequence[AssetsDefinition]:
-        """Creates external assets for the observed specs."""
-        return external_assets_from_specs(self.specs)
