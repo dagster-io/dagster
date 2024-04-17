@@ -1132,7 +1132,7 @@ class DbtCliResource(ConfigurableResource):
         comparison, an empty list of arguments is returned.
 
         Returns:
-            Sequence[str]: The defer arguements for the dbt CLI command.
+            Sequence[str]: The defer arguments for the dbt CLI command.
         """
         if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
             return []
@@ -1142,6 +1142,19 @@ class DbtCliResource(ConfigurableResource):
             state_flag = "--state"
 
         return ["--defer", state_flag, self.state_path]
+
+    def get_state_args(self) -> Sequence[str]:
+        """Build the state arguments for the dbt CLI command, using the supplied state directory.
+        If no state directory is supplied, or the state directory does not have a manifest for.
+        comparison, an empty list of arguments is returned.
+
+        Returns:
+            Sequence[str]: The state arguments for the dbt CLI command.
+        """
+        if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
+            return []
+
+        return ["--state", self.state_path]
 
     @public
     def cli(
