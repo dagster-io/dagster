@@ -4,6 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
+import pydantic
 import pytest
 from dagster import (
     job,
@@ -482,3 +483,15 @@ def test_dbt_adapter(dbt: DbtCliResource) -> None:
     assert dbt.cli(["build"]).adapter
     assert dbt.cli(["parse"]).adapter
     assert dbt.cli(["source", "freshness"]).adapter
+
+
+def test_custom_subclass():
+    CustomDbtCliResource = pydantic.create_model(
+        "CustomDbtCliResource",
+        __base__=DbtCliResource,
+        custom_field=(str, ...),
+    )
+    custom = CustomDbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path), custom_field="custom_value"
+    )
+    assert isinstance(custom, DbtCliResource)
