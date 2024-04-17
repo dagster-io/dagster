@@ -61,7 +61,7 @@ To complete the steps in this guide, you'll need:
 
 2. In the **Subdomain** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
 
-   In the following example, the organization name is `hooli` and our Dagster+ domain is `https://hooli.dagster.plus`. To configure this correctly, we'd enter `hooli` into the **Subdomain** field:
+   In the following example, the organization name is `hooli` and our Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, we'd enter `hooli` into the **Subdomain** field:
 
    <Image
    alt="Okta Subdomain Configuration"
@@ -96,7 +96,7 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
    ```shell
    dagster-plus organization settings saml upload-identity-provider-metadata <path/to/metadata> \
       --api-token=<user_token> \
-      --url https://<organization_name>.dagster.plus
+      --url https://<organization_name>.dagster.cloud
    ```
 
 ---
@@ -120,7 +120,7 @@ Lastly, you'll test your SSO configuration:
 
 ### Testing a service provider-initiated login
 
-1. Navigate to your Dagster+ sign in page at `https://<organization_name>.dagster.plus`
+1. Navigate to your Dagster+ sign in page at `https://<organization_name>.dagster.cloud`
 
 2. Click the **Sign in with SSO** button.
 
