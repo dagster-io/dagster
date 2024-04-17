@@ -116,11 +116,7 @@ def my_job():
 
 Other run launchers will ignore the `dagster-k8s/config` tag.
 
-The default executor <PyObject module="dagster" object="multi_or_in_process_executor" /> will run each job in its own pod executing each step in an individual process.
-If your Dagster job produces assets which have a short compute time (compared to the step overhead time), consider avoiding the step process creation cost by using the <PyObject module="dagster" object="in_process_executor" /> executor, which runs each step serially in a single process.
-This can be especially useful where parallelism is obtained through a <PyObject object="PartitionsDefinition" /> and parallelism within the job is unnecessary.
-For this use-case, the <PyObject module="dagster" object="in_process_executor" /> is more efficient than running each step in its own process.
-Using the <PyObject module="dagster_k8s" object="k8s_job_executor" /> in this use-case is contraindicated as it places additional stress on the Kubernetes API server, creating a new pod for each step.
+The default executor <PyObject module="dagster" object="multi_or_in_process_executor" /> will run each job in its own pod executing each step in an individual process. If your Dagster job produces assets which have a short compute time (compared to the step overhead time), consider avoiding the step process creation cost by using the <PyObject module="dagster" object="in_process_executor" /> executor, which runs each step serially in a single process. This can be especially useful where parallelism is obtained through a <PyObject object="PartitionsDefinition" /> and parallelism within the job is unnecessary. For this use-case, the <PyObject module="dagster" object="in_process_executor" /> is more efficient than running each step in its own process. Using the <PyObject module="dagster_k8s" object="k8s_job_executor" /> in this use-case is contraindicated as it places additional stress on the Kubernetes API server, creating a new pod for each step.
 
 If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set on a job using the `dagster-k8s/config` tag will _not_ be propagated to any of those step pods.
 
