@@ -141,7 +141,11 @@ export const AssetNodeOverview = ({
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
             <Subtitle2>Check results</Subtitle2>
-            <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
+            <AssetChecksStatusSummary
+              liveData={liveData}
+              rendering="tags"
+              assetKey={assetNode.assetKey}
+            />
           </Box>
         ) : undefined}
       </Box>
