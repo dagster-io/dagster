@@ -1,8 +1,10 @@
 import {Colors} from '@dagster-io/ui-components';
-import {Fragment, memo, useMemo} from 'react';
+import {useWorker} from '@koale/useworker';
+import {Fragment, memo, useEffect, useRef, useState} from 'react';
 
 import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
 import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
@@ -13,16 +15,51 @@ interface AssetEdgesProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-const MAX_EDGES = 20;
-
-export const AssetEdges = ({
-  edges,
-  selected,
-  highlighted,
-  direction,
-  strokeWidth = 4,
+function getEdgesToShow({
   viewportRect,
-}: AssetEdgesProps) => {
+  highlighted,
+  selected,
+  edges,
+}: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
+  const MAX_EDGES = 20;
+
+  //https://stackoverflow.com/a/20925869/1162881
+  function doesViewportContainEdge(
+    edge: {from: {x: number; y: number}; to: {x: number; y: number}},
+    viewportRect: {top: number; left: number; right: number; bottom: number},
+  ) {
+    return (
+      isOverlapping1D(
+        Math.max(edge.from.x, edge.to.x),
+        Math.max(viewportRect.left, viewportRect.right),
+        Math.min(edge.from.x, edge.to.x),
+        Math.min(viewportRect.left, viewportRect.right),
+      ) &&
+      isOverlapping1D(
+        Math.max(edge.from.y, edge.to.y),
+        Math.max(viewportRect.top, viewportRect.bottom),
+        Math.min(edge.from.y, edge.to.y),
+        Math.min(viewportRect.top, viewportRect.bottom),
+      )
+    );
+  }
+
+  function isOverlapping1D(xmax1: number, xmax2: number, xmin1: number, xmin2: number) {
+    return xmax1 >= xmin2 && xmax2 >= xmin1;
+  }
+
+  function doesViewportContainPoint(
+    point: {x: number; y: number},
+    viewportRect: {top: number; left: number; right: number; bottom: number},
+  ) {
+    return (
+      point.x >= viewportRect.left &&
+      point.x <= viewportRect.right &&
+      point.y >= viewportRect.top &&
+      point.y <= viewportRect.bottom
+    );
+  }
+
   // Note: we render the highlighted edges twice, but it's so that the first item with
   // all the edges in it can remain memoized.
 
@@ -32,7 +69,7 @@ export const AssetEdges = ({
   const top = Math.floor(viewportRect.top / 100) * 100;
   const bottom = Math.ceil(viewportRect.bottom / 100) * 100;
 
-  const edgesToShow = useMemo(() => {
+  const edgesToShow = (() => {
     const rectRounded = {left, right, top, bottom};
     const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, rectRounded));
     if (intersectedEdges.length <= 10) {
@@ -59,9 +96,9 @@ export const AssetEdges = ({
     }));
     edgesWithDistance.sort((a, b) => a.distance - b.distance);
     return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
-  }, [left, right, top, bottom, edges]);
+  })();
 
-  const selectedOrHighlightedEdges = useMemo(() => {
+  const selectedOrHighlightedEdges = (() => {
     const rectRounded = {left, right, top, bottom};
     const selectedOrHighlighted = edges.filter(
       ({fromId, toId}) =>
@@ -83,7 +120,51 @@ export const AssetEdges = ({
     }));
     edgesWithDistance.sort((a, b) => a.distance - b.distance);
     return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
-  }, [selected, highlighted, edges, left, right, top, bottom]);
+  })();
+  return {edgesToShow, selectedOrHighlightedEdges};
+}
+
+type EdgeState = {edgesToShow: AssetLayoutEdge[]; selectedOrHighlightedEdges: AssetLayoutEdge[]};
+export const AssetEdges = ({
+  edges,
+  selected,
+  highlighted,
+  direction,
+  strokeWidth = 4,
+  viewportRect,
+}: AssetEdgesProps) => {
+  const [getEdgesToShowWorker] = useWorker(getEdgesToShow);
+
+  const [{edgesToShow, selectedOrHighlightedEdges}, setEdges] = useState<EdgeState>({
+    edgesToShow: [],
+    selectedOrHighlightedEdges: [],
+  });
+
+  const isRunning = useRef(false);
+  const needsUpdate = useRef(false);
+  const currentStateRef = useUpdatingRef({highlighted, edges, selected, viewportRect});
+  useEffect(() => {
+    if (!isRunning.current) {
+      (async () => {
+        needsUpdate.current = true;
+        while (needsUpdate.current) {
+          isRunning.current = true;
+          const edgesToShow = await new Promise<EdgeState>((res) => {
+            getEdgesToShowWorker(currentStateRef.current).then((edgesToShow) => {
+              res(edgesToShow);
+            });
+          });
+          setEdges(edgesToShow);
+          isRunning.current = false;
+        }
+      })();
+    } else {
+      needsUpdate.current = true;
+    }
+    return () => {
+      getEdgesToShowWorker;
+    };
+  }, [edges, getEdgesToShowWorker, highlighted, selected, viewportRect, currentStateRef]);
 
   // Show up to 50 edges....
   return (
@@ -145,40 +226,3 @@ const AssetEdgeSet = memo(({edges, color, strokeWidth, direction}: AssetEdgeSetP
     ))}
   </>
 ));
-
-//https://stackoverflow.com/a/20925869/1162881
-function doesViewportContainEdge(
-  edge: {from: {x: number; y: number}; to: {x: number; y: number}},
-  viewportRect: {top: number; left: number; right: number; bottom: number},
-) {
-  return (
-    isOverlapping1D(
-      Math.max(edge.from.x, edge.to.x),
-      Math.max(viewportRect.left, viewportRect.right),
-      Math.min(edge.from.x, edge.to.x),
-      Math.min(viewportRect.left, viewportRect.right),
-    ) &&
-    isOverlapping1D(
-      Math.max(edge.from.y, edge.to.y),
-      Math.max(viewportRect.top, viewportRect.bottom),
-      Math.min(edge.from.y, edge.to.y),
-      Math.min(viewportRect.top, viewportRect.bottom),
-    )
-  );
-}
-
-function isOverlapping1D(xmax1: number, xmax2: number, xmin1: number, xmin2: number) {
-  return xmax1 >= xmin2 && xmax2 >= xmin1;
-}
-
-function doesViewportContainPoint(
-  point: {x: number; y: number},
-  viewportRect: {top: number; left: number; right: number; bottom: number},
-) {
-  return (
-    point.x >= viewportRect.left &&
-    point.x <= viewportRect.right &&
-    point.y >= viewportRect.top &&
-    point.y <= viewportRect.bottom
-  );
-}
