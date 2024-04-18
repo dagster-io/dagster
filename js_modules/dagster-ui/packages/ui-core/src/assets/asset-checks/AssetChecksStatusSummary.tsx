@@ -103,7 +103,7 @@ const ChecksSummaryPopover = ({
   );
 };
 
-function statusFromCheck(check: AssetCheckLiveFragment): AssetCheckIconType {
+function iconTypeFromCheck(check: AssetCheckLiveFragment): AssetCheckIconType {
   const status = check.executionForLatestMaterialization?.status;
   return status === undefined
     ? 'NOT_EVALUATED'
@@ -125,9 +125,7 @@ export const AssetChecksStatusSummary = ({
   rendering: 'dag' | 'tags';
   assetKey: AssetKey;
 }) => {
-  const byIconType = countBy(liveData.assetChecks, (c) => {
-    return statusFromCheck(c);
-  });
+  const byIconType = countBy(liveData.assetChecks, iconTypeFromCheck);
 
   return rendering === 'dag' ? (
     <Box flex={{gap: 6, alignItems: 'center'}}>
@@ -147,7 +145,7 @@ export const AssetChecksStatusSummary = ({
             <ChecksSummaryPopover
               type={type}
               assetKey={assetKey}
-              assetChecks={liveData.assetChecks.filter((a) => statusFromCheck(a) === type)}
+              assetChecks={liveData.assetChecks.filter((a) => iconTypeFromCheck(a) === type)}
             />
           }
           position="top-left"

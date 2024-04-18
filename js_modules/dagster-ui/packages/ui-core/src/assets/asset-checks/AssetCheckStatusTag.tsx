@@ -23,6 +23,34 @@ import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {TagActionsPopover} from '../../ui/TagActions';
 import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
+const CheckRow = ({
+  icon,
+  checkName,
+  timestamp,
+  assetKey,
+}: {
+  icon: JSX.Element;
+  checkName: string;
+  assetKey: AssetKey;
+  timestamp?: number;
+}) => (
+  <Box
+    flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12}}
+    padding={{horizontal: 12, vertical: 8}}
+  >
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      {icon}
+      <Link
+        to={assetDetailsPathForAssetCheck({assetKey, name: checkName})}
+        style={{textDecoration: 'none'}}
+      >
+        {checkName}
+      </Link>
+    </Box>
+    {timestamp && <TimestampDisplay timestamp={timestamp} />}
+  </Box>
+);
+
 export const CheckStatusRow = ({
   assetCheck,
   assetKey,
@@ -32,38 +60,13 @@ export const CheckStatusRow = ({
 }) => {
   const {executionForLatestMaterialization: execution} = assetCheck;
 
-  const CheckRow = ({
-    icon,
-    checkName,
-    timestamp,
-  }: {
-    icon: JSX.Element;
-    checkName: string;
-    timestamp?: number;
-  }) => (
-    <Box
-      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12}}
-      padding={{horizontal: 12, vertical: 8}}
-    >
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        {icon}
-        <Link
-          to={assetDetailsPathForAssetCheck({assetKey, name: checkName})}
-          style={{textDecoration: 'none'}}
-        >
-          {checkName}
-        </Link>
-      </Box>
-      {timestamp && <TimestampDisplay timestamp={timestamp} />}
-    </Box>
-  );
-
   // Note: this uses BaseTag for a "grayer" style than the default tag intent
   if (!execution) {
     return (
       <CheckRow
         icon={<Icon name="status" color={Colors.accentGray()} />}
         checkName={assetCheck.name}
+        assetKey={assetKey}
       />
     );
   }
@@ -81,6 +84,7 @@ export const CheckStatusRow = ({
           icon={<Spinner purpose="body-text" />}
           checkName={assetCheck.name}
           timestamp={timestamp}
+          assetKey={assetKey}
         />
       );
     case AssetCheckExecutionResolvedStatus.FAILED:
@@ -95,6 +99,7 @@ export const CheckStatusRow = ({
           }
           checkName={assetCheck.name}
           timestamp={timestamp}
+          assetKey={assetKey}
         />
       );
     case AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
@@ -109,6 +114,7 @@ export const CheckStatusRow = ({
           }
           checkName={assetCheck.name}
           timestamp={timestamp}
+          assetKey={assetKey}
         />
       );
     case AssetCheckExecutionResolvedStatus.SUCCEEDED:
@@ -117,11 +123,17 @@ export const CheckStatusRow = ({
           icon={<Icon name="check_circle" color={intentToFillColor('success')} />}
           checkName={assetCheck.name}
           timestamp={timestamp}
+          assetKey={assetKey}
         />
       );
     case AssetCheckExecutionResolvedStatus.SKIPPED:
       return (
-        <CheckRow icon={<Icon name="dot" />} checkName={assetCheck.name} timestamp={timestamp} />
+        <CheckRow
+          icon={<Icon name="dot" />}
+          checkName={assetCheck.name}
+          timestamp={timestamp}
+          assetKey={assetKey}
+        />
       );
     default:
       assertUnreachable(status);
