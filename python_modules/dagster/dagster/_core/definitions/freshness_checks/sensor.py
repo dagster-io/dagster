@@ -1,88 +1,24 @@
-import datetime
-from typing import Any, Mapping, Optional, Sequence
+from typing import Iterator, Optional, Sequence, cast
 
 import pendulum
-from pydantic import BaseModel
 
 from dagster import _check as check
 from dagster._annotations import experimental
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    SerializableNonScalarKeyMapping,
-    UnpackContext,
-    WhitelistMap,
-    deserialize_value,
-    pack_value,
-    serialize_value,
-    unpack_value,
-    whitelist_for_serdes,
-)
-from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import get_latest_completed_cron_tick
 
-from ..asset_check_spec import AssetCheckKey, AssetCheckSpec
+from ..asset_check_spec import AssetCheckKey
 from ..asset_checks import AssetChecksDefinition
 from ..asset_selection import AssetSelection
 from ..decorators import sensor
 from ..run_request import RunRequest
 from ..sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
 from .utils import (
-    DEADLINE_CRON_PARAM_KEY,
-    DEFAULT_FRESHNESS_TIMEZONE,
-    FRESHNESS_PARAMS_METADATA_KEY,
-    LOWER_BOUND_DELTA_PARAM_KEY,
-    TIMEZONE_PARAM_KEY,
-    ensure_freshness_checks,
+    FRESH_UNTIL_METADATA_KEY,
     ensure_no_duplicate_asset_checks,
+    seconds_in_words,
 )
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
-
-
-class EvaluationTimestampsSerializer(FieldSerializer):
-    def pack(
-        self,
-        mapping: Mapping[str, float],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> JsonSerializableValue:
-        return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
-
-    def unpack(
-        self,
-        unpacked_value: JsonSerializableValue,
-        whitelist_map: WhitelistMap,
-        context: UnpackContext,
-    ) -> PackableValue:
-        return unpack_value(unpacked_value, dict, whitelist_map, context)
-
-
-@whitelist_for_serdes(
-    field_serializers={"evaluation_timestamps_by_check_key": EvaluationTimestampsSerializer}
-)
-class FreshnessCheckSensorCursor(BaseModel):
-    """The cursor for the freshness check sensor."""
-
-    evaluation_timestamps_by_check_key: Mapping[AssetCheckKey, float]
-
-    def get_last_evaluation_timestamp(self, key: AssetCheckKey) -> Optional[float]:
-        return self.evaluation_timestamps_by_check_key.get(key)
-
-    @staticmethod
-    def empty():
-        return FreshnessCheckSensorCursor(evaluation_timestamps_by_check_key={})
-
-    def with_updated_evaluations(
-        self, keys: Sequence[AssetCheckKey], evaluation_timestamp: float
-    ) -> "FreshnessCheckSensorCursor":
-        return FreshnessCheckSensorCursor(
-            evaluation_timestamps_by_check_key=merge_dicts(
-                self.evaluation_timestamps_by_check_key,
-                {key: evaluation_timestamp for key in keys},
-            )
-        )
+MAXIMUM_RUNTIME_SECONDS = 35  # Due to GRPC communications, only allow this sensor to run for 40 seconds before pausing iteration and resuming in the next run. Leave a bit of time for run requests to be processed.
 
 
 @experimental
@@ -95,10 +31,21 @@ def build_sensor_for_freshness_checks(
 ) -> SensorDefinition:
     """Builds a sensor which kicks off evaluation of freshness checks.
 
-    The sensor will introspect from the parameters of the passed-in freshness checks how often to
-    run them. IE, if the freshness check is based on a cron schedule, the sensor will request one
-    run of the check per tick of the cron. If the freshness check is based on a maximum lag, the
-    sensor will request one run of the check per interval specified by the maximum lag.
+    This sensor will kick off an execution of a check in the following cases:
+    - The check has never been executed before.
+    - The check has been executed before, and the previous result was a success, but it is again
+    possible for the check to be overdue based on the `dagster/fresh_until_timestamp` metadata
+    on the check result.
+
+    Note that we will not execute if:
+    - The freshness check has been executed before, and the previous result was a failure. This is
+    because whichever run materializes/observes the run to bring the check back to a passing
+    state will end up also running the check anyway, so until that run occurs, there's no point
+    in evaluating the check.
+    - The freshness check has been executed before, and the previous result was a success, but it is
+    not possible for the check to be overdue based on the `dagster/fresh_until_timestamp`
+    metadata on the check result. Since the check cannot be overdue, we know the check
+    result would not change with an additional execution.
 
     Args:
         freshness_checks (Sequence[AssetChecksDefinition]): The freshness checks to evaluate.
@@ -109,11 +56,10 @@ def build_sensor_for_freshness_checks(
             to stopped.
 
     Returns:
-        SensorDefinition: The sensor that evaluates the freshness of the assets.
+        SensorDefinition: The sensor that kicks off freshness evaluations.
     """
     freshness_checks = check.sequence_param(freshness_checks, "freshness_checks")
     ensure_no_duplicate_asset_checks(freshness_checks)
-    ensure_freshness_checks(freshness_checks)
     check.invariant(
         check.int_param(minimum_interval_seconds, "minimum_interval_seconds") > 0
         if minimum_interval_seconds
@@ -130,69 +76,86 @@ def build_sensor_for_freshness_checks(
         default_status=default_status,
     )
     def the_sensor(context: SensorEvaluationContext) -> Optional[RunRequest]:
-        cursor = (
-            deserialize_value(context.cursor, FreshnessCheckSensorCursor)
-            if context.cursor
-            else FreshnessCheckSensorCursor.empty()
+        left_off_asset_check_key = (
+            AssetCheckKey.from_user_string(context.cursor) if context.cursor else None
         )
-        current_timestamp = pendulum.now("UTC").timestamp()
-        check_keys_to_run = []
-        for asset_check in freshness_checks:
-            for asset_check_spec in asset_check.check_specs:
-                prev_evaluation_timestamp = cursor.get_last_evaluation_timestamp(
-                    asset_check_spec.key
+        start_time = pendulum.now("UTC")
+        checks_iter = ordered_iterator_freshness_checks_starting_with_key(
+            left_off_asset_check_key, freshness_checks
+        )
+        check_key = next(checks_iter, None)
+        checks_to_evaluate = []
+        while (
+            pendulum.now("UTC").timestamp() - start_time.timestamp() < MAXIMUM_RUNTIME_SECONDS
+            and check_key is not None
+        ):
+            should_evaluate_check = False
+            prev_check_eval_record = context.instance.get_latest_asset_check_evaluation_record(
+                check_key
+            )
+            if prev_check_eval_record:
+                # If we have already executed this check, only run it if the previous result was a success, and the time limit has passed.
+                evaluation = check.not_none(
+                    check.not_none(
+                        prev_check_eval_record.event,
+                        "Expected the check evaluation record to have an associated dagster event.",
+                    ).asset_check_evaluation,
+                    "Expected the dagster event to be an asset check evaluation.",
                 )
-                if should_run_again(asset_check_spec, prev_evaluation_timestamp, current_timestamp):
-                    check_keys_to_run.append(asset_check_spec.key)
-        context.update_cursor(
-            serialize_value(cursor.with_updated_evaluations(check_keys_to_run, current_timestamp))
-        )
-        if check_keys_to_run:
-            return RunRequest(asset_check_keys=check_keys_to_run)
+                if evaluation.passed:
+                    next_deadline = cast(float, evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value)
+                    if next_deadline < start_time.timestamp():
+                        context.log.info(
+                            f"Freshness check {check_key.to_user_string()} previously passed, but "
+                            "enough time has passed that it can be overdue again. Adding to run request."
+                        )
+                        should_evaluate_check = True
+                    else:
+                        how_long_until_next_deadline = next_deadline - start_time.timestamp()
+                        context.log.info(
+                            f"Freshness check {check_key.to_user_string()} previously passed, but "
+                            f"cannot be overdue again until {seconds_in_words(how_long_until_next_deadline)}. Skipping..."
+                        )
+                else:
+                    context.log.info(
+                        f"Freshness check {check_key.to_user_string()} is currently overdue. "
+                        "Waiting to re-evaluate until the asset has received an update."
+                    )
+            else:
+                # If we have never before executed this check, we should run it
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} has never been executed before. "
+                    "Adding to run request."
+                )
+                should_evaluate_check = True
+            if should_evaluate_check:
+                checks_to_evaluate.append(check_key)
+            check_key = next(checks_iter, None)
+        new_cursor = check_key.to_user_string() if check_key else None
+        if new_cursor:
+            context.update_cursor(new_cursor)
+        if checks_to_evaluate:
+            return RunRequest(asset_check_keys=checks_to_evaluate)
 
     return the_sensor
 
 
-def should_run_again(
-    check_spec: AssetCheckSpec, prev_evaluation_timestamp: Optional[float], current_timestamp: float
-) -> bool:
-    metadata = check_spec.metadata
-    if not metadata:
-        # This should never happen, but type hinting prevents us from using check.not_none
-        check.assert_never(metadata)
-
-    if not prev_evaluation_timestamp:
-        return True
-
-    timezone = get_freshness_cron_timezone(metadata) or DEFAULT_FRESHNESS_TIMEZONE
-    current_time = pendulum.from_timestamp(current_timestamp, tz=timezone)
-    prev_evaluation_time = pendulum.from_timestamp(prev_evaluation_timestamp, tz=timezone)
-
-    deadline_cron = get_freshness_cron(metadata)
-    if deadline_cron:
-        latest_completed_cron_tick = check.not_none(
-            get_latest_completed_cron_tick(deadline_cron, current_time, timezone)
-        )
-        return latest_completed_cron_tick > prev_evaluation_time
-
-    lower_bound_delta = check.not_none(get_lower_bound_delta(metadata))
-    return current_time > prev_evaluation_time + lower_bound_delta
-
-
-def get_metadata(check_spec: AssetCheckSpec) -> Mapping[str, Any]:
-    if check_spec.metadata:
-        return check_spec.metadata
-    check.assert_never(check_spec.metadata)
-
-
-def get_freshness_cron(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(DEADLINE_CRON_PARAM_KEY)
-
-
-def get_freshness_cron_timezone(metadata: Mapping[str, Any]) -> Optional[str]:
-    return metadata[FRESHNESS_PARAMS_METADATA_KEY].get(TIMEZONE_PARAM_KEY)
-
-
-def get_lower_bound_delta(metadata: Mapping[str, Any]) -> Optional[datetime.timedelta]:
-    float_delta: float = metadata[FRESHNESS_PARAMS_METADATA_KEY].get(LOWER_BOUND_DELTA_PARAM_KEY)
-    return datetime.timedelta(seconds=float_delta) if float_delta else None
+def ordered_iterator_freshness_checks_starting_with_key(
+    left_off_asset_check_key: Optional[AssetCheckKey],
+    freshness_checks: Sequence[AssetChecksDefinition],
+) -> Iterator[AssetCheckKey]:
+    asset_check_keys_sorted = sorted(
+        [
+            asset_check_spec.key
+            for asset_check in freshness_checks
+            for asset_check_spec in asset_check.check_specs
+        ],
+        key=lambda key: key.to_user_string(),
+    )
+    # Offset based on the left off asset check key, but then iterate back through the beginning afterwards
+    if left_off_asset_check_key:
+        left_off_idx = asset_check_keys_sorted.index(left_off_asset_check_key)
+        yield from asset_check_keys_sorted[left_off_idx:]
+        yield from asset_check_keys_sorted[:left_off_idx]
+    else:
+        yield from asset_check_keys_sorted
