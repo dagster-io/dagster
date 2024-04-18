@@ -9,6 +9,7 @@ import {UserSettingsButton} from '@dagster-io/ui-core/app/UserSettingsButton';
 import {logLink, timeStartLink} from '@dagster-io/ui-core/app/apolloLinks';
 import {DeploymentStatusType} from '@dagster-io/ui-core/instance/DeploymentStatusProvider';
 import {LiveDataPollRateContext} from '@dagster-io/ui-core/live-data-provider/LiveDataProvider';
+import {Suspense} from 'react';
 
 import {InjectedComponents} from './InjectedComponents';
 import {CommunityNux} from './NUX/CommunityNux';
@@ -48,7 +49,9 @@ export default function AppPage() {
           </AppTopNav>
           <App>
             <ContentRoot />
-            <CommunityNux />
+            <Suspense>
+              <CommunityNux />
+            </Suspense>
           </App>
         </AppProvider>
       </LiveDataPollRateContext.Provider>
