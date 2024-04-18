@@ -10,7 +10,10 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_db_io_manager_type_handler import (
     DataFrameType,
     TemplateTypeHandlerTestSuite,

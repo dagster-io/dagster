@@ -12,7 +12,10 @@ from dagster import (
     job,
     op,
 )
+from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_db_io_manager_type_handler import (
     DataFrameType,
     TemplateTypeHandlerTestSuite,

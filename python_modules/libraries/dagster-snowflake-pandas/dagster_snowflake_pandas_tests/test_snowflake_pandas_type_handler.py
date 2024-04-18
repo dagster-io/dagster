@@ -16,6 +16,7 @@ from dagster import (
     build_output_context,
 )
 from dagster._core.storage.db_io_manager import TableSlice
+from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeResource
 from dagster_snowflake_pandas import (
@@ -27,6 +28,8 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_db_io_manager_type_handler import (
     DataFrameType,
     TemplateTypeHandlerTestSuite,
