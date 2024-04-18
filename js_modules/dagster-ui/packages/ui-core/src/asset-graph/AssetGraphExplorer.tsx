@@ -100,6 +100,7 @@ export const AssetGraphExplorer = (props: Props) => {
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
       [fullAssetGraphData],
     ),
+    loading: fetchResult.loading ?? true,
     isGlobalGraph: !!props.isGlobalGraph,
     assetFilterState: props.assetFilterState,
     explorerPath: explorerPath.opsQuery,
