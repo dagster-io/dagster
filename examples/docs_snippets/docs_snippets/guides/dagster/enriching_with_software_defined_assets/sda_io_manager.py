@@ -1,10 +1,10 @@
 from pandas import DataFrame
 
-from dagster import Definitions, SourceAsset, asset, define_asset_job
+from dagster import AssetsDefinition, Definitions, asset, define_asset_job
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
-raw_users = SourceAsset(key="raw_users", io_manager_key="warehouse")
+raw_users = AssetsDefinition.single(key="raw_users", io_manager_key="warehouse")
 
 
 @asset(io_manager_key="warehouse")

@@ -147,7 +147,7 @@ def send_emails(emails) -> None: ...
 
 @job
 def send_emails_job():
-    send_emails(emails_to_send.to_source_asset())
+    send_emails(emails_to_send)
 ```
 
 In this case, the asset - specifically, the table the job reads from - is only used as a data source for the job. It’s not materialized when the graph is run.
