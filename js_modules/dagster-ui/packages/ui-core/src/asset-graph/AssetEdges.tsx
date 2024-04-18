@@ -22,7 +22,7 @@ function getEdgesToShow({
   edges,
 }: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
   try {
-    const MAX_EDGES = 60;
+    const MAX_EDGES = 60; // arbitrary number
 
     //https://stackoverflow.com/a/20925869/1162881
     function doesViewportContainEdge(
@@ -178,14 +178,12 @@ export const AssetEdges = ({
         color={Colors.lineageEdge()}
         edges={edgesToShow}
         strokeWidth={strokeWidth}
-        viewportRect={viewportRect}
         direction={direction}
       />
       <AssetEdgeSet
         color={Colors.lineageEdgeHighlighted()}
         edges={selectedOrHighlightedEdges}
         strokeWidth={strokeWidth}
-        viewportRect={viewportRect}
         direction={direction}
       />
     </Fragment>
@@ -197,7 +195,6 @@ interface AssetEdgeSetProps {
   color: string;
   direction: AssetLayoutDirection;
   strokeWidth: number;
-  viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
 const AssetEdgeSet = memo(({edges, color, strokeWidth, direction}: AssetEdgeSetProps) => (
