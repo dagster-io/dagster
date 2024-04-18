@@ -556,10 +556,11 @@ class TemplateTypeHandlerTestSuite:
                 ) -> pd.DataFrame:
                     if not self_dependent_asset.empty:
                         assert len(self_dependent_asset.index) == 3
+                        # snowflake pandas i/o manager automatically converts column names to lowercase, so
+                        # we need to standardize here so we can use the same column names for all i/o managers
+                        self_dependent_asset.columns = map(str.upper, self_dependent_asset.columns)
                         assert (
-                            self_dependent_asset[
-                                "TIME"
-                            ]  # TODO need to fix snowflake io manager to keep column casing consistent
+                            self_dependent_asset["TIME"]
                             == pd.Timestamp(
                                 context.op_execution_context.op_config["last_partition_key"]
                             )
