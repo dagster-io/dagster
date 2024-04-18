@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
-import {Fragment, memo} from 'react';
+import {Fragment, useMemo, memo} from 'react';
 
 import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
 import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
@@ -24,30 +24,86 @@ export const AssetEdges = ({
   // Note: we render the highlighted edges twice, but it's so that the first item with
   // all the edges in it can remain memoized.
 
-  const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, viewportRect));
-  const visibleToFromEdges = intersectedEdges.filter(
-    (edge) =>
-      doesViewportContainPoint(edge.from, viewportRect) ||
-      doesViewportContainPoint(edge.to, viewportRect),
-  );
+  // Round to the nearest 100px to avoid recalculating edges too often (could be an array of 1,000+ edges)
+  const rectRounded = {
+    left: Math.floor(viewportRect.left / 100) * 100,
+    right: Math.ceil(viewportRect.right / 100) * 100,
+    top: Math.floor(viewportRect.top / 100) * 100,
+    bottom: Math.ceil(viewportRect.bottom / 100) * 100,
+  };
+
+  const edgesToShow = useMemo(() => {
+    const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, rectRounded));
+    if (intersectedEdges.length <= 10) {
+      return intersectedEdges;
+    }
+    const visibleToFromEdges = intersectedEdges.filter(
+      (edge) =>
+        doesViewportContainPoint(edge.from, rectRounded) ||
+        doesViewportContainPoint(edge.to, rectRounded),
+    );
+    if (visibleToFromEdges.length < 50) {
+      return visibleToFromEdges;
+    }
+    const center = {
+      x: (rectRounded.left + rectRounded.right) / 2,
+      y: (rectRounded.top + rectRounded.bottom) / 2,
+    };
+    const edgesWithDistance = visibleToFromEdges.map((edge) => ({
+      edge,
+      distance: Math.min(
+        Math.sqrt(Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2)),
+        Math.sqrt(Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2)),
+      ),
+    }));
+    edgesWithDistance.sort((a, b) => a.distance - b.distance);
+    return edgesWithDistance.slice(0, 20).map((item) => item.edge);
+  }, [rectRounded.bottom, rectRounded.top, rectRounded.left, rectRounded.right, edges]);
+
+  const selectedOrHighlightedEdges = useMemo(() => {
+    const selectedOrHighlighted = edges.filter(
+      ({fromId, toId}) =>
+        selected?.includes(fromId) ||
+        selected?.includes(toId) ||
+        highlighted?.includes(fromId) ||
+        highlighted?.includes(toId),
+    );
+    const center = {
+      x: (rectRounded.left + rectRounded.right) / 2,
+      y: (rectRounded.top + rectRounded.bottom) / 2,
+    };
+    const edgesWithDistance = selectedOrHighlighted.map((edge) => ({
+      edge,
+      distance: Math.min(
+        Math.sqrt(Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2)),
+        Math.sqrt(Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2)),
+      ),
+    }));
+    edgesWithDistance.sort((a, b) => a.distance - b.distance);
+    return edgesWithDistance.slice(0, 20).map((item) => item.edge);
+  }, [
+    selected,
+    highlighted,
+    edges,
+    rectRounded.left,
+    rectRounded.bottom,
+    rectRounded.right,
+    rectRounded.top,
+  ]);
+
+  // Show up to 50 edges....
   return (
     <Fragment>
       <AssetEdgeSet
         color={Colors.lineageEdge()}
-        edges={intersectedEdges.length > 10 ? visibleToFromEdges : intersectedEdges}
+        edges={edgesToShow}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
         direction={direction}
       />
       <AssetEdgeSet
         color={Colors.lineageEdgeHighlighted()}
-        edges={edges.filter(
-          ({fromId, toId}) =>
-            selected?.includes(fromId) ||
-            selected?.includes(toId) ||
-            highlighted?.includes(fromId) ||
-            highlighted?.includes(toId),
-        )}
+        edges={selectedOrHighlightedEdges}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
         direction={direction}
