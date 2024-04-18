@@ -16,7 +16,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-from dagster import AssetKey, AssetsDefinition, asset, file_relative_path
+from dagster import AssetKey, file_relative_path
 from dagster._core.definitions.asset_spec import AssetSpec
 
 
@@ -70,7 +70,7 @@ def build_stock_assets_object(stocks_dsl_document: Dict[str, Dict]) -> StockAsse
     )
 
 
-def get_stocks_dsl_example_defs() -> List[AssetsDefinition]:
+def get_stocks_dsl_example_defs() -> List[AssetGraphExecutionNode]:
     stocks_dsl_document = load_yaml("stocks.yaml")
     stock_assets = build_stock_assets_object(stocks_dsl_document)
     return assets_defs_from_stock_assets(stock_assets)
@@ -110,7 +110,13 @@ class IndexStrategyExecutionNode(AssetGraphExecutionNode):
             stored_ticker_data[ticker] = fetch_data_for_ticker(ticker)
 
 
-def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefinition]:
+class ForecastNode(AssetGraphExecutionNode):
+    def execute(self, context: AssetExecutionContext) -> None:
+        pass
+        # do some forecast thing
+
+
+def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetGraphExecutionNode]:
     group_name = "stocks"
 
     def spec_for_stock_info(stock_info: StockInfo) -> AssetSpec:
@@ -125,27 +131,18 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
     tickers = [stock_info.ticker for stock_info in stock_assets.stock_infos]
     ticker_specs = [spec_for_stock_info(stock_info) for stock_info in stock_assets.stock_infos]
 
-    fetch_the_tickers = TickerFetcher(asset_specs=ticker_specs, tickers=tickers).build_assets_def()
+    fetch_the_tickers = TickerFetcher(asset_specs=ticker_specs, tickers=tickers)
     index_strategy = IndexStrategyExecutionNode(
         asset_spec=AssetSpec(
             key="index_strategy",
             group_name=group_name,
-            deps=fetch_the_tickers.keys,
+            deps=fetch_the_tickers.asset_keys,
         ),
         tickers=tickers,
-    ).build_assets_def()
+    )
 
-    # @asset(deps=fetch_the_tickers.keys, group_name=group_name)
-    # def index_strategy() -> None:
-    #     stored_ticker_data = {}
-    #     for ticker in tickers:
-    #         stored_ticker_data[ticker] = fetch_data_for_ticker(ticker)
-
-    #     # do someting with stored_ticker_data
-
-    @asset(deps=fetch_the_tickers.keys, group_name=group_name)
-    def forecast() -> None:
-        # do some forecast thing
-        pass
+    forecast = ForecastNode(
+        specs=[AssetSpec(key="forecast", group_name=group_name, deps=fetch_the_tickers.asset_keys)]
+    )
 
     return [fetch_the_tickers, index_strategy, forecast]

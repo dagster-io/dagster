@@ -32,18 +32,18 @@ class AssetGraphExecutionNode(ABC):
         return [spec for spec in self.specs if isinstance(spec, AssetSpec)]
 
     @property
-    def keys(self) -> List[AssetKeyOrCheckKey]:
-        return [spec.key for spec in self.specs]
+    def keys(self) -> Set[AssetKeyOrCheckKey]:
+        return {spec.key for spec in self.specs}
 
     @property
-    def asset_keys(self) -> List[AssetKey]:
-        return [spec.key for spec in self.asset_specs]
+    def asset_keys(self) -> Set[AssetKey]:
+        return {spec.key for spec in self.asset_specs}
 
     @abstractmethod
     # TODO: generalize to all result types
     def execute(
         self, context: AssetExecutionContext
-    ) -> Union[None, Iterable[PipesExecutionResult]]: ...
+    ) -> Optional[Iterable[PipesExecutionResult]]: ...
 
     def build_assets_def(self) -> AssetsDefinition:
         # how to handle subsetting?
@@ -64,6 +64,7 @@ class AssetGraphExecutionNode(ABC):
 
         @multi_asset(name=self.op_name, specs=self.specs, required_resource_keys=self.resource_keys)  # type: ignore
         # Subverting typehints shenanigans
+        # need to figure out when to typehint to None
         def _asset_def(context):  # type: ignore
             return _implementation(context)
 

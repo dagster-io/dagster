@@ -15,10 +15,16 @@ forecast:
 
 
 import yaml
-from assets_yaml_dsl.domain_specific_dsl.stocks_dsl import assets_defs_from_stock_assets
+from assets_yaml_dsl.domain_specific_dsl.stocks_dsl import (
+    TickerFetcher,
+    assets_defs_from_stock_assets,
+)
 from dagster import AssetKey
 from dagster._core.definitions import materialize
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from examples.experimental.assets_yaml_dsl.assets_yaml_dsl.asset_graph_execution_node import (
+    AssetGraphExecutionNode,
+)
 from examples.experimental.assets_yaml_dsl.assets_yaml_dsl.domain_specific_dsl.stocks_dsl import (
     build_stock_assets_object,
 )
@@ -31,7 +37,9 @@ def test_stocks_dsl() -> None:
 
     fetch_ticker_assets_def = assets_defs[0]
 
-    assert fetch_ticker_assets_def.keys == {
+    assert isinstance(fetch_ticker_assets_def, TickerFetcher)
+
+    assert fetch_ticker_assets_def.asset_keys == {
         AssetKey("MSFT"),
         AssetKey("AAPL"),
         AssetKey("GOOG"),
@@ -55,5 +63,6 @@ def test_materialize_stocks_dsl() -> None:
     stock_assets = build_stock_assets_object(stocks_dsl_document)
     assets_defs = assets_defs_from_stock_assets(stock_assets)
     assert materialize(
-        assets=assets_defs, resources={"pipes_subprocess_client": PipesSubprocessClient()}
+        assets=AssetGraphExecutionNode.to_assets_defs(assets_defs),
+        resources={"pipes_subprocess_client": PipesSubprocessClient()},
     ).success
