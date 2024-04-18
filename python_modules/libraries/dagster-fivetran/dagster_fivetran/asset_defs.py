@@ -361,7 +361,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _get_connectors(self) -> Sequence[FivetranConnectionMetadata]:
         output_connectors: List[FivetranConnectionMetadata] = []
 
-        if self._desination_ids is None:
+        if not self._destination_ids:
             groups = self._fivetran_instance.make_request("GET", "groups")["items"]
         else:
             groups = [{"id": destination_id} for destination_id in self._desination_ids]
