@@ -23,48 +23,99 @@ The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies
 
 ## Step 2: Create your code location file
 
-```python startafter=start_example endbefore=end_example file=/integrations/dbt/quickstart.py
-from pathlib import Path
+Running your dbt project with Dagster can be easily done after creating a single file. For this example, let's consider a basic use case - say you want to represent your dbt models as Dagster assets and run them daily at midnight.
 
-from dagster import AssetExecutionContext, Definitions
-from dagster_dbt import (
-    DbtCliResource,
-    DbtProject,
-    build_schedule_from_dbt_selection,
-    dbt_assets,
-)
+1. Create the Python file where you will add the Dagster code. Since this file will contain [all Dagster definitions required for your code location](concepts/code-locations), let's call it `definitions.py`.
 
-my_project = DbtProject(
-    project_dir=Path(__file__).joinpath("..", "jaffle_shop").resolve(),
-)
+   ```shell
+   touch definitions.py
+   ```
 
+2. In this file, with your text editor of choice, add the following code. Make sure to update the `RELATIVE_PATH_TO_YOUR_DBT_PROJECT` constant so that it points to your dbt project.
 
-@dbt_assets(manifest=my_project.manifest_path)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-    yield from dbt.cli(["build"], context=context).stream()
+   ```python startafter=start_example endbefore=end_example file=/integrations/dbt/quickstart.py
+   from pathlib import Path
 
+   from dagster import AssetExecutionContext, Definitions
+   from dagster_dbt import (
+       DbtCliResource,
+       DbtProject,
+       build_schedule_from_dbt_selection,
+       dbt_assets,
+   )
 
-my_schedule = build_schedule_from_dbt_selection(
-    [my_dbt_assets],
-    job_name="materialize_dbt_models",
-    cron_schedule="0 0 * * *",
-    dbt_select="fqn:*",
-)
+   RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "relative/path/to/your/dbt-project"
 
 
-defs = Definitions(
-    assets=[my_dbt_assets],
-    schedules=[my_schedule],
-    resources={
-        "dbt": DbtCliResource(project_dir=my_project),
-    },
-)
-```
+   my_project = DbtProject(
+       project_dir=Path(__file__)
+       .joinpath("..", RELATIVE_PATH_TO_YOUR_DBT_PROJECT)
+       .resolve(),
+   )
+
+
+   @dbt_assets(manifest=my_project.manifest_path)
+   def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+       yield from dbt.cli(["build"], context=context).stream()
+
+
+   my_schedule = build_schedule_from_dbt_selection(
+       [my_dbt_assets],
+       job_name="materialize_dbt_models",
+       cron_schedule="0 0 * * *",
+       dbt_select="fqn:*",
+   )
+
+
+   defs = Definitions(
+       assets=[my_dbt_assets],
+       schedules=[my_schedule],
+       resources={
+           "dbt": DbtCliResource(project_dir=my_project),
+       },
+   )
+   ```
 
 ---
 
-## Step 3: Run the project
+## Step 3: Run your dbt project in Dagster's UI
 
-```shell
-dagster dev -f definitions.py
-```
+Now that your file is created, you can run Dagster's UI to take a look at your dbt project.
+
+1. To start Dagster's UI, run the following:
+
+   ```shell
+   dagster dev -f definitions.py
+   ```
+
+   Which will result in output similar to:
+
+   ```shell
+   Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
+   ```
+
+2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the asset graph for the job created by the schedule definition:
+
+  <!--
+  ![Asset graph for your job in Dagster's UI, containing dbt models loaded as Dagster assets](/images/integrations/dbt/quickstart/asset-graph.png)
+  -->
+
+<Image
+alt="Asset graph for your job in Dagster's UI, containing dbt models loaded as Dagster assets"
+src="/images/integrations/dbt/quickstart/asset-graph.png"
+width={2688}
+height={1680}
+/>
+
+3. In Dagster, running a dbt model corresponds to _materializing_ an asset. Because a schedule definition has been added to your code location, your assets will be materialized at the next cron tick. The assets can also be materialized manually by click the **Materialize all** button near the top right corner of the page. This will launch a run to materialize the assets.
+
+---
+
+## What's next?
+
+Congratulations on successfully running your dbt project in Dagster!
+
+In this example, we created a single file to handle a simple use case and run your dbt project. To learn more about our dbt integrations and how to handle more complex use cases, consider the following options:
+
+- Begin the official dbt scaffold tutorial, like the [dbt & Dagster project](/integrations/dbt/using-dbt-with-dagster).
+- Checkout out the Dagster & dbt course in [Dagster University]("https://courses.dagster.io").
