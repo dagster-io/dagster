@@ -6,6 +6,11 @@
     "isDefaultOpen": true,
     "children": [
       {
+        "title": "Testing Zone",
+        "path": "/getting-started/testing-zone",
+        "nonMdx": true
+      },
+      {
         "title": "What's Dagster?",
         "path": "/getting-started/what-why-dagster"
       },
