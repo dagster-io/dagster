@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from enum import Enum
+from functools import cached_property
 from typing import Iterator
 
 import pandas as pd
@@ -23,7 +24,6 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
-from dagster._utils.cached_method import cached_method
 
 
 class DataFrameType(Enum):
@@ -66,9 +66,9 @@ class TemplateTypeHandlerTestSuite:
     def _setup_spark_session(self):
         raise NotImplementedError("All PySpark test suites must implement _setup_spark_session")
 
-    @cached_method
+    @cached_property
     def spark_session(self):
-        self._spark_session = self._setup_spark_session()
+        return self._setup_spark_session()
 
     def test_not_supported_type(self):
         @asset
