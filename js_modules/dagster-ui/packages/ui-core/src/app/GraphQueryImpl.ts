@@ -141,19 +141,13 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
   const clauses = removeSpacesAroundArrow(query).split(/(,| AND | and | )/g);
   const focus = new Set<T>();
 
-  console.log({clauses});
-
   for (const clause of clauses) {
     // This regex focuses on matching exactly the quoted strings around "->" without any spaces
     const regex = /("([^"]+)"|(\w+))->("([^"]+)"|(\w+))/g;
     const pathClauseParts = regex.exec(clause.trim());
-    console.log({pathClauseParts});
     if (pathClauseParts) {
       const pathClauseStart = pathClauseParts[1] || pathClauseParts[2];
       const pathClauseEnd = pathClauseParts[4] || pathClauseParts[5];
-
-      console.log({pathClauseParts});
-
       const pathClauseStartMatches = items.filter((item) =>
         selectionFilter({itemName: item.name, selection: pathClauseStart}),
       );
@@ -178,7 +172,6 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
     }
 
     const parts = /(\*?\+*)([.\w\d>\[\?\]\"_\/-]+)(\+*\*?)/.exec(clause.trim());
-    console.log({parts});
     if (!parts) {
       continue;
     }
@@ -192,7 +185,6 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
         return selectionFilter({selection: selectionName, itemName: item.name});
       }
     });
-    console.log({itemsMatching});
 
     for (const item of itemsMatching) {
       const upDepth = expansionDepthForClause(parentsClause);
