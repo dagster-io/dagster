@@ -22,7 +22,7 @@ function getEdgesToShow({
   edges,
 }: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
   try {
-    const MAX_EDGES = 100;
+    const MAX_EDGES = 60;
 
     //https://stackoverflow.com/a/20925869/1162881
     function doesViewportContainEdge(
