@@ -481,12 +481,12 @@ const AssetNodeOverviewContainer = ({
 }) => (
   <Box
     flex={{direction: 'row', gap: 8}}
-    style={{width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden'}}
+    style={{width: '100%', height: '100%', overflow: 'hidden'}}
   >
     <Box
       flex={{direction: 'column'}}
       padding={{horizontal: 24, vertical: 12}}
-      style={{flex: 1, minWidth: 0}}
+      style={{flex: 1, minWidth: 0, overflowY: 'auto'}}
     >
       {left}
     </Box>
@@ -494,7 +494,7 @@ const AssetNodeOverviewContainer = ({
       border={{side: 'left'}}
       flex={{direction: 'column'}}
       padding={{left: 24, vertical: 12, right: 12}}
-      style={{width: '30%', minWidth: 250}}
+      style={{width: '30%', minWidth: 250, overflowY: 'auto'}}
     >
       {right}
     </Box>
