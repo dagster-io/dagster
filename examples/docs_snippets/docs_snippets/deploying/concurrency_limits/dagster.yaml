@@ -36,7 +36,8 @@ concurrency:
 # start_throttle_op_concurrency_limited_runs
 
 run_queue:
-  should_block_op_concurrency_limited_runs: true
-  op_concurrency_slot_buffer: 1  # buffer of 1 means 1 run might be started even though there are no slots available
+  block_op_concurrency_limited_runs:
+    enabled: true
+    op_concurrency_slot_buffer: 1  # buffer of 1 means 1 run might be started even though there are no slots available
 
 # end_throttle_op_concurrency_limited_runs
