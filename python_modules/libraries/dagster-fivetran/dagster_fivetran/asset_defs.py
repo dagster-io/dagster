@@ -364,7 +364,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         if not self._destination_ids:
             groups = self._fivetran_instance.make_request("GET", "groups")["items"]
         else:
-            groups = [{"id": destination_id} for destination_id in self._desination_ids]
+            groups = [{"id": destination_id} for destination_id in self._destination_ids]
 
         for group in groups:
             group_id = group["id"]
