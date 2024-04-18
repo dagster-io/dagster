@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
-import {Fragment, useMemo, memo} from 'react';
+import {Fragment, memo, useMemo} from 'react';
 
 import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
 import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
@@ -13,6 +13,8 @@ interface AssetEdgesProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
+const MAX_EDGES = 30;
+
 export const AssetEdges = ({
   edges,
   selected,
@@ -25,14 +27,13 @@ export const AssetEdges = ({
   // all the edges in it can remain memoized.
 
   // Round to the nearest 100px to avoid recalculating edges too often (could be an array of 1,000+ edges)
-  const rectRounded = {
-    left: Math.floor(viewportRect.left / 100) * 100,
-    right: Math.ceil(viewportRect.right / 100) * 100,
-    top: Math.floor(viewportRect.top / 100) * 100,
-    bottom: Math.ceil(viewportRect.bottom / 100) * 100,
-  };
+  const left = Math.floor(viewportRect.left / 100) * 100;
+  const right = Math.ceil(viewportRect.right / 100) * 100;
+  const top = Math.floor(viewportRect.top / 100) * 100;
+  const bottom = Math.ceil(viewportRect.bottom / 100) * 100;
 
   const edgesToShow = useMemo(() => {
+    const rectRounded = {left, right, top, bottom};
     const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, rectRounded));
     if (intersectedEdges.length <= 10) {
       return intersectedEdges;
@@ -57,10 +58,11 @@ export const AssetEdges = ({
       ),
     }));
     edgesWithDistance.sort((a, b) => a.distance - b.distance);
-    return edgesWithDistance.slice(0, 20).map((item) => item.edge);
-  }, [rectRounded.bottom, rectRounded.top, rectRounded.left, rectRounded.right, edges]);
+    return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
+  }, [left, right, top, bottom, edges]);
 
   const selectedOrHighlightedEdges = useMemo(() => {
+    const rectRounded = {left, right, top, bottom};
     const selectedOrHighlighted = edges.filter(
       ({fromId, toId}) =>
         selected?.includes(fromId) ||
@@ -80,16 +82,8 @@ export const AssetEdges = ({
       ),
     }));
     edgesWithDistance.sort((a, b) => a.distance - b.distance);
-    return edgesWithDistance.slice(0, 20).map((item) => item.edge);
-  }, [
-    selected,
-    highlighted,
-    edges,
-    rectRounded.left,
-    rectRounded.bottom,
-    rectRounded.right,
-    rectRounded.top,
-  ]);
+    return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
+  }, [selected, highlighted, edges, left, right, top, bottom]);
 
   // Show up to 50 edges....
   return (
