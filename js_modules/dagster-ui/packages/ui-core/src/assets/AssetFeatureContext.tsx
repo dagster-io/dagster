@@ -27,6 +27,8 @@ type AssetFeatureContextType = {
   useTabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
   renderFeatureView: (input: AssetViewFeatureInput) => React.ReactNode;
   AssetColumnLinksCell: (input: {column: string | null}) => React.ReactNode;
+
+  enableAssetHealthOverviewPreview: boolean;
 };
 
 export const AssetFeatureContext = React.createContext<AssetFeatureContextType>({
@@ -35,6 +37,7 @@ export const AssetFeatureContext = React.createContext<AssetFeatureContextType>(
   AssetColumnLinksCell: () => undefined,
   LineageOptions: undefined,
   LineageGraph: undefined,
+  enableAssetHealthOverviewPreview: false,
 });
 
 const renderFeatureView = () => <span />;
@@ -47,6 +50,7 @@ export const AssetFeatureProvider = ({children}: {children: React.ReactNode}) =>
       AssetColumnLinksCell: () => undefined,
       LineageOptions: undefined,
       LineageGraph: undefined,
+      enableAssetHealthOverviewPreview: false,
     };
   }, []);
 

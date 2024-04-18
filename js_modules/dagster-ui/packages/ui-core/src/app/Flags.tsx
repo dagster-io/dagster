@@ -14,7 +14,6 @@ export const FeatureFlag = {
   flagUseNewAutomationPage: 'flagUseNewAutomationPage' as const,
   flagUseNewOverviewPage: 'flagUseNewOverviewPage' as const,
   flagExperimentalBranchDiff: 'flagExperimentalBranchDiff' as const,
-  flagUseNewAssetHealthOverviewPage: 'flagUseNewAssetHealthOverviewPage' as const,
   flagSettingsPage: 'flagSettingsPage' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;

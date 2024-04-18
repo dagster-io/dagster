@@ -6,8 +6,8 @@ import {OverviewAssetsRoot} from './OverviewAssetsRoot';
 import {OverviewPageHeader} from './OverviewPageHeader';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
-import {useFeatureFlags} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
+import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ActivatableButton} from '../runs/RunListTabs';
@@ -28,12 +28,12 @@ export const OverviewActivityRoot = () => {
     (json) => (['timeline', 'assets'].includes(json) ? json : 'timeline'),
   );
 
-  const {flagUseNewAssetHealthOverviewPage} = useFeatureFlags();
-  const defaultTab = flagUseNewAssetHealthOverviewPage ? 'timeline' : _defaultTab;
+  const {enableAssetHealthOverviewPreview} = React.useContext(AssetFeatureContext);
+  const defaultTab = enableAssetHealthOverviewPreview ? 'timeline' : _defaultTab;
 
   const tabButton = React.useCallback(
     ({selected}: {selected: 'timeline' | 'assets'}) => {
-      if (flagUseNewAssetHealthOverviewPage) {
+      if (enableAssetHealthOverviewPreview) {
         return null;
       }
       if (defaultTab !== selected) {
@@ -50,13 +50,13 @@ export const OverviewActivityRoot = () => {
         </JoinedButtons>
       );
     },
-    [defaultTab, setDefaultTab, flagUseNewAssetHealthOverviewPage],
+    [defaultTab, setDefaultTab, enableAssetHealthOverviewPreview],
   );
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <Switch>
-        {!flagUseNewAssetHealthOverviewPage && (
+        {!enableAssetHealthOverviewPreview && (
           <Route path="/overview/activity/assets">
             <OverviewAssetsRoot Header={header} TabButton={tabButton} />
           </Route>

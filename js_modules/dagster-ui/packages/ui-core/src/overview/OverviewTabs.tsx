@@ -1,8 +1,9 @@
 import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
+import {useContext} from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {TabLink} from '../ui/TabLink';
@@ -18,17 +19,13 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
 
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
-  const {flagUseNewAssetHealthOverviewPage} = useFeatureFlags();
+  const {enableAssetHealthOverviewPreview} = useContext(AssetFeatureContext);
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        {flagUseNewAssetHealthOverviewPage ? (
-          <TabLink id="activity" title="Timeline" to="/overview/activity" />
-        ) : (
-          <TabLink id="activity" title="Activity" to="/overview/activity" />
-        )}
-        {flagUseNewAssetHealthOverviewPage && (
+        <TabLink id="activity" title="Timeline" to="/overview/activity" />
+        {enableAssetHealthOverviewPreview && (
           <TabLink id="asset-health" title="Asset Health" to="/overview/asset-health" />
         )}
         <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
