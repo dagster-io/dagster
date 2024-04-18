@@ -164,7 +164,11 @@ const AssetNodeChecksRow = ({
         to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
         onClick={(e) => e.stopPropagation()}
       >
-        <AssetChecksStatusSummary liveData={liveData} rendering="dag" />
+        <AssetChecksStatusSummary
+          liveData={liveData}
+          rendering="dag"
+          assetKey={definition.assetKey}
+        />
       </Link>
     </AssetNodeRowBox>
   );

@@ -65,6 +65,7 @@ export enum ColorName {
   AccentGray = 'AccentGray',
   AccentGrayHover = 'AccentGrayHover',
   AccentWhite = 'AccentWhite',
+  AlwaysWhite = 'AlwaysWhite',
   DialogBackground = 'DialogBackground',
   TooltipBackground = 'TooltipBackground',
   TooltipText = 'TooltipText',
@@ -81,7 +82,6 @@ export enum ColorName {
   NavButtonHover = 'NavButtonHover',
 
   // Lineage Graph
-  LineageDots = 'LineageDots',
   LineageEdge = 'LineageEdge',
   LineageEdgeHighlighted = 'LineageEdgeHighlighted',
   LineageGroupNodeBackground = 'LineageGroupNodeBackground',
