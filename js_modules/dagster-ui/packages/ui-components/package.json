@@ -60,6 +60,8 @@
     "@storybook/addon-essentials": "^7.4.5",
     "@storybook/addon-links": "^7.4.5",
     "@storybook/addon-mdx-gfm": "^7.4.5",
+    "@storybook/addon-themes": "^8.0.8",
+    "@storybook/icons": "^1.2.9",
     "@storybook/react": "^7.4.5",
     "@storybook/react-webpack5": "^7.2.0",
     "@testing-library/dom": "^9.3.0",
