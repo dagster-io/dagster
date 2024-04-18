@@ -22,10 +22,9 @@ function getEdgesToShow({
   edges,
 }: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
   try {
-    const viewportDistance = Math.sqrt(
+    const viewportDistance =
       Math.pow(viewportRect.right - viewportRect.left, 2) +
-        Math.pow(viewportRect.top - viewportRect.bottom, 2),
-    );
+      Math.pow(viewportRect.top - viewportRect.bottom, 2);
     const MAX_EDGES = 50; // arbitrary number
 
     //https://stackoverflow.com/a/20925869/1162881
@@ -91,8 +90,8 @@ function getEdgesToShow({
       };
       const edgesWithDistance = visibleToFromEdges.map((edge) => {
         const distance = Math.min(
-          Math.sqrt(Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2)),
-          Math.sqrt(Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2)),
+          Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2),
+          Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2),
         );
 
         return {
@@ -121,8 +120,8 @@ function getEdgesToShow({
         return {
           edge,
           distance: Math.min(
-            Math.sqrt(Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2)),
-            Math.sqrt(Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2)),
+            Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2),
+            Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2),
           ),
         };
       });
