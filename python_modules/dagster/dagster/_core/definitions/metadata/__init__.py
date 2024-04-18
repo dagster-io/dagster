@@ -1274,11 +1274,11 @@ class NamespacedMetadataSet(ABC, DagsterModel):
 
         .. code-block:: python
 
-            class MyMetadataEntries(NamedspacedMetadataEntries):
+            class MyMetadataSet(NamedspacedMetadataSet):
                 ...
 
-            metadata_entries: MyMetadataEntries  = ...
-            assert MyMetadataEntries.extract(dict(metadata_entries)) == metadata_entries
+            metadata: MyMetadataSet  = ...
+            assert MyMetadataSet.extract(dict(metadata)) == metadata
 
         Args:
             metadata (Mapping[str, Any]): A dictionary of metadata entries.
