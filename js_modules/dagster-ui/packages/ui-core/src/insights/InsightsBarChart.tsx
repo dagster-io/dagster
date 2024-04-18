@@ -91,7 +91,9 @@ export const InsightsBarChart = (props: Props) => {
     (element: ActiveElement | null) => {
       if (element) {
         const whichBar = values[element.index];
-        console.log('Clicked', whichBar?.href);
+        if (whichBar?.href) {
+          window.open(whichBar.href);
+        }
         return;
       }
     },
@@ -154,6 +156,10 @@ export const InsightsBarChart = (props: Props) => {
 
   const options: ChartOptions<'bar'> = React.useMemo(() => {
     return {
+      // dish: Disable animation until I can figure out why it's acting crazy.
+      // When rendering a responsive grid of charts, it's doing a distracting
+      // zoom-like animation on initial render.
+      animation: false,
       responsive: true,
       maintainAspectRatio: false,
       onClick: (_event, elements) => onClick(elements[0] || null),

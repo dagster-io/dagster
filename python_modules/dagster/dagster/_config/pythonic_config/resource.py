@@ -35,13 +35,13 @@ from dagster._core.definitions.definition_config_schema import (
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._model.pydantic_compat_layer import (
+    model_fields,
+)
 from dagster._utils.cached_method import cached_method
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-from .pydantic_compat_layer import (
-    model_fields,
 )
 from .type_check_utils import is_optional
 

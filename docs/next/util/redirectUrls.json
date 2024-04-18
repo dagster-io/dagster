@@ -920,8 +920,8 @@
       "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/deployment/agentsrunning-multiple-agents",
-      "destination": "/dagster-plus/deployment/agentsrunning-multiple-agents",
+      "source": "/dagster-cloud/deployment/agents/running-multiple-agents",
+      "destination": "/dagster-plus/deployment/agents/running-multiple-agents",
       "statusCode": 302
   },
   {

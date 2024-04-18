@@ -11,7 +11,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
 
 import dagster._check as check
@@ -33,19 +33,19 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-from .conversion_utils import _convert_pydantic_field, safe_is_subclass
-from .pydantic_compat_layer import (
+from dagster._model.pydantic_compat_layer import (
     USING_PYDANTIC_2,
     ModelFieldCompat,
     PydanticUndefined,
     model_config,
     model_fields,
 )
+from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
+
+from .attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
+from .conversion_utils import _convert_pydantic_field, safe_is_subclass
 from .type_check_utils import is_literal
 from .typing_utils import BaseConfigMeta
 
@@ -85,19 +85,19 @@ class MakeConfigCacheable(BaseModel):
     all in one go.
     """
 
-    # Pydantic config for this class
-    # Cannot use kwargs for base class as this is not support for pydnatic<1.8
-    class Config:
-        # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
-        # Necessary to allow for caching decorators
-        arbitrary_types_allowed = True
-        # Avoid pydantic reading a cached property class as part of the schema
-        if USING_PYDANTIC_2:
-            ignored_types = (cached_property,)
-        else:
+    # - Frozen, to avoid complexity caused by mutation.
+    # - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
+    # - Avoid pydantic reading a cached property class as part of the schema.
+    if USING_PYDANTIC_2:
+        model_config = ConfigDict(  # type: ignore
+            frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
+        )
+    else:
+
+        class Config:
+            frozen = True
+            arbitrary_types_allowed = True
             keep_untouched = (cached_property,)
-        # Ensure the class is serializable, for caching purposes
-        frozen = True
 
     def __setattr__(self, name: str, value: Any):
         from .resource import ConfigurableResourceFactory
@@ -400,8 +400,12 @@ class PermissiveConfig(Config):
 
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
-    class Config:
-        extra = "allow"
+    if USING_PYDANTIC_2:
+        model_config = ConfigDict(extra="allow")  # type: ignore
+    else:
+
+        class Config:
+            extra = "allow"
 
 
 def infer_schema_from_config_class(

@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
+import {BreadcrumbProps, Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
 import {
   Box,
   Colors,
@@ -73,6 +73,7 @@ export const AssetPageHeader = ({assetKey, headerBreadcrumbs, ...extra}: Props) 
               </Heading>
             )}
             $numHeaderBreadcrumbs={headerBreadcrumbs.length}
+            popoverProps={{popoverClassName: 'dagster-popover'}}
           />
           {copyableString ? (
             <Tooltip placement="bottom" content="Copy asset key">
