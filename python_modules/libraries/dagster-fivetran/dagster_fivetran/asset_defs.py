@@ -347,7 +347,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connector_to_asset_key_fn: Callable[[FivetranConnectionMetadata, str], AssetKey] = (
             connector_to_asset_key_fn or (lambda _, table: AssetKey(path=table.split(".")))
         )
-        self._desination_ids = destination_ids
+        self._destination_ids = destination_ids
         self._poll_interval = poll_interval
         self._poll_timeout = poll_timeout
 
