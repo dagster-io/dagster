@@ -1,5 +1,6 @@
 import {Box, Colors, Icon, Slider, Tooltip} from '@dagster-io/ui-components';
 import animate from 'amator';
+import throttle from 'lodash/throttle';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -78,7 +79,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     let lastY: number = start.y;
     const travel = {x: 0, y: 0};
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = throttle((e: MouseEvent) => {
       const offset = viewport.getOffsetXY(e);
       if (!offset) {
         return;
@@ -93,7 +94,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       travel.y += Math.abs(delta.y);
       lastX = offset.x;
       lastY = offset.y;
-    };
+    }, 1000 / 60);
 
     viewport.setState({isClickHeld: true});
     const onCancelClick = (e: MouseEvent) => {
@@ -118,7 +119,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     document.addEventListener('click', onCancelClick, {capture: true});
   },
 
-  onWheel(viewport: SVGViewport, event: WheelEvent) {
+  onWheel: throttle((viewport: SVGViewport, event: WheelEvent) => {
     const viewportEl = viewport.element.current;
     if (!viewportEl) {
       return;
@@ -162,7 +163,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     } else {
       viewport.shiftXY(-event.deltaX * panSpeed, -event.deltaY * panSpeed);
     }
-  },
+  }, 1000 / 60),
 
   render(viewport: SVGViewport) {
     return (
