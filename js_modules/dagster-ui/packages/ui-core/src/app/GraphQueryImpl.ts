@@ -81,7 +81,6 @@ class GraphTraverser<T extends GraphQueryItem> {
 
   findAllPathsBetweenMultiple(startNodes: T[], endNodes: T[], callback: (path: T[]) => void) {
     const endSet = new Set(endNodes);
-    const pathCache: {[key: string]: T[][]} = {};
 
     startNodes.forEach((nodeA) => {
       const start = this.itemNamed(nodeA.name);
@@ -97,11 +96,7 @@ class GraphTraverser<T extends GraphQueryItem> {
         path.push(current);
         visited.add(current.name);
 
-        if (endSet.has(current)) {
-          if (!pathCache[current.name]) {
-            pathCache[current.name] = [];
-          }
-          pathCache[current.name]!.push([...path]);
+        if (endSet.size === 0 || endSet.has(current)) {
           callback([...path]);
         }
 
@@ -143,17 +138,17 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
 
   for (const clause of clauses) {
     // This regex focuses on matching exactly the quoted strings around "->" without any spaces
-    const regex = /("([^"]+)"|(\w+))->("([^"]+)"|(\w+))/g;
+    const regex = /("([^"]+)"|(\w+))->("([^"]+)"|(\w+))?/g;
     const pathClauseParts = regex.exec(clause.trim());
     if (pathClauseParts) {
       const pathClauseStart = pathClauseParts[1] || pathClauseParts[2];
       const pathClauseEnd = pathClauseParts[4] || pathClauseParts[5];
-      const pathClauseStartMatches = items.filter((item) =>
-        selectionFilter({itemName: item.name, selection: pathClauseStart}),
-      );
-      const pathClauseEndMatches = items.filter((item) =>
-        selectionFilter({itemName: item.name, selection: pathClauseEnd}),
-      );
+      const pathClauseStartMatches = pathClauseStart
+        ? items.filter((item) => selectionFilter({itemName: item.name, selection: pathClauseStart}))
+        : [];
+      const pathClauseEndMatches = pathClauseEnd
+        ? items.filter((item) => selectionFilter({itemName: item.name, selection: pathClauseEnd}))
+        : [];
 
       if (pathClauseStart) {
         if (pathClauseStartMatches.length) {
