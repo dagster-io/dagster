@@ -34,7 +34,7 @@ export const AssetEdges = ({
     <Fragment>
       <AssetEdgeSet
         color={Colors.lineageEdge()}
-        edges={intersectedEdges.length > 50 ? visibleToFromEdges : intersectedEdges}
+        edges={intersectedEdges.length > 10 ? visibleToFromEdges : intersectedEdges}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
         direction={direction}
