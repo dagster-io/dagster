@@ -478,6 +478,21 @@ run_monitoring:
   free_slots_after_run_end_seconds: 300 # free any hanging concurrency slots after 5 minutes from the end of a run
 ```
 
+#### Throttling concurrency-limited runs
+
+If a global concurrency limit is set, some runs may be active without an executing op due to concurrency restraints. When this occurs, runs can unnecessarily utilize resources or make it difficult to see whether other runs are progressing.
+
+You can throttle runs and block their step progression to mitigate this issue. To do this, configure the run queue to keep these runs in a `QUEUED` state until a slot becomes free for one of its steps:
+
+```yaml file=/deploying/concurrency_limits/dagster.yaml startafter=start_throttle_op_concurrency_limited_runs endbefore=end_throttle_op_concurrency_limited_runs
+run_queue:
+  block_op_concurrency_limited_runs:
+    enabled: true
+    op_concurrency_slot_buffer: 1 # buffer of 1 means 1 run might be started even though there are no slots available
+```
+
+---
+
 ## Troubleshooting
 
 When limiting concurrency, you might run into some issues until you get the configuration right.
