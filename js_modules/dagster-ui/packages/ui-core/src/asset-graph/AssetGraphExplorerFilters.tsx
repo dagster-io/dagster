@@ -96,7 +96,8 @@ export function useAssetGraphExplorerFilters({
       return;
     }
     if (!didWaitAfterLoading) {
-      setTimeout(() => setDidWaitAfterLoading(true), 500);
+      // Wait for a render frame because the graphData is set in a useEffect in response to the data loading...
+      requestAnimationFrame(() => setDidWaitAfterLoading(true));
       return;
     }
     let nextAllFilters = [...selectAllFilters];
