@@ -10,10 +10,14 @@ import requests
 from dagster import (
     EnvVar,
 )
+from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_gcp_pyspark import (
     BigQueryPySparkIOManager,
     bigquery_pyspark_io_manager,
 )
+
+ensure_dagster_tests_import()
+import pytest
 from dagster_tests.storage_tests.test_db_io_manager_type_handler import (
     DataFrameType,
     TemplateTypeHandlerTestSuite,
@@ -23,32 +27,14 @@ from pyspark.sql import (
     SparkSession,
 )
 
-resource_config = {
-    "database": "database_abc",
-    "account": "account_abc",
-    "user": "user_abc",
-    "password": "password_abc",
-    "warehouse": "warehouse_abc",
-}
-
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
-SHARED_BUILDKITE_BQ_CONFIG = {
-    "project": os.getenv("GCP_PROJECT_ID"),
-    "temporary_gcs_bucket": "gcs_io_manager_test",
-}
-
-SCHEMA = "BIGQUERY_IO_MANAGER_SCHEMA"
-
-pythonic_bigquery_io_manager = BigQueryPySparkIOManager(
-    project=EnvVar("GCP_PROJECT_ID"), temporary_gcs_bucket="gcs_io_manager_test"
-)
-old_bigquery_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
 
 BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
-class TestDuckDBPySparkTypeHandler(TemplateTypeHandlerTestSuite):
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+class TestBigQueryPySparkTypeHandler(TemplateTypeHandlerTestSuite):
     @property
     def df_format(self) -> DataFrameType:
         return DataFrameType.PYSPARK

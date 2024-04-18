@@ -4,7 +4,10 @@ from typing import Iterator
 
 import duckdb
 import pandas as pd
+from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager, duckdb_pyspark_io_manager
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_db_io_manager_type_handler import (
     DataFrameType,
     TemplateTypeHandlerTestSuite,
