@@ -22,7 +22,7 @@ function getEdgesToShow({
   edges,
 }: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
   try {
-    const MAX_EDGES = 60; // arbitrary number
+    const MAX_EDGES = 50; // arbitrary number
 
     //https://stackoverflow.com/a/20925869/1162881
     function doesViewportContainEdge(
@@ -61,46 +61,45 @@ function getEdgesToShow({
       );
     }
 
-    // Note: we render the highlighted edges twice, but it's so that the first item with
-    // all the edges in it can remain memoized.
-
-    // Round to the nearest 100px to avoid recalculating edges too often (could be an array of 1,000+ edges)
-    const left = Math.floor(viewportRect.left / 100) * 100;
-    const right = Math.ceil(viewportRect.right / 100) * 100;
-    const top = Math.floor(viewportRect.top / 100) * 100;
-    const bottom = Math.ceil(viewportRect.bottom / 100) * 100;
-
     const edgesToShow = (() => {
-      const rectRounded = {left, right, top, bottom};
-      const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, rectRounded));
+      const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, viewportRect));
       if (intersectedEdges.length <= 10) {
         return intersectedEdges;
       }
+      const visibleToAndFromEdges = new Set(
+        intersectedEdges.filter(
+          (edge) =>
+            doesViewportContainPoint(edge.from, viewportRect) &&
+            doesViewportContainPoint(edge.to, viewportRect),
+        ),
+      );
       const visibleToFromEdges = intersectedEdges.filter(
         (edge) =>
-          doesViewportContainPoint(edge.from, rectRounded) ||
-          doesViewportContainPoint(edge.to, rectRounded),
+          doesViewportContainPoint(edge.from, viewportRect) ||
+          doesViewportContainPoint(edge.to, viewportRect),
       );
       if (visibleToFromEdges.length < 50) {
         return visibleToFromEdges;
       }
       const center = {
-        x: (rectRounded.left + rectRounded.right) / 2,
-        y: (rectRounded.top + rectRounded.bottom) / 2,
+        x: (viewportRect.left + viewportRect.right) / 2,
+        y: (viewportRect.top + viewportRect.bottom) / 2,
       };
-      const edgesWithDistance = visibleToFromEdges.map((edge) => ({
-        edge,
-        distance: Math.min(
+      const edgesWithDistance = visibleToFromEdges.map((edge) => {
+        const distance = Math.min(
           Math.sqrt(Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2)),
           Math.sqrt(Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2)),
-        ),
-      }));
+        );
+        return {
+          edge,
+          distance: visibleToAndFromEdges.has(edge) ? distance : 5000 + distance,
+        };
+      });
       edgesWithDistance.sort((a, b) => a.distance - b.distance);
       return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
     })();
 
     const selectedOrHighlightedEdges = (() => {
-      const rectRounded = {left, right, top, bottom};
       const selectedOrHighlighted = edges.filter(
         ({fromId, toId}) =>
           selected?.includes(fromId) ||
@@ -109,16 +108,18 @@ function getEdgesToShow({
           highlighted?.includes(toId),
       );
       const center = {
-        x: (rectRounded.left + rectRounded.right) / 2,
-        y: (rectRounded.top + rectRounded.bottom) / 2,
+        x: (viewportRect.left + viewportRect.right) / 2,
+        y: (viewportRect.top + viewportRect.bottom) / 2,
       };
-      const edgesWithDistance = selectedOrHighlighted.map((edge) => ({
-        edge,
-        distance: Math.min(
-          Math.sqrt(Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2)),
-          Math.sqrt(Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2)),
-        ),
-      }));
+      const edgesWithDistance = selectedOrHighlighted.map((edge) => {
+        return {
+          edge,
+          distance: Math.min(
+            Math.sqrt(Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2)),
+            Math.sqrt(Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2)),
+          ),
+        };
+      });
       edgesWithDistance.sort((a, b) => a.distance - b.distance);
       return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
     })();
