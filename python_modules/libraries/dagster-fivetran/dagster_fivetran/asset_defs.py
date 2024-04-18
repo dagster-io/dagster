@@ -319,6 +319,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
         connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
+        destination_ids: Optional[List[str]],
         poll_interval: float,
         poll_timeout: Optional[float],
     ):
@@ -346,6 +347,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connector_to_asset_key_fn: Callable[[FivetranConnectionMetadata, str], AssetKey] = (
             connector_to_asset_key_fn or (lambda _, table: AssetKey(path=table.split(".")))
         )
+        self._desination_ids = destination_ids
         self._poll_interval = poll_interval
         self._poll_timeout = poll_timeout
 
@@ -359,7 +361,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _get_connectors(self) -> Sequence[FivetranConnectionMetadata]:
         output_connectors: List[FivetranConnectionMetadata] = []
 
-        groups = self._fivetran_instance.make_request("GET", "groups")["items"]
+        if self._desination_ids is None:
+            groups = self._fivetran_instance.make_request("GET", "groups")["items"]
+        else:
+            groups = [{"id": destination_id} for destination_id in self._desination_ids]
 
         for group in groups:
             group_id = group["id"]
