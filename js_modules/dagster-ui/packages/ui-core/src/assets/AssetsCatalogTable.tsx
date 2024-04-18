@@ -79,8 +79,6 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
     }
   }, [assetsOrError]);
 
-  console.log({assets, error});
-
   const groupQuery = useCallback(async () => {
     if (!groupSelector) {
       return;
