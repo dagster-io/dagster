@@ -6,7 +6,7 @@
 
 - Performance improvements when loading large asset graphs in the Dagster UI.
 - `@asset_check` functions can now be invoked directly for unit testing.
-- `dagster-embedded-elt` dlt resource `DagsterDltResource` can now be used from `@op` definitions in addition to assets
+- `dagster-embedded-elt` dlt resource `DagsterDltResource` can now be used from `@op` definitions in addition to assets.
 - `UPathIOManager.load_partitions` has been added to assist with helping `UpathIOManager` subclasses deal with serialization formats which support partitioning. Thanks `@danielgafni`!
 - [dagster-polars] now supports other data types rather than only string for the partitioning columns. Also `PolarsDeltaIOManager` now supports `MultiPartitionsDefinition` with `DeltaLake` native partitioning. Metadata value `"partition_by": {"dim_1": "col_1", "dim_2": "col_2"}` should be specified to enable this feature. Thanks `@danielgafni`!
 
@@ -15,25 +15,21 @@
 - [dagster-airbyte] Auto materialization policies passed to `load_assets_from_airbyte_instance` and `load_assets_from_airbyte_project` will now be properly propagated to the created assets.
 - Fixed an issue where deleting a run that was intended to materialize a partitioned asset would sometimes leave the status of that asset as “Materializing” in the Dagster UI.
 - Fixed an issue with `build_time_partition_freshness_checks` where it would incorrectly intuit that an asset was not fresh in certain cases.
-- [dagster-k8s] Handle transient ‘none’ responses for pod waiting reasons. Thanks @**[piotrmarczydlo](https://github.com/piotrmarczydlo)!**
+- [dagster-k8s] Fix an error on transient ‘none’ responses for pod waiting reasons. Thanks @**[piotrmarczydlo](https://github.com/piotrmarczydlo)!**
 - [dagster-dbt] Failing to build column schema metadata will now result in a warning rather than an error.
-- Fixed an issue where incorrect asset keys would cause a backfill to fail loudly
-- Fixed an issue where syncing unmaterialized assets could include source assets
+- Fixed an issue where incorrect asset keys would cause a backfill to fail loudly.
+- Fixed an issue where syncing unmaterialized assets could include source assets.
 
 ### Breaking Changes
 
 - [dagster-polars] `PolarsDeltaIOManager` no longer supports loading natively partitioned DeltaLake tables as dictionaries. They should be loaded as a single `pl.DataFrame`/`pl.LazyFrame` instead.
 
-### Deprecations
-
-- 
-
 ### Documentation
 
-- Renamed `Dagster Cloud` to `Dagster+` all over the docs
-- Added a page about [Change Tracking](https://www.notion.so/ec63b26b6cf34ec8a3959c41817dd375?pvs=21) in Dagster+ branch deployments
-- Added a section about [user-defined metrics](https://docs.dagster.io/concepts/metadata-tags/asset-metadata#asset-owners) to the Dagster+ Insights docs
-- Added a section about [Asset owners](https://docs.dagster.io/concepts/metadata-tags/asset-metadata#asset-owners) to the asset metadata docs
+- Renamed `Dagster Cloud` to `Dagster+` all over the docs.
+- Added a page about [Change Tracking](https://www.notion.so/ec63b26b6cf34ec8a3959c41817dd375?pvs=21) in Dagster+ branch deployments.
+- Added a section about [user-defined metrics](https://docs.dagster.io/concepts/metadata-tags/asset-metadata#asset-owners) to the Dagster+ Insights docs.
+- Added a section about [Asset owners](https://docs.dagster.io/concepts/metadata-tags/asset-metadata#asset-owners) to the asset metadata docs.
 
 ### Dagster Cloud
 
