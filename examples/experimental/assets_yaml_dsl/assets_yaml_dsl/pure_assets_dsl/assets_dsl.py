@@ -1,10 +1,15 @@
 import os
 import shutil
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable, List, Sequence
 
 import yaml
-from dagster import AssetsDefinition
+from dagster import (
+    _check as check,
+)
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.pipes.client import PipesClient
+from dagster._core.pipes.context import PipesExecutionResult
 from dagster._utils import file_relative_path
 
 try:
@@ -12,8 +17,46 @@ try:
 except ImportError:
     from yaml import Loader
 
-from dagster import AssetKey, asset
-from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster import AssetKey
+from examples.experimental.assets_yaml_dsl.assets_yaml_dsl.asset_graph_execution_node import (
+    AssetGraphExecutionNode,
+)
+
+
+class PureAssetDSLNode(AssetGraphExecutionNode):
+    def __init__(self, *, asset_spec, sql) -> None:
+        self.sql = sql
+        super().__init__([asset_spec])
+
+    # TODO: generalize to all execution results
+    def execute(self, context: AssetExecutionContext) -> Iterable[PipesExecutionResult]:
+        pipes_subprocess_client = check.inst(context.resources.pipes_subprocess_client, PipesClient)
+        python_executable = shutil.which("python")
+        assert python_executable is not None
+        return pipes_subprocess_client.run(
+            command=[python_executable, file_relative_path(__file__, "sql_script.py"), self.sql],
+            context=context,
+        ).get_results()
+
+
+def from_asset_entries(asset_entries: Dict[str, Any]) -> List[PureAssetDSLNode]:
+    group_name = asset_entries.get("group_name")
+
+    return [
+        PureAssetDSLNode(
+            asset_spec=AssetSpec(
+                key=AssetKey.from_user_string(asset_entry["asset_key"]),
+                description=asset_entry.get("description"),
+                group_name=group_name,
+                deps=[
+                    AssetKey.from_user_string(dep_entry)
+                    for dep_entry in asset_entry.get("deps", [])
+                ],
+            ),
+            sql=asset_entry["sql"],
+        )
+        for asset_entry in asset_entries["assets"]
+    ]
 
 
 def load_yaml(relative_path) -> Dict[str, Any]:
@@ -22,39 +65,6 @@ def load_yaml(relative_path) -> Dict[str, Any]:
         return yaml.load(ff, Loader=Loader)
 
 
-def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
-    assets_defs = []
-
-    group_name = asset_entries.get("group_name")
-
-    for asset_entry in asset_entries["assets"]:
-        asset_key_str = asset_entry["asset_key"]
-        dep_entries = asset_entry.get("deps", [])
-        description = asset_entry.get("description")
-        asset_key = AssetKey.from_user_string(asset_key_str)
-        deps = [AssetKey.from_user_string(dep_entry) for dep_entry in dep_entries]
-
-        sql = asset_entry["sql"]  # this is required
-
-        @asset(key=asset_key, deps=deps, description=description, group_name=group_name)
-        def _assets_def(
-            context: AssetExecutionContext,
-            pipes_subprocess_client: PipesSubprocessClient,
-        ):
-            # instead of querying a dummy client, do your real data processing here
-
-            python_executable = shutil.which("python")
-            assert python_executable is not None
-            pipes_subprocess_client.run(
-                command=[python_executable, file_relative_path(__file__, "sql_script.py"), sql],
-                context=context,
-            ).get_results()
-
-        assets_defs.append(_assets_def)
-
-    return assets_defs
-
-
-def get_asset_dsl_example_defs() -> List[AssetsDefinition]:
+def get_asset_dsl_example_defs() -> Sequence[PureAssetDSLNode]:
     asset_entries = load_yaml("assets.yaml")
     return from_asset_entries(asset_entries)

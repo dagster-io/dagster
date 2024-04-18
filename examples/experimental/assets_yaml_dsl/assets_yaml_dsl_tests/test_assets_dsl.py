@@ -6,10 +6,13 @@ from dagster import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from examples.experimental.assets_yaml_dsl.assets_yaml_dsl.asset_graph_execution_node import (
+    AssetGraphExecutionNode,
+)
 
 
 def assets_defs_from_yaml(yaml_string) -> List[AssetsDefinition]:
-    return from_asset_entries(yaml.safe_load(yaml_string))
+    return AssetGraphExecutionNode.to_assets_defs(from_asset_entries(yaml.safe_load(yaml_string)))
 
 
 def test_basic() -> None:
@@ -77,7 +80,9 @@ assets:
     assert assets_defs
     assert len(assets_defs) == 1
     assets_def = assets_defs[0]
-    assets_def(context=build_asset_context(), pipes_subprocess_client=PipesSubprocessClient())
+    assets_def(
+        context=build_asset_context(resources=dict(pipes_subprocess_client=PipesSubprocessClient()))
+    )
 
 
 def test_basic_group() -> None:

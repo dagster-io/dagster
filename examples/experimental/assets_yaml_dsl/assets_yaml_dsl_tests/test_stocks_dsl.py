@@ -24,7 +24,7 @@ from examples.experimental.assets_yaml_dsl.assets_yaml_dsl.domain_specific_dsl.s
 )
 
 
-def test_stocks_dsl():
+def test_stocks_dsl() -> None:
     stocks_dsl_document = yaml.safe_load(EXAMPLE_TEXT)
     stock_assets = build_stock_assets_object(stocks_dsl_document)
     assets_defs = assets_defs_from_stock_assets(stock_assets)
@@ -50,7 +50,7 @@ def test_stocks_dsl():
     assert forecast_asset_def.keys == {AssetKey("forecast")}
 
 
-def test_materialize_stocks_dsl():
+def test_materialize_stocks_dsl() -> None:
     stocks_dsl_document = yaml.safe_load(EXAMPLE_TEXT)
     stock_assets = build_stock_assets_object(stocks_dsl_document)
     assets_defs = assets_defs_from_stock_assets(stock_assets)
