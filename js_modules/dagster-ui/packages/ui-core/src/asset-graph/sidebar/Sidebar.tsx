@@ -1,9 +1,19 @@
 import {Box, Button, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {
+  KeyboardEvent,
+  MouseEvent,
+  memo,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
-import {FolderNodeType, getDisplayName, nodePathKey} from './util';
+import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
@@ -16,7 +26,7 @@ import {SearchFilter} from '../sidebar/SearchFilter';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
-export const AssetGraphExplorerSidebar = React.memo(
+export const AssetGraphExplorerSidebar = memo(
   ({
     assetGraphData,
     fullAssetGraphData,
@@ -32,7 +42,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
     selectedNodes: GraphNode[];
-    selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+    selectNode: (e: MouseEvent<any> | KeyboardEvent<any>, nodeId: string) => void;
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
@@ -47,14 +57,14 @@ export const AssetGraphExplorerSidebar = React.memo(
     const graphData = Object.keys(assetGraphData.nodes).length
       ? assetGraphData
       : fullAssetGraphData;
-    const [selectWhenDataAvailable, setSelectWhenDataAvailable] = React.useState<
-      [React.MouseEvent<any> | React.KeyboardEvent<any>, string] | null
+    const [selectWhenDataAvailable, setSelectWhenDataAvailable] = useState<
+      [MouseEvent<any> | KeyboardEvent<any>, string] | null
     >(null);
     const selectedNodeHasDataAvailable = selectWhenDataAvailable
       ? !!graphData.nodes[selectWhenDataAvailable[1]]
       : false;
 
-    React.useEffect(() => {
+    useEffect(() => {
       if (selectWhenDataAvailable) {
         const [e, id] = selectWhenDataAvailable;
         _selectNode(e, id);
@@ -95,11 +105,11 @@ export const AssetGraphExplorerSidebar = React.memo(
       },
       isEmptyState: (val) => val.size === 0,
     });
-    const [selectedNode, setSelectedNode] = React.useState<
+    const [selectedNode, setSelectedNode] = useState<
       null | {id: string; path: string} | {id: string}
     >(null);
 
-    const rootNodes = React.useMemo(
+    const rootNodes = useMemo(
       () =>
         Object.keys(graphData.nodes)
           .filter(
@@ -118,7 +128,33 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const renderedNodes = React.useMemo(() => {
+    const viewType = useMemo(() => {
+      if (explorerPath.opsQuery.includes('->')) {
+        return 'tree';
+      }
+      return 'group';
+    }, [explorerPath]);
+
+    const treeNodes = useMemo(() => {
+      const queue = rootNodes.map((id) => ({level: 1, id, path: id}));
+
+      const treeNodes: TreeNodeType[] = [];
+      while (queue.length) {
+        const node = queue.shift()!;
+        treeNodes.push(node);
+        if (openNodes.has(node.path)) {
+          const downstream = Object.keys(graphData.downstream[node.id] || {}).filter(
+            (id) => graphData.nodes[id],
+          );
+          queue.unshift(
+            ...downstream.map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
+          );
+        }
+      }
+      return treeNodes;
+    }, [graphData.downstream, graphData.nodes, openNodes, rootNodes]);
+
+    const folderNodes = useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -207,16 +243,18 @@ export const AssetGraphExplorerSidebar = React.memo(
       return folderNodes;
     }, [graphData.nodes, openNodes]);
 
-    const {nav} = React.useContext(LayoutContext);
+    const renderedNodes = viewType === 'tree' ? treeNodes : folderNodes;
 
-    React.useEffect(() => {
+    const {nav} = useContext(LayoutContext);
+
+    useEffect(() => {
       if (isGlobalGraph) {
         nav.close();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isGlobalGraph]);
 
-    const containerRef = React.useRef<HTMLDivElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
     const rowVirtualizer = useVirtualizer({
       count: renderedNodes.length,
@@ -228,9 +266,36 @@ export const AssetGraphExplorerSidebar = React.memo(
     const totalHeight = rowVirtualizer.getTotalSize();
     const items = rowVirtualizer.getVirtualItems();
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
       if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
+          if (viewType === 'tree') {
+            let path = lastSelectedNode.id;
+            let currentId = lastSelectedNode.id;
+            let next: string | undefined;
+            while ((next = Object.keys(graphData.upstream[currentId] ?? {})[0])) {
+              if (!graphData.nodes[next]) {
+                break;
+              }
+              path = `${next}:${path}`;
+              currentId = next;
+            }
+
+            const nextOpenNodes = new Set(prevOpenNodes);
+
+            const nodesInPath = path.split(':');
+            let currentPath = nodesInPath[0]!;
+
+            nextOpenNodes.add(currentPath);
+            for (let i = 1; i < nodesInPath.length; i++) {
+              currentPath = `${currentPath}:${nodesInPath[i]}`;
+              nextOpenNodes.add(currentPath);
+            }
+            if (selectedNode?.id !== lastSelectedNode.id) {
+              setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+            }
+            return nextOpenNodes;
+          }
           const nextOpenNodes = new Set(prevOpenNodes);
           const assetNode = graphData.nodes[lastSelectedNode.id];
           if (assetNode) {
@@ -259,29 +324,35 @@ export const AssetGraphExplorerSidebar = React.memo(
         renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
     ]);
 
-    const indexOfLastSelectedNode = React.useMemo(
+    const indexOfLastSelectedNode = useMemo(
       () => {
         if (!selectedNode) {
           return -1;
         }
-        return renderedNodes.findIndex((node) => {
-          // If you select a node via the search dropdown or from the graph directly then
-          // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
-          // will always have a path so we need to explicitly check if the id's match
-          if (!('path' in selectedNode)) {
-            return node.id === selectedNode.id;
-          } else {
-            return nodePathKey(node) === nodePathKey(selectedNode);
-          }
-        });
+        if (viewType === 'tree') {
+          return 'path' in selectedNode
+            ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
+            : -1;
+        } else {
+          return renderedNodes.findIndex((node) => {
+            // If you select a node via the search dropdown or from the graph directly then
+            // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+            // will always have a path so we need to explicitly check if the id's match
+            if (!('path' in selectedNode)) {
+              return node.id === selectedNode.id;
+            } else {
+              return nodePathKey(node) === nodePathKey(selectedNode);
+            }
+          });
+        }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [renderedNodes, selectedNode],
+      [renderedNodes, selectedNode, viewType],
     );
-    const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
+    const indexOfLastSelectedNodeRef = useRef(indexOfLastSelectedNode);
     indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
       if (indexOfLastSelectedNode !== -1) {
         rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
           align: 'center',
@@ -307,7 +378,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           border="bottom"
         >
           <SearchFilter
-            values={React.useMemo(() => {
+            values={useMemo(() => {
               return allAssetKeys.map((key) => ({
                 value: JSON.stringify(key.path),
                 label: key.path[key.path.length - 1]!,
@@ -361,6 +432,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                 return (
                   <Row $height={size} $start={start} key={key} data-key={key}>
                     <AssetSidebarNode
+                      viewType={viewType}
+                      graphData={graphData}
                       isOpen={openNodes.has(nodePathKey(node))}
                       fullAssetGraphData={fullAssetGraphData}
                       node={row!}

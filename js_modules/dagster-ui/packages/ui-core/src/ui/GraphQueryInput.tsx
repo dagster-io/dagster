@@ -511,6 +511,12 @@ const InfoIconDialog = () => {
                   </td>
                   <td>Render two disjointed lineage segments</td>
                 </tr>
+                <tr>
+                  <td>
+                    <Tag>my_asset_prefix_1 {'->'} my_asset_prefix_2</Tag>
+                  </td>
+                  <td>Render the path between sets of nodes</td>
+                </tr>
               </tbody>
             </CustomTable>
           </Box>

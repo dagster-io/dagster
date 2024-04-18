@@ -1,5 +1,5 @@
 import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useLayoutEffect, useMemo, useRef} from 'react';
 import styled from 'styled-components';
 
 import {StatusDot} from './StatusDot';
@@ -17,6 +17,7 @@ import {ContextMenuWrapper, triggerContextMenu} from '../ContextMenuWrapper';
 import {GraphData, GraphNode} from '../Utils';
 
 type AssetSidebarNodeProps = {
+  graphData: GraphData;
   fullAssetGraphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
@@ -29,17 +30,26 @@ type AssetSidebarNodeProps = {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onFilterToGroup: (group: AssetGroup) => void;
+  viewType: 'tree' | 'group';
 };
 
 export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
-  const {node, level, toggleOpen, isOpen, selectThisNode} = props;
+  const {node, level, toggleOpen, isOpen, selectThisNode, graphData, fullAssetGraphData, viewType} =
+    props;
   const isGroupNode = 'groupNode' in node;
   const isLocationNode = 'locationName' in node;
   const isAssetNode = !isGroupNode && !isLocationNode;
 
-  const elementRef = React.useRef<HTMLDivElement | null>(null);
+  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
 
-  const showArrow = !isAssetNode;
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  const showArrow = useMemo(
+    () =>
+      !isAssetNode ||
+      (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length),
+    [downstream, graphData.nodes, isAssetNode, viewType],
+  );
 
   return (
     <Box ref={elementRef} padding={{left: 8}}>
@@ -181,8 +191,8 @@ const FocusableLabelContainer = ({
   icon: React.ReactNode;
   text: string;
 }) => {
-  const ref = React.useRef<HTMLButtonElement | null>(null);
-  React.useLayoutEffect(() => {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  useLayoutEffect(() => {
     // When we click on a node in the graph it also changes "isSelected" in the sidebar.
     // We want to check if the focus is currently in the graph and if it is lets keep it there
     // Otherwise it means the click happened in the sidebar in which case we should move focus to the element
@@ -206,7 +216,7 @@ const FocusableLabelContainer = ({
 };
 
 const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode}) => {
-  const wrapper = React.useMemo(() => {
+  const wrapper = useMemo(() => {
     let sofar = children;
     for (let i = 0; i < level; i++) {
       sofar = (
