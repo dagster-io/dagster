@@ -119,7 +119,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     document.addEventListener('click', onCancelClick, {capture: true});
   },
 
-  onWheel(viewport: SVGViewport, event: WheelEvent) {
+  onWheel: throttle((viewport: SVGViewport, event: WheelEvent) => {
     const viewportEl = viewport.element.current;
     if (!viewportEl) {
       return;
@@ -163,7 +163,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     } else {
       viewport.shiftXY(-event.deltaX * panSpeed, -event.deltaY * panSpeed);
     }
-  },
+  }, 1000 / 60),
 
   render(viewport: SVGViewport) {
     return (
