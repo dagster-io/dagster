@@ -172,9 +172,6 @@ export const AssetEdges = ({
     } else {
       needsUpdate.current = true;
     }
-    return () => {
-      getEdgesToShowWorker;
-    };
   }, [edges, getEdgesToShowWorker, highlighted, selected, viewportRect, currentStateRef]);
 
   // Show up to 50 edges....
