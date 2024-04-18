@@ -448,6 +448,7 @@ def load_assets_from_fivetran_instance(
     connector_to_asset_key_fn: Optional[
         Callable[[FivetranConnectionMetadata, str], AssetKey]
     ] = None,
+    destination_ids: Optional[List[str]] = None,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
 ) -> CacheableAssetsDefinition:
@@ -472,6 +473,8 @@ def load_assets_from_fivetran_instance(
         connector_to_asset_key_fn (Optional[Callable[[FivetranConnectorMetadata, str], AssetKey]]): Optional function
             which takes in connector metadata and a table name and returns an AssetKey for that table. Defaults to
             a function that generates an AssetKey matching the table name, split by ".".
+        destination_ids (Optional[List[str]]): A list of destination IDs to fetch connectors from. If None, all destinations
+            will be polled for connectors.
         poll_interval (float): The time (in seconds) that will be waited between successive polls.
         poll_timeout (Optional[float]): The maximum time that will waited before this operation is
             timed out. By default, this will never time out.
@@ -527,6 +530,7 @@ def load_assets_from_fivetran_instance(
         connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
         connector_filter=connector_filter,
         connector_to_asset_key_fn=connector_to_asset_key_fn,
+        destination_ids=destination_ids,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
     )
