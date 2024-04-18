@@ -160,6 +160,7 @@ export const AssetEdges = ({
         needsUpdate.current = true;
         isRunning.current = true;
         while (needsUpdate.current) {
+          needsUpdate.current = false;
           const edgesToShow = await new Promise<EdgeState>((res) => {
             getEdgesToShowWorker(currentStateRef.current).then((edgesToShow) => {
               res(edgesToShow);
