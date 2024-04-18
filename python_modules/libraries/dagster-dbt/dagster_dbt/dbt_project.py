@@ -69,6 +69,9 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
     def prepare(self, project: "DbtProject") -> None:
         from .core.resources_v2 import DbtCliResource
 
+        if project.dependencies_path.exists() and not project.packages_install_path.exists():
+            (DbtCliResource(project_dir=project).cli(["deps", "--quiet"]).wait())
+
         (
             DbtCliResource(project_dir=project)
             .cli(
@@ -108,6 +111,13 @@ class DbtProject(DagsterModel):
             like when deploying using PEX.
         state_path (Optional[Union[str, Path]]):
             The path, relative to the project directory, to reference artifacts from another run.
+        dependencies_path (Union[str, Path]):
+            The path, relative to the project directory, to your dbt `dependencies.yml` file.
+            Default: "dependencies.yml"
+        packages_install_path (Union[str, Path]):
+            The path, relative to the project directory, to the directory
+            where packages are installed when the `dbt deps` command is run.
+            Default: "dbt_packages"
         manifest_preparer (Optional[DbtManifestPreparer]):
             A object for ensuring that manifest.json is in the right state at
             the right times.
@@ -155,6 +165,8 @@ class DbtProject(DagsterModel):
     manifest_path: Path
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
+    dependencies_path: Path
+    packages_install_path: Path
     manifest_preparer: DbtManifestPreparer
 
     def __init__(
@@ -165,6 +177,8 @@ class DbtProject(DagsterModel):
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
+        dependencies_path: Union[Path, str] = Path("dependencies.yml"),
+        packages_install_path: Union[Path, str] = Path("dbt_packages"),
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
         project_dir = Path(project_dir)
@@ -184,6 +198,8 @@ class DbtProject(DagsterModel):
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
+            dependencies_path=dependencies_path,
+            packages_install_path=packages_install_path,
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
