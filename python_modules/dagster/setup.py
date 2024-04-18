@@ -136,6 +136,7 @@ setup(
             "tox==3.25.0",
             "morefs[asynclocal]",
             "rapidfuzz",
+            "pandas",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
