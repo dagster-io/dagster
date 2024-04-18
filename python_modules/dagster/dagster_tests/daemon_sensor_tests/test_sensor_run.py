@@ -2790,6 +2790,12 @@ def test_status_in_code_sensor(executor, instance):
 
             evaluate_sensors(workspace_context, executor)
 
+            # time hasn't advanced, so tick count shouldn't change either
+            ticks = instance.get_ticks(
+                running_sensor.get_external_origin_id(), running_sensor.selector_id
+            )
+            assert len(ticks) == 1
+
         freeze_datetime = freeze_datetime.add(seconds=30)
         with pendulum_freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
@@ -2800,7 +2806,8 @@ def test_status_in_code_sensor(executor, instance):
             ticks = instance.get_ticks(
                 running_sensor.get_external_origin_id(), running_sensor.selector_id
             )
-            assert len(ticks) == 3
+
+            assert len(ticks) == 2
 
             expected_datetime = create_pendulum_time(
                 year=2019, month=2, day=28, hour=0, minute=0, second=29

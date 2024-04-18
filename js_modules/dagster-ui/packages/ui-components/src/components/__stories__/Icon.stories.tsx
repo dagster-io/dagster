@@ -2,6 +2,7 @@ import {Meta} from '@storybook/react';
 
 import {CoreColors} from '../../palettes/CoreColors';
 import {Box} from '../Box';
+import {Colors} from '../Color';
 import {Icon, IconNames as _iconNames} from '../Icon';
 import {Tooltip} from '../Tooltip';
 
@@ -48,7 +49,7 @@ export const IconColors = () => {
         return colorAtKey;
       }
     }
-    return CoreColors.Gray100;
+    return Colors.accentWhite();
   };
 
   return (
