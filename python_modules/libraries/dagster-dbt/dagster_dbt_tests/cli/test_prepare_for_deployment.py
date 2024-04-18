@@ -83,6 +83,7 @@ def test_prepare_for_deployment_with_dependencies(
 
     dependencies_path = dbt_project_dir.joinpath("dependencies.yml")
     packages_install_path = dbt_project_dir.joinpath("dbt_packages")
+    dbt_utils_dbt_project_path = packages_install_path.joinpath("dbt_utils/dbt_project.yml")
 
     # Scaffold doesn't include a dependencies.yml file, creating one.
     with open(dependencies_path, "w") as file:
@@ -93,6 +94,7 @@ def test_prepare_for_deployment_with_dependencies(
 
     assert dependencies_path.exists()
     assert not packages_install_path.exists()
+    assert not dbt_utils_dbt_project_path.exists()
 
     result = runner.invoke(
         app,
@@ -106,6 +108,7 @@ def test_prepare_for_deployment_with_dependencies(
 
     assert result.exit_code == 0
     assert packages_install_path.exists()
+    assert dbt_utils_dbt_project_path.exists()
 
 
 def test_prepare_for_deployment_with_state(

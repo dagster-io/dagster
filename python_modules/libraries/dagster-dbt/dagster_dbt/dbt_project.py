@@ -70,7 +70,11 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
         from .core.resources_v2 import DbtCliResource
 
         if project.dependencies_path.exists() and not project.packages_install_path.exists():
-            (DbtCliResource(project_dir=project).cli(["deps", "--quiet"]).wait())
+            (
+                DbtCliResource(project_dir=project)
+                .cli(["deps", "--quiet"], target_path=project.target_path)
+                .wait()
+            )
 
         (
             DbtCliResource(project_dir=project)
@@ -198,8 +202,8 @@ class DbtProject(DagsterModel):
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
-            dependencies_path=dependencies_path,
-            packages_install_path=packages_install_path,
+            dependencies_path=project_dir.joinpath(dependencies_path),
+            packages_install_path=project_dir.joinpath(packages_install_path),
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
