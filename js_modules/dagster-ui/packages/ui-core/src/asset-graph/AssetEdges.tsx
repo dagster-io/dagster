@@ -15,7 +15,6 @@ interface AssetEdgesProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-
 function getEdgesToShow({
   viewportRect,
   highlighted,
