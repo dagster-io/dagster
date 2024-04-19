@@ -1,0 +1,20 @@
+[project]
+name = "dagster-cloud"
+version = "0.0.1"
+description = "Mock dagster-cloud package for test."
+readme = "README.md"
+dependencies = []
+
+authors = [
+  { name="Dagster Labs" },
+]
+
+[project.license]
+file = "LICENSE.md"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://dagster.io/cloud"

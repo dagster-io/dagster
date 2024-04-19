@@ -381,6 +381,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "cli_tests",
             "core_tests_pydantic1",
             "core_tests_pydantic2",
+            "backcompat_cloud_instance_tests",
+            "dagster_plus_instance_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",

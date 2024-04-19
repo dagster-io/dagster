@@ -2,7 +2,6 @@ import os
 import re
 import tempfile
 from typing import Any, Mapping, Optional
-from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -35,7 +34,7 @@ from dagster._core.errors import (
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
@@ -67,9 +66,8 @@ from dagster._core.test_utils import (
 from dagster._daemon.asset_daemon import AssetDaemon
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from typing_extensions import Self
-
 from dagster_tests.api_tests.utils import get_bar_workspace
+from typing_extensions import Self
 
 
 def test_get_run_by_id():
@@ -536,7 +534,7 @@ def test_invalid_configurable_class():
         DagsterImportClassFromCodePointerError,
         match=re.escape(
             "Couldn't find class MadeUpRunLauncher in module when attempting to "
-            "load the configurable class dagster.MadeUpRunLauncher"
+            "load the class dagster.MadeUpRunLauncher"
         ),
     ):
         with instance_for_test(
@@ -550,7 +548,7 @@ def test_invalid_configurable_module():
         DagsterImportClassFromCodePointerError,
         match=re.escape(
             "Couldn't import module made_up_module when attempting to load "
-            "the configurable class made_up_module.MadeUpRunLauncher",
+            "the class made_up_module.MadeUpRunLauncher",
         ),
     ):
         with instance_for_test(
@@ -728,90 +726,6 @@ def test_configurable_class_missing_methods():
             }
         ) as instance:
             print(instance.run_launcher)  # noqa: T201
-
-
-# Test preserves behavior from dagster-cloud to dagster-plus rename.
-# Retry loading custom instance class from dagster-plus if dagster-cloud fails.
-def test_retry_loading_instance_from_dagster_plus():
-    mock_instance_class = mock.Mock(name="MockDagsterPlusInstanceClass")
-    mock_instance_class.config_schema = mock.Mock(return_value={})
-    mock_instance_class.config_defaults = mock.Mock(return_value=InstanceRef.config_defaults(""))
-
-    # Mock dagster_cloud module being nonexistent by raising an import error
-    def mock_import_module(module_name: str, _class_name: str):
-        if "dagster_cloud" in module_name:
-            raise DagsterImportClassFromCodePointerError()
-        return mock_instance_class
-
-    # Cannot instantiate a mock class, so we return a DagsterInstance with the same ref
-    def mock_construct_instance(instance_ref: InstanceRef):
-        assert instance_ref.custom_instance_class_data
-        assert instance_ref.custom_instance_class_data.module_name == "dagster_cloud.instance"
-        assert mock_instance_class.config_defaults.called
-        assert mock_instance_class.config_schema.called
-        return DagsterInstance(
-            instance_type=InstanceType.PERSISTENT,
-            local_artifact_storage=instance_ref.local_artifact_storage,
-            run_storage=instance_ref.run_storage,  # type: ignore  # (possible none)
-            event_storage=instance_ref.event_storage,  # type: ignore  # (possible none)
-            schedule_storage=instance_ref.schedule_storage,
-            compute_log_manager=None,
-            scheduler=instance_ref.scheduler,
-            run_coordinator=None,
-            run_launcher=None,
-            settings=instance_ref.settings,
-            secrets_loader=instance_ref.secrets_loader,
-            ref=instance_ref,
-        )
-
-    with mock.patch("dagster._core.instance.config.class_from_code_pointer", mock_import_module):
-        with mock.patch("dagster._core.instance.DagsterInstance.from_ref", mock_construct_instance):
-            with instance_for_test(
-                overrides={
-                    "instance_class": {
-                        "module": "dagster_cloud.instance",
-                        "class": "DagsterCloudAgentInstance",
-                    },
-                }
-            ) as instance:
-                assert (
-                    instance.get_ref().custom_instance_class_data.module_name
-                    == "dagster_cloud.instance"
-                )
-
-
-# Test preserves behavior from dagster-cloud to dagster-plus rename.
-# Ensure the instance ref only contains references to dagster-cloud for backcompat.
-def test_overwrite_plus_ref_with_cloud_ref():
-    # Overwrite the ref to point to the dagster_plus module
-    def mock_construct_instance(instance_ref: InstanceRef):
-        instance_ref = instance_ref._replace(
-            custom_instance_class_data=ConfigurableClassData(
-                "dagster_plus.instance", "DagsterCloudAgentInstance", yaml.dump({})
-            )
-        )
-        # Manually create a DagsterInstance because we can't instantiate a mock class
-        return DagsterInstance(
-            instance_type=InstanceType.PERSISTENT,
-            local_artifact_storage=instance_ref.local_artifact_storage,
-            run_storage=instance_ref.run_storage,  # type: ignore  # (possible none)
-            event_storage=instance_ref.event_storage,  # type: ignore  # (possible none)
-            schedule_storage=instance_ref.schedule_storage,
-            compute_log_manager=None,
-            scheduler=instance_ref.scheduler,
-            run_coordinator=None,
-            run_launcher=None,
-            settings=instance_ref.settings,
-            secrets_loader=instance_ref.secrets_loader,
-            ref=instance_ref,
-        )
-
-    with mock.patch("dagster._core.instance.DagsterInstance.from_ref", mock_construct_instance):
-        with instance_for_test() as instance:
-            assert (
-                instance.get_ref().custom_instance_class_data.module_name
-                == "dagster_cloud.instance"
-            )
 
 
 @patch("dagster._core.storage.partition_status_cache.get_and_update_asset_status_cache_value")
