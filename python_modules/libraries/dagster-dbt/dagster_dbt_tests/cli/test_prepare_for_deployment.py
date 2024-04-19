@@ -82,6 +82,7 @@ def test_prepare_for_deployment_with_dependencies(
     assert result.exit_code == 0
 
     dependencies_path = dbt_project_dir.joinpath("dependencies.yml")
+    packages_path = dbt_project_dir.joinpath("packages.yml")
     packages_install_path = dbt_project_dir.joinpath("dbt_packages")
     dbt_utils_dbt_project_path = packages_install_path.joinpath("dbt_utils/dbt_project.yml")
 
@@ -96,6 +97,65 @@ def test_prepare_for_deployment_with_dependencies(
         shutil.rmtree(packages_install_path)
 
     assert dependencies_path.exists()
+    assert not packages_path.exists()
+    assert not packages_install_path.exists()
+    assert not dbt_utils_dbt_project_path.exists()
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "prepare-for-deployment",
+            "--file",
+            os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert packages_install_path.exists()
+    assert dbt_utils_dbt_project_path.exists()
+
+
+def test_prepare_for_deployment_with_packages(
+        monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(dbt_project_dir)
+
+    project_name = "jaffle_dagster"
+    dagster_project_dir = dbt_project_dir.joinpath(project_name)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+            "--use-experimental-dbt-project",
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    dependencies_path = dbt_project_dir.joinpath("dependencies.yml")
+    packages_path = dbt_project_dir.joinpath("packages.yml")
+    packages_install_path = dbt_project_dir.joinpath("dbt_packages")
+    dbt_utils_dbt_project_path = packages_install_path.joinpath("dbt_utils/dbt_project.yml")
+
+    # Scaffold doesn't include a packages.yml file, let's create one
+    with open(packages_path, "w") as file:
+        packages_yml = {
+            "packages": [{"package": "dbt-labs/dbt_utils", "version": [">=1.1.1", "<2.0.0"]}]
+        }
+        yaml.dump(packages_yml, file)
+    # Delete dbt_packages
+    if packages_install_path.exists():
+        shutil.rmtree(packages_install_path)
+
+    assert not dependencies_path.exists()
+    assert packages_path.exists()
     assert not packages_install_path.exists()
     assert not dbt_utils_dbt_project_path.exists()
 

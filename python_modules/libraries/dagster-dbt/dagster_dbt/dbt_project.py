@@ -3,11 +3,12 @@ import os
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
+import yaml
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
 
-from .errors import DagsterDbtManifestNotFoundError, DagsterDbtProjectNotFoundError
+from .errors import DagsterDbtManifestNotFoundError, DagsterDbtProjectNotFoundError, DagsterDbtProjectYmlFileNotFoundError
 
 logger = logging.getLogger("dagster-dbt.artifacts")
 
@@ -69,7 +70,9 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
     def prepare(self, project: "DbtProject") -> None:
         from .core.resources_v2 import DbtCliResource
 
-        if project.dependencies_path.exists() and not project.packages_install_path.exists():
+        if (
+            project.dependencies_path.exists() or project.packages_path.exists()
+        ) and not project.packages_install_path.exists():
             (
                 DbtCliResource(project_dir=project)
                 .cli(["deps", "--quiet"], target_path=project.target_path)
@@ -115,13 +118,6 @@ class DbtProject(DagsterModel):
             like when deploying using PEX.
         state_path (Optional[Union[str, Path]]):
             The path, relative to the project directory, to reference artifacts from another run.
-        dependencies_path (Union[str, Path]):
-            The path, relative to the project directory, to your dbt `dependencies.yml` file.
-            Default: "dependencies.yml"
-        packages_install_path (Union[str, Path]):
-            The path, relative to the project directory, to the directory
-            where packages are installed when the `dbt deps` command is run.
-            Default: "dbt_packages"
         manifest_preparer (Optional[DbtManifestPreparer]):
             A object for ensuring that manifest.json is in the right state at
             the right times.
@@ -170,6 +166,7 @@ class DbtProject(DagsterModel):
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
     dependencies_path: Path
+    packages_path: Path
     packages_install_path: Path
     manifest_preparer: DbtManifestPreparer
 
@@ -181,8 +178,6 @@ class DbtProject(DagsterModel):
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
-        dependencies_path: Union[Path, str] = Path("dependencies.yml"),
-        packages_install_path: Union[Path, str] = Path("dbt_packages"),
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
         project_dir = Path(project_dir)
@@ -195,6 +190,21 @@ class DbtProject(DagsterModel):
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
+        dependencies_path = project_dir.joinpath("dependencies.yml")
+        packages_path = project_dir.joinpath("packages.yml")
+
+        dbt_project_yml_path = project_dir.joinpath("dbt_project.yml")
+        if not dbt_project_yml_path.exists():
+            raise DagsterDbtProjectYmlFileNotFoundError(
+                f"Did not find dbt_project.yml at expected path {dbt_project_yml_path}. "
+                f"Ensure the specified project directory respects all dbt project requirements."
+            )
+        with open(project_dir.joinpath("dbt_project.yml")) as file:
+            dbt_project_yml = yaml.safe_load(file)
+        packages_install_path = project_dir.joinpath(
+            dbt_project_yml.get("packages-install-path", "dbt_packages")
+        )
+
         super().__init__(
             project_dir=project_dir,
             target_path=target_path,
@@ -202,8 +212,9 @@ class DbtProject(DagsterModel):
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
-            dependencies_path=project_dir.joinpath(dependencies_path),
-            packages_install_path=project_dir.joinpath(packages_install_path),
+            dependencies_path=dependencies_path,
+            packages_path=packages_path,
+            packages_install_path=packages_install_path,
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
