@@ -31,6 +31,7 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
+    "@koale/useworker": "^4.0.2",
     "@tanstack/react-virtual": "^3.0.1",
     "@testing-library/react-hooks": "^7.0.2",
     "@vx/shape": "^0.0.192",

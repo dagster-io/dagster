@@ -2550,6 +2550,7 @@ __metadata:
     "@graphql-eslint/eslint-plugin": "npm:^3.18.0"
     "@graphql-tools/mock": "npm:^8.5.0"
     "@graphql-tools/schema": "npm:^8.3.1"
+    "@koale/useworker": "npm:^4.0.2"
     "@mdx-js/react": "npm:^1.6.22"
     "@storybook/addon-actions": "npm:^7.4.5"
     "@storybook/addon-docs": "npm:^7.4.5"
@@ -4528,6 +4529,17 @@ __metadata:
   version: 1.1.4
   resolution: "@kamilkisiela/fast-url-parser@npm:1.1.4"
   checksum: 10/5b79438235a81817b02b96ddc581c996961cec5b40c7d6ebabd01ac6af8d4a35a43b9b263144af25386cef92c054c3ef6b1723b09eb0d8cf7b4053781a474c5f
+  languageName: node
+  linkType: hard
+
+"@koale/useworker@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "@koale/useworker@npm:4.0.2"
+  dependencies:
+    dequal: "npm:^1.0.0"
+  peerDependencies:
+    react: ^16.8.0
+  checksum: 10/b2daed6366a5bfa0e7499d35e2a85ed8b5053f394b7b18187d0f8a9f9fef22f0e151f5adfffb4f3f7b85e44c2f3256c601af54447460eaae656f6814013af871
   languageName: node
   linkType: hard
 
@@ -11865,6 +11877,13 @@ __metadata:
   version: 0.11.0
   resolution: "dependency-graph@npm:0.11.0"
   checksum: 10/6b5eb540303753037a613e781da4b81534d139cbabc92f342630ed622e3ef4c332fc40cf87823e1ec71a7aeb4b195f8d88d7e625931ce6007bf2bf09a8bfb01e
+  languageName: node
+  linkType: hard
+
+"dequal@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "dequal@npm:1.0.1"
+  checksum: 10/92a80c10ec52c256e306ef44c6640f0f2451edfba795b314aec90ee2770930f472c95e8f438b2fb80b0060033d0b5589f2ccb243c0ddd3e9a427c0faa92035c3
   languageName: node
   linkType: hard
 
