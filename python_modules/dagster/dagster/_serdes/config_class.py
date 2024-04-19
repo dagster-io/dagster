@@ -1,4 +1,5 @@
 import importlib
+import logging
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -93,35 +94,34 @@ class ConfigurableClassData(
         from dagster._config import process_config, resolve_to_config_type
         from dagster._core.errors import DagsterInvalidConfigError
 
+        # All rehydrated classes are expected to implement the ConfigurableClass interface and
+        # will error when we call `klass.from_config_value` and `klass.config_type` below if
+        # they do not. However, not all rehydrated classes actually have `ConfigurableClass` as
+        # an ancestor due to some subtleties around multiple abstract classes that cause an
+        # error when `ConfigurableClass` is added as an ancestor to storage classes.
         try:
-            module = importlib.import_module(self.module_name)
-        except ModuleNotFoundError:
+            klass = cast(
+                Type[ConfigurableClass], class_from_code_pointer(self.module_name, self.class_name)
+            )
+        except DagsterImportClassFromCodePointerError as e:
             module_elems = self.module_name.split(".")
             if "dagster_cloud" == module_elems[0]:
                 try:
-                    module = importlib.import_module(".".join(["dagster_plus", *module_elems[1:]]))
-                except Exception:
-                    raise DagsterImportClassFromCodePointerError(
-                        f"Couldn't import module {self.module_name} when attempting to load the "
-                        f"configurable class {self.module_name}.{self.class_name}"
+                    klass = cast(
+                        Type[ConfigurableClass],
+                        class_from_code_pointer(
+                            ".".join(["dagster_plus", *module_elems[1:]]),
+                            self.class_name,
+                        ),
                     )
+                except Exception:
+                    logger = logging.getLogger("dagster")
+                    logger.exception(
+                        "Error importing DagsterInstance class from dagster_plus module"
+                    )
+                    raise e
             else:
-                raise DagsterImportClassFromCodePointerError(
-                    f"Couldn't import module {self.module_name} when attempting to load the "
-                    f"configurable class {self.module_name}.{self.class_name}"
-                )
-        try:
-            # All rehydrated classes are expected to implement the ConfigurableClass interface and
-            # will error when we call `klass.from_config_value` and `klass.config_type` below if
-            # they do not. However, not all rehydrated classes actually have `ConfigurableClass` as
-            # an ancestor due to some subtleties around multiple abstract classes that cause an
-            # error when `ConfigurableClass` is added as an ancestor to storage classes.
-            klass = cast(Type[ConfigurableClass], getattr(module, self.class_name))
-        except AttributeError:
-            raise DagsterImportClassFromCodePointerError(
-                f"Couldn't find class {self.class_name} in module when attempting to load the "
-                f"configurable class {self.module_name}.{self.class_name}"
-            )
+                raise e
 
         if not issubclass(klass, as_type or ConfigurableClass):
             raise check.CheckError(
