@@ -284,8 +284,6 @@ def send_emails_job():
     send_emails(emails_to_send)
 ```
 
-We must use the <PyObject object="AssetsDefinition" method="to_source_asset" />, because <PyObject object="SourceAsset" pluralize /> are used to represent assets that other assets or jobs depend on, in settings where they won't be materialized themselves.
-
 If the asset is partitioned, then:
 
 - If the job is partitioned, the corresponding partition of the asset will be loaded.

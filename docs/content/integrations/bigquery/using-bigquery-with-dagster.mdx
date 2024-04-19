@@ -129,11 +129,7 @@ Now you can run `dagster dev` and materialize the `iris_data` asset from the Dag
 
 #### Making Dagster aware of existing tables
 
-<<<<<<< HEAD
-If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
-=======
-If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [non-materializable assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables.
->>>>>>> 5bba59baa3 (eliminate SourceAsset)
+If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [non-materializable assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
 
 ```python file=/integrations/bigquery/tutorial/resource/source_asset.py
 from dagster import AssetsDefinition

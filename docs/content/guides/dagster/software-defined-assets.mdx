@@ -52,7 +52,7 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     return daily_temperature_highs.nlargest(10, "max_tmpf")
 ```
 
-`sfo_q2_weather_sample` represents our base temperature table. It's a <PyObject module="dagster" object="SourceAsset" />, meaning that we rely on it, but don't generate it.
+`sfo_q2_weather_sample` represents our base temperature table. Other assets rely on it, but it's not generated inside our pipeline. We define it without specifying any function that computes its contents.
 
 `daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function, a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on in an <PyObject object="IOManager" />. This allows us to swap in different implementations in different environments. For example, in local development, we might want to store data in a local CSV file for easy testing. However in production, we would want to store data in a data warehouse.
 

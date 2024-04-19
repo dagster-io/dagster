@@ -7,7 +7,12 @@ from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, experimental_param, public
+from dagster._annotations import (
+    deprecated,
+    deprecated_param,
+    experimental,
+    public,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -82,15 +87,14 @@ class AssetSelection(ABC, DagsterModel):
     """
 
     @public
-    @experimental_param(param="include_sources")
     @staticmethod
-    def all(include_sources: bool = False) -> "AllSelection":
+    def all(include_non_materializable: bool = False) -> "AllSelection":
         """Returns a selection that includes all assets and their asset checks.
 
         Args:
-            include_sources (bool): If True, then include all source assets.
+            include_non_materializable (bool): If True, then include all non-materializable assets.
         """
-        return AllSelection(include_sources=include_sources)
+        return AllSelection(include_non_materializable=include_non_materializable)
 
     @public
     @staticmethod
@@ -172,8 +176,15 @@ class AssetSelection(ABC, DagsterModel):
 
     @public
     @staticmethod
+    @deprecated_param(
+        param="include_sources",
+        breaking_version="2.0",
+        additional_warn_text="Use include_non_materializable instead",
+    )
     def key_prefixes(
-        *key_prefixes: CoercibleToAssetKeyPrefix, include_sources: bool = False
+        *key_prefixes: CoercibleToAssetKeyPrefix,
+        include_sources: bool = False,
+        include_non_materializable: bool = False,
     ) -> "KeyPrefixesAssetSelection":
         """Returns a selection that includes assets that match any of the provided key prefixes and all the asset checks that target them.
 
@@ -193,12 +204,22 @@ class AssetSelection(ABC, DagsterModel):
         """
         _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
         return KeyPrefixesAssetSelection(
-            selected_key_prefixes=_asset_key_prefixes, include_sources=include_sources
+            selected_key_prefixes=_asset_key_prefixes,
+            include_non_materializable=include_sources or include_non_materializable,
         )
 
     @public
     @staticmethod
-    def groups(*group_strs, include_sources: bool = False) -> "GroupsAssetSelection":
+    @deprecated_param(
+        param="include_sources",
+        breaking_version="2.0",
+        additional_warn_text="Use include_non_materializable instead",
+    )
+    def groups(
+        *group_strs,
+        include_sources: bool = False,
+        include_non_materializable: bool = False,
+    ) -> "GroupsAssetSelection":
         """Returns a selection that includes materializable assets that belong to any of the
         provided groups and all the asset checks that target them.
 
@@ -207,12 +228,15 @@ class AssetSelection(ABC, DagsterModel):
                 selection.
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
-        return GroupsAssetSelection(selected_groups=group_strs, include_sources=include_sources)
+        return GroupsAssetSelection(
+            selected_groups=group_strs,
+            include_non_materializable=include_sources or include_non_materializable,
+        )
 
     @public
     @staticmethod
     @experimental
-    def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
+    def tag(key: str, value: str, include_non_materializable: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
@@ -221,24 +245,30 @@ class AssetSelection(ABC, DagsterModel):
             include_sources (bool): If True, then include source assets matching the group in the
                 selection.
         """
-        return TagAssetSelection(key=key, value=value, include_sources=include_sources)
+        return TagAssetSelection(
+            key=key, value=value, include_non_materializable=include_non_materializable
+        )
 
     @staticmethod
-    def tag_string(string: str, include_sources: bool = False) -> "AssetSelection":
+    def tag_string(string: str, include_non_materializable: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
 
         Args:
-            include_sources (bool): If True, then include source assets matching the group in the
+            include_non_materializable (bool): If True, then include source assets matching the group in the
                 selection.
         """
         split_by_equals_segments = string.split("=")
         if len(split_by_equals_segments) == 1:
-            return TagAssetSelection(key=string, value="", include_sources=include_sources)
+            return TagAssetSelection(
+                key=string, value="", include_non_materializable=include_non_materializable
+            )
         elif len(split_by_equals_segments) == 2:
             key, value = split_by_equals_segments
-            return TagAssetSelection(key=key, value=value, include_sources=include_sources)
+            return TagAssetSelection(
+                key=key, value=value, include_non_materializable=include_non_materializable
+            )
         else:
             check.failed(f"Invalid tag selection string: {string}. Must have no more than one '='.")
 
@@ -512,16 +542,16 @@ class AssetSelection(ABC, DagsterModel):
         return f"({self})" if self.needs_parentheses_when_operand() else str(self)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"include_non_materializable": "include_sources"})
 class AllSelection(AssetSelection):
-    include_sources: Optional[bool] = None
+    include_non_materializable: Optional[bool] = None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         return (
             asset_graph.all_asset_keys
-            if self.include_sources
+            if self.include_non_materializable
             else asset_graph.materializable_asset_keys
         )
 
@@ -529,7 +559,9 @@ class AllSelection(AssetSelection):
         return self
 
     def __str__(self) -> str:
-        return "all materializable assets" + (" and source assets" if self.include_sources else "")
+        return "all materializable assets" + (
+            " and non-materializable assets" if self.include_non_materializable else ""
+        )
 
 
 @whitelist_for_serdes
@@ -815,17 +847,17 @@ class DownstreamAssetSelection(AssetSelection):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"include_non_materializable": "include_sources"})
 class GroupsAssetSelection(AssetSelection):
     selected_groups: Sequence[str]
-    include_sources: bool
+    include_non_materializable: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
-            if self.include_sources
+            if self.include_non_materializable
             else asset_graph.materializable_asset_keys
         )
         return {
@@ -845,18 +877,18 @@ class GroupsAssetSelection(AssetSelection):
             return f"group:({' or '.join(self.selected_groups)})"
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"include_non_materializable": "include_sources"})
 class TagAssetSelection(AssetSelection):
     key: str
     value: str
-    include_sources: bool
+    include_non_materializable: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
-            if self.include_sources
+            if self.include_non_materializable
             else asset_graph.materializable_asset_keys
         )
 
@@ -916,17 +948,17 @@ class KeysAssetSelection(AssetSelection):
             return f"{len(self.selected_keys)} assets"
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"include_non_materializable": "include_sources"})
 class KeyPrefixesAssetSelection(AssetSelection):
     selected_key_prefixes: Sequence[Sequence[str]]
-    include_sources: bool
+    include_non_materializable: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
-            if self.include_sources
+            if self.include_non_materializable
             else asset_graph.materializable_asset_keys
         )
         return {
