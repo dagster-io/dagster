@@ -92,7 +92,8 @@ def test_prepare_for_deployment_with_dependencies(
         }
         yaml.dump(dependencies_yml, file)
     # Delete dbt_packages
-    packages_install_path.unlink(missing_ok=True)
+    if packages_install_path.exists():
+        shutil.rmtree(packages_install_path)
 
     assert dependencies_path.exists()
     assert not packages_install_path.exists()
