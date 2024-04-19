@@ -27,7 +27,7 @@
 ### Documentation
 
 - Renamed `Dagster Cloud` to `Dagster+` all over the docs.
-- Added a page about [Change Tracking](https://www.notion.so/ec63b26b6cf34ec8a3959c41817dd375?pvs=21) in Dagster+ branch deployments.
+- Added a page about [Change Tracking](https://docs.dagster.io/dagster-plus/managing-deployments/branch-deployments/change-tracking) in Dagster+ branch deployments.
 - Added a section about [user-defined metrics](https://docs.dagster.io/concepts/metadata-tags/asset-metadata#asset-owners) to the Dagster+ Insights docs.
 - Added a section about [Asset owners](https://docs.dagster.io/concepts/metadata-tags/asset-metadata#asset-owners) to the asset metadata docs.
 
