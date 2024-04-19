@@ -61,4 +61,18 @@ custom_condition_scenarios = [
         .evaluate_tick()
         .assert_requested_runs(run_request("B")),
     ),
+    AssetDaemonScenario(
+        id="missing_and_parent_not_missing_scenario",
+        initial_spec=two_assets_in_sequence.with_asset_properties(
+            "B",
+            auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(
+                AssetCondition.missing() & ~AssetCondition.parent_missing()
+            ),
+        ),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs()
+        .with_runs(run_request("A"))
+        .evaluate_tick()
+        .assert_requested_runs(run_request("B")),
+    ),
 ]

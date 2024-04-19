@@ -371,9 +371,9 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition has never been materialized or observed.
         """
-        from ..auto_materialize_rule import AutoMaterializeRule
+        from .dep_scheduling_condition.dep_missing import DepMissingSchedulingCondition
 
-        return RuleCondition(rule=AutoMaterializeRule.skip_on_parent_missing())
+        return DepMissingSchedulingCondition()
 
     @staticmethod
     def updated_since_cron(cron_schedule: str, timezone: str = "UTC") -> "AssetCondition":
