@@ -49,8 +49,9 @@ from dagster_fivetran_tests.utils import (
     ],
 )
 @pytest.mark.parametrize("multiple_connectors", [True, False])
+@pytest.mark.parametrize("destination_ids", [None, [], ["some_group"]])
 def test_load_from_instance(
-    connector_to_group_fn, filter_connector, connector_to_asset_key_fn, multiple_connectors
+    connector_to_group_fn, filter_connector, connector_to_asset_key_fn, multiple_connectors, destination_ids
 ):
     with environ({"FIVETRAN_API_KEY": "some_key", "FIVETRAN_API_SECRET": "some_secret"}):
         load_calls = []
@@ -164,6 +165,13 @@ def test_load_from_instance(
             return
 
         all_assets = [downstream_asset] + ft_assets
+
+        if destination_ids:
+            # if destination_ids is truthy then we should skip the API call to get groups
+            assert not any(
+                map(lambda call: call.url == ft_resource.api_base_url + "groups", rsps.calls)
+            )
+
 
         # Check schema metadata is added correctly to asset def
         assert any(
