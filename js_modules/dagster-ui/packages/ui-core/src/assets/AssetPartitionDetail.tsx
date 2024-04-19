@@ -34,7 +34,8 @@ import {
 import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
-import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
+import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import {isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
 import {ChangeReason, RunStatus, StaleStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -191,8 +192,8 @@ export const AssetPartitionDetail = ({
   hasLoadingState?: boolean;
   hasStaleLoadingState?: boolean;
   stepKey?: string;
-  staleCauses?: LiveDataForNode['staleCauses'];
-  staleStatus?: LiveDataForNode['staleStatus'];
+  staleCauses?: AssetStaleDataFragment['staleCauses'];
+  staleStatus?: AssetStaleDataFragment['staleStatus'];
   changedReasons?: ChangeReason[];
 }) => {
   const {latest, partition, all} = group;

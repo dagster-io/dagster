@@ -100,7 +100,7 @@ FINISHED_STATUSES = [
 # Run statuses for runs that can be safely canceled.
 # Does not include the other unfinished statuses for the following reasons:
 # STARTING: Control has been ceded to the run worker, which will eventually move the run to a STARTED.
-# NOT_STARTED: Mostly replaced with STARTING. Runs are only here in the the brief window between
+# NOT_STARTED: Mostly replaced with STARTING. Runs are only here in the brief window between
 # creating the run and launching or enqueueing it.
 CANCELABLE_RUN_STATUSES = [DagsterRunStatus.STARTED, DagsterRunStatus.QUEUED]
 

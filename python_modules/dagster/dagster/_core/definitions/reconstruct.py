@@ -555,7 +555,7 @@ def build_reconstructable_job(
 
 
 def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
-    # So this actually straps the the job for the sole
+    # So this actually straps the job for the sole
     # purpose of getting the job name. If we changed ReconstructableJob
     # to get the job on demand in order to get name, we could avoid this.
     job_def = job_def_from_pointer(pointer)

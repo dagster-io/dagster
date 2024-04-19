@@ -3,7 +3,6 @@ import React, {useContext} from 'react';
 
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
@@ -93,11 +92,7 @@ export function useAssetGraphExplorerFilters({
     filters.push(groupsFilter);
   }
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
-  if (
-    changedInBranch &&
-    featureEnabled(FeatureFlag.flagExperimentalBranchDiff) &&
-    isBranchDeployment
-  ) {
+  if (changedInBranch && isBranchDeployment) {
     filters.push(changedFilter);
   }
   filters.push(kindTagsFilter);

@@ -1,5 +1,15 @@
 [
   {
+    "source": "/concepts/assets/software-defined-assets#attaching-definition-metadata",
+    "destination": "/concepts/metadata-tags/asset-metadata",
+    "statusCode": 302
+  },
+  {
+    "source": "/concepts/assets/software-defined-assets#recording-materialization-metadata",
+    "destination": "/concepts/metadata-tags/asset-metadata",
+    "statusCode": 302
+  },
+  {
     "source": "/deployment/guides/running-locally",
     "destination": "/guides/running-dagster-locally",
     "statusCode": 302
@@ -344,7 +354,6 @@
     "destination": "/concepts/partitions-schedules-sensors/schedules",
     "statusCode": 302
   },
-
   {
     "source": "/troubleshooting/run-queue",
     "destination": "/deployment/run-coordinator",
@@ -597,87 +606,87 @@
   },
   {
     "source": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso",
-    "destination": "/dagster-cloud/account/authentication/okta/saml-sso",
+    "destination": "/dagster-plus/account/authentication/okta/saml-sso",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing",
-    "destination": "/dagster-cloud/managing-deployments",
+    "destination": "/dagster-plus/managing-deployments",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/environment-variables",
-    "destination": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
+    "destination": "/dagster-plus/managing-deployments/environment-variables-and-secrets",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
-    "destination": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
+    "destination": "/dagster-plus/managing-deployments/environment-variables-and-secrets",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
-    "destination": "/dagster-cloud/getting-started",
+    "destination": "/dagster-plus/getting-started",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
-    "destination": "/dagster-cloud/getting-started",
+    "destination": "/dagster-plus/getting-started",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/managing-deployments",
-    "destination": "/dagster-cloud/managing-deployments/managing-deployments",
+    "destination": "/dagster-plus/managing-deployments/managing-deployments",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/deployment-settings-reference",
-    "destination": "/dagster-cloud/managing-deployments/deployment-settings-reference",
+    "destination": "/dagster-plus/managing-deployments/deployment-settings-reference",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/account/setting-up-alerts",
-    "destination": "/dagster-cloud/managing-deployments/alerts",
+    "destination": "/dagster-plus/managing-deployments/alerts",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
-    "destination": "/dagster-cloud/managing-deployments/alerts",
+    "destination": "/dagster-plus/managing-deployments/alerts",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/code-locations",
-    "destination": "/dagster-cloud/managing-deployments/code-locations",
+    "destination": "/dagster-plus/managing-deployments/code-locations",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/dagster-cloud-cli",
-    "destination": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
+    "destination": "/dagster-plus/managing-deployments/dagster-cloud-cli",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents",
-    "destination": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents",
+    "destination": "/dagster-plus/managing-deployments/setting-environment-variables-dagster-cloud-agents",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/branch-deployments",
-    "destination": "/dagster-cloud/managing-deployments/branch-deployments",
+    "destination": "/dagster-plus/managing-deployments/branch-deployments",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github",
-    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
+    "destination": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab",
-    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
+    "destination": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
     "statusCode": 302
   },
   {
     "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments",
-    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments",
+    "destination": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments",
     "statusCode": 302
   },
   {
@@ -764,5 +773,305 @@
     "source": "/concepts/ops-jobs-graphs/metadata-tags",
     "destination": "/concepts/metadata-tags",
     "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account",
+      "destination": "/dagster-plus/account",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication",
+      "destination": "/dagster-plus/account/authentication",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication/okta/saml-sso",
+      "destination": "/dagster-plus/account/authentication/okta/saml-sso",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication/okta/scim-provisioning",
+      "destination": "/dagster-plus/account/authentication/okta/scim-provisioning",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso",
+      "destination": "/dagster-plus/account/authentication/setting-up-azure-ad-saml-sso",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso",
+      "destination": "/dagster-plus/account/authentication/setting-up-google-workspace-saml-sso",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso",
+      "destination": "/dagster-plus/account/authentication/setting-up-onelogin-saml-sso",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication/setting-up-pingone-saml-sso",
+      "destination": "/dagster-plus/account/authentication/setting-up-pingone-saml-sso",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/authentication/utilizing-scim-provisioning",
+      "destination": "/dagster-plus/account/authentication/utilizing-scim-provisioning",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/managing-users",
+      "destination": "/dagster-plus/account/managing-users",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/managing-users/managing-teams",
+      "destination": "/dagster-plus/account/managing-users/managing-teams",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/account/managing-users/managing-user-roles-permissions",
+      "destination": "/dagster-plus/account/managing-users/managing-user-roles-permissions",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/best-practices",
+      "destination": "/dagster-plus/best-practices",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/best-practices/managing-multiple-projects-and-teams",
+      "destination": "/dagster-plus/best-practices/managing-multiple-projects-and-teams",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment",
+      "destination": "/dagster-plus/deployment",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/amazon-ecs",
+      "destination": "/dagster-plus/deployment/agents/amazon-ecs",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference",
+      "destination": "/dagster-plus/deployment/agents/amazon-ecs/configuration-reference",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc",
+      "destination": "/dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc",
+      "destination": "/dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning/ecs-agent",
+      "destination": "/dagster-plus/deployment/agents/amazon-ecs/manually-provisioning/ecs-agent",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template",
+      "destination": "/dagster-plus/deployment/agents/amazon-ecs/upgrading-cloudformation-template",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/docker/configuration-reference",
+      "destination": "/dagster-plus/deployment/agents/docker/configuration-reference",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent",
+      "destination": "/dagster-plus/deployment/agents/docker/configuring-running-docker-agent",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/docker",
+      "destination": "/dagster-plus/deployment/agents/docker",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference",
+      "destination": "/dagster-plus/deployment/agents/kubernetes/configuration-reference",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent",
+      "destination": "/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents",
+      "destination": "/dagster-plus/deployment/agents",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/customizing-configuration",
+      "destination": "/dagster-plus/deployment/agents/customizing-configuration",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/local",
+      "destination": "/dagster-plus/deployment/agents/local",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/agents/running-multiple-agents",
+      "destination": "/dagster-plus/deployment/agents/running-multiple-agents",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/hybrid",
+      "destination": "/dagster-plus/deployment/hybrid",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/deployment/serverless",
+      "destination": "/dagster-plus/deployment/serverless",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/getting-started",
+      "destination": "/dagster-plus/getting-started",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights",
+      "destination": "/dagster-plus/insights",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights/asset-metadata",
+      "destination": "/dagster-plus/insights/asset-metadata",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights/exporting-insights-metrics",
+      "destination": "/dagster-plus/insights/exporting-insights-metrics",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights/integrating-bigquery-and-dbt",
+      "destination": "/dagster-plus/insights/integrating-bigquery-and-dbt",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights/integrating-bigquery",
+      "destination": "/dagster-plus/insights/integrating-bigquery",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights/integrating-external-metrics",
+      "destination": "/dagster-plus/insights/integrating-external-metrics",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights/integrating-snowflake-and-dbt",
+      "destination": "/dagster-plus/insights/integrating-snowflake-and-dbt",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/insights/snowflake",
+      "destination": "/dagster-plus/insights/snowflake",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments",
+      "destination": "/dagster-plus/managing-deployments",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/alerts",
+      "destination": "/dagster-plus/managing-deployments/alerts",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/alerts/email",
+      "destination": "/dagster-plus/managing-deployments/alerts/email",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli",
+      "destination": "/dagster-plus/managing-deployments/alerts/managing-alerts-cli",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui",
+      "destination": "/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/alerts/microsoft-teams",
+      "destination": "/dagster-plus/managing-deployments/alerts/microsoft-teams",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/alerts/pagerduty",
+      "destination": "/dagster-plus/managing-deployments/alerts/pagerduty",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/alerts/slack",
+      "destination": "/dagster-plus/managing-deployments/alerts/slack",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/branch-deployments",
+      "destination": "/dagster-plus/managing-deployments/branch-deployments",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
+      "destination": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
+      "destination": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments",
+      "destination": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/controlling-logs",
+      "destination": "/dagster-plus/managing-deployments/controlling-logs",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/dagster-cloud-yaml",
+      "destination": "/dagster-plus/managing-deployments/dagster-plus-yaml",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/dagster-plus-cli",
+      "destination": "/dagster-plus/managing-deployments/dagster-plus-cli",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/deployment-settings-reference",
+      "destination": "/dagster-plus/managing-deployments/deployment-settings-reference",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
+      "destination": "/dagster-plus/managing-deployments/environment-variables-and-secrets",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents",
+      "destination": "/dagster-plus/managing-deployments/setting-environment-variables-agents",
+      "statusCode": 302
+  },
+  {
+      "source": "/dagster-cloud",
+      "destination": "/dagster-plus",
+      "statusCode": 302
   }
 ]

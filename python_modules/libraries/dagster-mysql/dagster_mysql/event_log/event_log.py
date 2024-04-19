@@ -58,9 +58,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def __init__(self, mysql_url: str, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = check.str_param(mysql_url, "mysql_url")
-        self._disposed = False
-
-        self._event_watcher = SqlPollingEventWatcher(self)
+        self._event_watcher: Optional[SqlPollingEventWatcher] = None
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
@@ -200,22 +198,20 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def watch(self, run_id: str, cursor: Optional[str], callback: EventHandlerFn) -> None:
         if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
             check.failed("Cannot call `watch` with an offset cursor")
+
+        if self._event_watcher is None:
+            self._event_watcher = SqlPollingEventWatcher(self)
+
         self._event_watcher.watch_run(run_id, cursor, callback)
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
-        self._event_watcher.unwatch_run(run_id, handler)
-
-    @property
-    def event_watcher(self) -> SqlPollingEventWatcher:
-        return self._event_watcher
-
-    def __del__(self) -> None:
-        self.dispose()
+        if self._event_watcher:
+            self._event_watcher.unwatch_run(run_id, handler)
 
     def dispose(self) -> None:
-        if not self._disposed:
-            self._disposed = True
+        if self._event_watcher:
             self._event_watcher.close()
+            self._event_watcher = None
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = mysql_alembic_config(__file__)

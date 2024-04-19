@@ -16,7 +16,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {isAssetMissing, isAssetStaleAll} from './Stale';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
@@ -55,7 +55,7 @@ export const CalculateUnsyncedDialog = React.memo(
     const unsynced = React.useMemo(
       () =>
         (data?.assetNodes || [])
-          .filter((node) => isAssetStaleAll(node) || isAssetMissing(node))
+          .filter((node) => !node.isSource && (isAssetStale(node) || isAssetMissing(node)))
           .map(asAssetKeyInput),
       [data],
     );
@@ -208,6 +208,7 @@ const ASSET_STALE_STATUS_QUERY = gql`
       assetKey {
         path
       }
+      isSource
       staleStatus
       partitionStats {
         numMaterialized

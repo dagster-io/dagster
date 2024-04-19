@@ -1,10 +1,10 @@
-from dagster import asset, asset_check
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster import AssetCheckResult, AssetCheckSpec, Output, asset, asset_check
 
 
-@asset
+@asset(check_specs=[AssetCheckSpec(name="in_op_check", asset="asset_1")])
 def asset_1():
-    pass
+    yield Output(1)
+    yield AssetCheckResult(passed=True)
 
 
 @asset_check(asset=asset_1)

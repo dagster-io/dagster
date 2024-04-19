@@ -588,3 +588,20 @@ pre[class="noop"] {
     margin: 0 !important;
     border-radius: 0 !important;
 }
+
+
+.n {
+  font-weight: 700;
+}
+
+.prose strong {
+  font-weight: 700;
+}
+
+.prose p {
+  line-height: 1.75em;
+}
+
+dl, dl * {
+  overflow-wrap: break-word;
+}

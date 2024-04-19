@@ -102,7 +102,7 @@ Sometimes, you may want to log information from your external code as structured
 
 ### Report asset materialization
 
-Similar to [reporting materialization metadata within the Dagster process](/concepts/assets/software-defined-assets#recording-materialization-metadata), you can also report asset materialization back to Dagster from the external process.
+Similar to [reporting materialization metadata within the Dagster process](/concepts/metadata-tags/asset-metadata), you can also report asset materialization back to Dagster from the external process.
 
 In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 

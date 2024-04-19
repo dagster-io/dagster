@@ -6,8 +6,8 @@ from dagster import (
     IAttachDifferentObjectToOpContext,
     resource,
 )
-from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._model.pydantic_compat_layer import compat_model_validator
 from pydantic import Field
 
 from .databricks import DatabricksClient

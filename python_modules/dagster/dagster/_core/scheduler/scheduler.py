@@ -171,13 +171,14 @@ class Scheduler(abc.ABC):
         stored_state = instance.get_instigator_state(
             external_schedule.get_external_origin_id(), external_schedule.selector_id
         )
-        new_instigator_data = ScheduleInstigatorData(
-            external_schedule.cron_schedule,
-            start_timestamp=None,
-        )
+
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
+            new_instigator_data = ScheduleInstigatorData(
+                external_schedule.cron_schedule,
+                start_timestamp=None,
+            )
             reset_state = instance.add_instigator_state(
                 state=InstigatorState(
                     external_schedule.get_external_origin(),
@@ -188,7 +189,7 @@ class Scheduler(abc.ABC):
             )
         else:
             reset_state = instance.update_instigator_state(
-                state=stored_state.with_status(new_status).with_data(new_instigator_data)
+                state=stored_state.with_status(new_status)
             )
 
         return reset_state

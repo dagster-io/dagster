@@ -82,6 +82,7 @@ export function useAssetCatalogFiltering(
     tags: filters.tags,
     setTags: setAssetTags,
   });
+
   const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter, tagsFilter];
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
   if (isBranchDeployment) {

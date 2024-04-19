@@ -2,14 +2,14 @@ import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {TabLink} from '../ui/TabLink';
 
 interface Props<TData> {
-  refreshState?: QueryRefreshState;
+  refreshState?: RefreshState;
   queryData?: QueryResult<TData, any>;
   tab: string;
 }

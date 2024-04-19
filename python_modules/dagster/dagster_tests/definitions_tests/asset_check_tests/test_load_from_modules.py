@@ -1,10 +1,15 @@
 import pytest
-from dagster import AssetKey, asset_check, load_assets_from_modules
-from dagster._core.definitions.load_asset_checks_from_modules import (
+from dagster import (
+    AssetKey,
+    Definitions,
+    asset_check,
     load_asset_checks_from_current_module,
     load_asset_checks_from_modules,
     load_asset_checks_from_package_module,
     load_asset_checks_from_package_name,
+    load_assets_from_modules,
+    load_assets_from_package_module,
+    load_assets_from_package_name,
 )
 
 from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (
@@ -30,10 +35,13 @@ def test_load_asset_checks_from_modules():
     )
     assert result.success
 
-    assert len(result.get_asset_check_evaluations()) == 1
+    assert len(result.get_asset_check_evaluations()) == 2
     assert result.get_asset_check_evaluations()[0].passed
     assert result.get_asset_check_evaluations()[0].asset_key == asset_check_1_key.asset_key
-    assert result.get_asset_check_evaluations()[0].check_name == asset_check_1_key.name
+    assert result.get_asset_check_evaluations()[0].check_name == "in_op_check"
+    assert result.get_asset_check_evaluations()[1].passed
+    assert result.get_asset_check_evaluations()[1].asset_key == asset_check_1_key.asset_key
+    assert result.get_asset_check_evaluations()[1].check_name == asset_check_1_key.name
 
 
 def test_load_asset_checks_from_modules_prefix():
@@ -51,10 +59,13 @@ def test_load_asset_checks_from_modules_prefix():
     )
     assert result.success
 
-    assert len(result.get_asset_check_evaluations()) == 1
+    assert len(result.get_asset_check_evaluations()) == 2
     assert result.get_asset_check_evaluations()[0].passed
     assert result.get_asset_check_evaluations()[0].asset_key == AssetKey(["foo", "asset_1"])
-    assert result.get_asset_check_evaluations()[0].check_name == "asset_check_1"
+    assert result.get_asset_check_evaluations()[0].check_name == "in_op_check"
+    assert result.get_asset_check_evaluations()[1].passed
+    assert result.get_asset_check_evaluations()[1].asset_key == AssetKey(["foo", "asset_1"])
+    assert result.get_asset_check_evaluations()[1].check_name == "asset_check_1"
 
 
 @asset_check(asset=AssetKey("asset_1"))
@@ -71,16 +82,23 @@ def test_load_asset_checks_from_current_module():
 
 
 @pytest.mark.parametrize(
-    "load_fn",
+    "load_fns",
     [
-        load_asset_checks_from_package_module,
-        lambda package, **kwargs: load_asset_checks_from_package_name(package.__name__, **kwargs),
+        (load_assets_from_package_module, load_asset_checks_from_package_module),
+        (
+            lambda package, **kwargs: load_assets_from_package_name(package.__name__, **kwargs),
+            lambda package, **kwargs: load_asset_checks_from_package_name(
+                package.__name__, **kwargs
+            ),
+        ),
     ],
 )
-def test_load_asset_checks_from_package(load_fn):
+def test_load_asset_checks_from_package(load_fns):
     from . import checks_module
 
-    checks = load_fn(checks_module, asset_key_prefix="foo")
+    assets_load_fn, checks_load_fn = load_fns
+
+    checks = checks_load_fn(checks_module, asset_key_prefix="foo")
     assert len(checks) == 2
     check_key_0 = next(iter(checks[0].check_keys))
     assert check_key_0.name == "asset_check_1"
@@ -88,3 +106,8 @@ def test_load_asset_checks_from_package(load_fn):
     check_key_1 = next(iter(checks[1].check_keys))
     assert check_key_1.name == "submodule_check"
     assert check_key_1.asset_key == AssetKey(["foo", "asset_1"])
+
+    assets = assets_load_fn(checks_module, key_prefix="foo")
+    assert len(assets) == 1
+
+    Definitions(assets=assets, asset_checks=checks).get_all_job_defs()

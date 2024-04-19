@@ -34,7 +34,6 @@ from dagster import (
     io_manager,
     materialize,
 )
-from dagster._check import CheckError
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
@@ -372,31 +371,6 @@ def test_partitioned_io_manager_preserves_single_partition_dependency(
         resources={"io_manager": dummy_io_manager},
     )
     assert result.output_for_node("daily_asset").endswith("2022-01-01")
-
-
-def test_user_forgot_dict_type_annotation_for_multiple_partitions(
-    start: datetime,
-    daily: DailyPartitionsDefinition,
-    hourly: HourlyPartitionsDefinition,
-    dummy_io_manager: DummyIOManager,
-):
-    @asset(partitions_def=hourly)
-    def upstream_asset(context: AssetExecutionContext) -> str:
-        return context.partition_key
-
-    @asset(partitions_def=daily)
-    def downstream_asset(upstream_asset: str) -> str:
-        return upstream_asset
-
-    with pytest.raises(
-        CheckError,
-        match="the type annotation on the op input is not a dict",
-    ):
-        materialize(
-            [*upstream_asset.to_source_assets(), downstream_asset],
-            partition_key=start.strftime(daily.fmt),
-            resources={"io_manager": dummy_io_manager},
-        )
 
 
 def test_skip_type_check_for_multiple_partitions_with_no_type_annotation(

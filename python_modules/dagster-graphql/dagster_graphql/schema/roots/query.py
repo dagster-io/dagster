@@ -92,7 +92,6 @@ from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.fetch_ticks import get_instigation_ticks
 from ...implementation.loader import (
-    BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -939,10 +938,8 @@ class GrapheneQuery(graphene.ObjectType):
         if not results:
             return []
 
-        materialization_loader = BatchMaterializationLoader(
-            instance=graphene_info.context.instance,
-            asset_keys=[node.assetKey for node in results],
-        )
+        asset_record_loader = graphene_info.context.asset_record_loader
+        asset_record_loader.add_asset_keys([node.assetKey for node in results])
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
             asset_keys=[node.assetKey for node in results],
@@ -969,7 +966,7 @@ class GrapheneQuery(graphene.ObjectType):
                 node.external_repository,
                 node.external_asset_node,
                 asset_checks_loader=asset_checks_loader,
-                materialization_loader=materialization_loader,
+                asset_record_loader=asset_record_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
@@ -1075,7 +1072,10 @@ class GrapheneQuery(graphene.ObjectType):
             if node.assetKey in asset_keys
         }
 
-        return get_assets_latest_info(graphene_info, step_keys_by_asset)
+        asset_record_loader = graphene_info.context.asset_record_loader
+        asset_record_loader.add_asset_keys(asset_keys)
+
+        return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
 
     @capture_error
     def resolve_logsForRun(

@@ -1163,7 +1163,7 @@ class GoogleAnalyticsV4Source(GeneratedAirbyteSource):
             start_date (str): The date in the format YYYY-MM-DD. Any data before this date will not be replicated.
             view_id (str): The ID for the Google Analytics View you want to fetch data from. This can be found from the Google Analytics Account Explorer.
             custom_reports (Optional[str]): A JSON array describing the custom reports you want to sync from Google Analytics. See the docs for more information about the exact format you can use to fill out this field.
-            window_in_days (Optional[int]): The time increment used by the connector when requesting data from the Google Analytics API. More information is available in the the docs. The bigger this value is, the faster the sync will be, but the more likely that sampling will be applied to your data, potentially causing inaccuracies in the returned results. We recommend setting this to 1 unless you have a hard requirement to make the sync faster at the expense of accuracy. The minimum allowed value for this field is 1, and the maximum is 364.
+            window_in_days (Optional[int]): The time increment used by the connector when requesting data from the Google Analytics API. More information is available in the docs. The bigger this value is, the faster the sync will be, but the more likely that sampling will be applied to your data, potentially causing inaccuracies in the returned results. We recommend setting this to 1 unless you have a hard requirement to make the sync faster at the expense of accuracy. The minimum allowed value for this field is 1, and the maximum is 364.
         """
         self.credentials = check.inst_param(
             credentials,
@@ -4724,7 +4724,7 @@ class GoogleAnalyticsDataApiSource(GeneratedAirbyteSource):
             credentials (Union[GoogleAnalyticsDataApiSource.AuthenticateViaGoogleOauth, GoogleAnalyticsDataApiSource.ServiceAccountKeyAuthentication]): Credentials for the service
             date_ranges_start_date (str): The start date. One of the values Ndaysago, yesterday, today or in the format YYYY-MM-DD
             custom_reports (Optional[str]): A JSON array describing the custom reports you want to sync from Google Analytics. See the docs for more information about the exact format you can use to fill out this field.
-            window_in_days (Optional[int]): The time increment used by the connector when requesting data from the Google Analytics API. More information is available in the the docs. The bigger this value is, the faster the sync will be, but the more likely that sampling will be applied to your data, potentially causing inaccuracies in the returned results. We recommend setting this to 1 unless you have a hard requirement to make the sync faster at the expense of accuracy. The minimum allowed value for this field is 1, and the maximum is 364.
+            window_in_days (Optional[int]): The time increment used by the connector when requesting data from the Google Analytics API. More information is available in the docs. The bigger this value is, the faster the sync will be, but the more likely that sampling will be applied to your data, potentially causing inaccuracies in the returned results. We recommend setting this to 1 unless you have a hard requirement to make the sync faster at the expense of accuracy. The minimum allowed value for this field is 1, and the maximum is 364.
         """
         self.property_id = check.str_param(property_id, "property_id")
         self.credentials = check.inst_param(
@@ -5930,7 +5930,7 @@ class PardotSource(GeneratedAirbyteSource):
             client_secret (str): The Consumer Secret that can be found when viewing your app in Salesforce
             refresh_token (str): Salesforce Refresh Token used for Airbyte to access your Salesforce account. If you don't know what this is, follow this guide to retrieve it.
             start_date (Optional[str]): UTC date and time in the format 2017-01-25T00:00:00Z. Any data before this date will not be replicated. Leave blank to skip this filter
-            is_sandbox (Optional[bool]): Whether or not the the app is in a Salesforce sandbox. If you do not know what this, assume it is false.
+            is_sandbox (Optional[bool]): Whether or not the app is in a Salesforce sandbox. If you do not know what this, assume it is false.
         """
         self.pardot_business_unit_id = check.str_param(
             pardot_business_unit_id, "pardot_business_unit_id"

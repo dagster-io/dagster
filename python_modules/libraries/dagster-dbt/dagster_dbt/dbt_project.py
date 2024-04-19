@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
@@ -63,128 +62,122 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
     def prepare(self, project: "DbtProject") -> None:
         from .core.resources_v2 import DbtCliResource
 
-        DbtCliResource(project_dir=os.fspath(project.project_dir)).cli(
-            self._generate_cli_args,
-            target_path=project.target_dir,
-        ).wait()
+        (
+            DbtCliResource(project_dir=project)
+            .cli(
+                self._generate_cli_args,
+                target_path=project.target_path,
+            )
+            .wait()
+        )
 
 
 @experimental
 class DbtProject(DagsterModel):
+    """Representation of a dbt project and related settings that assist with managing manifest.json preparation.
+
+    By default, using this helps achieve a setup where:
+    * during development, reload the manifest at run time to pick up any changes.
+    * when deployed, expect a manifest that was created at build time to reduce start-up time.
+
+    The cli ``dagster-dbt project prepare-for-deployment`` can be used as part of the deployment process to
+    handle manifest.json preparation.
+
+    This object can be passed directly to :py:class:`~dagster_dbt.DbtCliResource`.
+
+    Args:
+        project_dir (Union[str, Path]):
+            The directory of the dbt project.
+        target_path (Union[str, Path]):
+            The path, relative to the project directory, to output artifacts.
+            Default: "target"
+        target (Optional[str]):
+            The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
+        packaged_project_dir (Optional[Union[str, Path]]):
+            A directory that will contain a copy of the dbt project and the manifest.json
+            when the artifacts have been built. The prepare method will handle syncing
+            the project_path to this directory.
+            This is useful when the dbt project needs to be part of the python package data
+            like when deploying using PEX.
+        state_path (Optional[Union[str, Path]]):
+            The path, relative to the project directory, to reference artifacts from another run.
+        manifest_preparer (Optional[DbtManifestPreparer]):
+            A object for ensuring that manifest.json is in the right state at
+            the right times.
+            Default: DagsterDbtManifestPreparer
+
+    Examples:
+        Creating a DbtProject with by referencing the dbt project directory:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster_dbt import DbtProject
+
+            my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+        Creating a DbtProject that changes target based on environment variables and uses manged state artifacts:
+
+        .. code-block:: python
+
+            import os
+            from pathlib import Path
+            from dagster_dbt import DbtProject
+
+
+            def get_env():
+                if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT", "") == "1":
+                    return "BRANCH"
+                if os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME", "") == "prod":
+                    return "PROD"
+                return "LOCAL"
+
+
+            dbt_project = DbtProject(
+                project_dir=Path('path/to/dbt_project'),
+                state_path="target/managed_state",
+                target=get_env(),
+            )
+
+    """
+
     project_dir: Path
-    target_dir: Path
+    target_path: Path
+    target: Optional[str]
     manifest_path: Path
-    state_dir: Optional[Path]
     packaged_project_dir: Optional[Path]
-    manifest_preparer: Optional[DbtManifestPreparer]
+    state_path: Optional[Path]
+    manifest_preparer: DbtManifestPreparer
 
     def __init__(
         self,
         project_dir: Union[Path, str],
         *,
-        target_dir: Union[Path, str] = "target",
-        state_dir: Optional[Union[Path, str]] = None,
+        target_path: Union[Path, str] = Path("target"),
+        target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
-        manifest_preparer: Optional[DbtManifestPreparer] = DagsterDbtManifestPreparer(),
+        state_path: Optional[Union[Path, str]] = None,
+        manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
-        """Representation of a dbt project.
-
-        Args:
-            project_path (Union[str, Path]):
-                The directory of the dbt project.
-            target_dir (Union[str, Path]):
-                The folder in the project directory to output artifacts.
-                Default: "target"
-            state_dir (Optional[Union[str, Path]]):
-                The folder in the project directory to reference artifacts from another run.
-            manifest_preparer (Optional[DbtManifestPreparer]):
-                A object for ensuring that manifest.json is in the right state at
-                the right times.
-                Default: DagsterDbtManifestPreparer
-            packaged_project_dir (Optional[Union[str, Path]]):
-                A directory that will contain a copy of the dbt project and the manifest.json
-                when the artifacts have been built. The prepare method will handle syncing
-                the project_path to this directory.
-                This is useful when the dbt project needs to be part of the python package data
-                like when deploying using PEX.
-        """
         project_dir = Path(project_dir)
         if not project_dir.exists():
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
 
         packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
-        if using_dagster_dev() and packaged_project_dir:
-            current_project_dir = packaged_project_dir
-        else:
-            current_project_dir = project_dir
+        if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
+            project_dir = packaged_project_dir
 
-        manifest_path = current_project_dir.joinpath(target_dir, "manifest.json")
+        manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
         super().__init__(
             project_dir=project_dir,
-            target_dir=target_dir,
+            target_path=target_path,
+            target=target,
             manifest_path=manifest_path,
-            state_dir=current_project_dir.joinpath(state_dir) if state_dir else None,
+            state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
             manifest_preparer.on_load(self)
-
-    def prepare_for_deployment(self) -> None:
-        prepare_for_deployment(self)
-
-    def get_state_dir_if_populated(self) -> Optional[Path]:
-        if self.state_dir and self.state_dir.joinpath("manifest.json").exists():
-            return self.state_dir
-
-        return None
-
-
-def prepare_for_deployment(project: DbtProject) -> None:
-    """A method that can be called as part of the deployment process which runs the
-    following preparation steps if appropriate:
-        * project.manifest_init_fn(project, deploying=True)
-        * sync_project_to_packaged_dir.
-    """
-    if project.manifest_preparer:
-        logger.info(f"Preparing manifest with {project.manifest_preparer.prepare.__qualname__}.")
-        project.manifest_preparer.prepare(project)
-        logger.info("Manifest preparation complete.")
-
-    if project.packaged_project_dir:
-        sync_project_to_packaged_dir(project)
-
-
-def sync_project_to_packaged_dir(
-    project: DbtProject,
-) -> None:
-    """Sync a `DbtProject`s `project_dir` directory to its `packaged_project_dir`."""
-    if project.packaged_project_dir is None:
-        raise Exception(
-            "sync_project_to_packaged_dir should only be called if `packaged_project_dir` is set."
-        )
-
-    logger.info(f"Syncing project to package data directory {project.packaged_project_dir}.")
-    if project.packaged_project_dir.exists():
-        logger.info(f"Removing existing contents at {project.packaged_project_dir}.")
-        shutil.rmtree(project.packaged_project_dir)
-
-    # Determine if the package data dir is within the project dir, and ignore
-    # that path if so.
-    rel_path = Path(os.path.relpath(project.packaged_project_dir, project.project_dir))
-    rel_ignore = ""
-    if len(rel_path.parts) > 0 and rel_path.parts[0] != "..":
-        rel_ignore = rel_path.parts[0]
-
-    logger.info(f"Copying {project.project_dir} to {project.packaged_project_dir}.")
-    shutil.copytree(
-        src=project.project_dir,
-        dst=project.packaged_project_dir,
-        ignore=shutil.ignore_patterns(
-            "*.git*",
-            "*partial_parse.msgpack",
-            rel_ignore,
-        ),
-    )
-    logger.info("Sync complete.")

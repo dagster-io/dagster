@@ -446,7 +446,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     leaf_eval.subsets_with_metadata
                     # backcompat as previously we stored None metadata for any true evaluation
                     or (
-                        [AssetSubsetWithMetadata(leaf_eval.true_subset, {})]
+                        [AssetSubsetWithMetadata(subset=leaf_eval.true_subset, metadata={})]
                         if leaf_eval.true_subset.size
                         else []
                     )

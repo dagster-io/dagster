@@ -37,6 +37,10 @@ query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int) {
                     name
                     description
                     canExecuteIndividually
+                    blocking
+                    additionalAssetKeys {
+                        path
+                    }
                 }
             }
         }
@@ -283,6 +287,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                                 "name": "my_check",
                                 "description": "asset_1 check",
                                 "canExecuteIndividually": "CAN_EXECUTE",
+                                "blocking": True,
+                                "additionalAssetKeys": [
+                                    {"path": ["asset_2"]},
+                                ],
                             }
                         ]
                     },
@@ -305,6 +313,8 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                                 "name": "my_check",
                                 "description": None,
                                 "canExecuteIndividually": "REQUIRES_MATERIALIZATION",
+                                "blocking": False,
+                                "additionalAssetKeys": [],
                             }
                         ]
                     },

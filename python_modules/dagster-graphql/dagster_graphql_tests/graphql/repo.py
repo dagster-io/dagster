@@ -1197,6 +1197,10 @@ def define_sensors():
     def every_asset_sensor(_):
         return SkipReason("just kidding")
 
+    @sensor(asset_selection=AssetSelection.keys("does_not_exist"))
+    def invalid_asset_selection_error(_):
+        return SkipReason("just kidding")
+
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_job)
     def run_status(_):
         return SkipReason("always skip")
@@ -1240,6 +1244,7 @@ def define_sensors():
         the_failure_sensor,
         auto_materialize_sensor,
         every_asset_sensor,
+        invalid_asset_selection_error,
     ]
 
 
@@ -1873,7 +1878,7 @@ def asset_job_schedule():
     return {}
 
 
-@asset_check(asset=asset_1, description="asset_1 check")
+@asset_check(asset=asset_1, description="asset_1 check", blocking=True, additional_deps=[asset_2])
 def my_check(asset_1):
     return AssetCheckResult(
         passed=True,

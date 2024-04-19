@@ -1035,7 +1035,7 @@ class DependencyStructure:
         self, node_name: str
     ) -> Mapping[NodeInput, Sequence[NodeOutput]]:
         """Returns a Dict[NodeInput, List[NodeOutput]] that encodes
-        where all the the inputs are sourced from upstream. Usually the
+        where all the inputs are sourced from upstream. Usually the
         List[NodeOutput] will be a list of one, except for the
         multi-dependency case.
         """

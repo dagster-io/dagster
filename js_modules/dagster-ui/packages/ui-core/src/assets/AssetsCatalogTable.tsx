@@ -1,6 +1,7 @@
 import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
@@ -20,41 +21,42 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
-import {useConstantCallback} from '../hooks/useConstantCallback';
 import {PageLoadTrace} from '../performance';
+import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 import {LoadingSpinner} from '../ui/Loading';
 type Asset = AssetTableFragment;
 
-let globalTableCache: AssetCatalogTableQuery;
 const groupTableCache = new Map();
 
 export function useAllAssets(groupSelector?: AssetGroupSelector) {
   const client = useApolloClient();
-  const [{error, assets}, setErrorAndAssets] = React.useState<{
+  const [{error, assets}, setErrorAndAssets] = useState<{
     error: PythonErrorFragment | undefined;
     assets: Asset[] | undefined;
   }>({error: undefined, assets: undefined});
 
-  const assetsQuery = useConstantCallback(async () => {
-    function onData(queryData: typeof data) {
-      const assetsOrError = queryData?.assetsOrError;
+  const assetsQuery = useIndexedDBCachedQuery<
+    AssetCatalogTableQuery,
+    AssetCatalogTableQueryVariables
+  >({
+    key: 'allAssets',
+    query: ASSET_CATALOG_TABLE_QUERY,
+    version: 1,
+  });
+
+  const {data, fetch: fetchAssets} = assetsQuery;
+
+  const assetsOrError = data?.assetsOrError;
+  useLayoutEffect(() => {
+    if (assetsOrError) {
       setErrorAndAssets({
         error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
         assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
       });
     }
-    if (globalTableCache) {
-      onData(globalTableCache);
-    }
-    const {data} = await client.query<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
-      query: ASSET_CATALOG_TABLE_QUERY,
-      fetchPolicy: 'no-cache',
-    });
-    globalTableCache = data;
-    onData(data);
-  });
+  }, [assetsOrError]);
 
-  const groupQuery = React.useCallback(async () => {
+  const groupQuery = useCallback(async () => {
     if (!groupSelector) {
       return;
     }
@@ -80,13 +82,14 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
     onData(data);
   }, [groupSelector, client]);
 
-  return React.useMemo(() => {
+  return useMemo(() => {
     return {
       assets,
       error,
-      query: groupSelector ? groupQuery : assetsQuery,
+      loading: !assets && !error,
+      query: groupSelector ? groupQuery : fetchAssets,
     };
-  }, [assets, assetsQuery, error, groupQuery, groupSelector]);
+  }, [assets, error, fetchAssets, groupQuery, groupSelector]);
 }
 
 interface AssetCatalogTableProps {
@@ -120,7 +123,7 @@ export const AssetsCatalogTable = ({
   });
 
   const loaded = !!assets;
-  React.useEffect(() => {
+  useEffect(() => {
     if (loaded) {
       trace?.endTrace();
     }

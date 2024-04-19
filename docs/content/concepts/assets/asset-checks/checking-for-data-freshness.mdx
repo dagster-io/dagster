@@ -131,20 +131,20 @@ source_table_freshness_checks = build_last_update_freshness_checks(
 These checks will automatically execute after the observations of the source assets they target, so an additional schedule isn't needed.
 
 </TabItem>
-<TabItem name="Option 2: Use anomaly detection (Dagster Cloud Pro)">
+<TabItem name="Option 2: Use anomaly detection (Dagster+ Pro)">
 
-#### Option 2: Use anomaly detection (Dagster Cloud Pro)
+#### Option 2: Use anomaly detection (Dagster+ Pro)
 
-<Note>A Dagster Cloud Pro plan is required to use this feature.</Note>
+<Note>A Dagster+ Pro plan is required to use this feature.</Note>
 
-Setting custom freshness policies on a large number of source assets can be time-consuming. Dagster Cloud Pro users can take advantage of a time series anomaly detection model instead of applying policies on an asset-by-asset basis. Freshness checks that use this approach function the same way checks with hardcoded parameters do.
+Setting custom freshness policies on a large number of source assets can be time-consuming. Dagster+ Pro users can take advantage of a time series anomaly detection model instead of applying policies on an asset-by-asset basis. Freshness checks that use this approach function the same way checks with hardcoded parameters do.
 
 This model uses data from past materializations/observations to determine if data is arriving later than expected. **Note**: If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.
 
 In the following example, we'll use `build_anomaly_detection_freshness_checks` to accomplish this:
 
 ```python
-from dagster_cloud import build_anomaly_detection_freshness_checks
+from dagster_cloud.anomaly_detection import build_anomaly_detection_freshness_checks
 
 freshness_checks = build_anomaly_detection_freshness_checks(
   assets=[source_tables], params=None

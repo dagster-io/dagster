@@ -15,7 +15,7 @@ import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
-import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStaleFiltered} from '../assets/Stale';
+import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
@@ -36,7 +36,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         style={{minHeight: 24}}
       >
-        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
+        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
         <ChangedReasonsTag
           changedReasons={definition.changedReasons}
           assetKey={definition.assetKey}
@@ -164,7 +164,11 @@ const AssetNodeChecksRow = ({
         to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
         onClick={(e) => e.stopPropagation()}
       >
-        <AssetChecksStatusSummary liveData={liveData} rendering="dag" />
+        <AssetChecksStatusSummary
+          liveData={liveData}
+          rendering="dag"
+          assetKey={definition.assetKey}
+        />
       </Link>
     </AssetNodeRowBox>
   );
@@ -185,7 +189,7 @@ export const AssetNodeMinimal = ({
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   const isChanged = definition.changedReasons.length;
-  const isStale = isAssetStaleFiltered(assetKey, liveData, 'upstream');
+  const isStale = isAssetStale(liveData);
 
   const queuedRuns = liveData?.unstartedRunIds.length;
   const inProgressRuns = liveData?.inProgressRunIds.length;
@@ -213,9 +217,7 @@ export const AssetNodeMinimal = ({
                 assetKey={assetKey}
               />
             ) : null}
-            {isStale ? (
-              <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} include="upstream" />
-            ) : null}
+            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
             <MinimalName style={{fontSize: 28}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 20})}
             </MinimalName>
