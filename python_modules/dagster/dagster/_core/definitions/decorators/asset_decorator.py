@@ -1060,6 +1060,7 @@ def graph_asset(
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     metadata: Optional[RawMetadataMapping] = ...,
+    tags: Optional[Mapping[str, str]] = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
@@ -1069,6 +1070,7 @@ def graph_asset(
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
+@experimental_param(param="tags")
 def graph_asset(
     compose_fn: Optional[Callable] = None,
     *,
@@ -1080,6 +1082,7 @@ def graph_asset(
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     metadata: Optional[RawMetadataMapping] = None,
+    tags: Optional[Mapping[str, str]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -1124,6 +1127,8 @@ def graph_asset(
             compose the asset.
         metadata (Optional[RawMetadataMapping]): Dictionary of metadata to be associated with
             the asset.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
         freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
             intended to be updated with respect to its root data.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): The AutoMaterializePolicy to use
@@ -1157,6 +1162,7 @@ def graph_asset(
             group_name=group_name,
             partitions_def=partitions_def,
             metadata=metadata,
+            tags=tags,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
@@ -1175,6 +1181,7 @@ def graph_asset(
             group_name=group_name,
             partitions_def=partitions_def,
             metadata=metadata,
+            tags=tags,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
@@ -1195,6 +1202,7 @@ def graph_asset_no_defaults(
     group_name: Optional[str],
     partitions_def: Optional[PartitionsDefinition],
     metadata: Optional[RawMetadataMapping],
+    tags: Optional[Mapping[str, str]],
     freshness_policy: Optional[FreshnessPolicy],
     auto_materialize_policy: Optional[AutoMaterializePolicy],
     backfill_policy: Optional[BackfillPolicy],
@@ -1246,6 +1254,7 @@ def graph_asset_no_defaults(
         partition_mappings=partition_mappings if partition_mappings else None,
         group_name=group_name,
         metadata_by_output_name={"result": metadata} if metadata else None,
+        tags_by_output_name={"result": tags} if tags else None,
         freshness_policies_by_output_name=(
             {"result": freshness_policy} if freshness_policy else None
         ),
