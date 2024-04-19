@@ -32,6 +32,7 @@ const mocks = [
       query: BACKFILL_DETAILS_QUERY,
       variables: {backfillId: mockBackfillId},
     },
+    delay: 10,
     result: {
       __typename: 'CloudQuery',
       data: {

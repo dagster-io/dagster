@@ -13,7 +13,7 @@ interface AssetEdgesProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-const MAX_EDGES = 30;
+const MAX_EDGES = 20;
 
 export const AssetEdges = ({
   edges,

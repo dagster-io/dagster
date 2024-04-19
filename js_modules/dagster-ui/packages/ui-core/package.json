@@ -18,7 +18,7 @@
     "build-storybook": "storybook build"
   },
   "peerDependencies": {
-    "@apollo/client": "3.7.13",
+    "@apollo/client": "3.9.11",
     "@blueprintjs/core": "^4.20.2",
     "@blueprintjs/popover2": "1.13.12",
     "@blueprintjs/select": "^4.9.12",
@@ -71,7 +71,7 @@
     "yaml": "2.4.0"
   },
   "devDependencies": {
-    "@apollo/client": "3.7.13",
+    "@apollo/client": "3.9.11",
     "@babel/cli": "^7.13.15",
     "@babel/core": "^7.13.15",
     "@babel/plugin-proposal-class-properties": "^7.14.5",

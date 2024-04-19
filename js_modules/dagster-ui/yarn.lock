@@ -29,25 +29,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apollo/client@npm:3.7.13":
-  version: 3.7.13
-  resolution: "@apollo/client@npm:3.7.13"
+"@apollo/client@npm:3.9.11":
+  version: 3.9.11
+  resolution: "@apollo/client@npm:3.9.11"
   dependencies:
     "@graphql-typed-document-node/core": "npm:^3.1.1"
-    "@wry/context": "npm:^0.7.0"
-    "@wry/equality": "npm:^0.5.0"
-    "@wry/trie": "npm:^0.3.0"
+    "@wry/caches": "npm:^1.0.0"
+    "@wry/equality": "npm:^0.5.6"
+    "@wry/trie": "npm:^0.5.0"
     graphql-tag: "npm:^2.12.6"
     hoist-non-react-statics: "npm:^3.3.2"
-    optimism: "npm:^0.16.2"
+    optimism: "npm:^0.18.0"
     prop-types: "npm:^15.7.2"
+    rehackt: "npm:0.0.6"
     response-iterator: "npm:^0.2.6"
     symbol-observable: "npm:^4.0.0"
     ts-invariant: "npm:^0.10.3"
     tslib: "npm:^2.3.0"
     zen-observable-ts: "npm:^1.2.5"
   peerDependencies:
-    graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+    graphql: ^15.0.0 || ^16.0.0
     graphql-ws: ^5.5.5
     react: ^16.8.0 || ^17.0.0 || ^18.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
@@ -61,7 +62,7 @@ __metadata:
       optional: true
     subscriptions-transport-ws:
       optional: true
-  checksum: 10/a6d9a44163b5f7688b8f72a48ab8945556c6e3c74895dc5448ea96a42f436eda88df1eecb37a4b68d2a0798350a8e77c0700d7f8cc99508488ec78b778e4e48f
+  checksum: 10/d16a334c9675955c79388bbb8b0b7ebf702bb6a24cb907a723be7e08ed878891ab6bfb37e46c6a4568a4f254f511405962896f06dd766c1cb01af41bc39566cf
   languageName: node
   linkType: hard
 
@@ -2365,7 +2366,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/app-oss@workspace:packages/app-oss"
   dependencies:
-    "@apollo/client": "npm:3.7.13"
+    "@apollo/client": "npm:3.9.11"
     "@blueprintjs/core": "npm:^4.20.2"
     "@blueprintjs/popover2": "npm:1.13.12"
     "@blueprintjs/select": "npm:^4.9.12"
@@ -2529,7 +2530,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/ui-core@workspace:packages/ui-core"
   dependencies:
-    "@apollo/client": "npm:3.7.13"
+    "@apollo/client": "npm:3.9.11"
     "@babel/cli": "npm:^7.13.15"
     "@babel/core": "npm:^7.13.15"
     "@babel/plugin-proposal-class-properties": "npm:^7.14.5"
@@ -2653,7 +2654,7 @@ __metadata:
     worker-loader: "npm:^3.0.8"
     yaml: "npm:2.4.0"
   peerDependencies:
-    "@apollo/client": 3.7.13
+    "@apollo/client": 3.9.11
     "@blueprintjs/core": ^4.20.2
     "@blueprintjs/popover2": 1.13.12
     "@blueprintjs/select": ^4.9.12
@@ -8797,6 +8798,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@wry/caches@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "@wry/caches@npm:1.0.1"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  checksum: 10/055f592ee52b5fd9aa86e274e54e4a8b2650f619000bf6f61880ce14aaf47eb2ab34f3ada2eab964fe8b2f19bf8097ecacddcea4638fcc64c3d3a0a512aaa07c
+  languageName: node
+  linkType: hard
+
 "@wry/context@npm:^0.7.0":
   version: 0.7.3
   resolution: "@wry/context@npm:0.7.3"
@@ -8806,21 +8816,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@wry/equality@npm:^0.5.0":
-  version: 0.5.6
-  resolution: "@wry/equality@npm:0.5.6"
+"@wry/equality@npm:^0.5.6":
+  version: 0.5.7
+  resolution: "@wry/equality@npm:0.5.7"
   dependencies:
     tslib: "npm:^2.3.0"
-  checksum: 10/dcfec6f2c8ed0a7b9b3322195485eec4bbc8199f4ed400f246eb4b0238b6b041ce1c5ec73bc8f22ec409e275fe8253cd15d1a7057a016c6ecaff32214ec74aff
+  checksum: 10/69dccf33c0c41fd7ec5550f5703b857c6484a949412ad747001da941270ea436648c3ab988a2091765304249585ac30c7b417fad8be9a7ce19c1221f71548e35
   languageName: node
   linkType: hard
 
-"@wry/trie@npm:^0.3.0":
-  version: 0.3.2
-  resolution: "@wry/trie@npm:0.3.2"
+"@wry/trie@npm:^0.4.3":
+  version: 0.4.3
+  resolution: "@wry/trie@npm:0.4.3"
   dependencies:
     tslib: "npm:^2.3.0"
-  checksum: 10/151d06b519e1ff1c3acf6ee6846161b1d7d50bbecd4c48e5cd1b05f9e37c30602aff02e88f20105f6e6c54ae4123f9c4eb7715044d7fd927d4ba4ec3e755cd36
+  checksum: 10/106e021125cfafd22250a6631a0438a6a3debae7bd73f6db87fe42aa0757fe67693db0dfbe200ae1f60ba608c3e09ddb8a4e2b3527d56ed0a7e02aa0ee4c94e1
+  languageName: node
+  linkType: hard
+
+"@wry/trie@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@wry/trie@npm:0.5.0"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  checksum: 10/578a08f3a96256c9b163230337183d9511fd775bdfe147a30561ccaacedc9ce33b9731ee6e591bb1f5f53e41b26789e519b47dff5100c7bf4e1cd2df3062f797
   languageName: node
   linkType: hard
 
@@ -18783,13 +18802,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"optimism@npm:^0.16.2":
-  version: 0.16.2
-  resolution: "optimism@npm:0.16.2"
+"optimism@npm:^0.18.0":
+  version: 0.18.0
+  resolution: "optimism@npm:0.18.0"
   dependencies:
+    "@wry/caches": "npm:^1.0.0"
     "@wry/context": "npm:^0.7.0"
-    "@wry/trie": "npm:^0.3.0"
-  checksum: 10/b9fc5f6549cf98fcb67cd9a2c1c30b4a0f52d4e9c41191def5855ec753ec2b2796f7b114fdc67354b3d3b7f48a7293914e903cedc8c17454a1864051ec50862d
+    "@wry/trie": "npm:^0.4.3"
+    tslib: "npm:^2.3.0"
+  checksum: 10/b461968008eb7aafd5b5dd63b81fd41fbd907f39858bdd5190f10b71db6a5bf54541cdb3d2a569b2bf5585ca917ac192f953e6239d81702a4391fdb476a00ae8
   languageName: node
   linkType: hard
 
@@ -20769,6 +20790,21 @@ __metadata:
   bin:
     regjsparser: bin/parser
   checksum: 10/be7757ef76e1db10bf6996001d1021048b5fb12f5cb470a99b8cf7f3ff943f0f0e2291c0dcdbb418b458ddc4ac10e48680a822b69ef487a0284c8b6b77beddc3
+  languageName: node
+  linkType: hard
+
+"rehackt@npm:0.0.6":
+  version: 0.0.6
+  resolution: "rehackt@npm:0.0.6"
+  peerDependencies:
+    "@types/react": "*"
+    react: "*"
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    react:
+      optional: true
+  checksum: 10/3897c93270836159406529e0fa983bf4a11c07d2efc5c8f6bdfd7f6821d3b84a30d911c3f3b9c689948739e6955c5835c8dd9d91579150bec5092f356c0d91df
   languageName: node
   linkType: hard
 
