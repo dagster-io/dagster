@@ -1,3 +1,4 @@
+import importlib.util
 import logging
 import os
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
@@ -39,28 +40,28 @@ def is_dagster_home_set() -> bool:
 def dagster_instance_class_from_code_pointer(
     module_name: str, class_name: str
 ) -> Type["DagsterInstance"]:
-    try:
-        return cast(
-            Type["DagsterInstance"],
-            class_from_code_pointer(module_name, class_name),
-        )
-    except DagsterImportClassFromCodePointerError as e:
-        module_elems = module_name.split(".")
-        if "dagster_cloud" == module_elems[0]:
-            try:
-                return cast(
-                    Type["DagsterInstance"],
-                    class_from_code_pointer(
-                        ".".join(["dagster_plus", *module_elems[1:]]),
-                        class_name,
-                    ),
-                )
-            except Exception:
-                logger = logging.getLogger("dagster")
-                logger.exception("Error importing DagsterInstance class from dagster_plus module")
-                raise e
-        else:
-            raise e
+    module_elems = module_name.split(".")
+    # When attempting to rehydrate a configurable class, attempt to load from dagster_plus
+    # instead of dagster_cloud if the dagster_plus package exists
+    if "dagster_cloud" == module_elems[0] and importlib.util.find_spec("dagster_plus") is not None:
+        try:
+            return cast(
+                Type["DagsterInstance"],
+                class_from_code_pointer(
+                    ".".join(["dagster_plus", *module_elems[1:]]),
+                    class_name,
+                ),
+            )
+        except DagsterImportClassFromCodePointerError:
+            logger = logging.getLogger("dagster")
+            logger.exception("Error importing DagsterInstance class from dagster_plus module")
+
+    # If the module is not in dagster_plus, or if the dagster_plus package does not exist,
+    # load it from the original module
+    return cast(
+        Type["DagsterInstance"],
+        class_from_code_pointer(module_name, class_name),
+    )
 
 
 def dagster_instance_config(
