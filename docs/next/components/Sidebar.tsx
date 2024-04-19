@@ -87,19 +87,17 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
     }
 
     const linkElement = (
-      <div className={itemClassName}>
-        <a
-          className={innerClassName}
-          href={item.path}
-          ref={ref}
-          target={item.isExternalLink ? '_blank' : '_self'}
-          rel="noopener noreferrer"
-          onClick={onClick}
-        >
-          {itemContents}
-        </a>
-        {rightIcon()}
-      </div>
+      <a
+        className={innerClassName}
+        href={item.path}
+        ref={ref}
+        target={item.isExternalLink ? '_blank' : '_self'}
+        rel="noopener noreferrer"
+        onClick={onClick}
+      >
+        {itemContents}
+        <span>{rightIcon()}</span>
+      </a>
     );
 
     if (item.isExternalLink) {
