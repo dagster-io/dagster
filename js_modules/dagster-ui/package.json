@@ -18,6 +18,7 @@
     ]
   },
   "dependencies": {
+    "@apollo/client": "^3.9.11",
     "graphql.macro": "^1.4.2",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0"
