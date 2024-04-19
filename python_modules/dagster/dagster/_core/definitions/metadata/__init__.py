@@ -17,6 +17,7 @@ from typing import (
     cast,
 )
 
+from pydantic import Field
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -804,17 +805,23 @@ class PythonArtifactMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
-class FloatMetadataValue(DagsterModel, MetadataValue[float]):
+class FloatMetadataValue(
+    NamedTuple(
+        "_FloatMetadataValue",
+        [
+            ("value", PublicAttr[Optional[float]]),
+        ],
+    ),
+    MetadataValue[float],
+):
     """Container class for float metadata entry data.
 
     Args:
         value (Optional[float]): The float value.
     """
 
-    value: PublicAttr[Optional[float]]
-
-    def __init__(self, value: Optional[float]):
-        super().__init__(value=value)
+    def __new__(cls, value: Optional[float]):
+        return super(FloatMetadataValue, cls).__new__(cls, check.opt_float_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
@@ -825,52 +832,68 @@ class IntMetadataValue(DagsterModel, MetadataValue[int]):
         value (Optional[int]): The int value.
     """
 
-    value: PublicAttr[Optional[int]]
+    value_inner: PublicAttr[Optional[int]] = Field(..., alias="value")
+
+    @public
+    @property
+    def value(self) -> Optional[int]:
+        return self.value_inner
 
     def __init__(self, value: Optional[int]):
         super().__init__(value=value)
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
-class BoolMetadataValue(DagsterModel, MetadataValue[int]):
+class BoolMetadataValue(
+    NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
+    MetadataValue[bool],
+):
     """Container class for bool metadata entry data.
 
     Args:
         value (Optional[bool]): The bool value.
     """
 
-    value: PublicAttr[Optional[bool]]
-
-    def __init__(self, value: Optional[bool]):
-        super().__init__(value=value)
+    def __new__(cls, value: Optional[bool]):
+        return super(BoolMetadataValue, cls).__new__(cls, check.opt_bool_param(value, "value"))
 
 
 @whitelist_for_serdes
-class TimestampMetadataValue(DagsterModel, MetadataValue[float]):
+class TimestampMetadataValue(
+    NamedTuple(
+        "_DateTimeMetadataValue",
+        [("value", PublicAttr[float])],
+    ),
+    MetadataValue[float],
+):
     """Container class for metadata value that's a unix timestamp.
 
     Args:
         value (float): Seconds since the unix epoch.
     """
 
-    value: PublicAttr[float]
-
-    def __init__(self, value: float):
-        super().__init__(value=value)
+    def __new__(cls, value: float):
+        return super(TimestampMetadataValue, cls).__new__(cls, check.float_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
-class DagsterRunMetadataValue(DagsterModel, MetadataValue[str]):
+class DagsterRunMetadataValue(
+    NamedTuple(
+        "_DagsterRunMetadataValue",
+        [
+            ("run_id", PublicAttr[str]),
+        ],
+    ),
+    MetadataValue[str],
+):
     """Representation of a dagster run.
 
     Args:
         run_id (str): The run id
     """
 
-    run_id: PublicAttr[str]
-
-    def __init__(self, run_id: str):
-        super().__init__(run_id=run_id)
+    def __new__(cls, run_id: str):
+        return super(DagsterRunMetadataValue, cls).__new__(cls, check.str_param(run_id, "run_id"))
 
     @public
     @property
