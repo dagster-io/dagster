@@ -54,8 +54,8 @@ def test_params() -> None:
     assert next(iter(check.check_keys)).asset_key == my_partitioned_asset.key
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/deadline_cron": "0 0 * * *",
-            "dagster/freshness_timezone": "UTC",
+            "deadline_cron": "0 0 * * *",
+            "timezone": "UTC",
         }
     }
     assert (

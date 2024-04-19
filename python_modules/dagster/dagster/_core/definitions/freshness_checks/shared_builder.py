@@ -20,13 +20,13 @@ from dagster._utils.schedules import get_latest_completed_cron_tick, is_valid_cr
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
 from .utils import (
-    DEADLINE_CRON_METADATA_KEY,
+    DEADLINE_CRON_PARAM_KEY,
     FRESHNESS_PARAMS_METADATA_KEY,
-    FRESHNESS_TIMEZONE_METADATA_KEY,
     LAST_UPDATED_TIMESTAMP_METADATA_KEY,
-    LOWER_BOUND_DELTA_METADATA_KEY,
+    LOWER_BOUND_DELTA_PARAM_KEY,
     OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY,
     OVERDUE_SECONDS_METADATA_KEY,
+    TIMEZONE_PARAM_KEY,
     asset_to_keys_iterable,
     ensure_no_duplicate_assets,
     get_description_for_freshness_check_result,
@@ -44,11 +44,11 @@ def build_freshness_multi_check(
     lower_bound_delta: Optional[datetime.timedelta],
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]],
 ) -> AssetChecksDefinition:
-    params_metadata: dict[str, Any] = {FRESHNESS_TIMEZONE_METADATA_KEY: timezone}
+    params_metadata: dict[str, Any] = {TIMEZONE_PARAM_KEY: timezone}
     if deadline_cron:
-        params_metadata[DEADLINE_CRON_METADATA_KEY] = deadline_cron
+        params_metadata[DEADLINE_CRON_PARAM_KEY] = deadline_cron
     if lower_bound_delta:
-        params_metadata[LOWER_BOUND_DELTA_METADATA_KEY] = lower_bound_delta.total_seconds()
+        params_metadata[LOWER_BOUND_DELTA_PARAM_KEY] = lower_bound_delta.total_seconds()
 
     @multi_asset_check(
         specs=[
