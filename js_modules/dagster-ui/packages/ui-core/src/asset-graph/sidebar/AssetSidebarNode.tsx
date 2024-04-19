@@ -94,7 +94,6 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
 
 type AssetSidebarAssetLabelProps = {
   fullAssetGraphData?: GraphData;
-  showStatus?: boolean;
   node: AssetNodeMenuProps['node'] & StatusDotNode;
   selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
   isLastSelected: boolean;
@@ -103,7 +102,7 @@ type AssetSidebarAssetLabelProps = {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 };
 
-export const AssetSidebarAssetLabel = ({
+const AssetSidebarAssetLabel = ({
   node,
   isSelected,
   isLastSelected,
@@ -111,7 +110,6 @@ export const AssetSidebarAssetLabel = ({
   selectNode,
   explorerPath,
   onChangeExplorerPath,
-  showStatus = true,
 }: AssetSidebarAssetLabelProps) => {
   const {menu, dialog} = useAssetNodeMenu({
     graphData: fullAssetGraphData,
@@ -126,7 +124,7 @@ export const AssetSidebarAssetLabel = ({
       <FocusableLabelContainer
         isSelected={isSelected}
         isLastSelected={isLastSelected}
-        icon={showStatus ? <StatusDot node={node} /> : null}
+        icon={<StatusDot node={node} />}
         text={getDisplayName(node)}
       />
       <ExpandMore onClick={triggerContextMenu}>
