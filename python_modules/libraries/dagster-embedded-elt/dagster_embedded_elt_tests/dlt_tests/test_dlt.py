@@ -1,6 +1,7 @@
 from typing import Optional
 
 import duckdb
+import pytest
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -146,3 +147,13 @@ def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
         for mat in asset_materializations
     ]
     assert found_asset_keys == [AssetKey(["dlt_pipeline_repo_issues"])]
+
+
+# Expected to fail until issue has been resolved - https://github.com/dlt-hub/dlt/issues/1249
+@pytest.mark.xfail
+def test_subset_pipeline_using_with_resources(dlt_pipeline: Pipeline) -> None:
+    @dlt_assets(dlt_source=pipeline().with_resources("repos"), dlt_pipeline=dlt_pipeline)
+    def example_pipeline_assets() -> None: ...
+
+    assert len(example_pipeline_assets.keys) == 1
+    assert example_pipeline_assets.keys == [AssetKey("dlt_example_pipeline_repos")]
