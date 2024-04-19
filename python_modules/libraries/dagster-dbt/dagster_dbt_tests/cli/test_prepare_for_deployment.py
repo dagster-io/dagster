@@ -85,12 +85,14 @@ def test_prepare_for_deployment_with_dependencies(
     packages_install_path = dbt_project_dir.joinpath("dbt_packages")
     dbt_utils_dbt_project_path = packages_install_path.joinpath("dbt_utils/dbt_project.yml")
 
-    # Scaffold doesn't include a dependencies.yml file, creating one.
+    # Scaffold doesn't include a dependencies.yml file, let's create one
     with open(dependencies_path, "w") as file:
         dependencies_yml = {
             "packages": [{"package": "dbt-labs/dbt_utils", "version": [">=1.1.1", "<2.0.0"]}]
         }
         yaml.dump(dependencies_yml, file)
+    # Delete dbt_packages
+    packages_install_path.unlink(missing_ok=True)
 
     assert dependencies_path.exists()
     assert not packages_install_path.exists()
