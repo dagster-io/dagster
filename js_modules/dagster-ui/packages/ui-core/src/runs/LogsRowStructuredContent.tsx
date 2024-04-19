@@ -285,12 +285,12 @@ const DefaultContent = ({
             style={
               eventColor
                 ? {
-                    fontSize: '0.9em',
+                    fontSize: '12px',
                     color: 'black',
                     background: eventColor,
                   }
                 : {
-                    fontSize: '0.9em',
+                    fontSize: '12px',
                   }
             }
           >

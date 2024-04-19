@@ -43,7 +43,7 @@ interface AssetRunLinkProps {
 
 export const AssetRunLink = ({assetKey, runId, children, event}: AssetRunLinkProps) => {
   const content = children || (
-    <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
+    <span style={{fontSize: '1em', fontFamily: FontFamily.monospace}}>
       {titleForRun({id: runId})}
     </span>
   );

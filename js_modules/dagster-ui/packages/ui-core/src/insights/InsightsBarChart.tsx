@@ -136,7 +136,7 @@ export const InsightsBarChart = (props: Props) => {
         text: metricLabel,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
@@ -144,7 +144,7 @@ export const InsightsBarChart = (props: Props) => {
           color: {
             color: textLighterRGB,
           },
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -198,7 +198,7 @@ export const InsightsBarChart = (props: Props) => {
               color: {
                 color: textLighterRGB,
               },
-              size: 14,
+              size: 12,
               family: FontFamily.monospace,
             },
             callback(timestamp) {

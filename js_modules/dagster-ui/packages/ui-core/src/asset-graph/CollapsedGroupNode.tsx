@@ -43,7 +43,7 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
         <div
           data-tooltip={name}
           data-tooltip-style={GroupNameTooltipStyle}
-          style={{fontSize: 30, fontWeight: 600, lineHeight: '30px'}}
+          style={{fontSize: 24, fontWeight: 600, lineHeight: '24px'}}
         >
           {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(30)})}
         </div>
@@ -56,12 +56,12 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
         <div
           data-tooltip={name}
           data-tooltip-style={GroupNameTooltipStyle}
-          style={{fontSize: 20, fontWeight: 600, lineHeight: '1.1em'}}
+          style={{fontSize: 18, fontWeight: 600, lineHeight: '1.1em'}}
         >
           {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(20)})}
         </div>
       </Box>
-      <Box style={{fontSize: 14, lineHeight: '1em', color: Colors.textLight()}}>
+      <Box style={{fontSize: 12, lineHeight: '1em', color: Colors.textLight()}}>
         {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(14)})}
       </Box>
     </Box>
