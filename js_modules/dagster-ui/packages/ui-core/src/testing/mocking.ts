@@ -17,7 +17,7 @@ export function buildQueryMock<
   variables?: TVariables;
   data?: Omit<TQuery, '__typename'>;
   errors?: ReadonlyArray<GraphQLError>;
-}): Omit<MockedResponse<TQuery>, 'newData'> {
+}): MockedResponse<TQuery> {
   return {
     request: {
       query,
@@ -50,7 +50,7 @@ export function buildMutationMock<
   variables: TVariables;
   data?: Omit<TMutation, '__typename'>;
   errors?: ReadonlyArray<GraphQLError>;
-}): Omit<MockedResponse<TMutation>, 'newData'> {
+}): MockedResponse<TMutation> {
   return {
     request: {
       query,
@@ -89,14 +89,11 @@ export function mergeMockQueries<T extends Record<string, any>>(
   defaultData: MockedResponse<T>,
   ...queries: Array<MockedResponse<T>>
 ): MockedResponse<T> {
-  let mergedResult = resultData(queries[0]!.result, queries[0]!.request.variables);
+  let mergedResult = resultData(queries[0]!.result);
   for (let i = 1; i < queries.length; i++) {
     mergedResult = deepmerge(
       mergedResult,
-      removeDefaultValues(
-        resultData(defaultData.result!),
-        resultData(queries[i]!.result!, queries[i]?.request.variables),
-      ),
+      removeDefaultValues(resultData(defaultData.result!), resultData(queries[i]!.result!)),
     );
   }
   return {
@@ -105,9 +102,9 @@ export function mergeMockQueries<T extends Record<string, any>>(
   };
 }
 
-function resultData<T>(result: MockedResponse<T>['result'], variables: Record<string, any> = {}) {
+function resultData<T>(result: MockedResponse<T>['result']) {
   if (result instanceof Function) {
-    return result(variables)!;
+    return result()!;
   } else {
     return result!;
   }

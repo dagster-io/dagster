@@ -1,4 +1,4 @@
-import {gql, useMutation, useSuspenseQuery} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Body,
   Box,
@@ -21,18 +21,14 @@ export const CommunityNux = () => {
     'communityNux',
     (data) => data,
   );
-  const {data} = useSuspenseQuery(GET_SHOULD_SHOW_NUX_QUERY);
+  const {data, loading} = useQuery(GET_SHOULD_SHOW_NUX_QUERY);
   const [dismissOnServer] = useMutation(SET_NUX_SEEN_MUTATION);
 
   if (!isLocalhost()) {
     // Yes, we only want to show this on localhost for now.
     return null;
   }
-  if (
-    didDismissCommunityNux ||
-    !data ||
-    (typeof data === 'object' && 'shouldShowNux' in data && !data.shouldShowNux)
-  ) {
+  if (didDismissCommunityNux || loading || (data && !data.shouldShowNux)) {
     return null;
   }
   return (

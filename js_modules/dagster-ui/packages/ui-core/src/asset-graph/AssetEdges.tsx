@@ -25,7 +25,7 @@ function getEdgesToShow({
     const viewportDistance =
       Math.pow(viewportRect.right - viewportRect.left, 2) +
       Math.pow(viewportRect.top - viewportRect.bottom, 2);
-    const MAX_EDGES = 50; // arbitrary number
+    const MAX_EDGES = 50; // arbitrary numberab138e2 (Update @apollo/client for Suspense support (#21292))
 
     //https://stackoverflow.com/a/20925869/1162881
     function doesViewportContainEdge(
