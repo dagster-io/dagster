@@ -22,9 +22,6 @@ function getEdgesToShow({
   edges,
 }: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
   try {
-    const viewportDistance =
-      Math.pow(viewportRect.right - viewportRect.left, 2) +
-      Math.pow(viewportRect.top - viewportRect.bottom, 2);
     const MAX_EDGES = 50; // arbitrary number
 
     //https://stackoverflow.com/a/20925869/1162881
@@ -52,83 +49,45 @@ function getEdgesToShow({
       return xmax1 >= xmin2 && xmax2 >= xmin1;
     }
 
-    function doesViewportContainPoint(
-      point: {x: number; y: number},
-      viewportRect: {top: number; left: number; right: number; bottom: number},
-    ) {
-      return (
-        point.x >= viewportRect.left &&
-        point.x <= viewportRect.right &&
-        point.y >= viewportRect.top &&
-        point.y <= viewportRect.bottom
-      );
+    function sortedEdges(edges: AssetLayoutEdge[], viewportRect: AssetEdgesProps['viewportRect']) {
+      if (edges.length < 50) {
+        return edges;
+      }
+      const center = {
+        x: (viewportRect.left + viewportRect.right) / 2,
+        y: (viewportRect.top + viewportRect.bottom) / 2,
+      };
+      function mapEdge(edge: AssetLayoutEdge) {
+        const fromDistance =
+          Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2);
+        const toDistance = Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2);
+        const distance = Math.min(fromDistance, toDistance);
+        const avgDistance = (fromDistance + toDistance) / 2;
+        return {...edge, distance, avgDistance};
+      }
+      return edges
+        .map(mapEdge)
+        .sort((a, b) => {
+          if (a.distance === b.distance) {
+            return a.avgDistance - b.avgDistance;
+          }
+          return a.distance - b.distance;
+        })
+        .slice(0, MAX_EDGES);
     }
 
-    const edgesToShow = (() => {
-      const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, viewportRect));
-      if (intersectedEdges.length <= 10) {
-        return intersectedEdges;
-      }
-      const visibleToAndFromEdges = new Set(
-        intersectedEdges.filter(
-          (edge) =>
-            doesViewportContainPoint(edge.from, viewportRect) &&
-            doesViewportContainPoint(edge.to, viewportRect),
-        ),
-      );
-      const visibleToFromEdges = intersectedEdges.filter(
-        (edge) =>
-          doesViewportContainPoint(edge.from, viewportRect) ||
-          doesViewportContainPoint(edge.to, viewportRect),
-      );
-      if (visibleToFromEdges.length < 50) {
-        return visibleToFromEdges;
-      }
-      const center = {
-        x: (viewportRect.left + viewportRect.right) / 2,
-        y: (viewportRect.top + viewportRect.bottom) / 2,
-      };
-      const edgesWithDistance = visibleToFromEdges.map((edge) => {
-        const distance = Math.min(
-          Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2),
-          Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2),
-        );
-
-        return {
-          edge,
-          // Effectively sorts edges with both nodes visible to the front.
-          distance: visibleToAndFromEdges.has(edge) ? distance : viewportDistance + distance,
-        };
-      });
-      edgesWithDistance.sort((a, b) => a.distance - b.distance);
-      return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
-    })();
-
-    const selectedOrHighlightedEdges = (() => {
-      const selectedOrHighlighted = edges.filter(
-        ({fromId, toId}) =>
-          selected?.includes(fromId) ||
-          selected?.includes(toId) ||
-          highlighted?.includes(fromId) ||
-          highlighted?.includes(toId),
-      );
-      const center = {
-        x: (viewportRect.left + viewportRect.right) / 2,
-        y: (viewportRect.top + viewportRect.bottom) / 2,
-      };
-      const edgesWithDistance = selectedOrHighlighted.map((edge) => {
-        return {
-          edge,
-          distance: Math.min(
-            Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2),
-            Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2),
-          ),
-        };
-      });
-      edgesWithDistance.sort((a, b) => a.distance - b.distance);
-      return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
-    })();
-    return {edgesToShow, selectedOrHighlightedEdges};
+    const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, viewportRect));
+    const selectedOrHighlighted = edges.filter(
+      ({fromId, toId}) =>
+        selected?.includes(fromId) ||
+        selected?.includes(toId) ||
+        highlighted?.includes(fromId) ||
+        highlighted?.includes(toId),
+    );
+    return {
+      edgesToShow: sortedEdges(intersectedEdges, viewportRect),
+      selectedOrHighlightedEdges: sortedEdges(selectedOrHighlighted, viewportRect),
+    };
   } catch (e) {
     console.error(e);
     return {edgesToShow: [], selectedOrHighlightedEdges: []};
