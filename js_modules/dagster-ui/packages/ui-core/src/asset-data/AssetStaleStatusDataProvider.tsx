@@ -21,7 +21,7 @@ function init() {
         AssetStaleStatusDataQueryVariables
       >({
         query: ASSET_STALE_STATUS_QUERY,
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'no-cache',
         variables: {
           assetKeys: keys.map(tokenToAssetKey),
         },
