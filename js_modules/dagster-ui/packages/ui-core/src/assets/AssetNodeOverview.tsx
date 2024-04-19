@@ -229,21 +229,19 @@ export const AssetNodeOverview = ({
         </Box>
       </AttributeAndValue>
       <AttributeAndValue label="Owners">
-        {assetNode.owners && assetNode.owners.length > 0 && (
-          <Box flex={{gap: 4, alignItems: 'center'}}>
-            {assetNode.owners.map((owner, idx) =>
-              owner.__typename === 'UserAssetOwner' ? (
-                <UserAssetOwnerWrapper key={idx}>
-                  <UserDisplay key={idx} email={owner.email} size="very-small" />
-                </UserAssetOwnerWrapper>
-              ) : (
-                <Tag icon="people" key={idx}>
-                  {owner.team}
-                </Tag>
-              ),
-            )}
-          </Box>
-        )}
+        {assetNode.owners &&
+          assetNode.owners.length > 0 &&
+          assetNode.owners.map((owner, idx) =>
+            owner.__typename === 'UserAssetOwner' ? (
+              <UserAssetOwnerWrapper key={idx}>
+                <UserDisplay key={idx} email={owner.email} size="very-small" />
+              </UserAssetOwnerWrapper>
+            ) : (
+              <Tag icon="people" key={idx}>
+                {owner.team}
+              </Tag>
+            ),
+          )}
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
@@ -251,13 +249,9 @@ export const AssetNodeOverview = ({
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Tags">
-        {assetNode.tags && assetNode.tags.length > 0 && (
-          <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
-            {assetNode.tags.map((tag, idx) => (
-              <Tag key={idx}>{buildTagString(tag)}</Tag>
-            ))}
-          </Box>
-        )}
+        {assetNode.tags &&
+          assetNode.tags.length > 0 &&
+          assetNode.tags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
       </AttributeAndValue>
     </Box>
   );
@@ -523,7 +517,7 @@ const AttributeAndValue = ({
     <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
       <Subtitle2>{label}</Subtitle2>
       <Body2 style={{maxWidth: '100%'}}>
-        <Box flex={{gap: 2}}>{children}</Box>
+        <Box flex={{gap: 4, wrap: 'wrap'}}>{children}</Box>
       </Body2>
     </Box>
   );
