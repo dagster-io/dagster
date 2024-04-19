@@ -29,7 +29,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apollo/client@npm:3.9.11, @apollo/client@npm:^3.9.11":
+"@apollo/client@npm:3.9.11":
   version: 3.9.11
   resolution: "@apollo/client@npm:3.9.11"
   dependencies:
@@ -2412,7 +2412,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/dagster-ui-workspace@workspace:."
   dependencies:
-    "@apollo/client": "npm:^3.9.11"
     graphql.macro: "npm:^1.4.2"
     patch-package: "npm:^8.0.0"
     postinstall-postinstall: "npm:^2.1.0"
