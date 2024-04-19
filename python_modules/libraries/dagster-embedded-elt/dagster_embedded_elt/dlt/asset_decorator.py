@@ -94,6 +94,6 @@ def dlt_assets(
                     META_KEY_TRANSLATOR: dlt_dagster_translator,
                 },
             )
-            for dlt_source_resource in dlt_source.resources.values()
+            for dlt_source_resource in dlt_source.selected_resources.values()
         ],
     )
