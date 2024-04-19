@@ -1,4 +1,6 @@
-import {onError} from '@apollo/client/link/error';
+import {ServerError} from '@apollo/client';
+import {ErrorResponse, onError} from '@apollo/client/link/error';
+import {Observable} from '@apollo/client/utilities';
 import {Colors, FontFamily, Toaster} from '@dagster-io/ui-components';
 import {GraphQLError} from 'graphql';
 import memoize from 'lodash/memoize';
@@ -46,13 +48,22 @@ const showNetworkError = async (statusCode: number) => {
   }
 };
 
-export const errorLink = onError((response) => {
+export const errorLink = onError((response: ErrorResponse) => {
   if (response.graphQLErrors) {
     const {graphQLErrors, operation} = response;
     const {operationName} = operation;
     graphQLErrors.forEach((error) => showGraphQLError(error as DagsterGraphQLError, operationName));
   }
   if (response.networkError) {
+    // if we have a network error but there is still graphql data
+    // the payload should contain a meaningful error for the product to handle
+    const serverError = response.networkError as ServerError;
+    if (serverError.result && serverError.result.data) {
+      // we can return an observable here (normally used to perform retries)
+      // to flow the error payload to the product
+      return Observable.from([serverError.result]);
+    }
+
     if (response.networkError && 'statusCode' in response.networkError) {
       showNetworkError(response.networkError.statusCode);
     }
