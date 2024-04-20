@@ -88,7 +88,7 @@ def sling_assets(
         name=name,
         compute_kind="sling",
         partitions_def=partitions_def,
-        can_subset=False,
+        can_subset=True,
         op_tags=op_tags,
         backfill_policy=backfill_policy,
         specs=[
