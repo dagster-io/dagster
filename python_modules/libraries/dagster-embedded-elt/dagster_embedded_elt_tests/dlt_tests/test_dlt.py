@@ -146,3 +146,25 @@ def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
         for mat in asset_materializations
     ]
     assert found_asset_keys == [AssetKey(["dlt_pipeline_repo_issues"])]
+
+
+def test_subset_pipeline_using_with_resources(dlt_pipeline: Pipeline) -> None:
+    @dlt_assets(dlt_source=pipeline().with_resources("repos"), dlt_pipeline=dlt_pipeline)
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(context=context)
+
+    assert len(example_pipeline_assets.keys) == 1
+    assert example_pipeline_assets.keys == {AssetKey("dlt_pipeline_repos")}
+
+    res = materialize(
+        [example_pipeline_assets],
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    )
+    assert res.success
+
+    temporary_duckdb_path = f"{dlt_pipeline.pipeline_name}.duckdb"
+    with duckdb.connect(database=temporary_duckdb_path, read_only=True) as conn:
+        row = conn.execute("select count(*) from example.repos").fetchone()
+        assert row and row[0] == 3

@@ -175,7 +175,7 @@ const RunGroupRun = styled(Link)<{selected: boolean}>`
   background: ${({selected}) => (selected ? Colors.backgroundLight() : Colors.backgroundDefault())};
   padding: 4px 6px 4px 24px;
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
   line-height: 20px;
   display: flex;
   position: relative;

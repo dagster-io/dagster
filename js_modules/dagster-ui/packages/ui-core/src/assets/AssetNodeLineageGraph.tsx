@@ -50,7 +50,9 @@ export const AssetNodeLineageGraph = ({
   const history = useHistory();
 
   const onClickAsset = (key: AssetKey) => {
-    history.push(assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors'}));
+    history.push(
+      assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors', lineageDepth: 1}),
+    );
   };
 
   useLastSavedZoomLevel(viewportEl, layout, assetGraphId);

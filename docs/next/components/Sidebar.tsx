@@ -86,9 +86,9 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
       );
     }
 
-    const linkElement = (
+    return (
       <div className={itemClassName}>
-        <a
+        <NextLink
           className={innerClassName}
           href={item.path}
           ref={ref}
@@ -97,19 +97,9 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
           onClick={onClick}
         >
           {itemContents}
-        </a>
+        </NextLink>
         {rightIcon()}
       </div>
-    );
-
-    if (item.isExternalLink) {
-      return linkElement;
-    }
-
-    return (
-      <NextLink href={item.path} passHref legacyBehavior>
-        {linkElement}
-      </NextLink>
     );
   },
 );

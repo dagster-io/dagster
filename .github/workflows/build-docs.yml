@@ -20,11 +20,14 @@ jobs:
     steps:
       # Deploy to Vercel Previews on pull request, push to master branch, or push to release-* branch
       - name: Get branch preview subdomain
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
         if: |
           github.event_name == 'pull_request' || 
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')))
         run: |
-          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
+          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${HEAD_REF:-$REF_NAME}" | sed -e 's/[^a-zA-Z0-9-]/-/g; s/^-*//; s/-*$//')
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
 

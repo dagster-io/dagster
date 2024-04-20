@@ -48,8 +48,8 @@ def test_params() -> None:
     assert next(iter(check.check_keys)).asset_key == my_asset.key
     assert next(iter(check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
-            "dagster/freshness_timezone": "UTC",
+            "lower_bound_delta": 600,
+            "timezone": "UTC",
         }
     }
 
@@ -71,9 +71,9 @@ def test_params() -> None:
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
-            "dagster/deadline_cron": "0 0 * * *",
-            "dagster/freshness_timezone": "UTC",
+            "lower_bound_delta": 600,
+            "deadline_cron": "0 0 * * *",
+            "timezone": "UTC",
         }
     }
 
@@ -252,9 +252,9 @@ def test_check_result_cron(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/deadline_cron": deadline_cron,
-                        "dagster/freshness_timezone": timezone,
-                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "deadline_cron": deadline_cron,
+                        "timezone": timezone,
+                        "lower_bound_delta": lower_bound_delta.total_seconds(),
                     }
                 ),
                 "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
@@ -286,9 +286,9 @@ def test_check_result_cron(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/deadline_cron": deadline_cron,
-                        "dagster/freshness_timezone": timezone,
-                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "deadline_cron": deadline_cron,
+                        "timezone": timezone,
+                        "lower_bound_delta": lower_bound_delta.total_seconds(),
                     }
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
@@ -349,8 +349,8 @@ def test_check_result_bound_only(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/lower_bound_delta": 600,
-                        "dagster/freshness_timezone": "UTC",
+                        "lower_bound_delta": 600,
+                        "timezone": "UTC",
                     }
                 ),
                 # Indicates that no records exist.
@@ -383,8 +383,8 @@ def test_check_result_bound_only(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/lower_bound_delta": 600,
-                        "dagster/freshness_timezone": "UTC",
+                        "lower_bound_delta": 600,
+                        "timezone": "UTC",
                     }
                 ),
                 # Since no freshness cron, deadline is the current time.

@@ -1,4 +1,4 @@
-import {Mono} from '@dagster-io/ui-components';
+import {CaptionMono, Mono} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
@@ -82,10 +82,6 @@ export const PipelineSnapshotLink = (props: {
   size: 'small' | 'normal';
 }) => {
   const snapshotLink = getPipelineSnapshotLink(props.pipelineName, props.snapshotId);
-
-  return (
-    <Mono style={{fontSize: props.size === 'small' ? '14px' : '16px'}}>
-      <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>
-    </Mono>
-  );
+  const linkElem = <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>;
+  return props.size === 'small' ? <CaptionMono>{linkElem}</CaptionMono> : <Mono>{linkElem}</Mono>;
 };

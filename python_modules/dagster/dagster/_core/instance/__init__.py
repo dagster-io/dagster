@@ -2876,13 +2876,14 @@ class DagsterInstance(DynamicPartitionsStore):
         stored_state = self.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
-        new_instigator_data = SensorInstigatorData(
-            min_interval=external_sensor.min_interval_seconds,
-            sensor_type=external_sensor.sensor_type,
-        )
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
+            new_instigator_data = SensorInstigatorData(
+                min_interval=external_sensor.min_interval_seconds,
+                sensor_type=external_sensor.sensor_type,
+            )
+
             reset_state = self.add_instigator_state(
                 state=InstigatorState(
                     external_sensor.get_external_origin(),
@@ -2892,9 +2893,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
             )
         else:
-            reset_state = self.update_instigator_state(
-                state=stored_state.with_status(new_status).with_data(new_instigator_data)
-            )
+            reset_state = self.update_instigator_state(state=stored_state.with_status(new_status))
 
         return reset_state
 

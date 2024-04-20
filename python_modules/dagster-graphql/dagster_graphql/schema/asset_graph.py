@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set, Union, cas
 import graphene
 from dagster import (
     AssetKey,
+    DagsterError,
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer, ChangeReason
@@ -656,6 +657,25 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         except ValueError:
             before_timestamp = None
+
+        if (
+            graphene_info.context.instance.event_log_storage.asset_records_have_last_observation
+            and self._asset_record_loader
+            and limit == 1
+            and not partitions
+            and not before_timestamp
+        ):
+            latest_observation_event = (
+                self._asset_record_loader.get_latest_observation_for_asset_key(
+                    self._external_asset_node.asset_key
+                )
+            )
+
+            if not latest_observation_event:
+                return []
+
+            return [GrapheneObservationEvent(event=latest_observation_event)]
+
         return [
             GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
@@ -913,10 +933,14 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> bool:
         asset_key = self._external_asset_node.asset_key
 
-        if sensor.asset_selection is not None and (
-            asset_key in sensor.asset_selection.resolve(asset_graph)
-        ):
-            return True
+        if sensor.asset_selection is not None:
+            try:
+                asset_selection = sensor.asset_selection.resolve(asset_graph)
+            except DagsterError:
+                return False
+
+            if asset_key in asset_selection:
+                return True
 
         return any(target.job_name in job_names for target in sensor.get_external_targets())
 

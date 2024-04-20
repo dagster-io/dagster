@@ -184,6 +184,12 @@ class AssetSubset(DagsterModel):
         # This can likely be removed once TimeWindowPartitionsSubset is converted into a DagsterModel
         return {"asset_key": self.asset_key, "value": self.value}
 
+    def __eq__(self, other: Any) -> bool:
+        # Pydantic 2.x does not handle this comparison correctly for some reason, just override it
+        if not isinstance(other, AssetSubset):
+            return False
+        return self.dict() == other.dict()
+
 
 @whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class ValidAssetSubset(AssetSubset):

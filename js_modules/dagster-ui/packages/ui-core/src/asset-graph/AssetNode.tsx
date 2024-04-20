@@ -164,7 +164,11 @@ const AssetNodeChecksRow = ({
         to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
         onClick={(e) => e.stopPropagation()}
       >
-        <AssetChecksStatusSummary liveData={liveData} rendering="dag" />
+        <AssetChecksStatusSummary
+          liveData={liveData}
+          rendering="dag"
+          assetKey={definition.assetKey}
+        />
       </Link>
     </AssetNodeRowBox>
   );
@@ -311,7 +315,7 @@ export const NameTooltipCSS: CSSObject = {
   ...NameCSS,
   top: -9,
   left: -12,
-  fontSize: 16.8,
+  fontSize: 14,
 };
 
 export const NameTooltipStyle = JSON.stringify({

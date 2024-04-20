@@ -22,7 +22,7 @@ const Container = styled.div`
   &&& table {
     border: none;
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
   }
 
   &&& table tr th {

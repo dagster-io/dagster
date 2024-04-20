@@ -202,7 +202,7 @@ const ConfigJSON = styled.pre`
   color: ${Colors.tooltipText()};
   whitespace: pre-wrap;
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
   padding: 8px;
   margin: 0;
 `;
@@ -344,7 +344,7 @@ const TypeSchemaContainer = styled.code`
   color: ${Colors.textLighter()};
   display: block;
   white-space: pre-wrap;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 18px;
 `;
 

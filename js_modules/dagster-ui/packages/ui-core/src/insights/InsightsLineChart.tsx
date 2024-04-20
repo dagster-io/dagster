@@ -22,6 +22,7 @@ import {COMPACT_COST_FORMATTER, TOTAL_COST_FORMATTER} from './costFormatters';
 import {formatMetric, stripFormattingFromNumber} from './formatMetric';
 import {RenderTooltipFn, renderInsightsChartTooltip} from './renderInsightsChartTooltip';
 import {Datapoint, DatapointType, ReportingMetricsGranularity, ReportingUnitType} from './types';
+import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
@@ -58,6 +59,9 @@ export const InsightsLineChart = (props: Props) => {
     onHighlightKey,
     emptyState,
   } = props;
+
+  const rgbColors = useRGBColorsForTheme();
+
   const dataValues = React.useMemo(() => Object.values(datapoints), [datapoints]);
   const dataEntries = React.useMemo(() => Object.entries(datapoints), [datapoints]);
 
@@ -85,26 +89,29 @@ export const InsightsLineChart = (props: Props) => {
   const showYAxis = dataValues.length > 0;
 
   const data = React.useMemo(() => {
+    const backgroundDefaultRGB = rgbColors[Colors.backgroundDefault()];
+    const backgroundDefaultHoverRGB = rgbColors[Colors.backgroundDefaultHover()];
     return {
       labels: timestamps,
       datasets: dataEntries.map(([key, {label, lineColor, values}]) => {
+        const rgbLineColor = rgbColors[lineColor]!;
         return {
           label,
           data: values,
           backgroundColor: (context: any) => {
-            return buildFillGradient(context.chart.ctx, lineColor);
+            return buildFillGradient(context.chart.ctx, rgbLineColor);
           },
           borderColor:
             key === highlightKey || highlightKey === null
-              ? lineColor
-              : lineColor.replace(/, 1\)/, ', 0.2)'),
+              ? rgbLineColor
+              : rgbLineColor.replace(/, ?1\)/, ', 0.2)'),
           fill: key === highlightKey,
-          pointBackgroundColor: Colors.backgroundDefault(),
-          pointHoverBackgroundColor: Colors.backgroundDefaultHover(),
+          pointBackgroundColor: backgroundDefaultRGB,
+          pointHoverBackgroundColor: backgroundDefaultHoverRGB,
           pointBorderColor:
             key === highlightKey || highlightKey === null
-              ? lineColor
-              : lineColor.replace(/, 1\)/, ', 0.2)'),
+              ? rgbLineColor
+              : rgbLineColor.replace(/, ?1\)/, ', 0.2)'),
           pointRadius: key === highlightKey || highlightKey === null ? 3 : 0,
           tension: 0.1,
           // Render highlighted lines above non-highlighted lines, to avoid confusion at
@@ -113,7 +120,7 @@ export const InsightsLineChart = (props: Props) => {
         };
       }),
     };
-  }, [dataEntries, timestamps, highlightKey]);
+  }, [timestamps, dataEntries, rgbColors, highlightKey]);
 
   const debouncedSetHighlightKey = React.useMemo(
     () => debounce((key: string | null) => onHighlightKey && onHighlightKey(key), 40),
@@ -135,25 +142,28 @@ export const InsightsLineChart = (props: Props) => {
     [dataEntries, debouncedSetHighlightKey],
   );
 
+  const keylineDefaultRGB = rgbColors[Colors.keylineDefault()];
+  const textLighterRGB = rgbColors[Colors.textLighter()];
+
   const yCount = useMemo(() => {
     return {
       display: showYAxis,
       grid: {
-        color: Colors.keylineDefault(),
+        color: keylineDefaultRGB,
       },
       title: {
         display: true,
         text: metricLabel,
-        color: Colors.textLighter(),
+        color: textLighterRGB,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
-        color: Colors.textLighter(),
+        color: textLighterRGB,
         font: {
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -167,7 +177,7 @@ export const InsightsLineChart = (props: Props) => {
       min: 0,
       suggestedMax: yMax,
     };
-  }, [metricLabel, showYAxis, unitType, yMax]);
+  }, [keylineDefaultRGB, metricLabel, showYAxis, textLighterRGB, unitType, yMax]);
 
   const yCost = useMemo(() => {
     const yCostMax = yMax * Number(costMultiplier);
@@ -180,16 +190,16 @@ export const InsightsLineChart = (props: Props) => {
       title: {
         display: true,
         text: 'Estimated cost',
-        color: Colors.textLighter(),
+        color: textLighterRGB,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
-        color: Colors.textLighter(),
+        color: textLighterRGB,
         font: {
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -202,7 +212,7 @@ export const InsightsLineChart = (props: Props) => {
       min: 0,
       suggestedMax: yCostMax,
     };
-  }, [costMultiplier, showYAxis, yMax]);
+  }, [costMultiplier, showYAxis, textLighterRGB, yMax]);
 
   const renderTooltipFn: RenderTooltipFn = useCallback(
     (config) => {
@@ -251,12 +261,12 @@ export const InsightsLineChart = (props: Props) => {
           },
           title: {
             display: true,
-            color: Colors.textLighter(),
+            color: rgbColors[Colors.textLighter()],
           },
           ticks: {
-            color: Colors.textLighter(),
+            color: rgbColors[Colors.textLighter()],
             font: {
-              size: 14,
+              size: 12,
               family: FontFamily.monospace,
             },
             callback(timestamp) {
@@ -273,7 +283,7 @@ export const InsightsLineChart = (props: Props) => {
         yCost,
       },
     };
-  }, [yCount, yCost, onHover, renderTooltipFn, formatDateTime]);
+  }, [rgbColors, yCount, yCost, onHover, renderTooltipFn, formatDateTime]);
 
   const emptyContent = () => {
     const anyDatapoints = Object.keys(datapoints).length > 0;
@@ -320,7 +330,8 @@ export const InsightsLineChart = (props: Props) => {
 
 const buildFillGradient = (ctx: CanvasRenderingContext2D, lineColor: string) => {
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, lineColor.replace(/, 1\)/, ', 0.2)'));
-  gradient.addColorStop(1, lineColor.replace(/, 1\)/, ', 0.0)'));
+  gradient.addColorStop(0, lineColor.replace(/, ?1\)/, ', 0.2)'));
+  gradient.addColorStop(1, lineColor.replace(/, ?1\)/, ', 0.0)'));
+  console.log(lineColor);
   return gradient;
 };

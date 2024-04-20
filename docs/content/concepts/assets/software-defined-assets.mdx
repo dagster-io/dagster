@@ -35,10 +35,10 @@ A software-defined asset includes the following:
 
 ## Relevant APIs
 
-| Name                                  | Description                                                                                                                                                                                                                  |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                           |
-| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, in settings where they can't be materialized themselves. |
+| Name                                   | Description                                                                                                                                   |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset" decorator />  | A decorator used to define assets.                                                                                                            |
+| <PyObject object="AssetsDefinition" /> | A class that represents a one or more asset definitions, usually backed by a single function that materializes or observes them all together. |
 
 ---
 
@@ -75,7 +75,7 @@ By default, the name of the decorated function, `my_asset`, is used as the asset
 Software-defined assets can depend on other software-defined assets. In this section, we'll show you how to define:
 
 - [Basic asset dependencies](#defining-basic-dependencies)
-- [External asset dependencies](#defining-external-asset-dependencies)
+- [Asset dependencies across code locations](#defining-asset-dependencies-across-code-locations)
 
 #### Defining basic dependencies
 
@@ -99,24 +99,9 @@ def shopping_list() -> None:
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 ```
 
-#### Defining external asset dependencies
+#### Defining asset dependencies across code locations
 
-Software-defined assets frequently depend on assets that are generated elsewhere. Using <PyObject object="SourceAsset" />, you can include these external assets and allow your other assets to depend on them.
-
-For example:
-
-```python file=/concepts/assets/source_asset.py startafter=start_marker endbefore=end_marker
-from dagster import AssetKey, SourceAsset, asset
-
-my_source_asset = SourceAsset(key=AssetKey("a_source_asset"))
-
-
-@asset(deps=[my_source_asset])
-def my_derived_asset():
-    return execute_query("SELECT * from a_source_asset").as_list() + [4]
-```
-
-You can also re-use assets across [code locations](/concepts/code-locations) by including them as source assets. Consider this example for `code_location_1`:
+Assets can depend on assets in different [code locations](/concepts/code-locations). Consider this example for `code_location_1`:
 
 ```python file=/concepts/assets/cross_cl_code_location_1.py startafter=start endbefore=end
 # code_location_1.py
@@ -134,18 +119,16 @@ def code_location_1_asset():
 defs = Definitions(assets=[code_location_1_asset])
 ```
 
-And then in `code_location_2`, we've included `code_location_1_asset` as a source asset:
+In `code_location_2`, we can then reference it via its asset key:
 
 ```python file=/concepts/assets/cross_cl_code_location_2.py startafter=start endbefore=end
 # code_location_2.py
 import json
 
-from dagster import AssetKey, Definitions, SourceAsset, asset
-
-code_location_1_source_asset = SourceAsset(key=AssetKey("code_location_1_asset"))
+from dagster import AssetKey, Definitions, asset
 
 
-@asset(deps=[code_location_1_source_asset])
+@asset(deps=["code_location_1_asset"])
 def code_location_2_asset():
     with open("/data/code_location_1_asset.json", "r") as f:
         x = json.load(f)
@@ -154,16 +137,8 @@ def code_location_2_asset():
         json.dump(x + 6, f)
 
 
-defs = Definitions(
-    assets=[code_location_2_asset, code_location_1_source_asset],
-)
+defs = Definitions(assets=[code_location_2_asset])
 ```
-
-Using source assets has a few advantages over having the code inside of an asset's function load the data without specifying any dependencies:
-
-- **The UI can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into the underlying webserver, the UI can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/code-locations/workspace-files).
-- **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
-- **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a software-defined asset. This makes it easy to swap out a source asset for a software-defined asset and vice versa.
 
 ### Graph-backed assets and multi-assets
 

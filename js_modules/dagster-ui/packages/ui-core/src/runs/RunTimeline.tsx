@@ -735,7 +735,7 @@ const BatchCount = styled.div`
   color: ${Colors.accentReversed()};
   cursor: default;
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   user-select: none;
 `;
