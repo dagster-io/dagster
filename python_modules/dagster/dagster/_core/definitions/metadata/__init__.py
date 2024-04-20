@@ -17,6 +17,7 @@ from typing import (
     cast,
 )
 
+from pydantic import Field
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -824,23 +825,22 @@ class FloatMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
-class IntMetadataValue(
-    NamedTuple(
-        "_IntMetadataValue",
-        [
-            ("value", PublicAttr[Optional[int]]),
-        ],
-    ),
-    MetadataValue[int],
-):
+class IntMetadataValue(DagsterModel, MetadataValue[int]):
     """Container class for int metadata entry data.
 
     Args:
         value (Optional[int]): The int value.
     """
 
-    def __new__(cls, value: Optional[int]):
-        return super(IntMetadataValue, cls).__new__(cls, check.opt_int_param(value, "value"))
+    value_inner: Optional[int] = Field(..., alias="value")
+
+    def __init__(self, value: Optional[int]):
+        super().__init__(value=value)
+
+    @public
+    @property
+    def value(self) -> Optional[int]:
+        return self.value_inner
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
