@@ -6,7 +6,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._serdes import (
     ConfigurableClassData,
 )
-from dagster_plus.instance import DagsterCloudAgentInstance  # type: ignore
+from dagster_plus.instance import MockDagsterCloudAgentInstance  # type: ignore
 from dagster_plus.storage.compute_logs import MockCloudComputeLogStorage  # type: ignore
 
 
@@ -15,12 +15,12 @@ def test_load_instance_from_dagster_plus():
         overrides={
             "instance_class": {
                 "module": "dagster_cloud.instance",
-                "class": "DagsterCloudAgentInstance",
+                "class": "MockDagsterCloudAgentInstance",
             }
         }
     ) as instance:
         assert instance.get_ref().custom_instance_class_data.module_name == "dagster_cloud.instance"
-        assert isinstance(instance, DagsterCloudAgentInstance)
+        assert isinstance(instance, MockDagsterCloudAgentInstance)
 
 
 def test_load_instance_from_dagster_plus_module():
@@ -28,12 +28,12 @@ def test_load_instance_from_dagster_plus_module():
         overrides={
             "instance_class": {
                 "module": "dagster_plus.instance",
-                "class": "DagsterCloudAgentInstance",
+                "class": "MockDagsterCloudAgentInstance",
             }
         }
     ) as instance:
         assert instance.get_ref().custom_instance_class_data.module_name == "dagster_cloud.instance"
-        assert isinstance(instance, DagsterCloudAgentInstance)
+        assert isinstance(instance, MockDagsterCloudAgentInstance)
 
 
 def test_load_instance_from_ref():
@@ -47,5 +47,5 @@ def test_load_instance_from_ref():
             )
         )
         assert isinstance(ref.compute_log_manager, MockCloudComputeLogStorage)
-        with DagsterCloudAgentInstance.from_ref(ref) as instance:
+        with MockDagsterCloudAgentInstance.from_ref(ref) as instance:
             assert isinstance(instance.compute_log_manager, MockCloudComputeLogStorage)

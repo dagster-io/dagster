@@ -1,7 +1,7 @@
 import pytest
 from dagster._core.errors import DagsterImportClassFromCodePointerError
 from dagster._core.test_utils import instance_for_test
-from dagster_cloud.instance import DagsterCloudAgentInstance  # type: ignore
+from dagster_cloud.instance import MockDagsterCloudAgentInstance  # type: ignore
 
 
 def test_backcompat_no_dagster_plus():
@@ -9,12 +9,12 @@ def test_backcompat_no_dagster_plus():
         overrides={
             "instance_class": {
                 "module": "dagster_cloud.instance",
-                "class": "DagsterCloudAgentInstance",
+                "class": "MockDagsterCloudAgentInstance",
             }
         }
     ) as instance:
         assert instance.get_ref().custom_instance_class_data.module_name == "dagster_cloud.instance"
-        assert isinstance(instance, DagsterCloudAgentInstance)
+        assert isinstance(instance, MockDagsterCloudAgentInstance)
 
     with pytest.raises(
         DagsterImportClassFromCodePointerError, match="Couldn't import module dagster_plus.instance"
@@ -23,7 +23,7 @@ def test_backcompat_no_dagster_plus():
             overrides={
                 "instance_class": {
                     "module": "dagster_plus.instance",
-                    "class": "DagsterCloudAgentInstance",
+                    "class": "MockDagsterCloudAgentInstance",
                 }
             }
         ) as instance:

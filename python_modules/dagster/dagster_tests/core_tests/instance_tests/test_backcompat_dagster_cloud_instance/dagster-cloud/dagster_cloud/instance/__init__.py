@@ -1,7 +1,7 @@
 from dagster._core.instance import DagsterInstance, InstanceRef
 
 
-class DagsterCloudAgentInstance(DagsterInstance):
+class MockDagsterCloudAgentInstance(DagsterInstance):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

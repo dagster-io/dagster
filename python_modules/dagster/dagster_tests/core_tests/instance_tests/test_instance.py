@@ -66,8 +66,9 @@ from dagster._core.test_utils import (
 from dagster._daemon.asset_daemon import AssetDaemon
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster_tests.api_tests.utils import get_bar_workspace
 from typing_extensions import Self
+
+from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 def test_get_run_by_id():
