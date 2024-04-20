@@ -1580,6 +1580,7 @@ hanging_partition_asset_job = define_asset_job(
 @asset
 def asset_yields_observation():
     yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "BAR"})
     yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
     yield Output(5)
 
