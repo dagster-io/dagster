@@ -11,6 +11,8 @@ from dagster._utils.security import non_secure_md5_hash_str
 
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
+from dagster._utils.merger import deep_merge_dicts
+
 
 METADATA_KEY_TRANSLATOR = "dagster_embedded_elt/dagster_sling_translator"
 METADATA_KEY_REPLICATION_CONFIG = "dagster_embedded_elt/sling_replication_config"
@@ -20,6 +22,9 @@ def get_streams_from_replication(
     replication_config: Mapping[str, Any],
 ) -> Iterable[Mapping[str, Any]]:
     """Returns a list of streams and their configs from a Sling replication config."""
+    default_config = replication_config.get("defaults", {})
+    for stream, stream_config in replication_config.get("streams", {}).items():
+        config = deep_merge_dicts(default_config, stream_config)
     for stream, config in replication_config.get("streams", {}).items():
         if config and config.get("disabled", False):
             continue
