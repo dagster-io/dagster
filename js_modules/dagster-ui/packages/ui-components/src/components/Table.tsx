@@ -16,6 +16,7 @@ export const Table = styled(HTMLTable)<TableProps>`
 
   & tr th,
   & tr td {
+    border: none;
     box-shadow:
       inset 0 1px 0 ${Colors.keylineDefault()},
       inset 1px 0 0 ${Colors.keylineDefault()} !important;

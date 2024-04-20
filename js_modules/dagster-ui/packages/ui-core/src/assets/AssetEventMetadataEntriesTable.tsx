@@ -8,6 +8,7 @@ import {
   Mono,
   Tag,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
@@ -26,6 +27,8 @@ import {HIDDEN_METADATA_ENTRY_LABELS, MetadataEntry} from '../metadata/MetadataE
 import {isCanonicalColumnLineageEntry, isCanonicalColumnSchemaEntry} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {titleForRun} from '../runs/RunUtils';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 
 type TableEvent = Pick<
   AssetObservationFragment | AssetMaterializationFragment,
@@ -49,6 +52,7 @@ interface Props {
   hideTableSchema?: boolean;
   displayedByDefault?: number;
   emptyState?: React.ReactNode;
+  repoAddress?: RepoAddress;
 }
 
 /**
@@ -69,6 +73,7 @@ export const AssetEventMetadataEntriesTable = ({
   hideTableSchema,
   displayedByDefault = 100,
   emptyState,
+  repoAddress,
 }: Props) => {
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
@@ -83,6 +88,7 @@ export const AssetEventMetadataEntriesTable = ({
   const allRows = useMemo(() => {
     const eventRows = event
       ? event.metadataEntries.map((entry) => ({
+          tooltip: `Materialized ${dayjs(Number(event.timestamp)).fromNow()} in run ${event.runId}`,
           icon: 'materialization' as const,
           timestamp: event.timestamp,
           runId: null,
@@ -92,6 +98,7 @@ export const AssetEventMetadataEntriesTable = ({
 
     const observationRows = (observations || []).flatMap((o) =>
       o.metadataEntries.map((entry) => ({
+        tooltip: `Observed ${dayjs(Number(o.timestamp)).fromNow()} in run ${o.runId}`,
         icon: 'observation' as const,
         timestamp: o.timestamp,
         runId: o.runId,
@@ -100,6 +107,9 @@ export const AssetEventMetadataEntriesTable = ({
     );
 
     const definitionRows = (definitionMetadata || []).map((entry) => ({
+      tooltip: `Loaded ${dayjs(definitionLoadTimestamp).fromNow()}${
+        repoAddress ? ` from ${repoAddressAsHumanString(repoAddress)}` : ''
+      }`,
       icon: 'asset' as const,
       timestamp: definitionLoadTimestamp,
       runId: null,
@@ -107,7 +117,7 @@ export const AssetEventMetadataEntriesTable = ({
     }));
 
     return uniqBy([...observationRows, ...eventRows, ...definitionRows], (e) => e.entry.label);
-  }, [definitionLoadTimestamp, definitionMetadata, event, observations]);
+  }, [definitionLoadTimestamp, definitionMetadata, event, observations, repoAddress]);
 
   const filteredRows = useMemo(
     () =>
@@ -186,40 +196,44 @@ export const AssetEventMetadataEntriesTable = ({
                   </td>
                 </tr>
               )}
-              {filteredRows.slice(0, displayedCount).map(({entry, timestamp, runId, icon}) => (
-                <tr key={`metadata-${timestamp}-${entry.label}`}>
-                  <td>
-                    <Mono>{entry.label}</Mono>
-                  </td>
-                  {showTimestamps && (
+              {filteredRows
+                .slice(0, displayedCount)
+                .map(({entry, timestamp, runId, icon, tooltip}) => (
+                  <tr key={`metadata-${timestamp}-${entry.label}`}>
                     <td>
-                      <Tag>
-                        <Box flex={{gap: 4, alignItems: 'center'}}>
-                          <Icon name={icon} />
-                          <Timestamp timestamp={{ms: Number(timestamp)}} />
-                        </Box>
-                      </Tag>
+                      <Mono>{entry.label}</Mono>
                     </td>
-                  )}
-                  <td>
-                    <Mono>
-                      <MetadataEntry entry={entry} expandSmallValues={true} />
-                    </Mono>
-                  </td>
-                  {showDescriptions && (
-                    <td style={{opacity: 0.7}}>
-                      {runId && (
-                        <ObservedInRun
-                          runId={runId}
-                          timestamp={timestamp}
-                          relativeTo={event?.timestamp}
-                        />
-                      )}
-                      {entry.description}
+                    {showTimestamps && (
+                      <td>
+                        <Tooltip content={tooltip}>
+                          <Tag>
+                            <Box flex={{gap: 4, alignItems: 'center'}}>
+                              <Icon name={icon} />
+                              <Timestamp timestamp={{ms: Number(timestamp)}} />
+                            </Box>
+                          </Tag>
+                        </Tooltip>
+                      </td>
+                    )}
+                    <td>
+                      <Mono>
+                        <MetadataEntry entry={entry} expandSmallValues={true} />
+                      </Mono>
                     </td>
-                  )}
-                </tr>
-              ))}
+                    {showDescriptions && (
+                      <td style={{opacity: 0.7}}>
+                        {runId && (
+                          <ObservedInRun
+                            runId={runId}
+                            timestamp={timestamp}
+                            relativeTo={event?.timestamp}
+                          />
+                        )}
+                        {entry.description}
+                      </td>
+                    )}
+                  </tr>
+                ))}
             </tbody>
           </StyledTableWithHeader>
           {displayedCount < filteredRows.length ? (
