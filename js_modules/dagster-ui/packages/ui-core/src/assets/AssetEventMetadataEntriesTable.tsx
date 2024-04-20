@@ -296,22 +296,24 @@ export const StyledTableWithHeader = styled.table`
   border-spacing: 0;
   border-collapse: collapse;
 
-  thead tr td {
+  & > thead > tr > td {
     color: ${Colors.textLighter()};
     font-size: 12px;
     line-height: 16px;
   }
 
-  tr td:first-child {
-    max-width: 300px;
-    word-wrap: break-word;
-    width: 25%;
-  }
-  tr td {
+  & > tbody > tr > td,
+  & > thead > tr > td {
     border: 1px solid ${Colors.keylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     line-height: 20px;
     vertical-align: top;
+
+    &:first-child {
+      max-width: 300px;
+      word-wrap: break-word;
+      width: 25%;
+    }
   }
 `;

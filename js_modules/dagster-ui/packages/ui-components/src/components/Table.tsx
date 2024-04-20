@@ -27,7 +27,7 @@ export const Table = styled(HTMLTable)<TableProps>`
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: 400;
-    padding: ${({$compact}) => ($compact ? '0 8px' : ' 8px 12px')};
+    padding: ${({$compact}) => ($compact ? '4px 8px' : ' 8px 12px')};
     min-height: 32px;
     white-space: nowrap;
     vertical-align: bottom;
