@@ -1,4 +1,4 @@
-from dagster import GraphDefinition, NodeInvocation, op
+from dagster import GraphDefinition, IntMetadataValue, NodeInvocation, op
 
 
 def test_op_instance_tags():
@@ -25,3 +25,8 @@ def test_op_instance_tags():
 
     assert result.success
     assert called["yup"]
+
+
+def test_int_metadata_value():
+    assert IntMetadataValue(5).value == 5
+    assert IntMetadataValue(value=5).value == 5
