@@ -88,7 +88,9 @@ export const AssetEventMetadataEntriesTable = ({
   const allRows = useMemo(() => {
     const eventRows = event
       ? event.metadataEntries.map((entry) => ({
-          tooltip: `Materialized ${dayjs(Number(event.timestamp)).fromNow()} in run ${event.runId}`,
+          tooltip: `Materialized ${dayjs(Number(event.timestamp)).fromNow()}${
+            event.runId ? ` in run ${event.runId?.slice(0, 8)}` : ``
+          }`,
           icon: 'materialization' as const,
           timestamp: event.timestamp,
           runId: null,
@@ -98,7 +100,9 @@ export const AssetEventMetadataEntriesTable = ({
 
     const observationRows = (observations || []).flatMap((o) =>
       o.metadataEntries.map((entry) => ({
-        tooltip: `Observed ${dayjs(Number(o.timestamp)).fromNow()} in run ${o.runId}`,
+        tooltip: `Observed ${dayjs(Number(o.timestamp)).fromNow()}${
+          o.runId ? ` in run ${o.runId.slice(0, 8)}` : ``
+        }`,
         icon: 'observation' as const,
         timestamp: o.timestamp,
         runId: o.runId,
