@@ -672,11 +672,17 @@ T_PydanticModel = TypeVar("T_PydanticModel", bound=pydantic.BaseModel, default=p
 
 class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
     def object_as_mapping(self, value: T_PydanticModel) -> Mapping[str, Any]:
-        return value.__dict__
+        value_dict = value.__dict__
+
+        # respect aliases
+        return {
+            field.alias if field.alias else key: value_dict[key]
+            for key, field in self.klass.__fields__.items()
+        }
 
     @property
     def constructor_param_names(self) -> Sequence[str]:
-        return list(self.klass.__fields__.keys())
+        return [field.alias if field.alias else key for key, field in self.klass.__fields__.items()]
 
 
 class FieldSerializer(Serializer):

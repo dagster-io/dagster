@@ -25,6 +25,7 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 from dagster._serdes.utils import hash_str
+from pydantic import Field
 
 
 def test_deserialize_value_ok():
@@ -890,3 +891,20 @@ def test_object_migration():
     # can deserialize previous NamedTuples in to future pydantic models
     py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_m_env)
     assert py_dc_ent
+
+
+def test_pydantic_alias():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class SomeDagsterModel(DagsterModel):
+        unaliased_id: int = Field(..., alias="id_alias")
+        name: str
+
+    o = SomeDagsterModel(id_alias=5, name="fdsk")
+    ser_o = serialize_value(o, whitelist_map=test_env)
+    assert deserialize_value(ser_o, whitelist_map=test_env) == o
+
+    packed_o = pack_value(o, whitelist_map=test_env)
+    assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name": "fdsk"}
+    assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
