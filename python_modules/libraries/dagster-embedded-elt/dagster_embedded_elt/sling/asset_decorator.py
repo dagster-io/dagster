@@ -25,7 +25,6 @@ def get_streams_from_replication(
     default_config = replication_config.get("defaults", {})
     for stream, stream_config in replication_config.get("streams", {}).items():
         config = deep_merge_dicts(default_config, stream_config)
-    for stream, config in replication_config.get("streams", {}).items():
         if config and config.get("disabled", False):
             continue
         yield {"name": stream, "config": config}
