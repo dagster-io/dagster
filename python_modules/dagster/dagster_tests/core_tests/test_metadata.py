@@ -1,4 +1,4 @@
-from dagster import GraphDefinition, IntMetadataValue, NodeInvocation, op
+from dagster import GraphDefinition, IntMetadataValue, NodeInvocation, UrlMetadataValue, op
 
 
 def test_op_instance_tags():
@@ -30,3 +30,10 @@ def test_op_instance_tags():
 def test_int_metadata_value():
     assert IntMetadataValue(5).value == 5
     assert IntMetadataValue(value=5).value == 5
+
+
+def test_url_metadata_value():
+    url = "http://dagster.io"
+    assert UrlMetadataValue(url).value == url
+    assert UrlMetadataValue(url).url == url
+    assert UrlMetadataValue(url=url).value == url

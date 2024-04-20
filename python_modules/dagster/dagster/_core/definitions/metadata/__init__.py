@@ -643,31 +643,29 @@ class TextMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="UrlMetadataEntryData")
-class UrlMetadataValue(
-    NamedTuple(
-        "_UrlMetadataValue",
-        [
-            ("url", PublicAttr[Optional[str]]),
-        ],
-    ),
-    MetadataValue[str],
-):
+class UrlMetadataValue(DagsterModel, MetadataValue[str]):
     """Container class for URL metadata entry data.
 
     Args:
         url (Optional[str]): The URL as a string.
     """
 
-    def __new__(cls, url: Optional[str]):
-        return super(UrlMetadataValue, cls).__new__(
-            cls, check.opt_str_param(url, "url", default="")
-        )
+    url_inner: PublicAttr[Optional[str]] = Field(..., alias="url")
+
+    def __init__(self, url: Optional[str]):
+        super().__init__(url=url or "")
 
     @public
     @property
     def value(self) -> Optional[str]:
         """Optional[str]: The wrapped URL."""
-        return self.url
+        return self.url_inner
+
+    @public
+    @property
+    def url(self) -> Optional[str]:
+        """Optional[str]: The wrapped URL."""
+        return self.url_inner
 
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
