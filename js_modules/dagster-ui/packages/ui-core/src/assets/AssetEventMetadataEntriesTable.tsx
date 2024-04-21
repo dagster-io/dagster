@@ -40,6 +40,7 @@ type TableEvent = Pick<
 
 interface Props {
   assetKey?: AssetKey;
+  repoAddress: RepoAddress | null;
   event: TableEvent | null;
   observations?: TableEvent[] | null;
   definitionMetadata?: MetadataEntryFragment[];
@@ -52,7 +53,6 @@ interface Props {
   hideTableSchema?: boolean;
   displayedByDefault?: number;
   emptyState?: React.ReactNode;
-  repoAddress?: RepoAddress;
 }
 
 /**

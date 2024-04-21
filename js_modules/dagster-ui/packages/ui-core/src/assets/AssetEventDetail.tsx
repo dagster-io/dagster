@@ -197,7 +197,7 @@ export const AssetEventDetailEmpty = () => (
 
     <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
       <Subheading>Metadata</Subheading>
-      <AssetEventMetadataEntriesTable event={null} showDescriptions />
+      <AssetEventMetadataEntriesTable event={null} repoAddress={null} showDescriptions />
     </Box>
   </Box>
 );
