@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
+import React, {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
@@ -33,22 +33,29 @@ export const AssetsOverviewRoot = ({
 
   const params = useParams();
   const history = useHistory();
-  const currentPath: string[] = ((params as any)['0'] || '')
-    .split('/')
-    .filter((x: string) => x)
-    .map(decodeURIComponent);
+
+  const currentPathStr = (params as any)['0'];
+  const currentPath: string[] = useMemo(
+    () =>
+      (currentPathStr || '')
+        .split('/')
+        .filter((x: string) => x)
+        .map(decodeURIComponent),
+    [currentPathStr],
+  );
+  const assetKey = useMemo(() => ({path: currentPath}), [currentPath]);
 
   const queryResult = useQuery<AssetsOverviewRootQuery, AssetsOverviewRootQueryVariables>(
     ASSETS_OVERVIEW_ROOT_QUERY,
     {
       skip: currentPath.length === 0,
-      variables: {assetKey: {path: currentPath}},
+      variables: {assetKey},
     },
   );
 
   useDocumentTitle(
     currentPath && currentPath.length
-      ? `${documentTitlePrefix}: ${displayNameForAssetKey({path: currentPath})}`
+      ? `${documentTitlePrefix}: ${displayNameForAssetKey(assetKey)}`
       : documentTitlePrefix,
   );
 
@@ -72,7 +79,7 @@ export const AssetsOverviewRoot = ({
   if (queryResult.loading) {
     return (
       <Page>
-        <AssetPageHeader assetKey={{path: currentPath}} headerBreadcrumbs={headerBreadcrumbs} />
+        <AssetPageHeader assetKey={assetKey} headerBreadcrumbs={headerBreadcrumbs} />
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
@@ -90,7 +97,7 @@ export const AssetsOverviewRoot = ({
     return (
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <AssetPageHeader
-          assetKey={{path: currentPath}}
+          assetKey={assetKey}
           headerBreadcrumbs={headerBreadcrumbs}
           right={
             <Box flex={{gap: 12, alignItems: 'center'}}>
@@ -108,9 +115,7 @@ export const AssetsOverviewRoot = ({
     );
   }
 
-  return (
-    <AssetView assetKey={{path: currentPath}} trace={trace} headerBreadcrumbs={headerBreadcrumbs} />
-  );
+  return <AssetView assetKey={assetKey} trace={trace} headerBreadcrumbs={headerBreadcrumbs} />;
 };
 
 // Imported via React.lazy, which requires a default export.
