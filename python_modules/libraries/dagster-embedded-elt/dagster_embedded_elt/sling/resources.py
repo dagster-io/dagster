@@ -251,12 +251,16 @@ class SlingResource(ConfigurableResource):
             metadata_by_key = assets_def.metadata_by_key
             first_asset_metadata = next(iter(metadata_by_key.values()))
             replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
-            dagster_sling_translator: DagsterSlingTranslator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
+            dagster_sling_translator: DagsterSlingTranslator = first_asset_metadata.get(
+                METADATA_KEY_TRANSLATOR
+            )
             streams = get_streams_from_replication(replication_config)
             for asset_key in context.selected_asset_keys:
                 for stream in streams:
                     if dagster_sling_translator.get_asset_key(stream) == asset_key:
-                        context_streams.update(stream)
+                        name = stream["name"]
+                        config = stream["config"]
+                        context_streams.update({name: config})
                         break
 
         return context_streams
