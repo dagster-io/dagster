@@ -2,9 +2,9 @@ import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import styled, {keyframes} from 'styled-components';
 
+import {AssetKeyInput} from '../../graphql/types';
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
-import {AssetKeyInput} from '../../graphql/types';
 
 export type FolderNodeGroupType = {
   id: string;
