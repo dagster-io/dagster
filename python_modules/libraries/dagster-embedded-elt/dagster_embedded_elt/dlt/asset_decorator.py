@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 from dagster import (
     AssetsDefinition,
     AssetSpec,
+    _check as check,
     multi_asset,
 )
 from dlt.extract.source import DltSource
@@ -18,7 +19,7 @@ def dlt_assets(
     dlt_pipeline: Pipeline,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
-    dlt_dagster_translator: DagsterDltTranslator = DagsterDltTranslator(),
+    dlt_dagster_translator: Optional[DagsterDltTranslator] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
@@ -76,6 +77,13 @@ def dlt_assets(
                 yield from dlt.run(context=context)
 
     """
+    dlt_dagster_translator = (
+        check.opt_inst_param(
+            dlt_dagster_translator, "dagster_sling_translator", DagsterDltTranslator
+        )
+        or DagsterDltTranslator()
+    )
+
     return multi_asset(
         name=name,
         group_name=group_name,
