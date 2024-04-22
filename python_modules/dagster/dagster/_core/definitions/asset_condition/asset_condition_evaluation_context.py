@@ -18,6 +18,7 @@ from typing import (
 
 import pendulum
 
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_condition.asset_condition import (
     HistoricalAllPartitionsSubsetSentinel,
 )
@@ -70,6 +71,7 @@ class AssetConditionEvaluationContext:
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
     daemon_context: "AssetDaemonContext"
+    asset_graph_view: AssetGraphView
 
     evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
@@ -83,6 +85,7 @@ class AssetConditionEvaluationContext:
         condition: "AssetCondition",
         previous_evaluation_state: Optional["AssetConditionEvaluationState"],
         instance_queryer: CachingInstanceQueryer,
+        asset_graph_view: AssetGraphView,
         data_time_resolver: CachingDataTimeResolver,
         daemon_context: "AssetDaemonContext",
         evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
@@ -105,6 +108,7 @@ class AssetConditionEvaluationContext:
             ),
             data_time_resolver=data_time_resolver,
             instance_queryer=instance_queryer,
+            asset_graph_view=asset_graph_view,
             daemon_context=daemon_context,
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,

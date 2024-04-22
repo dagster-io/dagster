@@ -727,9 +727,20 @@ class TimeWindowPartitionsDefinition(
 
     @functools.lru_cache(maxsize=5)
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
+        """Returns the set of partition keys for this definition which fall within the given
+        TimeWindow. Will only return keys that exist within the start and end times of the definition.
+        """
         result: List[str] = []
-        for partition_time_window in self._iterate_time_windows(time_window.start):
-            if partition_time_window.start.timestamp() < time_window.end.timestamp():
+
+        # ensure that we don't start iterating before the start of the partitions definition
+        start_time = max(time_window.start, self.start)
+        # ensure that we don't iterate past the end of the partitions definition
+        end_timestamp = min(
+            time_window.end.timestamp(), self.end.timestamp() if self.end else float("inf")
+        )
+
+        for partition_time_window in self._iterate_time_windows(start_time):
+            if partition_time_window.start.timestamp() < end_timestamp:
                 result.append(
                     dst_safe_strftime(
                         partition_time_window.start, self.timezone, self.fmt, self.cron_schedule

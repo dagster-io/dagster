@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 
 import dagster._check as check
 from dagster import AssetKey
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_condition.asset_condition import (
     AndAssetCondition,
     AssetCondition,
@@ -59,6 +60,9 @@ class AssetConditionScenarioState(ScenarioState):
                 previous_evaluation_state=self.previous_evaluation_state,
                 instance_queryer=instance_queryer,
                 data_time_resolver=CachingDataTimeResolver(instance_queryer),
+                asset_graph_view=AssetGraphView.for_test(
+                    self.scenario_spec.defs, self.instance, instance_queryer.evaluation_time
+                ),
                 evaluation_state_by_key={},
                 expected_data_time_mapping={},
                 daemon_context=AssetDaemonContext(

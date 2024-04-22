@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -392,11 +392,30 @@ class AssetGraphView:
             ),
         )
 
-    def create_latest_time_window_slice(self, asset_key: AssetKey) -> AssetSlice:
+    def _get_time_partition_window(
+        self,
+        time_partitions_def: TimeWindowPartitionsDefinition,
+        timedelta: Optional[timedelta] = None,
+    ) -> Optional[TimeWindow]:
+        if timedelta is None:
+            return time_partitions_def.get_last_partition_window(self.effective_dt)
+        else:
+            return TimeWindow(
+                start=self.effective_dt - timedelta,
+                end=self.effective_dt,
+            )
+
+    def create_latest_time_window_slice(
+        self, asset_key: AssetKey, timedelta: Optional[timedelta] = None
+    ) -> AssetSlice:
         """If the underlying asset is time-window partitioned, this will return the latest complete
-        time window relative to the effective date. For example if it is daily partitioned starting
-        at midnight every day.  If the effective date is before the start of the partition definition, this will
-        return the empty time window (where both start and end are datetime.max).
+        time window relative to the effective date and the provided timedelta object. If no timedelta
+        if provided, it will return a slice corresponding to the latest existing partition key. If
+        a timedelta is provided, then it will return a slice corresponding to all partitions which
+        exist between the effective date and the effective date minus the timedelta.
+
+        If the effective date is before the start of the partition definition, this will return the
+        empty time window (where both start and end are datetime.max).
 
         If the underlying asset is unpartitioned or static partitioned and it is not empty,
         this will return a time window from the beginning of time to the effective date. If
@@ -412,7 +431,7 @@ class AssetGraphView:
             return self.get_asset_slice(asset_key)
 
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            time_window = partitions_def.get_last_partition_window(self.effective_dt)
+            time_window = self._get_time_partition_window(partitions_def, timedelta)
             return (
                 self.create_from_time_window(asset_key, time_window)
                 if time_window
@@ -424,10 +443,12 @@ class AssetGraphView:
                 return self.get_asset_slice(asset_key)
 
             multi_dim_info = self._get_multi_dim_info(asset_key)
-            last_tw = multi_dim_info.tw_partition_def.get_last_partition_window(self.effective_dt)
+            time_window = self._get_time_partition_window(
+                multi_dim_info.tw_partition_def, timedelta
+            )
             return (
-                self._build_multi_partition_slice(asset_key, multi_dim_info, last_tw)
-                if last_tw
+                self._build_multi_partition_slice(asset_key, multi_dim_info, time_window)
+                if time_window
                 else self.create_empty_slice(asset_key)
             )
 

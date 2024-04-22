@@ -351,6 +351,16 @@ class AssetCondition(ABC, DagsterModel):
         )
 
     @staticmethod
+    def partitions_within_latest_time_window(
+        *, delta_days=None, delta_hours=None, delta_minutes=None
+    ) -> "AssetCondition":
+        from .within_latest_time_window_condition import WithinLatestTimeWindowCondition
+
+        return WithinLatestTimeWindowCondition(
+            delta_days=delta_days, delta_hours=delta_hours, delta_minutes=delta_minutes
+        )
+
+    @staticmethod
     def parent_newer() -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition is newer than it.

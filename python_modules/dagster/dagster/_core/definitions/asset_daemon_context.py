@@ -22,8 +22,10 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -100,6 +102,17 @@ class AssetDaemonContext:
         self._instance_queryer = CachingInstanceQueryer(
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
+        stale_resolver = CachingStaleStatusResolver(instance=instance, asset_graph=asset_graph)
+        stale_resolver.instance_queryer  # noqa # must force the stale resolver to be constructed
+
+        self._asset_graph_view = AssetGraphView(
+            temporal_context=TemporalContext(
+                effective_dt=self.instance_queryer.evaluation_time,
+                last_event_id=None,
+            ),
+            stale_resolver=stale_resolver,
+        )
+
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._auto_materialize_asset_keys = auto_materialize_asset_keys or set()
@@ -131,6 +144,10 @@ class AssetDaemonContext:
     @property
     def asset_graph(self) -> BaseAssetGraph:
         return self.instance_queryer.asset_graph
+
+    @property
+    def asset_graph_view(self) -> AssetGraphView:
+        return self._asset_graph_view
 
     @property
     def auto_materialize_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -200,6 +217,7 @@ class AssetDaemonContext:
             previous_evaluation_state=asset_cursor,
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
+            asset_graph_view=self.asset_graph_view,
             data_time_resolver=self.data_time_resolver,
             daemon_context=self,
             evaluation_state_by_key=evaluation_state_by_key,
