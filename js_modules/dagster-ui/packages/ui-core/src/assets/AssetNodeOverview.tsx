@@ -433,6 +433,7 @@ export const AssetNodeOverview = ({
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
               assetHasDefinedPartitions={!!assetNode.partitionDefinition}
+              repoAddress={repoAddress}
               event={materialization || observation || null}
               emptyState={
                 <SectionEmptyState

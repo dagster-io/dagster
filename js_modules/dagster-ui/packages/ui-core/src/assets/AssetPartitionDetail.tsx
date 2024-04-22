@@ -368,6 +368,7 @@ export const AssetPartitionDetail = ({
         <AssetEventMetadataEntriesTable
           event={latest}
           observations={observationsAboutLatest}
+          repoAddress={repoAddress}
           showDescriptions
         />
       </Box>
