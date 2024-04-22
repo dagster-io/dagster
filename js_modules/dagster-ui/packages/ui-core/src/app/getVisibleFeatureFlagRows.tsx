@@ -25,7 +25,7 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagUseNewOverviewPage,
   },
   {
-    key: 'Use new settings page',
+    key: 'New navigation (experimental)',
     flagType: FeatureFlag.flagSettingsPage,
   },
 ];
