@@ -156,7 +156,10 @@ if TYPE_CHECKING:
         ExecutionStepSnap,
         JobSnapshot,
     )
-    from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
+    from dagster._core.storage.asset_check_execution_record import (
+        AssetCheckExecutionRecord,
+        AssetCheckInstanceSupport,
+    )
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
@@ -1989,6 +1992,14 @@ class DagsterInstance(DynamicPartitionsStore):
                 key, or `None` if the asset has not been materialized.
         """
         return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
+
+    @traced
+    def get_latest_asset_check_evaluation_record(
+        self, asset_check_key: "AssetCheckKey"
+    ) -> Optional["AssetCheckExecutionRecord"]:
+        return self._event_storage.get_latest_asset_check_execution_by_key([asset_check_key]).get(
+            asset_check_key
+        )
 
     @public
     @traced

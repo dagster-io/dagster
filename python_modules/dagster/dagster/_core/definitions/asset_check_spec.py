@@ -53,6 +53,11 @@ class AssetCheckKey(NamedTuple):
     def to_user_string(self) -> str:
         return f"{self.asset_key.to_user_string()}:{self.name}"
 
+    @staticmethod
+    def from_user_string(user_string: str) -> "AssetCheckKey":
+        asset_key_str, name = user_string.split(":")
+        return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
+
 
 class AssetCheckSpec(
     NamedTuple(
