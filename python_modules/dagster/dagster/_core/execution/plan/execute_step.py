@@ -471,44 +471,46 @@ def core_dagster_event_sequence_for_step(
     else:
         yield DagsterEvent.step_start_event(step_context)
 
-    inputs = {}
-
-    if step_context.is_sda_step:
-        step_context.fetch_external_input_asset_version_info()
-
-    for step_input in step_context.step.step_inputs:
-        input_def = step_context.op_def.input_def_named(step_input.name)
-        dagster_type = input_def.dagster_type
-
-        if dagster_type.is_nothing:
-            continue
-
-        for event_or_input_value in step_input.source.load_input_object(step_context, input_def):
-            if isinstance(event_or_input_value, DagsterEvent):
-                yield event_or_input_value
-            else:
-                check.invariant(step_input.name not in inputs)
-                inputs[step_input.name] = event_or_input_value
-
-    for input_name, input_value in inputs.items():
-        for evt in check.generator(
-            _type_checked_event_sequence_for_input(step_context, input_name, input_value)
-        ):
-            yield evt
-
-    # The core execution loop expects a compute generator in a specific format: a generator that
-    # takes a context and dictionary of inputs as input, yields output events. If an op definition
-    # was generated from the @op decorator, then compute_fn needs to be coerced
-    # into this format. If the op definition was created directly, then it is expected that the
-    # compute_fn is already in this format.
-    if isinstance(step_context.op_def.compute_fn, DecoratedOpFunction):
-        core_gen = create_op_compute_wrapper(step_context.op_def)
-    else:
-        core_gen = step_context.op_def.compute_fn
-
     with time_execution_scope() as timer_result, enter_execution_context(
         step_context
     ) as compute_context:
+        inputs = {}
+
+        if step_context.is_sda_step:
+            step_context.fetch_external_input_asset_version_info()
+
+        for step_input in step_context.step.step_inputs:
+            input_def = step_context.op_def.input_def_named(step_input.name)
+            dagster_type = input_def.dagster_type
+
+            if dagster_type.is_nothing:
+                continue
+
+            for event_or_input_value in step_input.source.load_input_object(
+                step_context, input_def
+            ):
+                if isinstance(event_or_input_value, DagsterEvent):
+                    yield event_or_input_value
+                else:
+                    check.invariant(step_input.name not in inputs)
+                    inputs[step_input.name] = event_or_input_value
+
+        for input_name, input_value in inputs.items():
+            for evt in check.generator(
+                _type_checked_event_sequence_for_input(step_context, input_name, input_value)
+            ):
+                yield evt
+
+        # The core execution loop expects a compute generator in a specific format: a generator that
+        # takes a context and dictionary of inputs as input, yields output events. If an op definition
+        # was generated from the @op decorator, then compute_fn needs to be coerced
+        # into this format. If the op definition was created directly, then it is expected that the
+        # compute_fn is already in this format.
+        if isinstance(step_context.op_def.compute_fn, DecoratedOpFunction):
+            core_gen = create_op_compute_wrapper(step_context.op_def)
+        else:
+            core_gen = step_context.op_def.compute_fn
+
         user_event_sequence = execute_core_compute(
             step_context,
             inputs,
