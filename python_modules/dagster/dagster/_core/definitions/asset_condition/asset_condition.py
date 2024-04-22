@@ -398,6 +398,17 @@ class AssetCondition(ABC, DagsterModel):
             )
         )
 
+    @staticmethod
+    def dep_updated_since_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when all parent asset
+        partitions have been updated more recently than the latest tick of the given cron schedule.
+        """
+        from .dep_scheduling_condition.dep_updated_since_cron import DepUpdatedSinceCronCondition
+
+        return DepUpdatedSinceCronCondition(
+            cron_schedule=cron_schedule, cron_timezone=cron_timezone
+        )
+
 
 @experimental
 @whitelist_for_serdes

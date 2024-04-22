@@ -111,9 +111,9 @@ class DepSchedulingCondition(_SchedulingCondition):
         candidate_asset_partition: AssetKeyPartitionKey,
     ) -> bool:
         """Returns if the condition is satisfied for the given candidate asset partition."""
+        dep_keys = self.get_dep_keys(context)
         return self.dep_selection_type.method(
-            self.evaluate_for_dep(context, dep, candidate_asset_partition)
-            for dep in self.get_dep_keys(context)
+            self.evaluate_for_dep(context, dep, candidate_asset_partition) for dep in dep_keys
         )
 
     def get_subset_to_evaluate(self, context: AssetConditionEvaluationContext) -> ValidAssetSubset:
