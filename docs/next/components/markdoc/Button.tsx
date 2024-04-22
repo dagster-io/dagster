@@ -10,7 +10,7 @@ export const Button = ({
   style?: 'primary' | 'secondary' | 'blurple';
 }) => {
   return (
-    <div className="h-full flex justify-center items-center">
+    <div className="flex justify-center items-center">
       <a
         href={link}
         className={cx(
