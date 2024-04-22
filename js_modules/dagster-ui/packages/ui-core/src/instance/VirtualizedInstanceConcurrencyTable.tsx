@@ -54,7 +54,7 @@ export const ConcurrencyTable = ({
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const concurrencyKey: string = concurrencyKeys[index]!;
+              const concurrencyKey = concurrencyKeys[index]!;
               return (
                 <ConcurrencyRow
                   key={key}
@@ -148,8 +148,8 @@ const ConcurrencyRow = ({
         </RowCell>
         <RowCell>
           {limit ? (
-            <Box>
-              <span style={{marginRight: 16}}>{limit.pendingSteps.length}</span>
+            <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
+              <span>{limit.pendingSteps.length}</span>
               <Tag intent="primary" interactive>
                 <ButtonLink
                   onClick={() => {
