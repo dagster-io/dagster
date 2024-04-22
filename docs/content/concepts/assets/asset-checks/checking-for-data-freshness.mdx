@@ -32,7 +32,6 @@ Freshness checks use an asset's latest update time to determine if it's overdue.
 
 - **For non-materializable assets**, which are assets kept up-to-date outside of Dagster, freshness checks depend on asset observations to report the time the asset was last updated. In this guide, we'll demonstrate how to use [observable assets and a schedule](#defining-freshness-checks-for-source-assets) to achieve this.
 
-
 ---
 
 ## Prerequisites
@@ -193,7 +192,7 @@ from dagster import (
     ScheduleDefinition,
     build_last_update_freshness_checks,
     define_asset_job,
-    multi_observable_source_asset,
+    multi_observable_asset,
 )
 
 TABLE_SCHEMA = "PUBLIC"
@@ -201,7 +200,7 @@ table_names = ["charges", "customers"]
 asset_specs = [AssetSpec(table_name) for table_name in table_names]
 
 
-@multi_observable_source_asset(specs=asset_specs)
+@multi_observable_asset(specs=asset_specs)
 def source_tables(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
         freshness_results = fetch_last_updated_timestamps(
@@ -359,13 +358,13 @@ height={1944}
 
 ## APIs in this guide
 
-| Name                                                                            | Description                                                                                                       |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset_check" decorator />                                     | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).            |
-| <PyObject object="build_freshness_checks_for_non_partitioned_assets" />         | A function that constructs a freshness check definition for each provided asset                                   |
-| <PyObject object="build_freshness_checks_for_time_window_partitioned_assets" /> | A function that constructs a freshness check definition for each provided time-window partitioned asset           |
-| <PyObject object="build_sensor_for_freshness_checks" />                         | Builds a sensor that triggers evaluation of freshness checks                                                      |
-| <PyObject object="ObserveResult" />                                             | An object representing a successful observation of an asset. Used with observable source assets to pass metadata. |
+| Name                                                                            | Description                                                                                                |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset_check" decorator />                                     | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).     |
+| <PyObject object="build_freshness_checks_for_non_partitioned_assets" />         | A function that constructs a freshness check definition for each provided asset                            |
+| <PyObject object="build_freshness_checks_for_time_window_partitioned_assets" /> | A function that constructs a freshness check definition for each provided time-window partitioned asset    |
+| <PyObject object="build_sensor_for_freshness_checks" />                         | Builds a sensor that triggers evaluation of freshness checks                                               |
+| <PyObject object="ObserveResult" />                                             | An object representing a successful observation of an asset. Used with observable assets to pass metadata. |
 
 ---
 

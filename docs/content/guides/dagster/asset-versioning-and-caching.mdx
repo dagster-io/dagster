@@ -253,13 +253,13 @@ If `versioned_number` had used a Dagster-generated data version, the data versio
 
 ---
 
-## Step four: data versions with source assets
+## Step four: data versions with observable assets
 
 In the real world, data pipelines depend on external upstream data. So far in this guide, we haven't used any external data; we've been substituting hardcoded data in the asset at the root of our graph and using a code version as a stand-in for the version of that data. We can do better than this.
 
-External data sources in Dagster are modeled by <PyObject object="SourceAsset" displayText="SourceAssets" />. We can add versioning to a `SourceAsset` by making it observable. An observable source asset has a user-defined function that computes and returns a data version.
+External data sources in Dagster can also be modeled by non-materializable assets. We can add versioning to a non-materializable asset by making it observable. An observable asset has a user-defined function that computes and returns a data version.
 
-Let's add an <PyObject object="observable_source_asset" decorator="true" /> called `input_number`. This will represent a file written by an external process upstream of our pipeline:
+Let's add an <PyObject object="observable_asset" decorator="true" /> called `input_number`. This will represent a file written by an external process upstream of our pipeline:
 
 ```python file=/guides/dagster/asset_versioning_and_caching/input_number.txt
 29034
@@ -275,7 +275,7 @@ from dagster import (
     Output,
     asset,
     file_relative_path,
-    observable_source_asset,
+    observable_asset,
 )
 
 
@@ -288,7 +288,7 @@ def sha256_digest_from_str(string: str) -> str:
 FILE_PATH = file_relative_path(__file__, "input_number.txt")
 
 
-@observable_source_asset
+@observable_asset
 def input_number():
     with open(FILE_PATH) as ff:
         return DataVersion(sha256_digest_from_str(ff.read()))
@@ -306,12 +306,12 @@ def multiplied_number(versioned_number):
     return versioned_number * 2
 ```
 
-Adding an observable source asset to an asset graph will cause a new button, **Observe sources**, to appear:
+Adding an observable asset to an asset graph will cause a new button, **Observe**, to appear:
 
-<!-- ![Source asset in graph](/images/guides/asset-versioning-and-caching/source-asset-in-graph.png) -->
+<!-- ![Observable asset in graph](/images/guides/asset-versioning-and-caching/source-asset-in-graph.png) -->
 
 <Image
-alt="Source asset in graph"
+alt="Observable asset in graph"
 src="/images/guides/asset-versioning-and-caching/source-asset-in-graph.png"
 width={2662}
 height={1618}
@@ -320,7 +320,7 @@ height={1618}
 Click this button to kick off a run that executes the observation function of `input_number`. Let's look at the entry in the asset catalog for `input_number`:
 
 <Image
-alt="Source asset in catalog"
+alt="Observable asset in catalog"
 src="/images/guides/asset-versioning-and-caching/source-asset-in-catalog.png"
 width={2662}
 height={1748}
@@ -328,7 +328,7 @@ height={1748}
 
 Take note of the `data_version` listed here that you computed.
 
-We also see that `versioned_number` and `multiplied_number` have labels indicating that they have new upstream dependencies (because we added the observable source asset to the graph). Click **Materialize all** to bring them up to date.
+We also see that `versioned_number` and `multiplied_number` have labels indicating that they have new upstream dependencies (because we added the observable asset to the graph). Click **Materialize all** to bring them up to date.
 
 Finally, let's manually alter the file to simulate the activity of an external process. Change the content of `input_number.txt`:
 
@@ -336,4 +336,4 @@ Finally, let's manually alter the file to simulate the activity of an external p
 15397
 ```
 
-If we click the **Observe Sources** button again, the downstream assets will again have labels indicating that upstream data has changed. The observation run generated a new data version for `input_number` because its content changed.
+If we click the **Observe** button again, the downstream assets will again have labels indicating that upstream data has changed. The observation run generated a new data version for `input_number` because its content changed.
