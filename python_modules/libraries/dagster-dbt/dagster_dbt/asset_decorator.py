@@ -62,7 +62,7 @@ def dbt_assets(
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
+    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -325,7 +325,7 @@ def dbt_assets(
                 yield from dbt.cli(dbt_build_args, context=context).stream()
 
     """
-    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
     manifest = validate_manifest(manifest)
 
     unique_ids = select_unique_ids_from_manifest(
