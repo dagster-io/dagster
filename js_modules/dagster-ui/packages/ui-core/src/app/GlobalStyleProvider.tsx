@@ -2,8 +2,8 @@ import {
   Colors,
   FontFamily,
   GlobalDialogStyle,
+  GlobalGeist,
   GlobalGeistMono,
-  GlobalInter,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
@@ -97,7 +97,7 @@ export const GlobalStyleProvider = () => {
 
   return (
     <>
-      <GlobalInter />
+      <GlobalGeist />
       <GlobalGeistMono />
       <GlobalStyle />
       <GlobalThemeStyle />
