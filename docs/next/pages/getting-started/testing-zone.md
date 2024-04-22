@@ -61,7 +61,7 @@ Code fences
 {% button link="https://dog.ceo/" style="blurple" %} Click Me! {% /button %}
 
 
-
+{% warning %}
 ### Don't format the buttons like this!
 ` {% button link="https://dog.ceo/" %}`
 
@@ -74,3 +74,20 @@ Or else they look like this.
 {% button link="https://dog.ceo/" %} 
 Click Me! 
 {% /button %}
+{% /warning %}
+
+## Crosses and Checks 
+A cross looks like this {% cross /%} and a check looks like this {% check /%}.
+
+Crosses and checks can also be used in lists:
+- {% check /%} Completed task
+- {% cross /%} Incomplete task
+- {% cross /%} Super Incomplete task 
+
+You can also put crosses and checks into headers 
+
+### This is a header with a check {% check /%}
+Which is pretty neat.
+
+### This is a header with a cross {% cross /%}
+Which is also pretty neat

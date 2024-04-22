@@ -1,5 +1,6 @@
 import {Button} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
+import {Check, Cross} from '../components/markdoc/CheckCross';
 
 export const note = {
   render: Note,
@@ -22,4 +23,14 @@ export const button = {
       matches: ['primary', 'secondary', 'blurple'],
     },
   },
+};
+
+export const check = {
+  render: Check,
+  selfClosing: true,
+};
+
+export const cross = {
+  render: Cross,
+  selfClosing: true,
 };
