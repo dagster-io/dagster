@@ -103,19 +103,17 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
+        kwargs = {
+            "url": self.postgres_url,
+            "isolation_level": "AUTOCOMMIT",
+            "pool_size": 1,
+            "pool_recycle": pool_recycle,
+        }
         existing_options = self._engine.url.query.get("options")
-        timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:
-            options = f"{timeout_option} {existing_options}"
-        else:
-            options = timeout_option
-        self._engine = create_engine(
-            self.postgres_url,
-            isolation_level="AUTOCOMMIT",
-            pool_size=1,
-            connect_args={"options": options},
-            pool_recycle=pool_recycle,
-        )
+            kwargs["connect_args"] = {"options": existing_options}
+        self._engine = create_engine(**kwargs)
+        self._engine.execute(pg_statement_timeout(statement_timeout))
 
     @property
     def inst_data(self) -> Optional[ConfigurableClassData]:

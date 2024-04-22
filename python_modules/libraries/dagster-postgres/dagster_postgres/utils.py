@@ -171,4 +171,4 @@ def create_pg_connection(
 
 def pg_statement_timeout(millis: int) -> str:
     check.int_param(millis, "millis")
-    return f"-c statement_timeout={millis}"
+    return f"SET statement_timeout = {millis};"
