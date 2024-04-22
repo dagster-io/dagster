@@ -21,6 +21,11 @@ from dagster._core.definitions.freshness_checks.time_partition import (
     build_time_partition_freshness_checks,
 )
 from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
+from dagster._core.definitions.metadata import (
+    FloatMetadataValue,
+    JsonMetadataValue,
+    TimestampMetadataValue,
+)
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import (
@@ -235,6 +240,18 @@ def test_result_cron_param(
             False,
             # We expected the asset to arrive between the end of the partition window (2021-01-02) and the current time (2021-01-03).
             description_match="Partition 2021-01-01 is overdue. Expected the partition to arrive within the last 1 day, 1 hour.",
+            metadata_match={
+                "dagster/freshness_params": JsonMetadataValue(
+                    {
+                        "timezone": "UTC",
+                        "deadline_cron": "0 9 * * *",
+                    }
+                ),
+                "dagster/expected_by_timestamp": TimestampMetadataValue(
+                    pendulum.datetime(2021, 1, 2, 9, 0, 0, tz="UTC").timestamp()
+                ),
+                "dagster/overdue_seconds": FloatMetadataValue(57600.0),
+            },
         )
 
         # Add an event for an old partition. Still fails
@@ -261,6 +278,17 @@ def test_result_cron_param(
             AssetCheckSeverity.WARN,
             True,
             description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 1 second, and it arrived 1 second ago.",
+            metadata_match={
+                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                    pendulum.datetime(2021, 1, 3, 9, 0, 0, tz="UTC").timestamp()
+                ),
+                "dagster/freshness_params": JsonMetadataValue(
+                    {"timezone": "UTC", "deadline_cron": "0 9 * * *"}
+                ),
+                "dagster/last_updated_timestamp": TimestampMetadataValue(
+                    freeze_datetime.subtract(seconds=1).timestamp()
+                ),
+            },
         )
 
     # Advance a full day. By now, we would expect a new event to have been added.
