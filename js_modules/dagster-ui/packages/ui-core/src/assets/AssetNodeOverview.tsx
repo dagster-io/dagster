@@ -1,5 +1,4 @@
 // eslint-disable-next-line no-restricted-imports
-import {Collapse} from '@blueprintjs/core';
 import {
   Body,
   Body2,
@@ -10,14 +9,11 @@ import {
   Colors,
   ConfigTypeSchema,
   Icon,
-  IconName,
   MiddleTruncate,
   NonIdealState,
   Skeleton,
-  Subtitle1,
   Subtitle2,
   Tag,
-  UnstyledButton,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import React, {useMemo, useState} from 'react';
@@ -30,6 +26,7 @@ import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
 import {AutomaterializePolicyTag} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {LargeCollapsibleSection} from './LargeCollapsibleSection';
 import {MaterializationTag} from './MaterializationTag';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {RecentUpdatesTimeline} from './RecentUpdatesTimeline';
@@ -56,7 +53,6 @@ import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -615,55 +611,6 @@ export const AssetNodeOverviewLoading = () => (
     }
   />
 );
-
-// BG: This should probably be moved to ui-components, but waiting to see if we
-// adopt it more broadly.
-
-const LargeCollapsibleSection = ({
-  header,
-  icon,
-  children,
-  right,
-  collapsedByDefault = false,
-}: {
-  header: string;
-  icon: IconName;
-  children: React.ReactNode;
-  right?: React.ReactNode;
-  collapsedByDefault?: boolean;
-}) => {
-  const [isCollapsed, setIsCollapsed] = useStateWithStorage<boolean>(
-    `collapsible-section-${header}`,
-    (storedValue) =>
-      storedValue === true || storedValue === false ? storedValue : collapsedByDefault,
-  );
-
-  return (
-    <Box flex={{direction: 'column'}}>
-      <UnstyledButton onClick={() => setIsCollapsed(!isCollapsed)}>
-        <Box
-          flex={{direction: 'row', alignItems: 'center', gap: 6}}
-          padding={{vertical: 12, right: 12}}
-          border="bottom"
-        >
-          <Icon size={20} name={icon} />
-          <Subtitle1 style={{flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
-            {header}
-          </Subtitle1>
-          {right}
-          <Icon
-            name="arrow_drop_down"
-            size={20}
-            style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
-          />
-        </Box>
-      </UnstyledButton>
-      <Collapse isOpen={!isCollapsed}>
-        <Box padding={{vertical: 12}}>{children}</Box>
-      </Collapse>
-    </Box>
-  );
-};
 
 const SectionEmptyState = ({
   title,

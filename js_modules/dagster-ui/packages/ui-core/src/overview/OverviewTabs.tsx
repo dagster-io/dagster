@@ -1,7 +1,9 @@
 import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
+import {useContext} from 'react';
 
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
+import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {TabLink} from '../ui/TabLink';
@@ -17,11 +19,15 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
 
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
+  const {enableAssetHealthOverviewPreview} = useContext(AssetFeatureContext);
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        <TabLink id="activity" title="Activity" to="/overview/activity" />
+        <TabLink id="activity" title="Timeline" to="/overview/activity" />
+        {enableAssetHealthOverviewPreview && (
+          <TabLink id="asset-health" title="Asset Health" to="/overview/asset-health" />
+        )}
         <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
         <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
         <TabLink id="sensors" title="Sensors" to="/overview/sensors" />

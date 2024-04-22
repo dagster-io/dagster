@@ -39,11 +39,11 @@ export const CollapsibleSection = ({
               name="arrow_drop_down"
               style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
             />
-            <div>{header}</div>
+            <div style={{userSelect: 'none'}}>{header}</div>
           </>
         ) : (
-          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <div>{header}</div>
+          <Box style={{flex: 1}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div style={{userSelect: 'none'}}>{header}</div>
             <Icon
               name="arrow_drop_down"
               style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}

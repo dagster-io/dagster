@@ -20,7 +20,7 @@ import {
 } from '../../graphql/types';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {TagActionsPopover} from '../../ui/TagActions';
+import {TagAction, TagActionsPopover} from '../../ui/TagActions';
 import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 const CheckRow = ({
@@ -221,6 +221,36 @@ export const AssetCheckStatusTag = ({
       ]}
     >
       {renderTag()}
+    </TagActionsPopover>
+  );
+};
+
+export const AssetCheckErrorsTag = ({
+  checks,
+  severity,
+}: {
+  checks: AssetCheckLiveFragment[];
+  severity: AssetCheckSeverity;
+}) => {
+  const actions: TagAction[] = [];
+  const execution = checks[0]?.executionForLatestMaterialization;
+  if (execution) {
+    actions.push({
+      label: 'View in run logs',
+      to: linkToRunEvent(
+        {id: execution.runId},
+        {stepKey: execution.stepKey, timestamp: execution.timestamp},
+      ),
+    });
+  }
+  return (
+    <TagActionsPopover data={{key: '', value: ''}} actions={actions}>
+      <Tag
+        icon={severity === AssetCheckSeverity.ERROR ? 'cancel' : 'warning_outline'}
+        intent={severity === AssetCheckSeverity.ERROR ? 'danger' : 'warning'}
+      >
+        {checks.length === 1 ? checks[0]!.name : `${checks.length} failed`}
+      </Tag>
     </TagActionsPopover>
   );
 };
