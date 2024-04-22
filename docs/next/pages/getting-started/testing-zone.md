@@ -27,3 +27,50 @@ Lists
 ```
 Code fences
 ```
+
+## Admonitions
+
+{% warning %} This is a warning {% /warning %}
+
+{% note %} This is a note {% /note %}
+
+## Buttons
+
+### Default
+
+`{% button link="https://dog.ceo/" %} Click Me! {% /button %}`
+
+{% button link="https://dog.ceo/" %} Click Me! {% /button %}
+
+### Primary
+
+`{% button link="https://dog.ceo/" style="primary" %} Click Me! {% /button %}`
+
+{% button link="https://dog.ceo/" style="primary" %} Click Me! {% /button %}
+
+### Secondary
+
+`{% button link="https://dog.ceo/" style="secondary" %} Click Me! {% /button %}`
+
+{% button link="https://dog.ceo/" style="secondary" %} Click Me! {% /button %}
+
+### Blurple
+
+` {% button link="https://dog.ceo/" style="blurple" %} Click Me! {% /button %} `
+
+{% button link="https://dog.ceo/" style="blurple" %} Click Me! {% /button %}
+
+
+
+### Don't format the buttons like this!
+` {% button link="https://dog.ceo/" %}`
+
+`Click Me!`
+
+`{% /button %}`
+
+Or else they look like this.
+
+{% button link="https://dog.ceo/" %} 
+Click Me! 
+{% /button %}
