@@ -513,7 +513,7 @@ const NowMarker = styled.div`
   border-radius: 1px;
   color: ${Colors.accentReversed()};
   cursor: default;
-  font-size: 12px;
+  font-size: 10px;
   line-height: 12px;
   margin-left: -12px;
   padding: 1px 4px;

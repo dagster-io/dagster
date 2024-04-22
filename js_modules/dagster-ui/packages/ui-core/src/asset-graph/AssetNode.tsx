@@ -218,8 +218,8 @@ export const AssetNodeMinimal = ({
               />
             ) : null}
             {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
-            <MinimalName style={{fontSize: 28}} $isSource={isSource}>
-              {withMiddleTruncation(displayName, {maxLength: 20})}
+            <MinimalName style={{fontSize: 24}} $isSource={isSource}>
+              {withMiddleTruncation(displayName, {maxLength: 18})}
             </MinimalName>
           </MinimalAssetNodeBox>
         </TooltipStyled>
