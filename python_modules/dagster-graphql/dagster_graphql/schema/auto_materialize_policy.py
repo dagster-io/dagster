@@ -58,6 +58,5 @@ class GrapheneAutoMaterializePolicy(graphene.ObjectType):
             )
         super().__init__(
             rules=rules,
-            policyType=auto_materialize_policy.policy_type,
             maxMaterializationsPerMinute=auto_materialize_policy.max_materializations_per_minute,
         )
