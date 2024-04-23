@@ -406,7 +406,8 @@ height={537}
 ## Step 5: Delete our database clone upon closing a branch
 
 <TabGroup>
-  <TabItem name="Using GitHub Actions">
+<TabItem name="Using GitHub Actions">
+
 Finally, we can add a step to our `branch_deployments.yml` file that queues a run of our `drop_prod_clone` job:
 
 ```yaml file=/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml
@@ -444,6 +445,7 @@ name: Dagster Branch Deployments
 
 </TabItem>
 <TabItem name="Using Gitlab CI/CD">
+
 Finally, we can add a step to our `.gitlab-ci.yml` file that queues a run of our `drop_prod_clone` job:
 
 ```yaml file=/guides/dagster/development_to_production/branch_deployments/drop_db_clone.gitlab-ci.yml
