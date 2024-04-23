@@ -162,10 +162,7 @@ export type SensorAssetSelectionQuery = {
                   definition: {
                     __typename: 'AssetNode';
                     id: string;
-                    autoMaterializePolicy: {
-                      __typename: 'AutoMaterializePolicy';
-                      policyType: Types.AutoMaterializePolicyType;
-                    } | null;
+                    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
                   } | null;
                 }>;
               }
@@ -198,10 +195,7 @@ export type SensorAssetSelectionFragment = {
           definition: {
             __typename: 'AssetNode';
             id: string;
-            autoMaterializePolicy: {
-              __typename: 'AutoMaterializePolicy';
-              policyType: Types.AutoMaterializePolicyType;
-            } | null;
+            autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
           } | null;
         }>;
       }

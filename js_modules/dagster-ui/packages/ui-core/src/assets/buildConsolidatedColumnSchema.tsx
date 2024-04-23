@@ -21,11 +21,11 @@ export function buildConsolidatedColumnSchema({
   definition: Pick<AssetDefinitionWithMetadata, 'metadataEntries'> | undefined;
   definitionLoadTimestamp: number | undefined;
 }) {
-  const materializationTableSchema = materialization?.metadataEntries.find(
+  const materializationTableSchema = materialization?.metadataEntries?.find(
     isCanonicalColumnSchemaEntry,
   );
   const materializationTimestamp = materialization ? Number(materialization.timestamp) : undefined;
-  const definitionTableSchema = definition?.metadataEntries.find(isCanonicalColumnSchemaEntry);
+  const definitionTableSchema = definition?.metadataEntries?.find(isCanonicalColumnSchemaEntry);
 
   let tableSchema = materializationTableSchema ?? definitionTableSchema;
   const tableSchemaLoadTimestamp = materializationTimestamp ?? definitionLoadTimestamp;
