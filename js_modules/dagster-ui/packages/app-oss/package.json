@@ -5,7 +5,7 @@
   "description": "Dagster UI OSS Application Shell",
   "license": "Apache-2.0",
   "dependencies": {
-    "@apollo/client": "3.7.13",
+    "@apollo/client": "3.9.11",
     "@blueprintjs/core": "^4.20.2",
     "@blueprintjs/popover2": "1.13.12",
     "@blueprintjs/select": "^4.9.12",
