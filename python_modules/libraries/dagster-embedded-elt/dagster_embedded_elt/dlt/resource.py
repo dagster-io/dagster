@@ -142,7 +142,7 @@ class DagsterDltResource(ConfigurableResource):
 
         asset_key_dlt_source_resource_mapping = {
             dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
-            for dlt_source_resource in dlt_source.resources.values()
+            for dlt_source_resource in dlt_source.selected_resources.values()
         }
 
         # Filter sources by asset key sub-selection

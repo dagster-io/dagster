@@ -16,7 +16,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
 import {RunStatusDot} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
@@ -30,6 +29,7 @@ import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
+import {SECTION_HEADER_HEIGHT} from '../workspace/TableSectionHeader';
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
@@ -513,7 +513,7 @@ const NowMarker = styled.div`
   border-radius: 1px;
   color: ${Colors.accentReversed()};
   cursor: default;
-  font-size: 12px;
+  font-size: 10px;
   line-height: 12px;
   margin-left: -12px;
   padding: 1px 4px;
@@ -735,7 +735,7 @@ const BatchCount = styled.div`
   color: ${Colors.accentReversed()};
   cursor: default;
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   user-select: none;
 `;

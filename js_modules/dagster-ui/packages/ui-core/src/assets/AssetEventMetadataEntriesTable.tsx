@@ -8,6 +8,7 @@ import {
   Mono,
   Tag,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
@@ -26,6 +27,8 @@ import {HIDDEN_METADATA_ENTRY_LABELS, MetadataEntry} from '../metadata/MetadataE
 import {isCanonicalColumnLineageEntry, isCanonicalColumnSchemaEntry} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {titleForRun} from '../runs/RunUtils';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 
 type TableEvent = Pick<
   AssetObservationFragment | AssetMaterializationFragment,
@@ -37,6 +40,7 @@ type TableEvent = Pick<
 
 interface Props {
   assetKey?: AssetKey;
+  repoAddress: RepoAddress | null;
   event: TableEvent | null;
   observations?: TableEvent[] | null;
   definitionMetadata?: MetadataEntryFragment[];
@@ -69,6 +73,7 @@ export const AssetEventMetadataEntriesTable = ({
   hideTableSchema,
   displayedByDefault = 100,
   emptyState,
+  repoAddress,
 }: Props) => {
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
@@ -83,6 +88,9 @@ export const AssetEventMetadataEntriesTable = ({
   const allRows = useMemo(() => {
     const eventRows = event
       ? event.metadataEntries.map((entry) => ({
+          tooltip: `Materialized ${dayjs(Number(event.timestamp)).fromNow()}${
+            event.runId ? ` in run ${event.runId?.slice(0, 8)}` : ``
+          }`,
           icon: 'materialization' as const,
           timestamp: event.timestamp,
           runId: null,
@@ -92,6 +100,9 @@ export const AssetEventMetadataEntriesTable = ({
 
     const observationRows = (observations || []).flatMap((o) =>
       o.metadataEntries.map((entry) => ({
+        tooltip: `Observed ${dayjs(Number(o.timestamp)).fromNow()}${
+          o.runId ? ` in run ${o.runId.slice(0, 8)}` : ``
+        }`,
         icon: 'observation' as const,
         timestamp: o.timestamp,
         runId: o.runId,
@@ -100,6 +111,9 @@ export const AssetEventMetadataEntriesTable = ({
     );
 
     const definitionRows = (definitionMetadata || []).map((entry) => ({
+      tooltip: `Loaded ${dayjs(definitionLoadTimestamp).fromNow()}${
+        repoAddress ? ` from ${repoAddressAsHumanString(repoAddress)}` : ''
+      }`,
       icon: 'asset' as const,
       timestamp: definitionLoadTimestamp,
       runId: null,
@@ -107,7 +121,7 @@ export const AssetEventMetadataEntriesTable = ({
     }));
 
     return uniqBy([...observationRows, ...eventRows, ...definitionRows], (e) => e.entry.label);
-  }, [definitionLoadTimestamp, definitionMetadata, event, observations]);
+  }, [definitionLoadTimestamp, definitionMetadata, event, observations, repoAddress]);
 
   const filteredRows = useMemo(
     () =>
@@ -186,40 +200,44 @@ export const AssetEventMetadataEntriesTable = ({
                   </td>
                 </tr>
               )}
-              {filteredRows.slice(0, displayedCount).map(({entry, timestamp, runId, icon}) => (
-                <tr key={`metadata-${timestamp}-${entry.label}`}>
-                  <td>
-                    <Mono>{entry.label}</Mono>
-                  </td>
-                  {showTimestamps && (
+              {filteredRows
+                .slice(0, displayedCount)
+                .map(({entry, timestamp, runId, icon, tooltip}) => (
+                  <tr key={`metadata-${timestamp}-${entry.label}`}>
                     <td>
-                      <Tag>
-                        <Box flex={{gap: 4, alignItems: 'center'}}>
-                          <Icon name={icon} />
-                          <Timestamp timestamp={{ms: Number(timestamp)}} />
-                        </Box>
-                      </Tag>
+                      <Mono>{entry.label}</Mono>
                     </td>
-                  )}
-                  <td>
-                    <Mono>
-                      <MetadataEntry entry={entry} expandSmallValues={true} />
-                    </Mono>
-                  </td>
-                  {showDescriptions && (
-                    <td style={{opacity: 0.7}}>
-                      {runId && (
-                        <ObservedInRun
-                          runId={runId}
-                          timestamp={timestamp}
-                          relativeTo={event?.timestamp}
-                        />
-                      )}
-                      {entry.description}
+                    {showTimestamps && (
+                      <td>
+                        <Tooltip content={tooltip}>
+                          <Tag>
+                            <Box flex={{gap: 4, alignItems: 'center'}}>
+                              <Icon name={icon} />
+                              <Timestamp timestamp={{ms: Number(timestamp)}} />
+                            </Box>
+                          </Tag>
+                        </Tooltip>
+                      </td>
+                    )}
+                    <td>
+                      <Mono>
+                        <MetadataEntry entry={entry} expandSmallValues={true} />
+                      </Mono>
                     </td>
-                  )}
-                </tr>
-              ))}
+                    {showDescriptions && (
+                      <td style={{opacity: 0.7}}>
+                        {runId && (
+                          <ObservedInRun
+                            runId={runId}
+                            timestamp={timestamp}
+                            relativeTo={event?.timestamp}
+                          />
+                        )}
+                        {entry.description}
+                      </td>
+                    )}
+                  </tr>
+                ))}
             </tbody>
           </StyledTableWithHeader>
           {displayedCount < filteredRows.length ? (
@@ -282,22 +300,24 @@ export const StyledTableWithHeader = styled.table`
   border-spacing: 0;
   border-collapse: collapse;
 
-  thead tr td {
+  & > thead > tr > td {
     color: ${Colors.textLighter()};
     font-size: 12px;
     line-height: 16px;
   }
 
-  tr td:first-child {
-    max-width: 300px;
-    word-wrap: break-word;
-    width: 25%;
-  }
-  tr td {
+  & > tbody > tr > td,
+  & > thead > tr > td {
     border: 1px solid ${Colors.keylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     line-height: 20px;
     vertical-align: top;
+
+    &:first-child {
+      max-width: 300px;
+      word-wrap: break-word;
+      width: 25%;
+    }
   }
 `;

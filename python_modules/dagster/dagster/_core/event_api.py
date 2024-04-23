@@ -8,7 +8,6 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
-from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
@@ -165,7 +164,6 @@ class EventRecordsFilter(
             ("after_timestamp", Optional[float]),
             ("before_timestamp", Optional[float]),
             ("storage_ids", Optional[Sequence[int]]),
-            ("tags", Optional[Mapping[str, Union[str, Sequence[str]]]]),
         ],
     )
 ):
@@ -202,16 +200,9 @@ class EventRecordsFilter(
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         storage_ids: Optional[Sequence[int]] = None,
-        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
         check.opt_sequence_param(asset_partitions, "asset_partitions", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)
-
-        tags = check.opt_mapping_param(tags, "tags", key_type=str)
-        if tags and event_type is not DagsterEventType.ASSET_MATERIALIZATION:
-            raise DagsterInvalidInvocationError(
-                "Can only filter by tags for asset materialization events"
-            )
 
         # type-ignores work around mypy type inference bug
         return super(EventRecordsFilter, cls).__new__(
@@ -228,7 +219,6 @@ class EventRecordsFilter(
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )
 
     @staticmethod
@@ -245,6 +235,10 @@ class EventRecordsFilter(
         before_cursor = cursor_obj.storage_id() if not ascending else None
         return before_cursor, after_cursor
 
+    @property
+    def tags(self) -> Optional[Mapping[str, Union[str, Sequence[str]]]]:
+        return None
+
 
 @whitelist_for_serdes
 class AssetRecordsFilter(
@@ -258,7 +252,6 @@ class AssetRecordsFilter(
             ("after_storage_id", PublicAttr[Optional[int]]),
             ("before_storage_id", PublicAttr[Optional[int]]),
             ("storage_ids", PublicAttr[Optional[Sequence[int]]]),
-            ("tags", PublicAttr[Optional[Mapping[str, Union[str, Sequence[str]]]]]),
         ],
     )
 ):
@@ -292,7 +285,6 @@ class AssetRecordsFilter(
         after_storage_id: Optional[int] = None,
         before_storage_id: Optional[int] = None,
         storage_ids: Optional[Sequence[int]] = None,
-        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
         return super(AssetRecordsFilter, cls).__new__(
             cls,
@@ -305,7 +297,6 @@ class AssetRecordsFilter(
             after_storage_id=check.opt_int_param(after_storage_id, "after_storage_id"),
             before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
-            tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str),
         )
 
     def to_event_records_filter(
@@ -336,8 +327,11 @@ class AssetRecordsFilter(
             after_timestamp=self.after_timestamp,
             before_timestamp=self.before_timestamp,
             storage_ids=self.storage_ids,
-            tags=self.tags,
         )
+
+    @property
+    def tags(self) -> Optional[Mapping[str, Union[str, Sequence[str]]]]:
+        return None
 
 
 @whitelist_for_serdes

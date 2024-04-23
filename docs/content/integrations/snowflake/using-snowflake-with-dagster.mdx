@@ -139,7 +139,7 @@ In this example, we've defined an asset that fetches the Iris dataset as a Panda
 
 If you have existing tables in Snowflake and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies.
 
-Making Dagster aware of these tables allows you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. For example:
+Making Dagster aware of these tables allows you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. For example:
 
 ```python file=/integrations/snowflake/source_asset.py
 from dagster import SourceAsset

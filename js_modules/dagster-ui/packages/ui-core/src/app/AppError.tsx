@@ -130,7 +130,6 @@ export const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps
           overflow: 'auto',
           color: Colors.textDefault(),
           fontFamily: FontFamily.monospace,
-          fontSize: '1em',
           whiteSpace: 'pre',
           overflowX: 'auto',
         }}

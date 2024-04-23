@@ -104,14 +104,14 @@ export const InsightsLineChart = (props: Props) => {
           borderColor:
             key === highlightKey || highlightKey === null
               ? rgbLineColor
-              : rgbLineColor.replace(/, 1\)/, ', 0.2)'),
+              : rgbLineColor.replace(/, ?1\)/, ', 0.2)'),
           fill: key === highlightKey,
           pointBackgroundColor: backgroundDefaultRGB,
           pointHoverBackgroundColor: backgroundDefaultHoverRGB,
           pointBorderColor:
             key === highlightKey || highlightKey === null
               ? rgbLineColor
-              : rgbLineColor.replace(/, 1\)/, ', 0.2)'),
+              : rgbLineColor.replace(/, ?1\)/, ', 0.2)'),
           pointRadius: key === highlightKey || highlightKey === null ? 3 : 0,
           tension: 0.1,
           // Render highlighted lines above non-highlighted lines, to avoid confusion at
@@ -157,13 +157,13 @@ export const InsightsLineChart = (props: Props) => {
         color: textLighterRGB,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
         color: textLighterRGB,
         font: {
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -193,13 +193,13 @@ export const InsightsLineChart = (props: Props) => {
         color: textLighterRGB,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
         color: textLighterRGB,
         font: {
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -266,7 +266,7 @@ export const InsightsLineChart = (props: Props) => {
           ticks: {
             color: rgbColors[Colors.textLighter()],
             font: {
-              size: 14,
+              size: 12,
               family: FontFamily.monospace,
             },
             callback(timestamp) {
@@ -330,7 +330,8 @@ export const InsightsLineChart = (props: Props) => {
 
 const buildFillGradient = (ctx: CanvasRenderingContext2D, lineColor: string) => {
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, lineColor.replace(/, 1\)/, ', 0.2)'));
-  gradient.addColorStop(1, lineColor.replace(/, 1\)/, ', 0.0)'));
+  gradient.addColorStop(0, lineColor.replace(/, ?1\)/, ', 0.2)'));
+  gradient.addColorStop(1, lineColor.replace(/, ?1\)/, ', 0.0)'));
+  console.log(lineColor);
   return gradient;
 };

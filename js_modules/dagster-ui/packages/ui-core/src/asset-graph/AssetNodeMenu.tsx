@@ -1,7 +1,7 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
+import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
@@ -11,13 +11,24 @@ import {
   AssetKeysDialogHeader,
 } from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetKeyInput} from '../graphql/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {MenuLink} from '../ui/MenuLink';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
+export type AssetNodeMenuNode = {
+  id: string;
+  assetKey: AssetKeyInput;
+  definition: {
+    isSource: boolean;
+    isExecutable: boolean;
+    hasMaterializePermission: boolean;
+  };
+};
+
 export type AssetNodeMenuProps = {
-  graphData: GraphData;
-  node: GraphNode;
+  node: AssetNodeMenuNode;
+  graphData?: GraphData;
   explorerPath?: ExplorerPath;
   onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
@@ -30,8 +41,8 @@ export const useAssetNodeMenu = ({
   explorerPath,
   onChangeExplorerPath,
 }: AssetNodeMenuProps) => {
-  const upstream = Object.keys(graphData.upstream[node.id] ?? {});
-  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
+  const upstream = graphData ? Object.keys(graphData.upstream[node.id] ?? {}) : [];
+  const downstream = graphData ? Object.keys(graphData.downstream[node.id] ?? {}) : [];
 
   const {executeItem, launchpadElement} = useExecuteAssetMenuItem(
     node.assetKey.path,
@@ -80,7 +91,7 @@ export const useAssetNodeMenu = ({
         <MenuDivider />
         {executeItem}
         {executeItem && (upstream.length || downstream.length) ? <MenuDivider /> : null}
-        {upstream.length ? (
+        {upstream.length && graphData ? (
           <MenuItem
             text={`View parents (${upstream.length})`}
             icon="list"
@@ -89,14 +100,14 @@ export const useAssetNodeMenu = ({
             }}
           />
         ) : null}
-        {upstream.length ? (
+        {upstream.length || !graphData ? (
           <MenuItem
             text="Show upstream graph"
             icon="arrow_back"
             onClick={() => showGraph(`*\"${tokenForAssetKey(node.assetKey)}\"`)}
           />
         ) : null}
-        {downstream.length ? (
+        {downstream.length || !graphData ? (
           <MenuItem
             text="Show downstream graph"
             icon="arrow_forward"
@@ -107,14 +118,16 @@ export const useAssetNodeMenu = ({
     ),
     dialog: (
       <>
-        <UpstreamDownstreamDialog
-          title="Parent assets"
-          graphData={graphData}
-          assetKeys={upstream}
-          isOpen={showParents}
-          setIsOpen={setShowParents}
-          selectNode={selectNode}
-        />
+        {graphData && (
+          <UpstreamDownstreamDialog
+            title="Parent assets"
+            graphData={graphData}
+            assetKeys={upstream}
+            isOpen={showParents}
+            setIsOpen={setShowParents}
+            selectNode={selectNode}
+          />
+        )}
         {launchpadElement}
       </>
     ),

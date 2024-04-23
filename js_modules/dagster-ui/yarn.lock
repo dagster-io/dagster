@@ -2398,7 +2398,7 @@ __metadata:
     react-router-dom: "npm:^5.3.0"
     react-router-dom-v5-compat: "npm:^6.3.0"
     styled-components: "npm:^5.3.3"
-    typescript: "npm:5.3.2"
+    typescript: "npm:5.4.5"
     uuid: "npm:^9.0.0"
     validator: "npm:^13.7.0"
     web-vitals: "npm:^2.1.3"
@@ -2438,7 +2438,7 @@ __metadata:
     jest: "npm:^29.7.0"
     prettier: "npm:^3.0.3"
     ts-jest: "npm:^29.1.1"
-    typescript: "npm:5.3.2"
+    typescript: "npm:5.4.5"
   peerDependencies:
     eslint: ^8.49.0
     prettier: ^3.0.3
@@ -2512,7 +2512,7 @@ __metadata:
     rollup-plugin-polyfill-node: "npm:^0.8.0"
     rollup-plugin-styles: "npm:^4.0.0"
     storybook: "npm:^7.4.5"
-    typescript: "npm:5.3.2"
+    typescript: "npm:5.4.5"
     webpack: "npm:^5.88.1"
     yaml: "npm:2.4.0"
   peerDependencies:
@@ -2553,6 +2553,7 @@ __metadata:
     "@graphql-eslint/eslint-plugin": "npm:^3.18.0"
     "@graphql-tools/mock": "npm:^8.5.0"
     "@graphql-tools/schema": "npm:^8.3.1"
+    "@koale/useworker": "npm:^4.0.2"
     "@mdx-js/react": "npm:^1.6.22"
     "@storybook/addon-actions": "npm:^7.4.5"
     "@storybook/addon-docs": "npm:^7.4.5"
@@ -2649,7 +2650,7 @@ __metadata:
     subscriptions-transport-ws: "npm:^0.9.15"
     ts-node: "npm:9.1.1"
     ts-prune: "npm:0.10.3"
-    typescript: "npm:5.3.2"
+    typescript: "npm:5.4.5"
     webpack: "npm:^5.88.1"
     worker-loader: "npm:^3.0.8"
     yaml: "npm:2.4.0"
@@ -4531,6 +4532,17 @@ __metadata:
   version: 1.1.4
   resolution: "@kamilkisiela/fast-url-parser@npm:1.1.4"
   checksum: 10/5b79438235a81817b02b96ddc581c996961cec5b40c7d6ebabd01ac6af8d4a35a43b9b263144af25386cef92c054c3ef6b1723b09eb0d8cf7b4053781a474c5f
+  languageName: node
+  linkType: hard
+
+"@koale/useworker@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "@koale/useworker@npm:4.0.2"
+  dependencies:
+    dequal: "npm:^1.0.0"
+  peerDependencies:
+    react: ^16.8.0
+  checksum: 10/b2daed6366a5bfa0e7499d35e2a85ed8b5053f394b7b18187d0f8a9f9fef22f0e151f5adfffb4f3f7b85e44c2f3256c601af54447460eaae656f6814013af871
   languageName: node
   linkType: hard
 
@@ -11885,6 +11897,13 @@ __metadata:
   version: 0.11.0
   resolution: "dependency-graph@npm:0.11.0"
   checksum: 10/6b5eb540303753037a613e781da4b81534d139cbabc92f342630ed622e3ef4c332fc40cf87823e1ec71a7aeb4b195f8d88d7e625931ce6007bf2bf09a8bfb01e
+  languageName: node
+  linkType: hard
+
+"dequal@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "dequal@npm:1.0.1"
+  checksum: 10/92a80c10ec52c256e306ef44c6640f0f2451edfba795b314aec90ee2770930f472c95e8f438b2fb80b0060033d0b5589f2ccb243c0ddd3e9a427c0faa92035c3
   languageName: node
   linkType: hard
 
@@ -23181,23 +23200,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:5.3.2":
-  version: 5.3.2
-  resolution: "typescript@npm:5.3.2"
+"typescript@npm:5.4.5":
+  version: 5.4.5
+  resolution: "typescript@npm:5.4.5"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/415e5fb6611f5713e460bad48039f00bcfdbde53a2f911727862d5aa9c5d5edd250059a419df382d8f031709e15a169c41eb62b6a401da5eec7ac0f4e359d6ac
+  checksum: 10/d04a9e27e6d83861f2126665aa8d84847e8ebabcea9125b9ebc30370b98cb38b5dff2508d74e2326a744938191a83a69aa9fddab41f193ffa43eabfdf3f190a5
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A5.3.2#optional!builtin<compat/typescript>":
-  version: 5.3.2
-  resolution: "typescript@patch:typescript@npm%3A5.3.2#optional!builtin<compat/typescript>::version=5.3.2&hash=e012d7"
+"typescript@patch:typescript@npm%3A5.4.5#optional!builtin<compat/typescript>":
+  version: 5.4.5
+  resolution: "typescript@patch:typescript@npm%3A5.4.5#optional!builtin<compat/typescript>::version=5.4.5&hash=5adc0c"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/1b45cdfb577a78ae7a9a9d0b77a7b772142cb98ba05e4e5aefba7044a028ded885bcecef63166407a5986645cea816fe4986894336aacd5e791796ea79a6a7ed
+  checksum: 10/760f7d92fb383dbf7dee2443bf902f4365db2117f96f875cf809167f6103d55064de973db9f78fe8f31ec08fff52b2c969aee0d310939c0a3798ec75d0bca2e1
   languageName: node
   linkType: hard
 

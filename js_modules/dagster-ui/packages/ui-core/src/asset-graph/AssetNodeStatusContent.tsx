@@ -49,7 +49,7 @@ const LOADING_STATUS_CONTENT = {
   ),
 };
 
-type StatusContentArgs = {
+export type StatusContentArgs = {
   assetKey: AssetKeyInput;
   definition: {opNames: string[]; isSource: boolean; isObservable: boolean};
   liveData: LiveDataForNode | null | undefined;

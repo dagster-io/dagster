@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Callable, Iterable, Optional, Sequence, Union, cast
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -10,23 +10,33 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import (
     multi_asset_check,
 )
-from dagster._core.definitions.metadata import FloatMetadataValue, TimestampMetadataValue
+from dagster._core.definitions.metadata import (
+    FloatMetadataValue,
+    JsonMetadataValue,
+    MetadataValue,
+    TimestampMetadataValue,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.execution.context.compute import (
     AssetCheckExecutionContext,
 )
-from dagster._utils.schedules import get_latest_completed_cron_tick, is_valid_cron_string
+from dagster._utils.schedules import (
+    get_latest_completed_cron_tick,
+    get_next_cron_tick,
+    is_valid_cron_string,
+)
 
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
 from .utils import (
-    DEADLINE_CRON_METADATA_KEY,
+    DEADLINE_CRON_PARAM_KEY,
+    EXPECTED_BY_TIMESTAMP_METADATA_KEY,
+    FRESH_UNTIL_METADATA_KEY,
     FRESHNESS_PARAMS_METADATA_KEY,
-    FRESHNESS_TIMEZONE_METADATA_KEY,
     LAST_UPDATED_TIMESTAMP_METADATA_KEY,
-    LOWER_BOUND_DELTA_METADATA_KEY,
-    OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY,
+    LOWER_BOUND_DELTA_PARAM_KEY,
     OVERDUE_SECONDS_METADATA_KEY,
+    TIMEZONE_PARAM_KEY,
     asset_to_keys_iterable,
     ensure_no_duplicate_assets,
     get_description_for_freshness_check_result,
@@ -44,11 +54,11 @@ def build_freshness_multi_check(
     lower_bound_delta: Optional[datetime.timedelta],
     asset_property_enforcement_lambda: Optional[Callable[[AssetsDefinition], bool]],
 ) -> AssetChecksDefinition:
-    params_metadata: dict[str, Any] = {FRESHNESS_TIMEZONE_METADATA_KEY: timezone}
+    params_metadata: dict[str, Any] = {TIMEZONE_PARAM_KEY: timezone}
     if deadline_cron:
-        params_metadata[DEADLINE_CRON_METADATA_KEY] = deadline_cron
+        params_metadata[DEADLINE_CRON_PARAM_KEY] = deadline_cron
     if lower_bound_delta:
-        params_metadata[LOWER_BOUND_DELTA_METADATA_KEY] = lower_bound_delta.total_seconds()
+        params_metadata[LOWER_BOUND_DELTA_PARAM_KEY] = lower_bound_delta.total_seconds()
 
     @multi_asset_check(
         specs=[
@@ -84,8 +94,12 @@ def build_freshness_multi_check(
                 "Expected partitions_def to be time-windowed.",
             )
             current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
-            latest_completed_cron_tick = get_latest_completed_cron_tick(
-                deadline_cron, current_time_in_freshness_tz, timezone
+            latest_completed_cron_tick = (
+                get_latest_completed_cron_tick(
+                    deadline_cron, current_time_in_freshness_tz, timezone
+                )
+                if deadline_cron
+                else None
             )
             deadline = check.inst_param(
                 latest_completed_cron_tick or current_time_in_freshness_tz,
@@ -123,16 +137,38 @@ def build_freshness_multi_check(
                 and update_timestamp >= last_update_time_lower_bound.timestamp()
             )
 
-            metadata = {
-                FRESHNESS_PARAMS_METADATA_KEY: params_metadata,
-                OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(
-                    deadline.timestamp()
-                ),
+            metadata: Dict[str, MetadataValue] = {
+                FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
             }
             if not passed:
                 metadata[OVERDUE_SECONDS_METADATA_KEY] = FloatMetadataValue(
                     current_timestamp - deadline.timestamp()
                 )
+                expected_by = (
+                    deadline.timestamp()
+                    if deadline_cron
+                    else update_timestamp + check.not_none(lower_bound_delta).total_seconds()
+                    if update_timestamp
+                    else None
+                )
+                if expected_by:
+                    metadata[EXPECTED_BY_TIMESTAMP_METADATA_KEY] = TimestampMetadataValue(
+                        expected_by
+                    )
+            else:
+                # If the asset is fresh, we can potentially determine when it has the possibility of becoming stale again.
+                # In the case of a deadline cron, this is the next cron tick after the current time.
+                # In the case of just a lower_bound_delta, this is the last update time plus the
+                # lower_bound_delta.
+                fresh_until = (
+                    check.not_none(
+                        get_next_cron_tick(deadline_cron, current_time_in_freshness_tz, timezone)
+                    ).timestamp()
+                    if deadline_cron
+                    else check.not_none(update_timestamp)
+                    + check.not_none(lower_bound_delta).total_seconds()
+                )
+                metadata[FRESH_UNTIL_METADATA_KEY] = TimestampMetadataValue(fresh_until)
             if update_timestamp:
                 metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY] = TimestampMetadataValue(
                     update_timestamp

@@ -881,6 +881,7 @@ def test_graph_asset_decorator_no_args():
 @ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 @ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `tags` .* is experimental")
 def test_graph_asset_with_args():
     @resource
     def foo_resource():
@@ -900,6 +901,7 @@ def test_graph_asset_with_args():
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
         resource_defs={"foo": foo_resource},
+        tags={"foo": "bar"},
     )
     def my_asset(x):
         return my_op2(my_op1(x))
@@ -909,6 +911,7 @@ def test_graph_asset_with_args():
     assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
+    assert my_asset.tags_by_key[AssetKey("my_asset")] == {"foo": "bar"}
     assert (
         my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
         == AutoMaterializePolicy.lazy()

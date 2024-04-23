@@ -672,11 +672,26 @@ T_PydanticModel = TypeVar("T_PydanticModel", bound=pydantic.BaseModel, default=p
 
 class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
     def object_as_mapping(self, value: T_PydanticModel) -> Mapping[str, Any]:
-        return value.__dict__
+        value_dict = value.__dict__
+
+        result = {}
+        for key, field in self.klass.__fields__.items():
+            if field.alias is None and (
+                getattr(field, "serialization_alias", None) is not None
+                or getattr(field, "validation_alias", None) is not None
+            ):
+                raise SerializationError(
+                    "Can't serialize pydantic models with serialization or validation aliases. Use "
+                    "the storage_field_names argument to whitelist_for_serdes instead."
+                )
+            result_key = field.alias if field.alias else key
+            result[result_key] = value_dict[key]
+
+        return result
 
     @property
     def constructor_param_names(self) -> Sequence[str]:
-        return list(self.klass.__fields__.keys())
+        return [field.alias or key for key, field in self.klass.__fields__.items()]
 
 
 class FieldSerializer(Serializer):

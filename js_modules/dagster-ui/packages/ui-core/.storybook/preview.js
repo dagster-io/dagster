@@ -1,7 +1,7 @@
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
+  GlobalGeist,
+  GlobalGeistMono,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -65,8 +65,8 @@ export const decorators = [
     <MemoryRouter>
       <GlobalStyle />
       <GlobalThemeStyle />
-      <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalGeist />
+      <GlobalGeistMono />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />

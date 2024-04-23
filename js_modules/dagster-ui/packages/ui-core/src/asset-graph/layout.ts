@@ -85,8 +85,8 @@ export const Config = {
     nodesep: 40,
     edgesep: 10,
     nodeHeight: 'auto',
-    groupPaddingTop: 40,
-    groupPaddingBottom: -20,
+    groupPaddingTop: 55,
+    groupPaddingBottom: -5,
     groupRendering: 'if-varied',
   },
 };

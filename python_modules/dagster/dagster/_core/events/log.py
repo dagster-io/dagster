@@ -2,6 +2,7 @@ from typing import Callable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.events import DagsterEvent, DagsterEventType
@@ -152,6 +153,18 @@ class EventLogEntry(
             observation = self.dagster_event.asset_observation_data.asset_observation
             if isinstance(observation, AssetObservation):
                 return observation
+
+        return None
+
+    @property
+    def asset_check_evaluation(self) -> Optional[AssetCheckEvaluation]:
+        if (
+            self.dagster_event
+            and self.dagster_event.event_type_value == DagsterEventType.ASSET_CHECK_EVALUATION
+        ):
+            evaluation = self.dagster_event.asset_check_evaluation_data
+            if isinstance(evaluation, AssetCheckEvaluation):
+                return evaluation
 
         return None
 

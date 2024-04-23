@@ -2,8 +2,8 @@ import {
   Colors,
   FontFamily,
   GlobalDialogStyle,
-  GlobalInconsolata,
-  GlobalInter,
+  GlobalGeist,
+  GlobalGeistMono,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
@@ -63,7 +63,7 @@ const GlobalStyle = createGlobalStyle`
 
   code, pre {
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
   }
 
   :focus-visible {
@@ -97,8 +97,8 @@ export const GlobalStyleProvider = () => {
 
   return (
     <>
-      <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalGeist />
+      <GlobalGeistMono />
       <GlobalStyle />
       <GlobalThemeStyle />
       <GlobalToasterStyle />

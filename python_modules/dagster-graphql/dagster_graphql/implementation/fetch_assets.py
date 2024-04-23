@@ -305,13 +305,11 @@ def get_asset_materializations(
     limit: Optional[int] = None,
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
-    tags: Optional[Mapping[str, str]] = None,
     storage_ids: Optional[Sequence[int]] = None,
 ) -> Sequence[EventLogEntry]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
-    check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
 
     instance = graphene_info.context.instance
     records_filter = AssetRecordsFilter(
@@ -319,7 +317,6 @@ def get_asset_materializations(
         asset_partitions=partitions,
         before_timestamp=before_timestamp,
         after_timestamp=after_timestamp,
-        tags=tags,
         storage_ids=storage_ids,
     )
     if limit is None:

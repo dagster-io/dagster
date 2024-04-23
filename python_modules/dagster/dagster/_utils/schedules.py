@@ -904,13 +904,21 @@ def schedule_execution_time_iterator(
 
 
 def get_latest_completed_cron_tick(
-    cron_string: Optional[str], current_time: datetime.datetime, timezone: Optional[str]
-) -> Optional[datetime.datetime]:
-    if not cron_string:
-        return None
-
+    cron_string: str, current_time: datetime.datetime, timezone: Optional[str]
+) -> datetime.datetime:
     cron_iter = reverse_cron_string_iterator(
         end_timestamp=current_time.timestamp(),
+        cron_string=cron_string,
+        execution_timezone=timezone,
+    )
+    return pendulum.instance(next(cron_iter))
+
+
+def get_next_cron_tick(
+    cron_string: str, current_time: datetime.datetime, timezone: Optional[str]
+) -> datetime.datetime:
+    cron_iter = cron_string_iterator(
+        start_timestamp=current_time.timestamp(),
         cron_string=cron_string,
         execution_timezone=timezone,
     )

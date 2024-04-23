@@ -97,6 +97,12 @@ class AssetEntry(
         return self.last_materialization_record.event_log_entry
 
     @property
+    def last_observation(self) -> Optional["EventLogEntry"]:
+        if self.last_observation_record is None:
+            return None
+        return self.last_observation_record.event_log_entry
+
+    @property
     def last_materialization_storage_id(self) -> Optional[int]:
         if self.last_materialization_record is None:
             return None

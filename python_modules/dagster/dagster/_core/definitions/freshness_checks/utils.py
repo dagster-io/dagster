@@ -13,15 +13,23 @@ from dagster._core.instance import DagsterInstance
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
 
+# Constants
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
 DEFAULT_FRESHNESS_TIMEZONE = "UTC"
-LOWER_BOUND_DELTA_METADATA_KEY = "dagster/lower_bound_delta"
-DEADLINE_CRON_METADATA_KEY = "dagster/deadline_cron"
-FRESHNESS_TIMEZONE_METADATA_KEY = "dagster/freshness_timezone"
+
+# Top-level metadata keys
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
-OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY = "dagster/overdue_deadline_timestamp"
+# When an asset is overdue, this represents the timestamp by which the asset was expected to arrive.
+EXPECTED_BY_TIMESTAMP_METADATA_KEY = "dagster/expected_by_timestamp"
+# When an asset is fresh, this represents the timestamp when the asset can become stale again.
+FRESH_UNTIL_METADATA_KEY = "dagster/fresh_until_timestamp"
 OVERDUE_SECONDS_METADATA_KEY = "dagster/overdue_seconds"
+
+# dagster/freshness_params inner keys
+LOWER_BOUND_DELTA_PARAM_KEY = "lower_bound_delta"
+DEADLINE_CRON_PARAM_KEY = "deadline_cron"
+TIMEZONE_PARAM_KEY = "timezone"
 
 
 def ensure_no_duplicate_assets(
@@ -157,15 +165,6 @@ def get_last_updated_timestamp(
             return None
     else:
         check.failed("Expected record to be an observation or materialization")
-
-
-def ensure_freshness_checks(checks: Sequence[AssetChecksDefinition]) -> None:
-    for check_def in checks:
-        for check_spec in check_def.check_specs:
-            check.invariant(
-                check_spec.metadata and check_spec.metadata.get(FRESHNESS_PARAMS_METADATA_KEY),
-                f"Asset check {check_spec.key} didn't have expected metadata. Please ensure that the asset check is a freshness check.",
-            )
 
 
 def get_description_for_freshness_check_result(

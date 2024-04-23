@@ -1,7 +1,6 @@
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
+  GlobalGeistMono,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -9,6 +8,7 @@ import {
   GlobalTooltipStyle,
   GlobalThemeStyle,
   Colors,
+  GlobalGeist,
 } from '../src';
 
 import {withThemeByClassName} from '@storybook/addon-themes';
@@ -68,8 +68,8 @@ export const decorators = [
     <MemoryRouter>
       <GlobalStyle />
       <GlobalThemeStyle />
-      <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalGeist />
+      <GlobalGeistMono />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />

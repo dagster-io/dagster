@@ -18,7 +18,7 @@ function init() {
     async (keys, client: ApolloClient<any>) => {
       const {data} = await client.query<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
         query: ASSETS_GRAPH_LIVE_QUERY,
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'no-cache',
         variables: {
           assetKeys: keys.map(tokenToAssetKey),
         },
