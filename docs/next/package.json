@@ -80,7 +80,7 @@
     "remark-cli": "^9.0.0",
     "remark-gfm": "^1.0.0",
     "remark-preset-prettier": "^0.4.1",
-    "typescript": "5.0.4"
+    "typescript": "5.4.5"
   },
   "packageManager": "yarn@3.6.4"
 }
