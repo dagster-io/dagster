@@ -7,7 +7,7 @@
   "scripts": {
     "find-dead-code": "yarn ts-prune --ignore 'types.ts|stories.ts|mocks.ts|__stories__|__fixtures__|__mocks__'",
     "jest": "jest",
-    "jest-all-silent": "yarn jest --silent --watchAll=false",
+    "jest-all-silent": "yarn jest --silent --watchAll=false --maxWorkers=50%",
     "jest:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
     "lint": "eslint src/ --ext=.tsx,.ts,.js,.graphql --fix -c .eslintrc.js",
     "lint:ci": "eslint src/ --ext=.tsx,.ts,.js,.graphql -c .eslintrc.js",
@@ -106,7 +106,7 @@
     "@storybook/react-webpack5": "^7.6.7",
     "@testing-library/dom": "^9.3.0",
     "@testing-library/jest-dom": "^6.1.5",
-    "@testing-library/react": "^14.0.0",
+    "@testing-library/react": "^15.0.3",
     "@testing-library/user-event": "^14.4.3",
     "@types/codemirror": "^5.60.5",
     "@types/color": "^3.0.2",
