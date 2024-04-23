@@ -51,6 +51,7 @@ from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
@@ -74,6 +75,9 @@ LAST_ITERATION_CHECKPOINT_INTERVAL_SECONDS = int(
 LAST_ITERATION_CHECKPOINT_JITTER_SECONDS = int(
     os.getenv("DAGSTER_SCHEDULE_CHECKPOINT_JITTER_SECONDS", "600")
 )
+
+# How long to wait if an error is raised in the SchedulerDaemon iteration
+ERROR_INTERVAL_TIME = 5
 
 
 class _ScheduleLaunchContext(AbstractContextManager):
@@ -220,27 +224,38 @@ def execute_scheduler_iteration_loop(
             start_time = pendulum.now("UTC").timestamp()
             end_datetime_utc = pendulum.now("UTC")
 
+            next_interval_time = _get_next_scheduler_iteration_time(start_time)
+
             yield SpanMarker.START_SPAN
-            yield from launch_scheduled_runs(
-                workspace_process_context,
-                logger,
-                end_datetime_utc=end_datetime_utc,
-                iteration_times=iteration_times,
-                threadpool_executor=threadpool_executor,
-                submit_threadpool_executor=submit_threadpool_executor,
-                scheduler_run_futures=scheduler_run_futures,
-                max_catchup_runs=max_catchup_runs,
-                max_tick_retries=max_tick_retries,
-            )
+            try:
+                yield from launch_scheduled_runs(
+                    workspace_process_context,
+                    logger,
+                    end_datetime_utc=end_datetime_utc,
+                    iteration_times=iteration_times,
+                    threadpool_executor=threadpool_executor,
+                    submit_threadpool_executor=submit_threadpool_executor,
+                    scheduler_run_futures=scheduler_run_futures,
+                    max_catchup_runs=max_catchup_runs,
+                    max_tick_retries=max_tick_retries,
+                )
+            except Exception:
+                error_info = DaemonErrorCapture.on_exception(
+                    exc_info=sys.exc_info(),
+                    logger=logger,
+                    log_message="ScheulderDaemon caught an error",
+                )
+                yield error_info
+                # Wait a few seconds after an error
+                next_interval_time = min(start_time + ERROR_INTERVAL_TIME, next_interval_time)
+
             yield SpanMarker.END_SPAN
             end_time = pendulum.now("UTC").timestamp()
 
-            next_minute_time = _get_next_scheduler_iteration_time(start_time)
-
-            if next_minute_time > end_time:
+            if next_interval_time > end_time:
                 # Sleep until the beginning of the next minute, plus a small epsilon to
                 # be sure that we're past the start of the minute
-                shutdown_event.wait(next_minute_time - end_time + 0.001)
+                shutdown_event.wait(next_interval_time - end_time + 0.001)
                 yield
 
 
