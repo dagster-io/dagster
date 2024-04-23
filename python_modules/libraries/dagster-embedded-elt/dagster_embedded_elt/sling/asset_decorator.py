@@ -5,6 +5,7 @@ from dagster import (
     AssetSpec,
     BackfillPolicy,
     PartitionsDefinition,
+    _check as check,
     multi_asset,
 )
 from dagster._utils.security import non_secure_md5_hash_str
@@ -29,7 +30,7 @@ def get_streams_from_replication(
 def sling_assets(
     *,
     replication_config: SlingReplicationParam,
-    dagster_sling_translator: DagsterSlingTranslator = DagsterSlingTranslator(),
+    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
     name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -79,6 +80,13 @@ def sling_assets(
     replication_config = validate_replication(replication_config)
     streams = get_streams_from_replication(replication_config)
     code_version = non_secure_md5_hash_str(str(replication_config).encode())
+
+    dagster_sling_translator = (
+        check.opt_inst_param(
+            dagster_sling_translator, "dagster_sling_translator", DagsterSlingTranslator
+        )
+        or DagsterSlingTranslator()
+    )
 
     return multi_asset(
         name=name,
