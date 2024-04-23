@@ -63,7 +63,7 @@ export function useReportEventsModal(asset: Asset | null, onEventReported: () =>
       asset={asset}
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      repoAddress={buildRepoAddress(asset.repository.name, asset.repository.location.name)}
+      repoAddress={buildRepoAddress(asset.repository?.name, asset.repository?.location?.name)}
       onEventReported={onEventReported}
     />
   ) : undefined;

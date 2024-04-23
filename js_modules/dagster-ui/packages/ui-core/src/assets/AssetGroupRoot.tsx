@@ -150,7 +150,7 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
     assetNodes(group: $selector) {
       id
       autoMaterializePolicy {
-        policyType
+        __typename
       }
     }
   }

@@ -214,7 +214,7 @@ export const JOB_METADATA_QUERY = gql`
   fragment JobMetadataAssetNode on AssetNode {
     id
     autoMaterializePolicy {
-      policyType
+      __typename
     }
     assetKey {
       path

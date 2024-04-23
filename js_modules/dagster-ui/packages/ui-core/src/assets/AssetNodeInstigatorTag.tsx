@@ -11,10 +11,11 @@ import {RepoAddress} from '../workspace/types';
 
 export const insitigatorsByType = (assetNode: AssetNodeInstigatorsFragment) => {
   const instigators = assetNode.targetingInstigators;
-  const schedules = instigators.filter(
+  console.log({instigators});
+  const schedules = instigators?.filter(
     (instigator): instigator is ScheduleSwitchFragment => instigator.__typename === 'Schedule',
   );
-  const sensors = instigators.filter(
+  const sensors = instigators?.filter(
     (instigator): instigator is SensorSwitchFragment => instigator.__typename === 'Sensor',
   );
 
