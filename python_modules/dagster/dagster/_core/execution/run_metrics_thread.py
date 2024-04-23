@@ -104,7 +104,7 @@ def _get_python_runtime_metrics() -> Dict[str, float]:
     return {**stats_dict, "python.runtime.gc_freeze_count": gc.get_freeze_count()}
 
 
-def _report_run_metrics_graphql(
+def _report_run_metrics(
     instance: DagsterInstance,
     dagster_run: DagsterRun,
     metrics: Dict[str, float],
@@ -170,7 +170,7 @@ def _capture_metrics(
                 metrics.update(python_metrics)
 
             if len(metrics) > 0:
-                _report_run_metrics_graphql(
+                _report_run_metrics(
                     instance,
                     dagster_run=dagster_run,
                     metrics=metrics,
