@@ -7,12 +7,11 @@ from dagster import (
     PartitionsDefinition,
     multi_asset,
 )
+from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
-from dagster._utils.merger import deep_merge_dicts
-
 
 METADATA_KEY_TRANSLATOR = "dagster_embedded_elt/dagster_sling_translator"
 METADATA_KEY_REPLICATION_CONFIG = "dagster_embedded_elt/sling_replication_config"
@@ -22,12 +21,27 @@ def get_streams_from_replication(
     replication_config: Mapping[str, Any],
 ) -> Iterable[Mapping[str, Any]]:
     """Returns a list of streams and their configs from a Sling replication config."""
-    default_config = replication_config.get("defaults", {})
-    for stream, stream_config in replication_config.get("streams", {}).items():
-        config = deep_merge_dicts(default_config, stream_config)
+    for stream, config in replication_config.get("streams", {}).items():
         if config and config.get("disabled", False):
             continue
         yield {"name": stream, "config": config}
+
+
+def streams_with_default_dagster_meta(
+    streams: Iterable[Mapping[str, Any]], replication_config: Mapping[str, Any]
+) -> Iterable[Mapping[str, Any]]:
+    """Ensures dagster meta configs in the `defaults` block of the replication_config are passed to
+    the assets definition object.
+    """
+    default_dagster_meta = replication_config.get("defaults", {}).get("meta", {}).get("dagster", {})
+    if not default_dagster_meta:
+        yield from streams
+    else:
+        for stream in streams:
+            name = stream["name"]
+            config = vars(stream["config"])
+            config["meta"] = deep_merge_dicts(default_dagster_meta, config["meta"])
+            yield {"name": name, "config": config}
 
 
 def sling_assets(
@@ -81,7 +95,11 @@ def sling_assets(
                 yield from sling.replicate(context=context)
     """
     replication_config = validate_replication(replication_config)
-    streams = get_streams_from_replication(replication_config)
+
+    raw_streams = get_streams_from_replication(replication_config)
+
+    streams = streams_with_default_dagster_meta(raw_streams, replication_config)
+
     code_version = non_secure_md5_hash_str(str(replication_config).encode())
 
     return multi_asset(

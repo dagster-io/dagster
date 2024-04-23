@@ -30,6 +30,7 @@ from dagster_embedded_elt.sling.asset_decorator import (
     METADATA_KEY_REPLICATION_CONFIG,
     METADATA_KEY_TRANSLATOR,
     get_streams_from_replication,
+    streams_with_default_dagster_meta,
 )
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
@@ -229,32 +230,50 @@ class SlingResource(ConfigurableResource):
     _stdout: List[str] = []
 
     @staticmethod
-    def _get_replication_streams_for_context(context: AssetExecutionContext) -> Dict[str, Any]:
+    def _get_replication_streams_for_context(
+        context: Union[OpExecutionContext, AssetExecutionContext],
+    ) -> Dict[str, Any]:
+        """Computes the sling replication streams config for a given execution context with an
+        assets def, possibly involving a subset selection of sling assets.
         """
-        Computes the sling replication streams config for a given execution context, possibly
-        involving a subset selection of sling assets.
-        """
+        if not context.has_assets_def:
+            no_assets_def_message = """
+            The current execution context has no backing AssetsDefinition object. Therefore,  no
+            sling assets subsetting will be performed...
+            """
+            logger.warn(no_assets_def_message)
+            return {}
         context_streams = {}
         assets_def = context.assets_def
         run_config = context.run_config
         if run_config:  # triggered via sensor
-            assets_op_config = run_config["ops"][assets_def.op.name]["config"]
-            context_streams = assets_op_config.get("context_streams", {})
+            ops_with_config = run_config.get("ops", {})
+            assets_op = vars(ops_with_config).get(assets_def.op.name, {})
+            assets_op_config = vars(assets_op).get("config", {})
+            context_streams = vars(assets_op_config).get("context_streams", {})
             if not context_streams:
-                warn_message = f"""
+                no_context_streams_config_message = f"""
                 It was expected that your `run_config` would provide a `context_streams` config for
                 the op {assets_def.op.name}. Instead, the received value for this op config was
-                {assets_op_config}. Your sling replication won't materialize any asset...
+                {assets_op_config}.
+
+                NO ASSET SUBSETTING WILL BE PERFORMED!
+
+                If that was your intention, you can safely ignore this message. Otherwise, provide
+                the mentioned `context_streams` config for executing only your desired asset subset.
                 """
-                logger.warn(warn_message)
+                logger.warn(no_context_streams_config_message)
         else:
             metadata_by_key = assets_def.metadata_by_key
             first_asset_metadata = next(iter(metadata_by_key.values()))
-            replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
-            dagster_sling_translator: DagsterSlingTranslator = first_asset_metadata.get(
-                METADATA_KEY_TRANSLATOR
+            replication_config: dict[str, Any] = first_asset_metadata.get(
+                METADATA_KEY_REPLICATION_CONFIG, {}
             )
-            streams = get_streams_from_replication(replication_config)
+            dagster_sling_translator: DagsterSlingTranslator = first_asset_metadata.get(
+                METADATA_KEY_TRANSLATOR, DagsterSlingTranslator()
+            )
+            raw_streams = get_streams_from_replication(replication_config)
+            streams = streams_with_default_dagster_meta(raw_streams, replication_config)
             for asset_key in context.selected_asset_keys:
                 for stream in streams:
                     if dagster_sling_translator.get_asset_key(stream) == asset_key:
@@ -262,7 +281,7 @@ class SlingResource(ConfigurableResource):
                         config = stream["config"]
                         context_streams.update({name: config})
                         break
-
+        context.log.info(f"Effective streams for current execution context: {context_streams}")
         return context_streams
 
     @classmethod
@@ -432,8 +451,11 @@ class SlingResource(ConfigurableResource):
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
         dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
 
-        replication_config = validate_replication(replication_config)
-        replication_config["streams"] = self._get_replication_streams_for_context(context)
+        # convert to dict to enable updating the index
+        replication_config = dict(validate_replication(replication_config))
+        context_streams = self._get_replication_streams_for_context(context)
+        if context_streams:
+            replication_config.update({"streams": context_streams})
         stream_definition = get_streams_from_replication(replication_config)
 
         with self._setup_config():
