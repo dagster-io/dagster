@@ -2,6 +2,7 @@ import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
@@ -17,6 +18,8 @@ interface Props<TData> {
 export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 
+  const {flagSettingsPage} = useFeatureFlags();
+
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   const {enableAssetHealthOverviewPreview} = useContext(AssetFeatureContext);
@@ -26,12 +29,15 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
       <Tabs selectedTabId={tab}>
         <TabLink id="activity" title="Timeline" to="/overview/activity" />
         {enableAssetHealthOverviewPreview && (
-          <TabLink id="asset-health" title="Asset Health" to="/overview/asset-health" />
+          <TabLink id="asset-health" title="Asset health" to="/overview/asset-health" />
         )}
-        <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
-        <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
-        <TabLink id="sensors" title="Sensors" to="/overview/sensors" />
-        {automaterializeSensorsFlagState === 'has-global-amp' ? (
+        {/* These are flagged individually because the links must be children of `Tabs`: */}
+        {flagSettingsPage ? null : <TabLink id="jobs" title="Jobs" to="/overview/jobs" />}
+        {flagSettingsPage ? null : (
+          <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
+        )}
+        {flagSettingsPage ? null : <TabLink id="sensors" title="Sensors" to="/overview/sensors" />}
+        {!flagSettingsPage && automaterializeSensorsFlagState === 'has-global-amp' ? (
           <TabLink
             id="amp"
             title={
@@ -58,7 +64,9 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
-        <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
+        {flagSettingsPage ? null : (
+          <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
+        )}
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>
