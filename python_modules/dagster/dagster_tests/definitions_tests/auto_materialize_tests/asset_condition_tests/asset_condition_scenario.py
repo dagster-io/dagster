@@ -18,7 +18,6 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..scenario_state import ScenarioState
 
@@ -50,30 +49,29 @@ class AssetConditionScenarioState(ScenarioState):
         )
 
         with pendulum_freeze_time(self.current_time):
-            instance_queryer = CachingInstanceQueryer(
-                instance=self.instance, asset_graph=self.asset_graph
+            daemon_context = AssetDaemonContext(
+                evaluation_id=1,
+                instance=self.instance,
+                asset_graph=self.asset_graph,
+                cursor=AssetDaemonCursor.empty(),
+                materialize_run_tags={},
+                observe_run_tags={},
+                auto_observe_asset_keys=None,
+                auto_materialize_asset_keys=None,
+                respect_materialization_data_versions=False,
+                logger=self.logger,
+                evaluation_time=self.current_time,
             )
             context = AssetConditionEvaluationContext.create(
                 asset_key=asset_key,
                 condition=asset_condition,
                 previous_evaluation_state=self.previous_evaluation_state,
-                instance_queryer=instance_queryer,
-                data_time_resolver=CachingDataTimeResolver(instance_queryer),
+                instance_queryer=daemon_context.instance_queryer,
+                asset_graph_view=daemon_context.asset_graph_view,
+                data_time_resolver=CachingDataTimeResolver(daemon_context.instance_queryer),
                 evaluation_state_by_key={},
                 expected_data_time_mapping={},
-                daemon_context=AssetDaemonContext(
-                    evaluation_id=1,
-                    instance=self.instance,
-                    asset_graph=self.asset_graph,
-                    cursor=AssetDaemonCursor.empty(),
-                    materialize_run_tags={},
-                    observe_run_tags={},
-                    auto_observe_asset_keys=None,
-                    auto_materialize_asset_keys=None,
-                    respect_materialization_data_versions=False,
-                    logger=self.logger,
-                    evaluation_time=self.current_time,
-                ),
+                daemon_context=daemon_context,
             )
 
             full_result = asset_condition.evaluate(context)

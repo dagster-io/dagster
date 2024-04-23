@@ -398,6 +398,15 @@ class AssetCondition(ABC, DagsterModel):
             )
         )
 
+    @staticmethod
+    def latest_time_partition() -> "AssetCondition":
+        """Returns an AssetCondition that is true for the latest time partition of a time-partitioned
+        asset, or all partitions if the asset is not time-partitioned.
+        """
+        from .latest_time_partition import LatestTimePartitionCondition
+
+        return LatestTimePartitionCondition()
+
 
 @experimental
 @whitelist_for_serdes
