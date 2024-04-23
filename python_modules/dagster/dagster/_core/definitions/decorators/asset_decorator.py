@@ -1071,6 +1071,7 @@ def graph_asset(
 
 
 @experimental_param(param="tags")
+@experimental_param(param="owners")
 def graph_asset(
     compose_fn: Optional[Callable] = None,
     *,
@@ -1083,6 +1084,7 @@ def graph_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     metadata: Optional[RawMetadataMapping] = None,
     tags: Optional[Mapping[str, str]] = None,
+    owners: Optional[Sequence[str]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -1129,6 +1131,9 @@ def graph_asset(
             the asset.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
         freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
             intended to be updated with respect to its root data.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): The AutoMaterializePolicy to use
@@ -1163,6 +1168,7 @@ def graph_asset(
             partitions_def=partitions_def,
             metadata=metadata,
             tags=tags,
+            owners=owners,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
@@ -1182,6 +1188,7 @@ def graph_asset(
             partitions_def=partitions_def,
             metadata=metadata,
             tags=tags,
+            owners=owners,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
@@ -1203,6 +1210,7 @@ def graph_asset_no_defaults(
     partitions_def: Optional[PartitionsDefinition],
     metadata: Optional[RawMetadataMapping],
     tags: Optional[Mapping[str, str]],
+    owners: Optional[Sequence[str]],
     freshness_policy: Optional[FreshnessPolicy],
     auto_materialize_policy: Optional[AutoMaterializePolicy],
     backfill_policy: Optional[BackfillPolicy],
@@ -1265,6 +1273,7 @@ def graph_asset_no_defaults(
         descriptions_by_output_name={"result": description} if description else None,
         resource_defs=resource_defs,
         check_specs=check_specs,
+        owners_by_key={out_asset_key: owners} if owners else None,
     )
 
 
