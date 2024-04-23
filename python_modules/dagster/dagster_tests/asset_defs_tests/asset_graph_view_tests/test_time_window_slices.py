@@ -26,9 +26,10 @@ def _tw(asset_slice: AssetSlice) -> TimeWindow:
     return next(iter(tws))
 
 
-def test_latest_time_slice_no_end() -> None:
+def test_time_slice_no_end() -> None:
     # starts at 2020-02-01
-    no_end_daily = DailyPartitionsDefinition(pendulum.datetime(2020, 2, 1))
+    dt2_1 = pendulum.datetime(2020, 2, 1)
+    no_end_daily = DailyPartitionsDefinition(dt2_1)
 
     @asset(partitions_def=no_end_daily)
     def daily() -> None: ...
@@ -44,17 +45,18 @@ def test_latest_time_slice_no_end() -> None:
 
     # effective date is 2020-2-4
 
-    asset_graph_view_on_2_4 = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 2, 4)
-    )
+    dt2_4 = pendulum.datetime(2020, 2, 4)
+    asset_graph_view_on_2_4 = AssetGraphView.for_test(defs, instance, effective_dt=dt2_4)
 
     assert asset_graph_view_on_2_4.get_asset_slice(daily.key).compute_partition_keys() == set(
         partition_key_list
     )
-
     assert asset_graph_view_on_2_4.create_latest_time_window_slice(
         daily.key
     ).compute_partition_keys() == {"2020-02-03"}
+    assert asset_graph_view_on_2_4.create_time_window_slice(
+        daily.key, TimeWindow(dt2_1, dt2_4)
+    ).compute_partition_keys() == set(partition_key_list)
 
     assert _tw(
         asset_graph_view_on_2_4.create_latest_time_window_slice(daily.key)
@@ -102,6 +104,17 @@ def test_latest_time_slice_no_end() -> None:
     assert asset_graph_view_on_2_2_plus_1_min.get_asset_slice(
         daily.key
     ).compute_partition_keys() == set(["2020-02-01"])
+
+    # there are no complete time windows in this range
+    assert (
+        asset_graph_view_on_2_2_plus_1_min.create_time_window_slice(
+            daily.key,
+            TimeWindow(
+                pendulum.datetime(2020, 2, 1, minute=1), pendulum.datetime(2020, 2, 2, minute=1)
+            ),
+        ).compute_partition_keys()
+        == set()
+    )
 
     tw = _tw(asset_graph_view_on_2_2_plus_1_min.get_asset_slice(daily.key))
 
@@ -156,7 +169,7 @@ def test_latest_time_slice_with_end() -> None:
     ).compute_partition_keys() == set(["2020-01-31"])
 
 
-def test_latest_time_slice_unpartitioned() -> None:
+def test_time_slice_unpartitioned() -> None:
     @asset
     def unpartitioned() -> None: ...
 
@@ -166,9 +179,13 @@ def test_latest_time_slice_unpartitioned() -> None:
     asset_graph_view = AssetGraphView.for_test(defs, instance)
     assert not asset_graph_view.get_asset_slice(unpartitioned.key).is_empty
     assert not asset_graph_view.create_latest_time_window_slice(unpartitioned.key).is_empty
+    assert not asset_graph_view.create_time_window_slice(
+        unpartitioned.key, TimeWindow(pendulum.datetime(2020, 1, 1), pendulum.datetime(2020, 1, 2))
+    ).is_empty
+    assert not asset_graph_view.create_time_window_slice(unpartitioned.key, None).is_empty
 
 
-def test_latest_time_slice_static_partitioned() -> None:
+def test_time_slice_static_partitioned() -> None:
     number_keys = {"1", "2", "3"}
     number_static_partitions_def = StaticPartitionsDefinition(list(number_keys))
 
@@ -182,8 +199,11 @@ def test_latest_time_slice_static_partitioned() -> None:
     latest_up_slice = asset_graph_view.create_latest_time_window_slice(up_numbers.key)
     assert latest_up_slice.compute_partition_keys() == number_keys
 
+    time_slice = asset_graph_view.create_time_window_slice(up_numbers.key, None)
+    assert time_slice.compute_partition_keys() == number_keys
 
-def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
+
+def test_multi_dimesional_with_time_partition_time_slice() -> None:
     # starts at 2020-02-01
     daily_partitions_def = DailyPartitionsDefinition(
         start_date=pendulum.datetime(2020, 1, 1), end_date=pendulum.datetime(2020, 1, 3)
@@ -219,9 +239,21 @@ def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
     last_tw_slice = asset_graph_view_within_partition.create_latest_time_window_slice(
         multi_dimensional.key
     )
+
     assert last_tw_slice.compute_partition_keys() == set(jan_2_keys)
     assert _tw(last_tw_slice).start == pendulum.datetime(2020, 1, 2)
     assert _tw(last_tw_slice).end == pendulum.datetime(2020, 1, 3)
+
+    assert asset_graph_view_within_partition.create_time_window_slice(
+        multi_dimensional.key,
+        TimeWindow(pendulum.datetime(2020, 1, 2), pendulum.datetime(2020, 1, 3)),
+    ).compute_partition_keys() == set(jan_2_keys)
+    assert (
+        asset_graph_view_within_partition.create_time_window_slice(
+            multi_dimensional.key, None
+        ).compute_partition_keys()
+        == set()
+    )
 
     asset_graph_view_in_past = AssetGraphView.for_test(
         defs, instance, effective_dt=pendulum.datetime(2019, 3, 3)
@@ -234,7 +266,7 @@ def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
     assert not md_slice_in_past.time_windows
 
 
-def test_multi_dimesional_without_time_partition_latest_time_window() -> None:
+def test_multi_dimesional_without_time_partition_time_slice() -> None:
     num_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
     letter_partitions_def = StaticPartitionsDefinition(["A", "B", "C"])
 
@@ -259,8 +291,16 @@ def test_multi_dimesional_without_time_partition_latest_time_window() -> None:
         multi_dimensional.key
     ).compute_partition_keys() == set(partition_keys)
 
+    assert asset_graph_view.create_time_window_slice(
+        multi_dimensional.key,
+        TimeWindow(pendulum.datetime(2020, 1, 2), pendulum.datetime(2020, 1, 3)),
+    ).compute_partition_keys() == set(partition_keys)
+    assert asset_graph_view.create_time_window_slice(
+        multi_dimensional.key, None
+    ).compute_partition_keys() == set(partition_keys)
 
-def test_dynamic_partitioning_latest_time_window() -> None:
+
+def test_dynamic_partitioning_time_slice() -> None:
     dynamic_partition_def = DynamicPartitionsDefinition(name="letters")
     instance = DagsterInstance.ephemeral()
     partition_keys = {"A", "B", "C"}
@@ -316,3 +356,14 @@ def test_dynamic_partitioning_latest_time_window() -> None:
     assert _tw(
         asset_graph_view.create_latest_time_window_slice(dynamic_multi_dimensional.key)
     ).end == pendulum.datetime(2020, 1, 3)
+
+    assert asset_graph_view.create_time_window_slice(
+        dynamic_multi_dimensional.key,
+        TimeWindow(pendulum.datetime(2020, 1, 2), pendulum.datetime(2020, 1, 3)),
+    ).compute_partition_keys() == set(jan_2_keys)
+    assert (
+        asset_graph_view.create_time_window_slice(
+            dynamic_multi_dimensional.key, None
+        ).compute_partition_keys()
+        == set()
+    )

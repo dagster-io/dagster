@@ -28,6 +28,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
+    get_time_partitions_def,
 )
 from dagster._utils.cached_method import cached_method
 
@@ -379,60 +380,60 @@ class AssetGraphView:
             ),
         )
 
-    def create_from_time_window(self, asset_key: AssetKey, time_window: TimeWindow) -> AssetSlice:
-        return _slice_from_subset(
-            self,
-            AssetSubset(
-                asset_key=asset_key,
-                value=TimeWindowPartitionsSubset(
-                    partitions_def=_required_tw_partitions_def(self._get_partitions_def(asset_key)),
-                    num_partitions=None,
-                    included_time_windows=[time_window],
-                ),
-            ),
-        )
-
-    def create_latest_time_window_slice(self, asset_key: AssetKey) -> AssetSlice:
-        """If the underlying asset is time-window partitioned, this will return the latest complete
-        time window relative to the effective date. For example if it is daily partitioned starting
-        at midnight every day.  If the effective date is before the start of the partition definition, this will
-        return the empty time window (where both start and end are datetime.max).
-
-        If the underlying asset is unpartitioned or static partitioned and it is not empty,
-        this will return a time window from the beginning of time to the effective date. If
-        it is empty it will return the empty time window.
-
-        TODO: add language for multi-dimensional partitioning when we support it
-        TODO: add language for dynamic partitioning when we support it
+    def create_time_window_slice(
+        self, asset_key: AssetKey, time_window: Optional[TimeWindow]
+    ) -> AssetSlice:
+        """Creates a slice that corresponds to partitions within the given time window. For assets
+        without a time partition dimension, this will return the full asset slice regardless of
+        the input time window.
         """
         partitions_def = self._get_partitions_def(asset_key)
+
+        # for unpartitioned, static partitioned, and dynamic partitioned assets, all partitions are
+        # considered to be within any time window
         if partitions_def is None or isinstance(
             partitions_def, (DynamicPartitionsDefinition, StaticPartitionsDefinition)
         ):
             return self.get_asset_slice(asset_key)
-
-        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            time_window = partitions_def.get_last_partition_window(self.effective_dt)
-            return (
-                self.create_from_time_window(asset_key, time_window)
-                if time_window
-                else self.create_empty_slice(asset_key)
-            )
-
-        if isinstance(partitions_def, MultiPartitionsDefinition):
+        elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            if time_window is None:
+                return self.create_empty_slice(asset_key)
+            else:
+                return _slice_from_subset(
+                    self,
+                    AssetSubset(
+                        asset_key=asset_key,
+                        value=TimeWindowPartitionsSubset(
+                            partitions_def=partitions_def,
+                            num_partitions=None,
+                            included_time_windows=[time_window],
+                        ),
+                    ),
+                )
+        elif isinstance(partitions_def, MultiPartitionsDefinition):
             if not partitions_def.has_time_window_dimension:
                 return self.get_asset_slice(asset_key)
+            elif time_window is None:
+                return self.create_empty_slice(asset_key)
+            else:
+                multi_dim_info = self._get_multi_dim_info(asset_key)
+                return self._build_multi_partition_slice(asset_key, multi_dim_info, time_window)
+        else:
+            check.failed(f"Unsupported partitions_def: {partitions_def}")
 
-            multi_dim_info = self._get_multi_dim_info(asset_key)
-            last_tw = multi_dim_info.tw_partition_def.get_last_partition_window(self.effective_dt)
-            return (
-                self._build_multi_partition_slice(asset_key, multi_dim_info, last_tw)
-                if last_tw
-                else self.create_empty_slice(asset_key)
-            )
+    def create_latest_time_window_slice(self, asset_key: AssetKey) -> AssetSlice:
+        """If the underlying asset has a time partition dimension, this will return a slice
+        corresponding to all partitions within the latest time window of that dimension.
 
-        # Need to handle dynamic partitioning
-        check.failed(f"Unsupported partitions_def: {partitions_def}")
+        For all other assets, this will return the full asset slice.
+        """
+        time_partitions_def = get_time_partitions_def(self._get_partitions_def(asset_key))
+        time_window = (
+            time_partitions_def.get_last_partition_window(self.effective_dt)
+            if time_partitions_def
+            else None
+        )
+        return self.create_time_window_slice(asset_key, time_window)
 
     def create_empty_slice(self, asset_key: AssetKey) -> AssetSlice:
         return _slice_from_subset(

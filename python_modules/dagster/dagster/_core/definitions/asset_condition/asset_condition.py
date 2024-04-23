@@ -31,6 +31,7 @@ from ..auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .recent_time_partitions import Duration
 
 
 T = TypeVar("T")
@@ -406,6 +407,15 @@ class AssetCondition(ABC, DagsterModel):
         from .latest_time_partition import LatestTimePartitionCondition
 
         return LatestTimePartitionCondition()
+
+    @staticmethod
+    def recent_time_partitions(lookback_duration: "Duration") -> "AssetCondition":
+        """Returns an AssetCondition that is true for the latest time partition of a time-partitioned
+        asset, or all partitions if the asset is not time-partitioned.
+        """
+        from .recent_time_partitions import RecentTimePartitionsCondition
+
+        return RecentTimePartitionsCondition(lookback_duration=lookback_duration)
 
 
 @experimental
