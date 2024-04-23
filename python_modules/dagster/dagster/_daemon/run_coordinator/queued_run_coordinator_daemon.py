@@ -294,9 +294,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     and global_concurrency_limits_counter.is_blocked(run)
                 ):
                     concurrency_blocked_info = json.dumps(
-                        global_concurrency_limits_counter.blocked_run_info(run)
+                        global_concurrency_limits_counter.get_blocked_run_debug_info(run)
                     )
-                    self._logger.debug(
+                    self._logger.info(
                         f"Run {run.run_id} is blocked by global concurrency limits: {concurrency_blocked_info}"
                     )
                     to_remove.append(run)

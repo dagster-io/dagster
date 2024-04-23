@@ -127,7 +127,7 @@ class GlobalOpConcurrencyLimitsCounter:
         # if we reached here, then every root concurrency key is blocked, so we should not dequeue
         return True
 
-    def blocked_run_info(self, run: DagsterRun) -> Mapping:
+    def get_blocked_run_debug_info(self, run: DagsterRun) -> Mapping:
         if not run.run_op_concurrency:
             return {}
 
