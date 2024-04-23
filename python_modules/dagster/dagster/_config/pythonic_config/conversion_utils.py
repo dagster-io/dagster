@@ -53,8 +53,8 @@ from dagster._config.field_utils import (
     Map,
     convert_potential_field,
 )
+from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
 
-from .pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
 from .type_check_utils import is_optional, safe_is_subclass
 
 

@@ -49,20 +49,7 @@ export type InstanceConcurrencyLimitsQuery = {
       maxConcurrentRuns: number;
       tagConcurrencyLimitsYaml: string | null;
     } | null;
-    concurrencyLimits: Array<{
-      __typename: 'ConcurrencyKeyInfo';
-      concurrencyKey: string;
-      slotCount: number;
-      claimedSlots: Array<{__typename: 'ClaimedConcurrencySlot'; runId: string; stepKey: string}>;
-      pendingSteps: Array<{
-        __typename: 'PendingConcurrencyStep';
-        runId: string;
-        stepKey: string;
-        enqueuedTimestamp: number;
-        assignedTimestamp: number | null;
-        priority: number | null;
-      }>;
-    }>;
+    concurrencyLimits: Array<{__typename: 'ConcurrencyKeyInfo'; concurrencyKey: string}>;
   };
 };
 

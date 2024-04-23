@@ -84,7 +84,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   return (
     <PageHeader
       title={
-        <Heading style={{fontFamily: FontFamily.monospace, fontSize: '20px'}}>
+        <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
           {explorerPath.snapshotId?.slice(0, 8)}
         </Heading>
       }

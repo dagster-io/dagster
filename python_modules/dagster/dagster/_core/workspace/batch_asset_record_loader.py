@@ -53,6 +53,18 @@ class BatchAssetRecordLoader:
 
         return asset_record.asset_entry.last_materialization
 
+    def get_latest_observation_for_asset_key(self, asset_key: AssetKey) -> Optional[EventLogEntry]:
+        check.invariant(
+            self._instance.event_log_storage.asset_records_have_last_observation,
+            "Event log storage must support fetching the last observation from asset records",
+        )
+
+        asset_record = self.get_asset_record(asset_key)
+        if not asset_record:
+            return None
+
+        return asset_record.asset_entry.last_observation
+
     def _fetch(self) -> None:
         if not self._unfetched_asset_keys:
             return

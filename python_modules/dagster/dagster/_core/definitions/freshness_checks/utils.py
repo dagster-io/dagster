@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 from typing import Iterator, Optional, Sequence, Union, cast
 
 from dagster import _check as check
@@ -9,19 +8,28 @@ from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
+from dagster._utils.security import non_secure_md5_hash_str
 
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
 
+# Constants
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
 DEFAULT_FRESHNESS_TIMEZONE = "UTC"
-LOWER_BOUND_DELTA_METADATA_KEY = "dagster/lower_bound_delta"
-DEADLINE_CRON_METADATA_KEY = "dagster/deadline_cron"
-FRESHNESS_TIMEZONE_METADATA_KEY = "dagster/freshness_timezone"
+
+# Top-level metadata keys
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
-OVERDUE_DEADLINE_TIMESTAMP_METADATA_KEY = "dagster/overdue_deadline_timestamp"
+# When an asset is overdue, this represents the timestamp by which the asset was expected to arrive.
+EXPECTED_BY_TIMESTAMP_METADATA_KEY = "dagster/expected_by_timestamp"
+# When an asset is fresh, this represents the timestamp when the asset can become stale again.
+FRESH_UNTIL_METADATA_KEY = "dagster/fresh_until_timestamp"
 OVERDUE_SECONDS_METADATA_KEY = "dagster/overdue_seconds"
+
+# dagster/freshness_params inner keys
+LOWER_BOUND_DELTA_PARAM_KEY = "lower_bound_delta"
+DEADLINE_CRON_PARAM_KEY = "deadline_cron"
+TIMEZONE_PARAM_KEY = "timezone"
 
 
 def ensure_no_duplicate_assets(
@@ -159,15 +167,6 @@ def get_last_updated_timestamp(
         check.failed("Expected record to be an observation or materialization")
 
 
-def ensure_freshness_checks(checks: Sequence[AssetChecksDefinition]) -> None:
-    for check_def in checks:
-        for check_spec in check_def.check_specs:
-            check.invariant(
-                check_spec.metadata and check_spec.metadata.get(FRESHNESS_PARAMS_METADATA_KEY),
-                f"Asset check {check_spec.key} didn't have expected metadata. Please ensure that the asset check is a freshness check.",
-            )
-
-
 def get_description_for_freshness_check_result(
     passed: bool,
     update_timestamp: Optional[float],
@@ -238,6 +237,6 @@ def unique_id_from_asset_keys(asset_keys: Sequence[AssetKey]) -> str:
     forcing the user to provide a name for the underlying op.
     """
     sorted_asset_keys = sorted(asset_keys, key=lambda asset_key: asset_key.to_string())
-    return hashlib.md5(
+    return non_secure_md5_hash_str(
         ",".join([str(asset_key) for asset_key in sorted_asset_keys]).encode()
-    ).hexdigest()[:8]
+    )[:8]

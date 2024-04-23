@@ -132,7 +132,7 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 ### Make an existing table available in Dagster
 
-You may already have tables in Snowflake that you want to make available to other Dagster assets. You can create [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
+You may already have tables in Snowflake that you want to make available to other Dagster assets. You can create [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
 ```python file=/integrations/snowflake/source_asset.py
 from dagster import SourceAsset

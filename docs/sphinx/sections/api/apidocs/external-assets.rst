@@ -98,7 +98,7 @@ Returns JSON:
 .. code-block:: bash
 
     curl --request POST \
-        --url https://example-org.dagster.plus/example-deployment/report_asset_materialization/ \
+        --url https://example-org.dagster.cloud/example-deployment/report_asset_materialization/ \
         --header 'Content-Type: application/json' \
         --header 'Dagster-Cloud-Api-Token: example-token' \
         --data '{
@@ -125,7 +125,7 @@ Returns JSON:
 
     import requests
 
-    url = "https://example-org.dagster.plus/example-deployment/report_asset_materialization/"
+    url = "https://example-org.dagster.cloud/example-deployment/report_asset_materialization/"
 
     payload = {
         "asset_key": "example_asset",
@@ -201,7 +201,7 @@ Returns JSON:
 .. code-block:: bash
 
     curl --request POST \
-        --url https://example-org.dagster.plus/example-deployment/report_asset_check/ \
+        --url https://example-org.dagster.cloud/example-deployment/report_asset_check/ \
         --header 'Content-Type: application/json' \
         --header 'Dagster-Cloud-Api-Token: example-token' \
         --data '{
@@ -277,7 +277,7 @@ Returns JSON:
 .. code-block:: bash
 
     curl --request POST \
-        --url https://example-org.dagster.plus/example-deployment/report_asset_observation/ \
+        --url https://example-org.dagster.cloud/example-deployment/report_asset_observation/ \
         --header 'Content-Type: application/json' \
         --header 'Dagster-Cloud-Api-Token: example-token' \
         --data '{

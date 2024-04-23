@@ -11,6 +11,7 @@ from typing import (
 )
 
 from dagster import (
+    AssetCheckKey,
     AssetCheckSpec,
     AssetDep,
     AssetKey,
@@ -62,7 +63,7 @@ def dbt_assets(
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
+    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -325,7 +326,7 @@ def dbt_assets(
                 yield from dbt.cli(dbt_build_args, context=context).stream()
 
     """
-    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
     manifest = validate_manifest(manifest)
 
     unique_ids = select_unique_ids_from_manifest(
@@ -405,7 +406,7 @@ def get_dbt_multi_asset_args(
     deps: Set[AssetDep] = set()
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
-    check_specs: Sequence[AssetCheckSpec] = []
+    check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
 
     dbt_unique_id_and_resource_types_by_asset_key: Dict[AssetKey, Tuple[Set[str], Set[str]]] = {}
     dbt_group_resource_props_by_group_name: Dict[str, Dict[str, Any]] = {
@@ -464,7 +465,7 @@ def get_dbt_multi_asset_args(
                 manifest, dbt_nodes, dagster_dbt_translator, asset_key, test_unique_id
             )
             if check_spec:
-                check_specs.append(check_spec)
+                check_specs_by_key[check_spec.key] = check_spec
 
         # Translate parent unique ids to dependencies
         output_internal_deps = internal_asset_deps.setdefault(output_name, set())
@@ -547,4 +548,4 @@ def get_dbt_multi_asset_args(
             "\n\n".join([DUPLICATE_ASSET_KEY_ERROR_MESSAGE, *error_messages])
         )
 
-    return list(deps), outs, internal_asset_deps, check_specs
+    return list(deps), outs, internal_asset_deps, list(check_specs_by_key.values())

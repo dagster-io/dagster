@@ -7,7 +7,7 @@ export const Trace = styled.div`
   background-color: ${Colors.backgroundLight()};
   color: ${Colors.textLight()};
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 13px;
   max-height: 90vh;
   overflow: auto;
   white-space: pre;

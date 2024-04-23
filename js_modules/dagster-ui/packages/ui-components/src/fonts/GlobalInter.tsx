@@ -1,7 +1,7 @@
 import {createGlobalStyle} from 'styled-components';
 
 /**
- * `Inter` and `Inconsolata` are encoded as base64 because we can't always guarantee
+ * `Inter` and `GeistMono` are encoded as base64 because we can't always guarantee
  * the absolute path that font files may be served from.
  *
  * For instance, running `dagster-webserver` with `--path-prefix` on built JS will not be able to

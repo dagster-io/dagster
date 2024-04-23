@@ -156,7 +156,10 @@ if TYPE_CHECKING:
         ExecutionStepSnap,
         JobSnapshot,
     )
-    from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
+    from dagster._core.storage.asset_check_execution_record import (
+        AssetCheckExecutionRecord,
+        AssetCheckInstanceSupport,
+    )
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
@@ -1990,6 +1993,14 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
 
+    @traced
+    def get_latest_asset_check_evaluation_record(
+        self, asset_check_key: "AssetCheckKey"
+    ) -> Optional["AssetCheckExecutionRecord"]:
+        return self._event_storage.get_latest_asset_check_execution_by_key([asset_check_key]).get(
+            asset_check_key
+        )
+
     @public
     @traced
     def get_event_records(
@@ -2876,13 +2887,14 @@ class DagsterInstance(DynamicPartitionsStore):
         stored_state = self.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
-        new_instigator_data = SensorInstigatorData(
-            min_interval=external_sensor.min_interval_seconds,
-            sensor_type=external_sensor.sensor_type,
-        )
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
+            new_instigator_data = SensorInstigatorData(
+                min_interval=external_sensor.min_interval_seconds,
+                sensor_type=external_sensor.sensor_type,
+            )
+
             reset_state = self.add_instigator_state(
                 state=InstigatorState(
                     external_sensor.get_external_origin(),
@@ -2892,9 +2904,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
             )
         else:
-            reset_state = self.update_instigator_state(
-                state=stored_state.with_status(new_status).with_data(new_instigator_data)
-            )
+            reset_state = self.update_instigator_state(state=stored_state.with_status(new_status))
 
         return reset_state
 

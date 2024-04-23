@@ -7,7 +7,6 @@ import {BaseButton} from './BaseButton';
 import {Colors} from './Color';
 import {Spinner} from './Spinner';
 import {StyledButton, StyledButtonText} from './StyledButton';
-import {CoreColors} from '../palettes/CoreColors';
 
 type BlueprintIntent = React.ComponentProps<typeof BlueprintButton>['intent'];
 type BlueprintOutlined = React.ComponentProps<typeof BlueprintButton>['outlined'];
@@ -160,7 +159,7 @@ export const intentToTextAndIconColor = (intent: BlueprintIntent) => {
   if (intent === 'primary') {
     return Colors.accentReversed();
   }
-  return CoreColors.White;
+  return Colors.alwaysWhite();
 };
 
 export const buildColorSet = (config: {intent?: BlueprintIntent; outlined: BlueprintOutlined}) => {

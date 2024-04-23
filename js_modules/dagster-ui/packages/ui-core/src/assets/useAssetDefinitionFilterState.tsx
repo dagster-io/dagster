@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import {useCallback, useMemo} from 'react';
+import {SetStateAction, useCallback, useMemo} from 'react';
 
 import {buildAssetGroupSelector} from './AssetGroupSuggest';
 import {
@@ -22,7 +22,7 @@ type FilterableAssetDefinition = Partial<
   }
 >;
 
-export type AssetFilterType = {
+export type AssetFilterBaseType = {
   groups: AssetGroupSelector[];
   computeKindTags: string[];
   changedInBranch: ChangeReason[];
@@ -31,15 +31,28 @@ export type AssetFilterType = {
   repos: RepoAddress[];
 };
 
+export type AssetFilterType = AssetFilterBaseType & {
+  selectAllFilters: Array<keyof AssetFilterBaseType>;
+};
+
 export const useAssetDefinitionFilterState = () => {
   const [filters, setFilters] = useQueryPersistedState<AssetFilterType>({
-    encode: ({groups, computeKindTags, changedInBranch, owners, tags, repos}) => ({
+    encode: ({
+      groups,
+      computeKindTags,
+      changedInBranch,
+      owners,
+      tags,
+      repos,
+      selectAllFilters,
+    }) => ({
       groups: groups?.length ? JSON.stringify(groups) : undefined,
       computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
       changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
       owners: owners?.length ? JSON.stringify(owners) : undefined,
       tags: tags?.length ? JSON.stringify(tags) : undefined,
       repos: repos?.length ? JSON.stringify(repos) : undefined,
+      selectAllFilters: selectAllFilters.length ? JSON.stringify(selectAllFilters) : undefined,
     }),
     decode: (qs) => ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
@@ -52,6 +65,7 @@ export const useAssetDefinitionFilterState = () => {
             buildRepoAddress(repo.name, repo.location),
           )
         : [],
+      selectAllFilters: qs.selectAllFilters ? JSON.parse(qs.selectAllFilters) : [],
     }),
   });
 
@@ -60,25 +74,33 @@ export const useAssetDefinitionFilterState = () => {
     [filters],
   );
 
-  const {setComputeKindTags, setGroups, setChangedInBranch, setOwners, setAssetTags, setRepos} =
-    useMemo(() => {
-      function makeSetter<T extends keyof AssetFilterType>(field: T) {
-        return (value: AssetFilterType[T]) => {
-          setFilters?.((filters) => ({
-            ...filters,
-            [field]: value,
-          }));
-        };
-      }
-      return {
-        setComputeKindTags: makeSetter('computeKindTags'),
-        setGroups: makeSetter('groups'),
-        setChangedInBranch: makeSetter('changedInBranch'),
-        setOwners: makeSetter('owners'),
-        setAssetTags: makeSetter('tags'),
-        setRepos: makeSetter('repos'),
+  const {
+    setComputeKindTags,
+    setGroups,
+    setChangedInBranch,
+    setOwners,
+    setAssetTags,
+    setRepos,
+    setSelectAllFilters,
+  } = useMemo(() => {
+    function makeSetter<T extends keyof AssetFilterType>(field: T) {
+      return (value: SetStateAction<AssetFilterType[T]>) => {
+        setFilters?.((filters) => ({
+          ...filters,
+          [field]: value instanceof Function ? value(filters[field]) : value,
+        }));
       };
-    }, [setFilters]);
+    }
+    return {
+      setComputeKindTags: makeSetter('computeKindTags'),
+      setGroups: makeSetter('groups'),
+      setChangedInBranch: makeSetter('changedInBranch'),
+      setOwners: makeSetter('owners'),
+      setAssetTags: makeSetter('tags'),
+      setRepos: makeSetter('repos'),
+      setSelectAllFilters: makeSetter('selectAllFilters'),
+    };
+  }, [setFilters]);
 
   return {
     filters,
@@ -90,6 +112,7 @@ export const useAssetDefinitionFilterState = () => {
     setOwners,
     setAssetTags,
     setRepos,
+    setSelectAllFilters,
   };
 };
 
@@ -100,7 +123,12 @@ export function filterAssetDefinition(
   definition?: FilterableAssetDefinition | null,
 ) {
   if (filters.repos?.length) {
-    if (
+    const isAllReposSelected = filters.selectAllFilters?.includes('repos');
+    if (isAllReposSelected) {
+      if (!definition?.repository) {
+        return false;
+      }
+    } else if (
       !definition ||
       !definition.repository ||
       !filters.repos.some(
@@ -112,7 +140,12 @@ export function filterAssetDefinition(
       return false;
     }
   }
-  if (filters.groups?.length) {
+  const isAllGroupsSelected = filters.selectAllFilters?.includes('groups');
+  if (isAllGroupsSelected) {
+    if (!definition?.groupName || !definition?.repository) {
+      return false;
+    }
+  } else if (filters.groups?.length) {
     if (!definition) {
       return false;
     }
@@ -126,7 +159,12 @@ export function filterAssetDefinition(
     }
   }
 
-  if (filters.computeKindTags?.length) {
+  const isAllComputeKindTagsSelected = filters.selectAllFilters?.includes('computeKindTags');
+  if (isAllComputeKindTagsSelected) {
+    if (!definition?.computeKind?.length) {
+      return false;
+    }
+  } else if (filters.computeKindTags?.length) {
     if (
       !definition?.computeKind?.length ||
       !filters.computeKindTags.includes(definition.computeKind)
@@ -135,7 +173,12 @@ export function filterAssetDefinition(
     }
   }
 
-  if (filters.changedInBranch?.length) {
+  const isAllChangedInBranchSelected = filters.selectAllFilters?.includes('changedInBranch');
+  if (isAllChangedInBranchSelected) {
+    if (!definition?.changedReasons?.length) {
+      return false;
+    }
+  } else if (filters.changedInBranch?.length || isAllChangedInBranchSelected) {
     if (
       !definition?.changedReasons?.length ||
       !definition.changedReasons.find((reason) => filters.changedInBranch!.includes(reason))
@@ -143,7 +186,12 @@ export function filterAssetDefinition(
       return false;
     }
   }
-  if (filters.owners?.length) {
+  const isAllOwnersSelected = filters.selectAllFilters?.includes('owners');
+  if (isAllOwnersSelected) {
+    if (!definition?.owners?.length) {
+      return false;
+    }
+  } else if (filters.owners?.length) {
     if (
       !definition?.owners?.length ||
       !filters.owners.some((owner) =>
@@ -153,7 +201,12 @@ export function filterAssetDefinition(
       return false;
     }
   }
-  if (filters.tags?.length) {
+  const isAllTagsSelected = filters.selectAllFilters?.includes('tags');
+  if (isAllTagsSelected) {
+    if (!definition?.tags?.length) {
+      return false;
+    }
+  } else if (filters.tags?.length) {
     if (
       !definition?.tags?.length ||
       !doesFilterArrayMatchValueArray(filters.tags, definition.tags)

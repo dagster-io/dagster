@@ -48,8 +48,8 @@ def test_params() -> None:
     assert next(iter(check.check_keys)).asset_key == my_asset.key
     assert next(iter(check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
-            "dagster/freshness_timezone": "UTC",
+            "lower_bound_delta": 600,
+            "timezone": "UTC",
         }
     }
 
@@ -71,9 +71,9 @@ def test_params() -> None:
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
-            "dagster/deadline_cron": "0 0 * * *",
-            "dagster/freshness_timezone": "UTC",
+            "lower_bound_delta": 600,
+            "deadline_cron": "0 0 * * *",
+            "timezone": "UTC",
         }
     }
 
@@ -252,12 +252,12 @@ def test_check_result_cron(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/deadline_cron": deadline_cron,
-                        "dagster/freshness_timezone": timezone,
-                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "deadline_cron": deadline_cron,
+                        "timezone": timezone,
+                        "lower_bound_delta": lower_bound_delta.total_seconds(),
                     }
                 ),
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
+                "dagster/expected_by_timestamp": TimestampMetadataValue(
                     value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
                 ),
                 "dagster/overdue_seconds": FloatMetadataValue(3600.0),
@@ -286,16 +286,16 @@ def test_check_result_cron(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/deadline_cron": deadline_cron,
-                        "dagster/freshness_timezone": timezone,
-                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "deadline_cron": deadline_cron,
+                        "timezone": timezone,
+                        "lower_bound_delta": lower_bound_delta.total_seconds(),
                     }
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
                     value=lower_bound.add(minutes=1).timestamp()
                 ),
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
-                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
+                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 2, 0, 0, 0, tz="UTC").timestamp()
                 ),
             },
         )
@@ -349,15 +349,12 @@ def test_check_result_bound_only(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/lower_bound_delta": 600,
-                        "dagster/freshness_timezone": "UTC",
+                        "lower_bound_delta": 600,
+                        "timezone": "UTC",
                     }
                 ),
-                # Indicates that no records exist.
+                # Indicates that no records exist. There is no expected_by_timestamp because we can't derive from no records.
                 "dagster/overdue_seconds": FloatMetadataValue(0.0),
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
-                    value=pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC").timestamp()
-                ),
             },
         )
 
@@ -369,7 +366,8 @@ def test_check_result_bound_only(
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, False)
 
     # Go back in time and add an event within the allowed time window.
-    with pendulum_freeze_time(lower_bound.add(minutes=1)):
+    update_time = lower_bound.add(minutes=1)
+    with pendulum_freeze_time(update_time):
         add_new_event(instance, my_asset.key)
     # Now we expect the check to pass.
     with pendulum_freeze_time(freeze_datetime):
@@ -383,16 +381,15 @@ def test_check_result_bound_only(
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/lower_bound_delta": 600,
-                        "dagster/freshness_timezone": "UTC",
+                        "lower_bound_delta": 600,
+                        "timezone": "UTC",
                     }
                 ),
-                # Since no freshness cron, deadline is the current time.
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
-                    value=freeze_datetime.timestamp()
+                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                    value=update_time.timestamp() + 600
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
-                    value=lower_bound.add(minutes=1).timestamp()
+                    value=update_time.timestamp()
                 ),
             },
         )

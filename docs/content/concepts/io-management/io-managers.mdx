@@ -238,6 +238,25 @@ defs = Definitions(
 )
 ```
 
+### Using I/O managers to load source data
+
+Software-defined assets often depend on data assets that are generated outside of Dagster, or in a different code location within Dagster, and it's often useful to use I/O managers to load the data from these assets. To represent one of these assets, you can create an asset definition that includes an I/O manager, but no materialization function. Your other assets can then depend on it and load data from it, just as they would with a materializable asset.
+
+For example:
+
+```python file=/concepts/io_management/source_asset.py
+from dagster import AssetKey, SourceAsset, asset
+
+my_source_asset = SourceAsset(
+    key=AssetKey("my_source_asset"), io_manager_key="s3_io_manager"
+)
+
+
+@asset
+def my_derived_asset(my_source_asset):
+    return my_source_asset + [4]
+```
+
 ### Asset input I/O managers
 
 In some cases you may need to load the input to an asset with different logic than that specified by the upstream asset's I/O manager.

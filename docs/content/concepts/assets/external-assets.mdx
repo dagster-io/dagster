@@ -11,7 +11,8 @@ In this case, you could use an external asset to leverage Dagster's event log an
 
 ### What about Source Assets?
 
-[Source Assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) can be used to model data that's produced by a process Dagster doesn't control, such as a daily file drop into Amazon S3.
+<PyObject object="SourceAsset" pluralize /> can be used to model data that's produced
+by a process Dagster doesn't control, such as a daily file drop into Amazon S3.
 
 External assets can accomplish this, and more. As a result, Source Assets will be replaced with external assets in the near future.
 
@@ -193,7 +194,7 @@ Refer to the following tabs for examples using `curl` and Python to communicate 
 
 ```bash
 curl --request POST \
-    --url https://{organization}.dagster.plus/{deployment}/report_asset_materialization/{asset_key} \
+    --url https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key} \
     --header 'Content-Type: application/json' \
     --header 'Dagster-Cloud-Api-Token: {token}' \
     --data '{
@@ -236,7 +237,7 @@ curl --request POST \
 ```python
 import requests
 
-url = f"https://{organization}.dagster.plus/{deployment}/report_asset_materialization/{asset_key}"
+url = f"https://{organization}.dagster.cloud/{deployment}/report_asset_materialization/{asset_key}"
 payload = { "metadata": { "source": "From python script" } }
 headers = { "Content-Type": "application/json", "Dagster-Cloud-Api-Token": "{token}" }
 

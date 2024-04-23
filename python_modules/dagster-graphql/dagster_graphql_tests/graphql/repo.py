@@ -1197,6 +1197,10 @@ def define_sensors():
     def every_asset_sensor(_):
         return SkipReason("just kidding")
 
+    @sensor(asset_selection=AssetSelection.keys("does_not_exist"))
+    def invalid_asset_selection_error(_):
+        return SkipReason("just kidding")
+
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_job)
     def run_status(_):
         return SkipReason("always skip")
@@ -1240,6 +1244,7 @@ def define_sensors():
         the_failure_sensor,
         auto_materialize_sensor,
         every_asset_sensor,
+        invalid_asset_selection_error,
     ]
 
 
@@ -1575,6 +1580,7 @@ hanging_partition_asset_job = define_asset_job(
 @asset
 def asset_yields_observation():
     yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "BAR"})
     yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
     yield Output(5)
 

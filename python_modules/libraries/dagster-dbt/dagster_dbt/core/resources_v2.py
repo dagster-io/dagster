@@ -43,11 +43,11 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
-from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.metadata import (
     TableMetadataSet,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
+from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.adapters.base.impl import BaseAdapter
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
@@ -217,8 +217,23 @@ class DbtCliEventMessage:
         unique_id: str = event_node_info["unique_id"]
         invocation_id: str = self.raw_event["info"]["invocation_id"]
         dbt_resource_props = manifest["nodes"][unique_id]
+
+        column_schema_metadata = {}
+        try:
+            column_schema_metadata = default_metadata_from_dbt_resource_props(
+                self._event_history_metadata
+            )
+        except Exception as e:
+            logger.warning(
+                "An error occurred while building column schema metadata from event history"
+                f" `{self._event_history_metadata}` for the dbt resource"
+                f" `{dbt_resource_props['original_file_path']}`."
+                " Column schema metadata will not be included in the event.\n\n"
+                f"Exception: {e}"
+            )
+
         default_metadata = {
-            **default_metadata_from_dbt_resource_props(self._event_history_metadata),
+            **column_schema_metadata,
             "unique_id": unique_id,
             "invocation_id": invocation_id,
         }
@@ -960,6 +975,7 @@ class DbtCliResource(ConfigurableResource):
         target: Optional[str] = None,
         dbt_executable: str = DBT_EXECUTABLE,
         state_path: Optional[str] = None,
+        **kwargs,  # allow custom subclasses to add fields
     ):
         if isinstance(project_dir, DbtProject):
             if not state_path and project_dir.state_path:
@@ -979,6 +995,7 @@ class DbtCliResource(ConfigurableResource):
             target=target,  # type: ignore
             dbt_executable=dbt_executable,  # type: ignore
             state_path=state_path,  # type: ignore
+            **kwargs,
         )
 
     @classmethod
@@ -1115,7 +1132,7 @@ class DbtCliResource(ConfigurableResource):
         comparison, an empty list of arguments is returned.
 
         Returns:
-            Sequence[str]: The defer arguements for the dbt CLI command.
+            Sequence[str]: The defer arguments for the dbt CLI command.
         """
         if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
             return []
@@ -1125,6 +1142,19 @@ class DbtCliResource(ConfigurableResource):
             state_flag = "--state"
 
         return ["--defer", state_flag, self.state_path]
+
+    def get_state_args(self) -> Sequence[str]:
+        """Build the state arguments for the dbt CLI command, using the supplied state directory.
+        If no state directory is supplied, or the state directory does not have a manifest for.
+        comparison, an empty list of arguments is returned.
+
+        Returns:
+            Sequence[str]: The state arguments for the dbt CLI command.
+        """
+        if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
+            return []
+
+        return ["--state", self.state_path]
 
     @public
     def cli(

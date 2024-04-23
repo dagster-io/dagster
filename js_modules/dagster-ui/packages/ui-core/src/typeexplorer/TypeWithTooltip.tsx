@@ -46,7 +46,7 @@ const TypeName = styled.code`
   padding: 2px 4px;
   border-bottom: 1px solid ${Colors.accentBlue()};
   border-radius: 0.25em;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   max-width: 100%;
   overflow: hidden;

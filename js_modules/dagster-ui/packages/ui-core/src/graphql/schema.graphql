@@ -621,7 +621,6 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
-    tags: [InputTag!]
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String!]
@@ -2951,6 +2950,7 @@ type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
   assets: [Asset!]!
+  assetsOrError: AssetsOrError!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
