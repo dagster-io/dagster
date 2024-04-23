@@ -117,7 +117,7 @@ def test_prepare_for_deployment_with_dependencies(
 
 
 def test_prepare_for_deployment_with_packages(
-        monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
 ) -> None:
     monkeypatch.chdir(dbt_project_dir)
 

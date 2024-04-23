@@ -107,4 +107,4 @@ class DagsterDbtManifestNotFoundError(DagsterDbtError):
 
 
 class DagsterDbtProjectYmlFileNotFoundError(DagsterDbtError):
-    """Error when a dbt_project.yml file can not be found in the specified project directory"""
+    """Error when a dbt_project.yml file can not be found in the specified project directory."""

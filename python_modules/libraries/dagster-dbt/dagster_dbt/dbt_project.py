@@ -8,9 +8,15 @@ from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
 
-from .errors import DagsterDbtManifestNotFoundError, DagsterDbtProjectNotFoundError, DagsterDbtProjectYmlFileNotFoundError
+from .errors import (
+    DagsterDbtManifestNotFoundError,
+    DagsterDbtProjectNotFoundError,
+    DagsterDbtProjectYmlFileNotFoundError,
+)
 
 logger = logging.getLogger("dagster-dbt.artifacts")
+
+DBT_MANIFEST_PREPARATION_IN_PROGRESS = "DBT_MANIFEST_PREPARATION_IN_PROGRESS"
 
 
 def using_dagster_dev() -> bool:
@@ -32,6 +38,15 @@ class DbtManifestPreparer:
 
     def parse_on_load_opt_in(self) -> bool:
         return bool(os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"))
+
+    def preparing_dbt_manifest(self) -> bool:
+        return bool(os.getenv(DBT_MANIFEST_PREPARATION_IN_PROGRESS))
+
+    def set_dbt_manifest_preparation_in_progress(self) -> None:
+        os.environ[DBT_MANIFEST_PREPARATION_IN_PROGRESS] = "true"
+
+    def unset_dbt_manifest_preparation_in_progress(self) -> None:
+        del os.environ[DBT_MANIFEST_PREPARATION_IN_PROGRESS]
 
 
 @experimental
@@ -70,23 +85,28 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
     def prepare(self, project: "DbtProject") -> None:
         from .core.resources_v2 import DbtCliResource
 
-        if (
-            project.dependencies_path.exists() or project.packages_path.exists()
-        ) and not project.packages_install_path.exists():
-            (
-                DbtCliResource(project_dir=project)
-                .cli(["deps", "--quiet"], target_path=project.target_path)
-                .wait()
-            )
+        if not self.preparing_dbt_manifest():
+            try:
+                self.set_dbt_manifest_preparation_in_progress()
+                if (
+                    project.dependencies_path.exists() or project.packages_path.exists()
+                ) and not project.packages_install_path.exists():
+                    (
+                        DbtCliResource(project_dir=project)
+                        .cli(["deps", "--quiet"], target_path=project.target_path)
+                        .wait()
+                    )
 
-        (
-            DbtCliResource(project_dir=project)
-            .cli(
-                self._generate_cli_args,
-                target_path=project.target_path,
-            )
-            .wait()
-        )
+                (
+                    DbtCliResource(project_dir=project)
+                    .cli(
+                        self._generate_cli_args,
+                        target_path=project.target_path,
+                    )
+                    .wait()
+                )
+            finally:
+                self.unset_dbt_manifest_preparation_in_progress()
 
 
 @experimental
