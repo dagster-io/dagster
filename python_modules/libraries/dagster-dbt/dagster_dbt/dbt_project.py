@@ -5,6 +5,7 @@ from typing import Optional, Sequence, Union
 
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
+from dagster._utils import run_with_concurrent_update_guard
 
 from .errors import DagsterDbtManifestNotFoundError, DagsterDbtProjectNotFoundError
 
@@ -51,7 +52,13 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
     def on_load(self, project: "DbtProject"):
         if self.using_dagster_dev() or self.parse_on_load_opt_in():
-            self.prepare(project)
+            # guard against multiple Dagster processes trying to update this at the same time
+            run_with_concurrent_update_guard(
+                project.manifest_path,
+                self.prepare,
+                project=project,
+            )
+
             if not project.manifest_path.exists():
                 raise DagsterDbtManifestNotFoundError(
                     f"Did not find manifest.json at expected path {project.manifest_path} "
