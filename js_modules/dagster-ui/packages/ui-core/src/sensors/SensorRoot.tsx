@@ -230,16 +230,23 @@ export const SENSOR_ASSET_SELECTIONS_QUERY = gql`
 
   fragment SensorAssetSelectionFragment on AssetSelection {
     assetSelectionString
-    assets {
-      id
-      key {
-        path
-      }
-      definition {
-        id
-        autoMaterializePolicy {
-          policyType
+    assetsOrError {
+      ... on AssetConnection {
+        nodes {
+          id
+          key {
+            path
+          }
+          definition {
+            id
+            autoMaterializePolicy {
+              policyType
+            }
+          }
         }
+      }
+      ... on PythonError {
+        ...PythonErrorFragment
       }
     }
   }
