@@ -38,8 +38,6 @@ from .event_log_storage import (
     create_and_delete_test_runs,
 )
 
-# Things we want to verify:
-
 
 class TestPartitionStatusCache:
     @pytest.fixture(name="instance", params=[])
@@ -159,6 +157,11 @@ class TestPartitionStatusCache:
 
         asset_records = list(instance.get_asset_records([asset_key]))
         assert len(asset_records) == 0
+
+        cached_status = get_and_update_asset_status_cache_value(
+            instance, asset_key, asset_graph.get(asset_key).partitions_def
+        )
+        assert not cached_status
 
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-01")
 
