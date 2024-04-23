@@ -37,7 +37,7 @@ eager_downstream_1_source_partitioned = SourceAsset(
 
 
 @asset(partitions_def=daily_partitions_def, auto_materialize_policy=AutoMaterializePolicy.eager())
-def eager_downstream_2_partitioned2(eager_downstream_1_partitioned):
+def eager_downstream_2_partitioned(eager_downstream_1_partitioned):
     return eager_downstream_1_partitioned + 2
 
 
@@ -47,8 +47,8 @@ def eager_downstream_3_partitioned(eager_downstream_1_partitioned):
 
 
 @asset(partitions_def=daily_partitions_def, auto_materialize_policy=AutoMaterializePolicy.eager())
-def eager_downstream_4_partitioned(eager_downstream_2_partitioned2, eager_downstream_3_partitioned):
-    return eager_downstream_2_partitioned2 + eager_downstream_3_partitioned
+def eager_downstream_4_partitioned(eager_downstream_2_partitioned, eager_downstream_3_partitioned):
+    return eager_downstream_2_partitioned + eager_downstream_3_partitioned
 
 
 @repository
@@ -58,7 +58,7 @@ def auto_materialize_repo_2():
         eager_downstream_3,
         eager_downstream_1_source,
         eager_downstream_4,
-        eager_downstream_2_partitioned2,
+        eager_downstream_2_partitioned,
         eager_downstream_3_partitioned,
         eager_downstream_1_source_partitioned,
         eager_downstream_4_partitioned,
