@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 from typing import Iterator, Optional, Sequence, Union, cast
 
 from dagster import _check as check
@@ -9,6 +8,7 @@ from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
+from dagster._utils.security import non_secure_md5_hash_str
 
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetKey, CoercibleToAssetKey
@@ -237,6 +237,6 @@ def unique_id_from_asset_keys(asset_keys: Sequence[AssetKey]) -> str:
     forcing the user to provide a name for the underlying op.
     """
     sorted_asset_keys = sorted(asset_keys, key=lambda asset_key: asset_key.to_string())
-    return hashlib.md5(
+    return non_secure_md5_hash_str(
         ",".join([str(asset_key) for asset_key in sorted_asset_keys]).encode()
-    ).hexdigest()[:8]
+    )[:8]
