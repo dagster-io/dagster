@@ -83,12 +83,11 @@ const AssetSelectionLink = ({
 }) => {
   const [showAssetSelection, setShowAssetSelection] = React.useState(false);
 
+  const error =
+    assetSelection.assetsOrError.__typename === 'PythonError' ? assetSelection.assetsOrError : null;
+
   const sortedAssets = React.useMemo(() => {
     if (assetSelection.assetsOrError.__typename === 'PythonError') {
-      showCustomAlert({
-        title: 'Error',
-        body: <PythonErrorInfo error={assetSelection.assetsOrError} />,
-      });
       return [];
     }
     return assetSelection.assetsOrError.nodes
@@ -150,11 +149,24 @@ const AssetSelectionLink = ({
       </Dialog>
       <ButtonLink
         onClick={() => {
-          setShowAssetSelection(true);
+          if (error) {
+            showCustomAlert({
+              title: 'Python Error',
+              body: <PythonErrorInfo error={error} />,
+            });
+          } else {
+            setShowAssetSelection(true);
+          }
         }}
       >
-        {assetSelectionString.slice(0, 1).toUpperCase()}
-        {assetSelectionString.slice(1)}
+        {error ? (
+          <>Error loading asset selection</>
+        ) : (
+          <>
+            {assetSelectionString.slice(0, 1).toUpperCase()}
+            {assetSelectionString.slice(1)}
+          </>
+        )}
       </ButtonLink>
     </>
   );
