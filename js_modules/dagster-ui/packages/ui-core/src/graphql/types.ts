@@ -651,8 +651,14 @@ export enum AutoMaterializeDecisionType {
 export type AutoMaterializePolicy = {
   __typename: 'AutoMaterializePolicy';
   maxMaterializationsPerMinute: Maybe<Scalars['Int']['output']>;
+  policyType: AutoMaterializePolicyType;
   rules: Array<AutoMaterializeRule>;
 };
+
+export enum AutoMaterializePolicyType {
+  EAGER = 'EAGER',
+  LAZY = 'LAZY',
+}
 
 export type AutoMaterializeRule = {
   __typename: 'AutoMaterializeRule';
@@ -6653,6 +6659,10 @@ export const buildAutoMaterializePolicy = (
       overrides && overrides.hasOwnProperty('maxMaterializationsPerMinute')
         ? overrides.maxMaterializationsPerMinute!
         : 9783,
+    policyType:
+      overrides && overrides.hasOwnProperty('policyType')
+        ? overrides.policyType!
+        : AutoMaterializePolicyType.EAGER,
     rules: overrides && overrides.hasOwnProperty('rules') ? overrides.rules! : [],
   };
 };
