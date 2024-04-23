@@ -20,10 +20,6 @@ import {
 } from './AssetMetadata';
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeList} from './AssetNodeList';
-import {
-  AutomaterializePolicyTag,
-  automaterializePolicyDescription,
-} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
@@ -113,22 +109,6 @@ export const AssetNodeDefinition = ({
                   {freshnessPolicyDescription(assetNode.freshnessPolicy)}
                 </Body>
                 <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
-              </Box>
-            </>
-          )}
-          {assetNode.autoMaterializePolicy && (
-            <>
-              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-                <Subheading>Auto-materialize policy</Subheading>
-              </Box>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                flex={{gap: 12, alignItems: 'flex-start'}}
-              >
-                <Body style={{flex: 1}}>
-                  {automaterializePolicyDescription(assetNode.autoMaterializePolicy)}
-                </Body>
-                <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
               </Box>
             </>
           )}
