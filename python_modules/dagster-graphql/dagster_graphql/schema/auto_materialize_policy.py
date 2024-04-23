@@ -2,6 +2,7 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy,
+    AutoMaterializePolicyType,
 )
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeDecisionType,
@@ -31,6 +32,7 @@ class GrapheneAutoMaterializeRule(graphene.ObjectType):
 
 
 class GrapheneAutoMaterializePolicy(graphene.ObjectType):
+    policyType = graphene.NonNull(graphene.Enum.from_enum(AutoMaterializePolicyType))
     maxMaterializationsPerMinute = graphene.Int()
     rules = non_null_list(GrapheneAutoMaterializeRule)
 
@@ -58,5 +60,6 @@ class GrapheneAutoMaterializePolicy(graphene.ObjectType):
             )
         super().__init__(
             rules=rules,
+            policyType=auto_materialize_policy.policy_type,
             maxMaterializationsPerMinute=auto_materialize_policy.max_materializations_per_minute,
         )
