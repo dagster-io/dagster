@@ -328,7 +328,6 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       }
     }
     autoMaterializePolicy {
-      policyType
       rules {
         className
         description
