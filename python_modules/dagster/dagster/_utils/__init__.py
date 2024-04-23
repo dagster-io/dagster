@@ -616,12 +616,30 @@ def process_is_alive(pid: int) -> bool:
         import psutil
 
         return psutil.pid_exists(pid=pid)
-    else:
-        try:
-            subprocess.check_output(["ps", str(pid)])
-        except subprocess.CalledProcessError as exc:
-            assert exc.returncode == 1
+
+    # https://stackoverflow.com/questions/568271/how-to-check-if-there-exists-a-process-with-a-given-pid-in-python
+    if pid < 0:
+        return False
+    if pid == 0:
+        # According to "man 2 kill" PID 0 refers to every process
+        # in the process group of the calling process.
+        # On certain systems 0 is a valid PID but we have no way
+        # to know that in a portable fashion.
+        raise ValueError("invalid PID 0")
+    try:
+        os.kill(pid, 0)
+    except OSError as err:
+        if err.errno == errno.ESRCH:
+            # ESRCH == No such process
             return False
+        elif err.errno == errno.EPERM:
+            # EPERM clearly means there's a process to deny access to
+            return True
+        else:
+            # According to "man 2 kill" possible error values are
+            # (EINVAL, EPERM, ESRCH)
+            raise
+    else:
         return True
 
 
@@ -780,3 +798,85 @@ def is_uuid(value: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def run_with_concurrent_update_guard(
+    target_file_path: Path,
+    update_fn: Callable[..., None],
+    *,
+    guard_timeout_seconds: float = 60,
+    **kwargs,
+) -> None:
+    """This function prevents multiple processes attempting to update the same target artifacts
+    from running concurrently. It uses a lock file to ensure that only one process can update the
+    target file at a time.
+
+    If the target file has been updated by another process while waiting for the lock, we skip
+    running the update_fn, assuming we are about to do redundant work.
+
+    Args:
+        target_file_path (Path): The path to the target file that needs to be updated.
+        update_fn (Callable[[Any], None]): The function that will update the target file.
+        guard_timeout_seconds (float): The maximum time to wait for the lock to be released.
+            Default: 60 seconds.
+        **kwargs: The keyword arguments to pass to the function.
+    """
+    lock_path = target_file_path.with_suffix(".dagster-lock")
+
+    start_mtime = 0
+    if target_file_path.exists():
+        start_mtime = target_file_path.lstat().st_mtime
+
+    if not lock_path.parent.exists():
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+    own_lock = False
+    try:
+        with open(lock_path, "x") as f:
+            own_lock = True
+            f.write(f"{os.getpid()}")
+
+        fn(**kwargs)
+        return
+    except FileExistsError as e:
+        if os.path.realpath(e.filename) != os.path.realpath(lock_path):
+            raise
+    finally:
+        if own_lock and lock_path.exists():
+            lock_path.unlink()
+
+    their_pid = 0
+    try:
+        their_pid = int(lock_path.read_text())
+    except Exception:
+        pass
+
+    while lock_path.exists() and (time.time() - start_time) <= guard_timeout_seconds:
+        # previous update successful, return
+        if target_file_path.exists() and target_file_path.lstat().st_mtime > start_mtime:
+            return
+
+        # if their process is gone, remove the lock and break
+        if their_pid and not process_is_alive(their_pid):
+            lock_path.unlink()
+            break
+
+        time.sleep(0.01)
+
+    # previous update successful, return
+    if target_file_path.exists():
+        target_mtime = target_file_path.lstat().st_mtime
+        if target_mtime > start_mtime:
+            return
+
+    if (time.time() - start_time) > guard_timeout_seconds:
+        raise Exception(f"Timed out waiting for concurrent update guard lock on {target_file_path}")
+
+    # otherwise try again
+    run_with_concurrent_update_guard(
+        target_file_path,
+        fn,
+        guard_timeout_seconds=guard_timeout_seconds,
+        start_time=start_time,
+        **kwargs,
+    )
