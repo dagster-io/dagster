@@ -85,7 +85,7 @@ def execute_run_command(input_json):
 
 
 def _truthy_tag_value(dagster_run: DagsterRun, tag: str, default: str = "false") -> bool:
-    return dagster_run.tags.get(tag, default).casefold() in ["true", "1", "yes", "on"]
+    return dagster_run.tags.get(tag, default).casefold() not in ["false", "0", "off", "no", ""]
 
 
 def _should_start_metrics_thread(dagster_run: DagsterRun) -> bool:
