@@ -25,7 +25,20 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagUseNewOverviewPage,
   },
   {
-    key: 'New navigation (experimental)',
+    key: 'New navigation',
+    label: (
+      <>
+        Experimental navigation (
+        <a
+          href="https://github.com/dagster-io/dagster/discussions/21370"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Learn more
+        </a>
+        )
+      </>
+    ),
     flagType: FeatureFlag.flagSettingsPage,
   },
 ];
