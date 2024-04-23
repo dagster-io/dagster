@@ -31,8 +31,8 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 
 if TYPE_CHECKING:
+    from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
     from dagster._core.storage.event_log.base import AssetRecord
-    from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 
 
 CACHEABLE_PARTITION_TYPES = (
@@ -227,7 +227,7 @@ def get_validated_partition_keys(
 def get_last_planned_storage_id(
     instance: DagsterInstance, asset_key: AssetKey, asset_record: Optional["AssetRecord"]
 ) -> int:
-    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id():
+    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
         return (
             (asset_record.asset_entry.last_planned_materialization_storage_id or 0)
             if asset_record

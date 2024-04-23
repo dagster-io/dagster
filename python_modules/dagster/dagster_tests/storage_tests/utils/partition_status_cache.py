@@ -38,6 +38,8 @@ from .event_log_storage import (
     create_and_delete_test_runs,
 )
 
+# Things we want to verify:
+
 
 class TestPartitionStatusCache:
     @pytest.fixture(name="instance", params=[])

@@ -26,7 +26,7 @@ from dagster._core.storage.tags import TagType, get_tag_type
 from .external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
-    from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
+    from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.errors import GrapheneRunNotFoundError

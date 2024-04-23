@@ -305,6 +305,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Sequence[AssetRecord]:
         pass
 
+    @property
     def asset_records_have_last_planned_materialization_storage_id(self) -> bool:
         return False
 

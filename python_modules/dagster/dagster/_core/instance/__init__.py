@@ -2186,11 +2186,7 @@ class DagsterInstance(DynamicPartitionsStore):
             get_and_update_asset_status_cache_value,
         )
 
-        cached_value = get_and_update_asset_status_cache_value(
-            self,
-            asset_key,
-            partitions_def,
-        )
+        cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
 
         if isinstance(cached_value, AssetStatusCacheValue):
             materialized_partitions = cached_value.deserialize_materialized_partition_subsets(

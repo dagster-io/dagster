@@ -34,8 +34,8 @@ from dagster._core.remote_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.utils import is_valid_email
-from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 

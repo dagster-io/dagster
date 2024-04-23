@@ -42,6 +42,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalAssetNode
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
@@ -51,7 +52,6 @@ from dagster._core.storage.partition_status_cache import (
     get_validated_partition_keys,
     is_cacheable_partition_type,
 )
-from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 from dagster_graphql.implementation.loader import (
