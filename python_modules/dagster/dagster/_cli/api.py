@@ -84,10 +84,6 @@ def execute_run_command(input_json):
                 sys.exit(return_code)
 
 
-def _is_isolated_run(dagster_run: DagsterRun) -> bool:
-    return dagster_run.tags.get("dagster/isolation") != "disabled"
-
-
 def _truthy_tag_value(dagster_run: DagsterRun, tag: str, default: str = "false") -> bool:
     return dagster_run.tags.get(tag, default).casefold() in ["true", "1", "yes", "on"]
 
