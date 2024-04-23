@@ -7,6 +7,7 @@ import yaml
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
+from filelock import FileLock
 
 from .errors import (
     DagsterDbtManifestNotFoundError,
@@ -17,6 +18,8 @@ from .errors import (
 logger = logging.getLogger("dagster-dbt.artifacts")
 
 DBT_MANIFEST_PREPARATION_IN_PROGRESS = "DBT_MANIFEST_PREPARATION_IN_PROGRESS"
+
+DBT_MANIFEST_PREPARATION_LOCK = "dbt_manifest_preparation.lock"
 
 
 def using_dagster_dev() -> bool:
@@ -38,15 +41,6 @@ class DbtManifestPreparer:
 
     def parse_on_load_opt_in(self) -> bool:
         return bool(os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"))
-
-    def preparing_dbt_manifest(self) -> bool:
-        return bool(os.getenv(DBT_MANIFEST_PREPARATION_IN_PROGRESS))
-
-    def set_dbt_manifest_preparation_in_progress(self) -> None:
-        os.environ[DBT_MANIFEST_PREPARATION_IN_PROGRESS] = "true"
-
-    def unset_dbt_manifest_preparation_in_progress(self) -> None:
-        del os.environ[DBT_MANIFEST_PREPARATION_IN_PROGRESS]
 
 
 @experimental
@@ -85,28 +79,31 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
     def prepare(self, project: "DbtProject") -> None:
         from .core.resources_v2 import DbtCliResource
 
-        if not self.preparing_dbt_manifest():
-            try:
-                self.set_dbt_manifest_preparation_in_progress()
-                if (
-                    project.dependencies_path.exists() or project.packages_path.exists()
-                ) and not project.packages_install_path.exists():
-                    (
-                        DbtCliResource(project_dir=project)
-                        .cli(["deps", "--quiet"], target_path=project.target_path)
-                        .wait()
-                    )
-
+        if (
+            project.dependencies_path.exists() or project.packages_path.exists()
+        ) and not project.packages_install_path.exists():
+            file_path = (
+                project.dependencies_path
+                if project.dependencies_path.exists()
+                else project.packages_path
+            )
+            lock_path = file_path.with_suffix(".lock")
+            lock = FileLock(lock_path)
+            with lock:
                 (
                     DbtCliResource(project_dir=project)
-                    .cli(
-                        self._generate_cli_args,
-                        target_path=project.target_path,
-                    )
+                    .cli(["deps", "--quiet"], target_path=project.target_path)
                     .wait()
                 )
-            finally:
-                self.unset_dbt_manifest_preparation_in_progress()
+
+        (
+            DbtCliResource(project_dir=project)
+            .cli(
+                self._generate_cli_args,
+                target_path=project.target_path,
+            )
+            .wait()
+        )
 
 
 @experimental
