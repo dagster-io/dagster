@@ -55,6 +55,10 @@ export function useQueryRefreshAtInterval(
     );
   }
 
+  if (typeof jest !== 'undefined') {
+    intervalMs = Number.MAX_SAFE_INTEGER;
+  }
+
   const {nextFireMs, nextFireDelay, refetch} = useRefreshAtInterval({
     refresh: useCallback(async () => {
       return await queryResult?.refetch();

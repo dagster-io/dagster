@@ -19,6 +19,8 @@ import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
 } from './types/SensorRoot.types';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -82,12 +84,19 @@ const AssetSelectionLink = ({
   const [showAssetSelection, setShowAssetSelection] = React.useState(false);
 
   const sortedAssets = React.useMemo(() => {
-    return assetSelection.assets
+    if (assetSelection.assetsOrError.__typename === 'PythonError') {
+      showCustomAlert({
+        title: 'Error',
+        body: <PythonErrorInfo error={assetSelection.assetsOrError} />,
+      });
+      return [];
+    }
+    return assetSelection.assetsOrError.nodes
       .slice()
       .sort((a, b) =>
         COMMON_COLLATOR.compare(displayNameForAssetKey(a.key), displayNameForAssetKey(b.key)),
       );
-  }, [assetSelection.assets]);
+  }, [assetSelection.assetsOrError]);
 
   const assetsWithAMP = React.useMemo(
     () => sortedAssets.filter((asset) => !!asset.definition?.autoMaterializePolicy),
@@ -156,7 +165,10 @@ const Section = ({
   title,
   titleBorder = 'top-and-bottom',
 }: {
-  assets: SensorAssetSelectionFragment['assets'];
+  assets: Extract<
+    SensorAssetSelectionFragment['assetsOrError'],
+    {__typename: 'AssetConnection'}
+  >['nodes'];
   title?: string;
   titleBorder?: React.ComponentProps<typeof Box>['border'];
 }) => {
@@ -202,7 +214,10 @@ const Section = ({
 const VirtualizedSelectedAssetRow = ({
   asset,
 }: {
-  asset: SensorAssetSelectionFragment['assets'][0];
+  asset: Extract<
+    SensorAssetSelectionFragment['assetsOrError'],
+    {__typename: 'AssetConnection'}
+  >['nodes'][0];
 }) => {
   return (
     <Box
