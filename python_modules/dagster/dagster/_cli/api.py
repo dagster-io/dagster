@@ -153,9 +153,6 @@ def _execute_run_command_body(
             dagster_run,
             container_metrics_enabled=True,
             python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
-            report_container_metrics_as_engine_events=_report_container_metrics_as_engine_events(
-                dagster_run
-            ),
             polling_interval=polling_interval,
             logger=logger,
         )
@@ -271,9 +268,6 @@ def _resume_run_command_body(
             dagster_run,
             container_metrics_enabled=True,
             python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
-            report_container_metrics_as_engine_events=_report_container_metrics_as_engine_events(
-                dagster_run
-            ),
             polling_interval=polling_interval,
             logger=logger,
         )
