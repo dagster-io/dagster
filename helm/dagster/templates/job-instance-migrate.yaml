@@ -30,16 +30,7 @@ spec:
           command: ["dagster"]
           args: ["instance", "migrate"]
           env:
-            - name: DAGSTER_PG_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "dagster.postgresql.secretName" . | quote }}
-                  key: {{ .Values.global.postgresqlSecretUsernameKey | quote }}
-            - name: DAGSTER_PG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "dagster.postgresql.secretName" . | quote }}
-                  key: {{ .Values.global.postgresqlSecretPasswordKey | quote }}
+            {{- include "dagster.postgresql.env" $ | nindent 12 }}
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" . }}-webserver-env

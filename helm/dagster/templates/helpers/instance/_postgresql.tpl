@@ -1,7 +1,11 @@
 {{- define "dagsterYaml.postgresql.config" }}
 postgres_db:
+  {{- if .Values.global.postgresqlSecretUsernameKey }}
   username:
     env: DAGSTER_PG_USERNAME
+  {{- else }}
+  username: {{ .Values.postgresql.postgresqlUsername }}
+  {{- end }}
   password:
     env: DAGSTER_PG_PASSWORD
   hostname: {{ include "dagster.postgresql.host" . }}

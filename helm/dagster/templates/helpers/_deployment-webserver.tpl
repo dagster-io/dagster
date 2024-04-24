@@ -82,16 +82,7 @@ spec:
             "{{ template "dagster.webserver.dagsterWebserverCommand" . }}"
           ]
           env:
-            - name: DAGSTER_PG_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "dagster.postgresql.secretName" . | quote }}
-                  key: {{ .Values.global.postgresqlSecretUsernameKey | quote }}
-            - name: DAGSTER_PG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "dagster.postgresql.secretName" . | quote }}
-                  key: {{ .Values.global.postgresqlSecretPasswordKey | quote }}
+            {{- include "dagster.postgresql.env" $ | nindent 12 }}
             # This is a list by default, but for backcompat it can be a map. As
             # a map it's written to the webserver-env configmap.
             {{- if and ($_.Values.dagsterWebserver.env) (kindIs "slice" $_.Values.dagsterWebserver.env) }}

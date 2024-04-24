@@ -54,16 +54,7 @@ spec:
           env:
             - name: DAGSTER_CURRENT_IMAGE
               value: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
-            - name: DAGSTER_PG_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "dagsterUserDeployments.postgresql.secretName" $ }}
-                  key: {{ include "dagsterUserDeployments.postgresql.secretUsernameKey" $ }}
-            - name: DAGSTER_PG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "dagsterUserDeployments.postgresql.secretName" $ }}
-                  key: {{ include "dagsterUserDeployments.postgresql.secretPasswordKey" $ }}
+            {{- include "dagsterUserDeployments.postgresql.env" $ | nindent 12 }}
             {{- $includeConfigInLaunchedRuns := $deployment.includeConfigInLaunchedRuns | default (dict "enabled" true) }}
             {{- if $includeConfigInLaunchedRuns.enabled }}
             {{- if $deployment.dagsterApiGrpcArgs }}

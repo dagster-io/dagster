@@ -79,14 +79,20 @@ Create the name of the service account to use
 {{- $global.postgresqlSecretName | default .Values.postgresqlSecretName }}
 {{- end -}}
 
-{{- define "dagsterUserDeployments.postgresql.secretUsernameKey" -}}
+{{- define "dagsterUserDeployments.postgresql.env" -}}
 {{- $global := .Values.global | default dict }}
-{{- $global.postgresqlSecretUsernameKey | default .Values.postgresqlSecretUsernameKey }}
-{{- end -}}
-
-{{- define "dagsterUserDeployments.postgresql.secretPasswordKey" -}}
-{{- $global := .Values.global | default dict }}
-{{- $global.postgresqlSecretPasswordKey | default .Values.postgresqlSecretPasswordKey }}
+{{- if or $global.postgresqlSecretUsernameKey .Values.postgresqlSecretUsernameKey }}
+- name: DAGSTER_PG_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "dagster.postgresql.secretName" $ | quote }}
+      key: {{ $global.postgresqlSecretUsernameKey | default .Values.postgresqlSecretUsernameKey | quote }}
+{{- end }}
+- name: DAGSTER_PG_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "dagster.postgresql.secretName" $ | quote }}
+      key: {{ $global.postgresqlSecretPasswordKey | default .Values.postgresqlSecretPasswordKey | quote }}
 {{- end -}}
 
 {{/*
