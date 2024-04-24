@@ -1,5 +1,5 @@
-import {memoize} from 'lodash';
 import isEqual from 'lodash/isEqual';
+import memoize from 'lodash/memoize';
 import qs from 'qs';
 import {useCallback, useMemo, useRef} from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
