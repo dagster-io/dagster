@@ -279,9 +279,8 @@ class SlingResource(ConfigurableResource):
                     if dagster_sling_translator.get_asset_key(stream) == asset_key:
                         name = stream["name"]
                         config = stream["config"]
-                        context_streams.update({name: config})
+                        context_streams[name] = config
                         break
-        context.log.info(f"Effective streams for current execution context: {context_streams}")
         return context_streams
 
     @classmethod
