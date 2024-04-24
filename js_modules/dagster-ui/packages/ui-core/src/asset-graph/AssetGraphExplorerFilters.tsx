@@ -27,7 +27,7 @@ type Props = {
   loading: boolean;
 };
 
-const defaultState = {filters: {}} as Partial<AssetFilterState> & {
+const defaultState = {filters: {selectAllFilters: [] as string[]}} as Partial<AssetFilterState> & {
   filters: Partial<AssetFilterState['filters']>;
 };
 
