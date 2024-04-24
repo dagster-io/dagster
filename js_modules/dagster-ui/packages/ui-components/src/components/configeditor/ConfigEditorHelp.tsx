@@ -1,19 +1,18 @@
-import * as React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
 
-import {Colors} from '../Colors';
+import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
+import {Colors} from '../Color';
 import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
-
-import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
   allInnerTypes: TypeData[];
 }
 
-export const ConfigEditorHelp: React.FC<ConfigEditorHelpProps> = React.memo(
-  ({context, allInnerTypes}) => {
+export const ConfigEditorHelp = memo(
+  ({context, allInnerTypes}: ConfigEditorHelpProps) => {
     if (!context) {
       return <Container />;
     }
@@ -33,14 +32,14 @@ const AutocompletionsNote = styled.div`
   font-size: 0.75rem;
   text-align: center;
   padding: 4px;
-  border-top: 1px solid ${Colors.KeylineGray};
-  background: ${Colors.Gray100};
-  color: ${Colors.Gray500};
+  border-top: 1px solid ${Colors.keylineDefault()};
+  background: ${Colors.backgroundLight()};
+  color: ${Colors.textLight()};
 `;
 
 const ConfigScrollWrap = styled.div`
   padding: 8px;
-  color: ${Colors.Dark};
+  color: ${Colors.textDefault()};
   flex: 1;
   pointer-events: initial;
   max-height: 100%;
@@ -51,6 +50,6 @@ const Container = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: ${Colors.Gray50};
+  background-color: ${Colors.backgroundLight()};
   height: 100%;
 `;

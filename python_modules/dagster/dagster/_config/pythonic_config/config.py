@@ -3,6 +3,7 @@ from enum import Enum
 from typing import (
     Any,
     Dict,
+    List,
     Mapping,
     Optional,
     Set,
@@ -10,18 +11,19 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, Extra
-from pydantic.fields import (
-    ModelField,
-)
+from pydantic import BaseModel, ConfigDict
+from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster import (
-    Field,
     Field as DagsterField,
     Shape,
 )
-from dagster._config.field_utils import Permissive
+from dagster._config.field_utils import (
+    EnvVar,
+    IntEnvVar,
+    Permissive,
+)
 from dagster._core.definitions.definition_config_schema import (
     DefinitionConfigSchema,
 )
@@ -31,12 +33,20 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
+from dagster._model.pydantic_compat_layer import (
+    USING_PYDANTIC_2,
+    ModelFieldCompat,
+    PydanticUndefined,
+    model_config,
+    model_fields,
+)
 from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
-from .conversion_utils import _convert_pydantic_field, _is_pydantic_field_required, safe_is_subclass
+from .conversion_utils import _convert_pydantic_field, safe_is_subclass
+from .type_check_utils import is_literal
 from .typing_utils import BaseConfigMeta
 
 try:
@@ -49,8 +59,24 @@ except ImportError:
 
 INTERNAL_MARKER = "__internal__"
 
+
+def _is_field_internal(name: str) -> bool:
+    return name.endswith(INTERNAL_MARKER)
+
+
 # ensure that this ends with the internal marker so we can do a single check
 assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
+
+
+def _is_frozen_pydantic_error(e: Exception) -> bool:
+    """Parses an error to determine if it is a Pydantic error indicating that the instance
+    is immutable. We use this to attach a more helpful error message.
+    """
+    return "Instance is frozen" in str(  # Pydantic 2.x error
+        e
+    ) or "is immutable and does not support item assignment" in str(  # Pydantic 1.x error
+        e
+    )
 
 
 class MakeConfigCacheable(BaseModel):
@@ -59,16 +85,19 @@ class MakeConfigCacheable(BaseModel):
     all in one go.
     """
 
-    # Pydantic config for this class
-    # Cannot use kwargs for base class as this is not support for pydnatic<1.8
-    class Config:
-        # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
-        # Necessary to allow for caching decorators
-        arbitrary_types_allowed = True
-        # Avoid pydantic reading a cached property class as part of the schema
-        keep_untouched = (cached_property,)
-        # Ensure the class is serializable, for caching purposes
-        frozen = True
+    # - Frozen, to avoid complexity caused by mutation.
+    # - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
+    # - Avoid pydantic reading a cached property class as part of the schema.
+    if USING_PYDANTIC_2:
+        model_config = ConfigDict(  # type: ignore
+            frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
+        )
+    else:
+
+        class Config:
+            frozen = True
+            arbitrary_types_allowed = True
+            keep_untouched = (cached_property,)
 
     def __setattr__(self, name: str, value: Any):
         from .resource import ConfigurableResourceFactory
@@ -77,7 +106,7 @@ class MakeConfigCacheable(BaseModel):
         # config schema. Pydantic will normally raise an error if you try to set an attribute
         # that is not part of the schema.
 
-        if self._is_field_internal(name):
+        if _is_field_internal(name):
             object.__setattr__(self, name, value)
             return
 
@@ -85,7 +114,7 @@ class MakeConfigCacheable(BaseModel):
             return super().__setattr__(name, value)
         except (TypeError, ValueError) as e:
             clsname = self.__class__.__name__
-            if "is immutable and does not support item assignment" in str(e):
+            if _is_frozen_pydantic_error(e):
                 if isinstance(self, ConfigurableResourceFactory):
                     raise DagsterInvalidInvocationError(
                         f"'{clsname}' is a Pythonic resource and does not support item assignment,"
@@ -121,8 +150,32 @@ class MakeConfigCacheable(BaseModel):
             else:
                 raise
 
-    def _is_field_internal(self, name: str) -> bool:
-        return name.endswith(INTERNAL_MARKER)
+
+T = TypeVar("T")
+
+
+def ensure_env_vars_set_post_init(set_value: T, input_value: Any) -> T:
+    """Pydantic 2.x utility. Ensures that Pydantic field values are set to the appropriate
+    EnvVar or IntEnvVar objects post-model-instantiation, since Pydantic 2.x will cast
+    EnvVar or IntEnvVar values to raw strings or ints as part of the model instantiation process.
+    """
+    if isinstance(set_value, dict) and isinstance(input_value, dict):
+        for key, value in input_value.items():
+            if isinstance(value, (EnvVar, IntEnvVar)):
+                set_value[key] = value
+            elif isinstance(value, dict):
+                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or {}, value)
+            elif isinstance(value, list):
+                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or [], value)
+    if isinstance(set_value, List) and isinstance(input_value, List):
+        for i in range(len(set_value)):
+            value = input_value[i]
+            if isinstance(value, (EnvVar, IntEnvVar)):
+                set_value[i] = value
+            elif isinstance(value, (dict, list)):
+                set_value[i] = ensure_env_vars_set_post_init(set_value[i], value)
+
+    return set_value
 
 
 class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
@@ -162,15 +215,16 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         modified_data = {}
         for key, value in config_dict.items():
-            field = self.__fields__.get(key)
-            if field and field.field_info.discriminator:
+            field = model_fields(self).get(key)
+
+            if field and field.discriminator:
                 nested_dict = value
 
-                discriminator_key = check.not_none(field.discriminator_key)
+                discriminator_key = check.not_none(field.discriminator)
                 if isinstance(value, Config):
                     nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
                         discriminator_key,
-                        value._get_non_none_public_field_values(),  # noqa: SLF001
+                        value._get_non_default_public_field_values(),  # noqa: SLF001
                     )
 
                 nested_items = list(check.is_dict(nested_dict).items())
@@ -184,9 +238,29 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                     **nested_values,
                     discriminator_key: discriminated_value,
                 }
+
+            # If the passed value matches the name of an expected Enum value, convert it to the value
+            elif (
+                field
+                and safe_is_subclass(field.annotation, Enum)
+                and value in field.annotation.__members__
+                and value not in [member.value for member in field.annotation]
+            ):
+                modified_data[key] = field.annotation.__members__[value].value
+            elif field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
+                modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
+                    value
+                )
             else:
                 modified_data[key] = value
+
+        for key, field in model_fields(self).items():
+            if field.is_required() and key not in modified_data:
+                modified_data[key] = field.default if field.default != PydanticUndefined else None
+
         super().__init__(**modified_data)
+        if USING_PYDANTIC_2:
+            self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
@@ -195,32 +269,42 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         Inner fields are recursively converted to dictionaries, meaning nested config objects
         or EnvVars will be converted to the appropriate dictionary representation.
         """
-        public_fields = self._get_non_none_public_field_values()
+        public_fields = self._get_non_default_public_field_values()
         return {
-            k: _config_value_to_dict_representation(self.__fields__.get(k), v)
+            k: _config_value_to_dict_representation(model_fields(self).get(k), v)
             for k, v in public_fields.items()
         }
 
-    def _get_non_none_public_field_values(self) -> Mapping[str, Any]:
+    @classmethod
+    def _get_non_default_public_field_values_cls(cls, items: Dict[str, Any]) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
-        ignoring any private fields, and any optional fields that are None.
+        ignoring any private fields, and any defaulted fields which are equal to the default value.
 
         Inner fields are returned as-is in the dictionary,
         meaning any nested config objects will be returned as config objects, not dictionaries.
         """
         output = {}
-        for key, value in self.__dict__.items():
-            if self._is_field_internal(key):
+        for key, value in items.items():
+            if _is_field_internal(key):
                 continue
-            field = self.__fields__.get(key)
-            if field and value is None and not _is_pydantic_field_required(field):
-                continue
+            field = model_fields(cls).get(key)
 
             if field:
-                output[field.alias] = value
+                if (
+                    not is_literal(field.annotation)
+                    and not safe_is_subclass(field.annotation, Enum)
+                    and value == field.default
+                ):
+                    continue
+
+                resolved_field_name = field.alias or key
+                output[resolved_field_name] = value
             else:
                 output[key] = value
         return output
+
+    def _get_non_default_public_field_values(self) -> Mapping[str, Any]:
+        return self.__class__._get_non_default_public_field_values_cls(dict(self))  # noqa: SLF001
 
     @classmethod
     def to_config_schema(cls) -> DefinitionConfigSchema:
@@ -252,26 +336,24 @@ def _discriminated_union_config_dict_to_selector_config_dict(
     return wrapped_dict
 
 
-def _config_value_to_dict_representation(field: Optional[ModelField], value: Any):
+def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], value: Any):
     """Converts a config value to a dictionary representation. If a field is provided, it will be used
     to determine the appropriate dictionary representation in the case of discriminated unions.
     """
-    from dagster._config.field_utils import EnvVar, IntEnvVar
+    from dagster._config.field_utils import env_var_to_config_dict, is_dagster_env_var
 
     if isinstance(value, dict):
         return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}
     elif isinstance(value, list):
         return [_config_value_to_dict_representation(None, v) for v in value]
-    elif isinstance(value, EnvVar):
-        return {"env": str(value)}
-    elif isinstance(value, IntEnvVar):
-        return {"env": value.name}
+    elif is_dagster_env_var(value):
+        return env_var_to_config_dict(value)
     if isinstance(value, Config):
-        if field and field.discriminator_key:
+        if field and field.discriminator:
             return {
                 k: v
                 for k, v in _discriminated_union_config_dict_to_selector_config_dict(
-                    field.discriminator_key,
+                    field.discriminator,
                     value._convert_to_config_dictionary(),  # noqa: SLF001
                 ).items()
             }
@@ -318,17 +400,21 @@ class PermissiveConfig(Config):
 
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
-    class Config:
-        extra = "allow"
+    if USING_PYDANTIC_2:
+        model_config = ConfigDict(extra="allow")  # type: ignore
+    else:
+
+        class Config:
+            extra = "allow"
 
 
 def infer_schema_from_config_class(
     model_cls: Type["Config"],
     description: Optional[str] = None,
     fields_to_omit: Optional[Set[str]] = None,
-) -> Field:
+) -> DagsterField:
     from .config import Config
-    from .resource import ConfigurableResourceFactory
+    from .resource import ConfigurableResourceFactory, _is_annotated_as_resource_type
 
     """Parses a structured config class and returns a corresponding Dagster config Field."""
     fields_to_omit = fields_to_omit or set()
@@ -338,10 +424,16 @@ def infer_schema_from_config_class(
         "Config type annotation must inherit from dagster.Config",
     )
 
-    fields: Dict[str, Field] = {}
-    for pydantic_field in model_cls.__fields__.values():
-        if pydantic_field.name not in fields_to_omit:
-            if isinstance(pydantic_field.default, Field):
+    fields: Dict[str, DagsterField] = {}
+    for key, pydantic_field_info in model_fields(model_cls).items():
+        if _is_annotated_as_resource_type(
+            pydantic_field_info.annotation, pydantic_field_info.metadata
+        ):
+            continue
+
+        resolved_field_name = pydantic_field_info.alias if pydantic_field_info.alias else key
+        if key not in fields_to_omit:
+            if isinstance(pydantic_field_info.default, DagsterField):
                 raise DagsterInvalidDefinitionError(
                     "Using 'dagster.Field' is not supported within a Pythonic config or resource"
                     " definition. 'dagster.Field' should only be used in legacy Dagster config"
@@ -349,20 +441,18 @@ def infer_schema_from_config_class(
                 )
 
             try:
-                fields[pydantic_field.alias] = _convert_pydantic_field(
-                    pydantic_field,
-                )
+                fields[resolved_field_name] = _convert_pydantic_field(pydantic_field_info)
             except DagsterInvalidConfigDefinitionError as e:
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,
-                    field_name=pydantic_field.name,
+                    field_name=key,
                     invalid_type=e.current_value,
                     is_resource=model_cls is not None
                     and safe_is_subclass(model_cls, ConfigurableResourceFactory),
                 )
 
-    shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
+    shape_cls = Permissive if model_config(model_cls).get("extra") == "allow" else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
 
-    return Field(config=shape_cls(fields), description=description or docstring)
+    return DagsterField(config=shape_cls(fields), description=description or docstring)

@@ -13,7 +13,7 @@ from docs_snippets.tutorial.connecting.resources import (
 def test_definitions_with_resources():
     repository = connecting.defs.get_repository_def()
     resource_keys = repository.get_resource_key_mapping().values()
-    assert len(resource_keys) == 3
+    assert len(resource_keys) == 1
     assert "hackernews_api" in resource_keys
 
 

@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster with Airbyte"
+title: "Airbyte & Dagster | Dagster Docs"
 description: Integrate your Airbyte connections into Dagster.
 ---
 
-# Using Airbyte with Dagster
+# Airbyte & Dagster
 
 <Note>
   Using Airbyte Cloud? Check out the{" "}
@@ -238,7 +238,7 @@ def stargazers_file(stargazers: pd.DataFrame):
 # only run the airbyte syncs necessary to materialize stargazers_file
 my_upstream_job = define_asset_job(
     "my_upstream_job",
-    AssetSelection.keys("stargazers_file")
+    AssetSelection.assets(stargazers_file)
     .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
     .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
 )
@@ -289,7 +289,7 @@ def stargazers_file(snowflake: SnowflakeResource):
 # only run the airbyte syncs necessary to materialize stargazers_file
 my_upstream_job = define_asset_job(
     "my_upstream_job",
-    AssetSelection.keys("stargazers_file")
+    AssetSelection.assets(stargazers_file)
     .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
     .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
 )
@@ -376,10 +376,6 @@ If you have questions on using Airbyte with Dagster, we'd love to hear from you:
   <ArticleListItem
     href="/\_apidocs/libraries/dagster-airbyte"
     title="dagster-airbyte API reference"
-  ></ArticleListItem>
-  <ArticleListItem
-    href="/guides/dagster/airbyte-ingestion-as-code"
-    title="Airbyte ingestion as code"
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/assets/software-defined-assets"

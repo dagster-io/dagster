@@ -1,15 +1,15 @@
 // eslint-disable-next-line no-restricted-imports
-import {InputGroupProps2, IPopoverProps} from '@blueprintjs/core';
+import {IPopoverProps, InputGroupProps2} from '@blueprintjs/core';
 // eslint-disable-next-line no-restricted-imports
-import {isCreateNewItem, Suggest as BlueprintSuggest, SuggestProps} from '@blueprintjs/select';
+import {Suggest as BlueprintSuggest, SuggestProps, isCreateNewItem} from '@blueprintjs/select';
 import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {List as _List} from 'react-virtualized';
-import {createGlobalStyle} from 'styled-components';
+import styled, {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
-import {Colors} from './Colors';
-import {IconWrapper} from './Icon';
+import {Colors} from './Color';
+import {Icon, IconName, IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 
 // todo: react-virtualized needs updated types to work with React 18. For now lets any type.
@@ -20,7 +20,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
     ${TextInputContainerStyles}
 
     &:disabled ${IconWrapper}:first-child {
-      background-color: ${Colors.Gray400};
+      background-color: ${Colors.accentGray()};
     }
 
     .bp4-input {
@@ -29,7 +29,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
       height: auto;
 
       ::placeholder {
-        color: ${Colors.Gray500};
+        color: ${Colors.textDisabled()};
       }
     }
 
@@ -57,6 +57,7 @@ const VISIBLE_ITEMS = 7.5;
 interface Props<T> extends React.PropsWithChildren<SuggestProps<T>> {
   itemHeight?: number;
   menuWidth?: number;
+  icon?: IconName;
 }
 
 export const Suggest = <T,>(props: Props<T>) => {
@@ -65,6 +66,7 @@ export const Suggest = <T,>(props: Props<T>) => {
     itemHeight = MENU_ITEM_HEIGHT,
     menuWidth = MENU_WIDTH,
     noResults,
+    icon,
     ...rest
   } = props;
 
@@ -80,7 +82,7 @@ export const Suggest = <T,>(props: Props<T>) => {
     className: 'dagster-suggest-input',
   };
 
-  return (
+  const suggest = (
     <BlueprintSuggest<T>
       {...rest}
       inputProps={inputProps as any}
@@ -98,26 +100,57 @@ export const Suggest = <T,>(props: Props<T>) => {
         }
 
         return (
-          <List
-            style={{outline: 'none', marginRight: -5, paddingRight: 5}}
-            rowCount={props.filteredItems.length}
-            scrollToIndex={
-              props.activeItem && !isCreateNewItem(props.activeItem)
-                ? props.filteredItems.indexOf(props.activeItem)
-                : undefined
-            }
-            rowHeight={itemHeight}
-            rowRenderer={(a: any) => (
-              <div key={a.index} style={a.style}>
-                {props.renderItem(props.filteredItems[a.index] as T, a.index)}
-              </div>
-            )}
-            width={menuWidth}
-            height={Math.min(props.filteredItems.length * itemHeight, itemHeight * VISIBLE_ITEMS)}
-          />
+          <div style={{overscrollBehavior: 'contain'}}>
+            <List
+              style={{outline: 'none', marginRight: -5, paddingRight: 5}}
+              rowCount={props.filteredItems.length}
+              scrollToIndex={
+                props.activeItem && !isCreateNewItem(props.activeItem)
+                  ? props.filteredItems.indexOf(props.activeItem)
+                  : undefined
+              }
+              rowHeight={itemHeight}
+              rowRenderer={(a: any) => (
+                <div key={a.index} style={a.style}>
+                  {props.renderItem(props.filteredItems[a.index] as T, a.index)}
+                </div>
+              )}
+              width={menuWidth}
+              height={Math.min(props.filteredItems.length * itemHeight, itemHeight * VISIBLE_ITEMS)}
+            />
+          </div>
         );
       }}
       popoverProps={allPopoverProps}
     />
   );
+
+  if (icon) {
+    return (
+      <SuggestWithIconWrapper>
+        <div>
+          <Icon name={icon} />
+        </div>
+        {suggest}
+      </SuggestWithIconWrapper>
+    );
+  }
+  return suggest;
 };
+
+const SuggestWithIconWrapper = styled.div`
+  position: relative;
+  > :first-child {
+    position: absolute;
+    left: 8px;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  &&& input {
+    padding-left: 28px;
+  }
+`;

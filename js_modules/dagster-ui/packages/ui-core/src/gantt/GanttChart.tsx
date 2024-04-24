@@ -16,22 +16,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AppContext} from '../app/AppContext';
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {withMiddleTruncation} from '../app/Util';
-import {WebSocketContext} from '../app/WebSocketProvider';
-import {CancelRunButton} from '../runs/RunActionButtons';
-import {
-  EMPTY_RUN_METADATA,
-  IRunMetadataDict,
-  IStepMetadata,
-  IStepState,
-} from '../runs/RunMetadataProvider';
-import {runsPathWithFilters} from '../runs/RunsFilterInput';
-import {StepSelection} from '../runs/StepSelection';
-import {RunFragment} from '../runs/types/RunFragments.types';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
-
 import {
   BOTTOM_INSET,
   BOX_DOT_MARGIN_Y,
@@ -56,10 +40,10 @@ import {
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 import {
+  BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
-  BuildLayoutParams,
   interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
@@ -68,12 +52,27 @@ import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
 import {useGanttChartMode} from './useGanttChartMode';
+import {AppContext} from '../app/AppContext';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {withMiddleTruncation} from '../app/Util';
+import {WebSocketContext} from '../app/WebSocketProvider';
+import {CancelRunButton} from '../runs/RunActionButtons';
+import {
+  EMPTY_RUN_METADATA,
+  IRunMetadataDict,
+  IStepMetadata,
+  IStepState,
+} from '../runs/RunMetadataProvider';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
+import {StepSelection} from '../runs/StepSelection';
+import {RunFragment} from '../runs/types/RunFragments.types';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 export {GanttChartMode} from './Constants';
 
 const HIGHLIGHT_TIME_EVENT = 'gantt-highlight-time';
 
-let highlightTimer: NodeJS.Timeout;
+let highlightTimer: ReturnType<typeof setTimeout>;
 
 /**
  * Set or clear the highlighted time on the Gantt chart. Goal of this convenience
@@ -109,7 +108,7 @@ interface GanttChartState {
   options: GanttChartLayoutOptions;
 }
 
-export const GanttChart: React.FC<GanttChartProps> = (props) => {
+export const GanttChart = (props: GanttChartProps) => {
   const {graph, onSetSelection, options, selection, toolbarActions} = props;
   const [mode, setMode] = useGanttChartMode();
   const [state, setState] = React.useState(() => ({
@@ -376,11 +375,11 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               <Group
                 direction="row"
                 spacing={8}
-                background={`${Colors.Yellow500}26`}
+                background={Colors.backgroundYellow()}
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
-                <Icon name="warning" color={Colors.Yellow700} />
+                <Icon name="warning" color={Colors.accentYellow()} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagster webserver.</strong>
                   <span>
@@ -442,7 +441,7 @@ interface GanttChartViewportContentsProps {
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
-const GanttChartViewportContents: React.FC<GanttChartViewportContentsProps> = (props) => {
+const GanttChartViewportContents = (props: GanttChartViewportContentsProps) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
   const items: React.ReactChild[] = [];
 
@@ -591,20 +590,14 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
   const bIsDot = b.width === BOX_DOT_WIDTH_CUTOFF;
   const bCenterY = bIsDot ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2 : BOX_HEIGHT / 2;
 
-  const straight = b.y === a.y;
-
   // Line comes out of the center of the right side of the box
   const minX = Math.min(a.x + a.width, b.x + b.width);
-  const minY = TOP_INSET + (straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY);
+  const minY = TOP_INSET + a.y * BOX_HEIGHT + aCenterY;
 
   // Line ends on the center left edge of the box if it is on the
   // same line, or drops into the top center of the box if it's below.
-  const maxX = straight
-    ? Math.max(a.x, b.x)
-    : Math.max(a.x + a.width / 2, b.x + (bIsDot ? BOX_DOT_SIZE : b.width) / 2);
-  const maxY = straight
-    ? TOP_INSET + b.y * BOX_HEIGHT + bCenterY
-    : TOP_INSET + b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
+  const maxX = Math.max(a.x, b.x);
+  const maxY = TOP_INSET + b.y * BOX_HEIGHT + bCenterY;
 
   return {minX, minY, maxX, maxY};
 };
@@ -630,10 +623,49 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? Colors.Gray700 : Colors.Gray300
+      darkened ? Colors.lineageEdgeHighlighted() : Colors.lineageEdge()
     }`;
 
-    const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
+    if (depNotDrawn) {
+      return (
+        <div
+          className="line"
+          style={{
+            height: 1,
+            left: minX,
+            width: 50,
+            top: minY - 1,
+            borderTop: border,
+            zIndex: darkened ? 100 : 1,
+          }}
+        />
+      );
+    }
+    if (minY === maxY) {
+      return (
+        <div
+          className="line"
+          style={{
+            height: 1,
+            left: minX,
+            width: maxX - minX,
+            top: minY - 1,
+            borderTop: border,
+            zIndex: darkened ? 100 : 1,
+          }}
+        />
+      );
+    }
+
+    // When drawing a line that has a vertical segment, position the vertical segment
+    // in the space after the first box before the next box begins. This is ideal because
+    // there can be "marker-dot" and "marker-whiskers" elements before the next box, and
+    // the line looks better going straight through those.
+    //
+    // The idx lgoic here ensures that outgoing lines from a single box "stack" rather than
+    // layering on top of each other.
+    //
+    const verticalLineX = minX + BOX_SPACING_X * 0.4 + (depIdx % 10) * LINE_SIZE;
 
     return (
       <>
@@ -642,7 +674,7 @@ const GanttLine = React.memo(
           style={{
             height: 1,
             left: minX,
-            width: depNotDrawn ? 50 : maxXAvoidingOverlap - minX,
+            width: verticalLineX - minX,
             top: minY - 1,
             borderTop: border,
             zIndex: darkened ? 100 : 1,
@@ -653,7 +685,7 @@ const GanttLine = React.memo(
             className="line"
             style={{
               width: 1,
-              left: maxXAvoidingOverlap,
+              left: verticalLineX,
               top: minY - LINE_SIZE / 2,
               height: maxY - minY,
               borderRight: border,
@@ -661,6 +693,17 @@ const GanttLine = React.memo(
             }}
           />
         )}
+        <div
+          className="line"
+          style={{
+            height: 1,
+            left: verticalLineX,
+            width: maxX - verticalLineX,
+            top: maxY - 1,
+            borderTop: border,
+            zIndex: darkened ? 100 : 1,
+          }}
+        />
       </>
     );
   },
@@ -689,7 +732,7 @@ const GanttChartContainer = styled.div`
   flex-direction: column;
   z-index: 2;
   user-select: none;
-  background: ${Colors.White};
+  background: ${Colors.backgroundDefault()};
 
   .line {
     position: absolute;
@@ -709,7 +752,7 @@ const GanttChartContainer = styled.div`
       left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
-    color: white;
+    color: ${Colors.accentReversed()};
     overflow: hidden;
     user-select: text;
     z-index: 2;
@@ -733,11 +776,10 @@ const GanttChartContainer = styled.div`
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
     padding: 3px;
     padding-right: 1px;
-    border: 1px solid transparent;
     border-radius: 2px;
     white-space: nowrap;
     font-family: ${FontFamily.monospace};
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 700;
     line-height: 15px;
 
@@ -745,14 +787,14 @@ const GanttChartContainer = styled.div`
       top ${CSS_DURATION}ms linear,
       left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear,
-      height ${CSS_DURATION}ms linear;
+      height ${CSS_DURATION}ms linear,
+      box-shadow ${CSS_DURATION}ms linear;
 
     &.focused {
-      border: 1px solid ${Colors.Gray900};
-      box-shadow: 0 0 0 2px ${Colors.Yellow500};
+      box-shadow: 0 0 0 2px ${Colors.focusRing()};
     }
     &.hovered {
-      border: 1px solid ${Colors.Gray800};
+      box-shadow: 0 0 0 2px ${Colors.focusRing()};
     }
     &.dynamic {
       filter: brightness(115%);
@@ -768,23 +810,24 @@ const GanttChartContainer = styled.div`
   .marker-dot {
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
-    border: 1px solid rgb(27, 164, 206);
+    border: 1px solid ${Colors.accentCyan()};
     border-radius: ${BOX_DOT_SIZE / 2}px;
   }
+
   .marker-whiskers {
     display: inline-block;
     position: absolute;
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    background: rgba(27, 164, 206, 0.09);
-    border-left: 1px solid rgba(27, 164, 206, 0.6);
-    border-right: 1px solid rgba(27, 164, 206, 0.6);
+    background-color: ${Colors.backgroundCyan()};
+    border-left: 1px solid ${Colors.accentCyan()};
+    border-right: 1px solid ${Colors.accentCyan()};
     transition:
       top ${CSS_DURATION}ms linear,
       left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear;
 
     & > div {
-      border-bottom: 1px dashed rgba(27, 164, 206, 0.6);
+      border-bottom: 1px dashed ${Colors.accentCyan()};
       height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
@@ -793,7 +836,7 @@ const GanttChartContainer = styled.div`
 const WebsocketWarning = styled.div`
   position: absolute;
   bottom: 100%;
-  color: ${Colors.Yellow700};
+  color: ${Colors.textYellow()};
   width: 100%;
 `;
 
@@ -807,8 +850,9 @@ const GraphQueryInputContainer = styled.div`
 `;
 
 const FilterInputsBackgroundBox = styled(Box)`
-  background: radial-gradient(${Colors.Gray50} 0%, rgba(255, 255, 255, 0) 100%);
-  padding: 15px 15px 0px 15px;
+  background-color: ${Colors.backgroundGray()};
+  border-radius: 4px;
+  padding: 8px 12px 8px 8px;
 `;
 
 export const GanttChartLoadingState = ({runId}: {runId: string}) => (

@@ -1,49 +1,65 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetEdges} from '../asset-graph/AssetEdges';
-import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
-import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
-import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
-import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
-import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {AssetKeyInput} from '../graphql/types';
-import {getJSONForKey} from '../hooks/useStateWithStorage';
-
+import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
+import {AssetEdges} from '../asset-graph/AssetEdges';
+import {AssetGraphBackgroundContextMenu} from '../asset-graph/AssetGraphBackgroundContextMenu';
+import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
+import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
+import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
+import {AssetNodeLink} from '../asset-graph/ForeignNode';
+import {ToggleDirectionButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
+import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {isNodeOffscreen} from '../graph/common';
+import {AssetKeyInput} from '../graphql/types';
 
-const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
-
-export const AssetNodeLineageGraph: React.FC<{
+export type AssetNodeLineageGraphProps = {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   params: AssetViewParams;
-}> = ({assetKey, assetGraphData, liveDataByNode, params}) => {
+};
+
+export const AssetNodeLineageGraph = ({
+  assetKey,
+  assetGraphData,
+  params,
+}: AssetNodeLineageGraphProps) => {
   const assetGraphId = toGraphId(assetKey);
 
-  const [highlighted, setHighlighted] = React.useState<string | null>(null);
+  const {allGroups, groupedAssets} = useMemo(() => {
+    const groupedAssets: Record<string, GraphNode[]> = {};
+    Object.values(assetGraphData.nodes).forEach((node) => {
+      const groupId = groupIdForNode(node);
+      groupedAssets[groupId] = groupedAssets[groupId] || [];
+      groupedAssets[groupId]!.push(node);
+    });
+    return {allGroups: Object.keys(groupedAssets), groupedAssets};
+  }, [assetGraphData]);
 
-  const {layout, loading} = useAssetLayout(assetGraphData);
-  const viewportEl = React.useRef<SVGViewport>();
+  const [highlighted, setHighlighted] = useState<string[] | null>(null);
+  const [direction, setDirection] = useLayoutDirectionState();
+
+  const {layout, loading} = useAssetLayout(
+    assetGraphData,
+    allGroups,
+    useMemo(() => ({direction}), [direction]),
+  );
+  const viewportEl = useRef<SVGViewport>();
   const history = useHistory();
 
   const onClickAsset = (key: AssetKey) => {
-    history.push(assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors'}));
+    history.push(
+      assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors', lineageDepth: 1}),
+    );
   };
 
-  React.useEffect(() => {
-    if (viewportEl.current && layout) {
-      const lastZoomLevel = Number(getJSONForKey(LINEAGE_GRAPH_ZOOM_LEVEL));
-      viewportEl.current.autocenter(false, lastZoomLevel);
-      viewportEl.current.focus();
-    }
-  }, [viewportEl, layout, assetGraphId]);
+  useLastSavedZoomLevel(viewportEl, layout, assetGraphId);
 
   if (!layout || loading) {
     return (
@@ -54,82 +70,117 @@ export const AssetNodeLineageGraph: React.FC<{
   }
 
   return (
-    <SVGViewport
-      ref={(r) => (viewportEl.current = r || undefined)}
-      interactor={SVGViewport.Interactors.PanAndZoom}
-      defaultZoom="zoom-to-fit"
-      graphWidth={layout.width}
-      graphHeight={layout.height}
-      onDoubleClick={(e) => {
-        viewportEl.current?.autocenter(true);
-        e.stopPropagation();
-      }}
-      maxZoom={DEFAULT_MAX_ZOOM}
-      maxAutocenterZoom={DEFAULT_MAX_ZOOM}
-    >
-      {({scale}) => (
-        <SVGContainer width={layout.width} height={layout.height}>
-          {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
-          <AssetEdges highlighted={highlighted} edges={layout.edges} />
+    <AssetGraphBackgroundContextMenu direction={direction} setDirection={setDirection}>
+      <SVGViewport
+        ref={(r) => (viewportEl.current = r || undefined)}
+        interactor={SVGViewport.Interactors.PanAndZoom}
+        defaultZoom="zoom-to-fit"
+        graphWidth={layout.width}
+        graphHeight={layout.height}
+        onDoubleClick={(e) => {
+          viewportEl.current?.autocenter(true);
+          e.stopPropagation();
+        }}
+        maxZoom={DEFAULT_MAX_ZOOM}
+        maxAutocenterZoom={DEFAULT_MAX_ZOOM}
+        additionalToolbarElements={
+          <ToggleDirectionButton
+            key="toggle-direction"
+            direction={direction}
+            setDirection={setDirection}
+          />
+        }
+      >
+        {({scale}, viewportRect) => (
+          <SVGContainer width={layout.width} height={layout.height}>
+            {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
 
-          {Object.values(layout.groups)
-            .sort((a, b) => a.id.length - b.id.length)
-            .map((group) => (
-              <foreignObject {...group.bounds} key={group.id}>
-                <AssetGroupNode group={group} scale={scale} />
-              </foreignObject>
-            ))}
+            {Object.values(layout.groups)
+              .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+              .sort((a, b) => a.id.length - b.id.length)
+              .map((group) => (
+                <foreignObject
+                  {...group.bounds}
+                  key={`${group.id}-outline`}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <GroupOutline $minimal={scale < MINIMAL_SCALE} />
+                </foreignObject>
+              ))}
 
-          {Object.values(layout.nodes).map(({id, bounds}) => {
-            const graphNode = assetGraphData.nodes[id];
-            const path = JSON.parse(id);
+            <AssetEdges
+              selected={null}
+              highlighted={highlighted}
+              edges={layout.edges}
+              viewportRect={viewportRect}
+              direction={direction}
+            />
 
-            return (
-              <foreignObject
-                {...bounds}
-                key={id}
-                style={{overflow: 'visible'}}
-                onMouseEnter={() => setHighlighted(id)}
-                onMouseLeave={() => setHighlighted(null)}
-                onClick={() => onClickAsset({path})}
-                onDoubleClick={(e) => {
-                  viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                  e.stopPropagation();
-                }}
-              >
-                {!graphNode ? (
-                  <AssetNodeLink assetKey={{path}} />
-                ) : scale < MINIMAL_SCALE ? (
-                  <AssetNodeMinimal
-                    definition={graphNode.definition}
-                    liveData={liveDataByNode[graphNode.id]}
-                    selected={graphNode.id === assetGraphId}
+            {Object.values(layout.groups)
+              .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+              .sort((a, b) => a.id.length - b.id.length)
+              .map((group) => (
+                <foreignObject {...group.bounds} key={group.id}>
+                  <ExpandedGroupNode
+                    group={{...group, assets: groupedAssets[group.id]!}}
+                    minimal={scale < MINIMAL_SCALE}
+                    setHighlighted={setHighlighted}
                   />
-                ) : (
-                  <AssetNode
-                    definition={graphNode.definition}
-                    liveData={liveDataByNode[graphNode.id]}
-                    selected={graphNode.id === assetGraphId}
-                  />
-                )}
-              </foreignObject>
-            );
-          })}
-        </SVGContainer>
-      )}
-    </SVGViewport>
+                </foreignObject>
+              ))}
+
+            {Object.values(layout.nodes)
+              .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+              .map(({id, bounds}) => {
+                const graphNode = assetGraphData.nodes[id];
+                const path = JSON.parse(id);
+
+                const contextMenuProps = {
+                  graphData: assetGraphData,
+                  node: graphNode!,
+                };
+
+                return (
+                  <foreignObject
+                    {...bounds}
+                    key={id}
+                    style={{overflow: 'visible'}}
+                    onMouseEnter={() => setHighlighted([id])}
+                    onMouseLeave={() => setHighlighted(null)}
+                    onClick={() => onClickAsset({path})}
+                    onDoubleClick={(e) => {
+                      viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                      e.stopPropagation();
+                    }}
+                  >
+                    {!graphNode ? (
+                      <AssetNodeLink assetKey={{path}} />
+                    ) : scale < MINIMAL_SCALE ? (
+                      <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                        <AssetNodeMinimal
+                          definition={graphNode.definition}
+                          selected={graphNode.id === assetGraphId}
+                          height={bounds.height}
+                        />
+                      </AssetNodeContextMenuWrapper>
+                    ) : (
+                      <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                        <AssetNode
+                          definition={graphNode.definition}
+                          selected={graphNode.id === assetGraphId}
+                        />
+                      </AssetNodeContextMenuWrapper>
+                    )}
+                  </foreignObject>
+                );
+              })}
+          </SVGContainer>
+        )}
+      </SVGViewport>
+    </AssetGraphBackgroundContextMenu>
   );
-};
-
-const SVGSaveZoomLevel = ({scale}: {scale: number}) => {
-  React.useEffect(() => {
-    try {
-      window.localStorage.setItem(LINEAGE_GRAPH_ZOOM_LEVEL, JSON.stringify(scale));
-    } catch (err) {
-      // no-op
-    }
-  }, [scale]);
-  return <></>;
 };
 
 const SVGContainer = styled.svg`

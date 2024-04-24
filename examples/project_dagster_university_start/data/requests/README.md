@@ -16,9 +16,9 @@ Here is a sample request:
 
 ```json
 {
-    "start_date": "2023-01-10",
-    "end_date": "2023-01-25",
-    "borough": "Staten Island"
+  "start_date": "2023-01-10",
+  "end_date": "2023-01-25",
+  "borough": "Staten Island"
 }
 ```
 

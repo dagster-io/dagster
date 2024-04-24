@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import {Html, Head, Main, NextScript} from 'next/document';
-import React from 'react';
+import {Head, Html, Main, NextScript} from 'next/document';
 
 function getSecurityPolicy() {
   return fs.readFileSync(path.join(__dirname, '../../../csp-header-dev.txt'), {encoding: 'utf8'});
@@ -14,6 +13,12 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head nonce="NONCE-PLACEHOLDER">
+        <script
+          nonce="NONCE-PLACEHOLDER"
+          dangerouslySetInnerHTML={{
+            __html: 'window.__webpack_public_path__ = "__PATH_PREFIX__"',
+          }}
+        />
         {/* Not sure if we need the following script */}
         <script
           id="webpack-nonce-setter"
@@ -29,7 +34,8 @@ export default function Document() {
             __html: `
     {
       "pathPrefix": "__PATH_PREFIX__",
-      "telemetryEnabled": "__TELEMETRY_ENABLED__"
+      "telemetryEnabled": "__TELEMETRY_ENABLED__",
+      "liveDataPollRate": "__LIVE_DATA_POLL_RATE__"
     }
   `,
           }}

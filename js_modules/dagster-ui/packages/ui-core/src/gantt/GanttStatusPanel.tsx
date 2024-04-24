@@ -2,16 +2,15 @@ import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {formatElapsedTime} from '../app/Util';
-import {SidebarSection} from '../pipelines/SidebarComponents';
-import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
-import {StepSelection} from '../runs/StepSelection';
-
 import {GanttChartMode} from './Constants';
 import {isPlannedDynamicStep} from './DynamicStepSupport';
 import {boxStyleFor} from './GanttChartLayout';
 import {RunGroupPanel} from './RunGroupPanel';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
+import {SidebarSection} from '../pipelines/SidebarComponents';
+import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
+import {StepSelection} from '../runs/StepSelection';
 
 interface GanttStatusPanelProps {
   graph: GraphQueryItem[];
@@ -25,7 +24,7 @@ interface GanttStatusPanelProps {
   onDoubleClickStep?: (step: string) => void;
 }
 
-export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
+export const GanttStatusPanel = ({
   runId,
   nowMs,
   graph,
@@ -34,7 +33,7 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   onClickStep,
   onDoubleClickStep,
   onHighlightStep,
-}) => {
+}: GanttStatusPanelProps) => {
   const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
     const keys = Object.keys(metadata.steps);
     const preparing = [];
@@ -137,7 +136,15 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   );
 };
 
-const StepItem: React.FC<{
+const StepItem = ({
+  nowMs,
+  name,
+  selected,
+  metadata,
+  onClick,
+  onHover,
+  onDoubleClick,
+}: {
   name: string;
   selected: boolean;
   metadata: IRunMetadataDict;
@@ -145,7 +152,7 @@ const StepItem: React.FC<{
   onClick?: (step: string, evt: React.MouseEvent<any>) => void;
   onHover?: (name: string | null) => void;
   onDoubleClick?: (name: string) => void;
-}> = ({nowMs, name, selected, metadata, onClick, onHover, onDoubleClick}) => {
+}) => {
   const step = metadata.steps[name];
   const end = (step && step.end) ?? nowMs;
   return (
@@ -182,7 +189,7 @@ const StepItem: React.FC<{
         />
       )}
       <StepLabel>{name}</StepLabel>
-      {step?.start && <Elapsed>{formatElapsedTime(end - step.start)}</Elapsed>}
+      {step?.start && <Elapsed>{formatElapsedTimeWithoutMsec(end - step.start)}</Elapsed>}
     </StepItemContainer>
   );
 };
@@ -200,12 +207,12 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   padding: 0 14px 0 6px;
   gap: 6px;
   align-items: center;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   font-size: 12px;
-  ${({selected}) => selected && `background: ${Colors.Gray100};`}
+  ${({selected}) => selected && `background: ${Colors.backgroundLight()};`}
 
   &:hover {
-    background: ${Colors.Gray100};
+    background: ${Colors.backgroundLightHover()};
   }
 `;
 
@@ -219,7 +226,7 @@ export const StepStatusDot = styled.div`
 `;
 
 const Elapsed = styled.div`
-  color: ${Colors.Gray400};
+  color: ${Colors.textLight()};
   font-variant-numeric: tabular-nums;
 `;
 
@@ -227,5 +234,5 @@ const EmptyNotice = styled.div`
   min-height: 32px;
   font-size: 12px;
   padding: 8px 24px;
-  color: ${Colors.Gray400};
+  color: ${Colors.textLight()};
 `;

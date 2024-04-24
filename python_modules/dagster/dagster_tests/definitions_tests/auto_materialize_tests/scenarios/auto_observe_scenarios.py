@@ -9,6 +9,7 @@ from dagster import (
     observable_source_asset,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
 from ..base_scenario import AssetReconciliationScenario, run_request
 
@@ -26,7 +27,9 @@ def asset2():
 @asset(
     partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
     # this is just a dummy policy, as we don't want this to actually impact the logic
-    auto_materialize_policy=AutoMaterializePolicy(rules=set()),
+    auto_materialize_policy=AutoMaterializePolicy(
+        rules={AutoMaterializeRule.skip_on_parent_missing()}
+    ),
 )
 def partitioned_dummy_asset():
     return 1

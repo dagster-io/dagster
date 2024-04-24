@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
+import {useContext} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {
@@ -25,6 +25,19 @@ jest.mock('../RepositoryLocationStateObserver', () => ({
 describe('Repository options', () => {
   const locationOne = 'ipsum';
   const repoOne = 'lorem';
+
+  let nativeGBRC: any;
+
+  beforeAll(() => {
+    nativeGBRC = window.Element.prototype.getBoundingClientRect;
+    window.Element.prototype.getBoundingClientRect = jest
+      .fn()
+      .mockReturnValue({height: 400, width: 400});
+  });
+
+  afterAll(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  });
 
   afterEach(() => {
     window.localStorage.clear();
@@ -209,7 +222,7 @@ describe('Repository options', () => {
 
     it('initializes empty, then shows options when they are added', async () => {
       const ReloadableTest = () => {
-        const {refetch} = React.useContext(WorkspaceContext);
+        const {refetch} = useContext(WorkspaceContext);
         return (
           <>
             <button onClick={() => refetch()}>Refetch workspace</button>
@@ -261,7 +274,7 @@ describe('Repository options', () => {
 
     it('initializes with options, then shows empty if they are removed', async () => {
       const ReloadableTest = () => {
-        const {refetch} = React.useContext(WorkspaceContext);
+        const {refetch} = useContext(WorkspaceContext);
         return (
           <>
             <button onClick={() => refetch()}>Refetch workspace</button>

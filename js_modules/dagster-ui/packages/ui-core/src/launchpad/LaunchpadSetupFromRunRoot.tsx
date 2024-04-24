@@ -1,7 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
+import {LaunchpadSessionError} from './LaunchpadSessionError';
+import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {
+  ConfigForRunQuery,
+  ConfigForRunQueryVariables,
+} from './types/LaunchpadSetupFromRunRoot.types';
 import {
   IExecutionSession,
   applyCreateSession,
@@ -15,14 +20,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {LaunchpadSessionError} from './LaunchpadSessionError';
-import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
-import {
-  ConfigForRunQuery,
-  ConfigForRunQueryVariables,
-} from './types/LaunchpadSetupFromRunRoot.types';
-
-export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
+export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {
     permissions: {canLaunchPipelineExecution},
@@ -56,7 +54,7 @@ interface Props {
  * values, then redirect to the launchpad. The newly created session will be the open launchpad
  * config tab.
  */
-const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
+const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
   const {pipelinePath, repoAddress, runId} = props;
 
   const explorerPath = explorerPathFromString(pipelinePath);
@@ -67,43 +65,50 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const [storageData, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
+  const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
 
   const {data, loading} = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
     CONFIG_FOR_RUN_QUERY,
     {
       variables: {runId},
+      onCompleted: (data: ConfigForRunQuery) => {
+        const runOrError = data?.runOrError;
+        const run = runOrError?.__typename === 'Run' ? runOrError : null;
+        if (!run) {
+          return;
+        }
+
+        const {runConfigYaml, mode, solidSelection} = run;
+        if (!runConfigYaml && !mode && !solidSelection) {
+          return;
+        }
+
+        // Name the session after this run ID.
+        const newSession: Partial<IExecutionSession> = {name: `From run ${run.id.slice(0, 8)}`};
+
+        if (typeof runConfigYaml === 'string') {
+          newSession.runConfigYaml = runConfigYaml;
+        }
+        if (typeof mode === 'string') {
+          newSession.mode = mode;
+        }
+
+        let solidSelectionValue = null;
+        if (solidSelection instanceof Array && solidSelection.length > 0) {
+          solidSelectionValue = solidSelection as string[];
+        } else if (typeof solidSelection === 'string' && solidSelection) {
+          solidSelectionValue = [solidSelection];
+        }
+
+        newSession.solidSelection = solidSelectionValue;
+        newSession.solidSelectionQuery = solidSelectionValue ? solidSelectionValue.join(',') : '*';
+
+        onSave((storageData) => applyCreateSession(storageData, newSession));
+      },
     },
   );
+
   const runOrError = data?.runOrError;
-  const run = runOrError?.__typename === 'Run' ? runOrError : null;
-
-  React.useEffect(() => {
-    // Wait until we have a run, then create the session.
-    if (!run) {
-      return;
-    }
-
-    const {runConfigYaml, mode, solidSelection} = run;
-    if (runConfigYaml || mode || solidSelection) {
-      // Name the session after this run ID.
-      const newSession: Partial<IExecutionSession> = {name: `From run ${run.id.slice(0, 8)}`};
-
-      if (typeof runConfigYaml === 'string') {
-        newSession.runConfigYaml = runConfigYaml;
-      }
-      if (typeof mode === 'string') {
-        newSession.mode = mode;
-      }
-      if (solidSelection instanceof Array && solidSelection.length > 0) {
-        newSession.solidSelection = solidSelection as string[];
-      } else if (typeof solidSelection === 'string' && solidSelection) {
-        newSession.solidSelection = [solidSelection];
-      }
-
-      onSave(applyCreateSession(storageData, newSession));
-    }
-  }, [run, storageData, onSave]);
 
   if (loading) {
     return <LaunchpadSessionLoading />;

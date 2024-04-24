@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -11,6 +11,7 @@ from dagster._serdes.serdes import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
     from dagster._core.definitions.auto_materialize_rule import (
         AutoMaterializeRule,
         AutoMaterializeRuleSnapshot,
@@ -35,6 +36,8 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
             rules = {
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             }
             for backcompat_key, rule in backcompat_map.items():
                 if unpacked_dict.get(backcompat_key):
@@ -60,6 +63,7 @@ class AutoMaterializePolicy(
         [
             ("rules", FrozenSet["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
+            ("asset_condition", Optional["AssetCondition"]),
         ],
     )
 ):
@@ -122,6 +126,7 @@ class AutoMaterializePolicy(
         cls,
         rules: AbstractSet["AutoMaterializeRule"],
         max_materializations_per_minute: Optional[int] = 1,
+        asset_condition: Optional["AssetCondition"] = None,
     ):
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
@@ -130,11 +135,23 @@ class AutoMaterializePolicy(
             "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
             " to None. To disable auto materializing, remove the policy.",
         )
+        check.param_invariant(
+            bool(rules) ^ bool(asset_condition),
+            "asset_condition",
+            "Must specify exactly one of `rules` or `asset_condition`.",
+        )
+        if asset_condition is not None:
+            check.param_invariant(
+                max_materializations_per_minute is None,
+                "max_materializations_per_minute",
+                "`max_materializations_per_minute` is not supported when using `asset_condition`.",
+            )
 
         return super(AutoMaterializePolicy, cls).__new__(
             cls,
             rules=frozenset(check.set_param(rules, "rules", of_type=AutoMaterializeRule)),
             max_materializations_per_minute=max_materializations_per_minute,
+            asset_condition=asset_condition,
         )
 
     @property
@@ -154,6 +171,19 @@ class AutoMaterializePolicy(
         return {
             rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
         }
+
+    @staticmethod
+    def from_asset_condition(asset_condition: "AssetCondition") -> "AutoMaterializePolicy":
+        """Constructs an AutoMaterializePolicy which will materialize an asset partition whenever
+        the provided asset_condition evaluates to True.
+
+        Args:
+            asset_condition (AssetCondition): The condition which determines whether an asset
+                partition should be materialized.
+        """
+        return AutoMaterializePolicy(
+            rules=set(), max_materializations_per_minute=None, asset_condition=asset_condition
+        )
 
     @public
     @staticmethod
@@ -175,6 +205,8 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
@@ -183,8 +215,14 @@ class AutoMaterializePolicy(
 
     @public
     @staticmethod
+    @deprecated(
+        breaking_version="1.8",
+        additional_warn_text="Lazy auto-materialize is deprecated, in favor of explicit cron-based "
+        "scheduling rules. Additional alternatives to replicate more of the lazy auto-materialize "
+        "behavior will be provided before this is fully removed.",
+    )
     def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
-        """Constructs a lazy AutoMaterializePolicy.
+        """(Deprecated) Constructs a lazy AutoMaterializePolicy.
 
         Args:
             max_materializations_per_minute (Optional[int]): The maximum number of
@@ -199,6 +237,8 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+                AutoMaterializeRule.skip_on_backfill_in_progress(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
@@ -223,8 +263,15 @@ class AutoMaterializePolicy(
 
     @public
     def with_rules(self, *rules_to_add: "AutoMaterializeRule") -> "AutoMaterializePolicy":
-        """Constructs a copy of this policy with the specified rules added."""
-        return self._replace(rules=self.rules.union(set(rules_to_add)))
+        """Constructs a copy of this policy with the specified rules added. If an instance of a
+        provided rule with the same type exists on this policy, it will be replaced.
+        """
+        new_rule_types = {type(rule) for rule in rules_to_add}
+        return self._replace(
+            rules=set(rules_to_add).union(
+                {rule for rule in self.rules if type(rule) not in new_rule_types}
+            )
+        )
 
     @property
     def policy_type(self) -> AutoMaterializePolicyType:
@@ -237,3 +284,40 @@ class AutoMaterializePolicy(
     @property
     def rule_snapshots(self) -> Sequence["AutoMaterializeRuleSnapshot"]:
         return [rule.to_snapshot() for rule in self.rules]
+
+    def to_asset_condition(self) -> "AssetCondition":
+        """Converts a set of materialize / skip rules into a single binary expression."""
+        from .asset_condition.asset_condition import (
+            AndAssetCondition,
+            NotAssetCondition,
+            OrAssetCondition,
+        )
+        from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
+
+        if self.asset_condition is not None:
+            return self.asset_condition
+
+        materialize_condition = OrAssetCondition(
+            operands=[
+                rule.to_asset_condition()
+                for rule in sorted(self.materialize_rules, key=lambda rule: rule.description)
+            ]
+        )
+        skip_condition = OrAssetCondition(
+            operands=[
+                rule.to_asset_condition()
+                for rule in sorted(self.skip_rules, key=lambda rule: rule.description)
+            ]
+        )
+        children = [
+            materialize_condition,
+            NotAssetCondition(operand=skip_condition),
+        ]
+        if self.max_materializations_per_minute:
+            discard_condition = DiscardOnMaxMaterializationsExceededRule(
+                self.max_materializations_per_minute
+            ).to_asset_condition()
+            children.append(NotAssetCondition(operand=discard_condition))
+
+        # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d
+        return AndAssetCondition(operands=children)

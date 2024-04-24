@@ -1,5 +1,4 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 
 import {TimeProvider} from '../../app/time/TimeContext';
 import {RunStatus, buildRun} from '../../graphql/types';

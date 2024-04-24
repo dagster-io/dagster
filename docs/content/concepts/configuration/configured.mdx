@@ -114,7 +114,7 @@ def unsigned_s3_session(config):
 You can use the `configured` API with any definition type in the same way. For example, to configure an op, you can simply invoke `configured` on the op definition:
 
 ```python file=/concepts/configuration/configured_op_example.py
-from dagster import Field, configured, op
+from dagster import Field, OpExecutionContext, configured, op
 
 
 @op(
@@ -123,7 +123,7 @@ from dagster import Field, configured, op
         "word": Field(str, is_required=False, default_value="hello"),
     }
 )
-def example(context):
+def example(context: OpExecutionContext):
     for _ in range(context.op_config["iterations"]):
         context.log.info(context.op_config["word"])
 
@@ -206,7 +206,7 @@ When using the decorator syntax (`@configured`), the resulting op definition wil
     },
     ins={"xs": In(List[Int])},
 )
-def get_dataset(context, xs):
+def get_dataset(context: OpExecutionContext, xs):
     if context.op_config["is_sample"]:
         return xs[:5]
     else:

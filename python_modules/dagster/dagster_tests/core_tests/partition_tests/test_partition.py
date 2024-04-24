@@ -16,6 +16,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.test_utils import instance_for_test
+from dagster._serdes import serialize_value
 
 
 @pytest.mark.parametrize(
@@ -142,13 +143,25 @@ def test_static_partitions_subset():
     assert len(subset) == 0
     assert "bar" not in subset
     with_some_partitions = subset.with_partition_keys(["foo", "bar"])
-    assert with_some_partitions.get_partition_keys_not_in_subset() == {"baz", "qux"}
+    assert with_some_partitions.get_partition_keys_not_in_subset(partitions) == {"baz", "qux"}
     serialized = with_some_partitions.serialize()
     deserialized = partitions.deserialize_subset(serialized)
-    assert deserialized.get_partition_keys_not_in_subset() == {"baz", "qux"}
+    assert deserialized.get_partition_keys_not_in_subset(partitions) == {"baz", "qux"}
     assert len(with_some_partitions) == 2
     assert len(deserialized) == 2
     assert "bar" in with_some_partitions
+
+
+def test_static_partitions_subset_identical_serialization():
+    # serialized subsets should be equal if the original subsets are equal
+    partitions = StaticPartitionsDefinition([str(i) for i in range(1000)])
+    subset = [str(i) for i in range(500)]
+
+    in_order_subset = partitions.subset_with_partition_keys(subset)
+    reverse_order_subset = partitions.subset_with_partition_keys(reversed(subset))
+
+    assert in_order_subset.serialize() == reverse_order_subset.serialize()
+    assert serialize_value(in_order_subset) == serialize_value(reverse_order_subset)
 
 
 def test_static_partitions_invalid_chars():

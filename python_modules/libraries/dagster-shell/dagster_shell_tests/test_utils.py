@@ -108,6 +108,16 @@ def test_output_logging_stream(caplog):
 
     caplog.clear()
 
+    _, retcode = execute("ls", output_logging="STREAM", log=logging, log_shell_command=False)
+    log_messages = [r.message for r in caplog.records]
+    assert log_messages[0].startswith("Using temporary directory: ")
+    assert log_messages[1].startswith("Temporary script location: ")
+    assert log_messages[2].startswith("Command pid:")
+    assert log_messages[3]
+    assert retcode == 0
+
+    caplog.clear()
+
     _, retcode = execute(
         'for i in 1 2 3; do echo "iter $i"; done;',
         output_logging="STREAM",

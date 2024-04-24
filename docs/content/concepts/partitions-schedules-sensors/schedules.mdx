@@ -45,8 +45,7 @@ Here's a simple schedule that runs a job every day, at midnight:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job
-def my_job():
-    ...
+def my_job(): ...
 
 
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
@@ -70,7 +69,7 @@ If you want to vary the behavior of your job based on the time it's scheduled to
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
 @op(config_schema={"scheduled_date": str})
-def configurable_op(context):
+def configurable_op(context: OpExecutionContext):
     context.log.info(context.op_config["scheduled_date"])
 
 
@@ -100,19 +99,16 @@ If you don't need access to the context parameter, you can omit it from the deco
 
 #### Time partitioned jobs and assets
 
-When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
+When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job. For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
 
-For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
-
-The Partitioned Jobs concepts page includes an [example of how to define a date-partitioned job](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job). Having defined that job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
+Having defined a date-partitioned job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
 from dagster import build_schedule_from_partitioned_job, job
 
 
 @job(config=my_partitioned_config)
-def do_stuff_partitioned():
-    ...
+def do_stuff_partitioned(): ...
 
 
 do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
@@ -120,7 +116,7 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 )
 ```
 
-The Partitioned Jobs concepts page also includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitions#partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
+The [Partitioning assets](/concepts/partitions-schedules-sensors/partitioning-assets) documentation includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitioning-assets#defining-partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
 from dagster import (
@@ -132,8 +128,7 @@ from dagster import (
 
 
 @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-def hourly_asset():
-    ...
+def hourly_asset(): ...
 
 
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
@@ -152,12 +147,12 @@ You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_mont
 
 #### Static partitioned jobs
 
-You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
+You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitioning-ops#defining-jobs-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
 
 For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import Config, job, op, static_partitioned_config
+from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -180,7 +175,7 @@ class ContinentOpConfig(Config):
 
 
 @op
-def continent_op(context, config: ContinentOpConfig):
+def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
     context.log.info(config.continent_name)
 
 
@@ -244,7 +239,7 @@ Dagster's [resources](/concepts/resources) system can be used with schedules to 
 
 To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
 
-Here, a resource is provided which helps a schedule generate a date string:
+Here, a resource is provided that helps a schedule generate a date string:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
 from dagster import (
@@ -266,8 +261,7 @@ class DateFormatter(ConfigurableResource):
         return dt.strftime(self.format)
 
 @job
-def process_data():
-    ...
+def process_data(): ...
 
 @schedule(job=process_data, cron_schedule="* * * * *")
 def process_data_schedule(
@@ -298,11 +292,13 @@ Schedules must be started for them to run. Schedules can be started and stopped:
 
 - In the Dagster UI using the **Schedules** tab:
 
+  <!-- ![Schedules tab in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/schedules-tab-toggle.png) -->
+
   <Image
   alt="Schedules tab in the Dagster UI"
-  src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
-  width={1164}
-  height={280}
+  src="/images/concepts/partitions-schedules-sensors/schedules/schedules-tab-toggle.png"
+  width={1920}
+  height={512}
   />
 
 - Using the CLI:
@@ -323,6 +319,30 @@ Schedules must be started for them to run. Schedules can be started and stopped:
 If you manually start or stop a schedule in the UI, that overrides any default status set in code.
 
 Once the schedule is started, the schedule will begin executing immediately if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment. Refer to the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section if your schedule has been started but isn't submitting runs.
+
+---
+
+## Logging in schedules
+
+<Note>
+  Schedule logs are stored in your{" "}
+  <a href="/deployment/dagster-instance#compute-log-storage">
+    Dagster instance's compute log storage
+  </a>
+  . You should ensure that your compute log storage is configured to view your schedule
+  logs.
+</Note>
+
+Any schedule can emit log messages during its evaluation function:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
+@schedule(job=my_job, cron_schedule="* * * * *")
+def logs_then_skips(context):
+    context.log.info("Logging from a schedule!")
+    return SkipReason("Nothing to do")
+```
+
+These logs can be viewed when inspecting a tick in the tick history view on the corresponding schedule page.
 
 ---
 
@@ -394,7 +414,7 @@ If your `@schedule`-decorated function doesn't have a context parameter, you don
 
 #### Testing schedules with resources
 
-For schedules which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
+For schedules that utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
 
 Below is a test for the `process_data_schedule` that we defined in the [Using resources in schedules](#using-resources-in-schedules) section, which uses the `date_formatter` resource.
 
@@ -468,7 +488,7 @@ Next, using the UI, verify the schedule has been started:
 
    1. Click **Deployment** in the top navigation.
 
-   2. In the **Code locations** tab, click **Reload** (local webserver) or **Redeploy** (Dagster Cloud).
+   2. In the **Code locations** tab, click **Reload** (local webserver) or **Redeploy** (Dagster+).
 
    If the webserver is unable to load the code location - for example, due to a syntax error - an error message with additional info will display in the left UI sidenav.
 

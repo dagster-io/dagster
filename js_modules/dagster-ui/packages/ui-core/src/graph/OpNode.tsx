@@ -1,17 +1,17 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {OpIOBox, metadataForIO} from './OpIOBox';
+import {IOpTag, OpTags} from './OpTags';
+import {OpLayout} from './asyncGraphLayout';
+import {Edge, position} from './common';
+import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-
-import {OpIOBox, metadataForIO} from './OpIOBox';
-import {OpTags, IOpTag} from './OpTags';
-import {OpLayout} from './asyncGraphLayout';
-import {Edge, position} from './common';
-import {OpNodeInvocationFragment, OpNodeDefinitionFragment} from './types/OpNode.types';
+import {testId} from '../testing/testId';
 
 interface IOpNodeProps {
   layout: OpLayout;
@@ -119,6 +119,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
         $dim={dim}
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
+        data-testid={testId(definition.name)}
       >
         <div className="highlight-box" style={{...position(layout.bounds)}} />
         {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
@@ -135,18 +136,18 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {minified ? 'C' : 'Config'}
           </div>
         )}
-
-        {definition.inputDefinitions.map((item, idx) => (
-          <OpIOBox
-            {...this.props}
-            {...metadataForIO(item, invocation)}
-            key={idx}
-            item={item}
-            layoutInfo={layout.inputs[item.name]}
-            colorKey="input"
-          />
-        ))}
-
+        <div>
+          {definition.inputDefinitions.map((item, idx) => (
+            <OpIOBox
+              {...this.props}
+              {...metadataForIO(item, invocation)}
+              key={idx}
+              item={item}
+              layoutInfo={layout.inputs[item.name]}
+              colorKey="input"
+            />
+          ))}
+        </div>
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
             {!minified && <Icon name="op" size={16} />}
@@ -172,23 +173,24 @@ export class OpNode extends React.Component<IOpNodeProps> {
             }}
           />
         )}
-
-        {definition.outputDefinitions.map((item, idx) => (
-          <OpIOBox
-            {...this.props}
-            {...metadataForIO(item, invocation)}
-            key={idx}
-            item={item}
-            layoutInfo={layout.outputs[item.name]}
-            colorKey="output"
-          />
-        ))}
+        <div>
+          {definition.outputDefinitions.map((item, idx) => (
+            <OpIOBox
+              {...this.props}
+              {...metadataForIO(item, invocation)}
+              key={idx}
+              item={item}
+              layoutInfo={layout.outputs[item.name]}
+              colorKey="output"
+            />
+          ))}
+        </div>
       </NodeContainer>
     );
   }
 }
 
-const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({nodes}) => {
+const OpNodeAssociatedAssets = ({nodes}: {nodes: {assetKey: AssetKey}[]}) => {
   const more = nodes.length > 1 ? ` + ${nodes.length - 1} more` : '';
   return (
     <div className="assets">
@@ -317,8 +319,8 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
 `;
 
 const NodeHighlightColors = {
-  Border: Colors.Blue500,
-  Background: Colors.Blue50,
+  Border: Colors.accentBlue(),
+  Background: Colors.backgroundBlue(),
 };
 
 const NodeContainer = styled.div<{
@@ -341,23 +343,23 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${Colors.Blue500}55`
-        : '2px solid #dcd5ca'};
+        ? `2px solid ${Colors.accentBlue()}55`
+        : `2px solid ${Colors.keylineDefault()}`};
 
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 8px;
-    background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};
+    background: ${(p) => (p.$minified ? Colors.backgroundLight() : Colors.backgroundDefault())};
   }
   .composite-marker {
     outline: ${(p) => (p.$minified ? '3px' : '2px')} solid
-      ${(p) => (p.$selected ? 'transparent' : Colors.Yellow200)};
+      ${(p) => (p.$selected ? 'transparent' : Colors.accentYellow())};
     outline-offset: ${(p) => (p.$minified ? '5px' : '3px')};
     border-radius: 3px;
   }
   .dynamic-marker {
     transform: translate(-5px, -5px);
-    border: ${(p) => (p.$minified ? '3px' : '2px')} solid #dcd5ca;
-    border-radius: 3px;
+    border: ${(p) => (p.$minified ? '3px' : '2px')} solid ${Colors.keylineDefault()};
+    border-radius: 8px;
   }
   .config-marker {
     position: absolute;
@@ -390,7 +392,7 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
+    background: ${Colors.backgroundLighter()};
     font-size: 12px;
     display: flex;
     gap: 4px;
@@ -403,10 +405,12 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
-    border-top: 1px solid #e6e1d8;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    background: ${Colors.backgroundLighter()};
+    border-top: ${Colors.keylineDefault()} 1px solid;
+
+    /* 6px because it's inside a bordered box with a 2px line at our standard 8px radius */
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
     font-size: 12px;
   }
 `;

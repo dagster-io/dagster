@@ -261,3 +261,10 @@ Then, to connect to your database from outside the cluster execute the following
 
    kubectl port-forward --namespace default svc/dagredis-master 6379:6379
    redis-cli -h 127.0.0.1 -p 6379
+
+Pipes
+=====
+
+.. autoclass:: PipesK8sClient
+
+.. autoclass:: PipesK8sPodLogsMessageReader

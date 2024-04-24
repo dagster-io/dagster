@@ -138,8 +138,7 @@ def test_execute_run_iterator():
             )
             assert (
                 "Ignoring a duplicate run that was started from somewhere other than the run"
-                " monitor daemon"
-                in event.message
+                " monitor daemon" in event.message
             )
 
             with pytest.raises(
@@ -190,8 +189,7 @@ def test_restart_running_run_worker():
         assert any(
             [
                 f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"
-                " while the run was already in state DagsterRunStatus.STARTED. "
-                in event.message
+                " while the run was already in state DagsterRunStatus.STARTED. " in event.message
                 for event in events
             ]
         )

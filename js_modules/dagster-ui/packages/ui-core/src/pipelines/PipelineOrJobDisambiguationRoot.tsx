@@ -1,16 +1,14 @@
-import * as React from 'react';
 import {Redirect, useLocation, useParams} from 'react-router-dom';
 
+import {explorerPathFromString} from './PipelinePathUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {explorerPathFromString} from './PipelinePathUtils';
 
 interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelineOrJobDisambiguationRoot: React.FC<Props> = (props) => {
+export const PipelineOrJobDisambiguationRoot = (props: Props) => {
   const {repoAddress} = props;
   const location = useLocation();
   const {pipelinePath} = useParams<{pipelinePath: string}>();

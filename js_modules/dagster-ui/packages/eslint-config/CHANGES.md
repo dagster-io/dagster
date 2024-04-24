@@ -1,3 +1,13 @@
+## 1.0.15 (April 23, 2024)
+
+- Dependency upgrades
+
+## 1.0.14 (January 19, 2024)
+
+- Alphabetize imports
+- Remove unused imports
+- Turn off `react/react-in-jsx-scope`
+
 ## 1.0.13 (September 20, 2023)
 
 - Dependency upgrades

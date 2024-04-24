@@ -1,38 +1,54 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   Button,
+  CaptionMono,
   Colors,
-  DialogFooter,
   Dialog,
+  DialogBody,
+  DialogFooter,
+  FontFamily,
   Group,
   Icon,
-  Tooltip,
-  FontFamily,
-  tryPrettyPrintJSON,
   Table,
-  DialogBody,
-  CaptionMono,
+  Tooltip,
+  tryPrettyPrintJSON,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {TableSchema} from './TableSchema';
+import {MetadataEntryFragment} from './types/MetadataEntryFragment.types';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {TableMetadataEntry} from '../graphql/types';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
-import {MetadataEntryFragment} from './types/MetadataEntry.types';
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
+  'dagster_dbt/select',
+  'dagster_dbt/exclude',
+  'dagster-dbt/select',
+  'dagster-dbt/exclude',
+  'dagster_dbt/manifest',
+  'dagster_dbt/dagster_dbt_translator',
+  'dagster_embedded_elt/dagster_sling_translator',
+  'dagster_embedded_elt/sling_replication_config',
+]);
 
-export const LogRowStructuredContentTable: React.FC<{
+export const LogRowStructuredContentTable = ({
+  rows,
+  styles,
+}: {
   rows: {label: string; item: JSX.Element}[];
   styles?: React.CSSProperties;
-}> = ({rows, styles}) => (
+}) => (
   <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
     <StructuredContentTable cellPadding="0" cellSpacing="0">
       <tbody>
@@ -54,28 +70,37 @@ export const LogRowStructuredContentTable: React.FC<{
   </div>
 );
 
-export const MetadataEntries: React.FC<{
+export const MetadataEntries = ({
+  entries,
+  expandSmallValues,
+}: {
   entries?: MetadataEntryFragment[];
   expandSmallValues?: boolean;
-}> = ({entries, expandSmallValues}) => {
+}) => {
   if (!entries || !entries.length) {
     return null;
   }
   return (
     <LogRowStructuredContentTable
-      rows={entries.map((entry) => ({
-        label: entry.label,
-        item: <MetadataEntry entry={entry} expandSmallValues={expandSmallValues} />,
-      }))}
+      rows={entries
+        .filter((entry) => !HIDDEN_METADATA_ENTRY_LABELS.has(entry.label))
+        .map((entry) => ({
+          label: entry.label,
+          item: <MetadataEntry entry={entry} expandSmallValues={expandSmallValues} />,
+        }))}
     />
   );
 };
 
-export const MetadataEntry: React.FC<{
+export const MetadataEntry = ({
+  entry,
+  expandSmallValues,
+  repoLocation,
+}: {
   entry: MetadataEntryFragment;
   expandSmallValues?: boolean;
   repoLocation?: string;
-}> = ({entry, expandSmallValues, repoLocation}) => {
+}) => {
   switch (entry.__typename) {
     case 'PathMetadataEntry':
       return (
@@ -84,27 +109,30 @@ export const MetadataEntry: React.FC<{
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
-            <Icon name="assignment" color={Colors.Gray500} />
+            <Icon name="assignment" color={Colors.accentGray()} />
           </IconButton>
         </Group>
       );
 
     case 'JsonMetadataEntry':
-      return expandSmallValues && entry.jsonString.length < 1000 ? (
-        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(entry.jsonString)}</div>
+    case 'TableColumnLineageMetadataEntry':
+      const jsonString =
+        entry.__typename === 'JsonMetadataEntry' ? entry.jsonString : JSON.stringify(entry.lineage);
+      return expandSmallValues && jsonString.length < 1000 ? (
+        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(jsonString)}</div>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
-          copyContent={() => entry.jsonString}
+          copyContent={() => jsonString}
           content={() => (
             <Box
-              background={Colors.Gray100}
+              background={Colors.backgroundLight()}
               margin={{bottom: 12}}
               padding={24}
               border="bottom"
               style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace, overflow: 'auto'}}
             >
-              {tryPrettyPrintJSON(entry.jsonString)}
+              {tryPrettyPrintJSON(jsonString)}
             </Box>
           )}
         >
@@ -119,7 +147,7 @@ export const MetadataEntry: React.FC<{
             {entry.url}
           </MetadataEntryAction>
           <a href={entry.url} target="_blank" rel="noreferrer">
-            <Icon name="link" color={Colors.Gray500} />
+            <Icon name="link" color={Colors.accentGray()} />
           </a>
         </Group>
       );
@@ -135,7 +163,7 @@ export const MetadataEntry: React.FC<{
           content={() => (
             <Box
               padding={{vertical: 16, horizontal: 20}}
-              background={Colors.White}
+              background={Colors.backgroundDefault()}
               style={{overflow: 'auto'}}
               margin={{bottom: 12}}
             >
@@ -156,6 +184,8 @@ export const MetadataEntry: React.FC<{
       );
     case 'FloatMetadataEntry':
       return <>{entry.floatValue}</>;
+    case 'TimestampMetadataEntry':
+      return <TimestampDisplay timestamp={entry.timestamp} timeFormat={TIME_FORMAT} />;
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
     case 'BoolMetadataEntry':
@@ -170,6 +200,24 @@ export const MetadataEntry: React.FC<{
           {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );
+    case 'JobMetadataEntry':
+      const repositoryName = entry.repositoryName || DUNDER_REPO_NAME;
+      const workspacePath = workspacePathFromAddress(
+        buildRepoAddress(repositoryName, entry.locationName),
+        `/jobs/${entry.jobName}`,
+      );
+      return (
+        <Box
+          flex={{
+            direction: 'row',
+            gap: 8,
+          }}
+          style={{maxWidth: '100%'}}
+        >
+          <Icon name="job" color={Colors.accentGray()} />
+          <MetadataEntryLink to={workspacePath}>{entry.jobName}</MetadataEntryLink>
+        </Box>
+      );
     case 'TableMetadataEntry':
       return <TableMetadataEntryComponent entry={entry} />;
 
@@ -179,11 +227,12 @@ export const MetadataEntry: React.FC<{
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
+          modalWidth={900}
           copyContent={() => JSON.stringify(entry.schema, null, 2)}
           content={() => (
             <Box
               padding={{vertical: 16, horizontal: 20}}
-              background={Colors.White}
+              background={Colors.backgroundDefault()}
               style={{overflow: 'auto'}}
               margin={{bottom: 12}}
             >
@@ -204,7 +253,7 @@ export const MetadataEntry: React.FC<{
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
-            <Icon name="assignment" color={Colors.Gray500} />
+            <Icon name="assignment" color={Colors.accentGray()} />
           </IconButton>
         </Group>
       );
@@ -212,72 +261,6 @@ export const MetadataEntry: React.FC<{
       return assertUnreachable(entry);
   }
 };
-
-export const METADATA_ENTRY_FRAGMENT = gql`
-  fragment MetadataEntryFragment on MetadataEntry {
-    label
-    description
-    ... on PathMetadataEntry {
-      path
-    }
-    ... on NotebookMetadataEntry {
-      path
-    }
-    ... on JsonMetadataEntry {
-      jsonString
-    }
-    ... on UrlMetadataEntry {
-      url
-    }
-    ... on TextMetadataEntry {
-      text
-    }
-    ... on MarkdownMetadataEntry {
-      mdStr
-    }
-    ... on PythonArtifactMetadataEntry {
-      module
-      name
-    }
-    ... on FloatMetadataEntry {
-      floatValue
-    }
-    ... on IntMetadataEntry {
-      intValue
-      intRepr
-    }
-    ... on BoolMetadataEntry {
-      boolValue
-    }
-    ... on PipelineRunMetadataEntry {
-      runId
-    }
-    ... on AssetMetadataEntry {
-      assetKey {
-        path
-      }
-    }
-    ... on TableMetadataEntry {
-      table {
-        records
-        schema {
-          ...TableSchemaFragment
-        }
-      }
-    }
-    ... on TableSchemaMetadataEntry {
-      ...TableSchemaForMetadataEntry
-    }
-  }
-
-  fragment TableSchemaForMetadataEntry on TableSchemaMetadataEntry {
-    schema {
-      ...TableSchemaFragment
-    }
-  }
-
-  ${TABLE_SCHEMA_FRAGMENT}
-`;
 
 const IconButton = styled.button`
   background: transparent;
@@ -313,19 +296,20 @@ const PythonArtifactLink = ({
   </>
 );
 
-const MetadataEntryModalAction: React.FC<{
+const MetadataEntryModalAction = (props: {
   children: React.ReactNode;
   label: string;
+  modalWidth?: number;
   content: () => React.ReactNode;
   copyContent: () => string;
-}> = (props) => {
+}) => {
   const [open, setOpen] = React.useState(false);
   return (
     <>
       <MetadataEntryAction onClick={() => setOpen(true)}>{props.children}</MetadataEntryAction>
       <Dialog
         icon="info"
-        style={{width: 'auto', minWidth: 400, maxWidth: '80vw'}}
+        style={{width: props.modalWidth || 'auto', minWidth: 400, maxWidth: '80vw'}}
         title={props.label}
         onClose={() => setOpen(false)}
         isOpen={open}
@@ -342,7 +326,7 @@ const MetadataEntryModalAction: React.FC<{
   );
 };
 
-export const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({entry}) => {
+export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}) => {
   const [showSchema, setShowSchema] = React.useState(false);
 
   const schema = entry.table.schema;
@@ -362,7 +346,7 @@ export const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> 
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <MetadataEntryAction onClick={() => setShowSchema(true)}>Show schema</MetadataEntryAction>
-      <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`}}>
+      <Table style={{borderRight: `1px solid ${Colors.keylineDefault()}`}} $compact>
         <thead>
           <tr>
             {schema.columns.map((column) => (
@@ -436,22 +420,22 @@ export const MetadataEntryLink = styled(Link)`
   }
 `;
 
-const StructuredContentTable = styled.table`
+export const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;
-  border-top: 1px solid ${Colors.KeylineGray};
-  border-left: 1px solid ${Colors.KeylineGray};
-  background: ${Colors.Gray50};
+  border-top: 1px solid ${Colors.keylineDefault()};
+  border-left: 1px solid ${Colors.keylineDefault()};
+  background: ${Colors.backgroundLighter()};
 
   td:first-child {
-    color: ${Colors.Gray400};
+    color: ${Colors.textLight()};
   }
 
   &&& tbody > tr > td {
     padding: 4px 8px;
-    border-bottom: 1px solid ${Colors.KeylineGray};
-    border-right: 1px solid ${Colors.KeylineGray};
+    border-bottom: 1px solid ${Colors.keylineDefault()};
+    border-right: 1px solid ${Colors.keylineDefault()};
     vertical-align: top;
     box-shadow: none !important;
   }

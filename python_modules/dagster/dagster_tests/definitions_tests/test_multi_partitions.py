@@ -3,8 +3,8 @@ from datetime import datetime
 import pendulum
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
-    AssetKey,
     DagsterEventType,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
@@ -132,49 +132,6 @@ def test_tags_multi_dimensional_partitions():
                 {"abc": "a", "date": "2021-06-01"}
             )
 
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset1"),
-                    tags={get_multidimensional_partition_tag("abc"): "a"},
-                )
-            )
-        )
-        assert len(materializations) == 1
-
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset1"),
-                    tags={get_multidimensional_partition_tag("abc"): "nonexistent"},
-                )
-            )
-        )
-        assert len(materializations) == 0
-
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset1"),
-                    tags={get_multidimensional_partition_tag("date"): "2021-06-01"},
-                )
-            )
-        )
-        assert len(materializations) == 1
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset2"),
-                    tags={get_multidimensional_partition_tag("date"): "2021-06-01"},
-                )
-            )
-        )
-        assert len(materializations) == 1
-
 
 multipartitions_def = MultiPartitionsDefinition(
     {
@@ -283,13 +240,11 @@ def test_multipartitions_subset_addition(initial, added):
             "static": StaticPartitionsDefinition(static_keys),
         }
     )
-    full_date_set_keys = daily_partitions_def.get_partition_keys(
-        current_time=datetime(year=2015, month=1, day=30)
-    )[: max(len(keys) for keys in initial)]
+    full_date_set_keys = daily_partitions_def.get_partition_keys()[
+        : max(len(keys) for keys in initial)
+    ]
     current_day = datetime.strptime(
-        daily_partitions_def.get_partition_keys(current_time=datetime(year=2015, month=1, day=30))[
-            : max(len(keys) for keys in initial) + 1
-        ][-1],
+        daily_partitions_def.get_partition_keys()[: max(len(keys) for keys in initial) + 1][-1],
         daily_partitions_def.fmt,
     )
 
@@ -316,13 +271,11 @@ def test_multipartitions_subset_addition(initial, added):
     initial_subset = multipartitions_def.empty_subset().with_partition_keys(initial_subset_keys)
     added_subset = initial_subset.with_partition_keys(added_subset_keys)
 
-    assert initial_subset.get_partition_keys(current_time=current_day) == set(initial_subset_keys)
-    assert added_subset.get_partition_keys(current_time=current_day) == set(
-        added_subset_keys + initial_subset_keys
-    )
-    assert added_subset.get_partition_keys_not_in_subset(current_time=current_day) == set(
-        expected_keys_not_in_updated_subset
-    )
+    assert initial_subset.get_partition_keys() == set(initial_subset_keys)
+    assert added_subset.get_partition_keys() == set(added_subset_keys + initial_subset_keys)
+    assert added_subset.get_partition_keys_not_in_subset(
+        multipartitions_def, current_time=current_day
+    ) == set(expected_keys_not_in_updated_subset)
 
 
 def test_asset_partition_key_is_multipartition_key():
@@ -521,19 +474,22 @@ def test_context_partition_time_window():
     )
 
     @asset(partitions_def=partitions_def)
-    def my_asset(context):
+    def my_asset(context: AssetExecutionContext):
+        time_partition = get_time_partitions_def(partitions_def)
+        if time_partition is None:
+            assert False, "expected a time component in the partitions definition"
+
         time_window = TimeWindow(
             start=pendulum.instance(
                 datetime(year=2020, month=1, day=1),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
             end=pendulum.instance(
                 datetime(year=2020, month=1, day=2),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
         )
         assert context.partition_time_window == time_window
-        assert context.asset_partitions_time_window_for_output() == time_window
         return 1
 
     multipartitioned_job = define_asset_job(
@@ -629,3 +585,105 @@ def test_multipartitions_self_dependency():
         partition_key=second_partition_key,
         resources=resources,
     )
+
+
+def test_context_returns_multipartition_keys():
+    partitions_def = MultiPartitionsDefinition(
+        {"a": StaticPartitionsDefinition(["a", "b"]), "1": StaticPartitionsDefinition(["1", "2"])}
+    )
+
+    @asset(partitions_def=partitions_def)
+    def upstream(context):
+        assert isinstance(context.partition_key, MultiPartitionKey)
+
+    @asset(partitions_def=partitions_def)
+    def downstream(context: AssetExecutionContext, upstream):
+        assert isinstance(context.partition_key, MultiPartitionKey)
+
+        input_range = context.asset_partition_key_range_for_input("upstream")
+        assert isinstance(input_range.start, MultiPartitionKey)
+        assert isinstance(input_range.end, MultiPartitionKey)
+
+        output = context.partition_key_range
+        assert isinstance(output.start, MultiPartitionKey)
+        assert isinstance(output.end, MultiPartitionKey)
+
+    materialize([upstream, downstream], partition_key="1|a")
+
+
+def test_multipartitions_range_cartesian_single_key_in_secondary():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
+    ]
+
+
+def test_multipartitions_range_cartesian_single_key_in_primary():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+    ]
+
+
+def test_multipartitions_range_cartesian_multiple_keys_in_both_ranges():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "4"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
+    ]

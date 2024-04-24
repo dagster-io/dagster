@@ -1,5 +1,5 @@
 import memoize from 'lodash/memoize';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
@@ -9,17 +9,19 @@ export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 export const FeatureFlag = {
   flagDebugConsoleLogging: 'flagDebugConsoleLogging' as const,
   flagDisableWebsockets: 'flagDisableWebsockets' as const,
-  flagInstanceConcurrencyLimits: 'flagInstanceConcurrencyLimits' as const,
-  flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
-  flagHorizontalDAGs: 'flagHorizontalDAGs' as const,
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
-  flagDAGSidebar: 'flagDAGSidebar' as const,
+  flagUseNewOverviewPage: 'flagUseNewOverviewPage' as const,
+  flagSettingsPage: 'flagSettingsPage' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
 export const getFeatureFlags: () => FeatureFlagType[] = memoize(
-  () => getJSONForKey(DAGSTER_FLAGS_KEY) || [],
+  () =>
+    getJSONForKey(DAGSTER_FLAGS_KEY) || [
+      // Enable the new asset details page by default.
+      FeatureFlag.flagUseNewOverviewPage,
+    ],
 );
 
 export const featureEnabled = memoize((flag: FeatureFlagType) => getFeatureFlags().includes(flag));
@@ -29,7 +31,7 @@ type FlagMap = {
 };
 
 export const useFeatureFlags = () => {
-  return React.useMemo(() => {
+  return useMemo(() => {
     const flagSet = new Set(getFeatureFlags());
     const all: Record<string, boolean> = {};
     for (const flag in FeatureFlag) {

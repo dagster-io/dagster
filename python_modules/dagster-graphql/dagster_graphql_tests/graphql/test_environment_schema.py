@@ -1,5 +1,5 @@
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 from .repo import csv_hello_world_ops_config
@@ -126,7 +126,7 @@ query PipelineQuery(
 
 class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
     def test_successful_run_config_schema(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
@@ -138,7 +138,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["runConfigSchemaOrError"]["__typename"] == "RunConfigSchema"
 
     def test_run_config_schema_pipeline_not_found(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "jkdjfkdjfd")
+        selector = infer_job_selector(graphql_context, "jkdjfkdjfd")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
@@ -147,7 +147,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["runConfigSchemaOrError"]["__typename"] == "PipelineNotFoundError"
 
     def test_run_config_schema_op_not_found(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job", ["kdjfkdj"])
+        selector = infer_job_selector(graphql_context, "required_resource_job", ["kdjfkdj"])
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
@@ -159,7 +159,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["runConfigSchemaOrError"]["__typename"] == "InvalidSubsetError"
 
     def test_run_config_schema_mode_not_found(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
@@ -170,7 +170,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
     def test_basic_valid_config_on_run_config_schema(
         self, graphql_context: WorkspaceRequestContext, snapshot
     ):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        selector = infer_job_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,
@@ -190,7 +190,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
         snapshot.assert_match(result.data)
 
     def test_full_yaml(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        selector = infer_job_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_ROOT_DEFAULT_YAML_QUERY,
@@ -209,7 +209,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
     def test_basic_invalid_config_on_run_config_schema(
         self, graphql_context: WorkspaceRequestContext, snapshot
     ):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        selector = infer_job_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,

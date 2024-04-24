@@ -7,16 +7,21 @@ def test_syntax_error_serialized_message():
     serialized_error = None
 
     try:
-        eval("""
+        eval(
+            """
 foo = bar
-            """)
+            """
+        )
     except SyntaxError:
         serialized_error = serializable_error_info_from_exc_info(sys.exc_info())
 
     assert serialized_error
 
-    assert serialized_error.message == """  File "<string>", line 2
+    assert (
+        serialized_error.message
+        == """  File "<string>", line 2
     foo = bar
         ^
 SyntaxError: invalid syntax
 """
+    )

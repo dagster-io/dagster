@@ -7,7 +7,9 @@ from dagster import (
     AssetIn,
     ConfigurableIOManager,
     Definitions,
+    InputContext,
     IOManager,
+    OutputContext,
     asset,
     io_manager,
 )
@@ -22,7 +24,7 @@ from .asset_input_managers import (
 
 
 class PandasAssetIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         file_path = self._get_path(context)
         store_pandas_dataframe(name=file_path, table=obj)
 
@@ -32,13 +34,13 @@ class PandasAssetIOManager(ConfigurableIOManager):
             f"{context.asset_key.path[-1]}.csv",
         )
 
-    def load_input(self, context) -> pd.DataFrame:
+    def load_input(self, context: InputContext) -> pd.DataFrame:
         file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context: InputContext) -> np.ndarray:
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 

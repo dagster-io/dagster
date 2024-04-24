@@ -16,6 +16,7 @@ The materialization endpoint of the external system returns a data version strin
 indicating whether a memoized value was used. This information is passed to the Dagster framework by
 returning a `Nothing` `Output`.
 """
+
 import warnings
 from typing import Sequence, cast
 
@@ -160,5 +161,5 @@ source_assets = [
 
 defs = Definitions(
     assets=[*assets, *source_assets],
-    jobs=[define_asset_job("external_system_job", AssetSelection.keys("alpha", "beta"))],
+    jobs=[define_asset_job("external_system_job", AssetSelection.assets("alpha", "beta"))],
 )

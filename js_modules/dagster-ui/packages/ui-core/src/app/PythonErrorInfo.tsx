@@ -1,16 +1,15 @@
 import {gql} from '@apollo/client';
-import {Button, Icon, FontFamily, Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Button, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {Fragment, useRef} from 'react';
 import styled from 'styled-components';
-
-import {ErrorSource} from '../graphql/types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {MetadataEntries} from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 
 import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';
 import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
+import {ErrorSource} from '../graphql/types';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {MetadataEntries} from '../metadata/MetadataEntry';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 
 export type GenericError = {
   message: string;
@@ -26,7 +25,7 @@ interface IPythonErrorInfoProps {
   errorSource?: ErrorSource | null;
 }
 
-export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
+export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
   const {message, stack = [], errorChain = []} = props.error;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
@@ -36,7 +35,7 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const PythonErrorInfoHeader = useLaunchPadHooks().PythonErrorInfoHeader;
   const copy = useCopyToClipboard();
 
-  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <>
@@ -60,7 +59,7 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
         {errorChain.map((chainLink, ii) => (
-          <React.Fragment key={ii}>
+          <Fragment key={ii}>
             <CauseHeader>
               {chainLink.isExplicitLink
                 ? 'The above exception was caused by the following exception:'
@@ -68,7 +67,7 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
             </CauseHeader>
             <ErrorHeader>{chainLink.error.message}</ErrorHeader>
             {stack ? <Trace>{chainLink.error.stack.join('')}</Trace> : null}
-          </React.Fragment>
+          </Fragment>
         ))}
         {props.showReload && (
           <Button icon={<Icon name="refresh" />} onClick={() => window.location.reload()}>
@@ -80,7 +79,7 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   );
 };
 
-const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
+const ErrorContext = ({errorSource}: {errorSource: ErrorSource}) => {
   switch (errorSource) {
     case ErrorSource.UNEXPECTED_ERROR:
       return (
@@ -122,7 +121,7 @@ const CopyErrorButtonWrapper = styled.button`
   gap: 8px;
   top: 0px;
   right: -8px;
-  border: 1px solid ${Colors.KeylineGray};
+  border: 1px solid ${Colors.keylineDefault()};
   background: transparent;
   cursor: pointer;
   border: none;
@@ -141,23 +140,23 @@ const CauseHeader = styled.h3`
 `;
 
 const ErrorHeader = styled.h3`
-  color: #b05c47;
+  color: ${Colors.textRed()};
   font-weight: 400;
   margin: 0.5em 0 0.25em;
   white-space: pre-wrap;
 `;
 
 const Trace = styled.div`
-  color: rgb(41, 50, 56);
+  color: ${Colors.textLight()};
   font-family: ${FontFamily.monospace};
-  font-size: 1em;
+  font-size: 12px;
   white-space: pre;
   padding-bottom: 1em;
 `;
 
 export const ErrorWrapper = styled.div`
-  background-color: #fdf2f4;
-  border: 1px solid #d17257;
+  background-color: ${Colors.backgroundRed()};
+  border: 1px solid ${Colors.accentRed()};
   border-radius: 3px;
   max-width: 90vw;
   max-height: calc(100vh - 250px);

@@ -1,15 +1,15 @@
 import {gql} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import React, {useState} from 'react';
-
-import {usePermissionsForLocation} from '../../app/Permissions';
-import {AssetCheckCanExecuteIndividually} from '../../graphql/types';
-import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
+import {useContext, useState} from 'react';
 
 import {
   ExecuteChecksButtonAssetNodeFragment,
   ExecuteChecksButtonCheckFragment,
 } from './types/ExecuteChecksButton.types';
+import {CloudOSSContext} from '../../app/CloudOSSContext';
+import {usePermissionsForLocation} from '../../app/Permissions';
+import {AssetCheckCanExecuteIndividually, ExecutionParams} from '../../graphql/types';
+import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
 
 export const ExecuteChecksButton = ({
   assetNode,
@@ -41,10 +41,18 @@ export const ExecuteChecksButton = ({
   const disabledReason = !permissions.canLaunchPipelineExecution
     ? disabledReasons.canLaunchPipelineExecution
     : checks.length > 0 && launchable.length === 0
-    ? 'Invidiual launch is not supported. Upgrade your user code version of dagster.'
+    ? 'This check cannot execute without materializing the asset.'
     : checks.length === 0
     ? 'No checks are defined on this asset.'
     : '';
+
+  const {
+    featureContext: {canSeeExecuteChecksAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeExecuteChecksAction) {
+    return null;
+  }
 
   if (disabledReason) {
     return (
@@ -68,24 +76,23 @@ export const ExecuteChecksButton = ({
   }
 
   const onClick = async () => {
-    const params = {
-      executionParams: {
-        mode: 'default',
-        executionMetadata: {},
-        runConfigData: '{}',
-        selector: {
-          repositoryLocationName: repository.location.name,
-          repositoryName: repository.name,
-          jobName,
-          assetCheckSelection: launchable.map((c) => ({
-            assetKey: {path: assetKey.path},
-            name: c.name,
-          })),
-        },
+    const executionParams: ExecutionParams = {
+      mode: 'default',
+      executionMetadata: {},
+      runConfigData: '{}',
+      selector: {
+        jobName,
+        repositoryLocationName: repository.location.name,
+        repositoryName: repository.name,
+        assetSelection: [],
+        assetCheckSelection: launchable.map((c) => ({
+          assetKey: {path: assetKey.path},
+          name: c.name,
+        })),
       },
     };
     setLaunching(true);
-    await launchWithTelemetry(params, 'toast');
+    await launchWithTelemetry({executionParams}, 'toast');
     setLaunching(false);
   };
 

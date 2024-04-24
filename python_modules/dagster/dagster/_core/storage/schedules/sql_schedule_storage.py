@@ -20,7 +20,9 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.asset_condition.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
@@ -338,6 +340,24 @@ class SqlScheduleStorage(ScheduleStorage):
             results[selector_id].append(InstigatorTick(tick_id, tick_data))
         return results
 
+    def get_tick(self, tick_id: int) -> InstigatorTick:
+        check.int_param(tick_id, "tick_id")
+
+        query = (
+            db_select([JobTickTable.c.id, JobTickTable.c.tick_body])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.id == tick_id)
+        )
+
+        rows = self.execute(query)
+        if not rows:
+            raise DagsterInvariantViolationError(
+                f"InstigatorTick {tick_id} is not present in storage"
+            )
+
+        tick_id, tick_data = rows[0]
+        return InstigatorTick(tick_id, deserialize_value(tick_data, TickData))
+
     def get_ticks(
         self,
         origin_id: str,
@@ -465,26 +485,40 @@ class SqlScheduleStorage(ScheduleStorage):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
     ):
         if not asset_evaluations:
             return
 
         with self.connect() as conn:
-            bulk_insert = AssetDaemonAssetEvaluationsTable.insert().values(
-                [
-                    {
-                        "evaluation_id": evaluation_id,
-                        "asset_key": evaluation.asset_key.to_string(),
-                        "asset_evaluation_body": serialize_value(evaluation),
-                        "num_requested": evaluation.num_requested,
-                        "num_skipped": evaluation.num_skipped,
-                        "num_discarded": evaluation.num_discarded,
-                    }
-                    for evaluation in asset_evaluations
-                ]
-            )
-            conn.execute(bulk_insert)
+            for evaluation in asset_evaluations:
+                insert_stmt = AssetDaemonAssetEvaluationsTable.insert().values(
+                    [
+                        {
+                            "evaluation_id": evaluation_id,
+                            "asset_key": evaluation.asset_key.to_string(),
+                            "asset_evaluation_body": serialize_value(evaluation),
+                            "num_requested": evaluation.num_requested,
+                        }
+                    ]
+                )
+                try:
+                    conn.execute(insert_stmt)
+                except db_exc.IntegrityError:
+                    conn.execute(
+                        AssetDaemonAssetEvaluationsTable.update()
+                        .where(
+                            db.and_(
+                                AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id,
+                                AssetDaemonAssetEvaluationsTable.c.asset_key
+                                == evaluation.asset_key.to_string(),
+                            )
+                        )
+                        .values(
+                            asset_evaluation_body=serialize_value(evaluation),
+                            num_requested=evaluation.num_requested,
+                        )
+                    )
 
     def get_auto_materialize_asset_evaluations(
         self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
@@ -497,6 +531,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
                         AssetDaemonAssetEvaluationsTable.c.evaluation_id,
                         AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                        AssetDaemonAssetEvaluationsTable.c.asset_key,
                     ]
                 )
                 .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
@@ -505,6 +540,23 @@ class SqlScheduleStorage(ScheduleStorage):
 
             if cursor:
                 query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
+
+            rows = db_fetch_mappings(conn, query)
+            return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
+
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        with self.connect() as conn:
+            query = db_select(
+                [
+                    AssetDaemonAssetEvaluationsTable.c.id,
+                    AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                    AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                    AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                    AssetDaemonAssetEvaluationsTable.c.asset_key,
+                ]
+            ).where(AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id)
 
             rows = db_fetch_mappings(conn, query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]

@@ -18,7 +18,6 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
@@ -27,7 +26,8 @@ from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.event_api import EventRecordsFilter
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._core.test_utils import create_test_asset_job
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -93,7 +93,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
         },
     )
     def bcd(context):
-        for output_name in sorted(context.selected_output_names):
+        for output_name in sorted(context.op_execution_context.selected_output_names):
             yield Output(output_name, output_name)
 
     @asset(deps=[AssetKey("c")])
@@ -116,14 +116,9 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             runs_to_expected_data_times_index
         ):
             # materialize selected assets
-            result = build_asset_selection_job(
-                "materialize_job",
-                assets=all_assets,
-                source_assets=[],
-                asset_selection=AssetSelection.keys(*(AssetKey(c) for c in to_materialize)).resolve(
-                    all_assets
-                ),
-                asset_checks=[],
+            result = create_test_asset_job(
+                all_assets,
+                selection=AssetSelection.assets(*(AssetKey(c) for c in to_materialize)),
             ).execute_in_process(instance=instance)
 
             assert result.success
@@ -276,7 +271,9 @@ scenarios = {
 
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_partitioned_data_time(scenario):
-    with DagsterInstance.ephemeral() as instance, pendulum.test(create_pendulum_time(2023, 1, 7)):
+    with DagsterInstance.ephemeral() as instance, pendulum_freeze_time(
+        create_pendulum_time(2023, 1, 7)
+    ):
         _materialize_partitions(instance, scenario.before_partitions)
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)
@@ -331,7 +328,7 @@ def observe_sources(*args):
     def observe_sources_fn(*, instance, times_by_key, **kwargs):
         for arg in args:
             key = AssetKey(arg)
-            observe(source_assets=[versioned_repo.source_assets_by_key[key]], instance=instance)
+            observe(assets=[versioned_repo.asset_graph.get(key).assets_def], instance=instance)
             latest_record = instance.get_latest_data_version_record(key, is_source=True)
             latest_timestamp = latest_record.timestamp
             times_by_key[key].append(
@@ -343,7 +340,7 @@ def observe_sources(*args):
 
 def run_assets(*args):
     def run_assets_fn(*, instance, **kwargs):
-        assets = [versioned_repo.assets_defs_by_key[AssetKey(arg)] for arg in args]
+        assets = [versioned_repo.asset_graph.get(AssetKey(arg)).assets_def for arg in args]
         materialize_to_memory(assets=assets, instance=instance)
 
     return run_assets_fn

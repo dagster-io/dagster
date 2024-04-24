@@ -1,8 +1,10 @@
 from dagster import (
     DefaultScheduleStatus,
+    OpExecutionContext,
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    SkipReason,
     asset,
     job,
     op,
@@ -12,8 +14,7 @@ from dagster import (
 
 # start_basic_schedule
 @job
-def my_job():
-    ...
+def my_job(): ...
 
 
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
@@ -37,7 +38,7 @@ basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 
 # start_run_config_schedule
 @op(config_schema={"scheduled_date": str})
-def configurable_op(context):
+def configurable_op(context: OpExecutionContext):
     context.log.info(context.op_config["scheduled_date"])
 
 
@@ -74,3 +75,13 @@ my_running_schedule = ScheduleDefinition(
 )
 
 # end_running_in_code
+
+
+# start_schedule_logging
+@schedule(job=my_job, cron_schedule="* * * * *")
+def logs_then_skips(context):
+    context.log.info("Logging from a schedule!")
+    return SkipReason("Nothing to do")
+
+
+# end_schedule_logging

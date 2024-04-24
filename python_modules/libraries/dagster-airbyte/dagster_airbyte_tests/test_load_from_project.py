@@ -20,7 +20,10 @@ def airbyte_instance_fixture(request) -> AirbyteResource:
 
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
-@pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
+@pytest.mark.parametrize(
+    "connection_to_group_fn, connection_meta_to_group_fn",
+    [(None, lambda meta: f"{meta.name[0]}_group"), (None, None), (lambda x: f"{x[0]}_group", None)],
+)
 @pytest.mark.parametrize("filter_connection", [None, "filter_fn", "dirs"])
 @pytest.mark.parametrize(
     "connection_to_asset_key_fn", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
@@ -28,6 +31,7 @@ def airbyte_instance_fixture(request) -> AirbyteResource:
 def test_load_from_project(
     use_normalization_tables,
     connection_to_group_fn,
+    connection_meta_to_group_fn,
     filter_connection,
     connection_to_asset_key_fn,
     airbyte_instance,
@@ -37,6 +41,7 @@ def test_load_from_project(
             file_relative_path(__file__, "./test_airbyte_project"),
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection == "filter_fn" else None,
             connection_directories=(
                 ["github_snowflake_ben"] if filter_connection == "dirs" else None
@@ -47,6 +52,7 @@ def test_load_from_project(
         ab_cacheable_assets = load_assets_from_airbyte_project(
             file_relative_path(__file__, "./test_airbyte_project"),
             create_assets_for_normalization_tables=use_normalization_tables,
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection == "filter_fn" else None,
             connection_directories=(
                 ["github_snowflake_ben"] if filter_connection == "dirs" else None
@@ -93,9 +99,17 @@ def test_load_from_project(
         [
             ab_assets[0].group_names_by_key.get(AssetKey(t))
             == (
-                connection_to_group_fn("GitHub <> snowflake-ben")
-                if connection_to_group_fn
-                else "github_snowflake_ben"
+                connection_meta_to_group_fn(
+                    AirbyteConnectionMetadata(
+                        "GitHub <> snowflake-ben", "", use_normalization_tables, []
+                    )
+                )
+                if connection_meta_to_group_fn
+                else (
+                    connection_to_group_fn("GitHub <> snowflake-ben")
+                    if connection_to_group_fn
+                    else "github_snowflake_ben"
+                )
             )
             for t in tables
         ]

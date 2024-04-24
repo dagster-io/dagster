@@ -2,55 +2,58 @@ import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
+  Checkbox,
   Colors,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
+  NonIdealState,
   Popover,
   Tooltip,
-  Checkbox,
-  NonIdealState,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
-
-import {useUnscopedPermissions} from '../app/Permissions';
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
-import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {testId} from '../testing/testId';
-import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
+import {useContext} from 'react';
 
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
+import {CloudOSSContext} from '../app/CloudOSSContext';
+import {useUnscopedPermissions} from '../app/Permissions';
+import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
+import {AssetKeyInput} from '../graphql/types';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {testId} from '../testing/testId';
+import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 type Asset = AssetTableFragment;
 
 interface Props {
   view: AssetViewType;
   assets: Asset[];
-  refreshState: QueryRefreshState;
+  refreshState: RefreshState;
   actionBarComponents: React.ReactNode;
+  belowActionBarComponents: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
   requery?: RefetchQueriesFunction;
   searchPath: string;
-  searchGroups: AssetGroupSelector[];
+  isFiltered: boolean;
 }
 
-export const AssetTable: React.FC<Props> = ({
+export const AssetTable = ({
   assets,
   actionBarComponents,
+  belowActionBarComponents,
   refreshState,
   prefixPath,
   displayPathForAsset,
   requery,
   searchPath,
-  searchGroups,
+  isFiltered,
   view,
-}) => {
+}: Props) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
   const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
@@ -75,14 +78,10 @@ export const AssetTable: React.FC<Props> = ({
               icon="search"
               title="No matching assets"
               description={
-                searchGroups.length ? (
+                isFiltered ? (
                   <div>
-                    No assets matching <strong>{searchPath}</strong> were found in{' '}
-                    {searchGroups.length === 1 ? (
-                      <strong>{searchGroups[0]?.groupName}</strong>
-                    ) : (
-                      'the selected asset groups'
-                    )}
+                    No assets matching <strong>{searchPath}</strong> were found in the selected
+                    filters
                   </div>
                 ) : (
                   <div>
@@ -101,18 +100,9 @@ export const AssetTable: React.FC<Props> = ({
             icon="search"
             title="No assets"
             description={
-              searchGroups.length ? (
-                <div>
-                  No assets were found in{' '}
-                  {searchGroups.length === 1 ? (
-                    <strong>{searchGroups[0]?.groupName}</strong>
-                  ) : (
-                    'the selected asset groups'
-                  )}
-                </div>
-              ) : (
-                'No assets were found'
-              )
+              isFiltered
+                ? 'No assets were found matching the selected filters'
+                : 'No assets were found'
             }
           />
         </Box>
@@ -149,7 +139,7 @@ export const AssetTable: React.FC<Props> = ({
     <>
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <Box
-          background={Colors.White}
+          background={Colors.backgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
           padding={{vertical: 8, left: 24, right: 12}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
@@ -182,6 +172,7 @@ export const AssetTable: React.FC<Props> = ({
             />
           </Box>
         </Box>
+        {belowActionBarComponents}
         {content()}
       </Box>
       <AssetWipeDialog
@@ -195,17 +186,24 @@ export const AssetTable: React.FC<Props> = ({
   );
 };
 
-const MoreActionsDropdown: React.FC<{
+interface MoreActionsDropdownProps {
   selected: Asset[];
   clearSelection: () => void;
   requery?: RefetchQueriesFunction;
-}> = React.memo(({selected, clearSelection, requery}) => {
+}
+
+const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
+  const {selected, clearSelection, requery} = props;
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
   const {
     permissions: {canWipeAssets},
   } = useUnscopedPermissions();
 
-  if (!canWipeAssets) {
+  const {
+    featureContext: {canSeeWipeMaterializationAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canWipeAssets || !canSeeWipeMaterializationAction) {
     return null;
   }
 
@@ -220,7 +218,9 @@ const MoreActionsDropdown: React.FC<{
             <MenuItem
               text="Wipe materializations"
               onClick={() => setShowBulkWipeDialog(true)}
-              icon={<Icon name="delete" color={disabled ? Colors.Gray600 : Colors.Red500} />}
+              icon={
+                <Icon name="delete" color={disabled ? Colors.textDisabled() : Colors.accentRed()} />
+              }
               disabled={disabled}
               intent="danger"
             />

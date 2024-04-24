@@ -1,10 +1,9 @@
 import {Box, IconName} from '@dagster-io/ui-components';
-import React from 'react';
-
-import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {useMemo, useRef, useState} from 'react';
 
 import {FilterObject} from './useFilter';
 import {SetFilterActiveState} from './useStaticSetFilter';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 export type SuggestionFilterSuggestion<TValue> = {final?: boolean; value: TValue};
 
@@ -16,14 +15,17 @@ type Args<TValue> = {
   freeformSearchResult?: (
     query: string,
     suggestionPath: TValue[],
-  ) => SuggestionFilterSuggestion<TValue>;
+  ) => SuggestionFilterSuggestion<TValue> | null;
 
   state: TValue[]; // Active suggestions
   setState: (state: TValue[]) => void;
-  initialSuggestions: SuggestionFilterSuggestion<TValue>[];
 
+  initialSuggestions: SuggestionFilterSuggestion<TValue>[];
+  getNoSuggestionsPlaceholder?: (query: string) => string;
   onSuggestionClicked: (value: TValue) => Promise<SuggestionFilterSuggestion<TValue>[]> | void;
+
   getStringValue: (value: TValue) => string;
+  getTooltipText?: (value: TValue) => string;
   getKey: (value: TValue) => string;
   renderLabel: ({value, isActive}: {value: TValue; isActive: boolean}) => JSX.Element;
   renderActiveStateLabel?: ({value, isActive}: {value: TValue; isActive: boolean}) => JSX.Element;
@@ -44,22 +46,24 @@ export function useSuggestionFilter<TValue>({
   setState,
   initialSuggestions,
   onSuggestionClicked,
+  getNoSuggestionsPlaceholder,
   getStringValue,
   getKey,
   renderLabel,
   renderActiveStateLabel,
   isMatch,
   matchType = 'any-of',
+  getTooltipText,
 }: Args<TValue>): SuggestionFilter<TValue> {
-  const [nextSuggestionsLoading, setNextSuggestionsLoading] = React.useState(false);
-  const [nextSuggestions, setNextSuggestions] = React.useState<
+  const [nextSuggestionsLoading, setNextSuggestionsLoading] = useState(false);
+  const [nextSuggestions, setNextSuggestions] = useState<
     SuggestionFilterSuggestion<TValue>[] | null
   >(null);
   const nextSuggestionsRef = useUpdatingRef(nextSuggestions);
   const nextSuggestionsLoadingRef = useUpdatingRef(nextSuggestionsLoading);
-  const [suggestionPath, setSuggestionPath] = React.useState<TValue[]>([]);
+  const [suggestionPath, setSuggestionPath] = useState<TValue[]>([]);
 
-  const filterObj: SuggestionFilter<TValue> = React.useMemo(
+  const filterObj: SuggestionFilter<TValue> = useMemo(
     () => ({
       name,
       icon,
@@ -71,6 +75,7 @@ export function useSuggestionFilter<TValue>({
         setSuggestionPath([]);
       },
       isLoadingFilters: nextSuggestionsLoading,
+      getNoResultsPlaceholder: getNoSuggestionsPlaceholder,
       getResults: (query: string) => {
         let results;
         let hasExactMatch = false;
@@ -116,17 +121,19 @@ export function useSuggestionFilter<TValue>({
         }
         if (!hasExactMatch && freeformSearchResult && query.length) {
           const suggestion = freeformSearchResult(query, suggestionPath);
-          results.unshift({
-            label: (
-              <SuggestionFilterLabel
-                value={suggestion.value}
-                renderLabel={renderLabel}
-                filter={filterObjRef.current}
-              />
-            ),
-            key: getKey?.(suggestion.value) || 'freeform',
-            value: suggestion,
-          });
+          if (suggestion) {
+            results.unshift({
+              label: (
+                <SuggestionFilterLabel
+                  value={suggestion.value}
+                  renderLabel={renderLabel}
+                  filter={filterObjRef.current}
+                />
+              ),
+              key: getKey?.(suggestion.value) || 'freeform',
+              value: suggestion,
+            });
+          }
         }
         return results;
       },
@@ -156,6 +163,7 @@ export function useSuggestionFilter<TValue>({
           name={name}
           state={new Set(state)}
           getStringValue={getStringValue}
+          getTooltipText={getTooltipText}
           renderLabel={renderActiveStateLabel || renderLabel}
           onRemove={() => {
             setState([]);
@@ -173,6 +181,7 @@ export function useSuggestionFilter<TValue>({
       state,
       nextSuggestionsLoading,
       getStringValue,
+      getNoSuggestionsPlaceholder,
       renderActiveStateLabel,
       renderLabel,
       matchType,
@@ -204,15 +213,15 @@ function SuggestionFilterLabel(props: SuggestionFilterLabelProps) {
   const {value, filter, renderLabel} = props;
   const isActive = filter.state.includes(value);
 
-  const labelRef = React.useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
 
   return (
-    // 4 px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
+    // 2px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
     // SVG it contains with size="small"
     <Box
       flex={{direction: 'row', gap: 6, alignItems: 'center'}}
       ref={labelRef}
-      margin={{left: 4}}
+      margin={{left: 2}}
       style={{maxWidth: '500px', overflow: 'hidden'}}
     >
       <div style={{overflow: 'hidden'}}>{renderLabel({value, isActive})}</div>

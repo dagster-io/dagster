@@ -1,7 +1,18 @@
 # type: ignore
 import dummy_local_file  # noqa: F401
+from dagster import job, op
 
-from dagster_tests.cli_tests.command_tests.test_cli_commands import (
-    foo_job,  # noqa: F401
-    qux_job,  # noqa: F401
-)
+
+@op
+def do_something_op():
+    return 1
+
+
+@op
+def do_input_op(x):
+    return x
+
+
+@job
+def qux_job():
+    do_input_op(do_something_op())

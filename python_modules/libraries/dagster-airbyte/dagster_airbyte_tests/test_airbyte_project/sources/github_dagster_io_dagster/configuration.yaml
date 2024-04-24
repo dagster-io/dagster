@@ -5,8 +5,8 @@ definition_image: airbyte/source-github
 definition_version: 0.2.46
 configuration:
   repository: dagster-io/dagster
-  start_date: '2021-03-01T00:00:00Z'
+  start_date: "2021-03-01T00:00:00Z"
   credentials:
     option_title: PAT Credentials
-    personal_access_token: '**********'
+    personal_access_token: "**********"
   page_size_for_large_streams: 10

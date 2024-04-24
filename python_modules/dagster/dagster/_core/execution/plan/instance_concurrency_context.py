@@ -11,8 +11,12 @@ from typing import (
 from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import PRIORITY_TAG
 
-DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
+INITIAL_INTERVAL_VALUE = 1
+STEP_UP_BASE = 1.1
+MAX_CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 15
 
 
 class InstanceConcurrencyContext:
@@ -29,13 +33,18 @@ class InstanceConcurrencyContext:
     `free_concurrency_slots_by_run_id`
     """
 
-    def __init__(self, instance: DagsterInstance, run_id: str):
+    def __init__(self, instance: DagsterInstance, dagster_run: DagsterRun):
         self._instance = instance
-        self._run_id = run_id
+        self._run_id = dagster_run.run_id
         self._global_concurrency_keys = None
         self._pending_timeouts = defaultdict(float)
+        self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
         self._claims = set()
+        try:
+            self._run_priority = int(dagster_run.tags.get(PRIORITY_TAG, "0"))
+        except ValueError:
+            self._run_priority = 0
 
     def __enter__(self) -> Self:
         self._context_guard = True
@@ -54,6 +63,7 @@ class InstanceConcurrencyContext:
 
         for step_key in to_clear:
             del self._pending_timeouts[step_key]
+            del self._pending_claim_counts[step_key]
             self._pending_claims.remove(step_key)
 
         self._context_guard = False
@@ -72,9 +82,24 @@ class InstanceConcurrencyContext:
 
         return self._global_concurrency_keys
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
-        if concurrency_key not in self.global_concurrency_keys:
+    def _sync_global_concurrency_keys(self) -> None:
+        self._global_concurrency_keys = self._instance.event_log_storage.get_concurrency_keys()
+
+    def claim(self, concurrency_key: str, step_key: str, step_priority: int = 0):
+        if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
+
+        if concurrency_key not in self.global_concurrency_keys:
+            # The initialization call will be a no-op if the limit is set by another process,
+            # mitigating any race condition concerns
+            if not self._instance.event_log_storage.initialize_concurrency_limit_to_default(
+                concurrency_key
+            ):
+                # still default open if the limit table has not been initialized
+                return True
+            else:
+                # sync the global concurrency keys to ensure we have the latest
+                self._sync_global_concurrency_keys()
 
         if step_key in self._pending_claims:
             if time.time() > self._pending_timeouts[step_key]:
@@ -84,17 +109,17 @@ class InstanceConcurrencyContext:
         else:
             self._pending_claims.add(step_key)
 
+        priority = self._run_priority + step_priority
         claim_status = self._instance.event_log_storage.claim_concurrency_slot(
             concurrency_key, self._run_id, step_key, priority
         )
 
         if not claim_status.is_claimed:
-            interval = (
-                claim_status.sleep_interval
-                if claim_status.sleep_interval
-                else DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+            interval = _calculate_timeout_interval(
+                claim_status.sleep_interval, self._pending_claim_counts[step_key]
             )
             self._pending_timeouts[step_key] = time.time() + interval
+            self._pending_claim_counts[step_key] += 1
             return False
 
         if step_key in self._pending_claims:
@@ -122,3 +147,17 @@ class InstanceConcurrencyContext:
 
         self._instance.event_log_storage.free_concurrency_slot_for_step(self._run_id, step_key)
         self._claims.remove(step_key)
+
+
+def _calculate_timeout_interval(sleep_interval: Optional[float], pending_claim_count: int) -> float:
+    if sleep_interval is not None:
+        return sleep_interval
+
+    if pending_claim_count > 30:
+        # with the current values, we will always hit the max by the 30th claim attempt
+        return MAX_CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+
+    # increase the step up value exponentially, up to a max of 15 seconds (starting from 0)
+    step_up_value = STEP_UP_BASE**pending_claim_count - 1
+    interval = INITIAL_INTERVAL_VALUE + step_up_value
+    return min(MAX_CONCURRENCY_CLAIM_BLOCKED_INTERVAL, interval)

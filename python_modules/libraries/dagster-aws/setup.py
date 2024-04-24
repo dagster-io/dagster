@@ -28,11 +28,13 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_aws_tests*"]),
     include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         "boto3",
         f"dagster{pin}",
@@ -43,8 +45,8 @@ setup(
         "redshift": ["psycopg2-binary"],
         "pyspark": ["dagster-pyspark"],
         "test": [
-            "botocore",
-            "moto[s3,server]>=2.2.8",
+            "botocore!=1.32.1",
+            "moto[s3,server]>=2.2.8,<5.0",
             "requests-mock",
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
         ],

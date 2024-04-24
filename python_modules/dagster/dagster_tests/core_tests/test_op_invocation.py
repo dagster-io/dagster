@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from datetime import datetime
 from functools import partial
 
@@ -44,7 +45,11 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
-from dagster._core.execution.context.invocation import build_asset_context
+from dagster._core.execution.context.invocation import (
+    DirectOpExecutionContext,
+    build_asset_context,
+)
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -597,8 +602,8 @@ def test_missing_required_output_generator():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Invocation of op 'op_multiple_outputs_not_sent' did not return an output "
-            "for non-optional output '1'"
+            'Invocation of op "op_multiple_outputs_not_sent" did not return an output '
+            'for non-optional output "1"'
         ),
     ):
         list(op_multiple_outputs_not_sent())
@@ -644,6 +649,10 @@ def test_missing_required_output_generator_async():
         asyncio.run(get_results())
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12) and USING_PYDANTIC_1,
+    reason="something with py3.12 and pydantic1 and sqlite",
+)
 def test_missing_required_output_return():
     @op(
         out={
@@ -711,9 +720,7 @@ def test_invalid_properties_on_bound_context(property_or_method_name: str, val_t
         result = getattr(context, property_or_method_name)
         (  # for the case where property_or_method_name is a method, getting an attribute won't cause
             # an error, but invoking the method should.
-            result(val_to_pass)
-            if val_to_pass
-            else result()
+            result(val_to_pass) if val_to_pass else result()
         )
 
     with pytest.raises(DagsterInvalidPropertyError):
@@ -1240,11 +1247,14 @@ def test_assets_def_invocation():
     def non_asset_op(context):
         context.assets_def  # noqa: B018
 
-    with build_op_context(
+    with build_asset_context(
         partition_key="2023-02-02",
     ) as context:
         my_asset(context)
 
+    with build_op_context(
+        partition_key="2023-02-02",
+    ) as context:
         with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
             non_asset_op(context)
 
@@ -1255,12 +1265,12 @@ def test_partitions_time_window_asset_invocation():
     @asset(
         partitions_def=partitions_def,
     )
-    def partitioned_asset(context):
-        start, end = context.asset_partitions_time_window_for_output()
+    def partitioned_asset(context: AssetExecutionContext):
+        start, end = context.partition_time_window
         assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
         assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="2023-02-02",
     )
     partitioned_asset(context)
@@ -1275,21 +1285,24 @@ def test_multipartitioned_time_window_asset_invocation():
     )
 
     @asset(partitions_def=partitions_def)
-    def my_asset(context):
+    def my_asset(context: AssetExecutionContext):
+        time_partition = get_time_partitions_def(partitions_def)
+        if time_partition is None:
+            assert False, "partitions def does not have a time component"
         time_window = TimeWindow(
             start=pendulum.instance(
                 datetime(year=2020, month=1, day=1),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
             end=pendulum.instance(
                 datetime(year=2020, month=1, day=2),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
         )
-        assert context.asset_partitions_time_window_for_output() == time_window
+        assert context.partition_time_window == time_window
         return 1
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="2020-01-01|a",
     )
     my_asset(context)
@@ -1302,14 +1315,14 @@ def test_multipartitioned_time_window_asset_invocation():
     )
 
     @asset(partitions_def=partitions_def)
-    def static_multipartitioned_asset(context):
+    def static_multipartitioned_asset(context: AssetExecutionContext):
         with pytest.raises(
             DagsterInvariantViolationError,
             match="with a single time dimension",
         ):
-            context.asset_partitions_time_window_for_output()
+            _ = context.partition_time_window
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="a|a",
     )
     static_multipartitioned_asset(context)
@@ -1323,7 +1336,7 @@ def test_partition_range_asset_invocation():
         keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
         return {k: True for k in keys}
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
     )
     assert foo(context) == {"2023-01-01": True, "2023-01-02": True}
@@ -1332,3 +1345,256 @@ def test_partition_range_asset_invocation():
         partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
     )
     assert foo(context) == {"2023-01-01": True, "2023-01-02": True}
+
+
+def test_direct_invocation_output_metadata():
+    @asset
+    def my_asset(context):
+        context.add_output_metadata({"foo": "bar"})
+
+    @asset
+    def my_other_asset(context):
+        context.add_output_metadata({"baz": "qux"})
+
+    ctx = build_asset_context()
+
+    my_asset(ctx)
+    assert ctx.get_output_metadata("result") == {"foo": "bar"}
+
+    # context is unbound when used in another invocation. This allows the metadata to be
+    # added in my_other_asset
+    my_other_asset(ctx)
+
+
+def test_async_assets_with_shared_context():
+    @asset
+    async def async_asset_one(context):
+        assert context.asset_key.to_user_string() == "async_asset_one"
+        await asyncio.sleep(0.01)
+        return "one"
+
+    @asset
+    async def async_asset_two(context):
+        assert context.asset_key.to_user_string() == "async_asset_two"
+        await asyncio.sleep(0.01)
+        return "two"
+
+    # test that we can run two ops/assets with the same context at the same time without
+    # overriding op/asset specific attributes
+    ctx = build_asset_context()
+
+    async def main():
+        return await asyncio.gather(
+            async_asset_one(ctx),
+            async_asset_two(ctx),
+        )
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"This context is currently being used to execute .* The context"
+        r" cannot be used to execute another asset until .* has finished executing",
+    ):
+        asyncio.run(main())
+
+
+def assert_context_unbound(context: DirectOpExecutionContext):
+    # to assert that the context is correctly unbound after op invocation
+    assert not context.is_bound
+
+
+def assert_context_bound(context: DirectOpExecutionContext):
+    # to assert that the context is correctly bound during op invocation
+    assert context.is_bound
+
+
+def assert_execution_properties_cleared(context: DirectOpExecutionContext):
+    # to assert that the invocation properties are reset at the beginning of op invocation
+    assert len(context.execution_properties.output_metadata.keys()) == 0
+
+
+def assert_execution_properties_exist(context: DirectOpExecutionContext):
+    # to assert that the invocation properties remain accessible after op invocation
+    assert len(context.execution_properties.output_metadata.keys()) > 0
+
+
+def test_context_bound_state_non_generator():
+    @asset
+    def my_asset(context):
+        assert_context_bound(context)
+        assert_execution_properties_cleared(context)
+        context.add_output_metadata({"foo": "bar"})
+
+    ctx = build_op_context()
+    assert_context_unbound(ctx)
+
+    my_asset(ctx)
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+    my_asset(ctx)
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+
+def test_context_bound_state_generator():
+    @op(out={"first": Out(), "second": Out()})
+    def generator(context):
+        assert_context_bound(context)
+        assert_execution_properties_cleared(context)
+        context.add_output_metadata({"foo": "bar"}, output_name="first")
+        yield Output("one", output_name="first")
+        yield Output("two", output_name="second")
+
+    ctx = build_op_context()
+
+    result = list(generator(ctx))
+    assert result[0].value == "one"
+    assert result[1].value == "two"
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+    result = list(generator(ctx))
+    assert result[0].value == "one"
+    assert result[1].value == "two"
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+
+def test_context_bound_state_async():
+    @asset
+    async def async_asset(context):
+        assert_context_bound(context)
+        assert_execution_properties_cleared(context)
+        assert context.asset_key.to_user_string() == "async_asset"
+        context.add_output_metadata({"foo": "bar"})
+        await asyncio.sleep(0.01)
+        return "one"
+
+    ctx = build_asset_context()
+
+    result = asyncio.run(async_asset(ctx))
+    assert result == "one"
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+    result = asyncio.run(async_asset(ctx))
+    assert result == "one"
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+
+def test_context_bound_state_async_generator():
+    @op(out={"first": Out(), "second": Out()})
+    async def async_generator(context):
+        assert_context_bound(context)
+        assert_execution_properties_cleared(context)
+        context.add_output_metadata({"foo": "bar"}, output_name="first")
+        yield Output("one", output_name="first")
+        await asyncio.sleep(0.01)
+        yield Output("two", output_name="second")
+
+    ctx = build_op_context()
+
+    async def get_results():
+        res = []
+        async for output in async_generator(ctx):
+            res.append(output)
+        return res
+
+    result = asyncio.run(get_results())
+    assert result[0].value == "one"
+    assert result[1].value == "two"
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+    result = asyncio.run(get_results())
+    assert result[0].value == "one"
+    assert result[1].value == "two"
+    assert_context_unbound(ctx)
+    assert_execution_properties_exist(ctx)
+
+
+def test_bound_state_with_error_assets():
+    @asset
+    def throws_error(context):
+        assert context.asset_key.to_user_string() == "throws_error"
+        raise Failure("something bad happened!")
+
+    ctx = build_asset_context()
+
+    with pytest.raises(Failure):
+        throws_error(ctx)
+
+    assert_context_unbound(ctx)
+
+    @asset
+    def no_error(context):
+        assert context.asset_key.to_user_string() == "no_error"
+
+    no_error(ctx)
+
+
+def test_context_bound_state_with_error_ops():
+    @op(out={"first": Out(), "second": Out()})
+    def throws_error(context):
+        assert_context_bound(ctx)
+        raise Failure("something bad happened!")
+
+    ctx = build_op_context()
+
+    with pytest.raises(Failure):
+        throws_error(ctx)
+
+    assert_context_unbound(ctx)
+
+
+def test_context_bound_state_with_error_generator():
+    @op(out={"first": Out(), "second": Out()})
+    def generator(context):
+        assert_context_bound(ctx)
+        yield Output("one", output_name="first")
+        raise Failure("something bad happened!")
+
+    ctx = build_op_context()
+
+    with pytest.raises(Failure):
+        list(generator(ctx))
+
+    assert_context_unbound(ctx)
+
+
+def test_context_bound_state_with_error_async():
+    @asset
+    async def async_asset(context):
+        assert_context_bound(ctx)
+        await asyncio.sleep(0.01)
+        raise Failure("something bad happened!")
+
+    ctx = build_asset_context()
+
+    with pytest.raises(Failure):
+        asyncio.run(async_asset(ctx))
+
+    assert_context_unbound(ctx)
+
+
+def test_context_bound_state_with_error_async_generator():
+    @op(out={"first": Out(), "second": Out()})
+    async def async_generator(context):
+        assert_context_bound(ctx)
+        yield Output("one", output_name="first")
+        await asyncio.sleep(0.01)
+        raise Failure("something bad happened!")
+
+    ctx = build_op_context()
+
+    async def get_results():
+        res = []
+        async for output in async_generator(ctx):
+            res.append(output)
+        return res
+
+    with pytest.raises(Failure):
+        asyncio.run(get_results())
+
+    assert_context_unbound(ctx)

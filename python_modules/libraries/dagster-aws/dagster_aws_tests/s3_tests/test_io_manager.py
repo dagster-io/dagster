@@ -16,15 +16,14 @@ from dagster import (
     asset,
     graph,
     job,
-    materialize,
     op,
     resource,
-    with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import build_assets_job
 from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
@@ -185,15 +184,17 @@ def define_assets_job(bucket):
     def partitioned():
         return 8
 
-    return build_assets_job(
-        name="assets",
-        assets=[asset1, asset2, AssetsDefinition.from_graph(graph_asset), partitioned],
-        source_assets=[source1],
-        resource_defs={
+    graph_asset_def = AssetsDefinition.from_graph(graph_asset)
+    target_assets = [asset1, asset2, graph_asset_def, partitioned]
+
+    return Definitions(
+        assets=[*target_assets, source1],
+        jobs=[define_asset_job("assets", target_assets)],
+        resources={
             "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,
         },
-    )
+    ).get_job_def("assets")
 
 
 def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
@@ -226,26 +227,24 @@ def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
         ),
     }
 
+    # re-execution does not cause issues, overwrites the buckets
+    result2 = inty_job.execute_in_process(partition_key="apple")
 
-def test_nothing(mock_s3_bucket):
-    @asset
-    def asset1() -> None: ...
-
-    @asset(deps=[asset1])
-    def asset2() -> None: ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": s3_pickle_io_manager.configured({"s3_bucket": mock_s3_bucket.name}),
-                "s3": s3_test_resource,
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata) == 0
+    objects = list(mock_s3_bucket.objects.all())
+    assert len(objects) == 8
+    assert {(o.bucket_name, o.key) for o in objects} == {
+        ("test-bucket", "dagster/source1/bar"),
+        ("test-bucket", "dagster/source1/foo"),
+        ("test-bucket", "dagster/asset1"),
+        ("test-bucket", "dagster/asset2"),
+        ("test-bucket", "dagster/asset3"),
+        ("test-bucket", "dagster/partitioned/apple"),
+        (
+            "test-bucket",
+            "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
+        ),
+        (
+            "test-bucket",
+            "/".join(["dagster", "storage", result2.run_id, "graph_asset.first_op", "result"]),
+        ),
+    }

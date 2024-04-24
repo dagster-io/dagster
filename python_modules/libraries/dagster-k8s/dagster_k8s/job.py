@@ -1,8 +1,8 @@
 import copy
-import hashlib
 import json
 import random
 import string
+from enum import Enum
 from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -10,7 +10,9 @@ import kubernetes
 from dagster import (
     Array,
     BoolSource,
+    Enum as DagsterEnum,
     Field,
+    Map,
     Noneable,
     StringSource,
 )
@@ -19,6 +21,7 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import get_common_labels, sanitize_k8s_label
@@ -49,6 +52,16 @@ MAX_K8S_NAME_LEN = 63
 K8S_RESOURCE_REQUIREMENTS_KEY = "dagster-k8s/resource_requirements"
 K8S_RESOURCE_REQUIREMENTS_SCHEMA = Shape({"limits": Permissive(), "requests": Permissive()})
 
+
+class K8sConfigMergeBehavior(Enum):
+    SHALLOW = (  # Top-level keys in each of 'container_config' / 'pod_spec_config' are replaced
+        "SHALLOW"
+    )
+    DEEP = (  # Dictionaries are deep-merged, lists are appended after removing values that are already present
+        "DEEP"
+    )
+
+
 USER_DEFINED_K8S_CONFIG_KEY = "dagster-k8s/config"
 USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
     {
@@ -58,6 +71,10 @@ USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
         "job_config": Permissive(),
         "job_metadata": Permissive(),
         "job_spec_config": Permissive(),
+        "merge_behavior": Field(
+            DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
+            is_required=False,
+        ),
     }
 )
 
@@ -77,6 +94,7 @@ class UserDefinedDagsterK8sConfig(
             ("job_config", Mapping[str, Any]),
             ("job_metadata", Mapping[str, Any]),
             ("job_spec_config", Mapping[str, Any]),
+            ("merge_behavior", K8sConfigMergeBehavior),
         ],
     )
 ):
@@ -88,6 +106,7 @@ class UserDefinedDagsterK8sConfig(
         job_config: Optional[Mapping[str, Any]] = None,
         job_metadata: Optional[Mapping[str, Any]] = None,
         job_spec_config: Optional[Mapping[str, Any]] = None,
+        merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
     ):
         container_config = check.opt_mapping_param(
             container_config, "container_config", key_type=str
@@ -128,6 +147,9 @@ class UserDefinedDagsterK8sConfig(
             job_config=job_config,
             job_metadata=job_metadata,
             job_spec_config=job_spec_config,
+            merge_behavior=check.inst_param(
+                merge_behavior, "merge_behavior", K8sConfigMergeBehavior
+            ),
         )
 
     def to_dict(self):
@@ -138,6 +160,7 @@ class UserDefinedDagsterK8sConfig(
             "job_config": self.job_config,
             "job_metadata": self.job_metadata,
             "job_spec_config": self.job_spec_config,
+            "merge_behavior": self.merge_behavior.value,
         }
 
     @classmethod
@@ -149,6 +172,9 @@ class UserDefinedDagsterK8sConfig(
             job_config=config_dict.get("job_config"),
             job_metadata=config_dict.get("job_metadata"),
             job_spec_config=config_dict.get("job_spec_config"),
+            merge_behavior=K8sConfigMergeBehavior(
+                config_dict.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
+            ),
         )
 
 
@@ -188,9 +214,9 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
                 result,
             )
 
-        user_defined_k8s_config = result.value
+        user_defined_k8s_config = check.not_none(result.value)
 
-    container_config = user_defined_k8s_config.get("container_config", {})  # type: ignore
+    container_config = user_defined_k8s_config.get("container_config", {})
 
     # Backcompat for resource requirements key
     if K8S_RESOURCE_REQUIREMENTS_KEY in tags:
@@ -201,11 +227,14 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
 
     return UserDefinedDagsterK8sConfig(
         container_config=container_config,
-        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),  # type: ignore
-        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),  # type: ignore
-        job_config=user_defined_k8s_config.get("job_config"),  # type: ignore
-        job_metadata=user_defined_k8s_config.get("job_metadata"),  # type: ignore
-        job_spec_config=user_defined_k8s_config.get("job_spec_config"),  # type: ignore
+        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),
+        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
+        job_config=user_defined_k8s_config.get("job_config"),
+        job_metadata=user_defined_k8s_config.get("job_metadata"),
+        job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        merge_behavior=K8sConfigMergeBehavior(
+            user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
+        ),
     )
 
 
@@ -223,7 +252,7 @@ class DagsterK8sJobConfig(
             ("job_image", Optional[str]),
             ("dagster_home", Optional[str]),
             ("image_pull_policy", str),
-            ("image_pull_secrets", Optional[Sequence[Mapping[str, str]]]),
+            ("image_pull_secrets", Sequence[Mapping[str, str]]),
             ("service_account_name", Optional[str]),
             ("instance_config_map", Optional[str]),
             ("postgres_password_secret", Optional[str]),
@@ -404,11 +433,52 @@ class DagsterK8sJobConfig(
                     ),
                 ),
                 "run_k8s_config": Field(
-                    USER_DEFINED_K8S_CONFIG_SCHEMA,
+                    Shape(
+                        {
+                            "container_config": Permissive(),
+                            "pod_template_spec_metadata": Permissive(),
+                            "pod_spec_config": Permissive(),
+                            "job_config": Permissive(),
+                            "job_metadata": Permissive(),
+                            "job_spec_config": Permissive(),
+                        }
+                    ),
                     is_required=False,
                     description="Raw Kubernetes configuration for launched runs.",
                 ),
                 "job_namespace": Field(StringSource, is_required=False, default_value="default"),
+                "only_allow_user_defined_k8s_config_fields": Field(
+                    Shape(
+                        {
+                            "container_config": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "pod_spec_config": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "pod_template_spec_metadata": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "job_metadata": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "job_spec_config": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                        }
+                    ),
+                    is_required=False,
+                    description="Dictionary of fields that are allowed to be configured on a "
+                    "per-run or per-code-location basis - e.g. using tags on the run. "
+                    "Can be used to prevent user code from being able to set arbitrary kubernetes "
+                    "config on the pods launched by the run launcher.",
+                ),
+                "only_allow_user_defined_env_vars": Field(
+                    Array(str),
+                    is_required=False,
+                    description="List of environment variable names that are allowed to be set on "
+                    "a per-run or per-code-location basis - e.g. using tags on the run. ",
+                ),
             },
         )
 
@@ -587,6 +657,10 @@ class DagsterK8sJobConfig(
                             "container_config": Permissive(),
                             "pod_spec_config": Permissive(),
                             "pod_template_spec_metadata": Permissive(),
+                            "merge_behavior": Field(
+                                DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
+                                is_required=False,
+                            ),
                         }
                     ),
                     is_required=False,
@@ -734,6 +808,8 @@ def construct_dagster_k8s_job(
 
     job_image = container_config.pop("image", job_config.job_image)
 
+    image_pull_policy = container_config.pop("image_pull_policy", job_config.image_pull_policy)
+
     user_defined_k8s_volume_mounts = container_config.pop("volume_mounts", [])
 
     user_defined_resources = container_config.pop("resources", {})
@@ -751,7 +827,7 @@ def construct_dagster_k8s_job(
         {
             "name": container_name,
             "image": job_image,
-            "image_pull_policy": job_config.image_pull_policy,
+            "image_pull_policy": image_pull_policy,
             "env": [*env, *job_config.env, *user_defined_env_vars],
             "env_from": [*job_config.env_from_sources, *user_defined_env_from],
             "volume_mounts": volume_mounts,
@@ -779,7 +855,11 @@ def construct_dagster_k8s_job(
 
     scheduler_name = pod_spec_config.pop("scheduler_name", job_config.scheduler_name)
 
+    automount_service_account_token = pod_spec_config.pop("automount_service_account_token", True)
+
     user_defined_containers = pod_spec_config.pop("containers", [])
+
+    user_defined_image_pull_secrets = pod_spec_config.pop("image_pull_secrets", [])
 
     template = {
         "metadata": merge_dicts(
@@ -795,8 +875,12 @@ def construct_dagster_k8s_job(
             {"restart_policy": "Never"},
             pod_spec_config,
             {
-                "image_pull_secrets": job_config.image_pull_secrets,
+                "image_pull_secrets": [
+                    *job_config.image_pull_secrets,
+                    *user_defined_image_pull_secrets,
+                ],
                 "service_account_name": service_account_name,
+                "automount_service_account_token": automount_service_account_token,
                 "containers": [container_config] + user_defined_containers,
                 "volumes": volumes,
             },
@@ -851,6 +935,6 @@ def get_k8s_job_name(input_1, input_2=None):
         input_2 = "".join(random.choice(letters) for i in range(20))
 
     # Creates 32-bit signed int, so could be negative
-    name_hash = hashlib.md5((input_1 + input_2).encode("utf-8"))
+    name_hash = non_secure_md5_hash_str((input_1 + input_2).encode("utf-8"))
 
-    return name_hash.hexdigest()
+    return name_hash

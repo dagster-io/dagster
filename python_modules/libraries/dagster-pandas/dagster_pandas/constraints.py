@@ -46,13 +46,7 @@ class ConstraintWithMetadataException(Exception):
         self.offending = check.opt_inst_param(offending, "offending", (dict, list, str, set))
         self.actual = check.opt_inst_param(actual, "actual", (dict, list, str, set))
         super(ConstraintWithMetadataException, self).__init__(
-            "Violated {} - {}, {} was/were expected, but we received {} which was/were {}".format(
-                constraint_name,
-                constraint_description,
-                expectation,
-                offending,
-                actual,
-            )
+            f"Violated {constraint_name} - {constraint_description}, {expectation} was/were expected, but we received {offending} which was/were {actual}"
         )
 
     def normalize_metadata_json_value(self, val):
@@ -105,17 +99,10 @@ class ColumnConstraintViolationException(ConstraintViolationException):
         super(ColumnConstraintViolationException, self).__init__(self.construct_message())
 
     def construct_message(self):
-        base_message = (
-            'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'
-            .format(
-                constraint_name=self.constraint_name,
-                constraint_description=self.constraint_description,
-                column_name=self.column_name,
-            )
-        )
+        base_message = f'Violated "{self.constraint_name}" for column "{self.column_name}" - {self.constraint_description}'
         if self.offending_rows is not None:
-            base_message += "The offending (index, row values) are the following: {}".format(
-                self.offending_rows
+            base_message += (
+                f"The offending (index, row values) are the following: {self.offending_rows}"
             )
         return base_message
 
@@ -334,19 +321,15 @@ class StrictColumnsConstraint(DataFrameConstraint):
                 raise DataFrameConstraintViolationException(
                     constraint_name=self.name,
                     constraint_description=(
-                        "Expected the following ordering of columns {expected}. Received:"
-                        " {received}".format(
-                            expected=self.strict_column_list, received=columns_received
-                        )
+                        f"Expected the following ordering of columns {self.strict_column_list}. Received:"
+                        f" {columns_received}"
                     ),
                 )
         for column in columns_received:
             if column not in self.strict_column_list:
                 raise DataFrameConstraintViolationException(
                     constraint_name=self.name,
-                    constraint_description="Expected {}. Recevied {}.".format(
-                        self.strict_column_list, columns_received
-                    ),
+                    constraint_description=f"Expected {self.strict_column_list}. Recevied {columns_received}.",
                 )
 
 
@@ -379,11 +362,7 @@ class RowCountConstraint(DataFrameConstraint):
             raise DataFrameConstraintViolationException(
                 constraint_name=self.name,
                 constraint_description=(
-                    "Expected {expected} +- {tolerance} rows. Got {received}".format(
-                        expected=self.num_allowed_rows,
-                        tolerance=self.error_tolerance,
-                        received=len(dataframe),
-                    )
+                    f"Expected {self.num_allowed_rows} +- {self.error_tolerance} rows. Got {len(dataframe)}"
                 ),
             )
 
@@ -1106,9 +1085,7 @@ class InRangeColumnConstraint(ColumnConstraint):
         self.ignore_missing_vals = check.bool_param(ignore_missing_vals, "ignore_missing_vals")
         super(InRangeColumnConstraint, self).__init__(
             markdown_description=f"{self.min_value} < values < {self.max_value}",
-            error_description="Column must have values between {} and {} inclusive.".format(
-                self.min_value, self.max_value
-            ),
+            error_description=f"Column must have values between {self.min_value} and {self.max_value} inclusive.",
         )
 
     def validate(self, dataframe, column_name):

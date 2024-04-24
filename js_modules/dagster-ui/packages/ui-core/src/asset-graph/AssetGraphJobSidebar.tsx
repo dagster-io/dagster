@@ -1,24 +1,24 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PipelineSelector} from '../graphql/types';
-import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
-import {
-  SidebarContainerOverview,
-  SIDEBAR_ROOT_CONTAINER_FRAGMENT,
-} from '../pipelines/SidebarContainerOverview';
-import {Loading} from '../ui/Loading';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {
   AssetGraphSidebarQuery,
   AssetGraphSidebarQueryVariables,
 } from './types/AssetGraphJobSidebar.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PipelineSelector} from '../graphql/types';
+import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
+import {
+  SIDEBAR_ROOT_CONTAINER_FRAGMENT,
+  SidebarContainerOverview,
+} from '../pipelines/SidebarContainerOverview';
+import {Loading} from '../ui/Loading';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-export const AssetGraphJobSidebar: React.FC<{
+interface Props {
   pipelineSelector: PipelineSelector;
-}> = ({pipelineSelector}) => {
+}
+
+export const AssetGraphJobSidebar = ({pipelineSelector}: Props) => {
   const queryResult = useQuery<AssetGraphSidebarQuery, AssetGraphSidebarQueryVariables>(
     ASSET_GRAPH_JOB_SIDEBAR,
     {

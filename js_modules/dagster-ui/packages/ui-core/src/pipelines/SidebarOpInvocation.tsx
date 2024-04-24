@@ -1,21 +1,19 @@
 import {gql} from '@apollo/client';
 import {Box, Button, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {breakOnUnderscores} from '../app/Util';
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
 
 import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarOpHelpers';
 import {SidebarOpInvocationFragment} from './types/SidebarOpInvocation.types';
+import {breakOnUnderscores} from '../app/Util';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
 
 interface ISidebarOpInvocationProps {
   solid: SidebarOpInvocationFragment;
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
 }
 
-export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) => {
+export const SidebarOpInvocation = (props: ISidebarOpInvocationProps) => {
   const {solid, onEnterSubgraph} = props;
   const showInputs = solid.inputs.some((o) => o.dependsOn.length);
   const showOutputs = solid.outputs.some((o) => o.dependedBy.length);

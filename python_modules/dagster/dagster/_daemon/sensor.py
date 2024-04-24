@@ -1,16 +1,13 @@
 import logging
-import os
 import sys
 import threading
-import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
-from contextlib import ExitStack
+from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Dict,
-    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -22,24 +19,28 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
+    DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     InstigatorType,
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorType,
+)
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalJob, ExternalSensor
-from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
+from dagster._core.remote_representation.external_data import ExternalTargetData
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -52,21 +53,22 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
-from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
-from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
+from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from pendulum.datetime import DateTime
 
+    from dagster._daemon.daemon import DaemonIterator
+
+
 MIN_INTERVAL_LOOP_TIME = 5
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
-
-TDaemonGenerator: TypeAlias = Iterator[Optional[SerializableErrorInfo]]
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -80,7 +82,7 @@ class SkippedSensorRun(NamedTuple):
     existing_run: DagsterRun
 
 
-class SensorLaunchContext:
+class SensorLaunchContext(AbstractContextManager):
     def __init__(
         self,
         external_sensor: ExternalSensor,
@@ -88,13 +90,11 @@ class SensorLaunchContext:
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
-        sensor_state_lock: threading.Lock,
     ):
         self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
         self._tick = tick
-        self._sensor_state_lock = sensor_state_lock
         self._should_update_cursor_on_failure = False
         self._purge_settings = defaultdict(set)
         for status, day_offset in tick_retention_settings.items():
@@ -111,6 +111,18 @@ class SensorLaunchContext:
     @property
     def run_count(self) -> int:
         return len(self._tick.run_ids)
+
+    @property
+    def tick_id(self) -> str:
+        return str(self._tick.tick_id)
+
+    @property
+    def log_key(self) -> Sequence[str]:
+        return [
+            self._external_sensor.handle.repository_handle.repository_name,
+            self._external_sensor.name,
+            self.tick_id,
+        ]
 
     def update_state(self, status: TickStatus, **kwargs: object):
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
@@ -142,7 +154,7 @@ class SensorLaunchContext:
     def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
 
-    def add_log_info(self, log_key: Sequence[str]) -> None:
+    def add_log_key(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
 
     def add_dynamic_partitions_request_result(
@@ -165,35 +177,40 @@ class SensorLaunchContext:
             self._tick.status != TickStatus.FAILURE
         ) or self._should_update_cursor_on_failure
 
-        with self._sensor_state_lock:
-            # fetch the most recent state.  we do this as opposed to during context initialization time
-            # because we want to minimize the window of clobbering the sensor state upon updating the
-            # sensor state data.
-            state = self._instance.get_instigator_state(
-                self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
-            )
-            last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
-            if self._tick.run_keys and should_update_cursor_and_last_run_key:
-                last_run_key = self._tick.run_keys[-1]
+        # fetch the most recent state.  we do this as opposed to during context initialization time
+        # because we want to minimize the window of clobbering the sensor state upon updating the
+        # sensor state data.
+        state = self._instance.get_instigator_state(
+            self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
+        )
+        last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
+        last_sensor_start_timestamp = (
+            state.instigator_data.last_sensor_start_timestamp if state.instigator_data else None  # type: ignore  # (possible none)
+        )
+        if self._tick.run_keys and should_update_cursor_and_last_run_key:
+            last_run_key = self._tick.run_keys[-1]
 
-            cursor = state.instigator_data.cursor if state.instigator_data else None  # type: ignore  # (possible none)
-            if should_update_cursor_and_last_run_key:
-                cursor = self._tick.cursor
+        cursor = state.instigator_data.cursor if state.instigator_data else None  # type: ignore  # (possible none)
+        if should_update_cursor_and_last_run_key:
+            cursor = self._tick.cursor
 
-            marked_timestamp = max(
-                self._tick.timestamp, state.instigator_data.last_tick_start_timestamp or 0  # type: ignore  # (possible none)
-            )
-            self._instance.update_instigator_state(
-                state.with_data(  # type: ignore  # (possible none)
-                    SensorInstigatorData(
-                        last_tick_timestamp=self._tick.timestamp,
-                        last_run_key=last_run_key,
-                        min_interval=self._external_sensor.min_interval_seconds,
-                        cursor=cursor,
-                        last_tick_start_timestamp=marked_timestamp,
-                    )
+        marked_timestamp = max(
+            self._tick.timestamp,
+            state.instigator_data.last_tick_start_timestamp or 0,  # type: ignore  # (possible none)
+        )
+        self._instance.update_instigator_state(
+            state.with_data(  # type: ignore  # (possible none)
+                SensorInstigatorData(
+                    last_tick_timestamp=self._tick.timestamp,
+                    last_run_key=last_run_key,
+                    min_interval=self._external_sensor.min_interval_seconds,
+                    cursor=cursor,
+                    last_tick_start_timestamp=marked_timestamp,
+                    last_sensor_start_timestamp=last_sensor_start_timestamp,
+                    sensor_type=self._external_sensor.sensor_type,
                 )
             )
+        )
 
     def __enter__(self) -> Self:
         return self
@@ -209,8 +226,8 @@ class SensorLaunchContext:
 
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
         if exception_value and not isinstance(exception_value, GeneratorExit):
-            error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.update_state(TickStatus.FAILURE, error=error_data)
+            error_info = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
+            self.update_state(TickStatus.FAILURE, error=error_info)
 
         self._write()
 
@@ -225,107 +242,67 @@ class SensorLaunchContext:
             )
 
 
-def _check_for_debug_crash(
-    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
-) -> None:
-    if not debug_crash_flags:
-        return
-
-    kill_signal = debug_crash_flags.get(key)
-    if not kill_signal:
-        return
-
-    os.kill(os.getpid(), kill_signal)
-    time.sleep(10)
-    raise Exception("Process didn't terminate after sending crash signal")
-
-
-VERBOSE_LOGS_INTERVAL = 60
-
-
 def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     shutdown_event: threading.Event,
     until: Optional[float] = None,
-) -> TDaemonGenerator:
+    threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-    sensor_state_lock = threading.Lock()
+    from dagster._daemon.daemon import SpanMarker
+
     sensor_tick_futures: Dict[str, Future] = {}
-    submit_threadpool_executor = None
-    threadpool_executor = None
-    with ExitStack() as stack:
-        settings = workspace_process_context.instance.get_settings("sensors")
-        if settings.get("use_threads"):
-            threadpool_executor = stack.enter_context(
-                InheritContextThreadPoolExecutor(
-                    max_workers=settings.get("num_workers"),
-                    thread_name_prefix="sensor_daemon_worker",
-                )
-            )
-            num_submit_workers = settings.get("num_submit_workers")
-            if num_submit_workers:
-                submit_threadpool_executor = stack.enter_context(
-                    InheritContextThreadPoolExecutor(
-                        max_workers=settings.get("num_submit_workers"),
-                        thread_name_prefix="sensor_submit_worker",
-                    )
-                )
+    while True:
+        start_time = pendulum.now("UTC").timestamp()
+        if until and start_time >= until:
+            # provide a way of organically ending the loop to support test environment
+            break
 
-        last_verbose_time = None
-        while True:
-            start_time = pendulum.now("UTC").timestamp()
-            if until and start_time >= until:
-                # provide a way of organically ending the loop to support test environment
-                break
+        yield SpanMarker.START_SPAN
 
-            # occasionally enable verbose logging (doing it always would be too much)
-            verbose_logs_iteration = (
-                last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
-            )
+        try:
             yield from execute_sensor_iteration(
                 workspace_process_context,
                 logger,
                 threadpool_executor=threadpool_executor,
                 submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
-                sensor_state_lock=sensor_state_lock,
-                log_verbose_checks=verbose_logs_iteration,
             )
-            # Yield to check for heartbeats in case there were no yields within
-            # execute_sensor_iteration
-            yield None
+        except Exception:
+            error_info = DaemonErrorCapture.on_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message="SensorDaemon caught an error",
+            )
+            yield error_info
+        # Yield to check for heartbeats in case there were no yields within
+        # execute_sensor_iteration
+        yield SpanMarker.END_SPAN
 
-            end_time = pendulum.now("UTC").timestamp()
+        end_time = pendulum.now("UTC").timestamp()
 
-            if verbose_logs_iteration:
-                last_verbose_time = end_time
+        loop_duration = end_time - start_time
+        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+        shutdown_event.wait(sleep_time)
 
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            shutdown_event.wait(sleep_time)
-
-            yield None
+        yield None
 
 
 def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    threadpool_executor: Optional[ThreadPoolExecutor],
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
-    sensor_state_lock: Optional[threading.Lock] = None,
-    log_verbose_checks: bool = True,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
-
-    if not sensor_state_lock:
-        sensor_state_lock = threading.Lock()
 
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
@@ -337,6 +314,10 @@ def execute_sensor_iteration(
     all_sensor_states = {
         sensor_state.selector_id: sensor_state
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+        if (
+            not sensor_state.instigator_data
+            or sensor_state.instigator_data.sensor_type != SensorType.AUTO_MATERIALIZE  # type: ignore
+        )
     }
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
@@ -347,59 +328,16 @@ def execute_sensor_iteration(
         if code_location:
             for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
+                    if sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
+                        continue
+
                     selector_id = sensor.selector_id
                     if sensor.get_current_instigator_state(
                         all_sensor_states.get(selector_id)
                     ).is_running:
                         sensors[selector_id] = sensor
-        elif location_entry.load_error and log_verbose_checks:
-            logger.warning(
-                f"Could not load location {location_entry.origin.location_name} to check for"
-                f" sensors due to the following error: {location_entry.load_error}"
-            )
-
-    if log_verbose_checks:
-        unloadable_sensor_states = {
-            selector_id: sensor_state
-            for selector_id, sensor_state in all_sensor_states.items()
-            if selector_id not in sensors and sensor_state.status == InstigatorStatus.RUNNING
-        }
-
-        for sensor_state in unloadable_sensor_states.values():
-            sensor_name = sensor_state.origin.instigator_name
-            code_location_origin = (
-                sensor_state.origin.external_repository_origin.code_location_origin
-            )
-
-            location_name = code_location_origin.location_name
-            repo_name = sensor_state.origin.external_repository_origin.repository_name
-            if (
-                location_name not in workspace_snapshot
-                or not workspace_snapshot[location_name].code_location
-            ):
-                logger.warning(
-                    f"Sensor {sensor_name} was started from a location "
-                    f"{location_name} that can no longer be found in the workspace. "
-                    "You can turn off this sensor in the Dagster UI from the Status tab."
-                )
-            elif not check.not_none(  # checked above
-                workspace_snapshot[location_name].code_location
-            ).has_repository(repo_name):
-                logger.warning(
-                    f"Could not find repository {repo_name} in location {location_name} to "
-                    + f"run sensor {sensor_name}. If this repository no longer exists, you can "
-                    + "turn off the sensor in the Dagster UI from the Status tab.",
-                )
-            else:
-                logger.warning(
-                    f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
-                    "sensor no longer exists, you can turn it off in the Dagster UI from the "
-                    "Status tab.",
-                )
 
     if not sensors:
-        if log_verbose_checks:
-            logger.debug("Not checking for any runs since no sensors have been started.")
         yield
         return
 
@@ -412,11 +350,15 @@ def execute_sensor_iteration(
             sensor_state = InstigatorState(
                 external_sensor.get_external_origin(),
                 InstigatorType.SENSOR,
-                InstigatorStatus.AUTOMATICALLY_RUNNING,
-                SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
+                InstigatorStatus.DECLARED_IN_CODE,
+                SensorInstigatorData(
+                    min_interval=external_sensor.min_interval_seconds,
+                    last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    sensor_type=external_sensor.sensor_type,
+                ),
             )
             instance.add_instigator_state(sensor_state)
-        elif _is_under_min_interval(sensor_state, external_sensor):
+        elif is_under_min_interval(sensor_state, external_sensor):
             continue
 
         if threadpool_executor:
@@ -436,7 +378,6 @@ def execute_sensor_iteration(
                 logger,
                 external_sensor,
                 sensor_state,
-                sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
                 submit_threadpool_executor,
@@ -452,7 +393,6 @@ def execute_sensor_iteration(
                 logger,
                 external_sensor,
                 sensor_state,
-                sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
                 submit_threadpool_executor=None,
@@ -464,7 +404,6 @@ def _process_tick(
     logger: logging.Logger,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
-    sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
@@ -477,7 +416,6 @@ def _process_tick(
             logger,
             external_sensor,
             sensor_state,
-            sensor_state_lock,
             sensor_debug_crash_flags,
             tick_retention_settings,
             submit_threadpool_executor,
@@ -490,28 +428,23 @@ def _process_tick_generator(
     logger: logging.Logger,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
-    sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ):
     instance = workspace_process_context.instance
     error_info = None
-    with sensor_state_lock:
-        # acquire the lock to avoid a race condition where we're updating the recently touched
-        # timestamp on the sensor state, but clobbering it with an older timestamp which might open
-        # us up to a new evaluation being delegated within the minimum interval
-        now = pendulum.now("UTC")
-        sensor_state = check.not_none(
-            instance.get_instigator_state(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
+    now = pendulum.now("UTC")
+    sensor_state = check.not_none(
+        instance.get_instigator_state(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
-        if _is_under_min_interval(sensor_state, external_sensor):
-            # check the since we might have been queued before processing
-            return
-        else:
-            _mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
+    )
+    if is_under_min_interval(sensor_state, external_sensor):
+        # check the since we might have been queued before processing
+        return
+    else:
+        mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
 
     try:
         tick = instance.create_tick(
@@ -525,12 +458,18 @@ def _process_tick_generator(
             )
         )
 
-        _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
+        check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
         with SensorLaunchContext(
-            external_sensor, tick, instance, logger, tick_retention_settings, sensor_state_lock
+            external_sensor,
+            tick,
+            instance,
+            logger,
+            tick_retention_settings,
         ) as tick_context:
-            _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+            check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+            tick_context.add_log_key(tick_context.log_key)
+
             yield from _evaluate_sensor(
                 workspace_process_context,
                 tick_context,
@@ -541,8 +480,11 @@ def _process_tick_generator(
             )
 
     except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.exception(f"Sensor daemon caught an error for sensor {external_sensor.name}")
+        error_info = DaemonErrorCapture.on_exception(
+            exc_info=sys.exc_info(),
+            logger=logger,
+            log_message=f"Sensor daemon caught an error for sensor {external_sensor.name}",
+        )
 
     yield error_info
 
@@ -555,7 +497,7 @@ def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigator
         check.failed(f"Expected SensorInstigatorData, got {instigator_data}")
 
 
-def _mark_sensor_state_for_tick(
+def mark_sensor_state_for_tick(
     instance: DagsterInstance,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
@@ -572,6 +514,10 @@ def _mark_sensor_state_for_tick(
                 min_interval=external_sensor.min_interval_seconds,
                 cursor=instigator_data.cursor if instigator_data else None,
                 last_tick_start_timestamp=now.timestamp(),
+                sensor_type=external_sensor.sensor_type,
+                last_sensor_start_timestamp=instigator_data.last_sensor_start_timestamp
+                if instigator_data
+                else None,
             )
         )
     )
@@ -604,10 +550,11 @@ def _submit_run_request(
     code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
-        repository_name=sensor_origin.external_repository_origin.repository_name,
+        repository_name=sensor_origin.repository_origin.repository_name,
         job_name=target_data.job_name,
         op_selection=target_data.op_selection,
         asset_selection=run_request.asset_selection,
+        asset_check_selection=run_request.asset_check_keys,
     )
     external_job = code_location.get_external_job(job_subset_selector)
     run = _get_or_create_sensor_run(
@@ -624,7 +571,7 @@ def _submit_run_request(
     if isinstance(run, SkippedSensorRun):
         return SubmitRunRequestResult(run_key=run_request.run_key, error_info=None, run=run)
 
-    _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
+    check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
 
     error_info = None
     try:
@@ -632,20 +579,23 @@ def _submit_run_request(
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
         logger.info(f"Completed launch of run {run.run_id} for {external_sensor.name}")
     except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")
+        error_info = DaemonErrorCapture.on_exception(
+            exc_info=sys.exc_info(),
+            logger=logger,
+            log_message=f"Run {run.run_id} created successfully but failed to launch",
+        )
 
-    _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
+    check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
     return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)
 
 
 def _get_code_location_for_sensor(
     workspace_process_context: IWorkspaceProcessContext,
     external_sensor: ExternalSensor,
-):
+) -> CodeLocation:
     sensor_origin = external_sensor.get_external_origin()
     return workspace_process_context.create_request_context().get_code_location(
-        sensor_origin.external_repository_origin.code_location_origin.location_name
+        sensor_origin.repository_origin.code_location_origin.location_name
     )
 
 
@@ -670,124 +620,36 @@ def _evaluate_sensor(
         instigator_data.last_tick_timestamp if instigator_data else None,
         instigator_data.last_run_key if instigator_data else None,
         instigator_data.cursor if instigator_data else None,
+        context.log_key,
+        instigator_data.last_sensor_start_timestamp if instigator_data else None,
     )
 
     yield
 
-    if sensor_runtime_data.captured_log_key:
-        context.add_log_info(sensor_runtime_data.captured_log_key)
-
-    assert isinstance(sensor_runtime_data, SensorExecutionData)
+    # Kept for backwards compatibility with sensor log keys that were previously created in the
+    # sensor evaluation, rather than upfront.
+    #
+    # Note that to get sensor logs for failed sensor evaluations, we force users to update their
+    # Dagster version.
+    if sensor_runtime_data.log_key:
+        context.add_log_key(sensor_runtime_data.log_key)
 
     for asset_event in sensor_runtime_data.asset_events:
         instance.report_runless_asset_event(asset_event)
 
     if sensor_runtime_data.dynamic_partitions_requests:
-        for request in sensor_runtime_data.dynamic_partitions_requests:
-            existent_partitions = []
-            nonexistent_partitions = []
-            for partition_key in request.partition_keys:
-                if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
-                    existent_partitions.append(partition_key)
-                else:
-                    nonexistent_partitions.append(partition_key)
-
-            if isinstance(request, AddDynamicPartitionsRequest):
-                if nonexistent_partitions:
-                    instance.add_dynamic_partitions(
-                        request.partitions_def_name,
-                        nonexistent_partitions,
-                    )
-                    context.logger.info(
-                        "Added partition keys to dynamic partitions definition"
-                        f" '{request.partitions_def_name}': {nonexistent_partitions}"
-                    )
-
-                if existent_partitions:
-                    context.logger.info(
-                        "Skipping addition of partition keys for dynamic partitions definition"
-                        f" '{request.partitions_def_name}' that already exist:"
-                        f" {existent_partitions}"
-                    )
-
-                context.add_dynamic_partitions_request_result(
-                    DynamicPartitionsRequestResult(
-                        request.partitions_def_name,
-                        added_partitions=nonexistent_partitions,
-                        deleted_partitions=None,
-                        skipped_partitions=existent_partitions,
-                    )
-                )
-            elif isinstance(request, DeleteDynamicPartitionsRequest):
-                if existent_partitions:
-                    # TODO add a bulk delete method to the instance
-                    for partition in existent_partitions:
-                        instance.delete_dynamic_partition(request.partitions_def_name, partition)
-
-                    context.logger.info(
-                        "Deleted partition keys from dynamic partitions definition"
-                        f" '{request.partitions_def_name}': {existent_partitions}"
-                    )
-
-                if nonexistent_partitions:
-                    context.logger.info(
-                        "Skipping deletion of partition keys for dynamic partitions definition"
-                        f" '{request.partitions_def_name}' that do not exist:"
-                        f" {nonexistent_partitions}"
-                    )
-
-                context.add_dynamic_partitions_request_result(
-                    DynamicPartitionsRequestResult(
-                        request.partitions_def_name,
-                        added_partitions=None,
-                        deleted_partitions=existent_partitions,
-                        skipped_partitions=nonexistent_partitions,
-                    )
-                )
-            else:
-                check.failed(f"Unexpected action {request.action} for dynamic partition request")
+        _handle_dynamic_partitions_requests(
+            sensor_runtime_data.dynamic_partitions_requests, instance, context
+        )
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.dagster_run_reactions:
-            for run_reaction in sensor_runtime_data.dagster_run_reactions:
-                origin_run_id = check.not_none(run_reaction.dagster_run).run_id
-                if run_reaction.error:
-                    context.logger.error(
-                        f"Got a reaction request for run {origin_run_id} but execution errorred:"
-                        f" {run_reaction.error}"
-                    )
-                    context.update_state(
-                        TickStatus.FAILURE,
-                        cursor=sensor_runtime_data.cursor,
-                        error=run_reaction.error,
-                    )
-                    # Since run status sensors have side effects that we don't want to repeat,
-                    # we still want to update the cursor, even though the tick failed
-                    context.set_should_update_cursor_on_failure(True)
-                else:
-                    # Use status from the DagsterRunReaction object if it is from a new enough
-                    # version (0.14.4) to be set (the status on the DagsterRun object itself
-                    # may have since changed)
-                    status = (
-                        run_reaction.run_status.value
-                        if run_reaction.run_status
-                        else check.not_none(run_reaction.dagster_run).status.value
-                    )
-                    # log to the original dagster run
-                    message = (
-                        f'Sensor "{external_sensor.name}" acted on run status '
-                        f"{status} of run {origin_run_id}."
-                    )
-                    instance.report_engine_event(
-                        message=message, dagster_run=run_reaction.dagster_run
-                    )
-                    context.logger.info(
-                        f"Completed a reaction request for run {origin_run_id}: {message}"
-                    )
-                    context.update_state(
-                        TickStatus.SUCCESS,
-                        cursor=sensor_runtime_data.cursor,
-                        origin_run_id=origin_run_id,
-                    )
+            _handle_run_reactions(
+                sensor_runtime_data.dagster_run_reactions,
+                instance,
+                context,
+                sensor_runtime_data.cursor,
+                external_sensor,
+            )
         elif sensor_runtime_data.skip_message:
             context.logger.info(
                 f"Sensor {external_sensor.name} skipped: {sensor_runtime_data.skip_message}"
@@ -802,43 +664,191 @@ def _evaluate_sensor(
             context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
         yield
-        return  # Done with run status sensors
+    else:
+        yield from _handle_run_requests(
+            run_requests=sensor_runtime_data.run_requests,
+            cursor=sensor_runtime_data.cursor,
+            context=context,
+            instance=instance,
+            external_sensor=external_sensor,
+            workspace_process_context=workspace_process_context,
+            submit_threadpool_executor=submit_threadpool_executor,
+            sensor_debug_crash_flags=sensor_debug_crash_flags,
+        )
 
+
+def _handle_dynamic_partitions_requests(
+    dynamic_partitions_requests: Sequence[
+        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+    ],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+) -> None:
+    for request in dynamic_partitions_requests:
+        existent_partitions = []
+        nonexistent_partitions = []
+        for partition_key in request.partition_keys:
+            if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
+                existent_partitions.append(partition_key)
+            else:
+                nonexistent_partitions.append(partition_key)
+
+        if isinstance(request, AddDynamicPartitionsRequest):
+            if nonexistent_partitions:
+                instance.add_dynamic_partitions(
+                    request.partitions_def_name,
+                    nonexistent_partitions,
+                )
+                context.logger.info(
+                    "Added partition keys to dynamic partitions definition"
+                    f" '{request.partitions_def_name}': {nonexistent_partitions}"
+                )
+
+            if existent_partitions:
+                context.logger.info(
+                    "Skipping addition of partition keys for dynamic partitions definition"
+                    f" '{request.partitions_def_name}' that already exist:"
+                    f" {existent_partitions}"
+                )
+
+            context.add_dynamic_partitions_request_result(
+                DynamicPartitionsRequestResult(
+                    request.partitions_def_name,
+                    added_partitions=nonexistent_partitions,
+                    deleted_partitions=None,
+                    skipped_partitions=existent_partitions,
+                )
+            )
+        elif isinstance(request, DeleteDynamicPartitionsRequest):
+            if existent_partitions:
+                # TODO add a bulk delete method to the instance
+                for partition in existent_partitions:
+                    instance.delete_dynamic_partition(request.partitions_def_name, partition)
+
+                context.logger.info(
+                    "Deleted partition keys from dynamic partitions definition"
+                    f" '{request.partitions_def_name}': {existent_partitions}"
+                )
+
+            if nonexistent_partitions:
+                context.logger.info(
+                    "Skipping deletion of partition keys for dynamic partitions definition"
+                    f" '{request.partitions_def_name}' that do not exist:"
+                    f" {nonexistent_partitions}"
+                )
+
+            context.add_dynamic_partitions_request_result(
+                DynamicPartitionsRequestResult(
+                    request.partitions_def_name,
+                    added_partitions=None,
+                    deleted_partitions=existent_partitions,
+                    skipped_partitions=nonexistent_partitions,
+                )
+            )
+        else:
+            check.failed(f"Unexpected action {request.action} for dynamic partition request")
+
+
+def _handle_run_reactions(
+    dagster_run_reactions: Sequence[DagsterRunReaction],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+    cursor: Optional[str],
+    external_sensor: ExternalSensor,
+) -> None:
+    for run_reaction in dagster_run_reactions:
+        origin_run_id = check.not_none(run_reaction.dagster_run).run_id
+        if run_reaction.error:
+            context.logger.error(
+                f"Got a reaction request for run {origin_run_id} but execution errorred:"
+                f" {run_reaction.error}"
+            )
+            context.update_state(
+                TickStatus.FAILURE,
+                cursor=cursor,
+                error=run_reaction.error,
+            )
+            # Since run status sensors have side effects that we don't want to repeat,
+            # we still want to update the cursor, even though the tick failed
+            context.set_should_update_cursor_on_failure(True)
+        else:
+            # Use status from the DagsterRunReaction object if it is from a new enough
+            # version (0.14.4) to be set (the status on the DagsterRun object itself
+            # may have since changed)
+            status = (
+                run_reaction.run_status.value
+                if run_reaction.run_status
+                else check.not_none(run_reaction.dagster_run).status.value
+            )
+            # log to the original dagster run
+            message = (
+                f'Sensor "{external_sensor.name}" acted on run status '
+                f"{status} of run {origin_run_id}."
+            )
+            instance.report_engine_event(message=message, dagster_run=run_reaction.dagster_run)
+            context.logger.info(f"Completed a reaction request for run {origin_run_id}: {message}")
+            context.update_state(
+                TickStatus.SUCCESS,
+                cursor=cursor,
+                origin_run_id=origin_run_id,
+            )
+
+
+def _handle_run_requests(
+    run_requests: Sequence[RunRequest],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+    external_sensor: ExternalSensor,
+    cursor: Optional[str],
+    workspace_process_context: IWorkspaceProcessContext,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
+    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+):
     skipped_runs = []
-    existing_runs_by_key = _fetch_existing_runs(
-        instance, external_sensor, sensor_runtime_data.run_requests
-    )
+    existing_runs_by_key = _fetch_existing_runs(instance, external_sensor, run_requests)
 
-    run_requests = []
+    resolved_run_requests = []
 
-    for raw_run_request in sensor_runtime_data.run_requests:
-        if raw_run_request.stale_assets_only:
-            stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_sensor)  # type: ignore
+    for raw_run_request in run_requests:
+        run_request = raw_run_request.with_replaced_attrs(
+            tags=merge_dicts(
+                raw_run_request.tags,
+                DagsterRun.tags_for_tick_id(context.tick_id),
+            )
+        )
+
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_or_missing_assets(
+                workspace_process_context,  # type: ignore
+                run_request,
+                external_sensor,
+            )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
             else:
-                run_request = raw_run_request.with_replaced_attrs(
+                run_request = run_request.with_replaced_attrs(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
-        else:
-            run_request = raw_run_request
 
-        run_requests.append(run_request)
+        resolved_run_requests.append(run_request)
 
-    submit_run_request = lambda run_request: _submit_run_request(
-        run_request,
-        workspace_process_context,
-        external_sensor,
-        existing_runs_by_key,
-        context.logger,
-        sensor_debug_crash_flags,
-    )
+    def submit_run_request(run_request) -> SubmitRunRequestResult:
+        return _submit_run_request(
+            run_request,
+            workspace_process_context,
+            external_sensor,
+            existing_runs_by_key,
+            context.logger,
+            sensor_debug_crash_flags,
+        )
 
     if submit_threadpool_executor:
-        gen_run_request_results = submit_threadpool_executor.map(submit_run_request, run_requests)
+        gen_run_request_results = submit_threadpool_executor.map(
+            submit_run_request, resolved_run_requests
+        )
     else:
-        gen_run_request_results = map(submit_run_request, run_requests)
+        gen_run_request_results = map(submit_run_request, resolved_run_requests)
 
     for run_request_result in gen_run_request_results:
         yield run_request_result.error_info
@@ -860,14 +870,14 @@ def _evaluate_sensor(
         )
 
     if context.run_count:
-        context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
+        context.update_state(TickStatus.SUCCESS, cursor=cursor)
     else:
-        context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
+        context.update_state(TickStatus.SKIPPED, cursor=cursor)
 
     yield
 
 
-def _is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
+def is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
     instigator_data = _sensor_instigator_data(state)
     if not instigator_data:
         return False
@@ -918,8 +928,8 @@ def _fetch_existing_runs(
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
             run.external_job_origin is not None
-            and run.external_job_origin.external_repository_origin.get_selector_id()
-            == external_sensor.get_external_origin().external_repository_origin.get_selector_id()
+            and run.external_job_origin.repository_origin.get_selector_id()
+            == external_sensor.get_external_origin().repository_origin.get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):
             valid_runs.append(run)
@@ -988,9 +998,13 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    job_tags = validate_tags(external_job.tags or {}, allow_reserved_tags=False)
+    job_tags = normalize_tags(
+        external_job.tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
+    ).tags
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
+        # this gets applied in the sensor definition too, but we apply it here for backcompat
+        # with sensors before the tag was added to the sensor definition
         DagsterRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:
@@ -1026,5 +1040,8 @@ def _create_sensor_run(
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
-        asset_check_selection=None,
+        asset_check_selection=(
+            frozenset(run_request.asset_check_keys) if run_request.asset_check_keys else None
+        ),
+        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
     )

@@ -15,9 +15,9 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
-from dagster._core.definitions.assets_job import (
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_job import (
     ASSET_BASE_JOB_PREFIX,
 )
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
@@ -35,6 +35,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
+from dagster._utils.cached_method import cached_method
 
 from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import (
@@ -43,6 +44,7 @@ from .valid_definitions import (
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
+    from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
@@ -95,18 +97,16 @@ class RepositoryDefinition:
 
     def __init__(
         self,
-        name,
+        name: str,
         *,
-        repository_data,
-        description=None,
-        metadata=None,
-        repository_load_data=None,
+        repository_data: RepositoryData,
+        description: Optional[str] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._repository_data: RepositoryData = check.inst_param(
-            repository_data, "repository_data", RepositoryData
-        )
+        self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
         self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
@@ -134,7 +134,7 @@ class RepositoryDefinition:
         """Optional[MetadataMapping]: Arbitrary metadata for the repository."""
         return self._metadata
 
-    def load_all_definitions(self):
+    def load_all_definitions(self) -> None:
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
 
@@ -240,13 +240,33 @@ class RepositoryDefinition:
         """bool: Check if a sensor with a given name is present in the repository."""
         return self._repository_data.has_sensor(name)
 
+    @public
     @property
     def source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
+        """Mapping[AssetKey, SourceAsset]: The source assets defined in the repository."""
         return self._repository_data.get_source_assets_by_key()
 
+    # NOTE: `assets_defs_by_key` should generally not be used internally. It returns the
+    # `AssetsDefinition` supplied at repository construction time. Internally, assets defs should be
+    # obtained from the `AssetGraph` via `asset_graph.assets_defs`. This returns a normalized set of
+    # assets defs, where:
+    #
+    # - `SourceAsset` instances are replaced with external `AssetsDefinition`
+    # - Relative asset key dependencies are resolved
+    # - External `AssetsDefinition` have been generated for referenced asset keys without a
+    #   corresponding user-provided definition
+
+    @public
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        """Mapping[AssetKey, AssetsDefinition]: The assets definitions defined in the repository."""
         return self._repository_data.get_assets_defs_by_key()
+
+    @public
+    @property
+    def asset_checks_defs_by_key(self) -> Mapping[AssetKey, "AssetChecksDefinition"]:
+        """Mapping[AssetCheckKey, AssetChecksDefinition]: The assets checks defined in the repository."""
+        return self._repository_data.get_asset_checks_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
         """Returns true is there is a single implicit asset job for all asset keys in a repository."""
@@ -279,20 +299,18 @@ class RepositoryDefinition:
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
             base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
+            asset_layer = base_job.asset_layer
             if all(
-                key in base_job.asset_layer.assets_defs_by_key
-                or base_job.asset_layer.is_observable_for_asset(key)
-                for key in asset_keys
+                asset_layer.has(key) and asset_layer.get(key).is_executable for key in asset_keys
             ):
                 return base_job
         else:
             i = 0
             while self.has_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
                 base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
-
+                asset_layer = base_job.asset_layer
                 if all(
-                    key in base_job.asset_layer.assets_defs_by_key
-                    or base_job.asset_layer.is_observable_for_asset(key)
+                    asset_layer.has(key) and asset_layer.get(key).is_executable
                     for key in asset_keys
                 ):
                     return base_job
@@ -306,7 +324,7 @@ class RepositoryDefinition:
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         defn = self.get_job(job_name)
         return defn.get_subset(
@@ -349,9 +367,11 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        with AssetValueLoader(
-            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
-        ) as loader:
+        # The normalized assets defs must be obtained from the asset graph, not the repository data
+        normalized_assets_defs_by_key = {
+            k: ad for ad in self.asset_graph.assets_defs for k in ad.keys
+        }
+        with AssetValueLoader(normalized_assets_defs_by_key, instance=instance) as loader:
             return loader.load_asset_value(
                 asset_key,
                 python_type=python_type,
@@ -380,14 +400,21 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        return AssetValueLoader(
-            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
-        )
+        # The normalized assets defs must be obtained from the asset graph, not the repository data
+        normalized_assets_defs_by_key = {
+            k: ad for ad in self.asset_graph.assets_defs for k in ad.keys
+        }
+        return AssetValueLoader(normalized_assets_defs_by_key, instance=instance)
 
     @property
-    def asset_graph(self) -> InternalAssetGraph:
+    @cached_method
+    def asset_graph(self) -> AssetGraph:
         return AssetGraph.from_assets(
-            [*set(self.assets_defs_by_key.values()), *self.source_assets_by_key.values()]
+            [
+                *list(set(self.assets_defs_by_key.values())),
+                *self.source_assets_by_key.values(),
+                *list(set(self.asset_checks_defs_by_key.values())),
+            ],
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be

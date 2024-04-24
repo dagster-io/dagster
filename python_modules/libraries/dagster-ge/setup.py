@@ -30,17 +30,12 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_ge_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, <0.17.12",
     ],
-    extras_require={
-        "test": [
-            # https://github.com/great-expectations/great_expectations/issues/7990
-            "typing_extensions<4.6.0",
-        ],
-    },
     zip_safe=False,
 )

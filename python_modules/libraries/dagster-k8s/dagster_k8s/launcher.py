@@ -59,6 +59,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets=None,
         env_vars=None,
         k8s_client_batch_api=None,
+        k8s_client_core_api=None,
         volume_mounts=None,
         volumes=None,
         labels=None,
@@ -67,6 +68,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         scheduler_name=None,
         security_context=None,
         run_k8s_config=None,
+        only_allow_user_defined_k8s_config_fields=None,
+        only_allow_user_defined_env_vars=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -84,7 +87,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             kubernetes.config.load_kube_config(kubeconfig_file)
 
         self._api_client = DagsterKubernetesClient.production_client(
-            batch_api_override=k8s_client_batch_api
+            core_api_override=k8s_client_core_api,
+            batch_api_override=k8s_client_batch_api,
         )
 
         self._job_config = None
@@ -118,6 +122,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._scheduler_name = check.opt_str_param(scheduler_name, "scheduler_name")
         self._security_context = check.opt_dict_param(security_context, "security_context")
         self._run_k8s_config = check.opt_dict_param(run_k8s_config, "run_k8s_config")
+
+        self._only_allow_user_defined_k8s_config_fields = only_allow_user_defined_k8s_config_fields
+        self._only_allow_user_defined_env_vars = only_allow_user_defined_env_vars
         super().__init__()
 
     @property
@@ -180,6 +187,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def fail_pod_on_run_failure(self) -> Optional[bool]:
         return self._fail_pod_on_run_failure
 
+    @property
+    def only_allow_user_defined_k8s_config_fields(self) -> Optional[Mapping[str, Any]]:
+        return self._only_allow_user_defined_k8s_config_fields
+
+    @property
+    def only_allow_user_defined_env_vars(self) -> Optional[Sequence[str]]:
+        return self._only_allow_user_defined_env_vars
+
     @classmethod
     def config_type(cls):
         """Include all arguments required for DagsterK8sJobConfig along with additional arguments
@@ -206,7 +221,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pod_name = job_name
 
         job_origin = check.not_none(run.job_code_origin)
-        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
+        user_defined_k8s_config = container_context.run_k8s_config
         repository_origin = job_origin.repository_origin
 
         job_config = container_context.get_k8s_job_config(
@@ -225,7 +240,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         }
         if run.external_job_origin:
             labels["dagster/code-location"] = (
-                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                run.external_job_origin.repository_origin.code_location_origin.location_name
             )
 
         job = construct_dagster_k8s_job(
@@ -241,7 +256,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     "name": "DAGSTER_RUN_JOB_NAME",
                     "value": job_origin.job_name,
                 },
-                *container_context.env,
             ],
         )
 
@@ -328,9 +342,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Run was not terminated successfully; delete_job returned {}".format(
-                        termination_result
-                    ),
+                    message=f"Run was not terminated successfully; delete_job returned {termination_result}",
                     dagster_run=run,
                     cls=self.__class__,
                 )
@@ -353,7 +365,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def supports_run_worker_crash_recovery(self):
         return True
 
-    def get_run_worker_debug_info(self, run: DagsterRun) -> Optional[str]:
+    def get_run_worker_debug_info(
+        self, run: DagsterRun, include_container_logs: Optional[bool] = True
+    ) -> Optional[str]:
         container_context = self.get_container_context_for_run(run)
         if self.supports_run_worker_crash_recovery:
             resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
@@ -362,14 +376,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
         namespace = container_context.namespace
-        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
-        container_name = user_defined_k8s_config.container_config.get("name", "dagster")
         pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
         full_msg = ""
         try:
             pod_debug_info = [
                 self._api_client.get_pod_debug_info(
-                    pod_name, namespace, container_name=container_name
+                    pod_name, namespace, include_container_logs=include_container_logs
                 )
                 for pod_name in pod_names
             ]
@@ -387,9 +399,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
+            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
             full_msg = (
                 full_msg
-                + "\nFor more information about the failure, try running `kubectl describe job"
+                + "\n\n"
+                + job_debug_info
+                + "\n\nFor more information about the failure, try running `kubectl describe job"
                 f" {job_name}` in your cluster."
             )
 

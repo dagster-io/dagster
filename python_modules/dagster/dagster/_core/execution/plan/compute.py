@@ -3,7 +3,6 @@ import inspect
 from typing import (
     Any,
     AsyncIterator,
-    Callable,
     Iterator,
     List,
     Mapping,
@@ -27,13 +26,20 @@ from dagster._core.definitions import (
     NodeHandle,
     Output,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
-from dagster._core.definitions.result import MaterializeResult
-from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
+from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
+from dagster._core.errors import (
+    DagsterExecutionStepExecutionError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.compute import build_execution_context
+from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext,
+    AssetExecutionContext,
+    OpExecutionContext,
+)
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
@@ -53,11 +59,15 @@ OpOutputUnion: TypeAlias = Union[
     AssetCheckEvaluation,
     AssetCheckResult,
     MaterializeResult,
+    ObserveResult,
 ]
 
 
 def create_step_outputs(
-    node: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
+    node: Node,
+    handle: NodeHandle,
+    resolved_run_config: ResolvedRunConfig,
+    asset_layer: AssetLayer,
 ) -> Sequence[StepOutput]:
     check.inst_param(node, "node", Node)
     check.inst_param(handle, "handle", NodeHandle)
@@ -86,7 +96,7 @@ def create_step_outputs(
                     should_materialize=output_def.name in config_output_names,
                     asset_key=asset_info.key if asset_info and asset_info.is_required else None,
                     is_asset_partitioned=bool(asset_info.partitions_def) if asset_info else False,
-                    asset_check_handle=asset_layer.asset_check_handle_for_output(handle, name),
+                    asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
                 ),
             )
         )
@@ -106,22 +116,19 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
             AssetCheckResult,
             AssetCheckEvaluation,
             MaterializeResult,
+            ObserveResult,
         ),
     ):
         raise DagsterInvariantViolationError(
             (
-                "Compute function for {described_node} yielded a value of type {type_} "
+                f"Compute function for {step_context.describe_op()} yielded a value of type {type(event)} "
                 "rather than an instance of Output, AssetMaterialization, or ExpectationResult."
-                " Values yielded by {node_type}s must be wrapped in one of these types. If your "
-                "{node_type} has a single output and yields no other events, you may want to use "
-                "`return` instead of `yield` in the body of your {node_type} compute function. If "
+                f" Values yielded by {step_context.op_def.node_type_str}s must be wrapped in one of these types. If your "
+                f"{step_context.op_def.node_type_str} has a single output and yields no other events, you may want to use "
+                f"`return` instead of `yield` in the body of your {step_context.op_def.node_type_str} compute function. If "
                 "you are already using `return`, and you expected to return a value of type "
-                "{type_}, you may be inadvertently returning a generator rather than the value "
+                f"{type(event)}, you may be inadvertently returning a generator rather than the value "
                 # f"you expected. Value is {str(event[0])}"
-            ).format(
-                described_node=step_context.describe_op(),
-                type_=type(event),
-                node_type=step_context.op_def.node_type_str,
             )
         )
 
@@ -143,22 +150,19 @@ def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
 
 
 def _yield_compute_results(
-    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: Callable
+    step_context: StepExecutionContext,
+    inputs: Mapping[str, Any],
+    compute_fn: OpComputeFunction,
+    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
 ) -> Iterator[OpOutputUnion]:
-    check.inst_param(step_context, "step_context", StepExecutionContext)
-
-    context = build_execution_context(step_context)
-    user_event_generator = compute_fn(context, inputs)
+    user_event_generator = compute_fn(compute_context, inputs)
 
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
             (
-                "Compute function for {described_node} returned an Output rather than "
-                "yielding it. The compute_fn of the {node_type} must yield "
+                f"Compute function for {step_context.describe_op()} returned an Output rather than "
+                f"yielding it. The compute_fn of the {step_context.op_def.node_type_str} must yield "
                 "its results"
-            ).format(
-                described_node=step_context.describe_op(),
-                node_type=step_context.op_def.node_type_str,
             )
         )
 
@@ -181,31 +185,31 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if context.has_events():
-            yield from context.consume_events()
+        if compute_context.op_execution_context.has_events():
+            yield from compute_context.op_execution_context.consume_events()
         yield _validate_event(event, step_context)
 
-    if context.has_events():
-        yield from context.consume_events()
+    if compute_context.op_execution_context.has_events():
+        yield from compute_context.op_execution_context.consume_events()
 
 
 def execute_core_compute(
-    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: OpComputeFunction
+    step_context: StepExecutionContext,
+    inputs: Mapping[str, Any],
+    compute_fn: OpComputeFunction,
+    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
 ) -> Iterator[OpOutputUnion]:
     """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.
     """
-    check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.mapping_param(inputs, "inputs", key_type=str)
-
     step = step_context.step
 
     emitted_result_names = set()
-    for step_output in _yield_compute_results(step_context, inputs, compute_fn):
+    for step_output in _yield_compute_results(step_context, inputs, compute_fn, compute_context):
         yield step_output
         if isinstance(step_output, (DynamicOutput, Output)):
             emitted_result_names.add(step_output.output_name)
-        elif isinstance(step_output, MaterializeResult):
+        elif isinstance(step_output, AssetResult):
             asset_key = (
                 step_output.asset_key
                 or step_context.job_def.asset_layer.asset_key_for_node(step_context.node_handle)
@@ -215,21 +219,21 @@ def execute_core_compute(
             )
             # Check results embedded in MaterializeResult are counted
             for check_result in step_output.check_results or []:
-                handle = check_result.to_asset_check_evaluation(step_context).asset_check_handle
+                handle = check_result.to_asset_check_evaluation(step_context).asset_check_key
                 output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
                     handle
                 )
                 emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckEvaluation):
             output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                step_output.asset_check_handle
+                step_output.asset_check_key
             )
             emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckResult):
             if step_output.asset_key and step_output.check_name:
-                handle = AssetCheckHandle(step_output.asset_key, step_output.check_name)
+                handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
             else:
-                handle = step_output.to_asset_check_evaluation(step_context).asset_check_handle
+                handle = step_output.to_asset_check_evaluation(step_context).asset_check_key
             output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(handle)
             emitted_result_names.add(output_name)
 
@@ -237,7 +241,7 @@ def execute_core_compute(
         output.name
         for output in step.step_outputs
         # checks are required if we're in requires_typed_event_stream mode
-        if step_context.requires_typed_event_stream or output.properties.asset_check_handle
+        if step_context.requires_typed_event_stream or output.properties.asset_check_key
     }
     omitted_outputs = expected_op_output_names.difference(emitted_result_names)
     if omitted_outputs:

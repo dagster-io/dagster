@@ -20,16 +20,17 @@ export const CodeBlock = (props: Props) => {
   const [hidden, setHidden] = React.useState(obfuscated);
   const [copied, setCopied] = React.useState(false);
 
+  const copy = useCopyToClipboard();
+
   const copyToClipboard = React.useCallback(() => {
-    const clipboardAPI = navigator.clipboard;
-    if (clipboardAPI && typeof text === 'string') {
-      clipboardAPI.writeText(text);
+    if (typeof text === 'string') {
+      copy(text);
       setCopied(true);
       setTimeout(() => {
         setCopied(false);
       }, COPY_CONFIRMATION_MSC);
     }
-  }, [text]);
+  }, [copy, text]);
 
   React.useEffect(() => {
     Prism.highlightAll();
@@ -97,4 +98,26 @@ export const CodeBlock = (props: Props) => {
       ) : null}
     </div>
   );
+};
+
+export const useCopyToClipboard = () => {
+  const node = React.useRef<HTMLTextAreaElement | null>(null);
+
+  React.useEffect(() => {
+    node.current = document.createElement('textarea');
+    node.current.style.position = 'fixed';
+    node.current.style.top = '-10000px';
+    document.body.appendChild(node.current);
+    return () => {
+      node.current && document.body.removeChild(node.current);
+    };
+  }, []);
+
+  return React.useCallback((text: string) => {
+    if (node.current) {
+      node.current.value = text;
+      node.current.select();
+      document.execCommand('copy');
+    }
+  }, []);
 };

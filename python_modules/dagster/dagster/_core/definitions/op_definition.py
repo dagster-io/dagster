@@ -5,7 +5,6 @@ from typing import (
     Any,
     Callable,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -20,6 +19,7 @@ from typing_extensions import TypeAlias, get_args, get_origin
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
@@ -30,6 +30,7 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -47,6 +48,7 @@ from .hook_definition import HookDefinition
 from .inference import infer_output_props
 from .input import In, InputDefinition
 from .output import Out, OutputDefinition
+from .result import MaterializeResult, ObserveResult
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -426,7 +428,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
                 if input_asset_key:
-                    io_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+                    io_manager_key = (
+                        asset_layer.get(input_asset_key).io_manager_key
+                        if asset_layer.has(input_asset_key)
+                        else DEFAULT_IO_MANAGER_KEY
+                    )
                     yield InputManagerRequirement(
                         key=io_manager_key,
                         node_description=node_description,
@@ -481,35 +487,74 @@ def _resolve_output_defs_from_outs(
         only_out = outs[name]
         return [only_out.to_definition(annotation, name, description, default_code_version)]
 
-    output_defs: List[OutputDefinition] = []
+    # If multiple outputs...
 
-    # Introspection on type annotations is experimental, so checking
-    # metaclass is the best we can do.
-    if annotation != inspect.Parameter.empty and not get_origin(annotation) == tuple:
+    # Note: we don't provide description when using multiple outputs. Introspection
+    # is challenging when faced with multiple outputs.
+
+    # ... and no annotation, use empty for each output annotation
+    if annotation == inspect.Parameter.empty:
+        return [
+            out.to_definition(
+                annotation_type=inspect.Parameter.empty,
+                name=name,
+                description=None,
+                code_version=default_code_version,
+            )
+            for (name, out) in outs.items()
+        ]
+
+    # ... or if a single result object type, use None for each output annotation
+    if _is_result_object_type(annotation):
+        # this can happen for example when there are outputs for checks
+        # that get reported via a singular MaterializeResult
+        return [
+            out.to_definition(
+                annotation_type=type(None),
+                name=name,
+                description=None,
+                code_version=default_code_version,
+            )
+            for (name, out) in outs.items()
+        ]
+
+    # ... otherwise we expect to have a tuple with entries...
+    if get_origin(annotation) != tuple:
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
         )
-    if annotation != inspect.Parameter.empty and not len(get_args(annotation)) == len(outs):
+    subtypes = get_args(annotation)
+
+    # ... if they are all result object entries use None
+    if len(subtypes) > 0 and all(_is_result_object_type(t) for t in subtypes):
+        # the counts of subtypes and outputs may not align due to checks results
+        # being passed via MaterializeResult similar to above.
+        return [
+            out.to_definition(
+                annotation_type=type(None),
+                name=name,
+                description=None,
+                code_version=default_code_version,
+            )
+            for (name, out) in outs.items()
+        ]
+
+    # ... otherwise they should align with outputs
+    if len(subtypes) != len(outs):
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation to have number of entries matching the "
             f"number of outputs for more than one output. Expected {len(outs)} "
-            f"outputs but annotation has {len(get_args(annotation))}."
+            f"outputs but annotation has {len(subtypes)}."
         )
-    for idx, (name, cur_out) in enumerate(outs.items()):
-        annotation_type = (
-            get_args(annotation)[idx]
-            if annotation != inspect.Parameter.empty
-            else inspect.Parameter.empty
+    return [
+        cur_out.to_definition(
+            annotation_type=subtypes[idx],
+            name=name,
+            description=None,
+            code_version=default_code_version,
         )
-        # Don't provide description when using multiple outputs. Introspection
-        # is challenging when faced with multiple inputs.
-        output_defs.append(
-            cur_out.to_definition(
-                annotation_type, name=name, description=None, code_version=default_code_version
-            )
-        )
-
-    return output_defs
+        for idx, (name, cur_out) in enumerate(outs.items())
+    ]
 
 
 def _validate_context_type_hint(fn):
@@ -517,16 +562,26 @@ def _validate_context_type_hint(fn):
 
     from dagster._core.decorator_utils import get_function_params
     from dagster._core.definitions.decorators.op_decorator import is_context_provided
-    from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
+    from dagster._core.execution.context.compute import (
+        AssetCheckExecutionContext,
+        AssetExecutionContext,
+        OpExecutionContext,
+    )
 
     params = get_function_params(fn)
     if is_context_provided(params):
-        if (
-            params[0].annotation is not AssetExecutionContext
-            and params[0].annotation is not OpExecutionContext
-            and params[0].annotation is not EmptyAnnotation
-        ):
+        if params[0].annotation not in [
+            AssetExecutionContext,
+            OpExecutionContext,
+            EmptyAnnotation,
+            AssetCheckExecutionContext,
+        ]:
             raise DagsterInvalidDefinitionError(
                 f"Cannot annotate `context` parameter with type {params[0].annotation}. `context`"
-                " must be annotated with AssetExecutionContext, OpExecutionContext, or left blank."
+                " must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank."
             )
+
+
+def _is_result_object_type(ttype):
+    # Is this type special result object type
+    return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pandera as pa
 
-from dagster import AssetMaterialization, Field, In, Out, job, op
+from dagster import AssetMaterialization, Field, In, OpExecutionContext, Out, job, op
 
 from .factory import pandera_schema_to_dagster_type
 
@@ -27,7 +27,7 @@ TripsDataFrame = pandera_schema_to_dagster_type(
 
 # We've added a Dagster type for this op's output
 @op(out=Out(TripsDataFrame), config_schema={"clean": Field(bool, False)})
-def load_trips(context):
+def load_trips(context: OpExecutionContext):
     df = pd.read_csv(
         "./ebike_trips.csv",
         parse_dates=["start_time", "end_time"],
@@ -39,7 +39,7 @@ def load_trips(context):
 
 # We've added a Dagster type for this op's input
 @op(ins={"trips": In(TripsDataFrame)})
-def generate_plot(context, trips):
+def generate_plot(context: OpExecutionContext, trips):
     minute_lengths = [x.total_seconds() / 60 for x in trips.end_time - trips.start_time]
     bin_edges = np.histogram_bin_edges(minute_lengths, 15)
     fig, ax = plt.subplots(figsize=(10, 5))

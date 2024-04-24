@@ -50,6 +50,7 @@ from .logger_definition import (
 from .metadata import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
+    DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,
@@ -61,6 +62,7 @@ from .metadata import (
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
+    TableColumnLineageMetadataValue as TableColumnLineageMetadataValue,
     TableConstraints as TableConstraints,
     TableMetadataValue as TableMetadataValue,
     TableRecord as TableRecord,
@@ -122,7 +124,6 @@ from .asset_in import AssetIn as AssetIn
 from .asset_out import AssetOut as AssetOut
 from .asset_selection import AssetSelection as AssetSelection
 from .assets import AssetsDefinition as AssetsDefinition
-from .assets_job import build_assets_job as build_assets_job
 from .decorators import (
     asset as asset,
     asset_sensor as asset_sensor,

@@ -4,6 +4,8 @@ module: 'dagster_essentials'
 lesson: '1'
 ---
 
+# Orchestration approaches
+
 Data engineers see orchestration as key to solidifying a data pipeline for business and real-world use. In this section, we’ll go through two different approaches to workflow orchestration and the pros and cons of each.
 
 But first, what’s a workflow?

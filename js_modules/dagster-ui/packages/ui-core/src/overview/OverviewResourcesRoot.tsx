@@ -1,15 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  Heading,
-  NonIdealState,
-  PageHeader,
-  Spinner,
-  TextInput,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
+import {useContext, useMemo} from 'react';
 
+import {OverviewPageHeader} from './OverviewPageHeader';
+import {OverviewResourcesTable} from './OverviewResourcesTable';
+import {sortRepoBuckets} from './sortRepoBuckets';
+import {
+  OverviewResourcesQuery,
+  OverviewResourcesQueryVariables,
+} from './types/OverviewResourcesRoot.types';
+import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -24,20 +24,11 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-import {OverviewResourcesTable} from './OverviewResourcesTable';
-import {OverviewTabs} from './OverviewTabs';
-import {sortRepoBuckets} from './sortRepoBuckets';
-import {
-  OverviewResourcesQuery,
-  OverviewResourcesQueryVariables,
-} from './types/OverviewResourcesRoot.types';
-import {visibleRepoKeys} from './visibleRepoKeys';
-
 export const OverviewResourcesRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Resources');
 
-  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
@@ -57,7 +48,7 @@ export const OverviewResourcesRoot = () => {
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
-  const repoBuckets = React.useMemo(() => {
+  const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
@@ -67,7 +58,7 @@ export const OverviewResourcesRoot = () => {
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return repoBuckets
       .map(({repoAddress, resources}) => ({
@@ -83,7 +74,7 @@ export const OverviewResourcesRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading resources…</div>
+            <div style={{color: Colors.textLight()}}>Loading resources…</div>
           </Box>
         </Box>
       );
@@ -138,10 +129,7 @@ export const OverviewResourcesRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="resources" refreshState={refreshState} />}
-      />
+      <OverviewPageHeader tab="resources" refreshState={refreshState} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
@@ -220,6 +208,7 @@ const OVERVIEW_RESOURCES_QUERY = gql`
                 id
                 name
                 allTopLevelResourceDetails {
+                  id
                   ...ResourceEntryFragment
                 }
               }

@@ -4,36 +4,55 @@ import styled from 'styled-components';
 
 import airbyte from './optag-images/airbyte.svg';
 import airflow from './optag-images/airflow.svg';
+import airtable from './optag-images/airtable.svg';
 import aws from './optag-images/aws.svg';
+import axioma from './optag-images/axioma.svg';
 import azure from './optag-images/azure.svg';
 import azureml from './optag-images/azureml.svg';
 import bigquery from './optag-images/bigquery.svg';
+import catboost from './optag-images/catboost.svg';
 import census from './optag-images/census.svg';
+import chalk from './optag-images/chalk.svg';
+import cube from './optag-images/cube.svg';
+import dask from './optag-images/dask.svg';
 import databricks from './optag-images/databricks.svg';
 import datadog from './optag-images/datadog.svg';
 import dbt from './optag-images/dbt.svg';
+import delta_lake from './optag-images/delta_lake.svg';
+import dlthub from './optag-images/dlthub.svg';
 import duckdb from './optag-images/duckdb.svg';
+import excel from './optag-images/excel.svg';
 import fivetran from './optag-images/fivetran.svg';
 import github from './optag-images/github.svg';
 import gitlab from './optag-images/gitlab.svg';
 import googlecloud from './optag-images/googlecloud.svg';
 import googlesheets from './optag-images/googlesheets.svg';
 import great_expectations from './optag-images/great_expectations.svg';
+import hackernewsapi from './optag-images/hackernewsapi.svg';
 import hex from './optag-images/hex.svg';
 import hightouch from './optag-images/hightouch.svg';
+import huggingface from './optag-images/huggingface.svg';
+import jax from './optag-images/jax.svg';
 import jupyter from './optag-images/jupyter.svg';
 import k8s from './optag-images/k8s.svg';
 import keras from './optag-images/keras.svg';
+import lightgbm from './optag-images/lightgbm.svg';
+import linear from './optag-images/linear.svg';
 import looker from './optag-images/looker.svg';
 import matplotlib from './optag-images/matplotlib.svg';
 import meltano from './optag-images/meltano.svg';
+import metabase from './optag-images/metabase.svg';
 import mlflow from './optag-images/mlflow.svg';
 import modal from './optag-images/modal.svg';
 import teams from './optag-images/msteams.svg';
 import noteable from './optag-images/noteable.svg';
+import notion from './optag-images/notion.svg';
 import numpy from './optag-images/numpy.svg';
+import omni from './optag-images/omni.svg';
 import openai from './optag-images/openai.svg';
+import optuna from './optag-images/optuna.svg';
 import pandas from './optag-images/pandas.svg';
+import parquet from './optag-images/parquet.svg';
 import plotly from './optag-images/plotly.svg';
 import polars from './optag-images/polars.svg';
 import postgres from './optag-images/postgres.svg';
@@ -41,19 +60,26 @@ import powerbi from './optag-images/powerbi.svg';
 import pyspark from './optag-images/pyspark.svg';
 import python from './optag-images/python.svg';
 import pytorch from './optag-images/pytorch.svg';
+import pytorch_lightning from './optag-images/pytorch_lightning.svg';
+import ray from './optag-images/ray.svg';
+import rockset from './optag-images/rockset.svg';
+import rust from './optag-images/rust.svg';
 import sagemaker from './optag-images/sagemaker.svg';
 import scikitlearn from './optag-images/scikitlearn.svg';
 import scipy from './optag-images/scipy.svg';
 import segment from './optag-images/segment.svg';
 import slack from './optag-images/slack.svg';
+import sling from './optag-images/sling.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import stitch from './optag-images/stitch.svg';
 import stripe from './optag-images/stripe.svg';
 import tableau from './optag-images/tableau.svg';
+import tecton from './optag-images/tecton.svg';
 import tensorflow from './optag-images/tensorflow.svg';
 import vercel from './optag-images/vercel.svg';
 import weights_and_biases from './optag-images/weights_and_biases.svg';
+import xgboost from './optag-images/xgboost.svg';
 
 export interface IOpTag {
   label: string;
@@ -68,9 +94,16 @@ interface OpTagsProps {
   reversed?: boolean;
 }
 
-export const KNOWN_TAGS = {
+type KnownTag = {
+  color: string | null;
+  icon?: StaticImageData | string;
+  content: string;
+  reversed?: boolean;
+};
+
+export const KNOWN_TAGS: Record<string, KnownTag> = {
   jupyter: {
-    color: '#4E4E4E',
+    color: '#929292',
     icon: jupyter,
     content: 'Jupyter',
   },
@@ -78,25 +111,35 @@ export const KNOWN_TAGS = {
     color: '#4E4E4E',
     icon: jupyter,
     content: 'Jupyter',
+    reversed: true,
   },
   noteable: {
     color: '#00D2D2',
     icon: noteable,
     content: 'Noteable',
-    reversed: true,
   },
   airbyte: {
     color: '#655CFC',
     icon: airbyte,
     content: 'Airbyte',
   },
+  sling: {
+    color: '#2176EA',
+    icon: sling,
+    content: 'Sling',
+  },
   snowflake: {
     color: '#29B5E8',
     icon: snowflake,
     content: 'Snowflake',
   },
+  snowpark: {
+    color: '#29B5E8',
+    icon: snowflake,
+    content: 'Snowpark',
+  },
   python: {
-    color: '#35668F',
+    color: '#367EF0',
     icon: python,
     content: 'Python',
   },
@@ -111,7 +154,7 @@ export const KNOWN_TAGS = {
     content: 'dbt',
   },
   slack: {
-    color: '#4A144A',
+    color: null,
     icon: slack,
     content: 'Slack',
   },
@@ -134,18 +177,17 @@ export const KNOWN_TAGS = {
     color: '#FCBC41',
     icon: duckdb,
     content: 'DuckDB',
-    reversed: true,
   },
   tensorflow: {
     color: '#FE9413',
     icon: tensorflow,
     content: 'TensorFlow',
-    reversed: true,
   },
   pandas: {
-    color: '#130754',
+    color: '#E40385',
     icon: pandas,
     content: 'pandas',
+    reversed: true,
   },
   googlesheets: {
     color: '#23A566',
@@ -158,10 +200,9 @@ export const KNOWN_TAGS = {
     content: 'SQL',
   },
   wandb: {
-    color: '#FCB119',
+    color: '#FFBE00',
     icon: weights_and_biases,
     content: 'Weights & Biases',
-    reversed: true,
   },
   databricks: {
     color: '#FD3820',
@@ -169,17 +210,28 @@ export const KNOWN_TAGS = {
     content: 'Databricks',
   },
   airflow: {
-    color: '#017CEE',
+    color: null,
     icon: airflow,
     content: 'Airflow',
   },
+  airtable: {
+    color: null,
+    icon: airtable,
+    content: 'Airtable',
+  },
+  omni: {
+    color: null,
+    icon: omni,
+    content: 'Omni',
+  },
   datadog: {
-    color: '#632CA6',
+    color: '#7633C8',
     icon: datadog,
     content: 'Datadog',
+    reversed: true,
   },
   postgres: {
-    color: '#336791',
+    color: '#136FBA',
     icon: postgres,
     content: 'Postgres',
   },
@@ -189,7 +241,7 @@ export const KNOWN_TAGS = {
     content: 'Stripe',
   },
   hightouch: {
-    color: '#07484D',
+    color: '#4EBB6C',
     icon: hightouch,
     content: 'Hightouch',
   },
@@ -199,7 +251,7 @@ export const KNOWN_TAGS = {
     content: 'Census',
   },
   hex: {
-    color: '#F5C0C0',
+    color: '#473982',
     icon: hex,
     content: 'Hex',
     reversed: true,
@@ -243,7 +295,6 @@ export const KNOWN_TAGS = {
     color: '#EDC947',
     icon: powerbi,
     content: 'Power BI',
-    reversed: true,
   },
   gcp: {
     color: '#4285F4',
@@ -256,12 +307,12 @@ export const KNOWN_TAGS = {
     content: 'Google Cloud',
   },
   looker: {
-    color: '#5F6368',
+    color: '#929292',
     icon: looker,
     content: 'Looker',
   },
   tableau: {
-    color: '#25447A',
+    color: '#2E5EB1',
     icon: tableau,
     content: 'Tableau',
   },
@@ -274,25 +325,21 @@ export const KNOWN_TAGS = {
     color: '#FF9900',
     icon: aws,
     content: 'Athena',
-    reversed: true,
   },
   s3: {
     color: '#FF9900',
     icon: aws,
     content: 'S3',
-    reversed: true,
   },
   aws: {
     color: '#FF9900',
     icon: aws,
     content: 'AWS',
-    reversed: true,
   },
   stitch: {
     color: '#FFD201',
     icon: stitch,
     content: 'Stitch',
-    reversed: true,
   },
   openai: {
     color: '#4AA081',
@@ -300,14 +347,16 @@ export const KNOWN_TAGS = {
     content: 'Open AI',
   },
   vercel: {
-    color: '#171615',
+    color: '#787878',
     icon: vercel,
     content: 'Vercel',
+    reversed: true,
   },
   github: {
-    color: '#171615',
+    color: '#A970C1',
     icon: github,
     content: 'Github',
+    reversed: true,
   },
   gitlab: {
     color: '#E24329',
@@ -320,18 +369,19 @@ export const KNOWN_TAGS = {
     content: 'plotly',
   },
   modal: {
-    color: '#9AEE86',
+    color: '#4CDE29',
     icon: modal,
     content: 'Modal',
     reversed: true,
   },
   meltano: {
-    color: '#311772',
+    color: '#3537BE',
     icon: meltano,
     content: 'Meltano',
+    reversed: true,
   },
   matplotlib: {
-    color: '#2B597C',
+    color: '#055998',
     icon: matplotlib,
     content: 'matplotlib',
   },
@@ -369,31 +419,154 @@ export const KNOWN_TAGS = {
     color: '#24292E',
     icon: polars,
     content: 'Polars',
+    reversed: true,
+  },
+  catboost: {
+    color: null,
+    icon: catboost,
+    content: 'CatBoost',
+  },
+  rust: {
+    color: '#000000',
+    icon: rust,
+    content: 'Rust',
+    reversed: true,
+  },
+  pytorchlightning: {
+    color: null,
+    icon: pytorch_lightning,
+    content: 'Pytorch Lightning',
+  },
+  deltalake: {
+    color: '#00ADD4',
+    icon: delta_lake,
+    content: 'Delta Lake',
+  },
+  parquet: {
+    color: '#50ABF1',
+    icon: parquet,
+    content: 'Parquet',
+  },
+  lightgbm: {
+    color: null,
+    icon: lightgbm,
+    content: 'lightgbm',
+  },
+  xgboost: {
+    color: '#1A9EDB',
+    icon: xgboost,
+    content: 'XGBoost',
+  },
+  jax: {
+    color: null,
+    icon: jax,
+    content: 'JAX',
+  },
+  rockset: {
+    color: null,
+    icon: rockset,
+    content: 'Rockset',
+  },
+  optuna: {
+    color: '#1488C9',
+    icon: optuna,
+    content: 'Optuna',
+  },
+  chalk: {
+    color: '#000000',
+    icon: chalk,
+    content: 'Chalk',
+    reversed: true,
+  },
+  excel: {
+    color: '#00A651',
+    icon: excel,
+    content: 'Excel',
+  },
+  ray: {
+    color: '#00A2E9',
+    icon: ray,
+    content: 'Ray',
+  },
+  axioma: {
+    color: '#0774B6',
+    icon: axioma,
+    content: 'Axioma',
+  },
+  cube: {
+    color: null,
+    icon: cube,
+    content: 'Cube',
+  },
+  metabase: {
+    color: '#509EE3',
+    icon: metabase,
+    content: 'Metabase',
+  },
+  linear: {
+    color: '#5E6AD2',
+    icon: linear,
+    content: 'Linear',
+  },
+  notion: {
+    color: '#000000',
+    icon: notion,
+    content: 'Notion',
+    reversed: true,
+  },
+  hackernewsapi: {
+    color: '#FB651E',
+    icon: hackernewsapi,
+    content: 'Hacker News API',
+  },
+  tecton: {
+    color: '#D30602',
+    icon: tecton,
+    content: 'Tecton',
+  },
+  dask: {
+    color: null,
+    icon: dask,
+    content: 'Dask',
+  },
+  dlt: {
+    color: null,
+    icon: dlthub,
+    content: 'dlt',
+  },
+  dlthub: {
+    color: null,
+    icon: dlthub,
+    content: 'dlthub',
+  },
+  huggingface: {
+    color: null,
+    icon: huggingface,
+    content: 'Hugging Face',
+  },
+  huggingfaceapi: {
+    color: null,
+    icon: huggingface,
+    content: 'Hugging Face',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
-
-function generateColorForLabel(label = '') {
-  return `hsl(${
-    label
-      .split('')
-      .map((c) => c.charCodeAt(0))
-      .reduce((n, a) => n + a, 0) % 360
-  }, 75%, 45%)`;
-}
 
 // google-sheets to googlesheets, Duckdb to duckdb
 function coerceToStandardLabel(label: string) {
   return label.replace(/[ _-]/g, '').toLowerCase();
 }
 
-export const AssetComputeKindTag: React.FC<{
+export const AssetComputeKindTag = ({
+  definition,
+  ...rest
+}: {
   definition: {computeKind: string | null};
   style: React.CSSProperties;
   reduceColor?: boolean;
   reduceText?: boolean;
   reversed?: boolean;
-}> = ({definition, ...rest}) => {
+}) => {
   if (!definition.computeKind) {
     return null;
   }
@@ -412,14 +585,26 @@ export const AssetComputeKindTag: React.FC<{
   );
 };
 
+export const extractIconSrc = (knownTag: KnownTag | undefined) => {
+  // Storybook imports SVGs are string but nextjs imports them as object.
+  // This is a temporary work around until we can get storybook to import them the same way as nextjs
+  if (typeof knownTag?.icon !== 'undefined') {
+    return typeof knownTag.icon === 'string' ? (knownTag.icon as any) : knownTag.icon?.src;
+  }
+  return '';
+};
+
 export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTagsProps) => {
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
         const text = known?.content || tag.label;
-        const color = known?.color || generateColorForLabel(tag.label);
-        const textcolor = known && 'reversed' in known ? Colors.Gray900 : Colors.White;
+        // NULL color means we inherit the color from the svg.
+        // This is useful when the icon requires mulltiple colors. like Airflow.
+        const color = known?.color || null;
+        const reversed = known && 'reversed' in known ? known.reversed : false;
+
         return (
           <Box
             key={tag.label}
@@ -427,9 +612,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
             data-tooltip={reduceText ? text : undefined}
             onClick={tag.onClick}
             style={{
-              background:
-                reduceColor && reduceText ? Colors.White : reduceColor ? Colors.Gray100 : color,
-              color: reduceColor ? Colors.Gray700 : textcolor,
+              background: reduceColor ? Colors.backgroundGray() : Colors.lineageNodeBackground(),
               fontWeight: reduceColor ? 500 : 700,
             }}
           >
@@ -437,11 +620,8 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
               <OpTagIconWrapper
                 role="img"
                 $size={16}
-                $img={known.icon.src}
-                $color={
-                  reduceColor ? (known && 'reversed' in known ? Colors.Gray900 : color) : textcolor
-                }
-                //$color={reduceColor ? color : textcolor}
+                $img={extractIconSrc(known)}
+                $color={reversed ? Colors.accentPrimary() : color}
                 $rotation={null}
                 aria-label={tag.label}
               />
@@ -452,6 +632,25 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
       })}
     </OpTagsContainer>
   );
+});
+
+export const TagIcon = React.memo(({label}: {label: string}) => {
+  const known = KNOWN_TAGS[coerceToStandardLabel(label) as keyof typeof KNOWN_TAGS];
+  const color = known?.color || null;
+  const reversed = known && 'reversed' in known ? known.reversed : false;
+  if (known && 'icon' in known) {
+    return (
+      <OpTagIconWrapper
+        role="img"
+        $size={16}
+        $img={extractIconSrc(known)}
+        $color={reversed ? Colors.accentPrimary() : color}
+        $rotation={null}
+        aria-label={label}
+      />
+    );
+  }
+  return null;
 });
 
 const OpTagIconWrapper = styled(IconWrapper)`
@@ -467,6 +666,7 @@ const OpTagsContainer = styled.div`
   gap: 6px;
   position: absolute;
   display: flex;
+  margin-right: 14px;
 
   & > div {
     padding: 0 8px;

@@ -2,11 +2,13 @@ from typing import Dict, List, cast
 
 from dagster import (
     AssetCheckSpec,
+    AssetOut,
     Definitions,
     asset,
     asset_check,
     graph,
     job,
+    multi_asset,
     op,
     repository,
     resource,
@@ -15,7 +17,6 @@ from dagster import (
 )
 from dagster._config.field_utils import EnvVar
 from dagster._config.pythonic_config import Config, ConfigurableResource
-from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
@@ -23,12 +24,13 @@ from dagster._core.definitions.repository_definition import (
 )
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     ExternalJobData,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalResourceData,
     NestedResource,
     NestedResourceType,
@@ -114,8 +116,7 @@ def test_repository_snap_definitions_resources_nested() -> None:
 
     assert len(foo) == 1
     assert (
-        foo[0].resource_type
-        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        foo[0].resource_type == "dagster_tests.core_tests.snap_tests.test_repository_snap."
         "test_repository_snap_definitions_resources_nested.<locals>.MyOuterResource"
     )
 
@@ -154,8 +155,7 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     assert "inner" in foo[0].nested_resources
     assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
     assert (
-        foo[0].resource_type
-        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        foo[0].resource_type == "dagster_tests.core_tests.snap_tests.test_repository_snap."
         "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyOuterResource"
     )
 
@@ -163,8 +163,7 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     assert "foo" in inner[0].parent_resources
     assert inner[0].parent_resources["foo"] == "inner"
     assert (
-        inner[0].resource_type
-        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        inner[0].resource_type == "dagster_tests.core_tests.snap_tests.test_repository_snap."
         "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyInnerResource"
     )
 
@@ -354,8 +353,8 @@ def test_repository_snap_definitions_env_vars() -> None:
                 ),
             ),
             "quux": MyDataStructureResource(
-                str_list=[EnvVar("MY_STRING")],
-                str_dict={"foo": EnvVar("MY_STRING"), "bar": EnvVar("MY_OTHER_STRING")},
+                str_list=[EnvVar("MY_STRING")],  # type: ignore[arg-type]
+                str_dict={"foo": EnvVar("MY_STRING"), "bar": EnvVar("MY_OTHER_STRING")},  # type: ignore
             ),
             "quuz": MyResourceWithConfig(
                 config=MyInnerConfig(
@@ -668,7 +667,7 @@ def test_asset_check_multiple_jobs():
     @asset_check(asset=my_asset)
     def my_asset_check(): ...
 
-    my_job = build_assets_job("my_job", [my_asset])
+    my_job = define_asset_job("my_job", [my_asset])
 
     defs = Definitions(
         assets=[my_asset],
@@ -678,10 +677,33 @@ def test_asset_check_multiple_jobs():
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-
+    assert external_repo_data.external_asset_checks
     assert len(external_repo_data.external_asset_checks) == 2
     assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
     assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
+    assert external_repo_data.external_asset_checks[0].job_names == ["__ASSET_JOB", "my_job"]
+    assert external_repo_data.external_asset_checks[1].job_names == ["__ASSET_JOB", "my_job"]
+
+
+def test_asset_check_multi_asset():
+    @multi_asset(
+        outs={
+            "a": AssetOut(is_required=False),
+            "b": AssetOut(is_required=False),
+        },
+        check_specs=[AssetCheckSpec(name="check_1", asset="a")],
+    )
+    def my_multi_asset():
+        pass
+
+    defs = Definitions(assets=[my_multi_asset])
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_asset_checks
+    assert len(external_repo_data.external_asset_checks) == 1
+    assert external_repo_data.external_asset_checks[0].name == "check_1"
+    assert external_repo_data.external_asset_checks[0].job_names == ["__ASSET_JOB"]
 
 
 def test_repository_snap_definitions_resources_schedule_sensor_usage():

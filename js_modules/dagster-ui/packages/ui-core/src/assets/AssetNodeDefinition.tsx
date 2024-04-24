@@ -9,12 +9,25 @@ import {
   Mono,
   Subheading,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
+import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
+import {
+  ASSET_NODE_OP_METADATA_FRAGMENT,
+  AssetMetadataTable,
+  metadataForAssetNode,
+} from './AssetMetadata';
+import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
+import {AssetNodeList} from './AssetNodeList';
+import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
+import {Version} from './Version';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
-import {isHiddenAssetGroupJob, LiveData, toGraphId} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
@@ -24,33 +37,18 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
-import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
-import {
-  AssetMetadataTable,
-  ASSET_NODE_OP_METADATA_FRAGMENT,
-  metadataForAssetNode,
-} from './AssetMetadata';
-import {AssetNodeList} from './AssetNodeList';
-import {
-  automaterializePolicyDescription,
-  AutomaterializePolicyTag,
-} from './AutomaterializePolicyTag';
-import {DependsOnSelfBanner} from './DependsOnSelfBanner';
-import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
-import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
-import {Version} from './Version';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
-
-export const AssetNodeDefinition: React.FC<{
+export const AssetNodeDefinition = ({
+  assetNode,
+  upstream,
+  downstream,
+  dependsOnSelf,
+}: {
   assetNode: AssetNodeDefinitionFragment;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
-  liveDataByNode: LiveData;
   dependsOnSelf: boolean;
-}> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
+}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
-  const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
   const configType = assetNode.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
@@ -97,6 +95,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
+
           {assetNode.freshnessPolicy && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
@@ -109,30 +108,25 @@ export const AssetNodeDefinition: React.FC<{
                 <Body style={{flex: 1}}>
                   {freshnessPolicyDescription(assetNode.freshnessPolicy)}
                 </Body>
-                <OverdueTag
-                  liveData={liveDataForNode}
-                  policy={assetNode.freshnessPolicy}
-                  assetKey={assetNode.assetKey}
-                />
+                <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
               </Box>
             </>
           )}
-          {assetNode.autoMaterializePolicy && (
+
+          {assetNode.backfillPolicy && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-                <Subheading>Auto-materialize policy</Subheading>
+                <Subheading>Backfill policy</Subheading>
               </Box>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
                 flex={{gap: 12, alignItems: 'flex-start'}}
               >
-                <Body style={{flex: 1}}>
-                  {automaterializePolicyDescription(assetNode.autoMaterializePolicy)}
-                </Body>
-                <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
+                <Body style={{flex: 1}}>{assetNode.backfillPolicy.description}</Body>
               </Box>
             </>
           )}
+
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border="top-and-bottom"
@@ -144,12 +138,16 @@ export const AssetNodeDefinition: React.FC<{
             <Link to="?view=lineage&lineageScope=upstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
                 View upstream graph
-                <Icon name="open_in_new" color={Colors.Link} />
+                <Icon name="open_in_new" color={Colors.linkDefault()} />
               </Box>
             </Link>
           </Box>
-          {dependsOnSelf && <DependsOnSelfBanner />}
-          <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
+          {dependsOnSelf && (
+            <Box padding={{vertical: 16, left: 24, right: 12}} border="bottom">
+              <DependsOnSelfBanner />
+            </Box>
+          )}
+          <AssetNodeList items={upstream} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border="top-and-bottom"
@@ -158,14 +156,8 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>
               Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
             </Subheading>
-            <Link to="?view=lineage&lineageScope=downstream">
-              <Box flex={{gap: 4, alignItems: 'center'}}>
-                View downstream graph
-                <Icon name="open_in_new" color={Colors.Link} />
-              </Box>
-            </Link>
           </Box>
-          <AssetNodeList items={downstream} liveDataByNode={liveDataByNode} />
+          <AssetNodeList items={downstream} />
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
           <div style={{flex: 1}} />
         </Box>
@@ -180,7 +172,7 @@ export const AssetNodeDefinition: React.FC<{
                 .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
                 .map((resource) => (
                   <ResourceContainer key={resource.resourceKey}>
-                    <Icon name="resource" color={Colors.Gray700} />
+                    <Icon name="resource" color={Colors.accentGray()} />
                     {repoAddress ? (
                       <Link
                         to={workspacePathFromAddress(
@@ -283,10 +275,13 @@ export const AssetNodeDefinition: React.FC<{
   );
 };
 
-const DescriptionAnnotations: React.FC<{
+const DescriptionAnnotations = ({
+  assetNode,
+  repoAddress,
+}: {
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
-}> = ({assetNode, repoAddress}) => (
+}) => (
   <Box flex={{alignItems: 'center', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
       .filter((jobName) => !isHiddenAssetGroupJob(jobName))
@@ -304,7 +299,7 @@ const DescriptionAnnotations: React.FC<{
     {assetNode.isSource ? (
       <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
     ) : !assetNode.isExecutable ? (
-      <Caption style={{lineHeight: '16px'}}>Non-executable Asset</Caption>
+      <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
 );
@@ -313,14 +308,26 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     description
+    groupName
     graphName
     opNames
     opVersion
     jobNames
     isSource
     isExecutable
+    tags {
+      key
+      value
+    }
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     autoMaterializePolicy {
-      policyType
       rules {
         className
         description
@@ -332,7 +339,9 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       cronSchedule
       cronScheduleTimezone
     }
-
+    backfillPolicy {
+      description
+    }
     partitionDefinition {
       description
     }
@@ -351,9 +360,11 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
+    ...AssetNodeInstigatorsFragment
   }
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
 `;

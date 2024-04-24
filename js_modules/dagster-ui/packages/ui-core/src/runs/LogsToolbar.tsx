@@ -1,28 +1,27 @@
 import {
   Box,
+  Button,
   ButtonGroup,
   Checkbox,
-  IconName,
-  Icon,
-  MenuItem,
-  Tooltip,
-  Suggest,
   ExternalAnchorButton,
-  Button,
+  Icon,
+  IconName,
+  MenuItem,
+  Suggest,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
-
-import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
-import {extractLogCaptureStepsFromLegacySteps, IRunMetadataDict} from './RunMetadataProvider';
+import {IRunMetadataDict, extractLogCaptureStepsFromLegacySteps} from './RunMetadataProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
 import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
+import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 export enum LogType {
   structured = 'structured',
@@ -54,7 +53,7 @@ interface WithExpandCollapseProps extends ILogsToolbarProps {
 const logQueryToString = (logQuery: LogFilterValue[]) =>
   logQuery.map(({token, value}) => (token ? `${token}:${value}` : value)).join(' ');
 
-export const LogsToolbar: React.FC<ILogsToolbarProps | WithExpandCollapseProps> = (props) => {
+export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) => {
   const {
     steps,
     metadata,
@@ -79,18 +78,16 @@ export const LogsToolbar: React.FC<ILogsToolbarProps | WithExpandCollapseProps> 
   const activeItems = React.useMemo(() => new Set([logType]), [logType]);
 
   return (
-    <OptionsContainer>
-      <Box margin={{right: 12}}>
-        <ButtonGroup
-          activeItems={activeItems}
-          buttons={[
-            {id: LogType.structured, icon: 'view_list', label: 'Events'},
-            {id: LogType.stdout, icon: 'console', label: 'stdout'},
-            {id: LogType.stderr, icon: 'warning', label: 'stderr'},
-          ]}
-          onClick={(id) => onSetLogType(id)}
-        />
-      </Box>
+    <OptionsContainer style={{gap: 12}}>
+      <ButtonGroup
+        activeItems={activeItems}
+        buttons={[
+          {id: LogType.structured, icon: 'view_list', label: 'Events'},
+          {id: LogType.stdout, icon: 'console', label: 'stdout'},
+          {id: LogType.stderr, icon: 'warning', label: 'stderr'},
+        ]}
+        onClick={(id) => onSetLogType(id)}
+      />
       {logType === 'structured' ? (
         <StructuredLogToolbar
           counts={counts}

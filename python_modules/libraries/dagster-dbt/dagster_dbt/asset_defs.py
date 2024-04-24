@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -41,9 +40,10 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
     Output,
 )
-from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataMapping, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import (
     deprecation_warning,
     normalize_renamed_param,
@@ -63,12 +63,12 @@ from dagster_dbt.core.resources import DbtCliClient
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.core.types import DbtCliOutput
 from dagster_dbt.core.utils import build_command_args_from_flags, execute_cli
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
-    output_name_fn,
+    dagster_name_fn,
     result_to_events,
     select_unique_ids_from_manifest,
 )
@@ -107,18 +107,10 @@ def _load_manifest_for_project(
 
 def _can_stream_events(dbt_resource: Union[DbtCliClient, DbtCliResource]) -> bool:
     """Check if the installed dbt version supports streaming events."""
-    import dbt.version
-    from packaging import version
-
-    if version.parse(dbt.version.__version__) >= version.parse("1.4.0"):
-        # The json log format is required for streaming events. DbtCliResource always uses this format, but
-        # DbtCliClient has an option to disable it.
-        if isinstance(dbt_resource, DbtCliResource):
-            return True
-        else:
-            return dbt_resource._json_log_format  # noqa: SLF001
+    if isinstance(dbt_resource, DbtCliResource):
+        return True
     else:
-        return False
+        return dbt_resource._json_log_format  # noqa: SLF001
 
 
 def _batch_event_iterator(
@@ -213,7 +205,7 @@ def _events_for_structured_json_line(
         )
         yield Output(
             value=None,
-            output_name=output_name_fn(compiled_node_info),
+            output_name=dagster_name_fn(compiled_node_info),
             metadata=metadata,
         )
     elif node_resource_type == "test" and runtime_node_info.get("node_finished_at"):
@@ -248,7 +240,7 @@ def _stream_event_iterator(
     ],
     kwargs: Dict[str, Any],
     manifest_json: Mapping[str, Any],
-) -> Iterator[Union[AssetObservation, Output, AssetCheckResult]]:
+) -> Iterator[Union[AssetObservation, AssetMaterialization, Output, AssetCheckResult]]:
     """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
     emitted.
     """
@@ -282,6 +274,7 @@ def _stream_event_iterator(
             args=["build" if use_build_command else "run", *build_command_args_from_flags(kwargs)],
             manifest=manifest_json,
             dagster_dbt_translator=CustomDagsterDbtTranslator(),
+            context=context,
         )
         yield from cli_output.stream()
 
@@ -321,12 +314,9 @@ def _get_dbt_op(
         out=outs,
         required_resource_keys={dbt_resource_key},
     )
-    def _dbt_op(context, config: DbtOpConfig):
-        dbt_resource: Union[DbtCliResource, DbtCliClient] = getattr(
-            context.resources, dbt_resource_key
-        )
-        check.inst(
-            dbt_resource,
+    def _dbt_op(context: OpExecutionContext, config: DbtOpConfig):
+        dbt_resource = check.inst(
+            dbt_resource := getattr(context.resources, dbt_resource_key),
             (DbtCliResource, DbtCliClient),
             "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
             f" object, but is a {type(dbt_resource)}",
@@ -334,7 +324,7 @@ def _get_dbt_op(
 
         kwargs: Dict[str, Any] = {}
         # in the case that we're running everything, opt for the cleaner selection string
-        if len(context.selected_output_names) == len(outs):
+        if not context.is_subset:
             kwargs["select"] = select
             kwargs["exclude"] = exclude
         else:
@@ -348,7 +338,9 @@ def _get_dbt_op(
         if partition_key_to_vars_fn:
             kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
         # merge in any additional kwargs from the config
-        kwargs = deep_merge_dicts(kwargs, context.op_config)
+        kwargs = deep_merge_dicts(
+            kwargs, {k: v for k, v in context.op_config.items() if v is not None}
+        )
 
         if _can_stream_events(dbt_resource):
             yield from _stream_event_iterator(
@@ -427,7 +419,7 @@ def _dbt_nodes_to_assets(
     if not op_name:
         op_name = f"run_dbt_{project_id}"
         if select != "fqn:*" or exclude:
-            op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
+            op_name += "_" + non_secure_md5_hash_str(select.encode() + exclude.encode())[-5:]
 
     check_outs_by_output_name: Mapping[str, Out] = {}
     if check_specs_by_output_name:
@@ -502,7 +494,7 @@ def load_assets_from_dbt_project(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ] = default_metadata_from_dbt_resource_props,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
@@ -578,7 +570,7 @@ def load_assets_from_dbt_project(
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`. Deprecated: instead, configure auto-materialize
             policies on a dbt resource's meta field.
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]): [Deprecated]
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).
@@ -596,6 +588,7 @@ def load_assets_from_dbt_project(
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
     select = check.opt_str_param(select, "select", "fqn:*")
     exclude = check.opt_str_param(exclude, "exclude", "")
+    dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 
     _raise_warnings_for_deprecated_args(
         "load_assets_from_dbt_manifest",
@@ -713,7 +706,7 @@ def load_assets_from_dbt_manifest(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ] = default_metadata_from_dbt_resource_props,
 ) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -785,7 +778,7 @@ def load_assets_from_dbt_manifest(
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`. Deprecated: instead, configure auto-materialize
             policies on a dbt resource's meta field.
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]): [Deprecated]
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).
@@ -796,6 +789,8 @@ def load_assets_from_dbt_manifest(
             this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
             instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
+    dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
+
     manifest = normalize_renamed_param(
         manifest,
         "manifest",
@@ -872,7 +867,7 @@ def _load_assets_from_dbt_manifest(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ],
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ],
 ) -> Sequence[AssetsDefinition]:
     if partition_key_to_vars_fn:
@@ -1009,7 +1004,7 @@ def _raise_warnings_for_deprecated_args(
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ],
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
     ],
 ):
     if node_info_to_asset_key != default_asset_key_fn:

@@ -1,7 +1,7 @@
-import * as React from 'react';
+import {useEffect} from 'react';
 
 export const useOnBeforeUnload = () => {
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = '';

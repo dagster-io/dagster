@@ -5,6 +5,7 @@ from typing import Sequence
 
 import pytest
 from dagster import (
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
@@ -26,6 +27,7 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    graph_multi_asset,
     io_manager,
     job,
     materialize,
@@ -36,10 +38,10 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -49,12 +51,10 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
-    DagsterStepOutputNotFoundError,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import create_test_asset_job, instance_for_test
 from dagster._core.types.dagster_type import Nothing
 
 
@@ -89,10 +89,16 @@ def test_with_replaced_asset_keys():
 @pytest.mark.parametrize(
     "subset,expected_keys,expected_inputs,expected_outputs",
     [
-        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", "a,b,c", 3, 3),
+        # there are 5 inputs here, because in addition to in1, in2, and in3, "artificial" inputs are
+        # needed for both a and b, as c depends on both and could be executed in a separate step
+        # depending on how it is subset. in these cases, the step that contains c will need to
+        # have inputs for a and b to connect to.
+        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", "a,b,c", 5, 3),
         ("foo,bar,baz", None, 0, 0),
-        ("in1,a,b,c", "a,b,c", 3, 3),
-        ("foo,in1,a,b,c,bar", "a,b,c", 3, 3),
+        # see above
+        ("in1,a,b,c", "a,b,c", 5, 3),
+        # see above
+        ("foo,in1,a,b,c,bar", "a,b,c", 5, 3),
         ("foo,in1,in2,in3,a,bar", "a", 2, 1),
         ("foo,in1,in2,a,b,bar", "a,b", 2, 2),
         ("in1,in2,in3,b", "b", 0, 1),
@@ -111,7 +117,9 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     def abc_(context, in1, in2, in3):
         pass
 
-    subbed = abc_.subset_for({AssetKey(key) for key in subset.split(",")})
+    subbed = abc_.subset_for(
+        {AssetKey(key) for key in subset.split(",")}, selected_asset_check_keys=None
+    )
 
     assert subbed.keys == (
         {AssetKey(key) for key in expected_keys.split(",")} if expected_keys else set()
@@ -122,6 +130,34 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
 
     # the asset dependency structure should stay the same
     assert subbed.asset_deps == abc_.asset_deps
+
+
+def test_subset_with_checks():
+    @multi_asset(
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
+        check_specs=[AssetCheckSpec("check1", asset="a"), AssetCheckSpec("check2", asset="b")],
+        can_subset=True,
+    )
+    def abc_(context, in1, in2, in3): ...
+
+    a, b, c = AssetKey("a"), AssetKey("b"), AssetKey("c")
+    check1, check2 = AssetCheckKey(a, "check1"), AssetCheckKey(b, "check2")
+
+    subbed = abc_.subset_for({a, b, c}, selected_asset_check_keys={check1, check2})
+    assert subbed.check_specs_by_output_name == abc_.check_specs_by_output_name
+    assert len(subbed.check_specs_by_output_name) == 2
+    assert len(list(subbed.check_specs)) == 2
+    assert subbed.node_check_specs_by_output_name == abc_.node_check_specs_by_output_name
+
+    subbed = abc_.subset_for({a, b}, selected_asset_check_keys={check1})
+    assert len(subbed.check_specs_by_output_name) == 1
+    assert len(list(subbed.check_specs)) == 1
+    assert len(subbed.node_check_specs_by_output_name) == 2
+
+    subbed_again = subbed.subset_for({a, b}, selected_asset_check_keys=set())
+    assert len(subbed_again.check_specs_by_output_name) == 0
+    assert len(list(subbed_again.check_specs)) == 0
+    assert len(subbed_again.node_check_specs_by_output_name) == 2
 
 
 def test_retain_group():
@@ -165,6 +201,35 @@ def test_with_replaced_description() -> None:
         AssetKey("foo"): "foo",
         AssetKey("bar"): "bar_prime",
         AssetKey("baz"): "baz",
+    }
+
+    @op
+    def op1(): ...
+
+    @op
+    def op2(): ...
+
+    @graph_multi_asset(
+        outs={"foo": AssetOut(description="foo"), "bar": AssetOut(description="bar")}
+    )
+    def abc_graph():
+        return {"foo": op1(), "bar": op2()}
+
+    assert abc_graph.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+    }
+
+    replaced = abc_graph.with_attributes(descriptions_by_key={})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+    }
+
+    replaced = abc_graph.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar_prime",
     }
 
 
@@ -293,7 +358,7 @@ def test_retain_group_subset():
         can_subset=True,
     )
 
-    subset = ma.subset_for({AssetKey("b")})
+    subset = ma.subset_for({AssetKey("b")}, selected_asset_check_keys=None)
     assert subset.group_names_by_key[AssetKey("b")] == "bar"
 
 
@@ -349,7 +414,8 @@ def test_chain_replace_and_subset_for():
     }
 
     subbed_1 = replaced_1.subset_for(
-        {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")}
+        {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")},
+        selected_asset_check_keys=None,
     )
     assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
@@ -387,7 +453,8 @@ def test_chain_replace_and_subset_for():
             AssetKey(["again", "foo", "bar_in1"]),
             AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["c"]),
-        }
+        },
+        selected_asset_check_keys=None,
     )
     assert subbed_2.keys == {AssetKey(["again", "foo", "foo_a"])}
 
@@ -398,7 +465,7 @@ def test_fail_on_subset_for_nonsubsettable():
         pass
 
     with pytest.raises(CheckError, match="can_subset=False"):
-        abc_.subset_for({AssetKey("start"), AssetKey("a")})
+        abc_.subset_for({AssetKey("start"), AssetKey("a")}, selected_asset_check_keys=None)
 
 
 def test_fail_for_non_topological_order():
@@ -851,6 +918,34 @@ def test_group_name_requirements():
         def bad_name():
             return 2
 
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Empty asset group name was provided, which is not permitted."
+            "Set group_name=None to use the default group_name or set non-empty string"
+        ),
+    ):
+
+        @asset(group_name="")
+        def empty_name():
+            return 3
+
+
+def test_from_graph_w_check_specs():
+    @op
+    def my_op():
+        pass
+
+    @graph(out={"my_out": GraphOut()})
+    def my_graph():
+        return my_op()
+
+    my_asset = AssetsDefinition.from_graph(
+        my_graph, check_specs=[AssetCheckSpec("check1", asset="my_out")]
+    )
+
+    assert list(my_asset.check_specs) == [AssetCheckSpec("check1", asset=AssetKey(["my_out"]))]
+
 
 def test_from_graph_w_key_prefix():
     @op
@@ -1187,6 +1282,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"out_1": Out(is_required=False), "out_2": Out(is_required=False)})
     def op_1(context):
         assert context.selected_output_names == selected_output_names_op_1
+        assert (num_materializations != 3) == context.is_subset
         if "out_1" in context.selected_output_names:
             yield Output(1, output_name="out_1")
         if "out_2" in context.selected_output_names:
@@ -1195,6 +1291,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"add_one_1": Out(is_required=False), "add_one_2": Out(is_required=False)})
     def add_one(context, x):
         assert context.selected_output_names == selected_output_names_op_2
+        assert (num_materializations != 3) == context.is_subset
         if "add_one_1" in context.selected_output_names:
             yield Output(x, output_name="add_one_1")
         if "add_one_2" in context.selected_output_names:
@@ -1206,14 +1303,10 @@ def test_graph_backed_asset_subset_context(
         out_2, out_3 = add_one(reused_output)
         return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
 
-    asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
-            [AssetsDefinition.from_graph(three, can_subset=True)],
-        )
-    )
+    job_def = create_test_asset_job([AssetsDefinition.from_graph(three, can_subset=True)])
 
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        result = job_def.execute_in_process(asset_selection=asset_selection, instance=instance)
         assert result.success
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
@@ -1492,12 +1585,12 @@ def test_self_dependency():
 def test_context_assets_def():
     @asset
     def a(context):
-        assert context.assets_def == a
+        assert context.assets_def.keys == {a.key}
         return 1
 
     @asset
     def b(context, a):
-        assert context.assets_def == b
+        assert context.assets_def.keys == {b.key}
         return 2
 
     asset_job = define_asset_job("yay", [a, b]).resolve(
@@ -1707,141 +1800,6 @@ def test_return_materialization():
         mats = _exec_asset(ret_mismatch)
 
 
-def test_return_materialization_with_asset_checks():
-    with instance_for_test() as instance:
-
-        @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))])
-        def ret_checks(context: AssetExecutionContext):
-            return MaterializeResult(
-                check_results=[
-                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, success=True)
-                ]
-            )
-
-        materialize([ret_checks], instance=instance)
-        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
-            asset_key=ret_checks.key,
-            check_name="foo_check",
-            limit=1,
-        )
-        assert len(asset_check_executions) == 1
-        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
-
-
-def test_return_materialization_multi_asset():
-    #
-    # yield successful
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def multi():
-        yield MaterializeResult(
-            asset_key="one",
-            metadata={"one": 1},
-        )
-        yield MaterializeResult(
-            asset_key="two",
-            metadata={"two": 2},
-        )
-
-    mats = _exec_asset(multi)
-
-    assert len(mats) == 2, mats
-    assert "one" in mats[0].metadata
-    assert mats[0].tags
-    assert "two" in mats[1].metadata
-    assert mats[1].tags
-
-    #
-    # missing a non optional out
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def missing():
-        yield MaterializeResult(
-            asset_key="one",
-            metadata={"one": 1},
-        )
-
-    # currently a less than ideal error
-    with pytest.raises(
-        DagsterStepOutputNotFoundError,
-        match=(
-            'Core compute for op "missing" did not return an output for non-optional output "two"'
-        ),
-    ):
-        _exec_asset(missing)
-
-    #
-    # missing asset_key
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def no_key():
-        yield MaterializeResult(
-            metadata={"one": 1},
-        )
-        yield MaterializeResult(
-            metadata={"two": 2},
-        )
-
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=(
-            "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
-            " asset_key, options are:"
-        ),
-    ):
-        _exec_asset(no_key)
-
-    #
-    # return tuple success
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def ret_multi():
-        return (
-            MaterializeResult(
-                asset_key="one",
-                metadata={"one": 1},
-            ),
-            MaterializeResult(
-                asset_key="two",
-                metadata={"two": 2},
-            ),
-        )
-
-    mats = _exec_asset(ret_multi)
-
-    assert len(mats) == 2, mats
-    assert "one" in mats[0].metadata
-    assert mats[0].tags
-    assert "two" in mats[1].metadata
-    assert mats[1].tags
-
-    #
-    # return list error
-    #
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def ret_list():
-        return [
-            MaterializeResult(
-                asset_key="one",
-                metadata={"one": 1},
-            ),
-            MaterializeResult(
-                asset_key="two",
-                metadata={"two": 2},
-            ),
-        ]
-
-    # not the best
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=(
-            "When using multiple outputs, either yield each output, or return a tuple containing a"
-            " value for each output."
-        ),
-    ):
-        _exec_asset(ret_list)
-
-
 def test_multi_asset_no_out():
     #
     # base case
@@ -1934,7 +1892,22 @@ def test_multi_asset_nodes_out_names():
         pass
 
     assert len(users.op.output_defs) == 2
-    assert {out_def.name for out_def in users.op.output_defs} == {"sales_users", "marketing_users"}
+    assert {out_def.name for out_def in users.op.output_defs} == {
+        "sales__users",
+        "marketing__users",
+    }
+
+
+def test_multi_asset_dependencies_captured_in_internal_asset_deps() -> None:
+    @asset
+    def my_upstream_asset() -> int:
+        return 1
+
+    with pytest.raises(CheckError, match="inputs must be associated with an output"):
+
+        @multi_asset(outs={"asset_one": AssetOut()}, internal_asset_deps={"asset_one": set()})
+        def my_multi_asset(my_upstream_asset: int) -> int:
+            return my_upstream_asset + 1
 
 
 def test_asset_spec_deps():
@@ -2141,3 +2114,153 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
             return my_op()
 
         assert _specified_elsewhere  # appease linter
+
+
+def test_asset_owners():
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
+    def my_asset():
+        pass
+
+    owners = [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
+    assert my_asset.owners_by_key == {my_asset.key: owners}
+    assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
+
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
+    def my_asset_2():
+        pass
+
+    assert my_asset_2.owners_by_key == {my_asset_2.key: owners}
+
+    @asset(owners=[])
+    def asset_3():
+        pass
+
+    assert asset_3.owners_by_key == {}
+
+    @asset(owners=None)
+    def asset_4():
+        pass
+
+    assert asset_4.owners_by_key == {}
+
+
+def test_invalid_asset_owners():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["arbitrary string"])
+        def my_asset():
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["notanemail@com"])
+        def my_asset_2():
+            pass
+
+
+def test_multi_asset_owners():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(owners=["team:team1", "user@dagsterlabs.com"]),
+            "out2": AssetOut(owners=["user2@dagsterlabs.com"]),
+        }
+    )
+    def my_multi_asset():
+        pass
+
+    assert my_multi_asset.owners_by_key == {
+        AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
+    }
+
+
+def test_replace_asset_keys_for_asset_with_owners():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(owners=["user@dagsterlabs.com"]),
+            "out2": AssetOut(owners=["user@dagsterlabs.com"]),
+        }
+    )
+    def my_multi_asset():
+        pass
+
+    assert my_multi_asset.owners_by_key == {
+        AssetKey("out1"): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+    }
+
+    prefixed_asset = my_multi_asset.with_attributes(
+        output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
+    )
+    assert prefixed_asset.owners_by_key == {
+        AssetKey(["prefix", "out1"]): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+    }
+
+
+def test_asset_spec_with_code_versions():
+    @multi_asset(specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")])
+    def multi_asset_with_versions():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_versions.code_versions_by_key == {
+        AssetKey(["a"]): "1",
+        AssetKey(["b"]): "2",
+    }
+
+
+def test_asset_spec_with_metadata():
+    @multi_asset(
+        specs=[AssetSpec(key="a", metadata={"foo": "1"}), AssetSpec(key="b", metadata={"bar": "2"})]
+    )
+    def multi_asset_with_metadata():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_metadata.metadata_by_key == {
+        AssetKey(["a"]): {"foo": "1"},
+        AssetKey(["b"]): {"bar": "2"},
+    }
+
+
+def test_asset_with_tags():
+    @asset(tags={"a": "b"})
+    def asset1(): ...
+
+    assert asset1.tags_by_key[asset1.key] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @asset(tags={"a%": "b"})  # key has illegal character
+        def asset2(): ...
+
+
+def test_asset_spec_with_tags():
+    @multi_asset(specs=[AssetSpec("asset1", tags={"a": "b"})])
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])  # key has illegal character
+        def assets(): ...
+
+
+def test_asset_out_with_tags():
+    @multi_asset(outs={"asset1": AssetOut(tags={"a": "b"})})
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"a": "b"}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+
+        @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
+        def assets(): ...

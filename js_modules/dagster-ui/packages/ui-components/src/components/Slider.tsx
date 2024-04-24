@@ -1,27 +1,29 @@
 // eslint-disable-next-line no-restricted-imports
 import {
-  Slider as BlueprintSlider,
   MultiSlider as BlueprintMultiSlider,
-  SliderProps,
-  MultiSliderProps,
+  MultiSliderProps as BlueprintMultiSliderProps,
+  Slider as BlueprintSlider,
+  SliderProps as BlueprintSliderProps,
 } from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 
-export const Slider: React.FC<SliderProps & {fillColor?: string}> = ({
-  fillColor = Colors.Gray600,
-  ...rest
-}) => {
+interface SliderProps extends BlueprintSliderProps {
+  fillColor?: string;
+}
+
+export const Slider = ({fillColor = Colors.accentGray(), ...rest}: SliderProps) => {
   return <StyledSlider {...rest} intent="none" $fillColor={fillColor} />;
 };
 
-export const MultiSlider: React.FC<
-  MultiSliderProps & {fillColor?: string; children: React.ReactNode}
-> & {
-  Handle: typeof BlueprintMultiSlider.Handle;
-} = ({fillColor = Colors.Gray600, ...rest}) => {
+interface MultiSliderProps extends BlueprintMultiSliderProps {
+  fillColor?: string;
+  children: React.ReactNode;
+}
+
+export const MultiSlider = ({fillColor = Colors.accentGray(), ...rest}: MultiSliderProps) => {
   return <StyledMultiSlider {...rest} intent="none" $fillColor={fillColor} />;
 };
 
@@ -32,7 +34,7 @@ export const SliderStyles = css<{$fillColor: string}>`
     height: 8px;
     .bp4-slider-progress {
       background-color: ${(p) => p.$fillColor};
-      opacity: 0.2;
+      opacity: 0.4;
       height: 8px;
     }
     .bp4-slider-progress.bp4-intent-primary {
@@ -54,17 +56,17 @@ export const SliderStyles = css<{$fillColor: string}>`
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    border: 2px solid ${Colors.Gray300};
-    background: ${Colors.White};
+    border: 2px solid ${Colors.accentGray()};
+    background: ${Colors.backgroundLighter()};
     box-shadow: none;
     &:hover {
-      border: 2px solid ${Colors.Gray400};
-      box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+      border: 2px solid ${Colors.accentGrayHover()};
+      box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
     }
 
     .bp4-slider-label {
-      background: ${Colors.Gray900};
-      box-shadow: 0 1px 4px rgba(0,0,0,0.15)
+      background: ${Colors.accentBlue()};
+      box-shadow: 0 1px 4px ${Colors.shadowDefault()};
       padding: 4px 8px;
     }
   }

@@ -1,7 +1,8 @@
+import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
-import {featureEnabled, FeatureFlag} from './Flags';
+import {FeatureFlag, featureEnabled} from './Flags';
 import {timeByParts} from './timeByParts';
 
 function twoDigit(v: number) {
@@ -81,30 +82,26 @@ const formatMsecMantissa = (msec: number) =>
     .slice(-4);
 
 /**
- * Opinionated elapsed time formatting:
- *
- * - Times between -10 and 10 seconds are shown as `X.XXXs`
- * - Otherwise times are rendered in a `X:XX:XX` format, without milliseconds
+ * Format the time without milliseconds, rounding to :01 for non-zero value within (-1, 1)
  */
-export const formatElapsedTime = (msec: number) => {
-  const {hours, minutes, seconds, milliseconds} = timeByParts(msec);
+export const formatElapsedTimeWithoutMsec = (msec: number) => {
+  const {hours, minutes, seconds} = timeByParts(msec);
   const negative = msec < 0;
-
-  if (msec < 10000 && msec > -10000) {
-    const formattedMsec = formatMsecMantissa(milliseconds);
-    return `${negative ? '-' : ''}${seconds}${formattedMsec}s`;
-  }
-
-  return `${negative ? '-' : ''}${hours}:${twoDigit(minutes)}:${twoDigit(seconds)}`;
+  const roundedSeconds = msec !== 0 && msec < 1000 && msec > -1000 ? 1 : seconds;
+  return `${negative ? '-' : ''}${hours}:${twoDigit(minutes)}:${twoDigit(roundedSeconds)}`;
 };
 
 export const formatElapsedTimeWithMsec = (msec: number) => {
   const {hours, minutes, seconds, milliseconds} = timeByParts(msec);
+
   const negative = msec < 0;
-  const positiveValue = `${hours}:${twoDigit(minutes)}:${twoDigit(seconds)}${formatMsecMantissa(
-    milliseconds,
-  )}`;
-  return `${negative ? '-' : ''}${positiveValue}`;
+  const sign = negative ? '-' : '';
+  const hourStr = hours > 0 ? `${hours}:` : '';
+  const minuteStr = hours > 0 ? `${twoDigit(minutes)}:` : minutes > 0 ? `${minutes}:` : '';
+  const secStr = hours > 0 || minutes > 0 ? `${twoDigit(seconds)}` : `${seconds}`;
+  const mantissa = formatMsecMantissa(milliseconds);
+
+  return `${sign}${hourStr}${minuteStr}${secStr}${mantissa}`;
 };
 
 export function breakOnUnderscores(str: string) {
@@ -146,6 +143,57 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
     cache.set(key, r);
     return r;
   }) as any;
+}
+
+export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise<R>>(
+  fn: U,
+  hashFn?: (arg: T, ...rest: any[]) => any,
+): U & {
+  isCached: (arg: T, ...rest: any[]) => Promise<boolean>;
+} {
+  const lru = cache<string, R>({
+    dbName: 'indexDBAsyncMemoizeDB',
+    maxCount: 50,
+  });
+
+  async function genHashKey(arg: T, ...rest: any[]) {
+    const hash = hashFn ? hashFn(arg, ...rest) : arg;
+
+    const encoder = new TextEncoder();
+    // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
+    // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
+    if (crypto.subtle?.digest) {
+      const data = encoder.encode(hash.toString());
+      const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    }
+    return hash.toString();
+  }
+
+  const ret = (async (arg: T, ...rest: any[]) => {
+    return new Promise<R>(async (resolve) => {
+      const hashKey = await genHashKey(arg, ...rest);
+      if (await lru.has(hashKey)) {
+        const {value} = await lru.get(hashKey);
+        resolve(value);
+        return;
+      }
+
+      const result = await fn(arg, ...rest);
+      // Resolve the promise before storing the result in IndexedDB
+      resolve(result);
+      await lru.set(hashKey, result, {
+        // Some day in the year 2050...
+        expiry: new Date(9 ** 13),
+      });
+    });
+  }) as any;
+  ret.isCached = async (arg: T, ...rest: any) => {
+    const hashKey = await genHashKey(arg, ...rest);
+    return await lru.has(hashKey);
+  };
+  return ret;
 }
 
 // Simple memoization function for methods that take a single object argument.

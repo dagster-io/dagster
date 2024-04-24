@@ -31,6 +31,7 @@ from .container_context import K8sContainerContext
 from .job import (
     USER_DEFINED_K8S_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
+    UserDefinedDagsterK8sConfig,
     construct_dagster_k8s_job,
     get_k8s_job_name,
     get_user_defined_k8s_config,
@@ -139,9 +140,10 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         namespace=exc_cfg.get("job_namespace"),  # type: ignore
         resources=exc_cfg.get("resources"),  # type: ignore
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
+        security_context=exc_cfg.get("security_context"),  # type: ignore
         # step_k8s_config feeds into the run_k8s_config field because it is merged
         # with any configuration for the run that was set on the run launcher or code location
-        run_k8s_config=exc_cfg.get("step_k8s_config"),  # type: ignore
+        run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(exc_cfg.get("step_k8s_config", {})),
     )
 
     if "load_incluster_config" in exc_cfg:
@@ -224,7 +226,7 @@ class K8sStepHandler(StepHandler):
         user_defined_k8s_config = get_user_defined_k8s_config(
             step_handler_context.step_tags[step_key]
         )
-        return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict()))
+        return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config))
 
     def _get_k8s_step_job_name(self, step_handler_context: StepHandlerContext):
         step_key = self._get_step_key(step_handler_context)
@@ -273,7 +275,7 @@ class K8sStepHandler(StepHandler):
         }
         if run.external_job_origin:
             labels["dagster/code-location"] = (
-                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                run.external_job_origin.repository_origin.code_location_origin.location_name
             )
         job = construct_dagster_k8s_job(
             job_config=job_config,
@@ -281,7 +283,7 @@ class K8sStepHandler(StepHandler):
             job_name=job_name,
             pod_name=pod_name,
             component="step_worker",
-            user_defined_k8s_config=container_context.get_run_user_defined_k8s_config(),
+            user_defined_k8s_config=container_context.run_k8s_config,
             labels=labels,
             env_vars=[
                 *step_handler_context.execute_step_args.get_command_env(),
@@ -290,7 +292,6 @@ class K8sStepHandler(StepHandler):
                     "value": run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
-                *container_context.env,
             ],
         )
 

@@ -18,7 +18,7 @@ def calculate_bytes(df):
 
 
 # start_materialization_ops_marker_0
-from dagster import op
+from dagster import op, OpExecutionContext
 
 
 @op
@@ -35,7 +35,7 @@ from dagster import AssetMaterialization, op
 
 
 @op
-def my_materialization_op(context):
+def my_materialization_op(context: OpExecutionContext):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     context.log_event(
@@ -50,7 +50,7 @@ def my_materialization_op(context):
 
 
 # start_partitioned_asset_materialization
-from dagster import AssetMaterialization, Config, op
+from dagster import AssetMaterialization, Config, op, OpExecutionContext
 
 
 class MyOpConfig(Config):
@@ -58,7 +58,7 @@ class MyOpConfig(Config):
 
 
 @op
-def my_partitioned_asset_op(context, config: MyOpConfig):
+def my_partitioned_asset_op(context: OpExecutionContext, config: MyOpConfig):
     partition_date = config.date
     df = read_df_for_date(partition_date)
     remote_storage_path = persist_to_storage(df)
@@ -72,11 +72,11 @@ def my_partitioned_asset_op(context, config: MyOpConfig):
 
 
 # start_materialization_ops_marker_2
-from dagster import AssetMaterialization, MetadataValue, op
+from dagster import AssetMaterialization, MetadataValue, op, OpExecutionContext
 
 
 @op
-def my_metadata_materialization_op(context):
+def my_metadata_materialization_op(context: OpExecutionContext):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     context.log_event(
@@ -100,11 +100,11 @@ def my_metadata_materialization_op(context):
 
 
 # start_materialization_ops_marker_3
-from dagster import AssetKey, AssetMaterialization, Output, job, op
+from dagster import AssetKey, AssetMaterialization, Output, job, op, OpExecutionContext
 
 
 @op
-def my_asset_key_materialization_op(context):
+def my_asset_key_materialization_op(context: OpExecutionContext):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     yield AssetMaterialization(

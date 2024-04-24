@@ -1,12 +1,13 @@
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, cast
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
@@ -68,24 +69,44 @@ class StepDelegatingExecutor(Executor):
             ),
         )
         self._should_verify_step = should_verify_step
+
         self._event_cursor: Optional[str] = None
+        self._pop_events_offset = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_OFFSET", "0"))
 
     @property
     def retries(self):
         return self._retries
 
-    def _pop_events(self, instance: DagsterInstance, run_id: str) -> Sequence[DagsterEvent]:
+    def _pop_events(
+        self, instance: DagsterInstance, run_id: str, seen_storage_ids: Set[int]
+    ) -> Sequence[DagsterEvent]:
+        adjusted_cursor = self._event_cursor
+
+        if self._pop_events_offset > 0 and self._event_cursor:
+            cursor_obj = EventLogCursor.parse(self._event_cursor)
+            check.invariant(
+                cursor_obj.is_id_cursor(),
+                "Applying a tailer offset only works with an id-based cursor",
+            )
+            adjusted_cursor = EventLogCursor.from_storage_id(
+                cursor_obj.storage_id() - self._pop_events_offset
+            ).to_string()
+
         conn = instance.get_records_for_run(
             run_id,
-            self._event_cursor,
+            adjusted_cursor,
             of_type=set(DagsterEventType),
         )
         self._event_cursor = conn.cursor
+
         dagster_events = [
             record.event_log_entry.dagster_event
             for record in conn.records
-            if record.event_log_entry.dagster_event
+            if record.event_log_entry.dagster_event and record.storage_id not in seen_storage_ids
         ]
+
+        seen_storage_ids.update(record.storage_id for record in conn.records)
+
         return dagster_events
 
     def _get_step_handler_context(
@@ -111,6 +132,7 @@ class StepDelegatingExecutor(Executor):
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+        seen_storage_ids = set()
 
         DagsterEvent.engine_event(
             plan_context,
@@ -118,7 +140,7 @@ class StepDelegatingExecutor(Executor):
             EngineEventData(),
         )
         with InstanceConcurrencyContext(
-            plan_context.instance, plan_context.run_id
+            plan_context.instance, plan_context.dagster_run
         ) as instance_concurrency_context:
             with ActiveExecution(
                 execution_plan,
@@ -139,6 +161,7 @@ class StepDelegatingExecutor(Executor):
                     prior_events = self._pop_events(
                         plan_context.instance,
                         plan_context.run_id,
+                        seen_storage_ids,
                     )
                     for dagster_event in prior_events:
                         yield dagster_event
@@ -233,32 +256,36 @@ class StepDelegatingExecutor(Executor):
 
                         return
 
-                    for dagster_event in self._pop_events(
-                        plan_context.instance,
-                        plan_context.run_id,
-                    ):
-                        yield dagster_event
-                        # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
-                        # and yields them.
+                    if active_execution.has_in_flight_steps:
+                        for dagster_event in self._pop_events(
+                            plan_context.instance,
+                            plan_context.run_id,
+                            seen_storage_ids,
+                        ):
+                            yield dagster_event
+                            # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
+                            # and yields them.
 
-                        if dagster_event.is_step_skipped:
-                            assert isinstance(dagster_event.step_key, str)
-                            active_execution.verify_complete(plan_context, dagster_event.step_key)
-                        else:
-                            active_execution.handle_event(dagster_event)
-                            if (
-                                dagster_event.is_step_success
-                                or dagster_event.is_step_failure
-                                or dagster_event.is_resource_init_failure
-                                or dagster_event.is_step_up_for_retry
-                            ):
+                            if dagster_event.is_step_skipped:
                                 assert isinstance(dagster_event.step_key, str)
-                                del running_steps[dagster_event.step_key]
+                                active_execution.verify_complete(
+                                    plan_context, dagster_event.step_key
+                                )
+                            else:
+                                active_execution.handle_event(dagster_event)
+                                if (
+                                    dagster_event.is_step_success
+                                    or dagster_event.is_step_failure
+                                    or dagster_event.is_resource_init_failure
+                                    or dagster_event.is_step_up_for_retry
+                                ):
+                                    assert isinstance(dagster_event.step_key, str)
+                                    del running_steps[dagster_event.step_key]
 
-                                if not dagster_event.is_step_up_for_retry:
-                                    active_execution.verify_complete(
-                                        plan_context, dagster_event.step_key
-                                    )
+                                    if not dagster_event.is_step_up_for_retry:
+                                        active_execution.verify_complete(
+                                            plan_context, dagster_event.step_key
+                                        )
 
                     # process skips from failures or uncovered inputs
                     list(active_execution.plan_events_iterator(plan_context))
@@ -310,6 +337,9 @@ class StepDelegatingExecutor(Executor):
                         )
                     else:
                         max_steps_to_run = None  # disables limit
+
+                    # process events from concurrency blocked steps
+                    list(active_execution.concurrency_event_iterator(plan_context))
 
                     for step in active_execution.get_steps_to_execute(max_steps_to_run):
                         running_steps[step.key] = step

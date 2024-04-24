@@ -38,6 +38,8 @@ class UserDeployment(BaseModel):
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
     schedulerName: Optional[str]
+    initContainers: Optional[List[kubernetes.Container]]
+    sidecarContainers: Optional[List[kubernetes.Container]]
 
 
 class UserDeployments(BaseModel):

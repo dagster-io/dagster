@@ -1,7 +1,20 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, Alert, ButtonLink, Colors, Group, Box} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {
+  Alert,
+  Box,
+  ButtonLink,
+  Colors,
+  Group,
+  Heading,
+  Page,
+  PageHeader,
+} from '@dagster-io/ui-components';
 
+import {useRunListTabs} from './RunListTabs';
+import {
+  ScheduledRunsListQuery,
+  ScheduledRunsListQueryVariables,
+} from './types/ScheduledRunListRoot.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
@@ -19,12 +32,6 @@ import {
   SchedulesNextTicks,
 } from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
-
-import {useRunListTabs} from './RunListTabs';
-import {
-  ScheduledRunsListQuery,
-  ScheduledRunsListQueryVariables,
-} from './types/ScheduledRunListRoot.types';
 
 export const ScheduledRunListRoot = () => {
   useTrackPageView();
@@ -45,18 +52,24 @@ export const ScheduledRunListRoot = () => {
 
   return (
     <Page>
+      <PageHeader
+        title={<Heading>Runs</Heading>}
+        right={<QueryRefreshCountdown refreshState={combinedRefreshState} />}
+      />
       <Box
         flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
-        padding={{vertical: 8, left: 24, right: 12}}
+        padding={{vertical: 12, left: 24, right: 12}}
       >
         {tabs}
-        <QueryRefreshCountdown refreshState={combinedRefreshState} />
       </Box>
       <Loading queryResult={queryResult} allowStaleData>
         {(result) => {
           const {repositoriesOrError, instance} = result;
-          if (repositoriesOrError.__typename === 'PythonError') {
-            const message = repositoriesOrError.message;
+          if (repositoriesOrError.__typename !== 'RepositoryConnection') {
+            const message =
+              repositoriesOrError.__typename === 'PythonError'
+                ? repositoriesOrError.message
+                : 'Repository not found';
             return (
               <Alert
                 intent="warning"
@@ -64,7 +77,7 @@ export const ScheduledRunListRoot = () => {
                   <Group direction="row" spacing={4}>
                     <div>Could not load scheduled ticks.</div>
                     <ButtonLink
-                      color={Colors.Link}
+                      color={Colors.linkDefault()}
                       underline="always"
                       onClick={() => {
                         showCustomAlert({

@@ -15,6 +15,7 @@ export type SingleJobQuery = {
         id: string;
         name: string;
         isJob: boolean;
+        isAssetJob: boolean;
         description: string | null;
         runs: Array<{
           __typename: 'Run';
@@ -42,11 +43,16 @@ export type SingleJobQuery = {
           id: string;
           jobOriginId: string;
           name: string;
+          sensorType: Types.SensorType;
           sensorState: {
             __typename: 'InstigationState';
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            typeSpecificData:
+              | {__typename: 'ScheduleData'}
+              | {__typename: 'SensorData'; lastCursor: string | null}
+              | null;
           };
         }>;
       }

@@ -21,6 +21,7 @@ export enum DagsterTag {
   RootRunId = 'dagster/root_run_id',
   ScheduleName = 'dagster/schedule_name',
   SensorName = 'dagster/sensor_name',
+  TickId = 'dagster/tick',
   AssetPartitionRangeStart = 'dagster/asset_partition_range_start',
   AssetPartitionRangeEnd = 'dagster/asset_partition_range_end',
   AssetEventDataVersion = 'dagster/data_version',
@@ -28,6 +29,7 @@ export enum DagsterTag {
   AssetEventCodeVersion = 'dagster/code_version',
   AssetEvaluationID = 'dagster/asset_evaluation_id',
   SnapshotID = 'dagster/snapshot_id', // This only exists on the client, not the server.
+  ReportingUser = 'dagster/reporting_user',
   User = 'user',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
@@ -93,7 +95,7 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
   }, [key, value]);
 
   const ValueWrapper = ({children}: {children: React.ReactNode}) =>
-    tag.link ? <Link to={tag.link}>{children}</Link> : <>{children}</>;
+    tag.link ? <Link to={tag.link}>{children}</Link> : <span>{children}</span>;
 
   const tooltipValue = displayedKey ? `${displayedKey}: ${displayValue}` : displayValue;
 

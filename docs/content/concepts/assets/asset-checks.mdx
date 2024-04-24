@@ -1,0 +1,44 @@
+---
+title: "Asset checks | Dagster"
+description: Asset checks are a way to define expectations about the quality of your data.
+---
+
+# Asset checks
+
+Dagster allows you to define and execute data quality checks on your [Software-defined Assets](/concepts/assets/software-defined-assets). Each asset check verifies some property of a data asset, e.g. that there are no null values in a particular column.
+
+When viewing an asset in Dagster’s UI, you can see all of its checks, and whether they’ve passed, failed, or haven’t run.
+
+---
+
+## Benefits
+
+Using asset checks helps you:
+
+- Ensure that data produced by your pipeline is timely and high quality
+- Catch problems in the source data that your pipeline depends on
+- Communicate what the data produced by your pipeline is expected to look like (aka act as a data contract)
+- Block downstream assets from materializing when issues arise
+
+---
+
+## How it works
+
+Asset checks are [defined in code](/concepts/assets/asset-checks/define-execute-asset-checks) alongside the asset(s) they target. You can use Python to define them, or if using dbt, load your [dbt tests into Dagster as asset checks](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks). Refer to the [Defining and executing asset checks](/concepts/assets/asset-checks/define-execute-asset-checks) guide for more info.
+
+Using schedules and sensors, you can automate the execution of jobs that include asset checks and the assets that they target. Checks can also be executed on a one-off basis using the Dagster UI. Refer to the [Executing checks](/concepts/assets/asset-checks/define-execute-asset-checks#executing-checks) section of the [Defining and executing asset checks](/concepts/assets/asset-checks/define-execute-asset-checks) guide for more info.
+
+With asset checks, you can also:
+
+- Block downstream execution based on check results
+- Use severity levels and metadata [to communicate actionable details about check results in the UI](/concepts/assets/asset-checks/define-execute-asset-checks#using-asset-check-results)
+- Use freshness checks [to identify stale assets that are due for a refresh](/concepts/assets/asset-checks/checking-for-data-freshness)
+- **Dagster+ only**: [Create alerts based on asset check results](/dagster-plus/managing-deployments/alerts)
+
+---
+
+## Limitations
+
+- **Dagster's UI is tested with a maximum of 1000 checks per asset.** It's designed with the expectation that most assets will have fewer than 50 checks. If you have a use case that doesn't fit these limits, reach out to Dagster support to discuss.
+
+- **Checks are currently only supported per-asset, not per-partition.** See [this issue](https://github.com/dagster-io/dagster/issues/17005) for updates.

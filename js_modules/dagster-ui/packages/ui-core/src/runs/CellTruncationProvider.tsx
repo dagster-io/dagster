@@ -1,8 +1,6 @@
-import {Colors} from '@dagster-io/ui-components';
+import {Button, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
-
-import {showCustomAlert} from '../app/CustomAlertProvider';
 
 const OverflowFade = styled.div`
   position: absolute;
@@ -12,7 +10,6 @@ const OverflowFade = styled.div`
   height: 40px;
   user-select: none;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(245, 248, 250, 0) 0%, rgba(245, 248, 250, 255) 100%);
 `;
 
 const OverflowButtonContainer = styled.div`
@@ -25,31 +22,6 @@ const OverflowButtonContainer = styled.div`
   justify-content: center;
 `;
 
-const OverflowButton = styled.button`
-  border: 0;
-  cursor: pointer;
-  user-select: none;
-  font-size: 12px;
-  font-weight: 500;
-  background: rgba(100, 100, 100, 0.7);
-  border-radius: 4px;
-  line-height: 32px;
-  padding: 0 12px;
-  color: ${Colors.White};
-  &:hover {
-    background: rgba(100, 100, 100, 0.85);
-  }
-
-  &:focus,
-  &:active {
-    outline: none;
-  }
-
-  &:active {
-    background: rgba(0, 0, 0, 0.7);
-  }
-`;
-
 export class CellTruncationProvider extends React.Component<
   {
     children: React.ReactNode;
@@ -57,10 +29,11 @@ export class CellTruncationProvider extends React.Component<
     onExpand?: () => void;
     forceExpandability?: boolean;
   },
-  {isOverflowing: boolean}
+  {isOverflowing: boolean; showDialog: boolean}
 > {
   state = {
     isOverflowing: false,
+    showDialog: false,
   };
 
   private contentContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
@@ -88,18 +61,18 @@ export class CellTruncationProvider extends React.Component<
     }
   }
 
-  defaultExpand() {
+  dialogContents() {
     const message =
       this.contentContainerRef.current && this.contentContainerRef.current.textContent;
-    message &&
-      showCustomAlert({
-        body: <div style={{whiteSpace: 'pre-wrap'}}>{message}</div>,
-      });
+    if (message) {
+      return <div style={{whiteSpace: 'pre-wrap'}}>{message}</div>;
+    }
+    return null;
   }
 
   onView = () => {
     const {onExpand} = this.props;
-    onExpand ? onExpand() : this.defaultExpand();
+    onExpand ? onExpand() : this.setState({showDialog: true});
   };
 
   render() {
@@ -112,8 +85,26 @@ export class CellTruncationProvider extends React.Component<
           <>
             <OverflowFade />
             <OverflowButtonContainer>
-              <OverflowButton onClick={this.onView}>View full message</OverflowButton>
+              <Button intent="primary" icon={<Icon name="unfold_more" />} onClick={this.onView}>
+                View full message
+              </Button>
             </OverflowButtonContainer>
+            {this.props.onExpand ? null : (
+              <Dialog
+                canEscapeKeyClose
+                canOutsideClickClose
+                isOpen={this.state.showDialog}
+                onClose={() => this.setState({showDialog: false})}
+                style={{width: 'auto', maxWidth: '80vw'}}
+              >
+                <div>{this.dialogContents()}</div>
+                <DialogFooter topBorder>
+                  <Button intent="primary" onClick={() => this.setState({showDialog: false})}>
+                    Done
+                  </Button>
+                </DialogFooter>
+              </Dialog>
+            )}
           </>
         )}
       </div>

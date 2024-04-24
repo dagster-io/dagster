@@ -1,17 +1,15 @@
 import {gql} from '@apollo/client';
 import {Box, FontFamily} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import * as React from 'react';
 import styled from 'styled-components';
 
+import {DagsterTypeFragment} from './types/DagsterType.types';
 import {gqlTypePredicate} from '../app/Util';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchema} from '../metadata/TableSchema';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {Description} from '../pipelines/Description';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
-
-import {DagsterTypeFragment} from './types/DagsterType.types';
 
 export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}) => {
   const tableSchema = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
@@ -22,10 +20,7 @@ export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}
   }
 };
 
-const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}> = ({
-  type,
-  className,
-}) => {
+const _DagsterTypeName = ({type, className}: {type: DagsterTypeFragment; className?: string}) => {
   const typeKind = dagsterTypeKind(type);
   const displayName = typeKind === 'standard' ? type.name : `${type.name} (${typeKind})`;
   return <Box className={className}>{displayName}</Box>;
@@ -38,10 +33,13 @@ const DagsterTypeName = styled(_DagsterTypeName)`
   text-overflow: ellipsis;
 `;
 
-export const DagsterTypeSummary: React.FC<{
+export const DagsterTypeSummary = ({
+  type,
+  horizontalPadding,
+}: {
   type: DagsterTypeFragment;
   horizontalPadding?: Spacing;
-}> = ({type, horizontalPadding}) => {
+}) => {
   horizontalPadding = horizontalPadding || 0;
   const tableSchemaEntry = (type.metadataEntries || []).find(
     gqlTypePredicate('TableSchemaMetadataEntry'),

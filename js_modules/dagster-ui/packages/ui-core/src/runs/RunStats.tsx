@@ -1,13 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-
-import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
@@ -80,11 +78,10 @@ const RUN_STATS_QUERY = gql`
 `;
 
 const RunStatsDetailsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 200px;
   padding: 12px;
-  color: white;
   font-size: 12px;
-  & > a {
-    display: block;
-  }
 `;

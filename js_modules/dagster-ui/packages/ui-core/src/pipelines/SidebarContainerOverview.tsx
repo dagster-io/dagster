@@ -1,25 +1,27 @@
 import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui-components';
-import * as React from 'react';
 
+import {Description} from './Description';
+import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
+import {
+  SIDEBAR_RESOURCES_SECTION_FRAGMENT,
+  SidebarResourcesSection,
+} from './SidebarResourcesSection';
+import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 import {breakOnUnderscores} from '../app/Util';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {useRepositoryOptions, findRepositoryAmongOptions} from '../workspace/WorkspaceContext';
+import {MetadataEntry} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
 
-import {Description} from './Description';
-import {SidebarSubhead, SidebarTitle, SidebarSection} from './SidebarComponents';
-import {
-  SidebarResourcesSection,
-  SIDEBAR_RESOURCES_SECTION_FRAGMENT,
-} from './SidebarResourcesSection';
-import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
-
-export const SidebarContainerOverview: React.FC<{
+export const SidebarContainerOverview = ({
+  container,
+  repoAddress,
+}: {
   container: SidebarRootContainerFragment;
   repoAddress?: RepoAddress;
-}> = ({container, repoAddress}) => {
+}) => {
   const {options} = useRepositoryOptions();
 
   // Determine if the pipeline or job snapshot is tied to a legacy pipeline. This is annoying
@@ -74,7 +76,7 @@ export const SidebarContainerOverview: React.FC<{
             <MetadataTable
               rows={container.metadataEntries.map((entry) => ({
                 key: entry.label,
-                value: <MetadataEntry entry={entry} />,
+                value: <MetadataEntry entry={entry} repoLocation={repoAddress?.location} />,
               }))}
             />
           </Box>

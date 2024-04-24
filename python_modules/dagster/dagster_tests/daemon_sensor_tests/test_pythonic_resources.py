@@ -3,10 +3,10 @@ import sys
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-import pendulum
 import pytest
 from dagster import (
     AssetKey,
+    IAttachDifferentObjectToOpContext,
     SensorEvaluationContext,
     job,
     multi_asset_sensor,
@@ -50,7 +50,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
 from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
 
@@ -82,6 +82,13 @@ class MyResource(ConfigurableResource):
     a_str: str
 
 
+class MyResourceAttachDifferentObject(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    a_str: str
+
+    def get_object_to_set_on_execution_context(self) -> str:
+        return self.a_str
+
+
 @sensor(job_name="the_job", required_resource_keys={"my_resource"})
 def sensor_from_context(context: SensorEvaluationContext):
     return RunRequest(context.resources.my_resource.a_str, run_config={}, tags={})
@@ -105,6 +112,15 @@ def the_job_but_with_a_resource_dep() -> None:
 @sensor(job_name="the_job_but_with_a_resource_dep")
 def sensor_with_job_with_resource_dep(context: SensorEvaluationContext, my_resource: MyResource):
     return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def sensor_with_resource_from_context(
+    context: SensorEvaluationContext, my_resource_attach: MyResourceAttachDifferentObject
+):
+    assert context.resources.my_resource_attach == my_resource_attach.a_str
+
+    return RunRequest(my_resource_attach.a_str, run_config={}, tags={})
 
 
 is_in_cm = False
@@ -293,6 +309,7 @@ the_repo = Definitions(
         sensor_from_context,
         sensor_from_fn_arg,
         sensor_with_job_with_resource_dep,
+        sensor_with_resource_from_context,
         sensor_with_cm,
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
@@ -314,6 +331,7 @@ the_repo = Definitions(
     resources={
         "my_resource": MyResource(a_str="foo"),
         "my_cm_resource": my_cm_resource,
+        "my_resource_attach": MyResourceAttachDifferentObject(a_str="foo"),
         "the_inner": the_inner,
         "the_outer": the_outer,
     },
@@ -324,7 +342,7 @@ def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY
     return ModuleTarget(
         module_name="dagster_tests.daemon_sensor_tests.test_pythonic_resources",
         attribute=None,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 
@@ -376,6 +394,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
         "sensor_from_context",
         "sensor_from_fn_arg",
         "sensor_with_job_with_resource_dep",
+        "sensor_with_resource_from_context",
         "sensor_with_cm",
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",
@@ -410,7 +429,7 @@ def test_resources(
         "US/Central",
     )
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         base_run_count = 0
         if "asset" in sensor_name:
             the_job.execute_in_process(instance=instance)
@@ -479,7 +498,7 @@ def test_resources_freshness_policy_sensor(
     )
     original_time = freeze_datetime
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
@@ -495,15 +514,15 @@ def test_resources_freshness_policy_sensor(
 
     # We have to do two ticks because the first tick will be skipped due to the freshness policy
     # sensor initializing its cursor
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
@@ -555,7 +574,7 @@ def test_resources_run_status_sensor(
     )
     original_time = freeze_datetime
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
@@ -571,16 +590,16 @@ def test_resources_run_status_sensor(
 
     # We have to do two ticks because the first tick will be skipped due to the run status
     # sensor initializing its cursor
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     the_job.execute_in_process(instance=instance)
     freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
@@ -637,7 +656,7 @@ def test_resources_run_failure_sensor(
     )
     original_time = freeze_datetime
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
@@ -653,16 +672,16 @@ def test_resources_run_failure_sensor(
 
     # We have to do two ticks because the first tick will be skipped due to the run status
     # sensor initializing its cursor
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     the_failure_job.execute_in_process(instance=instance, raise_on_error=False)
     freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )

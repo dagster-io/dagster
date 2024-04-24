@@ -2,7 +2,7 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster import resource
-from dagster._annotations import deprecated, public
+from dagster._annotations import public
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import merge_dicts
@@ -481,7 +481,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
         context = self.get_resource_context()
         default_flags = {
             k: v
-            for k, v in self._get_non_none_public_field_values().items()
+            for k, v in self._get_non_default_public_field_values().items()
             if k not in COMMON_OPTION_KEYS
         }
 
@@ -502,7 +502,6 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
         return self.get_dbt_client()
 
 
-@deprecated(breaking_version="0.21", additional_warn_text="Use DbtCliResource instead.")
 @dagster_maintained_resource
 @resource(config_schema=DbtCliClientResource.to_config_schema())
 def dbt_cli_resource(context) -> DbtCliClient:

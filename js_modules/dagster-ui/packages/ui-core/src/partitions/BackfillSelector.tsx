@@ -15,6 +15,20 @@ import {
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 
+import {
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
+  DaemonNotRunningAlert,
+  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
+  UsingDefaultLauncherAlert,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
+} from './BackfillMessaging';
+import {DimensionRangeWizard} from './DimensionRangeWizard';
+import {PartitionRunStatusCheckboxes, countsByState} from './PartitionRunStatusCheckboxes';
+import {
+  BackfillSelectorQuery,
+  BackfillSelectorQueryVariables,
+} from './types/BackfillSelector.types';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
@@ -34,36 +48,12 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {
-  DaemonNotRunningAlert,
-  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
-  showBackfillErrorToast,
-  showBackfillSuccessToast,
-  UsingDefaultLauncherAlert,
-  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
-} from './BackfillMessaging';
-import {DimensionRangeWizard} from './DimensionRangeWizard';
-import {countsByState, PartitionRunStatusCheckboxes} from './PartitionRunStatusCheckboxes';
-import {
-  BackfillSelectorQuery,
-  BackfillSelectorQueryVariables,
-} from './types/BackfillSelector.types';
-
 interface BackfillOptions {
   reexecute: boolean;
   fromFailure: boolean;
 }
 
-export const BackfillPartitionSelector: React.FC<{
-  partitionSetName: string;
-  partitionNames: string[];
-  runStatusData: {[partitionName: string]: RunStatus};
-  pipelineName: string;
-  onLaunch?: (backfillId: string, stepQuery: string) => void;
-  onCancel?: () => void;
-  onSubmit: () => void;
-  repoAddress: RepoAddress;
-}> = ({
+export const BackfillPartitionSelector = ({
   partitionSetName,
   onLaunch,
   onCancel,
@@ -72,6 +62,15 @@ export const BackfillPartitionSelector: React.FC<{
   runStatusData,
   pipelineName,
   partitionNames,
+}: {
+  partitionSetName: string;
+  partitionNames: string[];
+  runStatusData: {[partitionName: string]: RunStatus};
+  pipelineName: string;
+  onLaunch?: (backfillId: string, stepQuery: string) => void;
+  onCancel?: () => void;
+  onSubmit: () => void;
+  repoAddress: RepoAddress;
 }) => {
   const history = useHistory();
   const [range, _setRange] = React.useState<string[]>(
@@ -238,7 +237,7 @@ export const BackfillPartitionSelector: React.FC<{
                       placement="top"
                       content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed. Only applies for selections of failed partitions."
                     >
-                      <Icon name="info" color={Colors.Gray500} />
+                      <Icon name="info" color={Colors.accentGray()} />
                     </Tooltip>
                   </Box>
                 }
@@ -254,7 +253,7 @@ export const BackfillPartitionSelector: React.FC<{
                   placement="top"
                   content="Applies a step-selection to each run for the requested partitions."
                 >
-                  <Icon name="info" color={Colors.Gray500} />
+                  <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
               </Box>
             }
@@ -270,7 +269,7 @@ export const BackfillPartitionSelector: React.FC<{
                 autoApplyChanges={true}
               />
               {query ? (
-                <div style={{color: Colors.Gray500}}>
+                <div style={{color: Colors.textLight()}}>
                   {stepRows.length} step{stepRows.length === 1 ? '' : 's'} selected
                 </div>
               ) : null}
@@ -285,7 +284,9 @@ export const BackfillPartitionSelector: React.FC<{
               onRequestClose={() => setTagEditorOpen(false)}
             />
             {tags.length ? (
-              <div style={{border: `1px solid ${Colors.Gray300}`, borderRadius: 8, padding: 3}}>
+              <div
+                style={{border: `1px solid ${Colors.borderDefault()}`, borderRadius: 8, padding: 3}}
+              >
                 <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
               </div>
             ) : (
@@ -326,17 +327,7 @@ export const BackfillPartitionSelector: React.FC<{
   );
 };
 
-const LaunchBackfillButton: React.FC<{
-  partitionSetName: string;
-  partitionNames: string[];
-  reexecutionSteps?: string[];
-  fromFailure?: boolean;
-  tags?: PipelineRunTag[];
-  onSuccess?: (backfillId: string, isPureAssetBackfill: boolean) => void;
-  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
-  onSubmit: () => void;
-  repoAddress: RepoAddress;
-}> = ({
+const LaunchBackfillButton = ({
   partitionSetName,
   partitionNames,
   reexecutionSteps,
@@ -346,6 +337,16 @@ const LaunchBackfillButton: React.FC<{
   onError,
   onSubmit,
   repoAddress,
+}: {
+  partitionSetName: string;
+  partitionNames: string[];
+  reexecutionSteps?: string[];
+  fromFailure?: boolean;
+  tags?: PipelineRunTag[];
+  onSuccess?: (backfillId: string, isPureAssetBackfill: boolean) => void;
+  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
+  onSubmit: () => void;
+  repoAddress: RepoAddress;
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);

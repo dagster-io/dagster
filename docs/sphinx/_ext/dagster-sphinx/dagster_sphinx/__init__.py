@@ -95,11 +95,14 @@ class DagsterClassDocumenter(ClassDocumenter):
         filtered_members = [
             m
             for m in unfiltered_members
-            if m[0] in self.object.__dict__ and is_public(self.object.__dict__[m[0]])
+            if m[0] in self.object.__dict__ and self._is_member_public(self.object.__dict__[m[0]])
         ]
         for member in filtered_members:
             check_public_method_has_docstring(self.env, member[0], member[1])
         return False, filtered_members
+
+    def _is_member_public(self, member: object) -> bool:
+        return self.fullname.startswith("dagster_pipes") or is_public(member)
 
 
 # This is a hook that will be executed for every processed docstring. It modifies the lines of the
@@ -140,17 +143,6 @@ def get_child_as(node: nodes.Node, index: int, node_type: Type[T_Node]) -> T_Nod
         child, node_type
     ), f"Docutils node not of expected type. Expected `{node_type}`, got `{type(child)}`."
     return child
-
-
-# def substitute_deprecated_text(app: Sphinx, doctree: nodes.Element, docname: str) -> None:
-#     # The `.. deprecated::` directive is rendered as a `versionmodified` node.
-#     # Find them all and replace the auto-generated text, which requires a version argument, with a
-#     # plain string "Deprecated".
-#     for node in doctree.findall(versionmodified):
-#         paragraph = get_child_as(node, 0, nodes.paragraph)
-#         inline = get_child_as(paragraph, 0, nodes.inline)
-#         text = get_child_as(inline, 0, nodes.Text)
-#         inline.replace(text, nodes.Text("Deprecated"))
 
 
 def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:

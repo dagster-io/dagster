@@ -11,6 +11,8 @@ SCHEDULE_NAME_TAG = f"{SYSTEM_TAG_PREFIX}schedule_name"
 
 SENSOR_NAME_TAG = f"{SYSTEM_TAG_PREFIX}sensor_name"
 
+TICK_ID_TAG = f"{SYSTEM_TAG_PREFIX}tick"
+
 BACKFILL_ID_TAG = f"{SYSTEM_TAG_PREFIX}backfill"
 
 PARTITION_NAME_TAG = f"{SYSTEM_TAG_PREFIX}partition"
@@ -63,11 +65,15 @@ AUTO_OBSERVE_TAG = f"{SYSTEM_TAG_PREFIX}auto_observe"
 RUN_WORKER_ID_TAG = f"{HIDDEN_TAG_PREFIX}run_worker"
 GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}concurrency_key"
 
-# In cloud, we tag runs with the email of the user who triggered the run
-# This is used to display the user in the UI
+# This tag is used to tag runs and backfills with the email of the creator.
 USER_TAG = "user"
 
+# This tag is used to tag runless asset events reported via the UI with the email of the reporting user.
+REPORTING_USER_TAG = f"{SYSTEM_TAG_PREFIX}reporting_user"
+
 RUN_ISOLATION_TAG = f"{SYSTEM_TAG_PREFIX}isolation"
+
+RUN_FAILURE_REASON_TAG = f"{SYSTEM_TAG_PREFIX}failure_reason"
 
 
 USER_EDITABLE_SYSTEM_TAGS = [

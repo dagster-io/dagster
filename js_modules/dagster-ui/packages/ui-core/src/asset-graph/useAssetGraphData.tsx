@@ -2,25 +2,25 @@ import {gql, useQuery} from '@apollo/client';
 import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
-import React from 'react';
-
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {AssetKey} from '../assets/types';
-import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
+import {useMemo} from 'react';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {buildGraphData, GraphData, toGraphId, tokenForAssetKey} from './Utils';
+import {GraphData, buildGraphData, toGraphId, tokenForAssetKey} from './Utils';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {AssetKey} from '../assets/types';
+import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
   hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
+  computeKinds?: string[];
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
@@ -47,7 +47,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const nodes = fetchResult.data?.assetNodes;
 
-  const repoFilteredNodes = React.useMemo(() => {
+  const repoFilteredNodes = useMemo(() => {
     // Apply any filters provided by the caller. This is where we do repo filtering
     let matching = nodes;
     if (options.hideNodesMatching) {
@@ -56,24 +56,24 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     return matching;
   }, [nodes, options.hideNodesMatching]);
 
-  const graphQueryItems = React.useMemo(
+  const graphQueryItems = useMemo(
     () => (repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
     [repoFilteredNodes],
   );
 
-  const fullAssetGraphData = React.useMemo(
-    () => (graphQueryItems ? buildGraphData(graphQueryItems.map((n) => n.node)) : null),
-    [graphQueryItems],
+  const fullGraphQueryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
+
+  const fullAssetGraphData = useMemo(
+    () => (fullGraphQueryItems ? buildGraphData(fullGraphQueryItems.map((n) => n.node)) : null),
+    [fullGraphQueryItems],
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
+  const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(() => {
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
         assetGraphData: null,
-        fullAssetGraphData: null,
-        applyingEmptyDefault: false,
       };
     }
 
@@ -81,7 +81,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
+    const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
+    const computeKinds = options.computeKinds;
+    const all = computeKinds?.length
+      ? allFilteredByOpQuery.filter((item) => computeKinds.includes(item.node.computeKind ?? ''))
+      : allFilteredByOpQuery;
 
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
@@ -94,9 +98,14 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
       graphQueryItems,
-      applyingEmptyDefault,
     };
-  }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
+  }, [
+    repoFilteredNodes,
+    graphQueryItems,
+    opsQuery,
+    options.computeKinds,
+    options.hideEdgesToNodesOutsideQuery,
+  ]);
 
   return {
     fetchResult,
@@ -105,7 +114,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
-    applyingEmptyDefault,
   };
 }
 
@@ -193,6 +201,23 @@ export const ASSET_GRAPH_QUERY = gql`
     id
     groupName
     isExecutable
+    changedReasons
+    tags {
+      key
+      value
+    }
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
+    tags {
+      key
+      value
+    }
     hasMaterializePermission
     repository {
       id

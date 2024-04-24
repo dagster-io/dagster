@@ -1,25 +1,27 @@
 import {ApolloClient, useApolloClient} from '@apollo/client';
-import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui-components';
-import React from 'react';
-
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useContext, useState} from 'react';
 
 import {
   AssetsInScope,
+  LAUNCH_ASSET_LOADER_QUERY,
   buildAssetCollisionsAlert,
   executionParamsForAssetJob,
   getCommonJob,
-  LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
+import {asAssetKeyInput} from './asInput';
+import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 type ObserveAssetsState =
   | {type: 'none'}
@@ -30,42 +32,13 @@ type ObserveAssetsState =
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
-export const LaunchAssetObservationButton: React.FC<{
-  scope: AssetsInScope;
-  intent?: 'primary' | 'none';
-  preferredJobName?: string;
-}> = ({scope, preferredJobName, intent = 'none'}) => {
+export const useObserveAction = (preferredJobName?: string) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
-
-  const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});
   const client = useApolloClient();
+  const [state, setState] = useState<ObserveAssetsState>({type: 'none'});
 
-  const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
-  if (!scopeAssets.length) {
-    return <span />;
-  }
-
-  const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
-  const label =
-    'selected' in scope
-      ? `Observe selected${count}`
-      : scope.skipAllTerm
-      ? `Observe${count}`
-      : `Observe sources ${count}`;
-
-  const hasMaterializePermission = scopeAssets.every((a) => a.hasMaterializePermission);
-  if (!hasMaterializePermission) {
-    return (
-      <Tooltip content="You do not have permission to observe source assets">
-        <Button intent={intent} icon={<Icon name="observation" />} disabled>
-          {label}
-        </Button>
-      </Tooltip>
-    );
-  }
-
-  const onClick = async (e: React.MouseEvent<any>) => {
+  const onClick = async (assetKeys: AssetKey[], e: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
       return;
     }
@@ -73,7 +46,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: scopeAssets.map((a) => ({path: a.assetKey.path}))},
+      variables: {assetKeys},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {
@@ -104,13 +77,61 @@ export const LaunchAssetObservationButton: React.FC<{
     }
   };
 
+  return {onClick, loading: state.type === 'loading'};
+};
+
+export const LaunchAssetObservationButton = ({
+  scope,
+  preferredJobName,
+  primary = false,
+}: {
+  scope: AssetsInScope;
+  primary?: boolean;
+  preferredJobName?: string;
+}) => {
+  const {onClick, loading} = useObserveAction(preferredJobName);
+  const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
+
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeMaterializeAction) {
+    return null;
+  }
+
+  if (!scopeAssets.length) {
+    return <></>;
+  }
+
+  const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
+  const label =
+    'selected' in scope
+      ? `Observe selected${count}`
+      : scope.skipAllTerm
+      ? `Observe${count}`
+      : `Observe sources ${count}`;
+
+  const hasMaterializePermission = scopeAssets.every((a) => a.hasMaterializePermission);
+  if (!hasMaterializePermission) {
+    return (
+      <Tooltip content="You do not have permission to observe source assets">
+        <Button
+          intent={primary ? 'primary' : undefined}
+          icon={<Icon name="observation" />}
+          disabled
+        >
+          {label}
+        </Button>
+      </Tooltip>
+    );
+  }
+
   return (
     <Button
-      intent={intent}
-      onClick={onClick}
-      icon={
-        state.type === 'loading' ? <Spinner purpose="body-text" /> : <Icon name="observation" />
-      }
+      intent={primary ? 'primary' : undefined}
+      onClick={(e) => onClick(scopeAssets.map(asAssetKeyInput), e)}
+      icon={loading ? <Spinner purpose="body-text" /> : <Icon name="observation" />}
     >
       {label}
     </Button>
@@ -133,7 +154,7 @@ async function stateForObservingAssets(
   if (assets.some((x) => !x.isObservable)) {
     return {
       type: 'error',
-      error: 'One or more of the selected source assets are unversioned and cannot be observed.',
+      error: 'One or more of the selected source assets is not an observable asset.',
     };
   }
   const repoAddress = buildRepoAddress(

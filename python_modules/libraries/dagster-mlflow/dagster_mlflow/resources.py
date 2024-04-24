@@ -2,6 +2,7 @@
 class. This resource provides an easy way to configure mlflow for logging various
 things from dagster runs.
 """
+
 import atexit
 import sys
 from itertools import islice

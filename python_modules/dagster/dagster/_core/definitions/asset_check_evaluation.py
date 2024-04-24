@@ -1,7 +1,7 @@
 from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey, MetadataValue
 from dagster._serdes import whitelist_for_serdes
 
@@ -26,8 +26,8 @@ class AssetCheckEvaluationPlanned(
         )
 
     @property
-    def asset_check_handle(self) -> AssetCheckHandle:
-        return AssetCheckHandle(self.asset_key, self.check_name)
+    def asset_check_key(self) -> AssetCheckKey:
+        return AssetCheckKey(self.asset_key, self.check_name)
 
 
 @whitelist_for_serdes
@@ -52,20 +52,21 @@ class AssetCheckEvaluationTargetMaterializationData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"passed": "success"})
 class AssetCheckEvaluation(
     NamedTuple(
         "_AssetCheckEvaluation",
         [
             ("asset_key", AssetKey),
             ("check_name", str),
-            ("success", bool),
+            ("passed", bool),
             ("metadata", Mapping[str, MetadataValue]),
             (
                 "target_materialization_data",
                 Optional[AssetCheckEvaluationTargetMaterializationData],
             ),
             ("severity", AssetCheckSeverity),
+            ("description", Optional[str]),
         ],
     )
 ):
@@ -76,7 +77,7 @@ class AssetCheckEvaluation(
             The asset key that was checked.
         check_name (str):
             The name of the check.
-        success (bool):
+        passed (bool):
             The pass/fail result of the check.
         metadata (Dict[str, MetadataValue]):
             Arbitrary user-provided metadata about the asset.  Keys are displayed string labels, and
@@ -86,22 +87,25 @@ class AssetCheckEvaluation(
             The latest materialization at execution time of the check.
         severity (AssetCheckSeverity):
             Severity of the check result.
+        description (Optional[str]):
+            A text description of the result of the check evaluation.
     """
 
     def __new__(
         cls,
         asset_key: AssetKey,
         check_name: str,
-        success: bool,
+        passed: bool,
         metadata: Mapping[str, MetadataValue],
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
+        description: Optional[str] = None,
     ):
         return super(AssetCheckEvaluation, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
-            success=check.bool_param(success, "success"),
+            passed=check.bool_param(passed, "passed"),
             metadata=check.dict_param(metadata, "metadata", key_type=str),
             target_materialization_data=check.opt_inst_param(
                 target_materialization_data,
@@ -109,8 +113,9 @@ class AssetCheckEvaluation(
                 AssetCheckEvaluationTargetMaterializationData,
             ),
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
+            description=check.opt_str_param(description, "description"),
         )
 
     @property
-    def asset_check_handle(self) -> AssetCheckHandle:
-        return AssetCheckHandle(self.asset_key, self.check_name)
+    def asset_check_key(self) -> AssetCheckKey:
+        return AssetCheckKey(self.asset_key, self.check_name)

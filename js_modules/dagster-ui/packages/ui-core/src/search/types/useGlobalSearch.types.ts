@@ -33,7 +33,7 @@ export type SearchPrimaryQuery = {
                   __typename: 'Repository';
                   id: string;
                   name: string;
-                  assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
+                  assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
                   pipelines: Array<{
                     __typename: 'Pipeline';
                     id: string;
@@ -48,7 +48,11 @@ export type SearchPrimaryQuery = {
                     name: string;
                     pipelineName: string;
                   }>;
-                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+                  allTopLevelResourceDetails: Array<{
+                    __typename: 'ResourceDetails';
+                    id: string;
+                    name: string;
+                  }>;
                 }>;
               }
             | null;
@@ -67,6 +71,23 @@ export type SearchSecondaryQuery = {
           __typename: 'Asset';
           id: string;
           key: {__typename: 'AssetKey'; path: Array<string>};
+          definition: {
+            __typename: 'AssetNode';
+            id: string;
+            computeKind: string | null;
+            groupName: string;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            repository: {
+              __typename: 'Repository';
+              id: string;
+              name: string;
+              location: {__typename: 'RepositoryLocation'; id: string; name: string};
+            };
+          } | null;
         }>;
       }
     | {__typename: 'PythonError'};

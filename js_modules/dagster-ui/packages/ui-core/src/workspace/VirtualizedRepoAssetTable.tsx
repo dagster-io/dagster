@@ -1,20 +1,18 @@
 import {gql} from '@apollo/client';
 import {Box, Colors, Icon, IconWrapper, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {AppContext} from '../app/AppContext';
-import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 import {VirtualizedAssetHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {RepoAssetTableFragment} from './types/VirtualizedRepoAssetTable.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
+import {Container, Inner, Row} from '../ui/VirtualizedTable';
+import {usePersistedExpansionState} from '../ui/usePersistedExpansionState';
 
 type Asset = RepoAssetTableFragment;
 
@@ -30,14 +28,14 @@ type RowType =
 const UNGROUPED_NAME = 'UNGROUPED';
 const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-state';
 
-export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
+  const parentRef = useRef<HTMLDivElement | null>(null);
   const repoKey = repoAddressAsHumanString(repoAddress);
-  const {expandedKeys, onToggle} = useAssetGroupExpansionState(
+  const {expandedKeys, onToggle} = usePersistedExpansionState(
     `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
   );
 
-  const grouped: Record<string, Asset[]> = React.useMemo(() => {
+  const grouped: Record<string, Asset[]> = useMemo(() => {
     const groups: Record<string, Asset[]> = {};
     for (const asset of assets) {
       const groupName = asset.groupName || UNGROUPED_NAME;
@@ -47,7 +45,7 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
     return groups;
   }, [assets]);
 
-  const flattened: RowType[] = React.useMemo(() => {
+  const flattened: RowType[] = useMemo(() => {
     const flat: RowType[] = [];
     Object.entries(grouped).forEach(([groupName, assetsForGroup]) => {
       flat.push({type: 'group', name: groupName, assetCount: assetsForGroup.length});
@@ -117,7 +115,15 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
   );
 };
 
-const GroupNameRow: React.FC<{
+const GroupNameRow = ({
+  repoAddress,
+  groupName,
+  assetCount,
+  expanded,
+  height,
+  start,
+  onToggle,
+}: {
   repoAddress: RepoAddress;
   groupName: string;
   assetCount: number;
@@ -125,7 +131,7 @@ const GroupNameRow: React.FC<{
   height: number;
   start: number;
   onToggle: (groupName: string) => void;
-}> = ({repoAddress, groupName, assetCount, expanded, height, start, onToggle}) => {
+}) => {
   return (
     <ClickableRow
       $height={height}
@@ -141,7 +147,7 @@ const GroupNameRow: React.FC<{
       }}
     >
       <Box
-        background={Colors.Gray50}
+        background={Colors.backgroundLight()}
         flex={{direction: 'row', alignItems: 'center', gap: 8, justifyContent: 'space-between'}}
         padding={{horizontal: 24}}
         border="bottom"
@@ -159,7 +165,7 @@ const GroupNameRow: React.FC<{
                   <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`)}>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                       <span>View lineage</span>
-                      <Icon name="open_in_new" size={16} color={Colors.Link} />
+                      <Icon name="open_in_new" size={16} color={Colors.linkDefault()} />
                     </Box>
                   </Link>
                 </Box>
@@ -189,42 +195,6 @@ const ClickableRow = styled(Row)<{$open: boolean}>`
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
 `;
-
-const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
-
-/**
- * Use localStorage to persist the expanded/collapsed visual state of asset groups.
- */
-const useAssetGroupExpansionState = (storageKey: string) => {
-  const {basePath} = React.useContext(AppContext);
-  const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
-    `${basePath}:dagster.${storageKey}`,
-    validateExpandedKeys,
-  );
-
-  const onToggle = React.useCallback(
-    (groupName: string) => {
-      setExpandedKeys((current) => {
-        const nextExpandedKeys = new Set(current || []);
-        if (nextExpandedKeys.has(groupName)) {
-          nextExpandedKeys.delete(groupName);
-        } else {
-          nextExpandedKeys.add(groupName);
-        }
-        return Array.from(nextExpandedKeys);
-      });
-    },
-    [setExpandedKeys],
-  );
-
-  return React.useMemo(
-    () => ({
-      expandedKeys,
-      onToggle,
-    }),
-    [expandedKeys, onToggle],
-  );
-};
 
 export const REPO_ASSET_TABLE_FRAGMENT = gql`
   fragment RepoAssetTableFragment on AssetNode {

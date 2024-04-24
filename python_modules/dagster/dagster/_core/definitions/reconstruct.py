@@ -21,7 +21,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -33,7 +33,7 @@ from dagster._core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -209,7 +209,7 @@ class ReconstructableJob(
             ("job_name", str),
             ("op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     ),
     IJob,
@@ -233,7 +233,7 @@ class ReconstructableJob(
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         op_selection = set(op_selection) if op_selection else None
         return super(ReconstructableJob, cls).__new__(
@@ -245,7 +245,7 @@ class ReconstructableJob(
                 asset_selection, "asset_selection", AssetKey
             ),
             asset_check_selection=check.opt_nullable_set_param(
-                asset_check_selection, "asset_check_selection", AssetCheckHandle
+                asset_check_selection, "asset_check_selection", AssetCheckKey
             ),
         )
 
@@ -254,14 +254,19 @@ class ReconstructableJob(
     ) -> "ReconstructableJob":
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
+    @lru_cache(maxsize=1)
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
+        return self.repository.get_definition()
+
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
     def get_definition(self) -> "JobDefinition":
-        return self.repository.get_definition().get_maybe_subset_job_def(
+        return check.not_none(self.get_repository_definition()).get_maybe_subset_job_def(
             self.job_name,
             self.op_selection,
             self.asset_selection,
+            self.asset_check_selection,
         )
 
     def get_reconstructable_repository(self) -> ReconstructableRepository:
@@ -272,8 +277,8 @@ class ReconstructableJob(
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
-    ) -> Self:
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    ) -> "ReconstructableJob":
         if op_selection and (asset_selection or asset_check_selection):
             check.failed(
                 "op_selection and asset_selection or asset_check_selection cannot both be provided"
@@ -550,7 +555,7 @@ def build_reconstructable_job(
 
 
 def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
-    # So this actually straps the the job for the sole
+    # So this actually straps the job for the sole
     # purpose of getting the job name. If we changed ReconstructableJob
     # to get the job on demand in order to get name, we could avoid this.
     job_def = job_def_from_pointer(pointer)
@@ -669,8 +674,8 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a JobDefinition (or JobDefinition for legacy"
-        " code). Received a {type}".format(str=pointer.describe(), type=type(target))
+        f"CodePointer ({pointer.describe()}) must resolve to a JobDefinition (or JobDefinition for legacy"
+        f" code). Received a {type(target)}"
     )
 
 

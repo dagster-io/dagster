@@ -4,7 +4,7 @@ import pytest
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster_graphql import DagsterGraphQLClientError
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from ..graphql.graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from ..graphql.repo import csv_hello_world_ops_config
@@ -55,7 +55,7 @@ def test_get_run_status_fails_with_query_error(mock_client: MockClient):
 
 class TestGetRunStatusWithClient(ExecutingGraphQLContextTestMatrix):
     def test_get_run_status(self, graphql_context, graphql_client):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        selector = infer_job_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,

@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dagster import Definitions, build_sensor_context, job, op
+from dagster import Definitions, OpExecutionContext, build_sensor_context, job, op
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_run_failure,
     my_slack_on_run_failure,
@@ -19,7 +19,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import 
 
 
 @op(config_schema={"fail": bool})
-def foo(context):
+def foo(context: OpExecutionContext):
     if context.op_config["fail"]:
         raise Exception("This will always fail!")
 

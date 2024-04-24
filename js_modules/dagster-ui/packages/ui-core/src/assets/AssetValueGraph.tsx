@@ -4,6 +4,8 @@ import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
+import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
+
 export interface AssetValueGraphData {
   minY: number;
   maxY: number;
@@ -17,14 +19,15 @@ export interface AssetValueGraphData {
   }[];
 }
 
-export const AssetValueGraph: React.FC<{
+export const AssetValueGraph = (props: {
   label: string;
   width: string;
   yAxisLabel?: string;
   data: AssetValueGraphData;
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
-}> = (props) => {
+}) => {
+  const rgbColors = useRGBColorsForTheme();
   // Note: To get partitions on the X axis, we pass the partition names in as the `labels`,
   // and pass the partition index as the x value. This prevents ChartJS from auto-coercing
   // ISO date partition names to dates and then re-formatting the labels away from 2020-01-01.
@@ -40,6 +43,11 @@ export const AssetValueGraph: React.FC<{
     xHover = xHover ? labels.indexOf(xHover) : null;
   }
 
+  const borderColor = rgbColors[Colors.accentBlue()];
+  const backgroundColor = rgbColors[Colors.backgroundBlue()];
+  const pointHoverBorderColor = rgbColors[Colors.accentBlue()];
+  const tickColor = rgbColors[Colors.textLighter()];
+
   const graphData = {
     labels,
     datasets: [
@@ -47,12 +55,12 @@ export const AssetValueGraph: React.FC<{
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: Colors.Blue500,
-        backgroundColor: 'rgba(0,0,0,0)',
+        borderColor,
+        backgroundColor,
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: Colors.Blue500,
+        pointHoverBorderColor,
       },
     ],
   };
@@ -71,12 +79,16 @@ export const AssetValueGraph: React.FC<{
       x: {
         id: 'x',
         display: true,
+        ticks: {
+          color: tickColor,
+        },
         ...(props.data.xAxis === 'time'
           ? {
               type: 'time',
               title: {
                 display: true,
                 text: 'Timestamp',
+                color: tickColor,
               },
             }
           : {
@@ -84,10 +96,18 @@ export const AssetValueGraph: React.FC<{
               title: {
                 display: true,
                 text: 'Partition',
+                color: tickColor,
               },
             }),
       },
-      y: {id: 'y', display: true, title: {display: true, text: props.yAxisLabel || 'Value'}},
+      y: {
+        id: 'y',
+        display: true,
+        ticks: {
+          color: tickColor,
+        },
+        title: {display: true, color: tickColor, text: props.yAxisLabel || 'Value'},
+      },
     },
     plugins: {
       legend: {

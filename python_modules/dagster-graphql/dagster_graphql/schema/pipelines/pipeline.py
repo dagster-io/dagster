@@ -4,9 +4,9 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalJob
-from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
-from dagster._core.host_representation.represented import RepresentedJob
+from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
+from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.storage.dagster_run import (
     DagsterRunStatsSnapshot,
     DagsterRunStatus,
@@ -39,7 +39,6 @@ from ..dagster_types import (
 )
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
-from ..inputs import GrapheneInputTag
 from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeLogs, from_captured_log_data
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -183,7 +182,6 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
-        tags=graphene.Argument(graphene.List(graphene.NonNull(GrapheneInputTag))),
     )
     assetObservations = graphene.Field(
         non_null_list(GrapheneObservationEvent),
@@ -221,7 +219,6 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
-        tags: Optional[Sequence[GrapheneInputTag]] = None,
     ) -> Sequence[GrapheneMaterializationEvent]:
         from ...implementation.fetch_assets import get_asset_materializations
 
@@ -236,7 +233,6 @@ class GrapheneAsset(graphene.ObjectType):
             partitions=partitions,
             before_timestamp=before_timestamp,
             after_timestamp=after_timestamp,
-            tags={tag["name"]: tag["value"] for tag in tags} if tags else None,
             limit=limit,
         )
         run_ids = [event.run_id for event in events]
@@ -379,6 +375,8 @@ class GrapheneRun(graphene.ObjectType):
     hasTerminatePermission = graphene.NonNull(graphene.Boolean)
     hasDeletePermission = graphene.NonNull(graphene.Boolean)
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
+    rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
+    hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
@@ -423,9 +421,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_repositoryOrigin(self, _graphene_info: ResolveInfo):
         return (
-            GrapheneRepositoryOrigin(
-                self.dagster_run.external_job_origin.external_repository_origin
-            )
+            GrapheneRepositoryOrigin(self.dagster_run.external_job_origin.repository_origin)
             if self.dagster_run.external_job_origin
             else None
         )
@@ -601,6 +597,24 @@ class GrapheneRun(graphene.ObjectType):
         active_run_ids = instance.event_log_storage.get_concurrency_run_ids()
         return self.runId in active_run_ids
 
+    def resolve_hasUnconstrainedRootNodes(self, graphene_info: ResolveInfo):
+        if not self.dagster_run.run_op_concurrency:
+            return True
+
+        if self.dagster_run.run_op_concurrency.has_unconstrained_root_nodes:
+            return True
+
+        return False
+
+    def resolve_rootConcurrencyKeys(self, graphene_info: ResolveInfo):
+        if not self.dagster_run.run_op_concurrency:
+            return None
+
+        root_concurrency_keys = []
+        for concurrency_key, count in self.dagster_run.run_op_concurrency.root_key_counts.items():
+            root_concurrency_keys.extend([concurrency_key] * count)
+        return root_concurrency_keys
+
 
 class GrapheneIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot
@@ -750,7 +764,7 @@ class GrapheneIPipelineSnapshotMixin:
                 job_name=pipeline.name,
                 tags={
                     REPOSITORY_LABEL_TAG: (
-                        pipeline.get_external_origin().external_repository_origin.get_label()
+                        pipeline.get_external_origin().repository_origin.get_label()
                     )
                 },
             )
@@ -904,7 +918,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         handle = self._external_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
         return GrapheneRepository(
-            graphene_info.context.instance,
+            graphene_info.context,
             location.get_repository(handle.repository_name),
             location,
         )

@@ -1,11 +1,10 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 
-import {Inner} from '../ui/VirtualizedTable';
-
-import {AssetListRow, AssetListContainer} from './AssetEventList';
+import {AssetListContainer, AssetListRow} from './AssetEventList';
 import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
+import {Inner} from '../ui/VirtualizedTable';
 
 export interface AssetPartitionListProps {
   partitions: string[];
@@ -13,13 +12,13 @@ export interface AssetPartitionListProps {
   focusedDimensionKey?: string;
   setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
 }
-export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
+export const AssetPartitionList = ({
   focusedDimensionKey,
   setFocusedDimensionKey,
   statusForPartition,
   partitions,
-}) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+}: AssetPartitionListProps) => {
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
@@ -31,10 +30,10 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  React.useEffect(() => {
-    if (focusedDimensionKey) {
+  useEffect(() => {
+    if (focusedDimensionKey && partitions.indexOf(focusedDimensionKey) !== -1) {
       rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
-        smoothScroll: false,
+        behavior: 'auto',
         align: 'auto',
       });
     }
@@ -86,8 +85,13 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 border="bottom"
               >
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                  {dimensionKey}
-                  <div style={{flex: 1}} />
+                  <div
+                    style={{flex: 1, minWidth: 0}}
+                    data-tooltip={dimensionKey}
+                    data-tooltip-style={PartitionTooltipStyle}
+                  >
+                    <MiddleTruncate text={dimensionKey} />
+                  </div>
                   {/* Note: we could just state.map, but we want these in a particular order*/}
                   {state.includes(AssetPartitionStatus.MISSING) && (
                     <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />
@@ -122,3 +126,12 @@ export const AssetPartitionStatusDot = ({status}: {status: AssetPartitionStatus[
     }}
   />
 );
+
+const PartitionTooltipStyle = JSON.stringify({
+  background: Colors.backgroundLight(),
+  border: `1px solid ${Colors.borderDefault()}`,
+  color: Colors.textDefault(),
+  fontSize: '14px',
+  top: 0,
+  left: 0,
+});

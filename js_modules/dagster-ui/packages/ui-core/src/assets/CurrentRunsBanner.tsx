@@ -1,17 +1,21 @@
 import {Alert, Box, Spinner} from '@dagster-io/ui-components';
-import {BorderSide, BorderSetting} from '@dagster-io/ui-components/src/components/types';
-import React from 'react';
+import {BorderSetting, BorderSide} from '@dagster-io/ui-components/src/components/types';
+import {Fragment} from 'react';
 import {Link} from 'react-router-dom';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 
-export const CurrentRunsBanner: React.FC<{
+export const CurrentRunsBanner = ({
+  stepKey,
+  liveData,
+  border,
+}: {
   liveData?: LiveDataForNode;
   border: BorderSide | BorderSetting;
   stepKey: string;
-}> = ({stepKey, liveData, border}) => {
+}) => {
   const {inProgressRunIds = [], unstartedRunIds = []} = liveData || {};
   const firstRunId = inProgressRunIds[0] || unstartedRunIds[0];
   const stepLogs = useStepLogs({runId: firstRunId, stepKeys: [stepKey]});
@@ -32,25 +36,27 @@ export const CurrentRunsBanner: React.FC<{
               icon={<Spinner purpose="body-text" />}
               title={
                 <div style={{fontWeight: 400}}>
-                  {inProgressRunIds.length > 0 && (
+                  {inProgressRunIds.length > 1 && (
                     <>
-                      {inProgressRunIds.map((id) => (
-                        <React.Fragment key={id}>
-                          Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
-                        </React.Fragment>
-                      ))}{' '}
-                      {inProgressRunIds.length === 1 ? 'is' : 'are'} currently refreshing this
+                      Runs <RunIdLinks ids={inProgressRunIds} /> are currently refreshing this
                       asset.
                     </>
                   )}
-                  {unstartedRunIds.length > 0 && (
+                  {inProgressRunIds.length === 1 && (
                     <>
-                      {unstartedRunIds.map((id) => (
-                        <React.Fragment key={id}>
-                          Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
-                        </React.Fragment>
-                      ))}{' '}
-                      {unstartedRunIds.length === 1 ? 'has' : 'have'} started and will refresh this
+                      Run <RunIdLinks ids={inProgressRunIds} /> is currently refreshing this asset.
+                    </>
+                  )}
+                  {inProgressRunIds.length && unstartedRunIds.length ? ' ' : ''}
+                  {unstartedRunIds.length > 1 && (
+                    <>
+                      Runs <RunIdLinks ids={unstartedRunIds} /> have started and will refresh this
+                      asset.
+                    </>
+                  )}
+                  {unstartedRunIds.length === 1 && (
+                    <>
+                      Run <RunIdLinks ids={unstartedRunIds} /> has started and will refresh this
                       asset.
                     </>
                   )}
@@ -64,3 +70,13 @@ export const CurrentRunsBanner: React.FC<{
     </>
   );
 };
+
+const RunIdLinks = ({ids}: {ids: string[]}) =>
+  ids.length <= 4
+    ? ids.map((id, idx) => (
+        <Fragment key={id}>
+          <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
+          {idx < ids.length - 1 ? ', ' : ' '}
+        </Fragment>
+      ))
+    : '';

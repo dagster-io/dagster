@@ -1,267 +1,280 @@
-import datetime
-import itertools
+import dataclasses
 import json
-from collections import defaultdict
+from dataclasses import dataclass
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    Dict,
-    Iterable,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
-    Set,
-    cast,
 )
 
-import dagster._check as check
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.events import AssetKey
+from dagster._serdes.serdes import (
+    FieldSerializer,
+    JsonSerializableValue,
+    PackableValue,
+    SerializableNonScalarKeyMapping,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+    unpack_value,
+    whitelist_for_serdes,
 )
 
-from .asset_graph import AssetGraph
-from .partition import (
-    PartitionsDefinition,
-    PartitionsSubset,
-)
+from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
+    from .asset_condition.asset_condition import (
+        AssetConditionEvaluation,
+        AssetConditionEvaluationState,
+        AssetConditionSnapshot,
+    )
 
 
-class AssetDaemonCursor(NamedTuple):
-    """State that's saved between reconciliation evaluations.
-
-    Attributes:
-        latest_storage_id:
-            The latest observed storage ID across all assets. Useful for finding out what has
-            happened since the last tick.
-        handled_root_asset_keys:
-            Every entry is a non-partitioned asset with no parents that has been requested by this
-            sensor, discarded by this sensor, or has been materialized (even if not by this sensor).
-        handled_root_partitions_by_asset_key:
-            Every key is a partitioned root asset. Every value is the set of that asset's partitions
-            that have been requested by this sensor, discarded by this sensor,
-            or have been materialized (even if not by this sensor).
-        last_observe_request_timestamp_by_asset_key:
-            Every key is an observable source asset that has been auto-observed. The value is the
-            timestamp of the tick that requested the observation.
+@whitelist_for_serdes
+class AssetConditionCursorExtras(NamedTuple):
+    """Represents additional state that may be optionally saved by an AssetCondition between
+    evaluations.
     """
 
-    latest_storage_id: Optional[int]
-    handled_root_asset_keys: AbstractSet[AssetKey]
-    handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
+    condition_snapshot: "AssetConditionSnapshot"
+    extras: Mapping[str, PackableValue]
+
+
+class ObserveRequestTimestampSerializer(FieldSerializer):
+    def pack(
+        self,
+        mapping: Mapping[str, float],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> JsonSerializableValue:
+        return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
+
+    def unpack(
+        self,
+        unpacked_value: JsonSerializableValue,
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ) -> PackableValue:
+        return unpack_value(unpacked_value, dict, whitelist_map, context)
+
+
+@whitelist_for_serdes(
+    field_serializers={
+        "last_observe_request_timestamp_by_asset_key": ObserveRequestTimestampSerializer
+    }
+)
+@dataclass(frozen=True)
+class AssetDaemonCursor:
+    """State that's stored between daemon evaluations.
+
+    Attributes:
+        evaluation_id (int): The ID of the evaluation that produced this cursor.
+        previous_evaluation_state (Sequence[AssetConditionEvaluationInfo]): The evaluation info
+            recorded for each asset on the previous tick.
+    """
+
     evaluation_id: int
+    previous_evaluation_state: Sequence["AssetConditionEvaluationState"]
+
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
-    def was_previously_handled(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.handled_root_asset_keys
-
-    def get_unhandled_partitions(
-        self,
-        asset_key: AssetKey,
-        asset_graph,
-        dynamic_partitions_store: "DynamicPartitionsStore",
-        current_time: datetime.datetime,
-    ) -> Iterable[str]:
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-
-        handled_subset = self.handled_root_partitions_by_asset_key.get(
-            asset_key, partitions_def.empty_subset()
-        )
-
-        return handled_subset.get_partition_keys_not_in_subset(
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
-
-    def with_updates(
-        self,
-        latest_storage_id: Optional[int],
-        to_materialize: AbstractSet[AssetKeyPartitionKey],
-        to_discard: AbstractSet[AssetKeyPartitionKey],
-        newly_materialized_root_asset_keys: AbstractSet[AssetKey],
-        newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
-        evaluation_id: int,
-        asset_graph: AssetGraph,
-        newly_observe_requested_asset_keys: Sequence[AssetKey],
-        observe_request_timestamp: float,
-    ) -> "AssetDaemonCursor":
-        """Returns a cursor that represents this cursor plus the updates that have happened within the
-        tick.
-        """
-        handled_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
-        handled_non_partitioned_root_assets: Set[AssetKey] = set()
-
-        for asset_partition in to_materialize | to_discard:
-            # only consider root assets
-            if asset_graph.has_non_source_parents(asset_partition.asset_key):
-                continue
-            if asset_partition.partition_key:
-                handled_root_partitions_by_asset_key[asset_partition.asset_key].add(
-                    asset_partition.partition_key
-                )
-            else:
-                handled_non_partitioned_root_assets.add(asset_partition.asset_key)
-
-        result_handled_root_partitions_by_asset_key = {**self.handled_root_partitions_by_asset_key}
-        for asset_key in set(newly_materialized_root_partitions_by_asset_key.keys()) | set(
-            handled_root_partitions_by_asset_key.keys()
-        ):
-            prior_materialized_partitions = self.handled_root_partitions_by_asset_key.get(asset_key)
-            if prior_materialized_partitions is None:
-                prior_materialized_partitions = cast(
-                    PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
-                ).empty_subset()
-
-            result_handled_root_partitions_by_asset_key[asset_key] = (
-                prior_materialized_partitions.with_partition_keys(
-                    itertools.chain(
-                        newly_materialized_root_partitions_by_asset_key[asset_key],
-                        handled_root_partitions_by_asset_key[asset_key],
-                    )
-                )
-            )
-
-        result_handled_root_asset_keys = (
-            self.handled_root_asset_keys
-            | newly_materialized_root_asset_keys
-            | handled_non_partitioned_root_assets
-        )
-
-        result_last_observe_request_timestamp_by_asset_key = {
-            **self.last_observe_request_timestamp_by_asset_key
-        }
-        for asset_key in newly_observe_requested_asset_keys:
-            result_last_observe_request_timestamp_by_asset_key[asset_key] = (
-                observe_request_timestamp
-            )
-
-        if latest_storage_id and self.latest_storage_id:
-            check.invariant(
-                latest_storage_id >= self.latest_storage_id,
-                "Latest storage ID should be >= previous latest storage ID",
-            )
-
+    @staticmethod
+    def empty(evaluation_id: int = 0) -> "AssetDaemonCursor":
         return AssetDaemonCursor(
-            latest_storage_id=latest_storage_id or self.latest_storage_id,
-            handled_root_asset_keys=result_handled_root_asset_keys,
-            handled_root_partitions_by_asset_key=result_handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
-            last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
-        )
-
-    @classmethod
-    def empty(cls) -> "AssetDaemonCursor":
-        return AssetDaemonCursor(
-            latest_storage_id=None,
-            handled_root_partitions_by_asset_key={},
-            handled_root_asset_keys=set(),
-            evaluation_id=0,
+            previous_evaluation_state=[],
             last_observe_request_timestamp_by_asset_key={},
         )
 
-    @classmethod
-    def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetDaemonCursor":
-        data = json.loads(cursor)
-
-        if isinstance(data, list):  # backcompat
-            check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
-            (
-                latest_storage_id,
-                serialized_handled_root_asset_keys,
-                serialized_handled_root_partitions_by_asset_key,
-            ) = data[:3]
-
-            evaluation_id = data[3] if len(data) == 4 else 0
-            serialized_last_observe_request_timestamp_by_asset_key = {}
-        else:
-            latest_storage_id = data["latest_storage_id"]
-            serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
-            serialized_handled_root_partitions_by_asset_key = data[
-                "handled_root_partitions_by_asset_key"
-            ]
-            evaluation_id = data["evaluation_id"]
-            serialized_last_observe_request_timestamp_by_asset_key = data.get(
-                "last_observe_request_timestamp_by_asset_key", {}
-            )
-
-        handled_root_partitions_by_asset_key = {}
-        for (
-            key_str,
-            serialized_subset,
-        ) in serialized_handled_root_partitions_by_asset_key.items():
-            key = AssetKey.from_user_string(key_str)
-            if key not in asset_graph.materializable_asset_keys:
-                continue
-
-            partitions_def = asset_graph.get_partitions_def(key)
-            if partitions_def is None:
-                continue
-
-            try:
-                # in the case that the partitions def has changed, we may not be able to deserialize
-                # the corresponding subset. in this case, we just use an empty subset
-                subset = partitions_def.deserialize_subset(serialized_subset)
-                # this covers the case in which the start date has changed for a time-partitioned
-                # asset. in reality, we should be using the can_deserialize method but because we
-                # are not storing the serializable unique id, we can't do that.
-                if (
-                    isinstance(subset, TimeWindowPartitionsSubset)
-                    and isinstance(partitions_def, TimeWindowPartitionsDefinition)
-                    and any(
-                        time_window.start < partitions_def.start
-                        for time_window in subset.included_time_windows
-                    )
-                ):
-                    subset = partitions_def.empty_subset()
-            except:
-                subset = partitions_def.empty_subset()
-            handled_root_partitions_by_asset_key[key] = subset
-        return cls(
-            latest_storage_id=latest_storage_id,
-            handled_root_asset_keys={
-                AssetKey.from_user_string(key_str) for key_str in serialized_handled_root_asset_keys
-            },
-            handled_root_partitions_by_asset_key=handled_root_partitions_by_asset_key,
-            evaluation_id=evaluation_id,
-            last_observe_request_timestamp_by_asset_key={
-                AssetKey.from_user_string(key_str): timestamp
-                for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
-            },
-        )
-
-    @classmethod
-    def get_evaluation_id_from_serialized(cls, cursor: str) -> Optional[int]:
-        data = json.loads(cursor)
-        if isinstance(data, list):  # backcompat
-            check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
-            return data[3] if len(data) == 4 else None
-        else:
-            return data["evaluation_id"]
-
-    def serialize(self) -> str:
-        serializable_handled_root_partitions_by_asset_key = {
-            key.to_user_string(): subset.serialize()
-            for key, subset in self.handled_root_partitions_by_asset_key.items()
+    @cached_property
+    def previous_evaluation_state_by_key(
+        self,
+    ) -> Mapping[AssetKey, "AssetConditionEvaluationState"]:
+        """Efficient lookup of previous evaluation info by asset key."""
+        return {
+            evaluation_state.asset_key: evaluation_state
+            for evaluation_state in self.previous_evaluation_state
         }
-        serialized = json.dumps(
-            {
-                "latest_storage_id": self.latest_storage_id,
-                "handled_root_asset_keys": [
-                    key.to_user_string() for key in self.handled_root_asset_keys
-                ],
-                "handled_root_partitions_by_asset_key": (
-                    serializable_handled_root_partitions_by_asset_key
-                ),
-                "evaluation_id": self.evaluation_id,
-                "last_observe_request_timestamp_by_asset_key": {
-                    key.to_user_string(): timestamp
-                    for key, timestamp in self.last_observe_request_timestamp_by_asset_key.items()
+
+    def get_previous_evaluation_state(
+        self, asset_key: AssetKey
+    ) -> Optional["AssetConditionEvaluationState"]:
+        """Returns the AssetConditionCursor associated with the given asset key. If no stored
+        cursor exists, returns an empty cursor.
+        """
+        return self.previous_evaluation_state_by_key.get(asset_key)
+
+    def get_previous_evaluation(self, asset_key: AssetKey) -> Optional["AssetConditionEvaluation"]:
+        """Returns the previous AssetConditionEvaluation for a given asset key, if it exists."""
+        previous_evaluation_state = self.get_previous_evaluation_state(asset_key)
+        return previous_evaluation_state.previous_evaluation if previous_evaluation_state else None
+
+    def with_updates(
+        self,
+        evaluation_id: int,
+        evaluation_timestamp: float,
+        newly_observe_requested_asset_keys: Sequence[AssetKey],
+        evaluation_state: Sequence["AssetConditionEvaluationState"],
+    ) -> "AssetDaemonCursor":
+        return dataclasses.replace(
+            self,
+            evaluation_id=evaluation_id,
+            previous_evaluation_state=evaluation_state,
+            last_observe_request_timestamp_by_asset_key={
+                **self.last_observe_request_timestamp_by_asset_key,
+                **{
+                    asset_key: evaluation_timestamp
+                    for asset_key in newly_observe_requested_asset_keys
                 },
-            }
+            },
         )
-        return serialized
+
+    def __hash__(self) -> int:
+        return hash(id(self))
+
+
+# BACKCOMPAT
+
+
+def get_backcompat_asset_condition_evaluation_state(
+    latest_evaluation: "AssetConditionEvaluation",
+    latest_storage_id: Optional[int],
+    latest_timestamp: Optional[float],
+    handled_root_subset: Optional[AssetSubset],
+) -> "AssetConditionEvaluationState":
+    """Generates an AssetDaemonCursor from information available on the old cursor format."""
+    from dagster._core.definitions.asset_condition.asset_condition import (
+        AssetConditionEvaluationState,
+        RuleCondition,
+    )
+    from dagster._core.definitions.auto_materialize_rule import MaterializeOnMissingRule
+
+    return AssetConditionEvaluationState(
+        previous_evaluation=latest_evaluation,
+        previous_tick_evaluation_timestamp=latest_timestamp,
+        max_storage_id=latest_storage_id,
+        # the only information we need to preserve from the previous cursor is the handled subset
+        extra_state_by_unique_id={
+            RuleCondition(rule=MaterializeOnMissingRule()).unique_id: handled_root_subset,
+        }
+        if handled_root_subset and handled_root_subset.size > 0
+        else {},
+    )
+
+
+def backcompat_deserialize_asset_daemon_cursor_str(
+    cursor_str: str, asset_graph: Optional[BaseAssetGraph], default_evaluation_id: int
+) -> AssetDaemonCursor:
+    """This serves as a backcompat layer for deserializing the old cursor format. Some information
+    is impossible to fully recover, this will recover enough to continue operating as normal.
+    """
+    from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
+    from .auto_materialize_rule_evaluation import (
+        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+    )
+
+    data = json.loads(cursor_str)
+
+    if isinstance(data, list):
+        evaluation_id = data[0] if isinstance(data[0], int) else default_evaluation_id
+        return AssetDaemonCursor.empty(evaluation_id)
+    elif not isinstance(data, dict):
+        return AssetDaemonCursor.empty(default_evaluation_id)
+    elif asset_graph is None:
+        return AssetDaemonCursor.empty(data.get("evaluation_id", default_evaluation_id))
+
+    serialized_last_observe_request_timestamp_by_asset_key = data.get(
+        "last_observe_request_timestamp_by_asset_key", {}
+    )
+    last_observe_request_timestamp_by_asset_key = {
+        AssetKey.from_user_string(key_str): timestamp
+        for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
+    }
+
+    partition_subsets_by_asset_key = {}
+    for key_str, serialized_str in data.get("handled_root_partitions_by_asset_key", {}).items():
+        asset_key = AssetKey.from_user_string(key_str)
+        partitions_def = asset_graph.get(asset_key).partitions_def if asset_graph else None
+        if not partitions_def:
+            continue
+        try:
+            partition_subsets_by_asset_key[asset_key] = partitions_def.deserialize_subset(
+                serialized_str
+            )
+        except:
+            continue
+
+    handled_root_asset_graph_subset = AssetGraphSubset(
+        non_partitioned_asset_keys={
+            AssetKey.from_user_string(key_str)
+            for key_str in data.get("handled_root_asset_keys", set())
+        },
+        partitions_subsets_by_asset_key=partition_subsets_by_asset_key,
+    )
+
+    serialized_latest_evaluation_by_asset_key = data.get("latest_evaluation_by_asset_key", {})
+    latest_evaluation_by_asset_key = {}
+    for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
+        key = AssetKey.from_user_string(key_str)
+        partitions_def = asset_graph.get(key).partitions_def if asset_graph else None
+
+        evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            serialized_evaluation, partitions_def
+        ).evaluation
+
+        latest_evaluation_by_asset_key[key] = evaluation
+
+    previous_evaluation_state = []
+    cursor_keys = (
+        asset_graph.materializable_asset_keys
+        if asset_graph
+        else latest_evaluation_by_asset_key.keys()
+    )
+    for asset_key in cursor_keys:
+        latest_evaluation_result = latest_evaluation_by_asset_key.get(asset_key)
+        # create a placeholder evaluation result if we don't have one
+        if not latest_evaluation_result:
+            partitions_def = asset_graph.get(asset_key).partitions_def if asset_graph else None
+            latest_evaluation_result = AssetConditionEvaluation(
+                condition_snapshot=AssetConditionSnapshot(
+                    class_name="", description="", unique_id=""
+                ),
+                true_subset=AssetSubset.empty(asset_key, partitions_def),
+                candidate_subset=AssetSubset.empty(asset_key, partitions_def),
+                start_timestamp=None,
+                end_timestamp=None,
+                subsets_with_metadata=[],
+                child_evaluations=[],
+            )
+        backcompat_evaluation_state = get_backcompat_asset_condition_evaluation_state(
+            latest_evaluation_result,
+            data.get("latest_storage_id"),
+            data.get("latest_evaluation_timestamp"),
+            handled_root_asset_graph_subset.get_asset_subset(asset_key, asset_graph)
+            if asset_graph
+            else None,
+        )
+        previous_evaluation_state.append(backcompat_evaluation_state)
+
+    return AssetDaemonCursor(
+        evaluation_id=data.get("evaluation_id") or default_evaluation_id,
+        previous_evaluation_state=previous_evaluation_state,
+        last_observe_request_timestamp_by_asset_key=last_observe_request_timestamp_by_asset_key,
+    )
+
+
+@whitelist_for_serdes
+class LegacyAssetDaemonCursorWrapper(NamedTuple):
+    """Wrapper class for the legacy AssetDaemonCursor object, which is not a serializable NamedTuple."""
+
+    serialized_cursor: str
+
+    def get_asset_daemon_cursor(self, asset_graph: Optional[BaseAssetGraph]) -> AssetDaemonCursor:
+        return backcompat_deserialize_asset_daemon_cursor_str(
+            self.serialized_cursor, asset_graph, 0
+        )

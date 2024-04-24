@@ -1,11 +1,13 @@
 import asyncio
 import os
 import re
+import sys
 import time
 import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
+from pathlib import Path
 from signal import Signals
 from threading import Event
 from typing import (
@@ -31,22 +33,28 @@ from typing_extensions import Self
 from dagster import (
     Permissive,
     Shape,
+    __file__ as dagster_init_py,
     _check as check,
     fs_io_manager,
 )
 from dagster._config import Array, Field
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
-from dagster._core.host_representation.origin import (
-    ExternalJobOrigin,
-    InProcessCodeLocationOrigin,
-)
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
+from dagster._core.remote_representation.origin import (
+    InProcessCodeLocationOrigin,
+)
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -151,6 +159,7 @@ def create_run_for_test(
     asset_selection=None,
     asset_check_selection=None,
     op_selection=None,
+    asset_job_partitions_def=None,
 ):
     return instance.create_run(
         job_name=job_name,
@@ -170,6 +179,7 @@ def create_run_for_test(
         asset_selection=asset_selection,
         asset_check_selection=asset_check_selection,
         op_selection=op_selection,
+        asset_job_partitions_def=asset_job_partitions_def,
     )
 
 
@@ -337,7 +347,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return ExplodingRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     def launch_run(self, context) -> NoReturn:
         raise NotImplementedError("The entire purpose of this is to throw on launch")
@@ -415,7 +425,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def submit_run(self, context: SubmitRunContext):
         dagster_run = context.dagster_run
-        check.inst(dagster_run.external_job_origin, ExternalJobOrigin)
+        check.not_none(dagster_run.external_job_origin)
         self._queue.append(dagster_run)
         return dagster_run
 
@@ -460,7 +470,7 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return TestSecretsLoader(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
 
 def get_crash_signals() -> Sequence[Signals]:
@@ -611,6 +621,7 @@ def test_counter():
 
 def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
+    results = {}
     for target_id, future in futures.copy().items():
         if timeout is not None:
             future_timeout = max(0, timeout - (time.time() - start_time))
@@ -618,8 +629,10 @@ def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None
             future_timeout = None
 
         if not future.done():
-            future.result(timeout=future_timeout)
+            results[target_id] = future.result(timeout=future_timeout)
             del futures[target_id]
+
+    return results
 
 
 class SingleThreadPoolExecutor(ThreadPoolExecutor):
@@ -679,7 +692,7 @@ class BlockingThreadPoolExecutor(ThreadPoolExecutor):
 def ignore_warning(message_substr: str):
     """Ignores warnings within the decorated function that contain the given string."""
 
-    def decorator(func: Callable):
+    def decorator(func: Callable[..., Any]):
         def wrapper(*args, **kwargs):
             warnings.filterwarnings("ignore", message=message_substr)
             return func(*args, **kwargs)
@@ -687,3 +700,45 @@ def ignore_warning(message_substr: str):
         return wrapper
 
     return decorator
+
+
+def raise_exception_on_warnings():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    warnings.filterwarnings("error")
+
+    # This resource warning can sometimes appear (nondeterministically) when ephemeral instances are
+    # used in tests. There seems to be an issue at the intersection of `DagsterInstance` weakrefs
+    # and guaranteeing timely cleanup of the LocalArtifactStorage for the instance
+    # LocalArtifactStorage.
+    warnings.filterwarnings(
+        "ignore", category=ResourceWarning, message=r".*Implicitly cleaning up.*"
+    )
+
+    if sys.version_info >= (3, 12):
+        # pendulum sometimes raises DeprecationWarning on python3.12
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module="pendulum")
+
+
+def ensure_dagster_tests_import() -> None:
+    dagster_package_root = (Path(dagster_init_py) / ".." / "..").resolve()
+    assert (
+        dagster_package_root / "dagster_tests"
+    ).exists(), "Could not find dagster_tests where expected"
+    sys.path.append(dagster_package_root.as_posix())
+
+
+def create_test_asset_job(
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    *,
+    selection: Optional[CoercibleToAssetSelection] = None,
+    name: str = "asset_job",
+    resources: Mapping[str, object] = {},
+    **kwargs: Any,
+) -> JobDefinition:
+    selection = selection or [a for a in assets if a.is_executable]
+    return Definitions(
+        assets=assets,
+        jobs=[define_asset_job(name, selection, **kwargs)],
+        resources=resources,
+    ).get_job_def(name)

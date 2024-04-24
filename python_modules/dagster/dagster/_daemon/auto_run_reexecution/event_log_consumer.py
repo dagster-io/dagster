@@ -49,9 +49,9 @@ class EventLogConsumerDaemon(IntervalDaemon):
         overall_max_event_id = instance.event_log_storage.get_maximum_record_id()
 
         events: List[EventLogEntry] = []
-        new_cursors: Dict[DagsterEventType, int] = (
-            {}
-        )  # keep these in memory until we handle the events
+        new_cursors: Dict[
+            DagsterEventType, int
+        ] = {}  # keep these in memory until we handle the events
         for event_type in DAGSTER_EVENT_TYPES:
             yield
 

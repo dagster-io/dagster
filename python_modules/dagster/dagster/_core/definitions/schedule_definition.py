@@ -1,5 +1,6 @@
 import copy
 import logging
+import warnings
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
@@ -20,7 +21,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -29,9 +29,10 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
+from dagster._seven.compat.pendulum import pendulum_create_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import is_valid_cron_schedule
+from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
 
 from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
@@ -49,7 +50,7 @@ from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from .utils import check_valid_name, validate_tags
+from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -60,7 +61,7 @@ RunConfig: TypeAlias = Mapping[str, Any]
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
-    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest]
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest], None
 ]
 RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
 
@@ -84,7 +85,7 @@ class DefaultScheduleStatus(Enum):
 
 
 def get_or_create_schedule_context(
-    fn: Callable, *args: Any, **kwargs: Any
+    fn: Callable[..., Any], *args: Any, **kwargs: Any
 ) -> "ScheduleEvaluationContext":
     """Based on the passed resource function and the arguments passed to it, returns the
     user-passed ScheduleEvaluationContext or creates one if it is not passed.
@@ -182,6 +183,7 @@ class ScheduleEvaluationContext:
         self,
         instance_ref: Optional[InstanceRef],
         scheduled_execution_time: Optional[datetime],
+        log_key: Optional[Sequence[str]] = None,
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
@@ -196,15 +198,18 @@ class ScheduleEvaluationContext:
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
-        self._log_key = (
-            [
+
+        self._log_key = log_key
+
+        # Kept for backwards compatibility if the schedule log key is not passed into the
+        # schedule evaluation.
+        if not self._log_key and repository_name and schedule_name and scheduled_execution_time:
+            self._log_key = [
                 repository_name,
                 schedule_name,
                 scheduled_execution_time.strftime("%Y%m%d_%H%M%S"),
             ]
-            if repository_name and schedule_name and scheduled_execution_time
-            else None
-        )
+
         self._logger = None
         self._repository_name = repository_name
         self._schedule_name = schedule_name
@@ -329,33 +334,32 @@ class ScheduleEvaluationContext:
 
     @property
     def log(self) -> logging.Logger:
-        if self._logger:
-            return self._logger
-
-        if not self._instance_ref:
-            self._logger = self._exit_stack.enter_context(
-                InstigationLogger(
-                    self._log_key,
-                    repository_name=self._repository_name,
-                    name=self._schedule_name,
+        if self._logger is None:
+            if not self._instance_ref:
+                self._logger = self._exit_stack.enter_context(
+                    InstigationLogger(
+                        self._log_key,
+                        repository_name=self._repository_name,
+                        name=self._schedule_name,
+                    )
                 )
-            )
+            else:
+                self._logger = self._exit_stack.enter_context(
+                    InstigationLogger(
+                        self._log_key,
+                        self.instance,
+                        repository_name=self._repository_name,
+                        name=self._schedule_name,
+                    )
+                )
 
-        self._logger = self._exit_stack.enter_context(
-            InstigationLogger(
-                self._log_key,
-                self.instance,
-                repository_name=self._repository_name,
-                name=self._schedule_name,
-            )
-        )
-        return cast(InstigationLogger, self._logger)
+        return self._logger
 
     def has_captured_logs(self):
         return self._logger and self._logger.has_captured_logs()
 
     @property
-    def log_key(self) -> Optional[List[str]]:
+    def log_key(self) -> Optional[Sequence[str]]:
         return self._log_key
 
     @property
@@ -409,7 +413,9 @@ def build_schedule_context(
         instance_ref=(
             instance_ref
             if instance_ref
-            else instance.get_ref() if instance and instance.is_persistent else None
+            else instance.get_ref()
+            if instance and instance.is_persistent
+            else None
         ),
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
@@ -419,14 +425,16 @@ def build_schedule_context(
     )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"log_key": "captured_log_key"},
+)
 class ScheduleExecutionData(
     NamedTuple(
         "_ScheduleExecutionData",
         [
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_message", Optional[str]),
-            ("captured_log_key", Optional[Sequence[str]]),
+            ("log_key", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -434,11 +442,11 @@ class ScheduleExecutionData(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_message: Optional[str] = None,
-        captured_log_key: Optional[Sequence[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
-        check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.opt_list_param(log_key, "log_key", str)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -446,7 +454,7 @@ class ScheduleExecutionData(
             cls,
             run_requests=run_requests,
             skip_message=skip_message,
-            captured_log_key=captured_log_key,
+            log_key=log_key,
         )
 
 
@@ -462,7 +470,7 @@ def validate_and_get_schedule_resource_dict(
                 f"Resource with key '{k}' required by schedule '{schedule_name}' was not provided."
             )
 
-    return {k: getattr(resources, k) for k in required_resource_keys}
+    return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
 @deprecated_param(
@@ -551,7 +559,7 @@ class ScheduleDefinition(IHasInternalInit):
         job_name: Optional[str] = None,
         run_config: Optional[Any] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Mapping[str, str]] = None,
@@ -571,6 +579,14 @@ class ScheduleDefinition(IHasInternalInit):
                 f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
                 "Dagster recognizes standard cron expressions consisting of 5 fields."
             )
+        if has_out_of_range_cron_interval(self._cron_schedule):  # type: ignore
+            warnings.warn(
+                "Found a cron schedule with an interval greater than the expected range for"
+                f" schedule '{name}'. Dagster currently normalizes this to an interval that may"
+                " fire more often than expected. You may want to break this cron schedule up into"
+                " a sequence of cron schedules. See"
+                " https://github.com/dagster-io/dagster/issues/15294 for more information."
+            )
 
         if job is not None:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
@@ -589,7 +605,7 @@ class ScheduleDefinition(IHasInternalInit):
 
         self._description = check.opt_str_param(description, "description")
 
-        self._environment_vars = check.opt_mapping_param(
+        self._environment_vars = check.opt_nullable_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
 
@@ -629,7 +645,7 @@ class ScheduleDefinition(IHasInternalInit):
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
             elif tags:
-                tags = validate_tags(tags, allow_reserved_tags=False)
+                tags = normalize_tags(tags, allow_reserved_tags=False).tags
                 tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
@@ -672,7 +688,7 @@ class ScheduleDefinition(IHasInternalInit):
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = validate_tags(tags_fn(context), allow_reserved_tags=False)
+                    evaluated_tags = normalize_tags(tags_fn(context), allow_reserved_tags=False)
 
                 yield RunRequest(
                     run_key=None,
@@ -685,7 +701,7 @@ class ScheduleDefinition(IHasInternalInit):
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.tz.timezone(self._execution_timezone)  # type: ignore
+                pendulum_create_timezone(self._execution_timezone)
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     f"Invalid execution timezone {self._execution_timezone} for {name}"
@@ -804,7 +820,7 @@ class ScheduleDefinition(IHasInternalInit):
         additional_warn_text="Setting this property no longer has any effect.",
     )
     @property
-    def environment_vars(self) -> Mapping[str, str]:
+    def environment_vars(self) -> Optional[Mapping[str, str]]:
         """Mapping[str, str]: Environment variables to export to the cron schedule."""
         return self._environment_vars
 
@@ -913,7 +929,7 @@ class ScheduleDefinition(IHasInternalInit):
         return ScheduleExecutionData(
             run_requests=resolved_run_requests,
             skip_message=skip_message,
-            captured_log_key=context.log_key if context.has_captured_logs() else None,
+            log_key=context.log_key if context.has_captured_logs() else None,
         )
 
     def has_loadable_target(self):

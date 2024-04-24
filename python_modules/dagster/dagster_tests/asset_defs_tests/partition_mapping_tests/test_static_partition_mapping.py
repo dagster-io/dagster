@@ -16,19 +16,21 @@ def test_single_valued_static_mapping():
         upstream_partitions_subset=upstream_parts.empty_subset().with_partition_keys(
             ["p1", "p3", "q2", "r1"]
         ),
+        upstream_partitions_def=upstream_parts,
         downstream_partitions_def=downstream_parts,
     )
 
-    assert result == DefaultPartitionsSubset(downstream_parts, {"p", "r"})
+    assert result == DefaultPartitionsSubset({"p", "r"})
 
     result = mapping.get_upstream_mapped_partitions_result_for_partitions(
         downstream_partitions_subset=downstream_parts.empty_subset().with_partition_keys(
             ["p", "q"]
         ),
+        downstream_partitions_def=downstream_parts,
         upstream_partitions_def=upstream_parts,
     )
 
-    assert result.partitions_subset == DefaultPartitionsSubset(upstream_parts, {"p1", "p2", "p3"})
+    assert result.partitions_subset == DefaultPartitionsSubset({"p1", "p2", "p3"})
 
 
 def test_multi_valued_static_mapping():
@@ -39,19 +41,21 @@ def test_multi_valued_static_mapping():
 
     result = mapping.get_downstream_partitions_for_partitions(
         upstream_partitions_subset=upstream_parts.empty_subset().with_partition_keys(["p", "r"]),
+        upstream_partitions_def=upstream_parts,
         downstream_partitions_def=downstream_parts,
     )
 
-    assert result == DefaultPartitionsSubset(downstream_parts, {"p1", "p2", "p3"})
+    assert result == DefaultPartitionsSubset({"p1", "p2", "p3"})
 
     result = mapping.get_upstream_mapped_partitions_result_for_partitions(
         downstream_partitions_subset=downstream_parts.empty_subset().with_partition_keys(
             ["p2", "p3", "q"]
         ),
+        downstream_partitions_def=downstream_parts,
         upstream_partitions_def=upstream_parts,
     )
 
-    assert result.partitions_subset == DefaultPartitionsSubset(upstream_parts, {"p", "q1", "q2"})
+    assert result.partitions_subset == DefaultPartitionsSubset({"p", "q1", "q2"})
 
 
 def test_error_on_extra_keys_in_mapping():
@@ -63,6 +67,7 @@ def test_error_on_extra_keys_in_mapping():
             {"p": "p", "q": {"q", "OTHER"}}
         ).get_downstream_partitions_for_partitions(
             upstream_partitions_subset=upstream_parts.empty_subset(),
+            upstream_partitions_def=upstream_parts,
             downstream_partitions_def=downstream_parts,
         )
 
@@ -71,6 +76,7 @@ def test_error_on_extra_keys_in_mapping():
             {"p": "p", "q": "q", "OTHER": "q"}
         ).get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset=downstream_parts.empty_subset(),
+            downstream_partitions_def=downstream_parts,
             upstream_partitions_def=upstream_parts,
         )
 

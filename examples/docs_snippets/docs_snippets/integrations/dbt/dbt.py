@@ -16,8 +16,14 @@ def scope_compile_dbt_manifest(manifest):
     # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
     # Otherwise, we expect a manifest to be present in the project's target directory.
     if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-        dbt_parse_invocation = dbt.cli(["parse"], manifest={}).wait()
-        dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+        dbt_manifest_path = (
+            dbt.cli(
+                ["--quiet", "parse"],
+                target_path=Path("target"),
+            )
+            .wait()
+            .target_path.joinpath("manifest.json")
+        )
     else:
         dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
     # end_compile_dbt_manifest
@@ -28,8 +34,7 @@ def scope_schedule_assets_dbt_only(manifest):
     from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
         [my_dbt_assets],
@@ -46,8 +51,7 @@ def scope_schedule_assets_dbt_and_downstream(manifest):
     from dagster_dbt import build_dbt_asset_selection, dbt_assets
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     # selects all models tagged with "daily", and all their downstream asset dependencies
     daily_selection = build_dbt_asset_selection(
@@ -67,16 +71,14 @@ def scope_downstream_asset():
     from dagster_dbt import dbt_assets
 
     @dbt_assets(manifest=MANIFEST_PATH)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        ...
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
 
     # start_downstream_asset
     from dagster_dbt import get_asset_key_for_model
     from dagster import asset
 
     @asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
-    def my_downstream_asset():
-        ...
+    def my_downstream_asset(): ...
 
     # end_downstream_asset_pandas_df_manager
 
@@ -86,8 +88,7 @@ def scope_downstream_asset_pandas_df_manager():
     from dagster_dbt import dbt_assets
 
     @dbt_assets(manifest=MANIFEST_PATH)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        ...
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
 
     # start_downstream_asset_pandas_df_manager
     from dagster_dbt import get_asset_key_for_model
@@ -114,8 +115,7 @@ def scope_upstream_asset():
     from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
 
     @dbt_assets(manifest=MANIFEST_PATH)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        ...
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
 
     @asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
     def orders():
@@ -129,8 +129,7 @@ def scope_upstream_multi_asset():
     from dagster_dbt import DbtCliResource, dbt_assets
 
     @dbt_assets(manifest=MANIFEST_PATH)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        ...
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
 
     # start_upstream_multi_asset
     from dagster import multi_asset, AssetOut, Output
@@ -144,8 +143,8 @@ def scope_upstream_multi_asset():
             ).items()
         }
     )
-    def jaffle_shop(context):
-        output_names = list(context.selected_output_names)
+    def jaffle_shop(context: AssetExecutionContext):
+        output_names = list(context.op_execution_context.selected_output_names)
         yield Output(value=..., output_name=output_names[0])
         yield Output(value=..., output_name=output_names[1])
 
@@ -157,8 +156,7 @@ def scope_existing_asset():
     from dagster import asset
 
     @asset
-    def upstream():
-        ...
+    def upstream(): ...
 
     # end_upstream_dagster_asset
 
@@ -209,6 +207,31 @@ def scope_custom_group_name_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_custom_group_name_dagster_dbt_translator
+
+
+def scope_custom_owners_dagster_dbt_translator():
+    # start_custom_owners_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional, Sequence
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_owners(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[Sequence[str]]:
+            return ["owner@company.com", "team:data@company.com"]
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_owners_dagster_dbt_translator
 
 
 def scope_custom_description_dagster_dbt_translator():
@@ -262,6 +285,36 @@ def scope_custom_metadata_dagster_dbt_translator():
     # end_custom_metadata_dagster_dbt_translator
 
 
+def scope_custom_tags_dagster_dbt_translator():
+    # start_custom_tags_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+            dbt_tags = dbt_resource_props.get("tags", [])
+            dagster_tags = {}
+            for tag in dbt_tags:
+                key, _, value = tag.partition("=")
+
+                dagster_tags[key] = value if value else "__dagster_no_value"
+
+            return dagster_tags
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_tags_dagster_dbt_translator
+
+
 def scope_custom_auto_materialize_policy_dagster_dbt_translator():
     # start_custom_auto_materialize_policy_dagster_dbt_translator
     from pathlib import Path
@@ -287,26 +340,27 @@ def scope_custom_auto_materialize_policy_dagster_dbt_translator():
     # end_custom_auto_materialize_policy_dagster_dbt_translator
 
 
-def scope_custom_freshness_policy_dagster_dbt_translator():
-    # start_custom_freshness_policy_dagster_dbt_translator
+def scope_disable_asset_check_dagster_dbt_translator():
+    # start_disable_asset_check_dagster_dbt_translator
     from pathlib import Path
-    from dagster import AssetExecutionContext, FreshnessPolicy
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
-    from typing import Any, Mapping, Optional
+    from dagster import AssetExecutionContext
+    from dagster_dbt import (
+        DagsterDbtTranslator,
+        DagsterDbtTranslatorSettings,
+        DbtCliResource,
+        dbt_assets,
+    )
 
     manifest_path = Path("path/to/dbt_project/target/manifest.json")
-
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(
-            self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[FreshnessPolicy]:
-            return FreshnessPolicy(maximum_lag_minutes=60)
+    dagster_dbt_translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+    )
 
     @dbt_assets(
         manifest=manifest_path,
-        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+        dagster_dbt_translator=dagster_dbt_translator,
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
-    # end_custom_freshness_policy_dagster_dbt_translator
+    # end_disable_asset_check_dagster_dbt_translator

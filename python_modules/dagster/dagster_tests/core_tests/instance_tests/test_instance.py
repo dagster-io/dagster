@@ -9,6 +9,7 @@ import yaml
 from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
     _check as check,
     _seven,
     asset,
@@ -20,9 +21,11 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
-from dagster._core.definitions import build_assets_job
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
@@ -72,7 +75,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    run = create_run_for_test(instance, job_name="foo_job", run_id="new_run")
+    run = create_run_for_test(instance, job_name="foo_job")
 
     assert instance.get_runs() == [run]
 
@@ -80,15 +83,13 @@ def test_get_run_by_id():
 
 
 def do_test_single_write_read(instance):
-    run_id = "some_run_id"
-
     @job
     def job_def():
         pass
 
-    instance.create_run_for_job(job_def=job_def, run_id=run_id)
-    run = instance.get_run_by_id(run_id)
-    assert run.run_id == run_id
+    run = instance.create_run_for_job(job_def=job_def)
+    stored_run = instance.get_run_by_id(run.run_id)
+    assert run.run_id == stored_run.run_id
     assert run.job_name == "job_def"
     assert list(instance.get_runs()) == [run]
     instance.wipe()
@@ -142,12 +143,10 @@ def test_unified_storage_env_var(tmpdir):
         ) as instance:
             assert _runs_directory(str(tmpdir)) in instance.run_storage._conn_string  # noqa: SLF001
             assert (
-                _event_logs_directory(str(tmpdir))
-                == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
+                _event_logs_directory(str(tmpdir)) == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
             )
             assert (
-                _schedule_directory(str(tmpdir))
-                in instance.schedule_storage._conn_string  # noqa: SLF001
+                _schedule_directory(str(tmpdir)) in instance.schedule_storage._conn_string  # noqa: SLF001
             )
 
 
@@ -255,12 +254,14 @@ def noop_job():
     noop_op()
 
 
-@asset
+@asset(partitions_def=StaticPartitionsDefinition(["bar", "baz", "foo"]))
 def noop_asset():
     pass
 
 
-noop_asset_job = build_assets_job(assets=[noop_asset], name="noop_asset_job")
+noop_asset_job = Definitions(
+    assets=[noop_asset], jobs=[define_asset_job("noop_asset_job", [noop_asset])]
+).get_job_def("noop_asset_job")
 
 
 def test_create_job_snapshot():
@@ -308,7 +309,6 @@ def test_submit_run():
             run = create_run_for_test(
                 instance=instance,
                 job_name=external_job.name,
-                run_id="foo-bar",
                 external_job_origin=external_job.get_external_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
@@ -316,7 +316,7 @@ def test_submit_run():
             instance.submit_run(run.run_id, workspace)
 
             assert len(instance.run_coordinator.queue()) == 1
-            assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
+            assert instance.run_coordinator.queue()[0].run_id == run.run_id
 
 
 def test_create_run_with_asset_partitions():
@@ -340,6 +340,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
+                asset_job_partitions_def=noop_asset_job.partitions_def,
             )
 
         with pytest.raises(
@@ -355,6 +356,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
+                asset_job_partitions_def=noop_asset_job.partitions_def,
             )
 
         create_run_for_test(
@@ -363,6 +365,7 @@ def test_create_run_with_asset_partitions():
             execution_plan_snapshot=ep_snapshot,
             job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
+            asset_job_partitions_def=noop_asset_job.partitions_def,
         )
 
 
@@ -428,7 +431,7 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return TestNonResumeRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     def launch_run(self, context):
         raise NotImplementedError()
@@ -614,8 +617,7 @@ def test_dagster_env_vars_from_dotenv_file():
 
                 with get_instance_for_cli() as instance:
                     assert (
-                        _runs_directory(str(storage_dir))
-                        in instance.run_storage._conn_string  # noqa: SLF001
+                        _runs_directory(str(storage_dir)) in instance.run_storage._conn_string  # noqa: SLF001
                     )
 
 
@@ -769,13 +771,21 @@ def test_report_runless_asset_event():
             AssetCheckEvaluation(
                 asset_key=my_asset_key,
                 check_name=my_check,
-                success=True,
+                passed=True,
                 metadata={},
             )
         )
-        records = instance.event_log_storage.get_asset_check_executions(
-            asset_key=my_asset_key,
-            check_name=my_check,
+        records = instance.event_log_storage.get_asset_check_execution_history(
+            check_key=AssetCheckKey(asset_key=my_asset_key, name=my_check),
             limit=1,
         )
         assert len(records) == 1
+
+
+def test_invalid_run_id():
+    with instance_for_test() as instance:
+        with pytest.raises(
+            CheckError,
+            match="run_id must be a valid UUID. Got invalid_run_id",
+        ):
+            create_run_for_test(instance, job_name="foo_job", run_id="invalid_run_id")

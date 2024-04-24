@@ -1,7 +1,15 @@
-from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset, repository
-
+from dagster import (
+    AutoMaterializePolicy,
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    asset,
+    repository,
+)
 
 ### Non partitioned ##
+
+
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
 def eager_upstream():
     return 3
@@ -17,18 +25,7 @@ def eager_downstream_1(eager_downstream_0_point_5):
     return eager_downstream_0_point_5 + 1
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def lazy_upstream():
-    return 1
-
-
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def lazy_downstream_1(lazy_upstream):
-    return lazy_upstream + 1
-
-
 ### Partitioned ##
-
 
 daily_partitions_def = DailyPartitionsDefinition(start_date="2023-02-01")
 
@@ -52,14 +49,19 @@ def eager_downstream_1_partitioned(eager_upstream_partitioned):
     return eager_upstream_partitioned + 1
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy(), partitions_def=daily_partitions_def)
-def lazy_upstream_partitioned():
-    return 1
+customers_partitions_def = DynamicPartitionsDefinition(name="customers")
+multipartition_w_dynamic_partitions_def = MultiPartitionsDefinition(
+    {"customers": customers_partitions_def, "daily": DailyPartitionsDefinition("2023-01-01")}
+)
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy(), partitions_def=daily_partitions_def)
-def lazy_downstream_1_partitioned(lazy_upstream_partitioned):
-    return lazy_upstream_partitioned + 1
+@asset(
+    auto_materialize_policy=AutoMaterializePolicy.eager(),
+    partitions_def=multipartition_w_dynamic_partitions_def,
+    deps=[eager_downstream_0_point_5_partitioned],
+)
+def eager_downstream_2_partitioned(eager_upstream_partitioned):
+    return eager_upstream_partitioned + 1
 
 
 @repository
@@ -68,11 +70,8 @@ def auto_materialize_repo_1():
         eager_upstream,
         eager_downstream_0_point_5,
         eager_downstream_1,
-        lazy_upstream,
-        lazy_downstream_1,
         eager_upstream_partitioned,
         eager_downstream_1_partitioned,
-        lazy_upstream_partitioned,
-        lazy_downstream_1_partitioned,
         eager_downstream_0_point_5_partitioned,
+        eager_downstream_2_partitioned,
     ]

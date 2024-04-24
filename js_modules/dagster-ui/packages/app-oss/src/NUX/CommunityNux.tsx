@@ -13,7 +13,7 @@ import {
   TextInput,
 } from '@dagster-io/ui-components';
 import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
-import React from 'react';
+import * as React from 'react';
 import isEmail from 'validator/lib/isEmail';
 
 export const CommunityNux = () => {
@@ -44,7 +44,7 @@ export const CommunityNux = () => {
 // Wait 1 second before trying to show Nux
 const TIMEOUT = 1000;
 
-const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
+const CommunityNuxImpl = ({dismiss}: {dismiss: () => void}) => {
   const [shouldShowNux, setShouldShowNux] = React.useState(false);
   React.useEffect(() => {
     const timeout = setTimeout(() => {
@@ -77,10 +77,12 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
   );
 };
 
-const Form: React.FC<{
+interface FormProps {
   dismiss: () => void;
   submit: (email: string, newsletter: boolean) => void;
-}> = ({dismiss, submit}) => {
+}
+
+const Form = ({dismiss, submit}: FormProps) => {
   const [email, setEmail] = React.useState('');
   const [newsletter, setNewsLetter] = React.useState(false);
   const validEmail = isEmail(email);
@@ -90,7 +92,7 @@ const Form: React.FC<{
   return (
     <Box
       flex={{direction: 'column', gap: 16}}
-      style={{padding: '36px', width: '680px', background: 'white'}}
+      style={{padding: '36px', width: '680px', background: Colors.backgroundDefault()}}
     >
       <Box
         flex={{direction: 'row', gap: 24, alignItems: 'center'}}
@@ -99,7 +101,7 @@ const Form: React.FC<{
       >
         <Box flex={{direction: 'column', gap: 8, alignItems: 'start', justifyContent: 'start'}}>
           <Heading>Join the Dagster community</Heading>
-          <Body style={{color: Colors.Gray700, marginBottom: '4px'}}>
+          <Body style={{color: Colors.textLight(), marginBottom: '4px'}}>
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
           </Body>
@@ -124,11 +126,11 @@ const Form: React.FC<{
           }}
           onBlur={() => setBlurred(true)}
           placeholder="hello@dagster.io"
-          strokeColor={!emailChanged || validEmail ? undefined : Colors.Red500}
+          strokeColor={!emailChanged || validEmail ? undefined : Colors.accentRed()}
           style={{width: '100%'}}
         />
         {emailChanged && blurred && !validEmail ? (
-          <div style={{paddingBottom: '12px', color: Colors.Red500, fontSize: '12px'}}>
+          <div style={{paddingBottom: '12px', color: Colors.textRed(), fontSize: '12px'}}>
             Add your email to get updates from Dagster.
           </div>
         ) : null}
@@ -169,11 +171,13 @@ const Form: React.FC<{
   );
 };
 
-const RecaptchaIFrame: React.FC<{
+interface RecaptchaIFrameProps {
   newsletter: boolean;
   email: string;
   dismiss: () => void;
-}> = ({dismiss, newsletter, email}) => {
+}
+
+const RecaptchaIFrame = ({dismiss, newsletter, email}: RecaptchaIFrameProps) => {
   const [iframeLoaded, setIframeLoaded] = React.useState(false);
   const [width, setWidth] = React.useState(680);
   const [height, setHeight] = React.useState(462);
@@ -195,11 +199,17 @@ const RecaptchaIFrame: React.FC<{
     };
   }, [dismiss]);
 
+  const iframeSrc = new URL(`${window.location.protocol}${IFRAME_SRC}`);
+  iframeSrc.searchParams.append('email', email);
+  if (newsletter) {
+    iframeSrc.searchParams.append('newsletter', '1');
+  }
+
   return (
     <Box padding={32} flex={{justifyContent: 'center', alignItems: 'center'}}>
       {iframeLoaded ? null : <Spinner purpose="section" />}
       <iframe
-        src={`${IFRAME_SRC}?email=${email}${newsletter ? '&newsletter=1' : ''}`}
+        src={iframeSrc.toString()}
         width={width}
         height={height}
         style={{

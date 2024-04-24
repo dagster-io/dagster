@@ -1,5 +1,4 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 
 import {HourCycleKey, TimeProvider, TimezoneStorageKey} from '../../app/time/TimeContext';
 import {useFormatDateTime} from '../useFormatDateTime';
@@ -17,7 +16,7 @@ describe('useFormatDateTime', () => {
     language?: string;
   }
 
-  const Test: React.FC<Props> = ({date, options, language}) => {
+  const Test = ({date, options, language}: Props) => {
     const formatDateTime = useFormatDateTime();
     return <div>{formatDateTime(date, options, language)}</div>;
   };

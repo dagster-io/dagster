@@ -2,6 +2,7 @@ import base64
 import sys
 import warnings
 from contextlib import closing, contextmanager
+from datetime import datetime
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
@@ -16,8 +17,9 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
+from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.cached_method import cached_method
-from pydantic import Field, root_validator, validator
+from pydantic import Field, validator
 
 try:
     import snowflake.connector
@@ -271,7 +273,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
         return v
 
-    @root_validator
+    @compat_model_validator(mode="before")
     def validate_authentication(cls, values):
         auths_set = 0
         auths_set += 1 if values.get("password") is not None else 0
@@ -712,3 +714,58 @@ def snowflake_resource(context) -> SnowflakeConnection:
     return SnowflakeConnection(
         config=context, log=context.log, snowflake_connection_resource=snowflake_resource
     )
+
+
+def fetch_last_updated_timestamps(
+    *,
+    snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],
+    schema: str,
+    tables: Sequence[str],
+    database: Optional[str] = None,
+) -> Mapping[str, datetime]:
+    """Fetch the last updated times of a list of tables in Snowflake.
+
+    If the underlying query to fetch the last updated time returns no results, a ValueError will be raised.
+
+    Args:
+        snowflake_connection (Union[SqlDbConnection, SnowflakeConnection]): A connection to Snowflake.
+            Accepts either a SnowflakeConnection or a sqlalchemy connection object,
+            which are the two types of connections emittable from the snowflake resource.
+        schema (str): The schema of the tables to fetch the last updated time for.
+        tables (Sequence[str]): A list of table names to fetch the last updated time for.
+        database (Optional[str]): The database of the table. Only required if the connection
+            has not been set with a database.
+
+    Returns:
+        Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
+    """
+    check.invariant(len(tables) > 0, "Must provide at least one table name to query upon.")
+    # Table names in snowflake's information schema are stored in uppercase
+    uppercase_tables = [table.upper() for table in tables]
+    tables_str = ", ".join([f"'{table_name}'" for table_name in uppercase_tables])
+    fully_qualified_table_name = (
+        f"{database}.information_schema.tables" if database else "information_schema.tables"
+    )
+
+    query = f"""
+    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered 
+    FROM {fully_qualified_table_name}
+    WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
+    """
+    result = snowflake_connection.cursor().execute(query)
+    if not result:
+        raise ValueError("No results returned from Snowflake update time query.")
+
+    result_mapping = {table_name: last_altered for table_name, last_altered in result}
+    result_correct_case = {}
+    for table_name in tables:
+        if table_name.upper() not in result_mapping:
+            raise ValueError(f"Table {table_name} could not be found.")
+        last_altered = result_mapping[table_name.upper()]
+        check.invariant(
+            isinstance(last_altered, datetime),
+            "Expected last_altered to be a datetime, but it was not.",
+        )
+        result_correct_case[table_name] = last_altered
+
+    return result_correct_case

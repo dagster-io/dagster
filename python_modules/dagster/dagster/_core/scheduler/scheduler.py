@@ -8,8 +8,8 @@ import dagster._check as check
 from dagster._config import Field, IntSource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation import ExternalSchedule
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalSchedule
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -153,6 +153,47 @@ class Scheduler(abc.ABC):
 
         return stopped_state
 
+    def reset_schedule(
+        self, instance: DagsterInstance, external_schedule: ExternalSchedule
+    ) -> InstigatorState:
+        """If the given schedule has a default schedule status, then update the status to
+        `InstigatorStatus.DECLARED_IN_CODE` in schedule storage.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            external_schedule (ExternalSchedule): The schedule to reset.
+        """
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
+
+        stored_state = instance.get_instigator_state(
+            external_schedule.get_external_origin_id(), external_schedule.selector_id
+        )
+
+        new_status = InstigatorStatus.DECLARED_IN_CODE
+
+        if not stored_state:
+            new_instigator_data = ScheduleInstigatorData(
+                external_schedule.cron_schedule,
+                start_timestamp=None,
+            )
+            reset_state = instance.add_instigator_state(
+                state=InstigatorState(
+                    external_schedule.get_external_origin(),
+                    InstigatorType.SCHEDULE,
+                    new_status,
+                    new_instigator_data,
+                )
+            )
+        else:
+            reset_state = instance.update_instigator_state(
+                state=stored_state.with_status(new_status)
+            )
+
+        return reset_state
+
     @abc.abstractmethod
     def debug_info(self) -> str:
         """Returns debug information about the scheduler."""
@@ -224,7 +265,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return DagsterDaemonScheduler(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def debug_info(self) -> str:
         return ""

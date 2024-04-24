@@ -16,7 +16,7 @@ export type TagAction =
     };
 
 export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]}) => (
-  <ActionContainer background={Colors.Gray900} flex={{direction: 'row'}}>
+  <ActionContainer background={Colors.tooltipBackground()} flex={{direction: 'row'}}>
     {actions.map((action, ii) =>
       'to' in action ? (
         <Link to={action.to} key={ii}>
@@ -62,14 +62,16 @@ const ActionContainer = styled(Box)`
 
 const TagButton = styled.button`
   border: none;
-  background: ${Colors.Dark};
-  color: ${Colors.Gray100};
+  background: ${Colors.tooltipBackground()};
+  color: ${Colors.tooltipText()};
   cursor: pointer;
   padding: 8px 12px;
   text-align: left;
+  opacity: 0.85;
+  transition: opacity 50ms linear;
 
   :not(:last-child) {
-    box-shadow: -1px 0 0 inset ${Colors.Gray600};
+    box-shadow: -1px 0 0 inset ${Colors.borderHover()};
   }
 
   :focus {
@@ -77,7 +79,6 @@ const TagButton = styled.button`
   }
 
   :hover {
-    background-color: ${Colors.Gray800};
-    color: ${Colors.White};
+    opacity: 1;
   }
 `;

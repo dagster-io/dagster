@@ -8,12 +8,10 @@ import {
   Mono,
   Spinner,
 } from '@dagster-io/ui-components';
-import React, {useState} from 'react';
+import {useState} from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {DagsterEventType} from '../graphql/types';
-import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
@@ -24,6 +22,8 @@ import {LogType, LogsToolbar} from './LogsToolbar';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
+import {DagsterEventType} from '../graphql/types';
+import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: string[]}) {
   const [showingLogs, setShowingLogs] = React.useState<{runId: string; stepKeys: string[]} | null>(
@@ -55,11 +55,15 @@ export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: strin
   };
 }
 
-export const StepLogsDialog: React.FC<{
+export const StepLogsDialog = ({
+  runId,
+  stepKeys,
+  onClose,
+}: {
   runId?: string;
   stepKeys: string[];
   onClose: () => void;
-}> = ({runId, stepKeys, onClose}) => {
+}) => {
   return (
     <Dialog
       isOpen={!!runId}
@@ -86,7 +90,7 @@ export const StepLogsDialog: React.FC<{
       ) : (
         ''
       )}
-      <div style={{zIndex: 2, background: Colors.White}}>
+      <div style={{zIndex: 2, background: Colors.backgroundDefault()}}>
         <DialogFooter topBorder>
           <Button intent="primary" onClick={onClose}>
             Done
@@ -97,12 +101,17 @@ export const StepLogsDialog: React.FC<{
   );
 };
 
-export const StepLogsModalContent: React.FC<{
+export const StepLogsModalContent = ({
+  runId,
+  stepKeys,
+  metadata,
+  logs,
+}: {
   runId: string;
   stepKeys: string[];
   metadata: IRunMetadataDict;
   logs: LogsProviderLogs;
-}> = ({runId, stepKeys, metadata, logs}) => {
+}) => {
   const supportsCapturedLogs = useSupportsCapturedLogs();
   const [logType, setComputeLogType] = useState<LogType>(LogType.structured);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
@@ -151,7 +160,7 @@ export const StepLogsModalContent: React.FC<{
               <Spinner purpose="body-text" />
             )}
             View Run <Mono>{titleForRun({id: runId})}</Mono>
-            <Icon name="open_in_new" color={Colors.Link} />
+            <Icon name="open_in_new" color={Colors.linkDefault()} />
           </Box>
         </Link>
       </LogsToolbar>

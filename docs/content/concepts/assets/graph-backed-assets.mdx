@@ -28,11 +28,12 @@ In this case, when you tell Dagster to materialize the `slack_files_table` asset
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
 import pandas as pd
 from dagster import graph_asset, op
+from dagster_slack import SlackResource
 
 
-@op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context) -> pd.DataFrame:
-    files = context.resources.slack.files_list(channel="#random")
+@op
+def fetch_files_from_slack(slack: SlackResource) -> pd.DataFrame:
+    files = slack.get_client().files_list(channel="#random")
     return pd.DataFrame(
         [
             {
@@ -130,7 +131,7 @@ During execution, if we select just `baz_asset` for materialization, the below i
 
 ```python file=/concepts/assets/subset_graph_backed_asset.py startafter=start_graph_backed_asset_foo endbefore=end_graph_backed_asset_foo
 @op(out={"foo_1": Out(is_required=False), "foo_2": Out(is_required=False)})
-def foo(context, bar_1):
+def foo(context: OpExecutionContext, bar_1):
     # Selectively returns outputs based on selected assets
     if "foo_1" in context.selected_output_names:
         yield Output(bar_1 + 1, output_name="foo_1")

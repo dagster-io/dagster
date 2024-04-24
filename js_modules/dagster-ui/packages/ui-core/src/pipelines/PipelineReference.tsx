@@ -1,11 +1,10 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-
-import {RepoAddress} from '../workspace/types';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import styled from 'styled-components';
 
 import {PipelineSnapshotLink} from './PipelinePathUtils';
+import {RepoAddress} from '../workspace/types';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 export interface Props {
   pipelineName: string;
@@ -20,7 +19,7 @@ export interface Props {
 const DEFAULT_TRUNCATION_THRESHOLD = 40;
 const TRUNCATION_BUFFER = 5;
 
-export const PipelineReference: React.FC<Props> = ({
+export const PipelineReference = ({
   pipelineName,
   pipelineHrefContext,
   isJob,
@@ -28,7 +27,7 @@ export const PipelineReference: React.FC<Props> = ({
   showIcon,
   truncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
   size = 'normal',
-}) => {
+}: Props) => {
   const truncatedName =
     truncationThreshold > 0 && pipelineName.length > truncationThreshold
       ? `${pipelineName.slice(0, truncationThreshold - TRUNCATION_BUFFER)}…`
@@ -56,7 +55,7 @@ export const PipelineReference: React.FC<Props> = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <Icon color={Colors.Gray400} name="job" />
+          <Icon color={Colors.accentGray()} name="job" />
         </Box>
       )}
       <span>
@@ -69,3 +68,19 @@ export const PipelineReference: React.FC<Props> = ({
     </Box>
   );
 };
+
+export const PipelineTag = (props: Props) => {
+  return (
+    <PipelineTagWrap>
+      <Tag tooltipText={props.pipelineName}>
+        <PipelineReference {...props} />
+      </Tag>
+    </PipelineTagWrap>
+  );
+};
+
+const PipelineTagWrap = styled.span`
+  span {
+    line-height: 0;
+  }
+`;

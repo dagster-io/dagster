@@ -202,7 +202,7 @@ def _pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
 
 
 def _pandera_schema_wide_checks_to_table_constraints(
-    checks: Sequence[Union[pa.Check, pa.Hypothesis]]
+    checks: Sequence[Union[pa.Check, pa.Hypothesis]],
 ) -> TableConstraints:
     return TableConstraints(other=[_pandera_check_to_table_constraint(check) for check in checks])
 

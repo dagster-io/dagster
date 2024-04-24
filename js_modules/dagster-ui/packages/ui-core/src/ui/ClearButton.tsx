@@ -9,16 +9,16 @@ export const ClearButton = styled.button`
   padding: 2px;
 
   ${IconWrapper} {
-    background-color: ${Colors.Gray400};
+    background-color: ${Colors.accentGray()};
     transition: background-color 100ms linear;
   }
 
   :hover ${IconWrapper}, :focus ${IconWrapper} {
-    background-color: ${Colors.Gray700};
+    background-color: ${Colors.accentGrayHover()};
   }
 
   :active ${IconWrapper} {
-    background-color: ${Colors.Dark};
+    background-color: ${Colors.textDefault()};
   }
 
   :focus {

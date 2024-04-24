@@ -1,16 +1,15 @@
 import {Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 export const BOX_SIZE = 32;
 
 const STEP_STATUS_COLORS = {
-  SUCCESS: Colors.Green500,
-  SUCCESS_SKIPPED: Colors.Green200,
-  FAILURE: Colors.Red500,
-  FAILURE_SKIPPED: Colors.Red200,
-  SKIPPED: Colors.Yellow500,
-  IN_PROGRESS: Colors.Blue500,
+  SUCCESS: Colors.accentGreen(),
+  SUCCESS_SKIPPED: Colors.accentGreenHover(),
+  FAILURE: Colors.accentRed(),
+  FAILURE_SKIPPED: Colors.accentRedHover(),
+  SKIPPED: Colors.accentYellow(),
+  IN_PROGRESS: Colors.accentBlue(),
 };
 
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
@@ -35,12 +34,12 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-      background: ${Colors.Gray100};
+      background: ${Colors.backgroundDefaultHover()};
       cursor: default;
       ${TopLabelTiltedInner} {
-        background: ${Colors.White};
+        background: ${Colors.backgroundDefaultHover()};
         .tilted {
-          background: ${Colors.Gray100};
+          background: ${Colors.backgroundLight()};
         }
       }
       .square {
@@ -52,36 +51,36 @@ export const GridColumn = styled.div<{
     disabled &&
     `
       ${TopLabelTiltedInner} {
-        color: ${Colors.Gray400}
+        color: ${Colors.textLight()}
       }
     `}
 
   ${({focused}) =>
     focused &&
-    `background: ${Colors.Blue500};
+    `background: ${Colors.accentBlue()};
     ${LeftLabel} {
-      color: white;
+      color: ${Colors.accentReversed()};
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.White};
-      color: white;
+      background: ${Colors.accentPrimary()};
+      color: ${Colors.accentReversed()};
       .tilted {
-        background: ${Colors.Blue500};
+        background: ${Colors.accentBlue()};
       }
     }
   }`}
 
   ${({multiselectFocused}) =>
     multiselectFocused &&
-    `background: ${Colors.Blue200};
+    `background: ${Colors.accentBlueHover()};
     ${LeftLabel} {
-      color: white;
+      color: ${Colors.accentReversed()};
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.White};
-      color: white;
+      background: ${Colors.accentPrimary()};
+      color: ${Colors.accentReversed()};
       .tilted {
-        background: ${Colors.Blue200};
+        background: ${Colors.accentBlueHover()};
       }
     }
   }`}
@@ -105,11 +104,11 @@ export const GridColumn = styled.div<{
     display: inline-block;
 
     &:hover:not(.empty):before {
-      box-shadow: ${Colors.Blue500} 0 0 0 3px;
+      box-shadow: ${Colors.accentBlue()} 0 0 0 3px;
     }
     &:before {
       content: ' ';
-      background: rgba(248, 247, 245, 1);
+      background: ${Colors.accentGray()};
       border-radius: 10px;
       display: inline-block;
       width: 20px;
@@ -117,7 +116,11 @@ export const GridColumn = styled.div<{
     }
     &.loading {
       &:before {
-        background: radial-gradient(white 0%, white 45%, rgba(248, 247, 245, 1) 60%);
+        background: radial-gradient(
+          ${Colors.backgroundGray()} 0%,
+          ${Colors.backgroundGray()} 45%,
+          ${Colors.backgroundGrayHover()} 60%
+        );
       }
     }
     &.success {
@@ -167,7 +170,8 @@ export const LeftLabel = styled.div<{hovered?: boolean}>`
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
-  background: ${({hovered}) => flatGradientStack([hovered ? Colors.Gray100 : 'transparent'])};
+  background: ${({hovered}) =>
+    flatGradientStack([hovered ? Colors.backgroundLight() : 'transparent'])};
 `;
 
 export const TopLabel = styled.div`
@@ -188,7 +192,7 @@ export function topLabelHeightForLabels(labels: string[]) {
   return (maxlength > 10 ? maxlength * 4.9 : 55) + TITLE_MARGIN_BOTTOM;
 }
 
-export const TopLabelTilted: React.FC<{label: string; $height: number}> = ({label, $height}) => {
+export const TopLabelTilted = ({label, $height}: {label: string; $height: number}) => {
   return (
     <TopLabelTiltedInner style={{height: $height - TITLE_MARGIN_BOTTOM}}>
       <div className="tilted">{label}</div>
@@ -225,7 +229,7 @@ export const GRID_FLOATING_CONTAINER_WIDTH = 330;
 
 export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
-  border-right: 1px solid ${Colors.Gray200};
+  border-right: 1px solid ${Colors.borderDefault()};
   padding-bottom: 16px;
   width: ${GRID_FLOATING_CONTAINER_WIDTH}px;
   z-index: 1;

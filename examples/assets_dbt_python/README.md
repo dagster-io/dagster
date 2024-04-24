@@ -2,7 +2,7 @@
 
 This starter demonstrates using Python alongside a medium-sized dbt project. It uses dbt's [`jaffle_shop`](https://github.com/dbt-labs/jaffle_shop), [`dagster-dbt`](https://docs.dagster.io/_apidocs/libraries/dagster-dbt), and [DuckDB](https://duckdb.org/).
 
-*New to Dagster? Learn what Dagster is in [Dagster's hands-on Tutorials](https://docs.dagster.io/tutorial) or learn using dbt with Dagster in the [dbt + Dagster tutorial](https://docs.dagster.io/integrations/dbt/using-dbt-with-dagster).*
+_New to Dagster? Learn what Dagster is in [Dagster's hands-on Tutorials](https://docs.dagster.io/tutorial) or learn using dbt with Dagster in the [dbt + Dagster tutorial](https://docs.dagster.io/integrations/dbt/using-dbt-with-dagster)._
 
 ## Getting started
 
@@ -34,7 +34,6 @@ dagster dev
 
 Open http://localhost:3000 with your browser to see the project.
 
-
 ## Learning more
 
 ### Changing the code locally
@@ -42,6 +41,7 @@ Open http://localhost:3000 with your browser to see the project.
 When developing pipelines locally, be sure to click the **Reload definition** button in the Dagster UI after you change the code. This ensures that Dagster picks up the latest changes you made.
 
 You can reload the code using the **Deployment** page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
@@ -51,6 +51,7 @@ You can reload the code using the **Deployment** page:
 </details>
 
 Or from the left nav or on each job page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">

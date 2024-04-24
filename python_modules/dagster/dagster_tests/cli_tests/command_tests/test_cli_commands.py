@@ -172,8 +172,8 @@ def define_bar_sensors():
     @sensor(job_name="baz")
     def foo_sensor(context):
         run_config = {"foo": "FOO"}
-        if context.last_completion_time:
-            run_config["since"] = context.last_completion_time
+        if context.last_tick_completion_time:
+            run_config["since"] = context.last_tick_completion_time
         return RunRequest(run_key=None, run_config=run_config)
 
     return {"foo_sensor": foo_sensor}
@@ -688,7 +688,7 @@ def valid_job_python_origin_target_cli_args():
             "-a",
             "bar",
             "-d",
-            os.path.dirname(__file__),
+            os.path.join(os.path.dirname(__file__), "..", "..", ".."),
             "-j",
             "qux",
         ],

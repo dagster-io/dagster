@@ -1,28 +1,28 @@
 import {gql} from '@apollo/client';
 import {Body2, Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {testId} from '../../testing/testId';
-import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
-import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
+import {linkToRunEvent} from '../../runs/RunUtils';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {testId} from '../../testing/testId';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 type Props = {
   assetNode: ExecuteChecksButtonAssetNodeFragment;
   rows: AssetCheckTableFragment[];
 };
 
-export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetNode, rows}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+export const VirtualizedAssetCheckTable = ({assetNode, rows}: Props) => {
+  const parentRef = useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 
   const rowVirtualizer = useVirtualizer({
@@ -86,12 +86,17 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <div>
-            <AssetCheckStatusTag check={row} execution={row.executionForLatestMaterialization} />
+            <AssetCheckStatusTag execution={execution} />
           </div>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           {timestamp ? (
-            <Link to={`/runs/${execution.runId}`}>
+            <Link
+              to={linkToRunEvent(
+                {id: execution.runId},
+                {stepKey: execution.stepKey, timestamp: execution.timestamp},
+              )}
+            >
               <TimestampDisplay timestamp={timestamp} />
             </Link>
           ) : (
@@ -132,7 +137,7 @@ export const VirtualizedAssetCheckHeader = () => {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: Colors.textLight(),
       }}
     >
       <HeaderCell>Check name</HeaderCell>

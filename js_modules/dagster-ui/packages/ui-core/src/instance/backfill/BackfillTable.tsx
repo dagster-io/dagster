@@ -1,13 +1,12 @@
 import {gql} from '@apollo/client';
 import {Table} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
+import {useState} from 'react';
 
 import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillActionsMenu';
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
 import {BackfillRow} from './BackfillRow';
 import {BackfillTableFragment} from './types/BackfillTable.types';
+import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 
 export const BackfillTable = ({
   showBackfillTarget = true,
@@ -21,7 +20,7 @@ export const BackfillTable = ({
   showBackfillTarget?: boolean;
 }) => {
   const [partitionsRequestedBackfill, setPartitionsRequestedBackfill] =
-    React.useState<BackfillTableFragment>();
+    useState<BackfillTableFragment>();
 
   return (
     <>
@@ -32,6 +31,7 @@ export const BackfillTable = ({
             <th>Created</th>
             {showBackfillTarget ? <th>Backfill target</th> : null}
             <th>Requested</th>
+            <th>Launched by</th>
             <th>Backfill status</th>
             <th>Run status</th>
             <th style={{width: 80}} />
@@ -75,6 +75,10 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     }
     assetSelection {
       path
+    }
+    tags {
+      key
+      value
     }
     error {
       ...PythonErrorFragment

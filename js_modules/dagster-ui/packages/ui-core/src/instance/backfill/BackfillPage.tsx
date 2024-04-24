@@ -1,53 +1,52 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
+  Box,
+  ButtonLink,
+  Colors,
+  Heading,
+  NonIdealState,
   Page,
   PageHeader,
-  Colors,
-  Box,
-  Tag,
-  Table,
   Spinner,
-  Dialog,
-  Button,
-  DialogFooter,
-  ButtonLink,
-  NonIdealState,
-  Heading,
+  Table,
+  Tag,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
-import {Link, useParams} from 'react-router-dom';
+import {useEffect, useReducer} from 'react';
+import {Link, useHistory, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
+import {TargetPartitionsDisplay} from './TargetPartitionsDisplay';
+import {
+  BackfillPartitionsForAssetKeyQuery,
+  BackfillPartitionsForAssetKeyQueryVariables,
+  BackfillStatusesByAssetQuery,
+  BackfillStatusesByAssetQueryVariables,
+} from './types/BackfillPage.types';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {Timestamp} from '../../app/time/Timestamp';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {AssetViewParams} from '../../assets/types';
+import {AssetKey, BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
-import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
-import {numberFormatter} from '../../ui/formatters';
-
-import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
-import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {
-  BackfillStatusesByAssetQuery,
-  BackfillStatusesByAssetQueryVariables,
-  PartitionBackfillFragment,
-} from './types/BackfillPage.types';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 export const BackfillPage = () => {
+  const client = useApolloClient();
+  const history = useHistory();
   const {backfillId} = useParams<{backfillId: string}>();
   useTrackPageView();
   useDocumentTitle(`Backfill | ${backfillId}`);
@@ -140,15 +139,27 @@ export const BackfillPage = () => {
       return runsPathWithFilters(filters);
     }
 
-    const linkQuery = () => {
-      if (backfill.assetBackfillData?.rootAssetTargetedRanges?.length === 1) {
-        const ranges = backfill.assetBackfillData?.rootAssetTargetedRanges;
-        if (ranges?.length) {
-          const {start, end} = ranges[0]!;
-          return {default_range: `[${start}...${end}]`};
+    const onShowAssetDetails = async (assetKey: AssetKey, isPartitioned: boolean) => {
+      let params: AssetViewParams = {};
+
+      if (isPartitioned) {
+        const resp = await client.query<
+          BackfillPartitionsForAssetKeyQuery,
+          BackfillPartitionsForAssetKeyQueryVariables
+        >({
+          query: BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY,
+          variables: {backfillId, assetKey: asAssetKeyInput(assetKey)},
+        });
+        const data =
+          resp.data.partitionBackfillOrError.__typename === 'PartitionBackfill'
+            ? resp.data.partitionBackfillOrError.partitionsTargetedForAssetKey
+            : null;
+
+        if (data && data.ranges?.length) {
+          params = {default_range: data.ranges.map((r) => `[${r.start}...${r.end}]`).join(',')};
         }
       }
-      return undefined;
+      return history.push(assetDetailsPathForKey(assetKey, params));
     };
 
     return (
@@ -184,12 +195,9 @@ export const BackfillPage = () => {
           <Detail
             label="Partition selection"
             detail={
-              <PartitionSelection
-                numPartitions={backfill.numPartitions || 0}
-                rootAssetTargetedPartitions={
-                  backfill.assetBackfillData?.rootAssetTargetedPartitions
-                }
-                rootAssetTargetedRanges={backfill.assetBackfillData?.rootAssetTargetedRanges}
+              <TargetPartitionsDisplay
+                targetPartitionCount={backfill.numPartitions || 0}
+                targetPartitions={backfill.assetBackfillData?.rootTargetedPartitions}
               />
             }
           />
@@ -238,9 +246,16 @@ export const BackfillPage = () => {
                   <td>
                     <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                       <div>
-                        <Link to={assetDetailsPathForKey(asset.assetKey, linkQuery())}>
+                        <ButtonLink
+                          onClick={() =>
+                            onShowAssetDetails(
+                              asset.assetKey,
+                              asset.__typename === 'AssetPartitionsStatusCounts',
+                            )
+                          }
+                        >
                           {asset.assetKey.path.join('/')}
-                        </Link>
+                        </ButtonLink>
                       </div>
                       <div>
                         <StatusBar
@@ -289,7 +304,7 @@ export const BackfillPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to="/overview/backfills" style={{color: Colors.Gray700}}>
+            <Link to="/overview/backfills" style={{color: Colors.textLight()}}>
               Backfills
             </Link>
             {' / '}
@@ -303,9 +318,7 @@ export const BackfillPage = () => {
               <BackfillActionsMenu
                 backfill={backfill}
                 refetch={queryResult.refetch}
-                counts={Object.fromEntries(
-                  backfill.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
-                )}
+                canCancelRuns={backfill.status === BulkActionStatus.REQUESTED}
               />
             ) : null}
           </Box>
@@ -338,7 +351,7 @@ function StatusBar({
     <div
       style={{
         borderRadius: '8px',
-        backgroundColor: Colors.Gray100,
+        backgroundColor: Colors.backgroundLight(),
         display: 'grid',
         gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
           (100 * inProgress) / targeted
@@ -349,22 +362,22 @@ function StatusBar({
         overflow: 'hidden',
       }}
     >
-      <div style={{background: Colors.Green500}} />
-      <div style={{background: Colors.Red500}} />
-      <div style={{background: Colors.Blue200}} />
+      <div style={{background: Colors.accentGreen()}} />
+      <div style={{background: Colors.accentRed()}} />
+      <div style={{background: Colors.accentBlue()}} />
     </div>
   );
 }
 
 const Label = styled.div`
-  color: ${Colors.Gray700};
+  color: ${Colors.textLight()};
   font-size: 12px;
   line-height: 16px;
 `;
 
 const Duration = ({start, end}: {start: number; end?: number | null}) => {
-  const [_, rerender] = React.useReducer((s: number, _: any) => s + 1, 0);
-  React.useEffect(() => {
+  const [_, rerender] = useReducer((s: number, _: any) => s + 1, 0);
+  useEffect(() => {
     if (end) {
       return;
     }
@@ -399,16 +412,14 @@ export const BACKFILL_DETAILS_QUERY = gql`
     error {
       ...PythonErrorFragment
     }
-    partitionStatusCounts {
-      runStatus
-      count
-    }
     assetBackfillData {
-      rootAssetTargetedRanges {
-        start
-        end
+      rootTargetedPartitions {
+        partitionKeys
+        ranges {
+          start
+          end
+        }
       }
-      rootAssetTargetedPartitions
       assetBackfillStatuses {
         ... on AssetPartitionsStatusCounts {
           assetKey {
@@ -434,101 +445,22 @@ export const BACKFILL_DETAILS_QUERY = gql`
   ${BACKFILL_ACTIONS_BACKFILL_FRAGMENT}
 `;
 
-const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
-
-type AssetBackfillData = Extract<
-  PartitionBackfillFragment['assetBackfillData'],
-  {__typename: 'AssetBackfillData'}
->;
-
-export const PartitionSelection = ({
-  numPartitions,
-  rootAssetTargetedRanges,
-  rootAssetTargetedPartitions,
-}: {
-  numPartitions: number;
-  rootAssetTargetedRanges?: AssetBackfillData['rootAssetTargetedRanges'];
-  rootAssetTargetedPartitions?: AssetBackfillData['rootAssetTargetedPartitions'];
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-
-  if (rootAssetTargetedPartitions) {
-    if (rootAssetTargetedPartitions.length <= 3) {
-      return (
-        <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
-          {rootAssetTargetedPartitions.map((p) => (
-            <Tag key={p}>{p}</Tag>
-          ))}
-        </Box>
-      );
+export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
+  query BackfillPartitionsForAssetKey($backfillId: String!, $assetKey: AssetKeyInput!) {
+    partitionBackfillOrError(backfillId: $backfillId) {
+      ... on PartitionBackfill {
+        id
+        partitionsTargetedForAssetKey(assetKey: $assetKey) {
+          partitionKeys
+          ranges {
+            start
+            end
+          }
+        }
+      }
     }
-
-    return (
-      <>
-        <ButtonLink onClick={() => setIsDialogOpen(true)}>
-          {numberFormatter.format(numPartitions)} partitions
-        </ButtonLink>
-        <Dialog
-          isOpen={isDialogOpen}
-          title={`Partition selection (${rootAssetTargetedPartitions.length})`}
-          onClose={() => setIsDialogOpen(false)}
-        >
-          <div style={{height: '340px', overflow: 'hidden'}}>
-            <VirtualizedItemListForDialog
-              items={[...rootAssetTargetedPartitions].sort((a, b) => COLLATOR.compare(a, b))}
-              renderItem={(assetKey) => (
-                <div key={assetKey}>
-                  <TruncatedTextWithFullTextOnHover text={assetKey} />
-                </div>
-              )}
-            />
-          </div>
-          <DialogFooter topBorder>
-            <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </Dialog>
-      </>
-    );
   }
-
-  if (rootAssetTargetedRanges) {
-    if (rootAssetTargetedRanges?.length === 1) {
-      const {start, end} = rootAssetTargetedRanges[0]!;
-      return (
-        <div>
-          {start}...{end}
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <ButtonLink onClick={() => setIsDialogOpen(true)}>
-          {numberFormatter.format(numPartitions)} partitions
-        </ButtonLink>
-        <Dialog
-          isOpen={isDialogOpen}
-          title={`Partition selection (${rootAssetTargetedRanges?.length})`}
-          onClose={() => setIsDialogOpen(false)}
-        >
-          <div style={{height: '340px', overflow: 'hidden'}}>
-            <VirtualizedItemListForDialog
-              items={rootAssetTargetedRanges || []}
-              renderItem={({start, end}) => {
-                return <div key={`${start}:${end}`}>{`${start}...${end}`}</div>;
-              }}
-            />
-          </div>
-          <DialogFooter topBorder>
-            <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </Dialog>
-      </>
-    );
-  }
-
-  return <div>{numPartitions === 1 ? '1 partition' : `${numPartitions} partitions`}</div>;
-};
+`;
 
 const formatDuration = (duration: number) => {
   const seconds = Math.floor((duration / 1000) % 60);

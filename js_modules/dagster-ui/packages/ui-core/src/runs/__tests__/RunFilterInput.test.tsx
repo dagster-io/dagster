@@ -1,8 +1,8 @@
-import {MockedResponse, MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
+import * as React from 'react';
 
 import {
   buildPipeline,
@@ -16,12 +16,12 @@ import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {DagsterTag} from '../RunTag';
 import {
-  RunsFilterInputProps,
   RUN_TAG_KEYS_QUERY,
+  RunFilterToken,
+  RunsFilterInputProps,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   useRunsFilterInput,
-  RunFilterToken,
   useTagDataFilterValues,
 } from '../RunsFilterInput';
 import {
@@ -49,6 +49,19 @@ const backfillRunTagsValuesMock = buildRunTagValuesQueryMockedResponse(DagsterTa
   'value2',
 ]);
 
+let nativeGBRC: any;
+
+beforeAll(() => {
+  nativeGBRC = window.Element.prototype.getBoundingClientRect;
+  window.Element.prototype.getBoundingClientRect = jest
+    .fn()
+    .mockReturnValue({height: 400, width: 400});
+});
+
+afterAll(() => {
+  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+});
+
 describe('useTagDataFilterValues', () => {
   it('should return the correct filter values based on the tag data', async () => {
     // Render the hook and pass the mockTagData as an argument
@@ -73,6 +86,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value1',
           },
           match: ['value1'],
+          final: true,
         },
         {
           label: 'value2',
@@ -82,6 +96,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value2',
           },
           match: ['value2'],
+          final: true,
         },
       ]);
     });
@@ -150,8 +165,8 @@ describe('<RunFilterInput  />', () => {
     const {getByText} = render(<TestRunsFilterInput tokens={tokens} onChange={onChange} />);
 
     expect(onChange).toHaveBeenCalledWith([
-      {token: 'created_date_before', value: '1609459200'},
       {token: 'created_date_after', value: '1577836800'},
+      {token: 'created_date_before', value: '1609459200'},
     ]);
 
     onChange.mockClear();

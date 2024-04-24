@@ -15,20 +15,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {InstigationStatus, InstigationType} from '../graphql/types';
-import {LastRunSummary} from '../instance/LastRunSummary';
-import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
-import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {errorDisplay} from '../schedules/SchedulesTable';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {humanCronString} from '../schedules/humanCronString';
-import {MenuLink} from '../ui/MenuLink';
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {RepoAddress} from './types';
@@ -37,6 +23,20 @@ import {
   SingleScheduleQueryVariables,
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {InstigationStatus} from '../graphql/types';
+import {LastRunSummary} from '../instance/LastRunSummary';
+import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
+import {errorDisplay} from '../schedules/SchedulesTable';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {humanCronString} from '../schedules/humanCronString';
+import {TickStatusTag} from '../ticks/TickStatusTag';
+import {MenuLink} from '../ui/MenuLink';
+import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1fr 1fr 76px 148px 210px 92px';
 const TEMPLATE_COLUMNS = '1fr 1fr 76px 148px 210px 92px';
@@ -119,6 +119,8 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     return {disabled: false};
   }, [scheduleState]);
 
+  const tick = scheduleData?.scheduleState.ticks[0];
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
@@ -160,7 +162,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                 <Tooltip position="top-left" content={scheduleData.cronSchedule} display="block">
                   <div
                     style={{
-                      color: Colors.Dark,
+                      color: Colors.textDefault(),
                       overflow: 'hidden',
                       whiteSpace: 'nowrap',
                       maxWidth: '100%',
@@ -210,12 +212,9 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           ) : null}
         </RowCell>
         <RowCell>
-          {scheduleData?.scheduleState.ticks[0] ? (
+          {tick ? (
             <div>
-              <TickTag
-                tick={scheduleData.scheduleState.ticks[0]}
-                instigationType={InstigationType.SCHEDULE}
-              />
+              <TickStatusTag tick={tick} />
             </div>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
@@ -264,7 +263,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
           ) : (
-            <span style={{color: Colors.Gray400}}>{'\u2013'}</span>
+            <span style={{color: Colors.textLight()}}>{'\u2013'}</span>
           )}
         </RowCell>
       </RowGrid>
@@ -282,7 +281,7 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: Colors.textLight(),
       }}
     >
       {checkbox ? (

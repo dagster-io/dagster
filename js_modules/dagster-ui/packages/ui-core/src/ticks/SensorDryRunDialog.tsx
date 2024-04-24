@@ -15,9 +15,16 @@ import {
   Tag,
   TextInput,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {RunRequestTable} from './DryRunRequestTable';
+import {DynamicPartitionRequests} from './DynamicPartitionRequests';
+import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
+import {
+  SensorDryRunMutation,
+  SensorDryRunMutationVariables,
+} from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -31,14 +38,6 @@ import {
 } from '../sensors/types/EditCursorDialog.types';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
-
-import {RunRequestTable} from './DryRunRequestTable';
-import {DynamicPartitionRequests} from './DynamicPartitionRequests';
-import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
-import {
-  SensorDryRunMutation,
-  SensorDryRunMutationVariables,
-} from './types/SensorDryRunDialog.types';
 
 type DryRunInstigationTick = Extract<
   SensorDryRunMutation['sensorDryRun'],
@@ -54,7 +53,7 @@ type Props = {
   jobName: string;
 };
 
-export const SensorDryRunDialog: React.FC<Props> = (props) => {
+export const SensorDryRunDialog = (props: Props) => {
   const {isOpen, onClose, name} = props;
   return (
     <Dialog
@@ -69,19 +68,20 @@ export const SensorDryRunDialog: React.FC<Props> = (props) => {
   );
 };
 
-const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClose, jobName}) => {
+const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );
 
-  const [cursor, setCursor] = React.useState(currentCursor);
+  const [cursor, setCursor] = useState(currentCursor);
 
-  const [submitting, setSubmitting] = React.useState(false);
-  const [error, setError] = React.useState<PythonErrorFragment | null>(null);
-  const [sensorExecutionData, setSensorExecutionData] =
-    React.useState<DryRunInstigationTick | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<PythonErrorFragment | null>(null);
+  const [sensorExecutionData, setSensorExecutionData] = useState<DryRunInstigationTick | null>(
+    null,
+  );
 
-  const sensorSelector = React.useMemo(
+  const sensorSelector = useMemo(
     () => ({
       sensorName: name,
       repositoryLocationName: repoAddress.location,
@@ -90,7 +90,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
     [repoAddress, name],
   );
 
-  const submitTest = React.useCallback(async () => {
+  const submitTest = useCallback(async () => {
     setSubmitting(true);
     const result = await sensorDryRun({
       variables: {
@@ -120,7 +120,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
     setSubmitting(false);
   }, [sensorDryRun, sensorSelector, cursor, name]);
 
-  const buttons = React.useMemo(() => {
+  const buttons = useMemo(() => {
     if (sensorExecutionData || error) {
       return (
         <Box flex={{direction: 'row', gap: 8}}>
@@ -157,7 +157,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
     }
   }, [sensorExecutionData, error, submitting, onClose, submitTest]);
 
-  const [cursorState, setCursorState] = React.useState<'Unpersisted' | 'Persisting' | 'Persisted'>(
+  const [cursorState, setCursorState] = useState<'Unpersisted' | 'Persisting' | 'Persisted'>(
     'Unpersisted',
   );
   const [setCursorMutation] = useMutation<
@@ -165,7 +165,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
     SetSensorCursorMutationVariables
   >(SET_CURSOR_MUTATION);
 
-  const onPersistCursorValue = React.useCallback(async () => {
+  const onPersistCursorValue = useCallback(async () => {
     const cursor = sensorExecutionData?.evaluationResult?.cursor;
     if (!cursor) {
       assertUnreachable('Did not expect to get here' as never);
@@ -185,7 +185,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
           <Group direction="row" spacing={8}>
             <div>Could not set cursor value.</div>
             <ButtonLink
-              color={Colors.White}
+              color={Colors.accentReversed()}
               underline="always"
               onClick={() => {
                 showCustomAlert({
@@ -207,7 +207,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
     }
   }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation]);
 
-  const content = React.useMemo(() => {
+  const content = useMemo(() => {
     if (sensorExecutionData || error) {
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
@@ -263,7 +263,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
                       </span>
                     </Button>
                     {cursorState === 'Persisted' ? (
-                      <Icon name="check_circle" color={Colors.Green500} />
+                      <Icon name="check_circle" color={Colors.accentGreen()} />
                     ) : null}
                   </Box>
                 )}
@@ -396,7 +396,7 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   margin-bottom: 12px;
   ${Subheading} {
     padding-bottom: 4px;

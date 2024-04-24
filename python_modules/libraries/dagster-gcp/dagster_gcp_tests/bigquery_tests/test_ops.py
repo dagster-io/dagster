@@ -256,8 +256,7 @@ def test_pd_df_load():
             )
         assert (
             "loading data to BigQuery from pandas DataFrames requires either pyarrow or fastparquet"
-            " to be installed"
-            in str(exc_info.value.user_exception)
+            " to be installed" in str(exc_info.value.user_exception)
         )
 
         @job(resource_defs={"bigquery": bigquery_resource})

@@ -1,9 +1,9 @@
-import {Box, ButtonGroup, Spinner, Subheading} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, ButtonGroup, SpinnerWithText} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {useGroupedEvents} from './groupByPartition';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
@@ -13,47 +13,22 @@ interface Props {
   setParams: (params: AssetViewParams) => void;
 }
 
-export const AssetPlots: React.FC<Props> = ({
-  assetKey,
-  assetHasDefinedPartitions,
-  params,
-  setParams,
-}) => {
+export const AssetPlots = ({assetKey, assetHasDefinedPartitions, params, setParams}: Props) => {
   const {materializations, observations, loadedPartitionKeys, loading, xAxis} =
     useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
-  const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
+  const activeItems = useMemo(() => new Set([xAxis]), [xAxis]);
 
-  if (loading) {
-    return (
-      <Box>
+  return (
+    <>
+      {assetHasDefinedPartitions ? (
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
           border="bottom"
           padding={{vertical: 16, left: 24, right: 12}}
           style={{marginBottom: -1}}
         >
-          <Subheading>Asset plots</Subheading>
-        </Box>
-        <Box padding={{vertical: 48}}>
-          <Spinner purpose="page" />
-        </Box>
-      </Box>
-    );
-  }
-
-  return (
-    <Box>
-      <Box
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        border="bottom"
-        padding={{vertical: 16, left: 24, right: 12}}
-        style={{marginBottom: -1}}
-      >
-        <Subheading>Asset plots</Subheading>
-
-        {assetHasDefinedPartitions ? (
           <div style={{margin: '-6px 0 '}}>
             <ButtonGroup
               activeItems={activeItems}
@@ -70,9 +45,15 @@ export const AssetPlots: React.FC<Props> = ({
               }
             />
           </div>
-        ) : null}
-      </Box>
-      <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} />
-    </Box>
+        </Box>
+      ) : null}
+      {loading ? (
+        <Box padding={{vertical: 48}} flex={{direction: 'row', justifyContent: 'center'}}>
+          <SpinnerWithText label="Loading plots…" />
+        </Box>
+      ) : (
+        <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} />
+      )}
+    </>
   );
 };

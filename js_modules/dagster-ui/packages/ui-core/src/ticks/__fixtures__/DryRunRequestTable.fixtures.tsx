@@ -1,4 +1,4 @@
-import {buildRepositoryLocation, buildRepository} from '../../graphql/types';
+import {buildRepository, buildRepositoryLocation} from '../../graphql/types';
 
 export const mockRepository = {
   repository: buildRepository({

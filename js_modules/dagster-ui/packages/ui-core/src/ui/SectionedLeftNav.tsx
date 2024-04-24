@@ -12,6 +12,7 @@ import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {Inner, Row} from './VirtualizedTable';
 import {AppContext} from '../app/AppContext';
 import {useFeatureFlags} from '../app/Flags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -25,12 +26,10 @@ import {
 } from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
-
-import {Inner, Row} from './VirtualizedTable';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
 const EXPANDED_REPO_KEYS = 'dagster.expanded-repo-keys';
@@ -300,7 +299,7 @@ export const SectionedLeftNav = () => {
 const Container = styled.div`
   height: 100%;
   overflow: auto;
-  background-color: ${Colors.Gray100};
+  background-color: ${Colors.backgroundLight()};
 `;
 
 interface CodeLocationNameRowProps {
@@ -346,8 +345,8 @@ const CodeLocationNameRow = (props: CodeLocationNameRowProps) => {
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
-                fillColor={Colors.Gray10}
-                textColor={Colors.Dark}
+                fillColor={Colors.backgroundGray()}
+                textColor={Colors.textDefault()}
                 label={itemCount.toLocaleString()}
               />
             </div>
@@ -425,9 +424,9 @@ const ItemRow = (props: ItemRowProps) => {
 };
 
 const CodeLocationTooltipStyles = JSON.stringify({
-  background: Colors.Gray100,
+  background: Colors.backgroundLightHover(),
   filter: `brightness(97%)`,
-  color: Colors.Gray900,
+  color: Colors.textDefault(),
   fontWeight: 500,
   border: 'none',
   borderRadius: 7,
@@ -484,7 +483,7 @@ const usePathMatch = () => {
 };
 
 const ItemTypeLabel = styled.div`
-  color: ${Colors.Gray600};
+  color: ${Colors.textLighter()};
   padding: 0 12px 4px;
   font-size: 12px;
 `;
@@ -493,9 +492,9 @@ const SectionHeader = styled.button<{
   $open: boolean;
   $showRepoLocation: boolean;
 }>`
-  background: ${Colors.Gray100};
+  background: ${Colors.backgroundLight()};
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -505,11 +504,12 @@ const SectionHeader = styled.button<{
   text-align: left;
   user-select: none;
   white-space: nowrap;
+  transition: background 100ms linear;
 
   width: 100%;
   margin: 0;
   
-  box-shadow: inset 0px 1px 0 ${Colors.KeylineGray}, inset 0px -1px 0 ${Colors.KeylineGray};
+  box-shadow: inset 0px 1px 0 ${Colors.keylineDefault()}, inset 0px -1px 0 ${Colors.keylineDefault()};
 
   :disabled {
     cursor: default;
@@ -517,12 +517,12 @@ const SectionHeader = styled.button<{
 
   :hover,
   :active {
-    background-color: ${Colors.Gray50};
+    background-color: ${Colors.backgroundLightHover()};
   }
 
   :disabled:hover,
   :disabled:active {
-    background-color: ${Colors.Gray100};
+    background-color: ${Colors.backgroundDisabled()};
   }
 
   :focus,
@@ -536,7 +536,7 @@ const SectionHeader = styled.button<{
   }
 
   :disabled ${IconWrapper} {
-    background-color: ${Colors.Gray300};
+    background-color: ${Colors.textDisabled()};
   }
 
   ${StyledTag} {
@@ -549,7 +549,7 @@ const SectionHeader = styled.button<{
   }
 
   :disabled ${StyledTag} {
-    color: ${Colors.Gray400};
+    color: ${Colors.textDisabled()};
   }
 }`;
 

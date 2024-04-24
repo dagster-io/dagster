@@ -17,6 +17,7 @@ export type SingleSensorQuery = {
         name: string;
         minIntervalSeconds: number;
         jobOriginId: string;
+        sensorType: Types.SensorType;
         targets: Array<{__typename: 'Target'; pipelineName: string}> | null;
         metadata: {
           __typename: 'SensorMetadata';
@@ -56,6 +57,10 @@ export type SingleSensorQuery = {
             updateTime: number | null;
           }>;
           nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
         };
       }
     | {__typename: 'SensorNotFoundError'}

@@ -5,12 +5,11 @@ export const PersistentTabContext = React.createContext<{
   setTabState: (string, number) => void;
 }>({getTabState: () => 0, setTabState: () => {}});
 
-export const PersistentTabProvider: React.FC = ({children}) => {
+export const PersistentTabProvider = ({children}: {children: React.ReactNode}) => {
   const [tabState, setTabState] = React.useState<{[key: string]: number}>({});
 
   const windowExists = typeof window !== 'undefined';
   React.useEffect(() => {
-    console.log(windowExists);
     if (windowExists) {
       const ts = localStorage.getItem('persistentTabStates');
       if (ts) {

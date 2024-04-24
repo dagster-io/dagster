@@ -3,7 +3,6 @@ from typing import Any
 import mock
 import pytest
 
-from dagster import build_init_resource_context, build_op_context
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import DagsterInvalidConfigError
 

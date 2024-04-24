@@ -1,5 +1,5 @@
 CLIENT_SUBMIT_PIPELINE_RUN_MUTATION = """
-mutation($executionParams: ExecutionParams!) {
+mutation GraphQLClientSubmitRun($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
 
@@ -38,12 +38,15 @@ mutation($executionParams: ExecutionParams!) {
     ... on PythonError {
       message
     }
+    ... on UnauthorizedError {
+      message
+    }
   }
 }
 """
 
 CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY = """
-query {
+query GraphQLClientGetJobNames {
   repositoriesOrError {
     __typename
     ... on RepositoryConnection {
@@ -65,7 +68,7 @@ query {
 """
 
 RELOAD_REPOSITORY_LOCATION_MUTATION = """
-mutation ($repositoryLocationName: String!) {
+mutation GraphQLClientReloadCodeLocation($repositoryLocationName: String!) {
    reloadRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
       __typename
       ... on WorkspaceLocationEntry {
@@ -94,7 +97,7 @@ mutation ($repositoryLocationName: String!) {
 """
 
 GET_PIPELINE_RUN_STATUS_QUERY = """
-query($runId: ID!) {
+query GraphQLClientGetRunStatus($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
     ... on PipelineRun {
@@ -111,7 +114,7 @@ query($runId: ID!) {
 """
 
 SHUTDOWN_REPOSITORY_LOCATION_MUTATION = """
-mutation ($repositoryLocationName: String!) {
+mutation GraphQLClientShutdownCodeLocation($repositoryLocationName: String!) {
    shutdownRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
       __typename
       ... on PythonError {
@@ -125,7 +128,7 @@ mutation ($repositoryLocationName: String!) {
 """
 
 TERMINATE_RUN_JOB_MUTATION = """
-mutation TerminateRun($runId: String!) {
+mutation GraphQLClientTerminateRun($runId: String!) {
   terminateRun(runId: $runId){
     __typename
     ... on TerminateRunSuccess{

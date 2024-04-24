@@ -1,5 +1,5 @@
 import {buildQueryMock} from '../../assets/AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
-import {buildRuns, buildRun, buildPipelineTag} from '../../graphql/types';
+import {buildPipelineTag, buildRun, buildRuns} from '../../graphql/types';
 import {DagsterTag} from '../RunTag';
 import {RUNS_ROOT_QUERY} from '../RunsRoot';
 import {RunsRootQuery, RunsRootQueryVariables} from '../types/RunsRoot.types';

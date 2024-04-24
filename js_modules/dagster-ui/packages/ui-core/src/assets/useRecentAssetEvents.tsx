@@ -1,12 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
-
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -15,8 +14,8 @@ import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAsse
  * limit could cause random partitions to disappear if materializations were out of order.
  */
 export function useRecentAssetEvents(
-  assetKey: AssetKey,
-  params: AssetViewParams,
+  assetKey: AssetKey | undefined,
+  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
   // The params behavior on this page is a bit nuanced - there are two main query
@@ -42,21 +41,23 @@ export function useRecentAssetEvents(
   const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
     ASSET_EVENTS_QUERY,
     {
+      skip: !assetKey,
+      fetchPolicy: 'cache-and-network',
       variables: loadUsingPartitionKeys
         ? {
-            assetKey: {path: assetKey.path},
+            assetKey: {path: assetKey?.path ?? []},
             before,
             partitionInLast: 120,
           }
         : {
-            assetKey: {path: assetKey.path},
+            assetKey: {path: assetKey?.path ?? []},
             before,
             limit: 100,
           },
     },
   );
 
-  return React.useMemo(() => {
+  const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];
@@ -79,7 +80,11 @@ export function useRecentAssetEvents(
       xAxis,
     };
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
+
+  return value;
 }
+
+export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
 
 export const ASSET_MATERIALIZATION_FRAGMENT = gql`
   fragment AssetMaterializationFragment on MaterializationEvent {

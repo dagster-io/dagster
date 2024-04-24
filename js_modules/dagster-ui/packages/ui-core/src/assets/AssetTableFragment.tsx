@@ -3,6 +3,7 @@ import {gql} from '@apollo/client';
 export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
+    changedReasons
     groupName
     opNames
     isSource
@@ -14,6 +15,18 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       description
     }
     description
+    owners {
+      ... on UserAssetOwner {
+        email
+      }
+      ... on TeamAssetOwner {
+        team
+      }
+    }
+    tags {
+      key
+      value
+    }
     repository {
       id
       name

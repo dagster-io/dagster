@@ -1,13 +1,14 @@
-from typing import AbstractSet, Optional
+from typing import AbstractSet, Any, Mapping, Optional
 
 from dagster import (
     AssetKey,
     AssetSelection,
     _check as check,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
-from .asset_utils import is_non_asset_node
+from .asset_utils import get_asset_check_key_for_test, is_non_asset_node
 from .dagster_dbt_translator import DagsterDbtTranslator
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
@@ -17,7 +18,7 @@ from .utils import (
 )
 
 
-class DbtManifestAssetSelection(AssetSelection):
+class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
@@ -39,25 +40,35 @@ class DbtManifestAssetSelection(AssetSelection):
             my_selection = DbtManifestAssetSelection(manifest=manifest, select="tag:foo")
     """
 
-    def __init__(
-        self,
+    manifest: Mapping[str, Any]
+    select: str
+    dagster_dbt_translator: DagsterDbtTranslator
+    exclude: str
+
+    @classmethod
+    def build(
+        cls,
         manifest: DbtManifestParam,
         select: str = "fqn:*",
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         exclude: Optional[str] = None,
-    ) -> None:
-        self.manifest = validate_manifest(manifest)
-        self.select = check.str_param(select, "select")
-        self.exclude = check.opt_str_param(exclude, "exclude", default="")
-        self.dagster_dbt_translator = check.opt_inst_param(
-            dagster_dbt_translator,
-            "dagster_dbt_translator",
-            DagsterDbtTranslator,
-            DagsterDbtTranslator(),
+    ):
+        return cls(
+            manifest=validate_manifest(manifest),
+            select=check.str_param(select, "select"),
+            dagster_dbt_translator=check.opt_inst_param(
+                dagster_dbt_translator,
+                "dagster_dbt_translator",
+                DagsterDbtTranslator,
+                DagsterDbtTranslator(),
+            ),
+            exclude=check.opt_str_param(exclude, "exclude", default=""),
         )
 
-    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool = False
+    ) -> AbstractSet[AssetKey]:
         dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
 
         keys = set()
@@ -71,5 +82,26 @@ class DbtManifestAssetSelection(AssetSelection):
             if is_dbt_asset and not is_non_asset_node(dbt_resource_props):
                 asset_key = self.dagster_dbt_translator.get_asset_key(dbt_resource_props)
                 keys.add(asset_key)
+
+        return keys
+
+    def resolve_checks_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetCheckKey]:
+        if not self.dagster_dbt_translator.settings.enable_asset_checks:
+            return set()
+
+        keys = set()
+        for unique_id in select_unique_ids_from_manifest(
+            select=self.select,
+            exclude=self.exclude,
+            manifest_json=self.manifest,
+        ):
+            asset_check_key = get_asset_check_key_for_test(
+                self.manifest, self.dagster_dbt_translator, test_unique_id=unique_id
+            )
+
+            if asset_check_key:
+                keys.add(asset_check_key)
 
         return keys

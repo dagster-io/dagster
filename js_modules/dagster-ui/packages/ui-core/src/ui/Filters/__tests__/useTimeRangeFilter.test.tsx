@@ -1,17 +1,16 @@
 import {IconName} from '@dagster-io/ui-components';
-import {render, act, waitFor} from '@testing-library/react';
+import {act, render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
 // eslint-disable-next-line no-restricted-imports
 import moment from 'moment-timezone';
-import React from 'react';
 
 import {
-  calculateTimeRanges,
-  useTimeRangeFilter,
+  ActiveFilterState,
   CustomTimeRangeFilterDialog,
   TimeRangeState,
-  ActiveFilterState,
+  calculateTimeRanges,
+  useTimeRangeFilter,
 } from '../useTimeRangeFilter';
 
 let mockReactDates = jest.fn((_props) => <div />);
@@ -25,8 +24,9 @@ jest.mock('react-dates', () => {
 });
 const mockFilterProps = {
   name: 'Test Filter',
+  activeFilterTerm: 'Timestamp',
   icon: 'date' as IconName,
-  initialState: [null, null] as TimeRangeState,
+  state: [null, null] as TimeRangeState,
 };
 
 describe('useTimeRangeFilter', () => {
@@ -36,7 +36,7 @@ describe('useTimeRangeFilter', () => {
 
     expect(filter.name).toBe(mockFilterProps.name);
     expect(filter.icon).toBe(mockFilterProps.icon);
-    expect(filter.state).toEqual(mockFilterProps.initialState);
+    expect(filter.state).toEqual(mockFilterProps.state);
   });
 
   it('should reset filter state', () => {
@@ -48,14 +48,14 @@ describe('useTimeRangeFilter', () => {
     });
 
     filter = result.current;
-    expect(filter.state).not.toEqual(mockFilterProps.initialState);
+    expect(filter.state).not.toEqual(mockFilterProps.state);
 
     act(() => {
       filter.setState([null, null]);
     });
     filter = result.current;
 
-    expect(filter.state).toEqual(mockFilterProps.initialState);
+    expect(filter.state).toEqual(mockFilterProps.state);
   });
 
   it('should handle pre-defined time ranges', () => {
@@ -98,8 +98,8 @@ describe('CustomTimeRangeFilterDialog', () => {
     );
 
     // Mock selecting start and end dates
-    const startDate = moment().subtract(10, 'days');
-    const endDate = moment().subtract(5, 'days');
+    const startDate = moment().startOf('day').subtract(10, 'days');
+    const endDate = moment().endOf('day').subtract(5, 'days');
 
     act(() => {
       ((mockReactDates.mock.calls[0] as any)[0] as any).onDatesChange({
@@ -147,6 +147,7 @@ describe('ActiveFilterState', () => {
   it('should render Today filter state', () => {
     const {getByText} = render(
       <ActiveFilterState
+        activeFilterTerm="Timestamp"
         state={timeRanges.TODAY.range}
         remove={removeMock}
         timezone={mockTimezone}
@@ -160,6 +161,7 @@ describe('ActiveFilterState', () => {
   it('should render Yesterday filter state', () => {
     const {getByText} = render(
       <ActiveFilterState
+        activeFilterTerm="Timestamp"
         state={timeRanges.YESTERDAY.range}
         remove={removeMock}
         timezone={mockTimezone}
@@ -173,6 +175,7 @@ describe('ActiveFilterState', () => {
   it('should render Within last 7 days filter state', () => {
     const {getByText} = render(
       <ActiveFilterState
+        activeFilterTerm="Timestamp"
         state={timeRanges.LAST_7_DAYS.range}
         remove={removeMock}
         timezone={mockTimezone}
@@ -186,6 +189,7 @@ describe('ActiveFilterState', () => {
   it('should render Within last 30 days filter state', () => {
     const {getByText} = render(
       <ActiveFilterState
+        activeFilterTerm="Timestamp"
         state={timeRanges.LAST_30_DAYS.range}
         remove={removeMock}
         timezone={mockTimezone}
@@ -200,6 +204,7 @@ describe('ActiveFilterState', () => {
     const customRange = [moment().subtract(3, 'days').valueOf(), null] as TimeRangeState;
     const {getByText} = render(
       <ActiveFilterState
+        activeFilterTerm="Timestamp"
         state={customRange}
         remove={removeMock}
         timezone={mockTimezone}
@@ -207,13 +212,14 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Timestamp is after/)).toBeInTheDocument();
+    expect(getByText(/Timestamp after/)).toBeInTheDocument();
   });
 
   it('should render custom filter state with upper boundary', () => {
     const customRange = [null, moment().subtract(1, 'days').valueOf()] as TimeRangeState;
     const {getByText} = render(
       <ActiveFilterState
+        activeFilterTerm="Timestamp"
         state={customRange}
         remove={removeMock}
         timezone={mockTimezone}
@@ -221,7 +227,7 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Timestamp is before/)).toBeInTheDocument();
+    expect(getByText(/Timestamp before/)).toBeInTheDocument();
   });
 
   it('should render custom filter state with both boundaries', () => {
@@ -231,6 +237,7 @@ describe('ActiveFilterState', () => {
     ] as TimeRangeState;
     const {getByText} = render(
       <ActiveFilterState
+        activeFilterTerm="Timestamp"
         state={customRange}
         remove={removeMock}
         timezone={mockTimezone}
@@ -238,6 +245,6 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Timestamp is in range/)).toBeInTheDocument();
+    expect(getByText(/Timestamp from/)).toBeInTheDocument();
   });
 });

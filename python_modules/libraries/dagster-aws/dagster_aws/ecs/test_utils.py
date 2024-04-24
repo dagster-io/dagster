@@ -42,7 +42,7 @@ class CustomECSRunLauncher(EcsRunLauncher):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return CustomECSRunLauncher(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def get_cpu_and_memory_overrides(
         self, container_context: EcsContainerContext, run: DagsterRun

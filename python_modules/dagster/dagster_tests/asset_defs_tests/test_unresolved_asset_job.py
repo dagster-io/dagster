@@ -13,6 +13,7 @@ from dagster import (
     IOManager,
     Out,
     Output,
+    RetryPolicy,
     SourceAsset,
     define_asset_job,
     graph,
@@ -22,7 +23,6 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
@@ -34,7 +34,7 @@ from dagster._core.definitions.partitioned_schedule import build_schedule_from_p
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import create_test_asset_job, instance_for_test
 
 
 def _all_asset_keys(result):
@@ -126,7 +126,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
+        outputs_to_return = (
+            sorted(context.op_execution_context.selected_output_names) if allow_subset else "abc"
+        )
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -160,7 +162,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
-        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
+        outputs_to_return = (
+            sorted(context.op_execution_context.selected_output_names) if allow_subset else "def"
+        )
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -209,21 +213,20 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             (
                 DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
-                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but"
+                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\] and check keys \[\], but"
                 r" attempted to "
-                r"select only \[AssetKey\(\['a'\]\)\]",
+                r"select only assets \[AssetKey\(\['a'\]\)\] and checks \[\]",
             ),
         ),
     ],
 )
 def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
-    job_def = define_asset_job(name="some_name", selection=job_selection)
     if expected_error:
         expected_class, expected_message = expected_error
         with pytest.raises(expected_class, match=expected_message):
-            job_def.resolve(asset_graph=AssetGraph.from_assets(_get_assets_defs(use_multi)))
+            create_test_asset_job(_get_assets_defs(use_multi), selection=job_selection)
     else:
-        assert job_def.resolve(asset_graph=AssetGraph.from_assets(_get_assets_defs(use_multi)))
+        assert create_test_asset_job(_get_assets_defs(use_multi), selection=job_selection)
 
 
 @pytest.mark.parametrize(
@@ -233,7 +236,7 @@ def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
         ("a+", "a,b"),
         ("+c", "b,c"),
         (["a", "c"], "a,c"),
-        (AssetSelection.keys("a", "c") | AssetSelection.keys("c", "b"), "a,b,c"),
+        (AssetSelection.assets("a", "c") | AssetSelection.assets("c", "b"), "a,b,c"),
     ],
 )
 def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
@@ -269,14 +272,10 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
     final_assets = with_resources([a_asset, b_asset, c_asset], {"asset_io_manager": io_manager_def})
 
     # run once so values exist to load from
-    define_asset_job("initial").resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
-    ).execute_in_process()
+    create_test_asset_job(final_assets).execute_in_process()
 
     # now build the subset job
-    job = define_asset_job("asset_job", selection=job_selection).resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
-    )
+    job = create_test_asset_job(final_assets, selection=job_selection)
 
     result = job.execute_in_process()
 
@@ -317,25 +316,25 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
         (["+core/models/a", "core/models/b+"], "start,a,b,c,d", ["core", "models"]),
         (["*core/models/c", "core/models/final"], "b,c,final", ["core", "models"]),
         (AssetSelection.all(), "start,a,b,c,d,e,f,final", None),
-        (AssetSelection.keys("a", "b", "c"), "a,b,c", None),
-        (AssetSelection.keys("f").upstream(depth=1), "f,d,e", None),
-        (AssetSelection.keys("f").upstream(depth=2), "f,d,e,c,a,b", None),
-        (AssetSelection.keys("start").downstream(), "start,a,d,f,final", None),
+        (AssetSelection.assets("a", "b", "c"), "a,b,c", None),
+        (AssetSelection.assets("f").upstream(depth=1), "f,d,e", None),
+        (AssetSelection.assets("f").upstream(depth=2), "f,d,e,c,a,b", None),
+        (AssetSelection.assets("start").downstream(), "start,a,d,f,final", None),
         (
-            AssetSelection.keys("a").upstream(depth=1)
-            | AssetSelection.keys("b").downstream(depth=1),
+            AssetSelection.assets("a").upstream(depth=1)
+            | AssetSelection.assets("b").downstream(depth=1),
             "start,a,b,c,d",
             None,
         ),
         (
-            AssetSelection.keys("c").upstream() | AssetSelection.keys("final"),
+            AssetSelection.assets("c").upstream() | AssetSelection.assets("final"),
             "b,c,final",
             None,
         ),
         (AssetSelection.all(), "start,a,b,c,d,e,f,final", ["core", "models"]),
         (
-            AssetSelection.keys("core/models/a").upstream(depth=1)
-            | AssetSelection.keys("core/models/b").downstream(depth=1),
+            AssetSelection.assets("core/models/a").upstream(depth=1)
+            | AssetSelection.assets("core/models/b").downstream(depth=1),
             "start,a,b,c,d",
             ["core", "models"],
         ),
@@ -363,15 +362,10 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     )
 
     # run once so values exist to load from
-    define_asset_job("initial").resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
-    ).execute_in_process()
+    create_test_asset_job(final_assets).execute_in_process()
 
     # now build the subset job
-    job = define_asset_job("asset_job", selection=job_selection).resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
-    )
-
+    job = create_test_asset_job(final_assets, selection=job_selection)
     with instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
@@ -452,10 +446,8 @@ def test_define_selection_job_assets_definition_selection():
 
     all_assets = [asset1, asset2, asset3]
 
-    job1 = define_asset_job("job1", selection=[asset1, asset2]).resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
-    )
-    asset_keys = list(job1.asset_layer.asset_keys)
+    job1 = create_test_asset_job(all_assets, selection=[asset1, asset2])
+    asset_keys = list(job1.asset_layer.executable_asset_keys)
     assert len(asset_keys) == 2
     assert set(asset_keys) == {asset1.key, asset2.key}
     job1.execute_in_process()
@@ -471,9 +463,7 @@ def test_root_asset_selection():
         return a + 1
 
     # Source asset should not be included in the job
-    assert define_asset_job("job", selection="*b").resolve(
-        asset_graph=AssetGraph.from_assets([a, b, SourceAsset("source")])
-    )
+    assert create_test_asset_job([a, b, SourceAsset("source")], selection="*b")
 
 
 def test_source_asset_selection_missing():
@@ -486,7 +476,7 @@ def test_source_asset_selection_missing():
         return a + 1
 
     with pytest.raises(DagsterInvalidDefinitionError, match="sources"):
-        define_asset_job("job", selection="*b").resolve(asset_graph=AssetGraph.from_assets([a, b]))
+        create_test_asset_job([a, b], selection="*b")
 
 
 @asset
@@ -495,25 +485,19 @@ def foo():
 
 
 def test_executor_def():
-    job = define_asset_job("with_exec", executor_def=in_process_executor).resolve(
-        asset_graph=AssetGraph.from_assets([foo])
-    )
+    job = create_test_asset_job([foo], executor_def=in_process_executor)
     assert job.executor_def == in_process_executor
 
 
 def test_tags():
     my_tags = {"foo": "bar"}
-    job = define_asset_job("with_tags", tags=my_tags).resolve(
-        asset_graph=AssetGraph.from_assets([foo])
-    )
+    job = create_test_asset_job([foo], tags=my_tags)
     assert job.tags == my_tags
 
 
 def test_description():
     description = "Some very important description"
-    job = define_asset_job("with_tags", description=description).resolve(
-        asset_graph=AssetGraph.from_assets([foo])
-    )
+    job = create_test_asset_job([foo], description=description)
     assert job.description == description
 
 
@@ -540,21 +524,21 @@ def test_config():
 
     @asset(config_schema={"val": int})
     def config_asset(context, foo):
-        return foo + context.op_config["val"]
+        return foo + context.op_execution_context.op_config["val"]
 
     @asset(config_schema={"val": int})
     def other_config_asset(context, config_asset):
-        return config_asset + context.op_config["val"]
+        return config_asset + context.op_execution_context.op_config["val"]
 
-    job = define_asset_job(
-        "config_job",
+    job = create_test_asset_job(
+        [foo, config_asset, other_config_asset],
         config={
             "ops": {
                 "config_asset": {"config": {"val": 2}},
                 "other_config_asset": {"config": {"val": 3}},
             }
         },
-    ).resolve(asset_graph=AssetGraph.from_assets([foo, config_asset, other_config_asset]))
+    )
 
     result = job.execute_in_process()
 
@@ -565,11 +549,11 @@ def test_config():
     "selection,config",
     [
         (
-            AssetSelection.keys("other_config_asset"),
+            AssetSelection.assets("other_config_asset"),
             {"other_config_asset": {"config": {"val": 3}}},
         ),
         (
-            AssetSelection.keys("other_config_asset").upstream(depth=1),
+            AssetSelection.assets("other_config_asset").upstream(depth=1),
             {
                 "config_asset": {"config": {"val": 2}},
                 "other_config_asset": {"config": {"val": 3}},
@@ -584,11 +568,11 @@ def test_subselect_config(selection, config):
 
     @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
     def config_asset(context, foo):
-        return foo + context.op_config["val"]
+        return foo + context.op_execution_context.op_config["val"]
 
     @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
     def other_config_asset(context, config_asset):
-        return config_asset + context.op_config["val"]
+        return config_asset + context.op_execution_context.op_config["val"]
 
     io_manager_obj, io_manager_def = asset_aware_io_manager()
     io_manager_obj.db[AssetKey("foo")] = 1
@@ -598,9 +582,7 @@ def test_subselect_config(selection, config):
         [foo, config_asset, other_config_asset],
         resource_defs={"asset_io_manager": io_manager_def},
     )
-    job = define_asset_job("config_job", config={"ops": config}, selection=selection).resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
-    )
+    job = create_test_asset_job(all_assets, config={"ops": config}, selection=selection)
 
     result = job.execute_in_process()
 
@@ -609,8 +591,8 @@ def test_subselect_config(selection, config):
 
 def test_simple_partitions():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
-    job = define_asset_job("hourly", partitions_def=partitions_def).resolve(
-        asset_graph=AssetGraph.from_assets(_get_partitioned_assets(partitions_def)),
+    job = create_test_asset_job(
+        _get_partitioned_assets(partitions_def), partitions_def=partitions_def
     )
     assert job.partitions_def == partitions_def
 
@@ -632,9 +614,7 @@ def test_hooks():
     def bar(_):
         pass
 
-    job = define_asset_job("with_hooks", hooks={foo, bar}).resolve(
-        asset_graph=AssetGraph.from_assets([a, b])
-    )
+    job = create_test_asset_job([a, b], hooks={foo, bar})
     assert job.hook_defs == {foo, bar}
 
 
@@ -655,9 +635,7 @@ def test_hooks_with_resources():
     def bar(_):
         pass
 
-    job = define_asset_job("with_hooks", hooks={foo, bar}).resolve(
-        asset_graph=AssetGraph.from_assets([a, b]), resource_defs={"a": 1, "b": 2, "c": 3}
-    )
+    job = create_test_asset_job([a, b], hooks={foo, bar}, resources={"a": 1, "b": 2, "c": 3})
     assert job.hook_defs == {foo, bar}
 
     defs = Definitions(
@@ -725,6 +703,8 @@ def test_intersecting_partitions_on_repo_invalid():
                 *_get_partitioned_assets(partitions_def),
                 d,
             ]
+
+        my_repo.get_all_jobs()
 
 
 def test_intersecting_partitions_on_repo_valid():
@@ -813,3 +793,24 @@ def test_job_partitions_def_unpartitioned_assets():
     @repository
     def my_repo():
         return [my_asset, my_job]
+
+
+def test_op_retry_policy():
+    ops_retry_policy = RetryPolicy(max_retries=2)
+    tries = {"a": 0, "b": 0}
+
+    @asset
+    def a():
+        tries["a"] += 1
+        raise Exception()
+
+    @asset(retry_policy=RetryPolicy(max_retries=3))
+    def b():
+        tries["b"] += 1
+        raise Exception()
+
+    job1 = create_test_asset_job([a, b], op_retry_policy=ops_retry_policy)
+    assert job1._op_retry_policy == ops_retry_policy  # noqa: SLF001
+    job1.execute_in_process(raise_on_error=False)
+
+    assert tries == {"a": 3, "b": 4}

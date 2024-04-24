@@ -12,10 +12,13 @@ export type AssetCheckTableFragment = {
     id: string;
     runId: string;
     status: Types.AssetCheckExecutionResolvedStatus;
+    stepKey: string | null;
+    timestamp: number;
     evaluation: {
       __typename: 'AssetCheckEvaluation';
       severity: Types.AssetCheckSeverity;
       timestamp: number;
+      description: string | null;
       targetMaterialization: {
         __typename: 'AssetCheckEvaluationTargetMaterializationData';
         timestamp: number;
@@ -44,6 +47,14 @@ export type AssetCheckTableFragment = {
             __typename: 'IntMetadataEntry';
             intValue: number | null;
             intRepr: string;
+            label: string;
+            description: string | null;
+          }
+        | {
+            __typename: 'JobMetadataEntry';
+            jobName: string;
+            repositoryName: string | null;
+            locationName: string;
             label: string;
             description: string | null;
           }
@@ -79,6 +90,20 @@ export type AssetCheckTableFragment = {
             name: string;
             label: string;
             description: string | null;
+          }
+        | {
+            __typename: 'TableColumnLineageMetadataEntry';
+            label: string;
+            description: string | null;
+            lineage: Array<{
+              __typename: 'TableColumnLineageEntry';
+              columnName: string;
+              columnDeps: Array<{
+                __typename: 'TableColumnDep';
+                columnName: string;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }>;
+            }>;
           }
         | {
             __typename: 'TableMetadataEntry';
@@ -127,6 +152,12 @@ export type AssetCheckTableFragment = {
             };
           }
         | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+        | {
+            __typename: 'TimestampMetadataEntry';
+            timestamp: number;
+            label: string;
+            description: string | null;
+          }
         | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
       >;
     } | null;

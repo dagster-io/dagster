@@ -45,8 +45,8 @@ def test_run_priority_job(rabbitmq):
                     "tempdir": tempdir,
                     "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "-3"},
                 },
+                daemon=True,
             )
-            low_thread.daemon = True
             low_thread.start()
 
             time.sleep(1)  # sleep so that we don't hit any sqlite concurrency issues
@@ -59,8 +59,8 @@ def test_run_priority_job(rabbitmq):
                     "tempdir": tempdir,
                     "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "3"},
                 },
+                daemon=True,
             )
-            hi_thread.daemon = True
             hi_thread.start()
 
             time.sleep(5)  # sleep to give queue time to prioritize tasks

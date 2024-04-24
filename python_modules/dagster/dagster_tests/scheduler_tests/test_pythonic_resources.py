@@ -6,6 +6,7 @@ import pendulum
 import pytest
 from dagster import (
     DagsterInstance,
+    IAttachDifferentObjectToOpContext,
     ScheduleEvaluationContext,
     job,
     op,
@@ -28,7 +29,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
 from .test_scheduler_run import evaluate_schedules, validate_tick, wait_for_all_runs_to_start
 
@@ -45,6 +46,13 @@ def the_job():
 
 class MyResource(ConfigurableResource):
     a_str: str
+
+
+class MyResourceAttachDifferentObject(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    a_str: str
+
+    def get_object_to_set_on_execution_context(self) -> str:
+        return self.a_str
 
 
 @schedule(job_name="the_job", cron_schedule="* * * * *", required_resource_keys={"my_resource"})
@@ -64,6 +72,15 @@ def schedule_from_weird_name(
     assert not_called_context.resources.my_resource.a_str == my_resource.a_str
 
     return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
+@schedule(job_name="the_job", cron_schedule="* * * * *")
+def schedule_with_resource_from_context(
+    context: ScheduleEvaluationContext, my_resource_attach: MyResourceAttachDifferentObject
+):
+    assert context.resources.my_resource_attach == my_resource_attach.a_str
+
+    return RunRequest(my_resource_attach.a_str, run_config={}, tags={})
 
 
 @resource
@@ -91,10 +108,12 @@ the_repo = Definitions(
         schedule_from_context,
         schedule_from_arg,
         schedule_from_weird_name,
+        schedule_with_resource_from_context,
         schedule_resource_deps,
     ],
     resources={
         "my_resource": MyResource(a_str="foo"),
+        "my_resource_attach": MyResourceAttachDifferentObject(a_str="foo"),
         "the_inner": the_inner,
         "the_outer": the_outer,
     },
@@ -105,7 +124,7 @@ def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY
     return ModuleTarget(
         module_name="dagster_tests.scheduler_tests.test_pythonic_resources",
         attribute=None,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 
@@ -147,6 +166,7 @@ def loadable_target_origin() -> LoadableTargetOrigin:
         "schedule_from_context",
         "schedule_from_arg",
         "schedule_from_weird_name",
+        "schedule_with_resource_from_context",
         "schedule_resource_deps",
     ],
 )
@@ -170,7 +190,7 @@ def test_resources(
         "US/Central",
     )
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_schedule = external_repo_struct_resources.get_external_schedule(schedule_name)
         instance.start_schedule(external_schedule)
 
@@ -181,7 +201,7 @@ def test_resources(
         assert len(ticks) == 0
     freeze_datetime = freeze_datetime.add(seconds=30)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context_struct_resources, None, pendulum.now("UTC"))
         wait_for_all_runs_to_start(instance)
 

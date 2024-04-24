@@ -4,214 +4,20 @@ import {
   Box,
   Button,
   Colors,
-  CursorHistoryControls,
   Dialog,
   DialogBody,
   DialogFooter,
-  DialogHeader,
-  Headline,
   Mono,
   NonIdealState,
-  Spinner,
-  Subtitle2,
-  Table,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import {Link} from 'react-router-dom';
+import {useState} from 'react';
 
-import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {useTrackPageView} from '../../app/analytics';
-import {AssetKeyInput} from '../../graphql/types';
-import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {METADATA_ENTRY_FRAGMENT, MetadataEntries} from '../../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
-import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-
-import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {
-  AssetCheckDetailsQuery,
-  AssetCheckDetailsQueryVariables,
-} from './types/AssetCheckDetailModal.types';
-
-export const AssetCheckDetailModal = ({
-  assetKey,
-  checkName,
-  onClose,
-}: {
-  assetKey: AssetKeyInput;
-  checkName: string | undefined | null;
-  onClose: () => void;
-}) => {
-  return (
-    <Dialog
-      isOpen={!!checkName}
-      canOutsideClickClose
-      canEscapeKeyClose
-      onClose={onClose}
-      style={{width: '80%', minWidth: '800px'}}
-    >
-      {checkName ? (
-        <AssetCheckDetailModalImpl checkName={checkName} assetKey={assetKey} onClose={onClose} />
-      ) : null}
-    </Dialog>
-  );
-};
-
-const PAGE_SIZE = 5;
-const AssetCheckDetailModalImpl = ({
-  assetKey,
-  checkName,
-  onClose,
-}: {
-  assetKey: AssetKeyInput;
-  checkName: string;
-  onClose: () => void;
-}) => {
-  useTrackPageView();
-  useDocumentTitle(`Asset Check | ${checkName}`);
-
-  const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    AssetCheckDetailsQuery,
-    AssetCheckDetailsQueryVariables
-  >({
-    query: ASSET_CHECK_DETAILS_QUERY,
-    variables: {
-      assetKey,
-      checkName,
-    },
-    nextCursorForResult: (data) => {
-      if (!data || data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
-        return undefined;
-      }
-      return data.assetChecksOrError.checks[0]?.executions[PAGE_SIZE - 1]?.id.toString();
-    },
-    getResultArray: (data) => {
-      if (!data || data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
-        return [];
-      }
-      return data.assetChecksOrError.checks[0]?.executions || [];
-    },
-    pageSize: PAGE_SIZE,
-  });
-
-  // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-
-  const {data: executionHistoryData} = queryResult;
-
-  const content = () => {
-    if (!executionHistoryData) {
-      return (
-        <Box flex={{direction: 'column'}} padding={24}>
-          <Spinner purpose="page" />
-        </Box>
-      );
-    }
-    return (
-      <Box
-        flex={{direction: 'column'}}
-        border="top"
-        // CollapsibleSection uses a white background which covers the border, so add 1px of padding on top for the border
-        padding={{top: 1, horizontal: 12}}
-      >
-        <Subtitle2 style={{padding: '8px 16px'}}>Run history</Subtitle2>
-        {runHistory()}
-      </Box>
-    );
-  };
-
-  const runHistory = () => {
-    if (!executionHistoryData) {
-      return (
-        <Box padding={48}>
-          <Spinner purpose="page" />
-        </Box>
-      );
-    }
-    if (executionHistoryData.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
-      return <MigrationRequired />;
-    }
-    const check = executionHistoryData.assetChecksOrError.checks[0];
-    if (!check) {
-      showCustomAlert({
-        title: 'Error',
-        body: `Asset Check ${checkName} not found`,
-      });
-      setTimeout(() => {
-        // This check does not exist
-        onClose();
-      });
-      return <NoChecks />;
-    }
-    const executions = check.executions;
-    if (!executions.length) {
-      return <NoExecutions />;
-    }
-    return (
-      <div>
-        <Table>
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Target materialization</th>
-              <th>Result</th>
-              <th>Evaluation metadata</th>
-            </tr>
-          </thead>
-          <tbody>
-            {executions.map((execution) => {
-              return (
-                <tr key={execution.id}>
-                  <td>
-                    {execution.evaluation?.timestamp ? (
-                      <Link to={`/runs/${execution.runId}`}>
-                        <TimestampDisplay timestamp={execution.evaluation.timestamp} />
-                      </Link>
-                    ) : (
-                      ' - '
-                    )}
-                  </td>
-                  <td>
-                    {execution.evaluation?.targetMaterialization ? (
-                      <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
-                        <TimestampDisplay
-                          timestamp={execution.evaluation.targetMaterialization.timestamp}
-                        />
-                      </Link>
-                    ) : (
-                      ' - '
-                    )}
-                  </td>
-                  <td>
-                    <AssetCheckStatusTag check={check} execution={execution} />
-                  </td>
-                  <td>
-                    <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-        <div style={{paddingBottom: '16px'}}>
-          <CursorHistoryControls {...paginationProps} />
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <>
-      <DialogHeader label={<Headline>{checkName}</Headline>} icon="asset_check"></DialogHeader>
-      {content()}
-    </>
-  );
-};
+import {MetadataEntries} from '../../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 
 export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntryFragment[]}) {
-  const [showMetadata, setShowMetadata] = React.useState(false);
+  const [showMetadata, setShowMetadata] = useState(false);
 
   if (!metadataEntries || !metadataEntries.length) {
     return <span>{' - '}</span>;
@@ -248,9 +54,12 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
     id
     runId
     status
+    stepKey
+    timestamp
     evaluation {
       severity
       timestamp
+      description
       targetMaterialization {
         timestamp
         runId
@@ -270,19 +79,14 @@ export const ASSET_CHECK_DETAILS_QUERY = gql`
     $limit: Int!
     $cursor: String
   ) {
-    assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
-      ... on AssetChecks {
-        checks {
-          name
-          description
-          executions(limit: $limit, cursor: $cursor) {
-            ...AssetCheckExecutionFragment
-          }
-        }
-      }
-      ... on AssetCheckNeedsMigrationError {
-        message
-      }
+    assetCheckExecutions(
+      assetKey: $assetKey
+      checkName: $checkName
+      limit: $limit
+      cursor: $cursor
+    ) {
+      id
+      ...AssetCheckExecutionFragment
     }
   }
   ${ASSET_CHECK_EXECUTION_FRAGMENT}
@@ -296,19 +100,48 @@ export function MigrationRequired() {
         title="Migration required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
             </Body2>
-            {/* <Box
-              as="a"
-              href="https://docs.dagster.io/concepts/assets/asset-checks"
-              target="_blank"
-              flex={{direction: 'row', alignItems: 'end', gap: 4}}
-            >
-              Learn more about Asset Checks
-              <Icon name="open_in_new" color={Colors.Link} />
-            </Box> */}
+          </Box>
+        }
+      />
+    </Box>
+  );
+}
+
+export function AgentUpgradeRequired() {
+  return (
+    <Box padding={24}>
+      <NonIdealState
+        icon="warning"
+        title="Agent upgrade required"
+        description={
+          <Box flex={{direction: 'column'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+              Checks require Dagster Cloud Agent version 1.5 or higher. Upgrade your agent(s) to use
+              checks.
+            </Body2>
+          </Box>
+        }
+      />
+    </Box>
+  );
+}
+
+export function NeedsUserCodeUpgrade() {
+  return (
+    <Box padding={24}>
+      <NonIdealState
+        icon="warning"
+        title="Upgrade required"
+        description={
+          <Box flex={{direction: 'column'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+              Checks aren&apos;t supported with dagster versions before 1.5. Upgrade the dagster
+              library in this code location to use them.
+            </Body2>
           </Box>
         }
       />
@@ -324,7 +157,7 @@ export function NoChecks() {
         title="No checks found for this asset"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               Asset Checks run after a materialization and can verify a particular property of a
               data asset. Checks can help ensure that the contents of each data asset is correct.
             </Body2>
@@ -335,34 +168,7 @@ export function NoChecks() {
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
               Learn more about Asset Checks
-              <Icon name="open_in_new" color={Colors.Link} />
-            </Box> */}
-          </Box>
-        }
-      />
-    </Box>
-  );
-}
-
-function NoExecutions() {
-  return (
-    <Box padding={24}>
-      <NonIdealState
-        icon="asset_check"
-        title="No executions found for this check"
-        description={
-          <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
-              No executions found. Materialize this asset and the check will run automatically.
-            </Body2>
-            {/* <Box
-              as="a"
-              href="https://docs.dagster.io/concepts/assets/asset-checks"
-              target="_blank"
-              flex={{direction: 'row', alignItems: 'end', gap: 4}}
-            >
-              Learn more about Asset Checks
-              <Icon name="open_in_new" color={Colors.Link} />
+              <Icon name="open_in_new" color={Colors.linkDefault()} />
             </Box> */}
           </Box>
         }

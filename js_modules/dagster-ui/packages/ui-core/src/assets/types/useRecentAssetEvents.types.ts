@@ -55,6 +55,14 @@ export type AssetMaterializationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -81,6 +89,20 @@ export type AssetMaterializationFragment = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -129,6 +151,12 @@ export type AssetMaterializationFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetLineage: Array<{
@@ -191,6 +219,14 @@ export type AssetObservationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -217,6 +253,20 @@ export type AssetObservationFragment = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -265,15 +315,21 @@ export type AssetObservationFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
 export type AssetEventsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  before?: Types.InputMaybe<Types.Scalars['String']>;
-  partitionInLast?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  before?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  partitionInLast?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type AssetEventsQuery = {
@@ -336,6 +392,14 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -372,6 +436,20 @@ export type AssetEventsQuery = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -422,6 +500,12 @@ export type AssetEventsQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -486,6 +570,14 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -522,6 +614,20 @@ export type AssetEventsQuery = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -572,6 +678,12 @@ export type AssetEventsQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }

@@ -6,6 +6,7 @@ import dagster._seven as seven
 from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
+    DagsterJobMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -17,12 +18,14 @@ from dagster import (
     TableMetadataValue,
     TableSchemaMetadataValue,
     TextMetadataValue,
+    TimestampMetadataValue,
     UrlMetadataValue,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
     MetadataValue,
+    TableColumnLineageMetadataValue,
 )
 from dagster._core.events import (
     DagsterEventType,
@@ -44,6 +47,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneBoolMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
+        GrapheneJobMetadataEntry,
         GrapheneJsonMetadataEntry,
         GrapheneMarkdownMetadataEntry,
         GrapheneNotebookMetadataEntry,
@@ -51,9 +55,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
+        GrapheneTableColumnLineageEntry,
+        GrapheneTableColumnLineageMetadataEntry,
         GrapheneTableMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
         GrapheneTextMetadataEntry,
+        GrapheneTimestampMetadataEntry,
         GrapheneUrlMetadataEntry,
     )
     from ..schema.table import GrapheneTable, GrapheneTableSchema
@@ -138,6 +145,13 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                 label=key,
                 assetKey=value.asset_key,
             )
+        elif isinstance(value, DagsterJobMetadataValue):
+            yield GrapheneJobMetadataEntry(
+                label=key,
+                jobName=value.job_name,
+                repositoryName=value.repository_name,
+                locationName=value.location_name,
+            )
         elif isinstance(value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(
                 label=key,
@@ -154,6 +168,18 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                     columns=value.schema.columns,
                 ),
             )
+        elif isinstance(value, TableColumnLineageMetadataValue):
+            yield GrapheneTableColumnLineageMetadataEntry(
+                label=key,
+                lineage=[
+                    GrapheneTableColumnLineageEntry(
+                        column_name=column_name, column_deps=column_deps
+                    )
+                    for column_name, column_deps in value.column_lineage.deps_by_column.items()
+                ],
+            )
+        elif isinstance(value, TimestampMetadataValue):
+            yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")
@@ -326,9 +352,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneHandledOutputEvent(
             output_name=data.output_name,
             manager_key=data.manager_key,
-            metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata  # type: ignore
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.event_specific_data.metadata),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.LOADED_INPUT:

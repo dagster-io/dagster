@@ -4,9 +4,10 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, ExitStack
+from enum import Enum
 from threading import Event
-from typing import TYPE_CHECKING, Generator, Generic, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generator, Generic, Mapping, Optional, TypeVar, Union
 
 import pendulum
 from typing_extensions import TypeAlias
@@ -17,6 +18,7 @@ from dagster import (
 )
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._daemon.monitoring import (
@@ -25,8 +27,12 @@ from dagster._daemon.monitoring import (
 )
 from dagster._daemon.sensor import execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_from_exc_info,
+)
 
 if TYPE_CHECKING:
     from pendulum.datetime import DateTime
@@ -45,8 +51,12 @@ def get_telemetry_daemon_session_id() -> str:
     return _telemetry_daemon_session_id
 
 
-# DaemonIterator = Iterator[Union[None, SerializableErrorInfo]]
-DaemonIterator: TypeAlias = Generator[Union[None, SerializableErrorInfo], None, None]
+class SpanMarker(Enum):
+    START_SPAN = "START_SPAN"
+    END_SPAN = "END_SPAN"
+
+
+DaemonIterator: TypeAlias = Generator[Union[None, SerializableErrorInfo, SpanMarker], None, None]
 
 TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
 
@@ -105,8 +115,8 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
 
                     try:
-                        result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
-                        if result:
+                        result = next(daemon_generator)
+                        if isinstance(result, SerializableErrorInfo):
                             self._errors.appendleft((result, pendulum.now("UTC")))
                     except StopIteration:
                         self._logger.error(
@@ -115,9 +125,10 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
                         break
                     except Exception:
-                        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                        self._logger.error(
-                            "Caught error, daemon loop will restart:\n%s", error_info
+                        error_info = DaemonErrorCapture.on_exception(
+                            exc_info=sys.exc_info(),
+                            logger=self._logger,
+                            log_message="Caught error, daemon loop will restart",
                         )
                         self._errors.appendleft((error_info, pendulum.now("UTC")))
                         daemon_generator.close()
@@ -220,12 +231,14 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
     ) -> DaemonIterator:
         while True:
             start_time = time.time()
+            yield SpanMarker.START_SPAN
             try:
                 yield from self.run_iteration(workspace_process_context)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
                 self._logger.error("Caught error:\n%s", error_info)
                 yield error_info
+            yield SpanMarker.END_SPAN
             while time.time() - start_time < self.interval_seconds:
                 shutdown_event.wait(0.5)
                 yield None
@@ -259,9 +272,35 @@ class SchedulerDaemon(DagsterDaemon):
 
 
 class SensorDaemon(DagsterDaemon):
+    def __init__(self, settings: Mapping[str, Any]) -> None:
+        super().__init__()
+        self._exit_stack = ExitStack()
+        self._threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
+        self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
+
+        if settings.get("use_threads"):
+            self._threadpool_executor = self._exit_stack.enter_context(
+                InheritContextThreadPoolExecutor(
+                    max_workers=settings.get("num_workers"),
+                    thread_name_prefix="sensor_daemon_worker",
+                )
+            )
+            num_submit_workers = settings.get("num_submit_workers")
+            if num_submit_workers:
+                self._submit_threadpool_executor = self._exit_stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_submit_workers"),
+                        thread_name_prefix="sensor_submit_worker",
+                    )
+                )
+
     @classmethod
     def daemon_type(cls) -> str:
         return "SENSOR"
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._exit_stack.close()
+        super().__exit__(_exception_type, _exception_value, _traceback)
 
     def core_loop(
         self,
@@ -272,6 +311,8 @@ class SensorDaemon(DagsterDaemon):
             workspace_process_context,
             self._logger,
             shutdown_event,
+            threadpool_executor=self._threadpool_executor,
+            submit_threadpool_executor=self._submit_threadpool_executor,
         )
 
 

@@ -1,25 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
+import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useTrackPageView} from '../app/analytics';
-import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {Loading} from '../ui/Loading';
-import {buildPipelineSelector} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
 import {
-  GraphExplorer,
-  GraphExplorerOptions,
   GRAPH_EXPLORER_ASSET_NODE_FRAGMENT,
   GRAPH_EXPLORER_FRAGMENT,
   GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
+  GraphExplorer,
+  GraphExplorerOptions,
 } from './GraphExplorer';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
 import {ExplorerPath, explorerPathFromString, explorerPathToString} from './PipelinePathUtils';
@@ -27,6 +16,16 @@ import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
 } from './types/PipelineExplorerRoot.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useTrackPageView} from '../app/analytics';
+import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetLocation} from '../asset-graph/useFindAssetLocation';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {Loading} from '../ui/Loading';
+import {buildPipelineSelector} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
 
 export const PipelineExplorerSnapshotRoot = () => {
   useTrackPageView();
@@ -51,20 +50,20 @@ export const PipelineExplorerSnapshotRoot = () => {
   );
 };
 
-export const PipelineExplorerContainer: React.FC<{
-  explorerPath: ExplorerPath;
-  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
-  repoAddress?: RepoAddress;
-  isGraph?: boolean;
-}> = ({
+export const PipelineExplorerContainer = ({
   explorerPath,
   repoAddress,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode,
   isGraph = false,
+}: {
+  explorerPath: ExplorerPath;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
+  repoAddress?: RepoAddress;
+  isGraph?: boolean;
 }) => {
-  const [options, setOptions] = React.useState<GraphExplorerOptions>({
+  const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
   });

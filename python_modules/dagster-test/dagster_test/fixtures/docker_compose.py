@@ -89,11 +89,9 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
         compose_command += ["--env-file", env_file]
 
     if service:
-        compose_command += ["--file", str(docker_compose_yml), "rm", "--volumes"]
-
-        compose_command.append(service)
-
+        compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", service]
         subprocess.check_call(compose_command)
+
     else:
         compose_command += [
             "--file",
@@ -102,7 +100,6 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
             "--volumes",
             "--remove-orphans",
         ]
-
         subprocess.check_call(compose_command)
 
 

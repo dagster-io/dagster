@@ -22,8 +22,9 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -85,6 +86,42 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
+def assert_permission_for_asset_graph(
+    graphene_info: "ResolveInfo",
+    asset_graph: RemoteAssetGraph,
+    asset_selection: Optional[Sequence[AssetKey]],
+    permission: str,
+) -> None:
+    asset_keys = set(asset_selection or [])
+
+    # If any of the asset keys don't map to a location (e.g. because they are no longer in the
+    # graph) need deployment-wide permissions - no valid code location to check
+    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
+        assert_permission(
+            graphene_info,
+            permission,
+        )
+        return
+
+    if asset_keys:
+        repo_handles = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
+    else:
+        repo_handles = asset_graph.repository_handles_by_key.values()
+
+    location_names = set(
+        repo_handle.code_location_origin.location_name for repo_handle in repo_handles
+    )
+
+    if not location_names:
+        assert_permission(
+            graphene_info,
+            permission,
+        )
+    else:
+        for location_name in location_names:
+            assert_permission_for_location(graphene_info, permission, location_name)
+
+
 def _noop(_) -> None:
     pass
 
@@ -92,7 +129,7 @@ def _noop(_) -> None:
 class ErrorCapture:
     @staticmethod
     def default_on_exception(
-        exc_info: Tuple[Type[BaseException], BaseException, TracebackType]
+        exc_info: Tuple[Type[BaseException], BaseException, TracebackType],
     ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
@@ -118,7 +155,7 @@ class ErrorCapture:
 
 
 def capture_error(
-    fn: Callable[P, T]
+    fn: Callable[P, T],
 ) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
     def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
@@ -160,10 +197,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector
             else None
         ),
         asset_check_selection=(
-            [
-                AssetCheckHandle.from_graphql_input(asset_check)
-                for asset_check in asset_check_selection
-            ]
+            [AssetCheckKey.from_graphql_input(asset_check) for asset_check in asset_check_selection]
             if asset_check_selection is not None
             else None
         ),
@@ -257,3 +291,4 @@ class ExecutionMetadata(
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]
+AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]

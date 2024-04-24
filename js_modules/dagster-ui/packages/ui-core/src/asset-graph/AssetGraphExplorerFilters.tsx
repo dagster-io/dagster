@@ -1,114 +1,193 @@
-import {Box, Icon} from '@dagster-io/ui-components';
-import React from 'react';
+import {Box} from '@dagster-io/ui-components';
+import React, {useContext, useEffect, useState} from 'react';
 
-import {AssetGroupSelector} from '../graphql/types';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
+import {GraphNode} from './Utils';
+import {CloudOSSContext} from '../app/CloudOSSContext';
+import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
+import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/Filters';
-import {FilterObject} from '../ui/Filters/useFilter';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
-import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
+import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
+import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
+import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {
+  useAssetKindTagsForAssets,
+  useComputeKindTagFilter,
+} from '../ui/Filters/useComputeKindTagFilter';
+import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-export const AssetGraphExplorerFilters = React.memo(
-  ({
-    assetGroups,
-    visibleAssetGroups,
-    setGroupFilters,
-  }:
-    | {
-        assetGroups: AssetGroupSelector[];
-        visibleAssetGroups: AssetGroupSelector[];
-        setGroupFilters: (groups: AssetGroupSelector[]) => void;
+type Props = {
+  nodes: GraphNode[];
+  clearExplorerPath: () => void;
+  explorerPath: string;
+  isGlobalGraph: boolean;
+  assetFilterState?: AssetFilterState;
+  loading: boolean;
+};
+
+const defaultState = {filters: {selectAllFilters: [] as string[]}} as Partial<AssetFilterState> & {
+  filters: Partial<AssetFilterState['filters']>;
+};
+
+export function useAssetGraphExplorerFilters({
+  nodes,
+  isGlobalGraph,
+  explorerPath,
+  loading,
+  clearExplorerPath,
+  assetFilterState,
+}: Props) {
+  const allAssetTags = useAssetTagsForAssets(nodes);
+
+  const {allRepos, visibleRepos} = useContext(WorkspaceContext);
+
+  const {
+    filters: {changedInBranch, computeKindTags, repos, owners, groups, tags, selectAllFilters},
+    setAssetTags,
+    setChangedInBranch,
+    setComputeKindTags,
+    setGroups,
+    setOwners,
+    setRepos,
+    setSelectAllFilters,
+  } = assetFilterState || defaultState;
+
+  const reposFilter = useCodeLocationFilter(repos && setRepos ? {repos, setRepos} : undefined);
+
+  const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
+
+  const allAssetGroups = useAssetGroupsForAssets(nodes);
+
+  const groupsFilter = useAssetGroupFilter({
+    assetGroups: selectAllFilters.includes('groups') ? allAssetGroups : groups,
+    allAssetGroups,
+    setGroups,
+  });
+
+  const allComputeKindTags = useAssetKindTagsForAssets(nodes);
+
+  const kindTagsFilter = useComputeKindTagFilter({
+    allComputeKindTags,
+    computeKindTags: selectAllFilters.includes('computeKindTags')
+      ? allComputeKindTags
+      : computeKindTags,
+    setComputeKindTags,
+  });
+
+  const tagsFilter = useAssetTagFilter({
+    allAssetTags,
+    tags: selectAllFilters.includes('tags') ? allAssetTags : tags,
+    setTags: setAssetTags,
+  });
+
+  const allAssetOwners = useAssetOwnersForAssets(nodes);
+  const ownerFilter = useAssetOwnerFilter({
+    allAssetOwners,
+    owners: selectAllFilters.includes('owners') ? allAssetOwners : owners,
+    setOwners,
+  });
+
+  const [didWaitAfterLoading, setDidWaitAfterLoading] = useState(false);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+    if (!didWaitAfterLoading) {
+      // Wait for a render frame because the graphData is set in a useEffect in response to the data loading...
+      requestAnimationFrame(() => setDidWaitAfterLoading(true));
+      return;
+    }
+    let nextAllFilters = [...selectAllFilters];
+
+    let didChange = false;
+
+    [
+      ['owners', owners, allAssetOwners] as const,
+      ['tags', tags, allAssetTags] as const,
+      ['computeKindTags', computeKindTags, allComputeKindTags] as const,
+      ['groups', groups, allAssetGroups] as const,
+      ['changedInBranch', changedInBranch, Object.values(ChangeReason)] as const,
+      ['repos', visibleRepos, allRepos] as const,
+    ].forEach(([key, activeItems, allItems]) => {
+      if (!allItems.length) {
+        return;
       }
-    | {assetGroups?: null; setGroupFilters?: null; visibleAssetGroups?: null}) => {
-    const {allRepos, visibleRepos, toggleVisible} = React.useContext(WorkspaceContext);
-
-    const visibleReposSet = React.useMemo(() => new Set(visibleRepos), [visibleRepos]);
-
-    const reposFilter = useStaticSetFilter<DagsterRepoOption>({
-      name: 'Repository',
-      icon: 'repo',
-      allValues: allRepos.map((repo) => ({
-        key: repo.repository.id,
-        value: repo,
-        match: [buildRepoPathForHuman(repo.repository.name, repo.repositoryLocation.name)],
-      })),
-      menuWidth: '300px',
-      renderLabel: ({value}) => (
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="repo" />
-          <TruncatedTextWithFullTextOnHover
-            text={buildRepoPathForHuman(value.repository.name, value.repositoryLocation.name)}
-          />
-        </Box>
-      ),
-      getStringValue: (value) =>
-        buildRepoPathForHuman(value.repository.name, value.repositoryLocation.name),
-      initialState: visibleReposSet,
-      onStateChanged: (values) => {
-        allRepos.forEach((repo) => {
-          if (visibleReposSet.has(repo) !== values.has(repo)) {
-            toggleVisible([buildRepoAddress(repo.repository.name, repo.repositoryLocation.name)]);
-          }
-        });
-      },
-    });
-
-    const groupsFilter = useStaticSetFilter<AssetGroupSelector>({
-      name: 'Asset Groups',
-      icon: 'asset_group',
-      allValues: (assetGroups || []).map((group) => ({
-        key: group.groupName,
-        value:
-          visibleAssetGroups?.find(
-            (visibleGroup) =>
-              visibleGroup.groupName === group.groupName &&
-              visibleGroup.repositoryName === group.repositoryName &&
-              visibleGroup.repositoryLocationName === group.repositoryLocationName,
-          ) ?? group,
-        match: [group.groupName],
-      })),
-      menuWidth: '300px',
-      renderLabel: ({value}) => (
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="repo" />
-          <TruncatedTextWithFullTextOnHover
-            tooltipText={
-              value.groupName +
-              ' - ' +
-              buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)
-            }
-            text={
-              <>
-                {value.groupName}
-                <span style={{opacity: 0.5, paddingLeft: '4px'}}>
-                  {buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)}
-                </span>
-              </>
-            }
-          />
-        </Box>
-      ),
-      getStringValue: (group) => group.groupName,
-      initialState: React.useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
-      onStateChanged: (values) => {
-        if (setGroupFilters) {
-          setGroupFilters(Array.from(values));
+      if (activeItems.length !== allItems.length) {
+        if (selectAllFilters.includes(key)) {
+          didChange = true;
+          nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
         }
-      },
+      } else if (activeItems.length && !selectAllFilters.includes(key)) {
+        didChange = true;
+        nextAllFilters.push(key);
+      }
     });
 
-    const filters: FilterObject[] = [];
-    if (allRepos.length > 1) {
-      filters.push(reposFilter);
+    if (didChange) {
+      setSelectAllFilters?.(nextAllFilters);
     }
-    if (assetGroups) {
-      filters.push(groupsFilter);
-    }
-    const {button} = useFilters({filters});
-    if (allRepos.length <= 1 && !assetGroups) {
-      return null;
-    }
-    return button;
-  },
-);
+  }, [
+    loading,
+    owners,
+    allAssetOwners,
+    selectAllFilters,
+    setSelectAllFilters,
+    tags,
+    allAssetTags,
+    computeKindTags,
+    allComputeKindTags,
+    groups,
+    allAssetGroups,
+    changedInBranch,
+    visibleRepos,
+    allRepos,
+    didWaitAfterLoading,
+  ]);
+
+  const filters: FilterObject[] = [];
+
+  if (allRepos.length > 1 && isGlobalGraph) {
+    filters.push(reposFilter);
+  }
+  if (allAssetGroups) {
+    filters.push(groupsFilter);
+  }
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+  if (changedInBranch && isBranchDeployment) {
+    filters.push(changedFilter);
+  }
+  filters.push(kindTagsFilter);
+  filters.push(tagsFilter);
+  filters.push(ownerFilter);
+  const {button, activeFiltersJsx} = useFilters({filters});
+  if (!filters.length) {
+    return {button: null, activeFiltersJsx: null};
+  }
+
+  return {
+    button,
+    filterBar:
+      activeFiltersJsx.length || explorerPath ? (
+        <Box padding={{vertical: 8, horizontal: 12}} flex={{gap: 12}}>
+          {' '}
+          {activeFiltersJsx}
+          {explorerPath ? (
+            <FilterTag
+              label={
+                <Box flex={{direction: 'row', alignItems: 'center'}}>
+                  Asset selection is&nbsp;
+                  <FilterTagHighlightedText tooltipText={explorerPath}>
+                    {explorerPath}
+                  </FilterTagHighlightedText>
+                </Box>
+              }
+              onRemove={clearExplorerPath}
+            />
+          ) : null}
+        </Box>
+      ) : null,
+  };
+}

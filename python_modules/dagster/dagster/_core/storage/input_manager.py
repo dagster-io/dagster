@@ -195,9 +195,7 @@ class InputManagerWrapper(InputManager):
         # result is an InputManager. If so we call it's load_input method
         intermediate = (
             # type-ignore because function being used as attribute
-            self._load_fn(context)
-            if has_at_least_one_parameter(self._load_fn)
-            else self._load_fn()  # type: ignore  # (strict type guard)
+            self._load_fn(context) if has_at_least_one_parameter(self._load_fn) else self._load_fn()  # type: ignore  # (strict type guard)
         )
 
         if isinstance(intermediate, InputManager):

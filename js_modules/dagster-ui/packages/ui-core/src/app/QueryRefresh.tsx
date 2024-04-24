@@ -1,18 +1,28 @@
 import {NetworkStatus, ObservableQuery, QueryResult} from '@apollo/client';
-import {useCountdown, RefreshableCountdown} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {RefreshableCountdown, useCountdown} from '@dagster-io/ui-components';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
+import {isSearchVisible, useSearchVisibility} from '../search/useSearchVisibility';
 
 export const FIFTEEN_SECONDS = 15 * 1000;
 export const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
 
-export interface QueryRefreshState {
+export type QueryRefreshState = {
   nextFireMs: number | null | undefined;
   nextFireDelay: number; // seconds
   networkStatus: NetworkStatus;
   refetch: ObservableQuery['refetch'];
-}
+};
+
+export type RefreshState<T = void> =
+  | {
+      nextFireMs: number | null | undefined;
+      nextFireDelay: number; // seconds
+      refetch: () => Promise<T>;
+      loading: boolean;
+    }
+  | QueryRefreshState;
 
 /**
  * The default pollInterval feature of Apollo's useQuery is fine, but we want to add two features:
@@ -34,21 +44,10 @@ export interface QueryRefreshState {
  *
  */
 export function useQueryRefreshAtInterval(
-  queryResult: QueryResult<any, any>,
+  queryResult: Pick<QueryResult<any, any>, 'refetch' | 'loading' | 'networkStatus'>,
   intervalMs: number,
   enabled = true,
-  customRefetch?: () => void,
 ) {
-  const timer = React.useRef<number>();
-  const loadingStartMs = React.useRef<number>();
-  const [nextFireMs, setNextFireMs] = React.useState<number | null>();
-
-  const queryResultRef = React.useRef(queryResult);
-  queryResultRef.current = queryResult;
-
-  const customRefetchRef = React.useRef(customRefetch);
-  customRefetchRef.current = customRefetch;
-
   // Sanity check - don't use this hook alongside a useQuery pollInterval
   if (queryResult.networkStatus === NetworkStatus.poll) {
     throw new Error(
@@ -56,23 +55,88 @@ export function useQueryRefreshAtInterval(
     );
   }
 
+  const {nextFireMs, nextFireDelay, refetch} = useRefreshAtInterval({
+    refresh: useCallback(async () => {
+      return await queryResult?.refetch();
+    }, [queryResult]),
+    intervalMs,
+    enabled,
+  });
+
+  // Memoize the returned object so components passed the entire QueryRefreshState
+  // can be memoized / pure components.
+  return useMemo<QueryRefreshState>(
+    () => ({
+      nextFireMs,
+      nextFireDelay,
+      networkStatus: queryResult.networkStatus,
+      refetch,
+    }),
+    [nextFireMs, nextFireDelay, queryResult.networkStatus, refetch],
+  );
+}
+
+export function useRefreshAtInterval<T = void>({
+  refresh,
+  intervalMs,
+  enabled = true,
+  leading,
+}: {
+  refresh: () => Promise<T>;
+  intervalMs: number;
+  enabled?: boolean;
+  leading?: boolean;
+}) {
+  const timer = useRef<number>();
+  const loadingStartMs = useRef<number>();
+  const [nextFireMs, setNextFireMs] = useState<number | null>();
+
   // If the page is in the background when our refresh timer fires, we set
   // documentVisiblityDidInterrupt = true. When the document becomes visible again,
   // this effect triggers an immediate out-of-interval refresh.
-  const documentVisiblityDidInterrupt = React.useRef(false);
+  const documentVisiblityDidInterrupt = useRef(false);
   const documentVisible = useDocumentVisibility();
 
-  React.useEffect(() => {
+  const searchVisibilityDidInterrupt = useRef(false);
+  const searchVisible = useSearchVisibility();
+
+  const didMakeLeadingQuery = useRef(false);
+
+  const [loading, setLoading] = useState(false);
+
+  const refreshFn = useCallback(async () => {
+    setLoading(true);
+    const result = await refresh();
+    setLoading(false);
+    return result;
+  }, [refresh]);
+
+  useEffect(() => {
+    // Whenever the refresh function changes we need to refire the leading query
+    if (leading) {
+      didMakeLeadingQuery.current = false;
+    }
+  }, [leading, refreshFn]);
+
+  useEffect(() => {
     if (!enabled) {
       return;
     }
-    if (documentVisible && documentVisiblityDidInterrupt.current) {
-      customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
+    if (
+      documentVisible &&
+      !searchVisible &&
+      (searchVisibilityDidInterrupt.current ||
+        documentVisiblityDidInterrupt.current ||
+        (leading && !didMakeLeadingQuery.current))
+    ) {
+      refreshFn();
       documentVisiblityDidInterrupt.current = false;
+      searchVisibilityDidInterrupt.current = false;
+      didMakeLeadingQuery.current = true;
     }
-  }, [documentVisible, enabled]);
+  }, [documentVisible, enabled, searchVisible, refreshFn, leading]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     clearTimeout(timer.current);
     if (!enabled) {
       return;
@@ -80,7 +144,7 @@ export function useQueryRefreshAtInterval(
 
     // If the query has just transitioned to a `loading` state, capture the current
     // time so we can compute the elapsed time when the query completes, and exit.
-    if (queryResult.loading) {
+    if (loading) {
       loadingStartMs.current = loadingStartMs.current || Date.now();
       return;
     }
@@ -105,35 +169,32 @@ export function useQueryRefreshAtInterval(
         documentVisiblityDidInterrupt.current = true;
         return;
       }
-      customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
+      if (isSearchVisible()) {
+        searchVisibilityDidInterrupt.current = true;
+        return;
+      }
+      refreshFn();
     }, adjustedIntervalMs);
 
     return () => {
       clearTimeout(timer.current);
     };
-  }, [queryResult.loading, intervalMs, enabled]);
+  }, [loading, intervalMs, enabled, refreshFn]);
 
   // Expose the next fire time both as a unix timstamp and as a "seconds" interval
   // so the <QueryRefreshCountdown> can display the number easily.
-  const nextFireDelay = React.useMemo(
-    () => (nextFireMs ? nextFireMs - Date.now() : -1),
-    [nextFireMs],
-  );
+  const nextFireDelay = useMemo(() => (nextFireMs ? nextFireMs - Date.now() : -1), [nextFireMs]);
 
   // Memoize the returned object so components passed the entire QueryRefreshState
   // can be memoized / pure components.
-  return React.useMemo<QueryRefreshState>(
+  return useMemo<RefreshState<T>>(
     () => ({
+      loading,
       nextFireMs,
       nextFireDelay,
-      networkStatus: queryResult.networkStatus,
-      refetch: (...props) => {
-        return customRefetchRef.current
-          ? (customRefetchRef.current() as any)
-          : queryResult.refetch(...props);
-      },
+      refetch: refreshFn,
     }),
-    [nextFireMs, nextFireDelay, queryResult],
+    [loading, nextFireMs, nextFireDelay, refreshFn],
   );
 }
 
@@ -148,7 +209,7 @@ export function useQueryRefreshAtInterval(
 export function useMergedRefresh(
   ...args: [QueryRefreshState, ...QueryRefreshState[]]
 ): QueryRefreshState {
-  return React.useMemo(() => {
+  return useMemo(() => {
     const refetch: ObservableQuery['refetch'] = async () => {
       const [ar] = await Promise.all(args.map((s) => s?.refetch()));
       return ar!;
@@ -167,10 +228,16 @@ export const QueryRefreshCountdown = ({
   refreshState,
   dataDescription,
 }: {
-  refreshState: QueryRefreshState;
+  refreshState: QueryRefreshState | RefreshState;
   dataDescription?: string;
 }) => {
-  const status = refreshState.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
+  const status = (
+    'networkStatus' in refreshState
+      ? refreshState.networkStatus === NetworkStatus.ready
+      : !refreshState.loading
+  )
+    ? 'counting'
+    : 'idle';
   const timeRemaining = useCountdown({duration: refreshState.nextFireDelay, status});
 
   return (

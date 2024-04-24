@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Popover} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useRef, useState} from 'react';
 import styled from 'styled-components';
 
+import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -12,8 +13,6 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 
 interface IOpSelectorProps {
   pipelineName: string;
@@ -57,8 +56,8 @@ const SOLID_SELECTOR_QUERY = gql`
 export const OpSelector = (props: IOpSelectorProps) => {
   const {serverProvidedSubsetError, onChange, pipelineName, repoAddress, onFlattenGraphsChange} =
     props;
-  const [focused, setFocused] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const flattenGraphs = props.flattenGraphs || false;
   const selector = {...repoAddressToSelector(repoAddress), pipelineName};
@@ -162,7 +161,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
 const PopoverErrorWrap = styled.div`
   padding: 4px 8px;
   border-radius: 2px;
-  border: 1px solid ${Colors.Red500};
-  background: ${Colors.Red200};
-  color: ${Colors.Red700};
+  border: 1px solid ${Colors.accentRed()};
+  background: ${Colors.backgroundRed()};
+  color: ${Colors.textRed()};
 `;

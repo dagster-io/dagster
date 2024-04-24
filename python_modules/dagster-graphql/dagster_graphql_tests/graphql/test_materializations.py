@@ -1,5 +1,5 @@
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import infer_pipeline_selector
+from dagster_graphql.test.utils import infer_job_selector
 
 from dagster_graphql_tests.graphql.repo import LONG_INT
 
@@ -9,7 +9,7 @@ from .utils import sync_execute_get_events
 
 class TestMaterializations(ExecutingGraphQLContextTestMatrix):
     def test_materializations(self, graphql_context: WorkspaceRequestContext, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "materialization_job")
+        selector = infer_job_selector(graphql_context, "materialization_job")
         logs = sync_execute_get_events(
             context=graphql_context,
             variables={
@@ -88,6 +88,10 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         assert entry["schema"]["columns"]
         assert entry["schema"]["columns"][0]["constraints"]
         assert entry["schema"]["constraints"]
+
+        entry = mat["metadataEntries"][14]
+        assert entry["__typename"] == "JobMetadataEntry"
+        assert entry["jobName"]
 
         non_engine_event_logs = [
             message for message in logs if message["__typename"] != "EngineEvent"

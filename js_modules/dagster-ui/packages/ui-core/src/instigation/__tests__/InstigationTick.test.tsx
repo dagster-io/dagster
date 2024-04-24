@@ -1,9 +1,8 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
 
 import {InstigationTickStatus} from '../../graphql/types';
-import {TickTag} from '../InstigationTick';
+import {TickStatusTag} from '../../ticks/TickStatusTag';
 import {TickTagFragment} from '../types/InstigationTick.types';
 
 describe('TickTag', () => {
@@ -22,9 +21,9 @@ describe('TickTag', () => {
     it('renders skip reason if no run keys', async () => {
       const skippedTick = {...tick, status: InstigationTickStatus.SKIPPED};
 
-      render(<TickTag tick={skippedTick} />);
+      render(<TickStatusTag tick={skippedTick} />);
 
-      const tag = screen.queryByText(/skipped/i);
+      const tag = screen.queryByText(/0 runs requested/i);
       expect(tag).toBeVisible();
 
       await userEvent.hover(tag as HTMLElement);
@@ -36,9 +35,9 @@ describe('TickTag', () => {
     it('renders info about requested run count if run keys', async () => {
       const skippedTick = {...tick, status: InstigationTickStatus.SKIPPED, runKeys: ['foo', 'bar']};
 
-      render(<TickTag tick={skippedTick} />);
+      render(<TickStatusTag tick={skippedTick} />);
 
-      const tag = screen.queryByText(/skipped/i);
+      const tag = screen.queryByText(/0 runs requested/i);
       expect(tag).toBeVisible();
 
       await userEvent.hover(tag as HTMLElement);

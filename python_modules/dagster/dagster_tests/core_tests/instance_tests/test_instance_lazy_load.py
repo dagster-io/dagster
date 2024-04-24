@@ -28,7 +28,7 @@ class InitFailRunLauncher(DefaultRunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return InitFailRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
 
 def test_lazy_run_launcher():
@@ -54,7 +54,7 @@ class InitFailComputeLogManager(NoOpComputeLogManager, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return InitFailComputeLogManager(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
 
 def test_lazy_compute_log_manager():
@@ -80,7 +80,7 @@ class InitFailRunCoordinator(DefaultRunCoordinator, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return InitFailRunCoordinator(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
 
 def test_lazy_run_coordinator():

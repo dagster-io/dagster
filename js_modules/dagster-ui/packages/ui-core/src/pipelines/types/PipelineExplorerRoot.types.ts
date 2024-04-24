@@ -4,9 +4,9 @@ import * as Types from '../../graphql/types';
 
 export type PipelineExplorerRootQueryVariables = Types.Exact<{
   snapshotPipelineSelector?: Types.InputMaybe<Types.PipelineSelector>;
-  snapshotId?: Types.InputMaybe<Types.Scalars['String']>;
-  rootHandleID: Types.Scalars['String'];
-  requestScopeHandleID?: Types.InputMaybe<Types.Scalars['String']>;
+  snapshotId?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  rootHandleID: Types.Scalars['String']['input'];
+  requestScopeHandleID?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type PipelineExplorerRootQuery = {
@@ -47,6 +47,14 @@ export type PipelineExplorerRootQuery = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -83,6 +91,20 @@ export type PipelineExplorerRootQuery = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -133,6 +155,12 @@ export type PipelineExplorerRootQuery = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }

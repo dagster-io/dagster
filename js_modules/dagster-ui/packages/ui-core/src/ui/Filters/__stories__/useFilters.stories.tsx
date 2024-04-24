@@ -1,6 +1,6 @@
 import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import React from 'react';
+import {useMemo} from 'react';
 
 import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForOption';
 import {FilterDropdown} from '../FilterDropdown';
@@ -14,7 +14,7 @@ export default {
   component: FilterDropdown,
 } as Meta;
 
-const TestComponent: React.FC = () => {
+const TestComponent = () => {
   const userFilter = useStaticSetFilter({
     name: 'User',
     icon: 'account_circle',
@@ -83,10 +83,11 @@ const TestComponent: React.FC = () => {
 
   const timeRangeFilter = useTimeRangeFilter({
     name: 'Timestamp',
+    activeFilterTerm: 'Timestamp',
     icon: 'date',
   });
 
-  const filters = React.useMemo(
+  const filters = useMemo(
     () => [userFilter, deploymentFilter, timeRangeFilter, testFilter],
     [userFilter, deploymentFilter, timeRangeFilter, testFilter],
   );

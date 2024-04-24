@@ -21,7 +21,7 @@ from dagster._config import (
     Shape,
     get_builtin_scalar_by_name,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import (
     JobDefinition,
@@ -309,8 +309,7 @@ def _construct_scalar_union_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 2,
-        "Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {}"
-        .format(config_type_snap.type_param_keys),
+        f"Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {config_type_snap.type_param_keys}",
     )
 
     return ScalarUnion(
@@ -327,9 +326,7 @@ def _construct_array_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 1,
-        "Expect ARRAY to provide a single inner type. Snapshot provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        f"Expect ARRAY to provide a single inner type. Snapshot provided: {config_type_snap.type_param_keys}",
     )
 
     return Array(
@@ -343,9 +340,7 @@ def _construct_map_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 2,
-        "Expect map to provide exactly two types (key, value). Snapshot provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        f"Expect map to provide exactly two types (key, value). Snapshot provided: {config_type_snap.type_param_keys}",
     )
 
     return Map(
@@ -366,9 +361,7 @@ def _construct_noneable_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 1,
-        "Expect NONEABLE to provide a single inner type. Snapshot provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        f"Expect NONEABLE to provide a single inner type. Snapshot provided: {config_type_snap.type_param_keys}",
     )
     return Noneable(
         construct_config_type_from_snap(
@@ -419,7 +412,7 @@ class JobLineageSnapshot(
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     )
 ):
@@ -429,7 +422,7 @@ class JobLineageSnapshot(
         op_selection: Optional[Sequence[str]] = None,
         resolved_op_selection: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         return super(JobLineageSnapshot, cls).__new__(

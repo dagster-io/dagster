@@ -173,13 +173,7 @@ def mysql_alembic_config(dunder_file: str) -> Config:
 
 
 def mysql_isolation_level():
-    if db.__version__.startswith("2.") or db.__version__.startswith("1.4"):
-        # Starting with 1.4, the ability to emulate autocommit was deprecated, so we need to
-        # explicitly call commit on the connection for MySQL where the AUTOCOMMIT isolation
-        # level is not supported.  We should then set the isolation level to the MySQL default
-        return "REPEATABLE READ"
-
-    return "AUTOCOMMIT"
+    return "REPEATABLE READ"
 
 
 @contextmanager

@@ -323,7 +323,7 @@ def test_task_definition_registration(
 
 
 @pytest.mark.skip(
-    "This remains occassionally flaky on older versions of Python. See"
+    "This remains occasionally flaky on older versions of Python. See"
     " https://github.com/dagster-io/dagster/pull/11290 "
     "https://linear.app/elementl/issue/CLOUD-2093/re-enable-flaky-ecs-task-registration-race-condition-tests"
 )
@@ -367,6 +367,9 @@ def test_reuse_task_definition(instance, ecs):
                 "secrets": secrets,
                 "environment": environment,
                 "command": ["echo", "HELLO"],
+                "healthCheck": {
+                    "command": ["HELLO"],
+                },
             },
             {
                 "image": "other_image",
@@ -478,6 +481,31 @@ def test_reuse_task_definition(instance, ecs):
     # Changed command fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["command"] = ["echo", "GOODBYE"]
+    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
+    # Changed linuxParameters fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["linuxParameters"] = {
+        "capabilities": {"add": ["SYS_PTRACE"]},
+        "initProcessEnabled": True,
+    }
+    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
+    # Changed healthCheck fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["healthCheck"] = {
+        "command": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 0,
+    }
     assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
@@ -687,6 +715,11 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
 
     repository_credentials = "fake-secret-arn"
 
+    linux_parameters = {
+        "capabilities": {"add": ["SYS_PTRACE"]},
+        "initProcessEnabled": True,
+    }
+
     # You can provide a family or a task definition ARN
     with instance_cm(
         {
@@ -700,6 +733,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
                 "mount_points": mount_points,
                 "volumes": volumes,
                 "repository_credentials": repository_credentials,
+                "linux_parameters": linux_parameters,
             },
             "container_name": container_name,
         }
@@ -745,6 +779,8 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
             container_definition["repositoryCredentials"]["credentialsParameter"]
             == repository_credentials
         )
+
+        assert container_definition["linuxParameters"] == linux_parameters
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,
@@ -1100,8 +1136,8 @@ def test_status(
         assert failure_health_check.status == WorkerStatus.FAILED
         assert (
             failure_health_check.msg
-            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed."
+            == f"Task {task_arn} failed.\nStop code: None.\nStop reason: None.\nContainer 'run'"
+            " failed - exit code 1.\n"
         )
 
         assert not failure_health_check.transient
@@ -1126,8 +1162,8 @@ def test_status(
 
         assert (
             failure_health_check.msg
-            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed.\n\nRun worker logs:\nOops something bad happened"
+            == f"Task {task_arn} failed.\nStop code: None.\nStop reason: None.\nContainer 'run'"
+            " failed - exit code 1.\nRun worker logs:\nOops something bad happened"
         )
 
     task["lastStatus"] = "foo"
@@ -1137,6 +1173,24 @@ def test_status(
 
     task["lastStatus"] = "STOPPED"
     task["stoppedReason"] = "Timeout waiting for network interface provisioning to complete."
+
+    started_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert started_health_check.status == WorkerStatus.FAILED
+    assert not started_health_check.transient
+    assert started_health_check.run_worker_id == "abcdef"
+
+    task["stoppedReason"] = "Timeout waiting for EphemeralStorage provisioning to complete."
+
+    started_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert started_health_check.status == WorkerStatus.FAILED
+    assert not started_health_check.transient
+    assert started_health_check.run_worker_id == "abcdef"
+
+    task["stoppedReason"] = (
+        "CannotPullContainerError: pull image manifest has been retried 5 time(s): Get"
+        ' "https://myfakeimage:myfakemanifest":'
+        " dial tcp 12.345.678.78:443: i/o timeout"
+    )
 
     started_health_check = instance.run_launcher.check_run_worker_health(run)
     assert started_health_check.status == WorkerStatus.FAILED
@@ -1221,3 +1275,59 @@ def test_custom_launcher(
         == WorkerStatus.RUNNING
     )
     ecs.stop_task(task=task_arn)
+
+
+def test_external_launch_type(
+    ecs,
+    instance_cm,
+    workspace,
+    external_job,
+    job,
+):
+    container_name = "external"
+
+    task_definition = ecs.register_task_definition(
+        family="external",
+        containerDefinitions=[{"name": container_name, "image": "dagster:first"}],
+        networkMode="bridge",
+        memory="512",
+        cpu="256",
+    )["taskDefinition"]
+
+    assert task_definition["networkMode"] == "bridge"
+
+    task_definition_arn = task_definition["taskDefinitionArn"]
+
+    # You can provide a family or a task definition ARN
+    with instance_cm(
+        {
+            "task_definition": task_definition_arn,
+            "container_name": container_name,
+            "run_task_kwargs": {
+                "launchType": "EXTERNAL",
+            },
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+
+        initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, workspace)
+
+        # A new task definition is not created
+        assert ecs.list_task_definitions()["taskDefinitionArns"] == initial_task_definitions
+
+        # A new task is launched
+        tasks = ecs.list_tasks()["taskArns"]
+
+        assert len(tasks) == len(initial_tasks) + 1
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
+        assert task["launchType"] == "EXTERNAL"

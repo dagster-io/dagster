@@ -289,6 +289,11 @@ class Field:
                 "required arguments should not specify default values",
             )
 
+        from dagster._config.field_utils import env_var_to_config_dict, is_dagster_env_var
+
+        if is_dagster_env_var(default_value):
+            default_value = env_var_to_config_dict(default_value)
+
         self._default_value = default_value
 
         # check explicit default value
@@ -297,11 +302,9 @@ class Field:
                 raise DagsterInvalidDefinitionError(
                     (
                         "You have passed into a python enum value as the default value "
-                        "into of a config enum type {name}. You must pass in the underlying "
-                        "string represention as the default value. One of {value_set}."
-                    ).format(
-                        value_set=[ev.config_value for ev in self.config_type.enum_values],
-                        name=self.config_type.given_name,
+                        f"into of a config enum type {self.config_type.given_name}. You must pass in the underlying "
+                        "string represention as the default value. "
+                        f"One of {[ev.config_value for ev in self.config_type.enum_values]}."  # type: ignore
                     )
                 )
 

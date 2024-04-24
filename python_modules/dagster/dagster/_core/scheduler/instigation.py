@@ -1,10 +1,19 @@
 from enum import Enum
-from typing import Any, List, NamedTuple, Optional, Sequence, Union
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
 
+import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions import RunRequest
+from dagster._core.definitions.asset_condition.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
+)
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+)
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partition import PartitionsDefinition
 
 # re-export
 from dagster._core.definitions.run_request import (
@@ -12,9 +21,12 @@ from dagster._core.definitions.run_request import (
     SkipReason as SkipReason,
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
-from dagster._core.host_representation.origin import ExternalInstigatorOrigin
+from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
+from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import (
+    EnumSerializer,
     deserialize_value,
     whitelist_for_serdes,
 )
@@ -25,15 +37,28 @@ from dagster._utils.merger import merge_dicts
 InstigatorData: TypeAlias = Union["ScheduleInstigatorData", "SensorInstigatorData"]
 
 
-@whitelist_for_serdes(old_storage_names={"JobStatus"})
+class InstigatorStatusBackcompatSerializer(EnumSerializer):
+    def unpack(self, value: str):
+        if value == InstigatorStatus.AUTOMATICALLY_RUNNING.name:
+            value = InstigatorStatus.DECLARED_IN_CODE.name
+
+        return super().unpack(value)
+
+
+@whitelist_for_serdes(
+    serializer=InstigatorStatusBackcompatSerializer,
+    old_storage_names={"JobStatus"},
+)
 class InstigatorStatus(Enum):
-    # User has taken some action to start the run instigator
+    # User has taken some manual action to change the status of the run instigator
     RUNNING = "RUNNING"
-
-    # The run instigator is running, but only because of its default setting
-    AUTOMATICALLY_RUNNING = "AUTOMATICALLY_RUNNING"
-
     STOPPED = "STOPPED"
+
+    # The run instigator status is controlled by its default setting in code
+    DECLARED_IN_CODE = "DECLARED_IN_CODE"
+
+    # DEPRECATED: use InstigatorStatus.DECLARED_IN_CODE
+    AUTOMATICALLY_RUNNING = "AUTOMATICALLY_RUNNING"
 
 
 @whitelist_for_serdes
@@ -84,6 +109,9 @@ class SensorInstigatorData(
             # the last time a tick was initiated, used to prevent issuing multiple threads from
             # evaluating ticks within the minimum interval
             ("last_tick_start_timestamp", Optional[float]),
+            # the last time the sensor was started
+            ("last_sensor_start_timestamp", Optional[float]),
+            ("sensor_type", Optional[SensorType]),
         ],
     )
 ):
@@ -94,6 +122,8 @@ class SensorInstigatorData(
         min_interval: Optional[int] = None,
         cursor: Optional[str] = None,
         last_tick_start_timestamp: Optional[float] = None,
+        last_sensor_start_timestamp: Optional[float] = None,
+        sensor_type: Optional[SensorType] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -102,6 +132,20 @@ class SensorInstigatorData(
             check.opt_int_param(min_interval, "min_interval"),
             check.opt_str_param(cursor, "cursor"),
             check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
+            check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
+            check.opt_inst_param(sensor_type, "sensor_type", SensorType),
+        )
+
+    def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
+        check.float_param(start_timestamp, "start_timestamp")
+        return SensorInstigatorData(
+            self.last_tick_timestamp,
+            self.last_run_key,
+            self.min_interval,
+            self.cursor,
+            self.last_tick_start_timestamp,
+            start_timestamp,
+            self.sensor_type,
         )
 
 
@@ -168,7 +212,7 @@ class InstigatorState(
     NamedTuple(
         "_InstigationState",
         [
-            ("origin", ExternalInstigatorOrigin),
+            ("origin", RemoteInstigatorOrigin),
             ("instigator_type", InstigatorType),
             ("status", InstigatorStatus),
             ("instigator_data", Optional[InstigatorData]),
@@ -177,14 +221,14 @@ class InstigatorState(
 ):
     def __new__(
         cls,
-        origin: ExternalInstigatorOrigin,
+        origin: RemoteInstigatorOrigin,
         instigator_type: InstigatorType,
         status: InstigatorStatus,
         instigator_data: Optional[InstigatorData] = None,
     ):
         return super(InstigatorState, cls).__new__(
             cls,
-            check.inst_param(origin, "origin", ExternalInstigatorOrigin),
+            check.inst_param(origin, "origin", RemoteInstigatorOrigin),
             check.inst_param(instigator_type, "instigator_type", InstigatorType),
             check.inst_param(status, "status", InstigatorStatus),
             check_instigator_data(instigator_type, instigator_data),
@@ -204,13 +248,13 @@ class InstigatorState(
 
     @property
     def repository_origin_id(self) -> str:
-        return self.origin.external_repository_origin.get_id()
+        return self.origin.repository_origin.get_id()
 
     @property
     def repository_selector(self) -> RepositorySelector:
         return RepositorySelector(
-            self.origin.external_repository_origin.code_location_origin.location_name,
-            self.origin.external_repository_origin.repository_name,
+            self.origin.repository_origin.code_location_origin.location_name,
+            self.origin.repository_origin.repository_name,
         )
 
     @property
@@ -225,8 +269,8 @@ class InstigatorState(
     def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
-                self.origin.external_repository_origin.code_location_origin.location_name,
-                self.origin.external_repository_origin.repository_name,
+                self.origin.repository_origin.code_location_origin.location_name,
+                self.origin.repository_origin.repository_name,
                 self.origin.instigator_name,
             )
         )
@@ -271,7 +315,14 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
+        end_timestamp = pendulum.now("UTC").timestamp() if status != TickStatus.STARTED else None
+        kwargs["end_timestamp"] = end_timestamp
         return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
+
+    def with_run_requests(
+        self, run_requests: Sequence[RunRequest], **kwargs: Any
+    ) -> "InstigatorTick":
+        return self._replace(tick_data=self.tick_data.with_run_requests(run_requests, **kwargs))
 
     def with_reason(self, skip_reason: str) -> "InstigatorTick":
         check.opt_str_param(skip_reason, "skip_reason")
@@ -318,6 +369,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def timestamp(self) -> float:
         return self.tick_data.timestamp
+
+    @property
+    def end_timestamp(self) -> Optional[float]:
+        return self.tick_data.end_timestamp
 
     @property
     def status(self) -> TickStatus:
@@ -377,6 +432,44 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     ) -> Sequence[DynamicPartitionsRequestResult]:
         return self.tick_data.dynamic_partitions_request_results
 
+    @property
+    def requested_asset_materialization_count(self) -> int:
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return 0
+
+        asset_partitions = set()
+        for run_request in self.tick_data.run_requests or []:
+            for asset_key in run_request.asset_selection or []:
+                asset_partitions.add(AssetKeyPartitionKey(asset_key, run_request.partition_key))
+        return len(asset_partitions)
+
+    @property
+    def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return {}
+
+        partitions_by_asset_key = {}
+        for run_request in self.tick_data.run_requests or []:
+            for asset_key in run_request.asset_selection or []:
+                if asset_key not in partitions_by_asset_key:
+                    partitions_by_asset_key[asset_key] = set()
+
+                if run_request.partition_key:
+                    partitions_by_asset_key[asset_key].add(run_request.partition_key)
+
+        return partitions_by_asset_key
+
+    @property
+    def requested_asset_keys(self) -> AbstractSet[AssetKey]:
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return set()
+
+        return set(self.requested_assets_and_partitions.keys())
+
+    @property
+    def run_requests(self) -> Optional[Sequence[RunRequest]]:
+        return self.tick_data.run_requests
+
 
 @whitelist_for_serdes(
     old_storage_names={"JobTickData"},
@@ -394,7 +487,7 @@ class TickData(
             ("instigator_name", str),
             ("instigator_type", InstigatorType),
             ("status", TickStatus),
-            ("timestamp", float),
+            ("timestamp", float),  # Time the tick started
             ("run_ids", Sequence[str]),
             ("run_keys", Sequence[str]),
             ("error", Optional[SerializableErrorInfo]),
@@ -408,6 +501,10 @@ class TickData(
                 "dynamic_partitions_request_results",
                 Sequence[DynamicPartitionsRequestResult],
             ),
+            ("end_timestamp", Optional[float]),  # Time the tick finished
+            ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
+            ("auto_materialize_evaluation_id", Optional[int]),
+            ("reserved_run_ids", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -422,15 +519,25 @@ class TickData(
         status (TickStatus): The status of the tick, which can be updated
         timestamp (float): The timestamp at which this instigator evaluation started
         run_id (str): The run created by the tick.
+        run_keys (Sequence[str]): Unique user-specified identifiers for the runs created by this
+            instigator.
         error (SerializableErrorInfo): The error caught during execution. This is set only when
             the status is ``TickStatus.Failure``
         skip_reason (str): message for why the tick was skipped
+        cursor (Optional[str]): Cursor output by this tick.
         origin_run_ids (List[str]): The runs originated from the schedule/sensor.
         failure_count (int): The number of times this tick has failed. If the status is not
             FAILED, this is the number of previous failures before it reached the current state.
         dynamic_partitions_request_results (Sequence[DynamicPartitionsRequestResult]): The results
             of the dynamic partitions requests evaluated within the tick.
-
+        end_timestamp (Optional[float]) Time that this tick finished.
+        run_requests (Optional[Sequence[RunRequest]]) The RunRequests that were requested by this
+            tick. Currently only used by the AUTO_MATERIALIZE type.
+        auto_materialize_evaluation_id (Optinoal[int]) For AUTO_MATERIALIZE ticks, the evaluation ID
+            that can be used to index into the asset_daemon_asset_evaluations table.
+        reserved_run_ids (Optional[Sequence[str]]): A list of run IDs to use for each of the
+            run_requests. Used to ensure that if the tick fails partway through, we don't create
+            any duplicate runs for the tick. Currently only used by AUTO_MATERIALIZE ticks.
     """
 
     def __new__(
@@ -452,6 +559,10 @@ class TickData(
         dynamic_partitions_request_results: Optional[
             Sequence[DynamicPartitionsRequestResult]
         ] = None,
+        end_timestamp: Optional[float] = None,
+        run_requests: Optional[Sequence[RunRequest]] = None,
+        auto_materialize_evaluation_id: Optional[int] = None,
+        reserved_run_ids: Optional[Sequence[str]] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -476,26 +587,24 @@ class TickData(
                 "dynamic_partitions_request_results",
                 of_type=DynamicPartitionsRequestResult,
             ),
+            end_timestamp=end_timestamp,
+            run_requests=check.opt_sequence_param(run_requests, "run_requests"),
+            auto_materialize_evaluation_id=auto_materialize_evaluation_id,
+            reserved_run_ids=check.opt_sequence_param(reserved_run_ids, "reserved_run_ids"),
         )
 
     def with_status(
         self,
         status: TickStatus,
-        error: Optional[SerializableErrorInfo] = None,
-        timestamp: Optional[float] = None,
-        failure_count: Optional[int] = None,
+        **kwargs,
     ) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(),
                 {
                     "status": status,
-                    "error": error,
-                    "timestamp": timestamp if timestamp is not None else self.timestamp,
-                    "failure_count": (
-                        failure_count if failure_count is not None else self.failure_count
-                    ),
                 },
+                kwargs,
             )
         )
 
@@ -518,6 +627,23 @@ class TickData(
                         if (run_key and run_key not in self.run_keys)
                         else self.run_keys
                     ),
+                },
+            )
+        )
+
+    def with_run_requests(
+        self,
+        run_requests: Sequence[RunRequest],
+        reserved_run_ids: Optional[Sequence[str]] = None,
+        cursor: Optional[str] = None,
+    ) -> "TickData":
+        return TickData(
+            **merge_dicts(
+                self._asdict(),
+                {
+                    "run_requests": run_requests,
+                    "reserved_run_ids": reserved_run_ids,
+                    "cursor": cursor,
                 },
             )
         )
@@ -604,17 +730,33 @@ def _validate_tick_args(
 
 class AutoMaterializeAssetEvaluationRecord(NamedTuple):
     id: int
-    evaluation: AutoMaterializeAssetEvaluation
+    serialized_evaluation_body: str
     evaluation_id: int
     timestamp: float
+    asset_key: AssetKey
 
     @classmethod
-    def from_db_row(cls, row):
+    def from_db_row(cls, row) -> "AutoMaterializeAssetEvaluationRecord":
         return cls(
             id=row["id"],
-            evaluation=deserialize_value(
-                row["asset_evaluation_body"], AutoMaterializeAssetEvaluation
-            ),
+            serialized_evaluation_body=row["asset_evaluation_body"],
             evaluation_id=row["evaluation_id"],
             timestamp=datetime_as_float(row["create_timestamp"]),
+            asset_key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
         )
+
+    def get_evaluation_with_run_ids(
+        self, partitions_def: Optional[PartitionsDefinition]
+    ) -> AssetConditionEvaluationWithRunIds:
+        try:
+            # If this was serialized as an AssetConditionEvaluationWithRunIds, we can deserialize
+            # this directly
+            return deserialize_value(
+                self.serialized_evaluation_body, AssetConditionEvaluationWithRunIds
+            )
+        except DeserializationError:
+            # If this is a legacy AutoMaterializeAssetEvaluation, we need to pass in the partitions
+            # definition in order to be able to deserialize the evaluation properly
+            return deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+                self.serialized_evaluation_body, partitions_def
+            )

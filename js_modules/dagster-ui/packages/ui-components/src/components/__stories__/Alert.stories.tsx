@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {Alert, AlertIntent} from '../Alert';
 import {Box} from '../Box';
@@ -13,7 +13,7 @@ export default {
 const intents: AlertIntent[] = ['info', 'warning', 'error', 'success'];
 
 export const Intents = () => {
-  const [isClosed, updateClosed] = React.useState<boolean[]>(intents.map(() => false));
+  const [isClosed, updateClosed] = useState<boolean[]>(intents.map(() => false));
   const setClosed = (index: number, closed: boolean) => {
     const newClosed = Array.from(isClosed);
     newClosed[index] = closed;

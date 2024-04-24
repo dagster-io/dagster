@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple, cast
 
@@ -8,17 +7,17 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalJob,
     ExternalPartitionSet,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalPartitionExecutionParamData,
     ExternalPartitionSetExecutionParamData,
 )
-from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
-from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
@@ -32,6 +31,7 @@ from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
 )
+from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -68,7 +68,7 @@ def execute_job_backfill_iteration(
         chunk, checkpoint, has_more = _get_partitions_chunk(
             instance, logger, backfill, CHECKPOINT_COUNT
         )
-        _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
+        check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
         if chunk:
             for _run_id in submit_backfill_runs(
@@ -83,7 +83,7 @@ def execute_job_backfill_iteration(
                 if backfill.status != BulkActionStatus.REQUESTED:
                     return
 
-        _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
+        check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
 
         if has_more:
             # refetch, in case the backfill was updated in the meantime
@@ -104,14 +104,14 @@ def execute_job_backfill_iteration(
 def _check_repo_has_partition_set(
     workspace_process_context: IWorkspaceProcessContext, backfill_job: PartitionBackfill
 ) -> None:
-    origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
+    origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
 
-    location_name = origin.external_repository_origin.code_location_origin.location_name
+    location_name = origin.repository_origin.code_location_origin.location_name
 
     workspace = workspace_process_context.create_request_context()
     code_location = workspace.get_code_location(location_name)
 
-    repo_name = origin.external_repository_origin.repository_name
+    repo_name = origin.repository_origin.repository_name
     if not code_location.has_repository(repo_name):
         raise DagsterBackfillFailedError(
             f"Could not find repository {repo_name} in location {code_location.name} to "
@@ -175,9 +175,9 @@ def submit_backfill_runs(
     partition_names: Optional[Sequence[str]] = None,
 ) -> Iterable[Optional[str]]:
     """Returns the run IDs of the submitted runs."""
-    origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
+    origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
 
-    repository_origin = origin.external_repository_origin
+    repository_origin = origin.repository_origin
     repo_name = repository_origin.repository_name
     location_name = repository_origin.code_location_origin.location_name
 
@@ -335,6 +335,7 @@ def create_backfill_run(
             frozenset(backfill_job.asset_selection) if backfill_job.asset_selection else None
         ),
         asset_check_selection=None,
+        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_pipeline),
     )
 
 
@@ -357,16 +358,3 @@ def _fetch_last_run(
     )
 
     return runs[0] if runs else None
-
-
-def _check_for_debug_crash(debug_crash_flags: Optional[Mapping[str, int]], key) -> None:
-    if not debug_crash_flags:
-        return
-
-    kill_signal = debug_crash_flags.get(key)
-    if not kill_signal:
-        return
-
-    os.kill(os.getpid(), kill_signal)
-    time.sleep(10)
-    raise Exception("Process didn't terminate after sending crash signal")

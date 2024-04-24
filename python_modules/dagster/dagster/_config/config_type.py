@@ -431,9 +431,7 @@ class ScalarUnion(ConfigType):
     ):
         from .field import resolve_to_config_type
 
-        self.scalar_type = check.inst(
-            cast(ConfigType, resolve_to_config_type(scalar_type)), ConfigType
-        )
+        self.scalar_type = check.inst(resolve_to_config_type(scalar_type), ConfigType)
         self.non_scalar_type = resolve_to_config_type(non_scalar_schema)
 
         check.param_invariant(self.scalar_type.kind == ConfigTypeKind.SCALAR, "scalar_type")
@@ -466,7 +464,7 @@ ConfigFloatInstance: Float = Float()
 ConfigIntInstance: Int = Int()
 ConfigStringInstance: String = String()
 
-_CONFIG_MAP: Dict[check.TypeOrTupleOfTypes, ConfigType] = {
+_CONFIG_MAP: Dict[typing.Any, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,

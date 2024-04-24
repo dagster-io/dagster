@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useContext} from 'react';
 
 import {TimeContext} from './TimeContext';
 import {TimeFormat} from './TimestampFormat';
@@ -9,12 +9,12 @@ interface Props {
   timeFormat?: TimeFormat;
 }
 
-export const Timestamp: React.FC<Props> = (props) => {
+export const Timestamp = (props: Props) => {
   const {timestamp, timeFormat} = props;
   const {
     timezone: [timezone],
     hourCycle: [hourCycle],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
   const locale = navigator.language;
   return <>{timestampToString({timestamp, locale, timezone, timeFormat, hourCycle})}</>;
 };

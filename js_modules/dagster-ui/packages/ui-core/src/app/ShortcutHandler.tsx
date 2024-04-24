@@ -26,7 +26,7 @@ const SHORTCUT_VISIBLITY_DELAY = 800;
 // implemented inside a React component.
 //
 let shortcutsVisible = false;
-let shortcutsTimer: NodeJS.Timeout | null = null;
+let shortcutsTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getShortcutsVisible() {
   return shortcutsVisible;
@@ -205,9 +205,9 @@ const ShortcutAnnotation = styled.div`
   padding: 2px;
   z-index: 20;
   transform: translate(-90%, -10px);
-  color: ${Colors.Gray100};
-  background: ${Colors.Gray800};
-  border: 1px solid ${Colors.Gray300};
+  color: ${Colors.tooltipText()};
+  background: ${Colors.tooltipBackground()};
+  border: 1px solid ${Colors.borderHover()};
   border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px ${Colors.shadowDefault()};
 `;

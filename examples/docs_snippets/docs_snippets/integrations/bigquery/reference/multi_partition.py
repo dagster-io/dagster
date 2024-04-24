@@ -7,6 +7,7 @@ def get_iris_data_for_date(*args, **kwargs):
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -27,8 +28,8 @@ from dagster import (
         "partition_expr": {"date": "TIMESTAMP_SECONDS(TIME)", "species": "SPECIES"}
     },
 )
-def iris_data_partitioned(context) -> pd.DataFrame:
-    partition = partition = context.partition_key.keys_by_dimension
+def iris_data_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    partition = context.partition_key.keys_by_dimension  # type: ignore
     species = partition["species"]
     date = partition["date"]
 

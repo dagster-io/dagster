@@ -51,6 +51,8 @@ def build_tox_step(
     commands = [
         *(extra_commands_pre or []),
         f"cd {root_dir}",
+        # 0.1.33 is installing old versions of libraries. Remove this pin once this is fixed.
+        'pip install --force-reinstall "uv==0.1.32"',
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
         *(extra_commands_post or []),

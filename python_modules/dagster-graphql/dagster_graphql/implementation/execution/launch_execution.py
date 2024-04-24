@@ -47,7 +47,10 @@ def do_launch(
         check.str_param(execution_metadata.root_run_id, "root_run_id")
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
     external_job = get_external_job_or_raise(graphene_info, execution_params.selector)
-    dagster_run = create_valid_pipeline_run(graphene_info, external_job, execution_params)
+    code_location = graphene_info.context.get_code_location(execution_params.selector.location_name)
+    dagster_run = create_valid_pipeline_run(
+        graphene_info, external_job, execution_params, code_location
+    )
 
     return graphene_info.context.instance.submit_run(
         dagster_run.run_id,
@@ -85,8 +88,8 @@ def launch_reexecution_from_parent_run(
     )
     origin = check.not_none(parent_run.external_job_origin)
     selector = JobSubsetSelector(
-        location_name=origin.external_repository_origin.code_location_origin.location_name,
-        repository_name=origin.external_repository_origin.repository_name,
+        location_name=origin.repository_origin.code_location_origin.location_name,
+        repository_name=origin.repository_origin.repository_name,
         job_name=parent_run.job_name,
         asset_selection=parent_run.asset_selection,
         asset_check_selection=parent_run.asset_check_selection,

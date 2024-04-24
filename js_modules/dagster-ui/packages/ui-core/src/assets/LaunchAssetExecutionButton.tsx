@@ -11,19 +11,42 @@ import {
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
-import React from 'react';
+import React, {useContext} from 'react';
+import {Link} from 'react-router-dom';
 
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
+import {
+  ADDITIONAL_REQUIRED_KEYS_WARNING,
+  MULTIPLE_DEFINITIONS_WARNING,
+} from './AssetDefinedInMultipleReposNotice';
+import {CalculateUnsyncedDialog} from './CalculateUnsyncedDialog';
+import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
+import {partitionDefinitionsEqual} from './MultipartitioningSupport';
+import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetKey} from './types';
+import {
+  LaunchAssetCheckUpstreamQuery,
+  LaunchAssetCheckUpstreamQueryVariables,
+  LaunchAssetExecutionAssetNodeFragment,
+  LaunchAssetLoaderJobQuery,
+  LaunchAssetLoaderJobQueryVariables,
+  LaunchAssetLoaderQuery,
+  LaunchAssetLoaderQueryVariables,
+  LaunchAssetLoaderResourceQuery,
+  LaunchAssetLoaderResourceQueryVariables,
+} from './types/LaunchAssetExecutionButton.types';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
-  LiveData,
   sortAssetKeys,
-  toGraphId,
   tokenForAssetKey,
 } from '../asset-graph/Utils';
+import {PipelineSelector} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
@@ -32,22 +55,6 @@ import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
-import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
-import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
-import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
-import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetMissing, isAssetStale} from './Stale';
-import {AssetKey} from './types';
-import {
-  LaunchAssetExecutionAssetNodeFragment,
-  LaunchAssetLoaderQuery,
-  LaunchAssetLoaderQueryVariables,
-  LaunchAssetLoaderResourceQuery,
-  LaunchAssetLoaderResourceQueryVariables,
-  LaunchAssetCheckUpstreamQuery,
-  LaunchAssetCheckUpstreamQueryVariables,
-} from './types/LaunchAssetExecutionButton.types';
 
 export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; partitionSetName: string}
@@ -114,7 +121,7 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): LaunchOption[] {
+function optionsForButton(scope: AssetsInScope): LaunchOption[] {
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
@@ -141,47 +148,58 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
         : `Materialize${isAnyPartitioned(executable) ? '…' : ''}`,
   });
 
-  if (liveDataForStale) {
-    const missingOrStale = executable.filter(
-      (a) =>
-        isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
-        isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
-    );
-
-    options.push({
-      assetKeys: missingOrStale.map((a) => a.assetKey),
-      label: `Materialize changed and missing${countOrBlank(missingOrStale)}`,
-      icon: <Icon name="changes_present" />,
-    });
-  }
-
   return options;
 }
 
 export function executionDisabledMessageForAssets(
   assets: {isSource: boolean; isExecutable: boolean; hasMaterializePermission: boolean}[],
 ) {
+  if (!assets.length) {
+    return null;
+  }
   return assets.some((a) => !a.hasMaterializePermission)
     ? 'You do not have permission to materialize assets'
     : assets.every((a) => a.isSource)
     ? 'Source assets cannot be materialized'
     : assets.every((a) => !a.isExecutable)
-    ? 'Non-executable assets cannot be materialized'
+    ? 'External assets cannot be materialized'
     : null;
 }
 
-export const LaunchAssetExecutionButton: React.FC<{
+export const LaunchAssetExecutionButton = ({
+  scope,
+  preferredJobName,
+  additionalDropdownOptions,
+  primary = true,
+  showChangedAndMissingOption = true,
+}: {
   scope: AssetsInScope;
-  liveDataForStale?: LiveData; // For "stale" dropdown options
-  intent?: 'primary' | 'none';
+  showChangedAndMissingOption?: boolean;
+  primary?: boolean;
   preferredJobName?: string;
-}> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
+  additionalDropdownOptions?: {
+    label: string;
+    icon?: JSX.Element;
+    onClick: () => void;
+  }[];
+}) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
   const {MaterializeButton} = useLaunchPadHooks();
 
-  const options = optionsForButton(scope, liveDataForStale);
+  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
+    React.useState<boolean>(false);
+
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canSeeMaterializeAction) {
+    return null;
+  }
+
+  const options = optionsForButton(scope);
   const firstOption = options[0]!;
   if (!firstOption) {
     return <span />;
@@ -194,7 +212,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     return (
       <Tooltip content={disabledMessage} position="bottom-right">
         <Button
-          intent={intent}
+          intent={primary ? 'primary' : undefined}
           icon={<Icon name="materialization" />}
           data-testid={testId('materialize-button')}
           disabled
@@ -207,6 +225,16 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   return (
     <>
+      <CalculateUnsyncedDialog
+        isOpen={showCalculatingUnsyncedDialog}
+        onClose={() => {
+          setShowCalculatingUnsyncedDialog(false);
+        }}
+        assets={inScope}
+        onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {
+          onClick(assets, e);
+        }}
+      />
       <Box flex={{alignItems: 'center'}}>
         <Tooltip
           content="Shift+click to add configuration"
@@ -214,7 +242,7 @@ export const LaunchAssetExecutionButton: React.FC<{
           useDisabledButtonTooltipFix
         >
           <MaterializeButton
-            intent={intent}
+            intent={primary ? 'primary' : undefined}
             data-testid={testId('materialize-button')}
             onClick={(e) => onClick(firstOption.assetKeys, e)}
             style={{
@@ -244,13 +272,28 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
+              {showChangedAndMissingOption ? (
+                <MenuItem
+                  text="Materialize unsynced"
+                  icon="changes_present"
+                  onClick={() => setShowCalculatingUnsyncedDialog(true)}
+                />
+              ) : null}
               <MenuItem
                 text="Open launchpad"
-                icon={<Icon name="open_in_new" />}
+                icon="open_in_new"
                 onClick={(e: React.MouseEvent<any>) => {
                   onClick(firstOption.assetKeys, e, true);
                 }}
               />
+              {additionalDropdownOptions?.map((option) => (
+                <MenuItem
+                  key={option.label}
+                  text={option.label}
+                  icon={option.icon}
+                  onClick={option.onClick}
+                />
+              ))}
             </Menu>
           }
         >
@@ -259,7 +302,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
             icon={<Icon name="arrow_drop_down" />}
             disabled={!firstOption.assetKeys.length}
-            intent={intent}
+            intent={primary ? 'primary' : undefined}
           />
         </Popover>
       </Box>
@@ -277,8 +320,24 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
+  const onLoad = async (
+    assetKeysOrJob: AssetKey[] | PipelineSelector,
+  ): Promise<LaunchAssetLoaderQuery | LaunchAssetLoaderJobQuery> => {
+    const result =
+      assetKeysOrJob instanceof Array
+        ? await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
+            query: LAUNCH_ASSET_LOADER_QUERY,
+            variables: {assetKeys: assetKeysOrJob.map(asAssetKeyInput)},
+          })
+        : await client.query<LaunchAssetLoaderJobQuery, LaunchAssetLoaderJobQueryVariables>({
+            query: LAUNCH_ASSET_LOADER_JOB_QUERY,
+            variables: {job: assetKeysOrJob},
+          });
+    return result.data;
+  };
+
   const onClick = async (
-    assetKeys: AssetKey[],
+    assetKeysOrJob: AssetKey[] | PipelineSelector,
     e: React.MouseEvent<any>,
     _forceLaunchpad = false,
   ) => {
@@ -287,53 +346,43 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
     setState({type: 'loading'});
 
-    const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
-      query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
-    });
+    let data = await onLoad(assetKeysOrJob);
 
-    if (result.data.assetNodeDefinitionCollisions.length) {
-      showCustomAlert(buildAssetCollisionsAlert(result.data));
+    if ('assetNodeDefinitionCollisions' in data && data.assetNodeDefinitionCollisions.length) {
+      showCustomAlert(buildAssetCollisionsAlert(data));
       setState({type: 'none'});
       return;
     }
 
-    const assets = result.data.assetNodes;
+    if ('assetNodeAdditionalRequiredKeys' in data && data.assetNodeAdditionalRequiredKeys.length) {
+      try {
+        await confirm(buildAssetAdditionalRequiredKeysAlert(data));
+      } catch {
+        setState({type: 'none'});
+        return; // user declined confirm
+      }
+      if (assetKeysOrJob instanceof Array) {
+        data = await onLoad([...assetKeysOrJob, ...data.assetNodeAdditionalRequiredKeys]);
+      }
+    }
+
+    const assets = data.assetNodes;
     const forceLaunchpad = e.shiftKey || _forceLaunchpad;
 
     const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
     if (next.type === 'error') {
-      showCustomAlert({
-        title: 'Unable to Materialize',
-        body: next.error,
-      });
+      showCustomAlert({title: 'Unable to Materialize', body: next.error});
       setState({type: 'none'});
       return;
     }
 
     const missing = await upstreamAssetsWithNoMaterializations(client, assets);
     if (missing.length) {
-      setState({type: 'none'});
       try {
-        await confirm({
-          title: 'Are you sure?',
-          description: (
-            <>
-              <div>
-                Materializing these assets may fail because the upstream assets listed below have
-                not been materialized yet.
-              </div>
-              <ul>
-                {missing.map((assetKey, idx) => (
-                  <li key={idx}>{displayNameForAssetKey(assetKey)}</li>
-                ))}
-              </ul>
-            </>
-          ),
-        });
-        setState({type: 'loading'});
+        await confirm(buildUpstreamAssetsWithNoMaterializationsAlert(missing));
       } catch {
-        return;
+        setState({type: 'none'});
+        return; // user declined confirm
       }
     }
 
@@ -368,15 +417,8 @@ export const useMaterializationAction = (preferredJobName?: string) => {
           open={true}
           setOpen={() => setState({type: 'none'})}
           refetch={async () => {
-            const result = await client.query<
-              LaunchAssetLoaderQuery,
-              LaunchAssetLoaderQueryVariables
-            >({
-              query: LAUNCH_ASSET_LOADER_QUERY,
-              variables: {assetKeys: state.assets.map(({assetKey}) => ({path: assetKey.path}))},
-            });
-            const assets = result.data.assetNodes;
-            const next = await stateForLaunchingAssets(client, assets, false, preferredJobName);
+            const {assetNodes} = await onLoad(state.assets.map(asAssetKeyInput));
+            const next = await stateForLaunchingAssets(client, assetNodes, false, preferredJobName);
             if (next.type === 'error') {
               showCustomAlert({
                 title: 'Unable to Materialize',
@@ -412,7 +454,7 @@ async function stateForLaunchingAssets(
   if (assets.some((x) => !x.isExecutable)) {
     return {
       type: 'error',
-      error: 'One or more non-executable assets are selected.',
+      error: 'One or more external assets are selected.',
     };
   }
 
@@ -502,6 +544,15 @@ async function stateForLaunchingAssets(
       sessionPresets: {
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
+        assetChecksAvailable: assets.flatMap((a) =>
+          a.assetChecksOrError.__typename === 'AssetChecks'
+            ? a.assetChecksOrError.checks
+                // For user code prior to 1.5.10 jobNames isn't populated, so don't filter on it
+                .filter((check) => check.jobNames.length === 0 || check.jobNames.includes(jobName))
+                .map((check) => ({...check, assetKey: a.assetKey}))
+            : [],
+        ),
+        includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
         base: partitionSetName
           ? {partitionsSetName: partitionSetName, partitionName: null, tags: []}
@@ -600,7 +651,10 @@ async function upstreamAssetsWithNoMaterializations(
 export function executionParamsForAssetJob(
   repoAddress: RepoAddress,
   jobName: string,
-  assets: {assetKey: AssetKey; opNames: string[]}[],
+  assets: Pick<
+    LaunchAssetExecutionAssetNodeFragment,
+    'assetKey' | 'opNames' | 'assetChecksOrError'
+  >[],
   tags: {key: string; value: string}[],
 ): LaunchPipelineExecutionMutationVariables['executionParams'] {
   return {
@@ -613,9 +667,8 @@ export function executionParamsForAssetJob(
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
       pipelineName: jobName,
-      assetSelection: assets.map((asset) => ({
-        path: asset.assetKey.path,
-      })),
+      assetSelection: assets.map(asAssetKeyInput),
+      assetCheckSelection: getAssetCheckHandleInputs(assets, jobName),
     },
   };
 }
@@ -630,7 +683,9 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
         <ul>
           {data.assetNodeDefinitionCollisions.map((collision, idx) => (
             <li key={idx}>
-              <strong>{displayNameForAssetKey(collision.assetKey)}</strong>
+              <Link to={assetDetailsPathForKey(collision.assetKey)} target="_blank">
+                <strong>{displayNameForAssetKey(collision.assetKey)}</strong>
+              </Link>
               <ul>
                 {collision.repositories.map((r, ridx) => (
                   <li key={ridx}>
@@ -642,6 +697,48 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
           ))}
         </ul>
       </div>
+    ),
+  };
+}
+
+export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQuery) {
+  return {
+    catchOnCancel: true,
+    title: ADDITIONAL_REQUIRED_KEYS_WARNING,
+    description: (
+      <div style={{overflow: 'auto'}}>
+        One or more of the selected assets are part of a multi-asset that does not support
+        subsetting or that has required outputs outside the current selection. Materializing the
+        current selection will also yield new materializations for the following:
+        <ul>
+          {data.assetNodeAdditionalRequiredKeys.map((assetKey, idx) => (
+            <li key={idx}>
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'definition'})} target="_blank">
+                <strong>{displayNameForAssetKey(assetKey)}</strong>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ),
+  };
+}
+export function buildUpstreamAssetsWithNoMaterializationsAlert(missing: AssetKey[]) {
+  return {
+    catchOnCancel: true,
+    title: 'Are you sure?',
+    description: (
+      <>
+        <div>
+          Materializing these assets may fail because the upstream assets listed below have not been
+          materialized yet.
+        </div>
+        <ul>
+          {missing.map((assetKey, idx) => (
+            <li key={idx}>{displayNameForAssetKey(assetKey)}</li>
+          ))}
+        </ul>
+      </>
     ),
   };
 }
@@ -658,6 +755,14 @@ const PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT = gql`
   }
 `;
 
+const BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT = gql`
+  fragment BackfillPolicyForLaunchAssetFragment on BackfillPolicy {
+    maxPartitionsPerRun
+    description
+    policyType
+  }
+`;
+
 const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
@@ -668,11 +773,23 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     partitionDefinition {
       ...PartitionDefinitionForLaunchAssetFragment
     }
+    backfillPolicy {
+      ...BackfillPolicyForLaunchAssetFragment
+    }
     isObservable
     isExecutable
     isSource
     assetKey {
       path
+    }
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          canExecuteIndividually
+          jobNames
+        }
+      }
     }
     dependencyKeys {
       path
@@ -693,6 +810,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT}
+  ${BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_LOADER_QUERY = gql`
@@ -700,6 +818,9 @@ export const LAUNCH_ASSET_LOADER_QUERY = gql`
     assetNodes(assetKeys: $assetKeys) {
       id
       ...LaunchAssetExecutionAssetNodeFragment
+    }
+    assetNodeAdditionalRequiredKeys(assetKeys: $assetKeys) {
+      path
     }
     assetNodeDefinitionCollisions(assetKeys: $assetKeys) {
       assetKey {
@@ -715,7 +836,16 @@ export const LAUNCH_ASSET_LOADER_QUERY = gql`
       }
     }
   }
+  ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
+`;
 
+export const LAUNCH_ASSET_LOADER_JOB_QUERY = gql`
+  query LaunchAssetLoaderJobQuery($job: PipelineSelector!) {
+    assetNodes(pipeline: $job) {
+      id
+      ...LaunchAssetExecutionAssetNodeFragment
+    }
+  }
   ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
 `;
 

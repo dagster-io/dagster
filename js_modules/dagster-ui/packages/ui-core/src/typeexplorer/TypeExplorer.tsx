@@ -1,24 +1,22 @@
 import {gql} from '@apollo/client';
 import {Box, ConfigTypeSchema} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
-
-import {gqlTypePredicate} from '../app/Util';
-import {dagsterTypeKind} from '../dagstertype/DagsterType';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {TableSchema} from '../metadata/TableSchema';
-import {Description} from '../pipelines/Description';
-import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorer.types';
+import {gqlTypePredicate} from '../app/Util';
+import {dagsterTypeKind} from '../dagstertype/DagsterType';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {TableSchema} from '../metadata/TableSchema';
+import {Description} from '../pipelines/Description';
+import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
 interface ITypeExplorerProps {
   isGraph: boolean;
   type: TypeExplorerFragment;
 }
 
-export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
+export const TypeExplorer = (props: ITypeExplorerProps) => {
   const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
   const typeKind = dagsterTypeKind(props.type);
   const displayName = typeKind === 'standard' ? name : `${name} (${typeKind})`;

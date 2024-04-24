@@ -1,5 +1,4 @@
-"""Unit testing the Mlflow class.
-"""
+"""Unit testing the Mlflow class."""
 
 import logging
 import random
@@ -262,9 +261,7 @@ def test_setup(mock_atexit, context):
         MlFlow, "_get_current_run_id", return_value="run_id_mock"
     ) as mock_get_current_run_id, patch.object(
         MlFlow, "_set_active_run"
-    ) as mock_set_active_run, patch.object(
-        MlFlow, "_set_all_tags"
-    ) as mock_set_all_tags:
+    ) as mock_set_active_run, patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags:
         # When _setup is called
         mlf._setup()  # noqa: SLF001
         # Then

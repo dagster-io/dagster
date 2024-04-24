@@ -120,7 +120,7 @@ def ge_validation_op_factory(
         batch = data_context.get_batch(final_batch_kwargs, suite)
         run_id = {
             "run_name": datasource_name + " run",
-            "run_time": datetime.datetime.utcnow(),
+            "run_time": datetime.datetime.now(datetime.timezone.utc),
         }
         results = data_context.run_validation_operator(
             validation_operator, assets_to_validate=[batch], run_id=run_id
@@ -225,7 +225,7 @@ def ge_validation_op_factory_v3(
 
         run_id = {
             "run_name": datasource_name + " run",
-            "run_time": datetime.datetime.utcnow(),
+            "run_time": datetime.datetime.now(datetime.timezone.utc),
         }
         results = validator.validate(run_id=run_id)
 

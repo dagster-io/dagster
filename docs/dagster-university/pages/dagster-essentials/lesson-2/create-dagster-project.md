@@ -4,6 +4,8 @@ module: 'dagster_essentials'
 lesson: '2'
 ---
 
+# Create the Dagster project
+
 Let’s create your first Dagster project! To do this, use the `dagster project from-example` command to clone the official Dagster University project to your local machine.
 
 To create the project, run:

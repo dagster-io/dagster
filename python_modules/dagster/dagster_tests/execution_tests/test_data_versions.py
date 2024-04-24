@@ -33,6 +33,7 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition_mapping import AllPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.events import DagsterEventType
@@ -201,7 +202,7 @@ def test_multi_asset():
         b = a + 1
         c = a + 2
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = sorted(context.selected_output_names)
+        outputs_to_return = sorted(context.op_execution_context.selected_output_names)
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -565,6 +566,51 @@ def test_stale_status_partitions_enabled() -> None:
         assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
 
 
+def test_stale_status_downstream_of_all_partitions_mapping():
+    start_date = datetime(2020, 1, 1)
+    end_date = start_date + timedelta(days=2)
+    start_key = start_date.strftime("%Y-%m-%d")
+
+    partitions_def = DailyPartitionsDefinition(start_date=start_date, end_date=end_date)
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        return 1
+
+    @asset(
+        ins={"asset1": AssetIn(partition_mapping=AllPartitionMapping())},
+    )
+    def asset2(asset1):
+        return 2
+
+    all_assets = [asset1, asset2]
+
+    # Downstream values are not stale even after upstream changed because of the partition mapping
+    with instance_for_test() as instance:
+        for k in partitions_def.get_partition_keys():
+            materialize_asset(all_assets, asset1, instance, partition_key=k)
+
+        materialize_asset(all_assets, asset2, instance)
+
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        for k in partitions_def.get_partition_keys():
+            assert status_resolver.get_status(asset1.key, k) == StaleStatus.FRESH
+
+        assert status_resolver.get_status(asset2.key, None) == StaleStatus.FRESH
+
+        materialize_asset(
+            all_assets,
+            asset1,
+            instance,
+            partition_key=start_key,
+        )
+
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+
+        # Still fresh b/c of the partition mapping
+        assert status_resolver.get_status(asset2.key, None) == StaleStatus.FRESH
+
+
 def test_stale_status_many_to_one_partitions() -> None:
     partitions_def = StaticPartitionsDefinition(["alpha", "beta"])
 
@@ -728,12 +774,12 @@ def test_stale_status_self_partitioned(num_partitions: int, expected_status: Sta
 def test_stale_status_manually_versioned() -> None:
     @asset(config_schema={"value": Field(int)})
     def asset1(context):
-        value = context.op_config["value"]
+        value = context.op_execution_context.op_config["value"]
         return Output(value, data_version=DataVersion(str(value)))
 
     @asset(config_schema={"value": Field(int)})
     def asset2(context, asset1):
-        value = context.op_config["value"] + asset1
+        value = context.op_execution_context.op_config["value"] + asset1
         return Output(value, data_version=DataVersion(str(value)))
 
     all_assets = [asset1, asset2]
@@ -927,7 +973,7 @@ def test_get_data_provenance_inside_op():
 
     @asset(config_schema={"check_provenance": Field(bool, default_value=False)})
     def asset2(context: AssetExecutionContext, asset1):
-        if context.op_config["check_provenance"]:
+        if context.op_execution_context.op_config["check_provenance"]:
             provenance = context.get_asset_provenance(AssetKey("asset2"))
             assert provenance
             assert provenance.input_data_versions[AssetKey("asset1")] == DataVersion("foo")
@@ -979,7 +1025,7 @@ def test_legacy_data_version_tags():
         assert extract_data_provenance_from_entry(record.event_log_entry) == DataProvenance(
             code_version="1",
             input_data_versions={AssetKey(["foo"]): DataVersion("alpha")},
-            input_storage_ids={AssetKey(["foo"]): 3},
+            input_storage_ids={AssetKey(["foo"]): 4},
             is_user_provided=True,
         )
 

@@ -2,9 +2,9 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Box} from './Box';
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {Group} from './Group';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 
 export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
 
@@ -16,43 +16,43 @@ interface Props {
   onClose?: () => void;
 }
 
-export const Alert: React.FC<Props> = (props) => {
+export const Alert = (props: Props) => {
   const {intent, title, description, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
       case 'warning':
         return {
-          backgroundColor: Colors.Yellow50,
-          borderColor: Colors.Yellow500,
+          backgroundColor: Colors.backgroundYellow(),
+          borderColor: Colors.accentYellow(),
           icon: 'warning',
-          iconColor: Colors.Yellow500,
-          textColor: Colors.Yellow700,
+          iconColor: Colors.accentYellow(),
+          textColor: Colors.textYellow(),
         };
       case 'error':
         return {
-          backgroundColor: Colors.Red50,
-          borderColor: Colors.Red500,
+          backgroundColor: Colors.backgroundRed(),
+          borderColor: Colors.accentRed(),
           icon: 'error',
-          iconColor: Colors.Red500,
-          textColor: Colors.Red700,
+          iconColor: Colors.accentRed(),
+          textColor: Colors.textRed(),
         };
       case 'success':
         return {
-          backgroundColor: Colors.Green50,
-          borderColor: Colors.Green500,
+          backgroundColor: Colors.backgroundGreen(),
+          borderColor: Colors.accentGreen(),
           icon: 'done',
-          iconColor: Colors.Green500,
-          textColor: Colors.Green700,
+          iconColor: Colors.accentGreen(),
+          textColor: Colors.textGreen(),
         };
       case 'info':
       default:
         return {
-          backgroundColor: Colors.Blue50,
-          borderColor: Colors.Blue500,
+          backgroundColor: Colors.backgroundBlue(),
+          borderColor: Colors.accentBlue(),
           icon: 'info',
-          iconColor: Colors.Blue500,
-          textColor: Colors.Blue700,
+          iconColor: Colors.accentBlue(),
+          textColor: Colors.textBlue(),
         };
     }
   }, [intent]);

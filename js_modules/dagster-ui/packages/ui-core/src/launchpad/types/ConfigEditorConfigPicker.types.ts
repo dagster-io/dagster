@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type ConfigPartitionsQueryVariables = Types.Exact<{
   repositorySelector: Types.RepositorySelector;
-  partitionSetName: Types.Scalars['String'];
+  partitionSetName: Types.Scalars['String']['input'];
   assetKeys?: Types.InputMaybe<Array<Types.AssetKeyInput> | Types.AssetKeyInput>;
 }>;
 
@@ -44,8 +44,8 @@ export type ConfigPartitionResultFragment = {__typename: 'Partition'; name: stri
 
 export type ConfigPartitionSelectionQueryVariables = Types.Exact<{
   repositorySelector: Types.RepositorySelector;
-  partitionSetName: Types.Scalars['String'];
-  partitionName: Types.Scalars['String'];
+  partitionSetName: Types.Scalars['String']['input'];
+  partitionName: Types.Scalars['String']['input'];
 }>;
 
 export type ConfigPartitionSelectionQuery = {

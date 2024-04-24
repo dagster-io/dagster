@@ -1,16 +1,20 @@
+import dataclasses
 import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
+import pydantic
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
+from dagster._model import DagsterModel
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
+    SerializableNonScalarKeyMapping,
     SetToSequenceFieldSerializer,
     UnpackContext,
     WhitelistMap,
@@ -21,6 +25,7 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 from dagster._serdes.utils import hash_str
+from pydantic import Field
 
 
 def test_deserialize_value_ok():
@@ -88,21 +93,23 @@ def test_forward_compat_serdes_new_field_with_default():
             def __new__(cls, foo, bar):
                 return super(Quux, cls).__new__(cls, foo, bar)
 
-        assert test_map.has_tuple_serializer("Quux")
-        serializer = test_map.get_tuple_serializer("Quux")
+        assert test_map.has_object_serializer("Quux")
+        serializer = test_map.get_object_serializer("Quux")
         assert serializer.klass is Quux
         return Quux("zip", "zow")
 
     orig = get_orig_obj()
     serialized = serialize_value(orig, whitelist_map=test_map)
 
+    test_map = WhitelistMap.create()
+
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str), ("baz", Optional[str])])):
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
-    assert test_map.has_tuple_serializer("Quux")
-    serializer_v2 = test_map.get_tuple_serializer("Quux")
+    assert test_map.has_object_serializer("Quux")
+    serializer_v2 = test_map.get_object_serializer("Quux")
     assert serializer_v2.klass is Quux
 
     deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
@@ -192,6 +199,8 @@ def test_backward_compat_serdes():
     quux = get_orig_obj()
     serialized = serialize_value(quux, whitelist_map=test_map)
 
+    test_map = WhitelistMap.create()
+
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar")):
         def __new__(cls, foo, bar):
@@ -255,6 +264,23 @@ def test_forward_compat():
     assert deserialized.baz == "baz"
 
 
+def test_error_on_multiple_deserializers() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Foo(NamedTuple):
+        x: int
+
+    with pytest.raises(
+        SerdesUsageError, match="Multiple deserializers registered for storage name `Foo`"
+    ):
+
+        @_whitelist_for_serdes(whitelist_map=test_map, storage_name="Foo")
+        class Foo2(NamedTuple):
+            x: int
+            y: str
+
+
 def serdes_test_class(klass):
     test_map = WhitelistMap.create()
 
@@ -284,8 +310,7 @@ def test_incorrect_order():
                 return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple WrongOrder: "
+        str(exc_info.value) == "For namedtuple WrongOrder: "
         "Params to __new__ must match the order of field declaration "
         "in the namedtuple. Declared field number 1 in the namedtuple "
         'is "field_one". Parameter 1 in __new__ method is "field_two".'
@@ -301,8 +326,7 @@ def test_missing_one_parameter():
                 return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -321,8 +345,7 @@ def test_missing_many_parameters():
                 return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldsInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldsInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -349,8 +372,7 @@ def test_extra_parameters_must_have_defaults():
                 return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple OldFieldsWithoutDefaults: "
+        str(exc_info.value) == "For namedtuple OldFieldsWithoutDefaults: "
         'Parameter "field_one" is a parameter to the __new__ '
         "method but is not a field in this namedtuple. "
         "The only reason why this should exist is that "
@@ -565,6 +587,8 @@ def test_named_tuple_skip_when_empty_fields() -> None:
     old_snapshot = hash_str(old_serialized)
 
     # Separate scope since we redefine SameSnapshotTuple
+    test_map = WhitelistMap.create()
+
     def get_new_obj_no_skip() -> Any:
         @_whitelist_for_serdes(whitelist_map=test_map)
         class SameSnapshotTuple(namedtuple("_SameSnapshotTuple", "foo bar")):
@@ -582,6 +606,8 @@ def test_named_tuple_skip_when_empty_fields() -> None:
     assert new_snapshot_without_serializer != old_snapshot
 
     # By setting `skip_when_empty_fields`, the ID stays the same as long as the new field is None
+
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map, skip_when_empty_fields={"bar"})
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
@@ -725,3 +751,224 @@ def test_enum_custom_serializer():
     assert serialized == '{"__enum__": "Foo.BLUE"}'
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == Foo.RED
+
+
+def test_serialize_non_scalar_key_mapping():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
+
+    serialized = serialize_value(non_scalar_key_mapping, whitelist_map=test_env)
+    assert serialized == """{"__mapping_items__": [[{"__class__": "Bar", "color": "red"}, 1]]}"""
+    assert non_scalar_key_mapping == deserialize_value(serialized, whitelist_map=test_env)
+
+
+def test_serializable_non_scalar_key_mapping():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
+
+    assert len(non_scalar_key_mapping) == 1
+    assert non_scalar_key_mapping[Bar("red")] == 1
+    assert list(iter(non_scalar_key_mapping)) == list(iter([Bar("red")]))
+
+    with pytest.raises(NotImplementedError, match="SerializableNonScalarKeyMapping is immutable"):
+        non_scalar_key_mapping["foo"] = None
+
+
+def test_serializable_non_scalar_key_mapping_in_named_tuple():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    @_whitelist_for_serdes(test_env)
+    class Foo(NamedTuple("_Foo", [("keyed_by_non_scalar", Mapping[Bar, int])])):
+        def __new__(cls, keyed_by_non_scalar):
+            return super(Foo, cls).__new__(
+                cls, SerializableNonScalarKeyMapping(keyed_by_non_scalar)
+            )
+
+    named_tuple = Foo(keyed_by_non_scalar={Bar("red"): 1})
+    assert (
+        deserialize_value(
+            serialize_value(named_tuple, whitelist_map=test_env), whitelist_map=test_env
+        )
+        == named_tuple
+    )
+
+
+def test_objects():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class SomeNT(NamedTuple):
+        nums: List[int]
+
+    @_whitelist_for_serdes(test_env)
+    @dataclasses.dataclass
+    class InnerDataclass:
+        f: float
+
+    @_whitelist_for_serdes(test_env)
+    class SomeModel(pydantic.BaseModel):
+        id: int
+        name: str
+
+    @_whitelist_for_serdes(test_env)
+    class SomeDagsterModel(DagsterModel):
+        id: int
+        name: str
+
+    @_whitelist_for_serdes(test_env)
+    @pydantic.dataclasses.dataclass
+    class DataclassObj:
+        s: str
+        i: int
+        d: InnerDataclass
+        nt: SomeNT
+        m: SomeModel
+        st: SomeDagsterModel
+
+    o = DataclassObj(
+        "woo",
+        4,
+        InnerDataclass(1.2),
+        SomeNT([1, 2, 3]),
+        SomeModel(id=4, name="zuck"),
+        SomeDagsterModel(id=4, name="zuck"),
+    )
+    ser_o = serialize_value(o, whitelist_map=test_env)
+    assert deserialize_value(ser_o, whitelist_map=test_env) == o
+
+    packed_o = pack_value(o, whitelist_map=test_env)
+    assert unpack_value(packed_o, whitelist_map=test_env, as_type=DataclassObj) == o
+
+
+def test_object_migration():
+    nt_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(nt_env)
+    class MyEnt(NamedTuple):  # type: ignore
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    nt_ent = MyEnt("dad", 40, [MyEnt("sis", 4, [])])
+    ser_nt_ent = serialize_value(nt_ent, whitelist_map=nt_env)
+    assert deserialize_value(ser_nt_ent, whitelist_map=nt_env) == nt_ent
+
+    py_dc_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(py_dc_env)
+    @pydantic.dataclasses.dataclass
+    class MyEnt:  # type: ignore
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    # can deserialize previous NamedTuples in to future dataclasses
+    py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_dc_env)
+    assert py_dc_ent
+
+    py_m_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(py_m_env)
+    class MyEnt(pydantic.BaseModel):
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    # can deserialize previous NamedTuples in to future pydantic models
+    py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_m_env)
+    assert py_dc_ent
+
+
+def test_pydantic_alias():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class SomeDagsterModel(DagsterModel):
+        unaliased_id: int = Field(..., alias="id_alias")
+        name: str
+
+    o = SomeDagsterModel(id_alias=5, name="fdsk")
+    packed_o = pack_value(o, whitelist_map=test_env)
+    assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name": "fdsk"}
+    assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
+
+    ser_o = serialize_value(o, whitelist_map=test_env)
+    assert deserialize_value(ser_o, whitelist_map=test_env) == o
+
+
+def test_pydantic_serialization_alias():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class SomeDagsterModel(DagsterModel):
+        unaliased_id: int = Field(..., serialization_alias="id_alias")
+        name: str
+
+    o = SomeDagsterModel(unaliased_id=5, name="fdsk")
+    with pytest.raises(
+        SerializationError,
+        match="Can't serialize pydantic models with serialization or validation aliases.",
+    ):
+        serialize_value(o, whitelist_map=test_env)
+
+    with pytest.raises(
+        SerializationError,
+        match="Can't serialize pydantic models with serialization or validation aliases.",
+    ):
+        pack_value(o, whitelist_map=test_env)
+
+
+def test_pydantic_validation_alias():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class SomeDagsterModel(DagsterModel):
+        unaliased_id: int = Field(..., validation_alias="id_alias")
+        name: str
+
+    o = SomeDagsterModel(id_alias=5, name="fdsk")
+    with pytest.raises(
+        SerializationError,
+        match="Can't serialize pydantic models with serialization or validation aliases.",
+    ):
+        serialize_value(o, whitelist_map=test_env)
+
+    with pytest.raises(
+        SerializationError,
+        match="Can't serialize pydantic models with serialization or validation aliases.",
+    ):
+        pack_value(o, whitelist_map=test_env)
+
+
+def test_pydantic_alias_generator():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class SomeDagsterModel(DagsterModel):
+        id: int = Field(...)
+        name: str
+
+        class Config:
+            alias_generator = lambda field_name: f"{field_name}_alias"
+
+    o = SomeDagsterModel(id_alias=5, name_alias="fdsk")
+    packed_o = pack_value(o, whitelist_map=test_env)
+    assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name_alias": "fdsk"}
+    assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
+
+    ser_o = serialize_value(o, whitelist_map=test_env)
+    assert deserialize_value(ser_o, whitelist_map=test_env) == o

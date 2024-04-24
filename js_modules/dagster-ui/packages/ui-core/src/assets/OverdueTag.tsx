@@ -1,16 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip, Tag, Popover, Box} from '@dagster-io/ui-components';
+import {Box, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
-
-import {Timestamp} from '../app/time/Timestamp';
-import {timestampToString} from '../app/time/timestampToString';
-import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
-import {humanCronString} from '../schedules/humanCronString';
-import {LoadingSpinner} from '../ui/Loading';
+import * as React from 'react';
 
 import {
   ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT,
@@ -18,6 +11,13 @@ import {
   TimeSinceWithOverdueColor,
 } from './AssetMaterializationUpstreamData';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
+import {Timestamp} from '../app/time/Timestamp';
+import {timestampToString} from '../app/time/timestampToString';
+import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
+import {LiveDataForNode} from '../asset-graph/Utils';
+import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
+import {humanCronString} from '../schedules/humanCronString';
+import {LoadingSpinner} from '../ui/Loading';
 
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 const locale = navigator.language;
@@ -38,11 +38,15 @@ export function isAssetOverdue(liveData?: LiveDataForNode): liveData is LiveData
 export const humanizedMinutesLateString = (minLate: number) =>
   dayjs.duration(minLate, 'minutes').humanize(false);
 
-export const OverdueTag: React.FC<{
-  liveData: LiveDataForNode | undefined;
+export const OverdueTag = ({
+  policy,
+  assetKey,
+}: {
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
-}> = ({liveData, policy, assetKey}) => {
+}) => {
+  const {liveData} = useAssetBaseData(assetKey);
+
   if (!liveData?.freshnessInfo) {
     return null;
   }
@@ -87,9 +91,13 @@ type OverdueLineagePopoverProps = {
   liveData: LiveDataForNode;
 };
 
-export const OverdueLineagePopover: React.FC<
-  OverdueLineagePopoverProps & {children: React.ReactNode}
-> = ({children, assetKey, liveData}) => {
+export const OverdueLineagePopover = ({
+  children,
+  assetKey,
+  liveData,
+}: OverdueLineagePopoverProps & {
+  children: React.ReactNode;
+}) => {
   return (
     <Popover
       position="top"
@@ -107,10 +115,13 @@ export const OverdueLineagePopover: React.FC<
   );
 };
 
-const OverdueLineagePopoverContent: React.FC<{
+const OverdueLineagePopoverContent = ({
+  assetKey,
+  timestamp,
+}: {
   assetKey: AssetKeyInput;
   timestamp: string;
-}> = ({assetKey, timestamp}) => {
+}) => {
   const result = useQuery<OverduePopoverQuery, OverduePopoverQueryVariables>(
     OVERDUE_POPOVER_QUERY,
     {variables: {assetKey: {path: assetKey.path}, timestamp}},

@@ -2,7 +2,7 @@ from dagster._utils.merger import deep_merge_dicts
 from dagster_airbyte import AirbyteState
 
 
-def get_sample_connection_json(**kwargs):
+def get_sample_connection_json(stream_prefix="", **kwargs):
     return deep_merge_dicts(
         {
             "name": "xyz",
@@ -10,7 +10,7 @@ def get_sample_connection_json(**kwargs):
                 "streams": [
                     {
                         "stream": {
-                            "name": "foo",
+                            "name": stream_prefix + "foo",
                             "jsonSchema": {
                                 "properties": {"a": {"type": "str"}, "b": {"type": "int"}}
                             },
@@ -19,7 +19,7 @@ def get_sample_connection_json(**kwargs):
                     },
                     {
                         "stream": {
-                            "name": "bar",
+                            "name": stream_prefix + "bar",
                             "jsonSchema": {
                                 "properties": {
                                     "c": {"type": "str"},
@@ -30,7 +30,7 @@ def get_sample_connection_json(**kwargs):
                     },
                     {
                         "stream": {
-                            "name": "baz",
+                            "name": stream_prefix + "baz",
                             "jsonSchema": {
                                 "properties": {
                                     "d": {"type": "str"},
@@ -41,7 +41,7 @@ def get_sample_connection_json(**kwargs):
                     },
                     {
                         "stream": {
-                            "name": "qux",
+                            "name": stream_prefix + "qux",
                             "jsonSchema": {
                                 "properties": {
                                     "e": {"type": "str"},

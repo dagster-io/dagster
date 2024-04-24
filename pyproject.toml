@@ -1,27 +1,4 @@
 # ########################
-# ##### BLACK
-# ########################
-
-# [Docs root]
-#   https://black.readthedocs.io/en/stable/
-# [Config option reference]
-#   https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#command-line-options
-
-[tool.black]
-line-length = 100
-
-# Enable "preview" mode-- this adds style rules likely to be incorporated into black's next major
-# release. The reason for enabling this, as of 2022-12-04, is to turn on formatting of long string
-# literals.
-preview = true
-
-# Black will refuse to run if it's not this version.
-required-version = "23.9.1"
-
-# Ensure black's output will be compatible with all listed versions.
-target-versions = ['py38', 'py39', 'py310', 'py311']
-
-# ########################
 # ##### PYRIGHT
 # ########################
 
@@ -55,7 +32,7 @@ exclude = [
   "**/.tox",
   ".git",
   "**/.venv*",
-  "**/build"
+  "**/build",
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -125,8 +102,17 @@ target-version = "py38"
 extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
-  "*/snapshots/*"
+  "*/snapshots/*",
 ]
+
+# Codebase-wide default line length. Override in package-specific pyproject.toml where a different
+# length is desired.
+line-length = 100
+
+# Fail if Ruff is not running this version.
+required-version = "0.3.4"
+
+[tool.ruff.lint]
 
 ignore = [
 
@@ -149,8 +135,8 @@ ignore = [
   # warnings.filterwarings calls before imports.
   "E402",
 
-  # (line too long): This fires for comments, which black won't wrap.
-  # Disabling until there is an autoformat solution available for comments.
+  # (line too long): This fires for comments, which the ruff formatter won't auto-wrap. Disabling
+  # until there is an autoformat solution available for comments.
   "E501",
 
   # (no type comparison): There are a few places where we use `== type(None)` which are more clear
@@ -160,7 +146,7 @@ ignore = [
   # (bare exception): There are many places where we want to catch a maximally generic exception.
   'E722',
 
-  # (no assign lambda): existing code assigns lambdas in a few places. With black formatting
+  # (no assign lambda): existing code assigns lambdas in a few places. With ruff formatting
   # requiring extra empty lines between defs, disallowing lambda assignment can make code less
   # readable.
   "E731",
@@ -179,17 +165,14 @@ ignore = [
 
   # (assorted docstring rules) There are too many violations of these to enable
   # right now, but we should enable after fixing the violations.
-  "D200",  # (one-line docstring should fit)
-  "D205",  # (blank line after summary)
-  "D417",  # (missing arg in docstring)
+  "D200", # (one-line docstring should fit)
+  "D205", # (blank line after summary)
+  "D417", # (missing arg in docstring)
 
   # (assorted perf rules) We have a lot of violations, enable when autofix is available
-  "PERF401",  # (manual-list-comprehension)
-  "PERF402",  # (manual-list-copy)
+  "PERF401", # (manual-list-comprehension)
+  "PERF402", # (manual-list-copy)
 ]
-
-# Match black. Note that this also checks comment line length, but black does not format comments.
-line-length = 100
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
 # Here we append to the defaults.
@@ -202,6 +185,9 @@ select = [
 
   # (useless expression): Expressions that aren't assigned to anything are typically bugs.
   "B018",
+
+  # (static key dict comprehension): Flag reuse of a key in dict comprehensions.
+  "B035",
 
   # (pydocstyle) Docstring-related rules. A large subset of these are ignored by the
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
@@ -234,7 +220,7 @@ select = [
   # (private member access) Flag access to `_`-prefixed symbols. By default the various special
   # methods on `NamedTuple` are ignored (e.g. `_replace`).
   "SLF001",
-  
+
   # (flake8-type-checking) Auto-sort imports into TYPE_CHECKING blocks depending on whether
   # they are runtime or type-only imports.
   "TCH",
@@ -252,19 +238,16 @@ select = [
   "W605",
 ]
 
-# Fail if Ruff is not running this version.
-required-version = "0.0.289"
-
-[tool.ruff.flake8-builtins]
+[tool.ruff.lint.flake8-builtins]
 
 # We use `id` in many places and almost never want to use the python builtin.
 builtins-ignorelist = ["id"]
 
-[tool.ruff.flake8-tidy-imports.banned-api]
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
 
 "__future__.annotations".msg = "Directly quote annotations instead."
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 
 # Combine multiple `from foo import bar as baz` statements with the same source
 # (`foo`) into a single statement.
@@ -274,12 +257,12 @@ combine-as-imports = true
 # per line. Useful for __init__.py files that just re-export symbols.
 force-wrap-aliases = true
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 
 # Enforce google-style docstrings. This is equivalent to ignoring a large number of pydocstyle (D)
 # rules incompatible with google-style docstrings. See:

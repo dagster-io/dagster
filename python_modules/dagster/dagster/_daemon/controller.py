@@ -12,8 +12,8 @@ import pendulum
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.asset_daemon import AssetDaemon
@@ -31,7 +31,7 @@ from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
-DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
+DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 1800
 
 # Default interval at which daemons run
 DEFAULT_DAEMON_INTERVAL_SECONDS = 30
@@ -44,9 +44,12 @@ DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS = 300
 
 THREAD_CHECK_INTERVAL = 5
 
-HEARTBEAT_CHECK_INTERVAL = 15
+HEARTBEAT_CHECK_INTERVAL = 60
 
 RELOAD_WORKSPACE_INTERVAL = 60
+
+# Number of seconds the workspace can fail to refresh before restarting the daemon.
+DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE = 300
 
 # Amount of time that a local code server spun up by the daemon will keep running
 # after it is no longer receiving any heartbeat pings - for this duration there may be
@@ -90,6 +93,7 @@ def daemon_controller_from_instance(
     error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
     code_server_log_level: str = "info",
     log_level: str = "info",
+    log_format: str = "colored",
 ) -> Iterator["DagsterDaemonController"]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
@@ -106,6 +110,9 @@ def daemon_controller_from_instance(
                 grpc_server_registry=grpc_server_registry,
             )
         )
+
+        configure_loggers(handler="default", formatter=log_format, log_level=log_level.upper())
+
         controller = stack.enter_context(
             DagsterDaemonController(
                 workspace_process_context,
@@ -114,7 +121,6 @@ def daemon_controller_from_instance(
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
                 grpc_server_registry=grpc_server_registry,
-                log_level=log_level,
             )
         )
 
@@ -143,8 +149,6 @@ class DagsterDaemonController(AbstractContextManager):
         heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
-        handler: str = "default",
-        log_level: str = "info",
     ):
         self._daemon_uuid = str(uuid.uuid4())
 
@@ -169,8 +173,6 @@ class DagsterDaemonController(AbstractContextManager):
             raise Exception("No daemons configured on the DagsterInstance")
 
         self._daemon_shutdown_event = threading.Event()
-
-        configure_loggers(handler=handler, log_level=log_level.upper())
 
         self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(
@@ -254,18 +256,36 @@ class DagsterDaemonController(AbstractContextManager):
             raise Exception("Stopped dagster-daemon process due to threads no longer running")
 
     def check_daemon_heartbeats(self) -> None:
-        failed_daemons = [
+        no_heartbeat_daemons = [
             daemon_type
             for daemon_type, is_daemon_healthy in self._daemon_heartbeat_health().items()
             if not is_daemon_healthy
         ]
 
-        if failed_daemons:
-            self._logger.error(
-                "Stopping dagster-daemon process since the following threads are no longer sending"
-                f" heartbeats: {failed_daemons}"
+        if no_heartbeat_daemons:
+            self._logger.warning(
+                "The following threads have not sent heartbeats in more than"
+                f" {self._heartbeat_tolerance_seconds} seconds: {no_heartbeat_daemons}."
+                " They may be running more slowly than expected or hanging."
             )
-            raise Exception("Stopped dagster-daemon process due to thread heartbeat failure")
+
+    def check_workspace_freshness(self, last_workspace_update_time: float) -> float:
+        nowish = pendulum.now("UTC").float_timestamp
+        try:
+            if (nowish - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
+                if self._grpc_server_registry:
+                    self._grpc_server_registry.clear_all_grpc_endpoints()
+                self._workspace_process_context.refresh_workspace()
+                return pendulum.now("UTC").float_timestamp
+        except Exception:
+            if (nowish - last_workspace_update_time) > DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE:
+                self._logger.exception("Daemon controller surpassed workspace freshness tolerance.")
+                raise
+            else:
+                self._logger.exception(
+                    "Daemon controller failed to refresh workspace. Still within freshness tolerance."
+                )
+        return last_workspace_update_time
 
     def check_daemon_loop(self) -> None:
         start_time = time.time()
@@ -277,18 +297,16 @@ class DagsterDaemonController(AbstractContextManager):
                 self.check_daemon_threads()
 
                 # periodically refresh the shared workspace context
-                if (time.time() - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
-                    if self._grpc_server_registry:
-                        self._grpc_server_registry.clear_all_grpc_endpoints()
-                    self._workspace_process_context.refresh_workspace()
-                    last_workspace_update_time = time.time()
+                last_workspace_update_time = self.check_workspace_freshness(
+                    last_workspace_update_time
+                )
 
                 if self._instance.daemon_skip_heartbeats_without_errors:
                     # If we're skipping heartbeats without errors, we just check the threads.
                     # If there's no errors, the daemons won't be writing heartbeats.
                     continue
 
-                now = time.time()
+                now = pendulum.now("UTC").float_timestamp
                 # Give the daemon enough time to send an initial heartbeat before checking
                 if (
                     (now - start_time) < 2 * self._heartbeat_interval_seconds
@@ -297,7 +315,7 @@ class DagsterDaemonController(AbstractContextManager):
                     continue
 
                 self.check_daemon_heartbeats()
-                last_heartbeat_check_time = time.time()
+                last_heartbeat_check_time = pendulum.now("UTC").float_timestamp
 
     def __exit__(
         self,
@@ -337,7 +355,7 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
     if daemon_type == SchedulerDaemon.daemon_type():
         return SchedulerDaemon()
     elif daemon_type == SensorDaemon.daemon_type():
-        return SensorDaemon()
+        return SensorDaemon(settings=instance.get_sensor_settings())
     elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
         return QueuedRunCoordinatorDaemon(
             interval_seconds=instance.run_coordinator.dequeue_interval_seconds  # type: ignore  # (??)
@@ -350,11 +368,12 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
         return EventLogConsumerDaemon()
     elif daemon_type == AssetDaemon.daemon_type():
         return AssetDaemon(
-            interval_seconds=(
+            settings=instance.get_auto_materialize_settings(),
+            pre_sensor_interval_seconds=(
                 instance.auto_materialize_minimum_interval_seconds
                 if instance.auto_materialize_minimum_interval_seconds is not None
                 else DEFAULT_DAEMON_INTERVAL_SECONDS
-            )
+            ),
         )
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
@@ -447,7 +466,7 @@ def get_daemon_statuses(
 
 
 def debug_daemon_heartbeats(instance: DagsterInstance) -> None:
-    daemon = SensorDaemon()
+    daemon = SensorDaemon(settings=instance.get_sensor_settings())
     timestamp = pendulum.now("UTC").float_timestamp
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))
     returned_timestamp = instance.get_daemon_heartbeats()[daemon.daemon_type()].timestamp

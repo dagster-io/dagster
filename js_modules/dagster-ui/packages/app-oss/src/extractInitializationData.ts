@@ -1,8 +1,10 @@
 const ELEMENT_ID = 'initialization-data';
 const PREFIX_PLACEHOLDER = '__PATH_PREFIX__';
 const TELEMETRY_PLACEHOLDER = '__TELEMETRY_ENABLED__';
+const LIVE_DATA_POLL_RATE = '__LIVE_DATA_POLL_RATE__';
 
-let value: {pathPrefix: string; telemetryEnabled: boolean} | undefined = undefined;
+let value: {pathPrefix: string; telemetryEnabled: boolean; liveDataPollRate?: number} | undefined =
+  undefined;
 
 // Determine the path prefix value, which is set server-side.
 // This value will be used for prefixing paths for the GraphQL
@@ -10,6 +12,7 @@ let value: {pathPrefix: string; telemetryEnabled: boolean} | undefined = undefin
 export const extractInitializationData = (): {
   pathPrefix: string;
   telemetryEnabled: boolean;
+  liveDataPollRate?: number;
 } => {
   if (!value) {
     value = {pathPrefix: '', telemetryEnabled: false};
@@ -21,6 +24,9 @@ export const extractInitializationData = (): {
       }
       if (parsed.telemetryEnabled !== TELEMETRY_PLACEHOLDER) {
         value.telemetryEnabled = parsed.telemetryEnabled;
+      }
+      if (parsed.liveDataPollRate !== LIVE_DATA_POLL_RATE) {
+        value.liveDataPollRate = parsed.liveDataPollRate;
       }
     }
   }

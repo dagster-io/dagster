@@ -1,41 +1,35 @@
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Colors,
-  Icon,
-  JoinedButtons,
-  TextInput,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Button, ButtonGroup, Colors, Icon} from '@dagster-io/ui-components';
+import React, {useContext, useMemo} from 'react';
 import styled from 'styled-components';
 
-import {GraphData, LiveData} from '../asset-graph/Utils';
+import {AssetFeatureContext} from './AssetFeatureContext';
+import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {LineageDepthControl} from './LineageDepthControl';
+import {AssetLineageScope, AssetViewParams} from './types';
+import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
-import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {AssetLineageScope, AssetViewParams} from './types';
-
-export const AssetNodeLineage: React.FC<{
+export const AssetNodeLineage = ({
+  params,
+  setParams,
+  assetKey,
+  assetGraphData,
+  graphQueryItems,
+  requestedDepth,
+}: {
   params: AssetViewParams;
   setParams: (params: AssetViewParams) => void;
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
-}> = ({
-  params,
-  setParams,
-  assetKey,
-  liveDataByNode,
-  assetGraphData,
-  graphQueryItems,
-  requestedDepth,
 }) => {
-  const maxDistances = React.useMemo(
+  // Note: Default needs to be here and not in the context declaration to avoid circular imports
+  const {LineageOptions, LineageGraph = AssetNodeLineageGraph} = useContext(AssetFeatureContext);
+
+  const maxDistances = useMemo(
     () => calculateGraphDistances(graphQueryItems, assetKey),
     [graphQueryItems, assetKey],
   );
@@ -72,11 +66,15 @@ export const AssetNodeLineage: React.FC<{
           onChange={(depth) => setParams({...params, lineageDepth: depth})}
           max={maxDepth}
         />
+
+        {LineageOptions && (
+          <LineageOptions assetKey={assetKey} params={params} setParams={setParams} />
+        )}
+
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
-            intent="none"
-            liveDataForStale={liveDataByNode}
+            primary={false}
             scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
           />
         ) : (
@@ -90,20 +88,15 @@ export const AssetNodeLineage: React.FC<{
           Not all upstream/downstream assets shown. Increase the depth to show more.
         </DepthHidesAssetsNotice>
       )}
-      <AssetNodeLineageGraph
-        assetKey={assetKey}
-        liveDataByNode={liveDataByNode}
-        assetGraphData={assetGraphData}
-        params={params}
-      />
+      <LineageGraph params={params} assetKey={assetKey} assetGraphData={assetGraphData} />
     </Box>
   );
 };
 
 const DepthHidesAssetsNotice = styled.div`
-  background: ${Colors.Gray100};
+  background: ${Colors.backgroundLight()};
   border-radius: 8px;
-  color: ${Colors.Gray500};
+  color: ${Colors.textLight()};
   align-items: center;
   display: flex;
   padding: 4px 8px;
@@ -113,64 +106,3 @@ const DepthHidesAssetsNotice = styled.div`
   top: 70px;
   z-index: 2;
 `;
-
-const LineageDepthControl: React.FC<{
-  value: number;
-  max: number;
-  onChange: (v: number) => void;
-}> = ({value, max, onChange}) => {
-  const [text, setText] = React.useState(`${value}`);
-  React.useEffect(() => {
-    setText(`${value}`);
-  }, [value]);
-
-  // We maintain the value in a separate piece of state so the user can clear it
-  // or briefly have an invalid value, and also so that the graph doesn't re-render
-  // on each keystroke which could be expensive.
-  const commitText = () => {
-    const next = Number(text) ? Math.min(max, Number(text)) : value;
-    onChange(next);
-  };
-
-  return (
-    <Box flex={{gap: 8, alignItems: 'center'}}>
-      Graph depth
-      <JoinedButtons>
-        <Button
-          disabled={value <= 1}
-          onClick={() => onChange(value - 1)}
-          icon={<Icon name="subtract" />}
-        />
-        <TextInput
-          min={1}
-          max={max}
-          disabled={max <= 1}
-          inputMode="numeric"
-          style={{
-            width: 40,
-            marginLeft: -1,
-            textAlign: 'center',
-            height: 32,
-            padding: 6,
-            borderRadius: 0,
-            boxShadow: 'none',
-            border: `1px solid ${Colors.Gray300}`,
-          }}
-          key={value}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === 'Return' ? commitText() : undefined)}
-          onBlur={() => commitText()}
-        />
-        <Button
-          disabled={value >= max}
-          onClick={() => onChange(value + 1)}
-          icon={<Icon name="add" />}
-        />
-        <Button disabled={value >= max} onClick={() => onChange(max)}>
-          All
-        </Button>
-      </JoinedButtons>
-    </Box>
-  );
-};

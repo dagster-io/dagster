@@ -3,25 +3,49 @@ import {
   Box,
   Button,
   Colors,
-  DialogFooter,
   Dialog,
+  DialogFooter,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
+  MiddleTruncate,
   Popover,
   useViewport,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useState} from 'react';
 import styled from 'styled-components';
 
+import {PartitionRunList} from './PartitionRunList';
+import {
+  BOX_SIZE,
+  GridColumn,
+  GridFloatingContainer,
+  LeftLabel,
+  TopLabel,
+  TopLabelTilted,
+  topLabelHeightForLabels,
+} from './RunMatrixUtils';
+import {
+  PartitionStepStatusPipelineQuery,
+  PartitionStepStatusPipelineQueryVariables,
+} from './types/PartitionStepStatus.types';
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  MatrixData,
+  MatrixStep,
+  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  PartitionRuns,
+  StatusSquareColor,
+  useMatrixData,
+} from './useMatrixData';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
-  partitionStatusAtIndex,
   Range,
+  partitionStatusAtIndex,
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
@@ -31,30 +55,6 @@ import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {PartitionRunList} from './PartitionRunList';
-import {
-  BOX_SIZE,
-  GridColumn,
-  GridFloatingContainer,
-  LeftLabel,
-  TopLabel,
-  topLabelHeightForLabels,
-  TopLabelTilted,
-} from './RunMatrixUtils';
-import {
-  PartitionStepStatusPipelineQuery,
-  PartitionStepStatusPipelineQueryVariables,
-} from './types/PartitionStepStatus.types';
-import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
-import {
-  MatrixStep,
-  PartitionRuns,
-  useMatrixData,
-  MatrixData,
-  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
-  StatusSquareColor,
-} from './useMatrixData';
 
 const BUFFER = 3;
 
@@ -90,14 +90,21 @@ const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) =
   return [minUnix, maxUnix] as const;
 };
 
-export const PartitionPerAssetStatus: React.FC<
-  Omit<PartitionStepStatusBaseProps, 'partitionNames'> & {
-    assetHealth: PartitionHealthData[];
-    assetQueryItems: GraphQueryItem[];
-    rangeDimensionIdx: number;
-    rangeDimension: PartitionHealthDimension;
-  }
-> = ({assetHealth, rangeDimension, rangeDimensionIdx, assetQueryItems, ...rest}) => {
+interface PartitionPerAssetStatusProps
+  extends Omit<PartitionStepStatusBaseProps, 'partitionNames'> {
+  assetHealth: PartitionHealthData[];
+  assetQueryItems: GraphQueryItem[];
+  rangeDimensionIdx: number;
+  rangeDimension: PartitionHealthDimension;
+}
+
+export const PartitionPerAssetStatus = ({
+  assetHealth,
+  rangeDimension,
+  rangeDimensionIdx,
+  assetQueryItems,
+  ...rest
+}: PartitionPerAssetStatusProps) => {
   const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
   for (const a of assetHealth) {
     if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
@@ -157,12 +164,18 @@ const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]): Statu
     : 'MISSING';
 };
 
-export const PartitionPerOpStatus: React.FC<
-  PartitionStepStatusBaseProps & {
-    repoAddress: RepoAddress;
-    partitions: PartitionRuns[];
-  }
-> = ({repoAddress, pipelineName, partitions, partitionNames, ...rest}) => {
+interface PartitionPerOpStatusProps extends PartitionStepStatusBaseProps {
+  repoAddress: RepoAddress;
+  partitions: PartitionRuns[];
+}
+
+export const PartitionPerOpStatus = ({
+  repoAddress,
+  pipelineName,
+  partitions,
+  partitionNames,
+  ...rest
+}: PartitionPerOpStatusProps) => {
   // Retrieve the pipeline's structure
   const repositorySelector = repoAddressToSelector(repoAddress);
   const pipelineSelector = {...repositorySelector, pipelineName};
@@ -198,18 +211,18 @@ export const PartitionPerOpStatus: React.FC<
   );
 };
 
-const PartitionStepStatus: React.FC<
-  PartitionStepStatusBaseProps & {
-    data: MatrixData;
-    showLatestRun: boolean;
-  }
-> = (props) => {
+interface PartitionStepStatusProps extends PartitionStepStatusBaseProps {
+  data: MatrixData;
+  showLatestRun: boolean;
+}
+
+const PartitionStepStatus = (props: PartitionStepStatusProps) => {
   const {viewport, containerProps} = useViewport();
-  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
+  const [hovered, setHovered] = useState<PartitionRunSelection | null>(null);
+  const [focused, setFocused] = useState<PartitionRunSelection | null>(null);
   const {setPageSize, data} = props;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewport.width) {
       setPageSize(getVisibleItemCount(viewport.width));
     }
@@ -265,12 +278,12 @@ const PartitionStepStatus: React.FC<
             <Divider />
             {stepRows.map((step) => (
               <LeftLabel
-                style={{paddingLeft: 8 + step.x}}
+                style={{paddingLeft: 8 + step.x, paddingRight: 8}}
                 key={step.name}
                 data-tooltip={step.name}
                 hovered={step.name === hovered?.stepName}
               >
-                {step.name}
+                <MiddleTruncate text={step.name} />
               </LeftLabel>
             ))}
           </GridColumn>
@@ -365,7 +378,7 @@ const PartitionStepStatus: React.FC<
 const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   width: 30px;
   position: absolute;
-  border: 1px solid ${Colors.KeylineGray};
+  border: 1px solid ${Colors.keylineDefault()};
   border-radius: 3px;
   display: flex;
   justify-content: center;
@@ -373,7 +386,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   top: calc(50% - 15px);
   bottom: calc(50% - 15px);
   ${({$direction}) => ($direction === 'left' ? 'left: 315px;' : 'right: 0;')}
-  background: white;
+  background: ${Colors.backgroundDefault()};
   z-index: 10;
 
   justify-content: center;
@@ -381,7 +394,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   cursor: pointer;
   display: flex;
   &:hover {
-    background: #ececec;
+    background: ${Colors.backgroundDefaultHover()};
   }
 `;
 
@@ -393,7 +406,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${Colors.KeylineGray};
+  border-top: 1px solid ${Colors.keylineDefault()};
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
@@ -419,7 +432,15 @@ const TOOLTIP_STYLE = JSON.stringify({
   left: 10,
 });
 
-const PartitionSquare: React.FC<{
+const PartitionSquare = ({
+  step,
+  runs,
+  runsLoaded,
+  hovered,
+  setHovered,
+  setFocused,
+  partitionName,
+}: {
   step?: MatrixStep;
   runs: PartitionMatrixStepRunFragment[];
   runsLoaded: boolean;
@@ -429,8 +450,8 @@ const PartitionSquare: React.FC<{
   partitionName: string;
   setHovered: (hovered: PartitionRunSelection | null) => void;
   setFocused: (hovered: PartitionRunSelection | null) => void;
-}> = ({step, runs, runsLoaded, hovered, setHovered, setFocused, partitionName}) => {
-  const [opened, setOpened] = React.useState(false);
+}) => {
+  const [opened, setOpened] = useState(false);
   let squareStatus;
 
   if (!runsLoaded) {

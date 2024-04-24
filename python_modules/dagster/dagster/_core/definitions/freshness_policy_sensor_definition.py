@@ -27,6 +27,7 @@ from dagster._seven import JSONDecodeError
 
 from .sensor_definition import (
     DefaultSensorStatus,
+    RawSensorEvaluationFunctionReturn,
     SensorDefinition,
     SensorEvaluationContext,
     SensorType,
@@ -62,7 +63,7 @@ class FreshnessPolicySensorCursor(
 
     @staticmethod
     def from_dict(
-        minutes_late_by_key: Mapping[AssetKey, Optional[float]]
+        minutes_late_by_key: Mapping[AssetKey, Optional[float]],
     ) -> "FreshnessPolicySensorCursor":
         return FreshnessPolicySensorCursor(
             minutes_late_by_key_str={k.to_user_string(): v for k, v in minutes_late_by_key.items()}
@@ -200,7 +201,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_selection: AssetSelection,
-        freshness_policy_sensor_fn: Callable[..., None],
+        freshness_policy_sensor_fn: Callable[..., RawSensorEvaluationFunctionReturn],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -257,7 +258,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             minutes_late_by_key: Dict[AssetKey, Optional[float]] = {}
             for asset_key in monitored_keys:
-                freshness_policy = asset_graph.freshness_policies_by_key.get(asset_key)
+                freshness_policy = asset_graph.get(asset_key).freshness_policy
                 if freshness_policy is None:
                     continue
 
@@ -312,7 +313,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             required_resource_keys=combined_required_resource_keys,
         )
 
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
         context_param_name = get_context_param_name(self._freshness_policy_sensor_fn)
 
         sensor_context = get_sensor_context_from_args_or_kwargs(
@@ -346,7 +347,10 @@ def freshness_policy_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[Callable[..., None]], FreshnessPolicySensorDefinition,]:
+) -> Callable[
+    [Callable[..., RawSensorEvaluationFunctionReturn]],
+    FreshnessPolicySensorDefinition,
+]:
     """Define a sensor that reacts to the status of a given set of asset freshness policies, where the
     decorated function will be evaluated on every tick for each asset in the selection that has a
     FreshnessPolicy defined.
@@ -367,7 +371,9 @@ def freshness_policy_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
-    def inner(fn: Callable[..., None]) -> FreshnessPolicySensorDefinition:
+    def inner(
+        fn: Callable[..., RawSensorEvaluationFunctionReturn],
+    ) -> FreshnessPolicySensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 

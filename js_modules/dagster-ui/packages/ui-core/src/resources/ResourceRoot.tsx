@@ -21,26 +21,24 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useParams, useRouteMatch} from 'react-router-dom';
-import styled from 'styled-components';
 
+import {ResourceTabs} from './ResourceTabs';
+import {
+  ResourceDetailsFragment,
+  ResourceRootQuery,
+  ResourceRootQueryVariables,
+} from './types/ResourceRoot.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetLink} from '../assets/AssetLink';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {SidebarSection} from '../pipelines/SidebarComponents';
 import {Loading} from '../ui/Loading';
+import {Markdown} from '../ui/Markdown';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {ResourceTabs} from './ResourceTabs';
-import {
-  ResourceRootQuery,
-  ResourceRootQueryVariables,
-  ResourceDetailsFragment,
-} from './types/ResourceRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -74,13 +72,20 @@ const resourceDisplayName = (
 
 const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
-    <Box padding={{left: 24, vertical: 16}} background={Colors.Gray50} border="all">
+    <Box padding={{left: 24, vertical: 16}} background={Colors.backgroundLight()} border="all">
       {props.children}
     </Box>
   );
 };
 
-export const ResourceRoot: React.FC<Props> = (props) => {
+// Strip leading tabs from the lines produced for the resource description, since they
+// break markdown formatting.
+const removeLeadingTabs = (input: string) => {
+  const lines = input.split('\n');
+  return lines.map((line) => line.replace(/^    /, '')).join('\n');
+};
+
+export const ResourceRoot = (props: Props) => {
   useTrackPageView();
 
   const {repoAddress} = props;
@@ -119,6 +124,11 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     <Page style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={<Heading>{displayName}</Heading>}
+        tags={
+          <Tag icon="resource">
+            Resource in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
+        }
         tabs={
           <ResourceTabs repoAddress={repoAddress} resourceName={resourceName} numUses={numUses} />
         }
@@ -139,7 +149,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                     <div>Could not load resource.</div>
                     {message && (
                       <ButtonLink
-                        color={Colors.Link}
+                        color={Colors.linkDefault()}
                         underline="always"
                         onClick={() => {
                           showCustomAlert({
@@ -162,7 +172,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           return (
             <div style={{height: '100%', display: 'flex'}}>
               <SplitPanelContainer
-                identifier="explorer"
+                identifier="resource-explorer"
                 firstInitialPercent={50}
                 firstMinSize={400}
                 first={
@@ -182,36 +192,34 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                   </Box>
                 }
                 second={
-                  <RightInfoPanel>
-                    <RightInfoPanelContent>
-                      <Box
-                        flex={{gap: 4, direction: 'column'}}
-                        margin={{left: 24, right: 12, vertical: 16}}
-                      >
-                        <Heading>{displayName}</Heading>
-
-                        <Tooltip content={topLevelResourceDetailsOrError.resourceType || ''}>
-                          <Mono>{resourceTypeSuccinct}</Mono>
-                        </Tooltip>
-                      </Box>
-
-                      <SidebarSection title="Definition">
-                        <Box padding={{vertical: 16, horizontal: 24}}>
-                          <Tag icon="resource">
-                            Resource in{' '}
-                            <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
-                          </Tag>
-                        </Box>
-                      </SidebarSection>
+                  <Box padding={{bottom: 48}} style={{overflowY: 'auto'}}>
+                    <Box
+                      flex={{gap: 4, direction: 'column'}}
+                      margin={{left: 24, right: 12, vertical: 16}}
+                    >
+                      <Heading>{displayName}</Heading>
+                      <Tooltip content={topLevelResourceDetailsOrError.resourceType || ''}>
+                        <Mono>{resourceTypeSuccinct}</Mono>
+                      </Tooltip>
+                    </Box>
+                    <Box
+                      border="top-and-bottom"
+                      background={Colors.backgroundLight()}
+                      padding={{vertical: 8, horizontal: 24}}
+                      style={{fontSize: '12px', fontWeight: 500}}
+                    >
+                      Description
+                    </Box>
+                    <Box padding={{horizontal: 24, vertical: 16}}>
                       {topLevelResourceDetailsOrError.description ? (
-                        <SidebarSection title="Description">
-                          <Box padding={{vertical: 16, horizontal: 24}}>
-                            {topLevelResourceDetailsOrError.description}
-                          </Box>
-                        </SidebarSection>
-                      ) : null}
-                    </RightInfoPanelContent>
-                  </RightInfoPanel>
+                        <Markdown>
+                          {removeLeadingTabs(topLevelResourceDetailsOrError.description)}
+                        </Markdown>
+                      ) : (
+                        'None'
+                      )}
+                    </Box>
+                  </Box>
                 }
               />
             </div>
@@ -222,10 +230,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
   );
 };
 
-const ResourceConfig: React.FC<{
+const ResourceConfig = (props: {
   resourceDetails: ResourceDetailsFragment;
   repoAddress: RepoAddress;
-}> = (props) => {
+}) => {
   const {resourceDetails, repoAddress} = props;
 
   const configuredValues = Object.fromEntries(
@@ -315,7 +323,9 @@ const ResourceConfig: React.FC<{
                     <td>
                       <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
                         <strong>{field.name}</strong>
-                        <div style={{fontSize: 12, color: Colors.Gray700}}>{field.description}</div>
+                        <div style={{fontSize: 12, color: Colors.textLight()}}>
+                          {field.description}
+                        </div>
                       </Box>
                     </td>
                     <td>{remapName(field.configTypeKey)}</td>
@@ -342,11 +352,11 @@ const ResourceConfig: React.FC<{
   );
 };
 
-const ResourceUses: React.FC<{
+const ResourceUses = (props: {
   resourceDetails: ResourceDetailsFragment;
   repoAddress: RepoAddress;
   numUses: number;
-}> = (props) => {
+}) => {
   const {resourceDetails, repoAddress, numUses} = props;
 
   if (numUses === 0) {
@@ -446,7 +456,7 @@ const ResourceUses: React.FC<{
                         }}
                         style={{maxWidth: '100%'}}
                       >
-                        <Icon name="job" color={Colors.Gray400} />
+                        <Icon name="job" color={Colors.accentGray()} />
 
                         <Link
                           to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.job.name}`)}
@@ -476,7 +486,7 @@ const ResourceUses: React.FC<{
                             style={{maxWidth: '100%'}}
                             key={op.handleID}
                           >
-                            <Icon name="op" color={Colors.Gray400} />
+                            <Icon name="op" color={Colors.accentGray()} />
 
                             <Link
                               to={workspacePathFromAddress(
@@ -501,12 +511,12 @@ const ResourceUses: React.FC<{
         {
           name: 'Schedules',
           objects: resourceDetails.schedulesUsing,
-          icon: <Icon name="schedule" color={Colors.Gray400} />,
+          icon: <Icon name="schedule" color={Colors.accentGray()} />,
         },
         {
           name: 'Sensors',
           objects: resourceDetails.sensorsUsing,
-          icon: <Icon name="sensors" color={Colors.Gray400} />,
+          icon: <Icon name="sensors" color={Colors.accentGray()} />,
         },
       ]
         .filter(({objects}) => objects.length > 0)
@@ -558,17 +568,13 @@ const ResourceUses: React.FC<{
   );
 };
 
-const ResourceEntry: React.FC<{
-  name: string;
-  url?: string;
-  description?: string;
-}> = (props) => {
+const ResourceEntry = (props: {name: string; url?: string; description?: string}) => {
   const {url, name, description} = props;
 
   return (
     <Box flex={{direction: 'column'}}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{maxWidth: '100%'}}>
-        <Icon name="resource" color={Colors.Blue700} />
+        <Icon name="resource" color={Colors.accentBlue()} />
         <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
           {url ? (
             <Link to={url} style={{overflow: 'hidden'}}>
@@ -583,22 +589,6 @@ const ResourceEntry: React.FC<{
     </Box>
   );
 };
-
-const RightInfoPanel = styled.div`
-  position: relative;
-
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: ${Colors.White};
-`;
-
-const RightInfoPanelContent = styled.div`
-  flex: 1;
-  overflow-y: auto;
-`;
 
 const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {

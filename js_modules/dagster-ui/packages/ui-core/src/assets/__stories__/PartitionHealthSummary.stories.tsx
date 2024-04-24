@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {PartitionHealthSummary} from '../PartitionHealthSummary';
 import {
@@ -19,10 +18,13 @@ export default {
   component: PartitionHealthSummary,
 };
 
-const PartitionHealthSummaryWithData: React.FC<{
+const PartitionHealthSummaryWithData = ({
+  assetKey,
+  ranges,
+}: {
   assetKey: AssetKey;
   ranges?: [string, string][];
-}> = ({assetKey, ranges}) => {
+}) => {
   const data = usePartitionHealthData([assetKey]);
 
   // Convert the convenient test shorthand into a PartitionDimensionSelection

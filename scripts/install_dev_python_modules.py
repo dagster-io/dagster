@@ -19,7 +19,9 @@ parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
 
 
 def main(
-    quiet: bool, extra_packages: List[str], include_prebuilt_grpcio_wheel: Optional[bool]
+    quiet: bool,
+    extra_packages: List[str],
+    include_prebuilt_grpcio_wheel: Optional[bool],
 ) -> None:
     """Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -40,7 +42,7 @@ def main(
 
     # Supported on all Python versions.
     install_targets += [
-        "-e python_modules/dagster[black,pyright,ruff,test]",
+        "-e python_modules/dagster[pyright,ruff,test]",
         "-e python_modules/dagster-pipes",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
@@ -49,7 +51,6 @@ def main(
         "-e python_modules/automation",
         "-e python_modules/libraries/dagster-managed-elements",
         "-e python_modules/libraries/dagster-airbyte",
-        "-e python_modules/libraries/dagster-airflow",
         "-e python_modules/libraries/dagster-aws[test]",
         "-e python_modules/libraries/dagster-celery",
         "-e python_modules/libraries/dagster-celery-docker",
@@ -62,6 +63,7 @@ def main(
         "-e python_modules/libraries/dagster-gcp",
         "-e python_modules/libraries/dagster-gcp-pandas",
         "-e python_modules/libraries/dagster-gcp-pyspark",
+        "-e python_modules/libraries/dagster-embedded-elt",
         "-e python_modules/libraries/dagster-fivetran",
         "-e python_modules/libraries/dagster-k8s",
         "-e python_modules/libraries/dagster-celery-k8s",
@@ -83,21 +85,29 @@ def main(
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-e python_modules/libraries/dagster-azure",
         "-e python_modules/libraries/dagster-msteams",
-        "-e python_modules/libraries/dagster-duckdb",
-        "-e python_modules/libraries/dagster-duckdb-pandas",
-        "-e python_modules/libraries/dagster-duckdb-polars",
-        "-e python_modules/libraries/dagster-duckdb-pyspark",
-        "-e python_modules/libraries/dagster-wandb",
+        "-e python_modules/libraries/dagster-deltalake",
+        "-e python_modules/libraries/dagster-deltalake-pandas",
+        "-e python_modules/libraries/dagster-deltalake-polars",
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
     ]
 
+    if sys.version_info <= (3, 12):
+        install_targets += [
+            "-e python_modules/libraries/dagster-duckdb",
+            "-e python_modules/libraries/dagster-duckdb-pandas",
+            "-e python_modules/libraries/dagster-duckdb-polars",
+            "-e python_modules/libraries/dagster-duckdb-pyspark",
+            "-e python_modules/libraries/dagster-wandb",
+            "-e python_modules/libraries/dagster-airflow",
+        ]
+
     if sys.version_info > (3, 7):
         install_targets += [
-            "-e python_modules/libraries/dagster-dbt",
             "-e python_modules/libraries/dagster-pandera",
             "-e python_modules/libraries/dagster-snowflake",
             "-e python_modules/libraries/dagster-snowflake-pandas",
+            "-e python_modules/libraries/dagster-polars[deltalake,gcp,test]",
         ]
 
     if sys.version_info > (3, 6) and sys.version_info < (3, 10):
@@ -120,10 +130,13 @@ def main(
     # if sys.version_info >= (3, 7) and os.name != "nt":
     #     install_targets += ["-e python_modules/libraries/dagster-ge"]
 
+    # Ensure uv is installed which we use for faster package resolution
+    subprocess.run(["pip", "install", "-U", "uv"], check=True)
+
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
-    cmd = ["pip", "install"] + install_targets
+    cmd = ["uv", "pip", "install"] + install_targets
 
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')

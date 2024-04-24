@@ -2,16 +2,17 @@ import pytest
 import responses
 from dagster import (
     AssetKey,
+    AutoMaterializePolicy,
     FreshnessPolicy,
     TableColumn,
     TableSchema,
     asset,
     build_init_resource_context,
 )
+from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.events import StepMaterializationData
-from dagster._legacy import build_assets_job
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
 
 from .utils import get_sample_connection_json, get_sample_job_json
@@ -19,7 +20,8 @@ from .utils import get_sample_connection_json, get_sample_job_json
 
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
-def test_assets(schema_prefix, monkeypatch):
+@pytest.mark.parametrize("auto_materialize_policy", [None, AutoMaterializePolicy.lazy()])
+def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -36,10 +38,19 @@ def test_assets(schema_prefix, monkeypatch):
         "12345",
         destination_tables=destination_tables,
         asset_key_prefix=["some", "prefix"],
+        auto_materialize_policy=auto_materialize_policy,
     )
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
     assert len(ab_assets[0].op.output_defs) == 2
+
+    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    if auto_materialize_policy:
+        assert auto_materialize_policies_by_key
+    assert all(
+        auto_materialize_policies_by_key[key] == auto_materialize_policy
+        for key in auto_materialize_policies_by_key
+    )
 
     responses.add(
         method=responses.POST,
@@ -60,10 +71,9 @@ def test_assets(schema_prefix, monkeypatch):
         status=200,
     )
 
-    ab_job = build_assets_job(
-        "ab_job",
+    res = materialize_to_memory(
         ab_assets,
-        resource_defs={
+        resources={
             "airbyte": airbyte_resource.configured(
                 {
                     "host": "some_host",
@@ -73,8 +83,6 @@ def test_assets(schema_prefix, monkeypatch):
             )
         },
     )
-
-    res = ab_job.execute_in_process()
 
     materializations = [
         event.event_specific_data.materialization
@@ -103,7 +111,10 @@ def test_assets(schema_prefix, monkeypatch):
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
 @pytest.mark.parametrize("source_asset", [None, "my_source_asset_key"])
 @pytest.mark.parametrize("freshness_policy", [None, FreshnessPolicy(maximum_lag_minutes=60)])
-def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy):
+@pytest.mark.parametrize("auto_materialize_policy", [None, AutoMaterializePolicy.lazy()])
+def test_assets_with_normalization(
+    schema_prefix, source_asset, freshness_policy, auto_materialize_policy
+):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -125,6 +136,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         asset_key_prefix=["some", "prefix"],
         deps=[AssetKey(source_asset)] if source_asset else None,
         freshness_policy=freshness_policy,
+        auto_materialize_policy=auto_materialize_policy,
     )
 
     freshness_policies = ab_assets[0].freshness_policies_by_key
@@ -134,6 +146,14 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         AssetKey(["some", "prefix", t]) for t in bar_normalization_tables
     }
     assert len(ab_assets[0].op.output_defs) == 4
+
+    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    if auto_materialize_policy:
+        assert auto_materialize_policies_by_key
+    assert all(
+        auto_materialize_policies_by_key[key] == auto_materialize_policy
+        for key in auto_materialize_policies_by_key
+    )
 
     responses.add(
         method=responses.POST,
@@ -154,11 +174,11 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         status=200,
     )
 
-    ab_job = build_assets_job(
-        "ab_job",
-        ab_assets,
-        source_assets=[SourceAsset(AssetKey(source_asset))] if source_asset else None,
-        resource_defs={
+    source_assets = [SourceAsset(AssetKey(source_asset))] if source_asset else []
+    res = materialize_to_memory(
+        [*ab_assets, *source_assets],
+        selection=ab_assets,
+        resources={
             "airbyte": airbyte_resource.configured(
                 {
                     "host": "some_host",
@@ -168,8 +188,6 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
             )
         },
     )
-
-    res = ab_job.execute_in_process()
 
     materializations = [
         event.event_specific_data.materialization
@@ -210,12 +228,6 @@ def test_assets_cloud() -> None:
         group_name="foo",
     )
 
-    ab_job = build_assets_job(
-        "ab_job",
-        ab_assets,
-        resource_defs={"airbyte": ab_resource},
-    )
-
     with responses.RequestsMock() as rsps:
         rsps.add(
             rsps.POST,
@@ -234,7 +246,10 @@ def test_assets_cloud() -> None:
             json={"jobId": 1, "status": "succeeded", "jobType": "sync"},
         )
 
-        res = ab_job.execute_in_process()
+        res = materialize_to_memory(
+            ab_assets,
+            resources={"airbyte": ab_resource},
+        )
 
         materializations = [
             event.event_specific_data.materialization

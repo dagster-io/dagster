@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dagster import (
     _check as check,
 )
@@ -12,6 +14,7 @@ from .webserver import DagsterWebserver
 def create_app_from_workspace_process_context(
     workspace_process_context: IWorkspaceProcessContext,
     path_prefix: str = "",
+    live_data_poll_rate: Optional[int] = None,
     **kwargs,
 ) -> Starlette:
     check.inst_param(
@@ -34,4 +37,5 @@ def create_app_from_workspace_process_context(
     return DagsterWebserver(
         workspace_process_context,
         path_prefix,
+        live_data_poll_rate,
     ).create_asgi_app(**kwargs)

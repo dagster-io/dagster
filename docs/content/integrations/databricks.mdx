@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster with Databricks | Dagster Docs"
+title: "Databricks & Dagster | Dagster Docs"
 description: Dagster can orchestrate Databricks jobs alongside other technologies.
 ---
 
-# Using Databricks with Dagster
+# Databricks & Dagster
 
 Dagster can orchestrate your Databricks jobs and other Databricks API calls, making it easy to chain together multiple Databricks jobs and orchestrate Databricks alongside your other technologies.
 
@@ -123,7 +123,7 @@ def my_databricks_table(context: AssetExecutionContext) -> None:
 
 materialize_databricks_table = define_asset_job(
     name="materialize_databricks_table",
-    selection=AssetSelection.keys("my_databricks_table"),
+    selection=AssetSelection.assets(my_databricks_table),
 )
 ```
 

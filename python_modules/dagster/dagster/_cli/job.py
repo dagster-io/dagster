@@ -30,23 +30,23 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.api import create_execution_plan, execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalJob,
     ExternalRepository,
     RepositoryHandle,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
@@ -127,13 +127,13 @@ def get_job_in_same_python_env_instructions(command_name):
 def get_job_instructions(command_name):
     return (
         "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
-        " job {command_name} -j <<job_name>> (works if .{default_filename} exists)\n\n2. dagster"
-        " job {command_name} -j <<job_name>> -w path/to/{default_filename}\n\n3. dagster job"
-        " {command_name} -f /path/to/file.py -a define_some_job\n\n4. dagster job {command_name} -m"
-        " a_module.submodule -a define_some_job\n\n5. dagster job {command_name} -f"
-        " /path/to/file.py -a define_some_repo -j <<job_name>>\n\n6. dagster job {command_name} -m"
+        f" job {command_name} -j <<job_name>> (works if .{DEFAULT_WORKSPACE_YAML_FILENAME} exists)\n\n2. dagster"
+        f" job {command_name} -j <<job_name>> -w path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}\n\n3. dagster job"
+        f" {command_name} -f /path/to/file.py -a define_some_job\n\n4. dagster job {command_name} -m"
+        f" a_module.submodule -a define_some_job\n\n5. dagster job {command_name} -f"
+        f" /path/to/file.py -a define_some_repo -j <<job_name>>\n\n6. dagster job {command_name} -m"
         " a_module.submodule -a define_some_repo -j <<job_name>>"
-    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
+    )
 
 
 @job_cli.command(
@@ -386,10 +386,7 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
 
         except JSONDecodeError:
             raise click.UsageError(
-                "Invalid JSON-string given for `--config-json`: {}\n\n{}".format(
-                    config_json,
-                    serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
-                )
+                f"Invalid JSON-string given for `--config-json`: {config_json}\n\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"
             )
     else:
         check.failed("Unhandled case getting config from kwargs")
@@ -428,8 +425,9 @@ def do_execute_command(
 @job_cli.command(
     name="launch",
     help=(
-        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}"
-        .format(instructions=get_job_instructions("launch"))
+        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}".format(
+            instructions=get_job_instructions("launch")
+        )
     ),
 )
 @job_target_argument
@@ -557,6 +555,7 @@ def _create_external_run(
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         asset_check_selection=None,
+        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
     )
 
 
@@ -575,7 +574,7 @@ def _check_execute_external_job_args(
 
     return (
         run_config,
-        validate_tags(tags),
+        normalize_tags(tags).tags,
         op_selection,
     )
 

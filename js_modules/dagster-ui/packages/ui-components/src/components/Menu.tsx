@@ -1,51 +1,51 @@
 /* eslint-disable no-restricted-imports */
 import {
-  Intent,
   Menu as BlueprintMenu,
   MenuDivider as BlueprintMenuDivider,
   MenuItem as BlueprintMenuItem,
+  Intent,
 } from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
-import {IconName, Icon, IconWrapper} from './Icon';
+import {Colors} from './Color';
+import {Icon, IconName, IconWrapper} from './Icon';
 
 interface Props extends React.ComponentProps<typeof BlueprintMenu> {}
 
-export const Menu: React.FC<Props> = (props) => {
+export const Menu = (props: Props) => {
   return <StyledMenu {...props} />;
 };
 
 const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintMenuItem>['intent']) => {
   switch (intent) {
     case 'primary':
-      return Colors.Blue500;
+      return Colors.accentBlue();
     case 'danger':
-      return Colors.Red500;
+      return Colors.accentRed();
     case 'success':
-      return Colors.Green500;
+      return Colors.accentGreen();
     case 'warning':
-      return Colors.Yellow500;
+      return Colors.accentYellow();
     case 'none':
     default:
-      return Colors.Gray900;
+      return Colors.textDefault();
   }
 };
 
 const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintMenuItem>['intent']) => {
   switch (intent) {
     case 'primary':
-      return Colors.Blue500;
+      return Colors.accentBlue();
     case 'danger':
-      return Colors.Red500;
+      return Colors.accentRed();
     case 'success':
-      return Colors.Green500;
+      return Colors.accentGreen();
     case 'warning':
-      return Colors.Yellow500;
+      return Colors.accentYellow();
     case 'none':
     default:
-      return Colors.Gray900;
+      return Colors.textDefault();
   }
 };
 
@@ -67,7 +67,7 @@ interface ItemProps
   extends CommonMenuItemProps,
     Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'href' | 'icon'> {}
 
-export const MenuItem: React.FC<ItemProps> = (props) => {
+export const MenuItem = (props: ItemProps) => {
   const {icon, intent, ...rest} = props;
   return (
     <StyledMenuItem
@@ -88,7 +88,7 @@ interface MenuExternalLinkProps
 /**
  * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
  */
-export const MenuExternalLink: React.FC<MenuExternalLinkProps> = (props) => {
+export const MenuExternalLink = (props: MenuExternalLinkProps) => {
   const {icon, intent = 'none', ...rest} = props;
   return (
     <StyledMenuItem
@@ -102,11 +102,24 @@ export const MenuExternalLink: React.FC<MenuExternalLinkProps> = (props) => {
 };
 
 export const MenuDivider = styled(BlueprintMenuDivider)`
-  border-top: 1px solid ${Colors.Gray100};
+  border-top: 1px solid ${Colors.keylineDefault()};
   margin: 2px 0;
+
+  :focus {
+    outline: none;
+  }
+
+  && h6 {
+    color: ${Colors.textLight()};
+    padding: 8px 6px 2px;
+    font-size: 12px;
+    font-weight: 300;
+    user-select: none;
+  }
 `;
 
 const StyledMenu = styled(BlueprintMenu)`
+  background-color: ${Colors.popoverBackground()};
   border-radius: 4px;
   padding: 8px 4px;
 `;
@@ -136,11 +149,11 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
 
   &.bp4-active,
   &.bp4-active:hover {
-    background-color: ${Colors.Blue500};
-    color: ${Colors.White};
+    background-color: ${Colors.backgroundBlue()};
+    color: ${Colors.textDefault()};
 
     ${IconWrapper} {
-      background-color: ${Colors.White};
+      background-color: ${Colors.textDefault()};
     }
   }
 
@@ -149,7 +162,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   }
 
   &.bp4-active ${IconWrapper} {
-    color: ${Colors.White};
+    color: ${Colors.textDefault()};
   }
 
   ${IconWrapper}:first-child {
@@ -157,13 +170,11 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   }
 
   &:hover {
-    background: ${Colors.Gray100};
+    background: ${Colors.popoverBackgroundHover()};
     color: ${({$textColor}) => $textColor};
   }
 
-  &:focus {
-    color: ${({$textColor}) => $textColor};
-    box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 2px;
-    outline: none;
+  &:focus-visible {
+    z-index: 1;
   }
 `;

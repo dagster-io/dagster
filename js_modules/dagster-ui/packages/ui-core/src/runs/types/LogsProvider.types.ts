@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type PipelineRunLogsSubscriptionVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  runId: Types.Scalars['ID']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type PipelineRunLogsSubscription = {
@@ -92,6 +92,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -128,6 +136,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -181,6 +203,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -250,6 +278,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -286,6 +322,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -336,6 +386,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -405,6 +461,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -441,6 +505,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -494,6 +572,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -547,6 +631,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -583,6 +675,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -640,6 +746,12 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -686,6 +798,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -722,6 +842,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -776,6 +910,12 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -810,6 +950,14 @@ export type PipelineRunLogsSubscription = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -850,6 +998,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -903,6 +1065,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -1009,6 +1177,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1045,6 +1221,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -1095,6 +1285,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1184,6 +1380,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1220,6 +1424,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -1270,6 +1488,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1342,6 +1566,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1378,6 +1610,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -1432,6 +1678,12 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -1478,6 +1730,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -1514,6 +1774,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -1571,6 +1845,12 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -1616,6 +1896,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1652,6 +1940,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -1702,6 +2004,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1753,6 +2061,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1789,6 +2105,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -1839,6 +2169,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1899,6 +2235,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1935,6 +2279,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -1985,6 +2343,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2035,6 +2399,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -2071,6 +2443,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -2121,6 +2507,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2254,6 +2646,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -2290,6 +2690,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -2347,6 +2761,12 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -2394,6 +2814,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -2430,6 +2858,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -2480,6 +2922,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2530,6 +2978,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -2566,6 +3022,20 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -2616,6 +3086,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -2708,6 +3184,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -2744,6 +3228,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -2794,6 +3292,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -2863,6 +3367,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -2899,6 +3411,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -2949,6 +3475,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -3013,6 +3545,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -3049,6 +3589,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -3099,6 +3653,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -3152,6 +3712,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -3188,6 +3756,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -3242,6 +3824,12 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -3288,6 +3876,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3324,6 +3920,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -3377,6 +3987,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
+              label: string;
+              description: string | null;
+            }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         typeCheck: {
@@ -3407,6 +4023,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 __typename: 'IntMetadataEntry';
                 intValue: number | null;
                 intRepr: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
                 label: string;
                 description: string | null;
               }
@@ -3447,6 +4071,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -3497,6 +4135,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -3603,6 +4247,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3639,6 +4291,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -3689,6 +4355,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -3773,6 +4445,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3809,6 +4489,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -3859,6 +4553,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -3926,6 +4626,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3962,6 +4670,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -4015,6 +4737,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
+              label: string;
+              description: string | null;
+            }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -4057,6 +4785,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -4093,6 +4829,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -4147,6 +4897,12 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -4192,6 +4948,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4228,6 +4992,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -4278,6 +5056,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4324,6 +5108,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4360,6 +5152,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -4410,6 +5216,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4465,6 +5277,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4501,6 +5321,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -4551,6 +5385,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4596,6 +5436,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4632,6 +5480,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -4682,6 +5544,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -4810,6 +5678,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -4846,6 +5722,20 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
               }
             | {
                 __typename: 'TableMetadataEntry';
@@ -4900,6 +5790,12 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -4947,6 +5843,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4983,6 +5887,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -5033,6 +5951,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -5078,6 +6002,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -5114,6 +6046,20 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
             }
           | {
               __typename: 'TableMetadataEntry';
@@ -5167,6 +6113,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               label: string;
               description: string | null;
             }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
+              label: string;
+              description: string | null;
+            }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
       }
@@ -5181,9 +6133,9 @@ export type PipelineRunLogsSubscriptionStatusFragment = {
 };
 
 export type RunLogsQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  runId: Types.Scalars['ID']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type RunLogsQuery = {
@@ -5269,6 +6221,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -5305,6 +6265,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -5358,6 +6332,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -5427,6 +6407,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -5463,6 +6451,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -5513,6 +6515,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -5582,6 +6590,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -5618,6 +6634,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -5671,6 +6701,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -5724,6 +6760,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -5760,6 +6804,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -5817,6 +6875,12 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -5863,6 +6927,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -5899,6 +6971,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -5953,6 +7039,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -5987,6 +7079,14 @@ export type RunLogsQuery = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -6027,6 +7127,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -6080,6 +7194,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -6186,6 +7306,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6222,6 +7350,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -6272,6 +7414,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6361,6 +7509,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6397,6 +7553,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -6447,6 +7617,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6519,6 +7695,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6555,6 +7739,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -6609,6 +7807,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'UrlMetadataEntry';
                     url: string;
                     label: string;
@@ -6655,6 +7859,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -6691,6 +7903,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -6748,6 +7974,12 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -6793,6 +8025,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6829,6 +8069,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -6879,6 +8133,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6930,6 +8190,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6966,6 +8234,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -7016,6 +8298,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7076,6 +8364,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -7112,6 +8408,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -7162,6 +8472,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7212,6 +8528,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -7248,6 +8572,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -7298,6 +8636,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7431,6 +8775,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -7467,6 +8819,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
                     }
                   | {
                       __typename: 'TableMetadataEntry';
@@ -7524,6 +8890,12 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'UrlMetadataEntry';
                       url: string;
                       label: string;
@@ -7571,6 +8943,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -7607,6 +8987,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -7657,6 +9051,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -7707,6 +9107,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -7743,6 +9151,20 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
                   }
                 | {
                     __typename: 'TableMetadataEntry';
@@ -7793,6 +9215,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }

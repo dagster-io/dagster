@@ -43,10 +43,12 @@ def dagster_ui_screenshot(ctx, output_root: str, spec_db: str, workspace_root: s
     ctx.obj["workspace_root"] = workspace_root
 
 
-@dagster_ui_screenshot.command(help="""
+@dagster_ui_screenshot.command(
+    help="""
     Audit a screenshot spec database. Verifies that screenshot specs are valid and that referenced
     workspace files exist. Optionally verify that corresponding output files exist.
-    """)
+    """
+)
 @click.option(
     "--verify-outputs/--no-verify-outputs",
     type=click.BOOL,

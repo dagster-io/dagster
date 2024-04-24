@@ -91,9 +91,9 @@ def _get_user_code_error_str_lambda(
     configured_definition: "ConfigurableDefinition",
 ) -> Callable[[], str]:
     return lambda: (
-        "The config mapping function on a `configured` {} has thrown an unexpected "
+        f"The config mapping function on a `configured` {configured_definition.__class__.__name__} has thrown an unexpected "
         "error during its execution."
-    ).format(configured_definition.__class__.__name__)
+    )
 
 
 class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):

@@ -6,6 +6,7 @@ from dagster import (
     DagsterType,
     Failure,
     Field,
+    OpExecutionContext,
     String,
     check_dagster_type,
     dagster_type_loader,
@@ -26,8 +27,8 @@ def less_simple_data_frame_type_check(_, value):
         row = value[i]
         if not isinstance(row, dict):
             raise Failure(
-                "LessSimpleDataFrame should be a list of dicts, got {type_} for row"
-                " {idx}".format(type_=type(row), idx=(i + 1))
+                f"LessSimpleDataFrame should be a list of dicts, got {type(row)} for row"
+                f" {i + 1}"
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
@@ -60,7 +61,7 @@ else:
 
 
 @op
-def sort_by_calories(context, cereals: LessSimpleDataFrame):
+def sort_by_calories(context: OpExecutionContext, cereals: LessSimpleDataFrame):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
     context.log.info(
         "Least caloric cereal: {least_caloric}".format(

@@ -12,7 +12,6 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -36,11 +35,15 @@ from dagster._core.definitions.definition_config_schema import (
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._model.pydantic_compat_layer import (
+    model_fields,
+)
 from dagster._utils.cached_method import cached_method
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
+from .type_check_utils import is_optional
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -72,7 +75,7 @@ from .conversion_utils import (
 )
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 
-Self = TypeVar("Self", bound="ConfigurableResourceFactory")
+T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int
 
 
@@ -280,10 +283,10 @@ class ConfigurableResourceFactoryState(NamedTuple):
 
 
 class ConfigurableResourceFactory(
-    Generic[TResValue],
     Config,
     TypecheckAllowPartialResourceInitParams,
     AllowDelayedDependencies,
+    Generic[TResValue],
     ABC,
     metaclass=BaseResourceMeta,
 ):
@@ -341,7 +344,7 @@ class ConfigurableResourceFactory(
         )
 
         # Populate config values
-        Config.__init__(self, **{**data_without_resources, **resource_pointers})
+        super().__init__(**data_without_resources, **resource_pointers)
 
         # We pull the values from the Pydantic config object, which may cast values
         # to the correct type under the hood - useful in particular for enums
@@ -396,6 +399,10 @@ class ConfigurableResourceFactory(
         return (
             cls.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
             or cls.teardown_after_execution != ConfigurableResourceFactory.teardown_after_execution
+            # We assume that any resource which has nested resources needs to be treated as a
+            # context manager resource, since its nested resources may be context managers
+            # and need setup and teardown logic
+            or len(_get_resource_param_fields(cls)) > 0
         )
 
     @property
@@ -432,7 +439,7 @@ class ConfigurableResourceFactory(
         return self._nested_resources
 
     @classmethod
-    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
+    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
         """Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
         """
@@ -448,7 +455,10 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        out = self.__class__(**{**self._get_non_none_public_field_values(), **values})
+        to_populate = self.__class__._get_non_default_public_field_values_cls(  # noqa: SLF001
+            {**self._get_non_default_public_field_values(), **values}
+        )
+        out = self.__class__(**to_populate)
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
             resource_context=self._state__internal__.resource_context
         )
@@ -468,15 +478,12 @@ class ConfigurableResourceFactory(
 
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
-            context_with_mapping = cast(
+            context_with_mapping = check.inst(
+                context,
                 InitResourceContextWithKeyMapping,
-                check.inst(
-                    context,
-                    InitResourceContextWithKeyMapping,
-                    "This ConfiguredResource contains unresolved partially-specified nested"
-                    " resources, and so can only be initialized using a"
-                    " InitResourceContextWithKeyMapping",
-                ),
+                "This ConfiguredResource contains unresolved partially-specified nested"
+                " resources, and so can only be initialized using a"
+                " InitResourceContextWithKeyMapping",
             )
             partial_resources_to_update = {
                 attr_name: context_with_mapping.resources_by_id[id(resource)]
@@ -672,6 +679,34 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
             resources={"writer": WriterResource(prefix="a_prefix")},
         )
 
+    You can optionally use this class to model configuration only and vend an object
+    of a different type for use at runtime. This is useful for those who wish to
+    have a separate object that manages configuration and a separate object at runtime. Or
+    where you want to directly use a third-party class that you do not control.
+
+    To do this you override the `create_resource` methods to return a different object.
+
+    .. code-block:: python
+
+        class WriterResource(ConfigurableResource):
+            str: prefix
+
+            def create_resource(self, context: InitResourceContext) -> Writer:
+                # Writer is pre-existing class defined else
+                return Writer(self.prefix)
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def use_preexisting_writer_as_resource(writer: ResourceParam[Writer]):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[use_preexisting_writer_as_resource],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
     """
 
     def create_resource(self, context: InitResourceContext) -> TResValue:
@@ -712,9 +747,13 @@ class PartialResourceState(NamedTuple):
     nested_resources: Dict[str, Any]
 
 
-class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
+class PartialResource(
+    AllowDelayedDependencies,
+    MakeConfigCacheable,
+    Generic[TResValue],
+):
     data: Dict[str, Any]
-    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
+    resource_cls: Type[Any]
 
     def __init__(
         self,
@@ -723,11 +762,14 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     ):
         resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
 
-        MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
+        super().__init__(data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
+            to_populate = resource_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
+                {**data, **context.resource_config}
+            )
             instantiated = resource_cls(
-                **{**data, **context.resource_config}
+                **to_populate
             )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
@@ -789,7 +831,7 @@ class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
 
-    def __get__(self, obj: "ConfigurableResourceFactory", __owner: Any) -> V:
+    def __get__(self, obj: "ConfigurableResourceFactory", owner: Any) -> V:
         return getattr(obj, self._name)
 
     def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
@@ -849,9 +891,19 @@ class SeparatedResourceParams(NamedTuple):
     non_resources: Dict[str, Any]
 
 
-def _is_annotated_as_resource_type(annotation: Type) -> bool:
+def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> bool:
     """Determines if a field in a structured config class is annotated as a resource type or not."""
-    from .inheritance_utils import safe_is_subclass
+    from .type_check_utils import safe_is_subclass
+
+    if metadata and metadata[0] == "resource_dependency":
+        return True
+
+    if is_optional(annotation):
+        args = get_args(annotation)
+        annotation_inner = next((arg for arg in args if arg is not None), None)
+        if not annotation_inner:
+            return False
+        return _is_annotated_as_resource_type(annotation_inner, [])
 
     is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
         annotation, "__metadata__", None
@@ -862,22 +914,50 @@ def _is_annotated_as_resource_type(annotation: Type) -> bool:
     )
 
 
+class ResourceDataWithAnnotation(NamedTuple):
+    key: str
+    value: Any
+    annotation: Type
+    annotation_metadata: List[str]
+
+
+def _get_resource_param_fields(cls: Type[BaseModel]) -> Set[str]:
+    """Returns the set of field names in a structured config class which are annotated as resource types."""
+    # We need to grab metadata from the annotation in order to tell if
+    # this key was annotated with a typing.Annotated annotation (which we use for resource/resource deps),
+    # since Pydantic 2.0 strips that info out and sticks any Annotated metadata in the
+    # metadata field
+    fields_by_resolved_field_name = {
+        field.alias if field.alias else key: field for key, field in model_fields(cls).items()
+    }
+
+    return {
+        field_name
+        for field_name in fields_by_resolved_field_name
+        if _is_annotated_as_resource_type(
+            fields_by_resolved_field_name[field_name].annotation,
+            fields_by_resolved_field_name[field_name].metadata,
+        )
+    }
+
+
 def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> SeparatedResourceParams:
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
-    keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
-    data_with_annotation: List[Tuple[str, Any, Type]] = [
-        # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
-        (k, v, keys_by_alias[k].outer_type_)
-        for k, v in data.items()
-        if k in keys_by_alias
-    ]
+    nested_resource_field_names = _get_resource_param_fields(cls)
+
+    resources = {}
+    non_resources = {}
+    for field_name, field_value in data.items():
+        if field_name in nested_resource_field_names:
+            resources[field_name] = field_value
+        else:
+            non_resources[field_name] = field_value
+
     out = SeparatedResourceParams(
-        resources={k: v for k, v, t in data_with_annotation if _is_annotated_as_resource_type(t)},
-        non_resources={
-            k: v for k, v, t in data_with_annotation if not _is_annotated_as_resource_type(t)
-        },
+        resources=resources,
+        non_resources=non_resources,
     )
     return out
 
@@ -912,8 +992,10 @@ def _call_resource_fn_with_default(
     else:
         result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
-    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
-        obj.resource_fn, contextlib.ContextDecorator
+    is_fn_generator = (
+        inspect.isgenerator(obj.resource_fn)
+        or isinstance(obj.resource_fn, contextlib.ContextDecorator)
+        or isinstance(result, contextlib.AbstractContextManager)
     )
     if is_fn_generator:
         return stack.enter_context(cast(contextlib.AbstractContextManager, result))
@@ -938,10 +1020,9 @@ def validate_resource_annotated_function(fn) -> None:
     from dagster._config.pythonic_config.resource import (
         ConfigurableResource,
         ConfigurableResourceFactory,
-        TResValue,
     )
 
-    from .inheritance_utils import safe_is_subclass
+    from .type_check_utils import safe_is_subclass
 
     malformed_params = [
         param
@@ -953,10 +1034,13 @@ def validate_resource_annotated_function(fn) -> None:
         malformed_param = malformed_params[0]
         output_type = None
         if safe_is_subclass(malformed_param.annotation, ConfigurableResourceFactory):
-            orig_bases = getattr(malformed_param.annotation, "__orig_bases__", None)
-            output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
-            if output_type == TResValue:
-                output_type = None
+            orig_bases = getattr(malformed_param.annotation, "__orig_bases__", ())
+            for base in orig_bases:
+                if get_origin(base) is ConfigurableResourceFactory:
+                    args = get_args(base)
+                    output_type = args[0] if len(args) == 1 else None
+                    if output_type == TResValue:
+                        output_type = None
 
         output_type_name = getattr(output_type, "__name__", str(output_type))
         raise DagsterInvalidDefinitionError(

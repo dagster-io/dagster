@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 
@@ -30,8 +30,8 @@ const BaseTagTooltipStyle: React.CSSProperties = {
 
 export const BaseTag = (props: Props) => {
   const {
-    fillColor = Colors.Gray10,
-    textColor = Colors.Gray900,
+    fillColor = Colors.backgroundDefault(),
+    textColor = Colors.textDefault(),
     icon,
     interactive = false,
     rightIcon,
@@ -46,8 +46,8 @@ export const BaseTag = (props: Props) => {
           data-tooltip={typeof label === 'string' ? label : tooltipText}
           data-tooltip-style={JSON.stringify({
             ...BaseTagTooltipStyle,
-            backgroundColor: fillColor,
-            color: textColor,
+            backgroundColor: Colors.tooltipBackground(),
+            color: Colors.tooltipText(),
           })}
         >
           {label}

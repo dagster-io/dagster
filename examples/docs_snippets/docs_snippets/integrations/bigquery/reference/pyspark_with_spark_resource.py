@@ -12,13 +12,13 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import AssetExecutionContext, Definitions, asset
 
 BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_data(context) -> DataFrame:
+def iris_data(context: AssetExecutionContext) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(

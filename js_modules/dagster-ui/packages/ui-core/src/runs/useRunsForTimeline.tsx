@@ -1,19 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
-
-import {isHiddenAssetGroupJob, __ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-import {InstigationStatus, RunsFilter, RunStatus} from '../graphql/types';
-import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePipelinePath} from '../workspace/workspacePath';
+import {useMemo} from 'react';
 
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
 import {RunTimelineQuery, RunTimelineQueryVariables} from './types/useRunsForTimeline.types';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
+import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePipelinePath} from '../workspace/workspacePath';
 
 export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilter = {}) => {
   const [start, end] = range;
@@ -23,6 +22,10 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
 
   const queryData = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
     notifyOnNetworkStatusChange: true,
+    // With a very large number of runs, operating on the Apollo cache is too expensive and
+    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
+    // skip the cache entirely.
+    fetchPolicy: 'no-cache',
     variables: {
       inProgressFilter: {
         ...runsFilter,
@@ -45,7 +48,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
   const initialLoading = loading && !data;
   const {unterminated, terminated, workspaceOrError} = data || previousData || {};
 
-  const runsByJobKey = React.useMemo(() => {
+  const runsByJobKey = useMemo(() => {
     const map: {[jobKey: string]: TimelineRun[]} = {};
     const now = Date.now();
 
@@ -95,7 +98,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     return map;
   }, [end, unterminated, terminated, start]);
 
-  const jobsWithRuns: TimelineJob[] = React.useMemo(() => {
+  const jobsWithRuns: TimelineJob[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename !== 'Workspace') {
       return [];
     }
@@ -186,7 +189,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, end]);
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       jobs: jobsWithRuns,
       initialLoading,

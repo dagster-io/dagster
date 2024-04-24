@@ -1,19 +1,26 @@
 // eslint-disable-next-line no-restricted-imports
 import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
-import * as React from 'react';
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 
 type SpinnerPurpose = 'page' | 'section' | 'body-text' | 'caption-text';
 
-export const Spinner: React.FC<{
+interface Props {
   purpose: SpinnerPurpose;
   value?: number;
   fillColor?: string;
   stopped?: boolean;
   title?: string;
-}> = ({purpose, value, fillColor = Colors.Gray600, stopped, title = 'Loading…'}) => {
+}
+
+export const Spinner = ({
+  purpose,
+  value,
+  fillColor = Colors.accentGray(),
+  stopped,
+  title = 'Loading…',
+}: Props) => {
   const size = () => {
     switch (purpose) {
       case 'page':

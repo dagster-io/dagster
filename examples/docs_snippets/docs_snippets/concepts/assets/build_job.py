@@ -1,25 +1,22 @@
+# ruff: isort: skip_file
+from docs_snippets.concepts.assets.non_argument_deps import (
+    shopping_list,
+    sugary_cereals,
+)
+
+
 # start_marker
-from dagster import Definitions, asset, define_asset_job
-
-
-@asset
-def asset1():
-    return [1, 2, 3]
-
-
-@asset
-def asset2(asset1):
-    return asset1 + [4]
+from dagster import Definitions, define_asset_job
 
 
 all_assets_job = define_asset_job(name="all_assets_job")
-asset1_job = define_asset_job(name="asset1_job", selection="asset1")
-
-
-defs = Definitions(
-    assets=[asset1, asset2],
-    jobs=[all_assets_job, asset1_job],
+sugary_cereals_job = define_asset_job(
+    name="sugary_cereals_job", selection="sugary_cereals"
 )
 
+defs = Definitions(
+    assets=[sugary_cereals, shopping_list],
+    jobs=[all_assets_job, sugary_cereals_job],
+)
 
 # end_marker

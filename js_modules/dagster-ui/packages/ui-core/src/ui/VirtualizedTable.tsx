@@ -1,16 +1,34 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
-  <CellBox
-    padding={{vertical: 8, horizontal: 12}}
-    border="right"
-    style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}
-  >
-    {children}
-  </CellBox>
-);
+export const HeaderCell = ({
+  children,
+  style,
+  onClick,
+  ...rest
+}: React.ComponentProps<typeof CellBox>) => {
+  // no text select
+  const clickStyle = onClick ? {cursor: 'pointer', userSelect: 'none'} : {};
+
+  return (
+    <CellBox
+      padding={{vertical: 8, horizontal: 12}}
+      border="right"
+      style={{
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        overflow: 'hidden',
+        ...clickStyle,
+        ...(style || {}),
+      }}
+      onClick={onClick}
+      {...rest}
+    >
+      {children}
+    </CellBox>
+  );
+};
 
 export const RowCell = ({
   children,
@@ -22,7 +40,7 @@ export const RowCell = ({
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
-    style={{color: Colors.Gray500, overflow: 'hidden', ...(style || {})}}
+    style={{overflow: 'hidden', ...(style || {})}}
     border="right"
   >
     {children}
@@ -70,4 +88,17 @@ export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   right: 0;
   top: 0;
   overflow: hidden;
+`;
+
+type DynamicRowContainerProps = {$start: number};
+
+export const DynamicRowContainer = styled.div.attrs<DynamicRowContainerProps>(({$start}) => ({
+  style: {
+    transform: `translateY(${$start}px)`,
+  },
+}))<DynamicRowContainerProps>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 `;

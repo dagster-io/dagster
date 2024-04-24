@@ -3,6 +3,8 @@ version: 2
 models:
   - name: customers
     description: This table has basic information about a customer, as well as some derived facts based on a customer's orders
+    config:
+      tags: "customer_info"
 
     columns:
       - name: customer_id
@@ -10,6 +12,7 @@ models:
         tests:
           - unique:
               severity: "warn"
+              tags: ["data_quality"]
           - not_null:
               severity: "error"
 
@@ -48,6 +51,13 @@ models:
           - relationships:
               to: ref('customers')
               field: customer_id
+          - relationships:
+              to: source('jaffle_shop', 'raw_customers')
+              field: customer_id
+          - relationships_with_duplicate:
+              to: ref('customers')
+              another_to: ref('customers')
+              field: customer_id
 
       - name: order_date
         description: Date (UTC) that the order was placed
@@ -56,7 +66,11 @@ models:
         description: '{{ doc("orders_status") }}'
         tests:
           - accepted_values:
-              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+              values:
+                ["placed", "shipped", "completed", "return_pending", "returned"]
+              config:
+                meta:
+                  description: "Status must be one of ['placed', 'shipped', 'completed', 'return_pending', or 'returned']"
 
       - name: amount
         description: Total amount (AUD) of the order
@@ -82,3 +96,22 @@ models:
         description: Amount of the order (AUD) paid for by gift card
         tests:
           - not_null
+
+  - name: fail_tests_model
+    columns:
+      - name: id
+        tests:
+          - unique:
+              config:
+                # will always warn
+                warn_if: ">0"
+                error_if: "=-1"
+
+      - name: first_name
+        tests:
+          - accepted_values:
+              values: ["foo", "bar", "baz"]
+              config:
+                # will always error
+                error_if: ">3"
+                warn_if: "=-1"

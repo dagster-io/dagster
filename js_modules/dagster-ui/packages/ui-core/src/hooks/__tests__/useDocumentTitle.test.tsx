@@ -4,7 +4,7 @@ import * as React from 'react';
 import {useDocumentTitle} from '../useDocumentTitle';
 
 describe('useDocumentTitle', () => {
-  const Test: React.FC<{title: string; children?: React.ReactNode}> = (props) => {
+  const Test = (props: {title: string; children?: React.ReactNode}) => {
     const {children, title} = props;
     useDocumentTitle(title);
     return <div>{children}</div>;

@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {FontFamily} from './styles';
 
 interface TextProps {
@@ -20,7 +20,7 @@ export const Title = styled(Text)`
 
 export const Heading = styled(Text)`
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 24px;
   -webkit-font-smoothing: antialiased;
 `;
@@ -82,8 +82,14 @@ export const CaptionSubtitle = styled(Text)`
   line-height: 16px;
 `;
 
+export const CaptionBolded = styled(Text)`
+  font-family: ${FontFamily.default};
+  font-size: 12px;
+  font-weight: 900;
+`;
+
 export const Code = styled(Text)`
-  background-color: ${Colors.Blue50};
+  background-color: ${Colors.backgroundBlue()};
   border-radius: 2px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
@@ -92,10 +98,10 @@ export const Code = styled(Text)`
 
 export const Mono = styled(Text)`
   font-family: ${FontFamily.monospace};
-  font-size: 16px;
+  font-size: 14px;
 `;
 
 export const CaptionMono = styled(Text)`
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
 `;

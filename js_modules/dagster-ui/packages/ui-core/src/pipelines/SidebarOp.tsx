@@ -1,15 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {LoadingSpinner} from '../ui/Loading';
-import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarOpDefinition, SIDEBAR_OP_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
+import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
-import {SidebarOpInvocation, SIDEBAR_OP_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
+import {SIDEBAR_OP_INVOCATION_FRAGMENT, SidebarOpInvocation} from './SidebarOpInvocation';
 import {
   SidebarGraphOpQuery,
   SidebarGraphOpQueryVariables,
@@ -17,6 +12,9 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {LoadingSpinner} from '../ui/Loading';
+import {RepoAddress} from '../workspace/types';
 
 interface SidebarOpProps {
   handleID: string;
@@ -87,7 +85,7 @@ const useSidebarOpQuery = (
   };
 };
 
-export const SidebarOp: React.FC<SidebarOpProps> = ({
+export const SidebarOp = ({
   handleID,
   explorerPath,
   getInvocations,
@@ -96,7 +94,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
   onClickOp,
   repoAddress,
   isGraph,
-}) => {
+}: SidebarOpProps) => {
   const {error, solidContainer, isLoading} = useSidebarOpQuery(
     explorerPath.pipelineName,
     handleID,
@@ -117,7 +115,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
 
   if (!solidContainer) {
     return (
-      <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray500}}>
+      <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.textLight()}}>
         Could not load ops.
       </Box>
     );

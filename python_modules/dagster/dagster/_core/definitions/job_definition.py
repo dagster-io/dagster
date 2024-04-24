@@ -19,14 +19,13 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Self
-
 import dagster._check as check
 from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.dependency import (
     Node,
     NodeHandle,
@@ -66,7 +65,7 @@ from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 
-from .asset_layer import AssetLayer, build_asset_selection_job
+from .asset_layer import AssetLayer
 from .config import ConfigMapping
 from .dependency import (
     DependencyMapping,
@@ -81,16 +80,17 @@ from .metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
-from .utils import DEFAULT_IO_MANAGER_KEY, validate_tags
+from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
-    from dagster._core.host_representation.job_index import JobIndex
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+    from dagster._core.remote_representation.job_index import JobIndex
     from dagster._core.snap import JobSnapshot
 
     from .run_config_schema import RunConfigSchema
@@ -131,7 +131,7 @@ class JobDefinition(IHasInternalInit):
         ] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        tags: Optional[Mapping[str, Any]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
@@ -174,7 +174,7 @@ class JobDefinition(IHasInternalInit):
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
-        self._tags = validate_tags(tags)
+        self._tags = normalize_tags(tags).tags
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
@@ -266,7 +266,7 @@ class JobDefinition(IHasInternalInit):
         ],
         description: Optional[str],
         partitions_def: Optional[PartitionsDefinition],
-        tags: Optional[Mapping[str, Any]],
+        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
         metadata: Optional[Mapping[str, RawMetadataValue]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],
@@ -329,14 +329,18 @@ class JobDefinition(IHasInternalInit):
     def executor_def(self) -> ExecutorDefinition:
         """Returns the default :py:class:`ExecutorDefinition` for the job.
 
-        If the user has not specified an executor definition, then this will default to the :py:func:`multi_or_in_process_executor`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        If the user has not specified an executor definition, then this will default to the
+        :py:func:`multi_or_in_process_executor`. If a default is specified on the
+        :py:class:`Definitions` object the job was provided to, then that will be used instead.
         """
         return self._executor_def or DEFAULT_EXECUTOR_DEF
 
     @public
     @property
     def has_specified_executor(self) -> bool:
-        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
+        """Returns True if this job has explicitly specified an executor, and False if the executor
+        was inherited through defaults or the :py:class:`Definitions` object the job was provided to.
+        """
         return self._executor_def is not None
 
     @public
@@ -344,7 +348,8 @@ class JobDefinition(IHasInternalInit):
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         """Returns the set of ResourceDefinition objects specified on the job.
 
-        This may not be the complete set of resources required by the job, since those can also be provided on the :py:class:`Definitions` object the job may be provided to.
+        This may not be the complete set of resources required by the job, since those can also be
+        provided on the :py:class:`Definitions` object the job may be provided to.
         """
         return self._resource_defs
 
@@ -371,7 +376,10 @@ class JobDefinition(IHasInternalInit):
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         """Returns the set of LoggerDefinition objects specified on the job.
 
-        If the user has not specified a mapping of :py:class:`LoggerDefinition` objects, then this will default to the :py:func:`colored_console_logger` under the key `console`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        If the user has not specified a mapping of :py:class:`LoggerDefinition` objects, then this
+        will default to the :py:func:`colored_console_logger` under the key `console`. If a default
+        is specified on the :py:class:`Definitions` object the job was provided to, then that will
+        be used instead.
         """
         from dagster._loggers import default_loggers
 
@@ -380,7 +388,9 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def has_specified_loggers(self) -> bool:
-        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
+        """Returns true if the job explicitly set loggers, and False if loggers were inherited
+        through defaults or the :py:class:`Definitions` object the job was provided to.
+        """
         return self._loggers is not None
 
     @property
@@ -619,7 +629,9 @@ class JobDefinition(IHasInternalInit):
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
-                A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+                A dictionary that maps python objects to the top-level inputs of the job. Input
+                values provided here will override input values that have been provided to the job
+                directly.
             resources (Optional[Mapping[str, Any]]):
                 The resources needed if any are required. Can provide resource instances directly,
                 or resource definitions.
@@ -735,8 +747,8 @@ class JobDefinition(IHasInternalInit):
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
-    ) -> Self:
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    ) -> "JobDefinition":
         check.invariant(
             not (op_selection and (asset_selection or asset_check_selection)),
             "op_selection cannot be provided with asset_selection or asset_check_selection to"
@@ -746,104 +758,45 @@ class JobDefinition(IHasInternalInit):
             return self._get_job_def_for_op_selection(op_selection)
         if asset_selection or asset_check_selection:
             return self._get_job_def_for_asset_selection(
-                asset_selection=asset_selection, asset_check_selection=asset_check_selection
+                AssetSelectionData(
+                    asset_selection=asset_selection,
+                    asset_check_selection=asset_check_selection,
+                    parent_job_def=self,
+                )
             )
         else:
             return self
 
     def _get_job_def_for_asset_selection(
-        self,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
-    ) -> Self:
-        asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
-        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
-
-        nonexistent_assets = [
-            asset
-            for asset in asset_selection
-            if asset not in self.asset_layer.asset_keys
-            and asset not in self.asset_layer.source_assets_by_key
-        ]
-        nonexistent_asset_strings = [
-            asset_str
-            for asset_str in (asset.to_string() for asset in nonexistent_assets)
-            if asset_str
-        ]
-        if nonexistent_assets:
-            raise DagsterInvalidSubsetError(
-                "Assets provided in asset_selection argument "
-                f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
-            )
-
-        # Test that selected asset checks exist
-        all_check_handles = self.asset_layer.node_output_handles_by_asset_check_handle.keys()
-
-        nonexistent_asset_checks = [
-            asset_check
-            for asset_check in asset_check_selection or set()
-            if asset_check not in all_check_handles
-        ]
-        nonexistent_asset_check_strings = [
-            str(asset_check) for asset_check in nonexistent_asset_checks
-        ]
-        if nonexistent_asset_checks:
-            raise DagsterInvalidSubsetError(
-                "Asset checks provided in asset_check_selection argument"
-                f" {', '.join(nonexistent_asset_check_strings)} do not exist in parent asset group"
-                " or job."
-            )
-
-        # Test that selected asset checks can be run individually. Currently this is only supported
-        # on checks defined with @asset_check, which will have an AssetChecksDefinition.
-        all_check_handles_in_checks_defs = set()
-        for asset_checks_def in self.asset_layer.asset_checks_defs:
-            for spec in asset_checks_def.specs:
-                all_check_handles_in_checks_defs.add(spec.handle)
-
-        non_checks_defs_asset_checks = [
-            asset_check
-            for asset_check in asset_check_selection or set()
-            if asset_check not in all_check_handles_in_checks_defs
-        ]
-        non_checks_defs_asset_check_strings = [
-            asset_check.name for asset_check in non_checks_defs_asset_checks
-        ]
-        if non_checks_defs_asset_checks:
-            raise DagsterInvalidSubsetError(
-                f"Can't execute asset checks [{', '.join(non_checks_defs_asset_check_strings)}],"
-                " because they weren't defined with @asset_check or AssetChecksDefinition. To"
-                " execute these checks, materialize the asset."
-            )
-
-        asset_selection_data = AssetSelectionData(
-            asset_selection=asset_selection,
-            asset_check_selection=asset_check_selection,
-            parent_job_def=self,
+        self, selection_data: AssetSelectionData
+    ) -> "JobDefinition":
+        from dagster._core.definitions.asset_job import (
+            build_asset_job,
+            get_asset_graph_for_job,
         )
 
-        check.invariant(
-            self.asset_layer.assets_defs_by_key is not None,
-            "Asset layer must have _asset_defs argument defined",
-        )
+        # If a non-null check selection is provided, use that. Otherwise the selection will resolve
+        # to all checks matching a selected asset by default.
+        selection = AssetSelection.assets(*selection_data.asset_selection)
+        if selection_data.asset_check_selection is not None:
+            selection = selection.without_checks() | AssetSelection.checks(
+                *selection_data.asset_check_selection
+            )
 
-        new_job = build_asset_selection_job(
+        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+
+        return build_asset_job(
             name=self.name,
-            assets=set(self.asset_layer.assets_defs_by_key.values()),
-            source_assets=self.asset_layer.source_assets_by_key.values(),
+            asset_graph=job_asset_graph,
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
             description=self.description,
             tags=self.tags,
-            asset_selection=asset_selection,
-            asset_check_selection=asset_check_selection,
-            asset_selection_data=asset_selection_data,
             config=self.config_mapping or self.partitioned_config,
-            asset_checks=self.asset_layer.asset_checks_defs,
+            _asset_selection_data=selection_data,
         )
-        return new_job
 
-    def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> Self:
+    def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
         try:
             sub_graph = get_graph_subset(self.graph, op_selection)
 
@@ -966,7 +919,7 @@ class JobDefinition(IHasInternalInit):
         return self.get_job_index().job_snapshot
 
     def get_job_index(self) -> "JobIndex":
-        from dagster._core.host_representation import JobIndex
+        from dagster._core.remote_representation import JobIndex
         from dagster._core.snap import JobSnapshot
 
         return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
@@ -1047,6 +1000,12 @@ class JobDefinition(IHasInternalInit):
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return self.asset_selection_data.asset_selection if self.asset_selection_data else None
+
+    @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return (
+            self.asset_selection_data.asset_check_selection if self.asset_selection_data else None
+        )
 
     @property
     def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
@@ -1222,13 +1181,16 @@ def get_run_config_schema_for_job(
 
 
 def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
-    """For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
-    AssetLayer that includes those SourceAssets.
+    """For non-asset jobs that have some inputs that are fed from assets, constructs an
+    AssetLayer that includes these assets as loadables.
     """
+    from dagster._core.definitions.asset_graph import (
+        AssetGraph,
+    )
+
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
-    source_assets_list = []
-    source_asset_keys_set = set()
-    io_manager_keys_by_asset_key: Mapping[AssetKey, str] = {}
+    all_input_assets: List[AssetsDefinition] = []
+    input_asset_keys: Set[AssetKey] = set()
 
     # each entry is a graph definition and its handle relative to the job root
     stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
@@ -1236,44 +1198,37 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     while stack:
         graph_def, parent_node_handle = stack.pop()
 
-        for node_name, input_source_assets in graph_def.node_input_source_assets.items():
+        for node_name, input_assets in graph_def.input_assets.items():
             node_handle = NodeHandle(node_name, parent_node_handle)
-            for input_name, source_asset in input_source_assets.items():
-                if source_asset.key not in source_asset_keys_set:
-                    source_asset_keys_set.add(source_asset.key)
-                    source_assets_list.append(source_asset)
+            for input_name, assets_def in input_assets.items():
+                if assets_def.key not in input_asset_keys:
+                    input_asset_keys.add(assets_def.key)
+                    all_input_assets.append(assets_def)
 
                 input_handle = NodeInputHandle(node_handle, input_name)
-                asset_keys_by_node_input_handle[input_handle] = source_asset.key
+                asset_keys_by_node_input_handle[input_handle] = assets_def.key
                 for resolved_input_handle in graph_def.node_dict[
                     node_name
                 ].definition.resolve_input_to_destinations(input_handle):
-                    asset_keys_by_node_input_handle[resolved_input_handle] = source_asset.key
-
-                if source_asset.io_manager_key:
-                    io_manager_keys_by_asset_key[source_asset.key] = source_asset.io_manager_key
+                    asset_keys_by_node_input_handle[resolved_input_handle] = assets_def.key
 
         for node_name, node in graph_def.node_dict.items():
             if isinstance(node.definition, GraphDefinition):
                 stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
 
     return AssetLayer(
+        asset_graph=AssetGraph.from_assets(all_input_assets),
         assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_info_by_node_output_handle={},
         asset_deps={},
         dependency_node_handles_by_asset_key={},
-        assets_defs_by_key={},
-        source_assets_by_key={
-            source_asset.key: source_asset for source_asset in source_assets_list
-        },
-        io_manager_keys_by_asset_key=io_manager_keys_by_asset_key,
         dep_asset_keys_by_node_output_handle={},
         partition_mappings_by_asset_dep={},
-        asset_checks_defs_by_node_handle={},
-        node_output_handles_by_asset_check_handle={},
+        node_output_handles_by_asset_check_key={},
         check_names_by_asset_key_by_node_handle={},
-        check_handle_by_node_output_handle={},
+        check_key_by_node_output_handle={},
+        assets_defs_by_check_key={},
     )
 
 
@@ -1284,9 +1239,7 @@ def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, No
             if node_def.name in all_defs:
                 if all_defs[node_def.name] != node_def:
                     raise DagsterInvalidDefinitionError(
-                        'Detected conflicting node definitions with the same name "{name}"'.format(
-                            name=node_def.name
-                        )
+                        f'Detected conflicting node definitions with the same name "{node_def.name}"'
                     )
             else:
                 all_defs[node_def.name] = node_def

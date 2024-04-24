@@ -1,16 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {usePermissionsForLocation} from '../app/Permissions';
-import {InstigationStatus} from '../graphql/types';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
 
 import {
-  displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
+  displayScheduleMutationErrors,
 } from './ScheduleMutations';
 import {
   StartThisScheduleMutation,
@@ -19,6 +13,10 @@ import {
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
 import {ScheduleSwitchFragment} from './types/ScheduleSwitch.types';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {InstigationStatus} from '../graphql/types';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -26,7 +24,7 @@ interface Props {
   size?: 'small' | 'large';
 }
 
-export const ScheduleSwitch: React.FC<Props> = (props) => {
+export const ScheduleSwitch = (props: Props) => {
   const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
   const {status, id, selectorId} = scheduleState;

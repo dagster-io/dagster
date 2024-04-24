@@ -1,15 +1,32 @@
 import {
   Box,
+  Button,
+  Colors,
+  ErrorBoundary,
+  Icon,
   NonIdealState,
   SplitPanelContainer,
-  ErrorBoundary,
-  Button,
-  Icon,
+  SplitPanelContainerHandle,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
+import {ComputeLogPanel} from './ComputeLogPanel';
+import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
+import {LogsScrollingTable} from './LogsScrollingTable';
+import {LogType, LogsToolbar} from './LogsToolbar';
+import {RunActionButtons} from './RunActionButtons';
+import {RunContext} from './RunContext';
+import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
+import {RunRootTrace} from './RunRootTrace';
+import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {
+  matchingComputeLogKeyFromStepKey,
+  useComputeLogFileKeyForSelection,
+} from './useComputeLogFileKeyForSelection';
+import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -22,24 +39,10 @@ import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
-import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
-import {ComputeLogPanel} from './ComputeLogPanel';
-import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
-import {LogsScrollingTable} from './LogsScrollingTable';
-import {LogsToolbar, LogType} from './LogsToolbar';
-import {RunActionButtons} from './RunActionButtons';
-import {RunContext} from './RunContext';
-import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
-import {
-  useComputeLogFileKeyForSelection,
-  matchingComputeLogKeyFromStepKey,
-} from './useComputeLogFileKeyForSelection';
-import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
-
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
+  trace: RunRootTrace;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -57,8 +60,8 @@ const runStatusFavicon = (status: RunStatus) => {
   }
 };
 
-export const Run: React.FC<RunProps> = (props) => {
-  const {run, runId} = props;
+export const Run = (props: RunProps) => {
+  const {run, runId, trace} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
@@ -99,25 +102,35 @@ export const Run: React.FC<RunProps> = (props) => {
     <RunContext.Provider value={run}>
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
-          <RunMetadataProvider logs={logs}>
-            {(metadata) => (
-              <RunWithData
-                run={run}
-                runId={runId}
-                logs={logs}
-                logsFilter={logsFilter}
-                metadata={metadata}
-                selectionQuery={selectionQuery}
-                onSetLogsFilter={setLogsFilter}
-                onSetSelectionQuery={onSetSelectionQuery}
-                onShowStateDetails={onShowStateDetails}
-              />
-            )}
-          </RunMetadataProvider>
+          <>
+            <OnLogsLoaded trace={trace} />
+            <RunMetadataProvider logs={logs}>
+              {(metadata) => (
+                <RunWithData
+                  run={run}
+                  runId={runId}
+                  logs={logs}
+                  logsFilter={logsFilter}
+                  metadata={metadata}
+                  selectionQuery={selectionQuery}
+                  onSetLogsFilter={setLogsFilter}
+                  onSetSelectionQuery={onSetSelectionQuery}
+                  onShowStateDetails={onShowStateDetails}
+                />
+              )}
+            </RunMetadataProvider>
+          </>
         )}
       </LogsProvider>
     </RunContext.Provider>
   );
+};
+
+const OnLogsLoaded = ({trace}: {trace: RunRootTrace}) => {
+  React.useLayoutEffect(() => {
+    trace.onLogsLoaded();
+  }, [trace]);
+  return null;
 };
 
 interface RunWithDataProps {
@@ -156,7 +169,7 @@ const logTypeFromQuery = (queryLogType: string) => {
  * We could revisit this in the future but I believe we iterated quite a bit to get to this
  * solution and we should avoid locking the two filter inputs together completely.
  */
-const RunWithData: React.FC<RunWithDataProps> = ({
+const RunWithData = ({
   run,
   runId,
   logs,
@@ -165,7 +178,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   selectionQuery,
   onSetLogsFilter,
   onSetSelectionQuery,
-}) => {
+}: RunWithDataProps) => {
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: LogType.structured},
@@ -237,35 +250,33 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     onSetSelectionQuery(newSelected.join(', ') || '*');
   };
 
-  const [splitPanelContainer, setSplitPanelContainer] = React.useState<null | SplitPanelContainer>(
-    null,
-  );
-  React.useEffect(() => {
-    const initialSize = splitPanelContainer?.getSize();
-    switch (initialSize) {
-      case 100:
-        setExpandedPanel('top');
-        return;
-      case 0:
-        setExpandedPanel('bottom');
-        return;
-    }
-  }, [splitPanelContainer]);
-
   const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
+  const containerRef = React.useRef<SplitPanelContainerHandle>(null);
+
+  React.useEffect(() => {
+    if (containerRef.current) {
+      const size = containerRef.current.getSize();
+      if (size === 100) {
+        setExpandedPanel('top');
+      } else if (size === 0) {
+        setExpandedPanel('bottom');
+      }
+    }
+  }, []);
+
   const isTopExpanded = expandedPanel === 'top';
   const isBottomExpanded = expandedPanel === 'bottom';
 
   const expandBottomPanel = () => {
-    splitPanelContainer?.onChangeSize(0);
+    containerRef.current?.changeSize(0);
     setExpandedPanel('bottom');
   };
   const expandTopPanel = () => {
-    splitPanelContainer?.onChangeSize(100);
+    containerRef.current?.changeSize(100);
     setExpandedPanel('top');
   };
   const resetPanels = () => {
-    splitPanelContainer?.onChangeSize(50);
+    containerRef.current?.changeSize(50);
     setExpandedPanel(null);
   };
 
@@ -319,14 +330,13 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   return (
     <>
       <SplitPanelContainer
-        ref={(container) => {
-          setSplitPanelContainer(container);
-        }}
+        ref={containerRef}
         axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
         firstMinSize={56}
         first={gantt(metadata)}
+        secondMinSize={56}
         second={
           <ErrorBoundary region="logs">
             <LogsContainer>
@@ -394,7 +404,7 @@ const NoStepSelectionState = ({type}: {type: LogType}) => {
         alignItems: 'center',
         justifyContent: 'center',
       }}
-      style={{background: '#221F1B'}}
+      style={{background: Colors.backgroundDefault()}}
     >
       <NonIdealState
         title={`Select a step to view ${type}`}

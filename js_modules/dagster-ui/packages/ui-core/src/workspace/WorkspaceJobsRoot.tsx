@@ -1,13 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useLayoutEffect, useMemo} from 'react';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -15,8 +8,16 @@ import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceJobsQuery, WorkspaceJobsQueryVariables} from './types/WorkspaceJobsRoot.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {usePageLoadTrace} from '../performance';
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  const trace = usePageLoadTrace('WorkspaceJobsRoot');
   useTrackPageView();
 
   const repoName = repoAddressAsHumanString(repoAddress);
@@ -37,19 +38,26 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     },
   );
   const {data, loading} = queryResultOverview;
+
+  useLayoutEffect(() => {
+    if (!loading) {
+      trace.endTrace();
+    }
+  }, [loading, trace]);
+
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const jobs = React.useMemo(() => {
+  const jobs = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.pipelines;
     }
     return [];
   }, [data]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return jobs.filter(
       ({name}) => !isHiddenAssetGroupJob(name) && name.toLocaleLowerCase().includes(searchToLower),
@@ -62,7 +70,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading jobs…</div>
+            <div style={{color: Colors.textLight()}}>Loading jobs…</div>
           </Box>
         </Box>
       );

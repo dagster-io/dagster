@@ -14,16 +14,20 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 <ArticleList>
   <ArticleListItem
-    title="Software-defined assets"
+    title="Software-defined Assets"
     href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Graph-backed Assets"
+    href="/concepts/assets/graph-backed-assets"
   ></ArticleListItem>
   <ArticleListItem
     title="Multi-assets"
     href="/concepts/assets/multi-assets"
   ></ArticleListItem>
   <ArticleListItem
-    title="Graph-backed Assets"
-    href="/concepts/assets/graph-backed-assets"
+    title="Asset jobs"
+    href="/concepts/assets/asset-jobs"
   ></ArticleListItem>
   <ArticleListItem
     title="Asset observations"
@@ -34,18 +38,26 @@ An asset is an object in persistent storage, such as a table, file, or persisted
     href="/concepts/assets/asset-selection-syntax"
   ></ArticleListItem>
   <ArticleListItem
-    title="Auto-materializing assets"
-    href="/concepts/assets/asset-auto-execution"
+    title="Asset checks"
+    href="/concepts/assets/asset-checks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="External assets (Experimental)"
+    href="/concepts/assets/external-assets"
   ></ArticleListItem>
 </ArticleList>
 
 ---
 
-## Schedules and sensors
+## Automation
 
-Schedules launch runs on a fixed interval, while sensors allow you to do so based on an external state change.
+Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers.
 
 <ArticleList>
+  <ArticleListItem
+    title="Automation overview"
+    href="/concepts/automation"
+  ></ArticleListItem>
   <ArticleListItem
     title="Schedules"
     href="/concepts/partitions-schedules-sensors/schedules"
@@ -53,6 +65,10 @@ Schedules launch runs on a fixed interval, while sensors allow you to do so base
   <ArticleListItem
     title="Sensors"
     href="/concepts/partitions-schedules-sensors/sensors"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Auto-materialize policies"
+    href="/concepts/assets/asset-auto-execution"
   ></ArticleListItem>
   <ArticleListItem
     title="Asset Sensors"
@@ -135,7 +151,7 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Advanced concepts
 
-### Ops
+### Ops and jobs
 
 Ops typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
 
@@ -145,6 +161,10 @@ An op graph is a set of interconnected ops or sub-graphs. While individual ops t
   <ArticleListItem
     title="Ops"
     href="/concepts/ops-jobs-graphs/ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op jobs"
+    href="/concepts/ops-jobs-graphs/jobs"
   ></ArticleListItem>
   <ArticleListItem
     title="Op events"
@@ -170,20 +190,24 @@ An op graph is a set of interconnected ops or sub-graphs. While individual ops t
     title="Dynamic op graphs"
     href="/concepts/ops-jobs-graphs/dynamic-graphs"
   ></ArticleListItem>
-</ArticleList>
-
-### Job execution, metadata, & tags
-
-Learn to execute op and asset jobs, and apply metadata and tags.
-
-<ArticleList>
   <ArticleListItem
     title="Job execution"
     href="/concepts/ops-jobs-graphs/job-execution"
   ></ArticleListItem>
+</ArticleList>
+
+### Metadata & tags
+
+Apply tags and metadata to organize your project and provide useful context to other members of your team.
+
+<ArticleList>
   <ArticleListItem
-    title="Metadata and tags"
-    href="/concepts/ops-jobs-graphs/metadata-tags"
+    title="Tags"
+    href="/concepts/metadata-tags/tags"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op job metadata"
+    href="/concepts/metadata-tags/op-job-metadata"
   ></ArticleListItem>
 </ArticleList>
 

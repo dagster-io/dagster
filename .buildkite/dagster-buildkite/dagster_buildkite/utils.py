@@ -3,7 +3,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 import packaging.version
 import yaml
@@ -193,19 +193,63 @@ def get_commit(rev):
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
-def skip_if_no_python_changes():
+def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
     if not is_feature_branch():
         return None
 
     if any(path.suffix == ".py" for path in ChangedFiles.all):
         return None
 
+    if overrides and any(
+        Path(override) in path.parents for override in overrides for path in ChangedFiles.all
+    ):
+        return None
+
     return "No python changes"
+
+
+def skip_if_no_pyright_requirements_txt_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.match("pyright/*/requirements.txt") for path in ChangedFiles.all):
+        return None
+
+    return "No pyright requirements.txt changes"
+
+
+def skip_if_no_yaml_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all):
+        return None
+
+    return "No yaml changes"
+
+
+def skip_if_no_non_docs_markdown_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+        return None
+
+    return "No markdown changes outside of docs"
 
 
 @functools.lru_cache(maxsize=None)
 def has_helm_changes():
     return any(Path("helm") in path.parents for path in ChangedFiles.all)
+
+
+@functools.lru_cache(maxsize=None)
+def has_storage_test_fixture_changes():
+    # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
+    return any(
+        Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
+        for path in ChangedFiles.all
+    )
 
 
 def skip_if_no_helm_changes():

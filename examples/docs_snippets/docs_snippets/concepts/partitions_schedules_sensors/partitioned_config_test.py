@@ -36,7 +36,7 @@ def test_my_partitioned_config():
 # end_partition_config
 
 # start_partition_keys
-from dagster import Config
+from dagster import Config, OpExecutionContext
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
@@ -59,7 +59,7 @@ class ProcessDataConfig(Config):
 
 
 @op
-def process_data(context, config: ProcessDataConfig):
+def process_data(context: OpExecutionContext, config: ProcessDataConfig):
     s = config.start
     e = config.end
     context.log.info(f"processing data for {s} - {e}")

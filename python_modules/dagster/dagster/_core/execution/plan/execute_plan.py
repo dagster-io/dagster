@@ -61,6 +61,8 @@ def inner_plan_execution_iterator(
             while not active_execution.is_complete:
                 step = active_execution.get_next_step()
 
+                yield from active_execution.concurrency_event_iterator(job_context)
+
                 if not step:
                     active_execution.sleep_til_ready()
                     continue
@@ -79,9 +81,9 @@ def inner_plan_execution_iterator(
                 check.invariant(
                     len(missing_resources) == 0,
                     (
-                        "Expected step context for solid {solid_name} to have all required"
-                        " resources, but missing {missing_resources}."
-                    ).format(solid_name=step_context.op.name, missing_resources=missing_resources),
+                        f"Expected step context for solid {step_context.op.name} to have all required"
+                        f" resources, but missing {missing_resources}."
+                    ),
                 )
 
                 with ExitStack() as step_stack:
@@ -100,10 +102,10 @@ def inner_plan_execution_iterator(
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
                         ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
+                            dagster_event = check.inst(step_event, DagsterEvent)
+                            step_event_list.append(dagster_event)
+                            yield dagster_event
+                            active_execution.handle_event(dagster_event)
 
                         active_execution.verify_complete(job_context, step.key)
 
@@ -119,10 +121,10 @@ def inner_plan_execution_iterator(
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
                         ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
+                            dagster_event = check.inst(step_event, DagsterEvent)
+                            step_event_list.append(dagster_event)
+                            yield dagster_event
+                            active_execution.handle_event(dagster_event)
 
                         active_execution.verify_complete(job_context, step.key)
 
@@ -193,12 +195,8 @@ def _trigger_hook(
         check.invariant(
             isinstance(hook_execution_result, HookExecutionResult),
             (
-                "Error in hook {hook_name}: hook unexpectedly returned result {result} of "
-                "type {type_}. Should be a HookExecutionResult"
-            ).format(
-                hook_name=hook_def.name,
-                result=hook_execution_result,
-                type_=type(hook_execution_result),
+                f"Error in hook {hook_def.name}: hook unexpectedly returned result {hook_execution_result} of "
+                f"type {type(hook_execution_result)}. Should be a HookExecutionResult"
             ),
         )
         if hook_execution_result and hook_execution_result.is_skipped:
@@ -209,6 +207,17 @@ def _trigger_hook(
         else:
             # hook_fn finishes successfully
             yield DagsterEvent.hook_completed(step_context, hook_def)
+
+
+def _user_failure_data_for_exc(exc: Optional[BaseException]) -> Optional[UserFailureData]:
+    if isinstance(exc, Failure):
+        return UserFailureData(
+            label="intentional-failure",
+            description=exc.description,
+            metadata=exc.metadata,
+        )
+
+    return None
 
 
 def dagster_event_sequence_for_step(
@@ -287,7 +296,10 @@ def dagster_event_sequence_for_step(
             step_context.capture_step_exception(retry_request)
             yield DagsterEvent.step_failure_event(
                 step_context=step_context,
-                step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
+                step_failure_data=StepFailureData(
+                    error=fail_err,
+                    user_failure_data=_user_failure_data_for_exc(retry_request.__cause__),
+                ),
             )
         else:  # retries.enabled or retries.deferred
             prev_attempts = step_context.previous_attempt_count
@@ -303,7 +315,7 @@ def dagster_event_sequence_for_step(
                     step_context=step_context,
                     step_failure_data=StepFailureData(
                         error=fail_err,
-                        user_failure_data=None,
+                        user_failure_data=_user_failure_data_for_exc(retry_request.__cause__),
                         # set the flag to omit the outer stack if we have a cause to show
                         error_source=ErrorSource.USER_CODE_ERROR if fail_err.cause else None,
                     ),
@@ -325,11 +337,7 @@ def dagster_event_sequence_for_step(
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
-            UserFailureData(
-                label="intentional-failure",
-                description=failure.description,
-                metadata=failure.metadata,
-            ),
+            _user_failure_data_for_exc(failure),
         )
         if step_context.raise_on_error:
             raise failure

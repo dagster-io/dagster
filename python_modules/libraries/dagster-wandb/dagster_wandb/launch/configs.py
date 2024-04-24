@@ -41,7 +41,7 @@ def launch_config():
             is_required=False,
             description=(
                 "A dictionary containing parameters for the entry point command. Defaults to using"
-                " the the parameters used to run the original run."
+                " the parameters used to run the original run."
             ),
         ),
         "name": Field(

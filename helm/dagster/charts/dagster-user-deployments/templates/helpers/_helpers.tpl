@@ -97,8 +97,6 @@ This environment shared across all User Code containers
 {{- $dagsterHome := $global.dagsterHome | default .Values.dagsterHome }}
 
 DAGSTER_HOME: {{ $dagsterHome | quote }}
-DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagsterUserDeployments.postgresql.secretName" . | quote }}
-DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
 {{- end -}}
@@ -147,5 +145,18 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if and (.env) (kindIs "slice" .env) }}
     env: {{- .env | toYaml | nindent 6 }}
     {{- end }}
+    run_k8s_config:
+      pod_spec_config:
+        automount_service_account_token: true
+        {{- if .sidecarContainers }}
+        containers: {{- toYaml .sidecarContainers | nindent 10 }}
+        {{- end }}
+        {{- if .initContainers }}
+        init_containers: {{- toYaml .initContainers | nindent 10 }}
+        {{- end }}
+      {{- if .annotations }}
+      pod_template_spec_metadata:
+        annotations: {{- toYaml .annotations | nindent 10 }}
+      {{- end }}
   {{- end }}
 {{- end -}}

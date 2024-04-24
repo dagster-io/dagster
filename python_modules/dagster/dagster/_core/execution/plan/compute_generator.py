@@ -30,22 +30,18 @@ from dagster._core.definitions import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
-from ..context.compute import OpExecutionContext
-
-
-class NoAnnotationSentinel:
-    pass
+from ..context.compute import ExecutionContextTypes
 
 
 def create_op_compute_wrapper(
     op_def: OpDefinition,
-) -> Callable[[OpExecutionContext, Mapping[str, InputDefinition]], Any]:
+) -> Callable[[ExecutionContextTypes, Mapping[str, InputDefinition]], Any]:
     compute_fn = cast(DecoratedOpFunction, op_def.compute_fn)
     fn = compute_fn.decorated_fn
     input_defs = op_def.input_defs
@@ -62,7 +58,7 @@ def create_op_compute_wrapper(
 
     @wraps(fn)
     def compute(
-        context: OpExecutionContext,
+        context: ExecutionContextTypes,
         input_defs: Mapping[str, InputDefinition],
     ) -> Union[Iterator[Output], AsyncIterator[Output]]:
         kwargs = {}
@@ -99,7 +95,9 @@ def create_op_compute_wrapper(
 
 
 async def _coerce_async_op_to_async_gen(
-    awaitable: Awaitable[Any], context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+    awaitable: Awaitable[Any],
+    context: ExecutionContextTypes,
+    output_defs: Sequence[OutputDefinition],
 ) -> AsyncIterator[Any]:
     result = await awaitable
     for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
@@ -107,8 +105,8 @@ async def _coerce_async_op_to_async_gen(
 
 
 def invoke_compute_fn(
-    fn: Callable,
-    context: OpExecutionContext,
+    fn: Callable[..., Any],
+    context: ExecutionContextTypes,
     kwargs: Mapping[str, Any],
     context_arg_provided: bool,
     config_arg_cls: Optional[Type[Config]],
@@ -118,20 +116,27 @@ def invoke_compute_fn(
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
         if issubclass(config_arg_cls, Config):
-            args_to_pass["config"] = config_arg_cls(**context.op_config)
+            to_pass = config_arg_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
+                context.op_execution_context.op_config
+            )
+            args_to_pass["config"] = config_arg_cls(**to_pass)
         else:
-            args_to_pass["config"] = context.op_config
+            args_to_pass["config"] = context.op_execution_context.op_config
     if resource_args:
         for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = context.resources._original_resource_dict[  # noqa: SLF001
-                resource_name
-            ]
+            args_to_pass[arg_name] = context.resources.original_resource_dict[resource_name]
 
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 
 def _coerce_op_compute_fn_to_iterator(
-    fn, output_defs, context, context_arg_provided, kwargs, config_arg_class, resource_arg_mapping
+    fn,
+    output_defs,
+    context: ExecutionContextTypes,
+    context_arg_provided,
+    kwargs,
+    config_arg_class,
+    resource_arg_mapping,
 ):
     result = invoke_compute_fn(
         fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_mapping
@@ -141,7 +146,7 @@ def _coerce_op_compute_fn_to_iterator(
 
 
 def _zip_and_iterate_op_result(
-    result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+    result: Any, context: ExecutionContextTypes, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
     # Filtering the expected output defs here is an unfortunate temporary solution to deal with the
     # change in expected outputs that occurs as a result of putting `AssetCheckResults` onto
@@ -168,22 +173,36 @@ def _zip_and_iterate_op_result(
 # Filter out output_defs corresponding to asset check results that already exist on a
 # MaterializeResult.
 def _filter_expected_output_defs(
-    result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+    result: Any, context: ExecutionContextTypes, output_defs: Sequence[OutputDefinition]
 ) -> Sequence[OutputDefinition]:
     result_tuple = (
         (result,) if not isinstance(result, tuple) or is_named_tuple_instance(result) else result
     )
-    materialize_results = [x for x in result_tuple if isinstance(x, MaterializeResult)]
-    remove_outputs = [
-        r.get_spec_python_identifier(asset_key=x.asset_key or context.asset_key)
-        for x in materialize_results
-        for r in x.check_results or []
-    ]
+    asset_results = [x for x in result_tuple if isinstance(x, AssetResult)]
+
+    if not asset_results:
+        return output_defs
+
+    check_names_by_asset_key = {}
+    for spec in context.op_execution_context.assets_def.check_specs:
+        if spec.asset_key not in check_names_by_asset_key:
+            check_names_by_asset_key[spec.asset_key] = []
+        check_names_by_asset_key[spec.asset_key].append(spec.name)
+
+    remove_outputs = []
+    for asset_result in asset_results:
+        for check_result in asset_result.check_results:
+            remove_outputs.append(
+                context.op_execution_context.assets_def.get_output_name_for_asset_check_key(
+                    check_result.resolve_target_check_key(check_names_by_asset_key)
+                )
+            )
+
     return [out for out in output_defs if out.name not in remove_outputs]
 
 
 def _validate_multi_return(
-    context: OpExecutionContext,
+    context: ExecutionContextTypes,
     result: Any,
     output_defs: Sequence[OutputDefinition],
 ) -> Any:
@@ -221,11 +240,14 @@ def _get_annotation_for_output_position(
     position: int, op_def: OpDefinition, output_defs: Sequence[OutputDefinition]
 ) -> Any:
     if op_def.is_from_decorator():
-        if len(output_defs) > 1 and op_def.get_output_annotation() != inspect.Parameter.empty:
-            return get_args(op_def.get_output_annotation())[position]
+        if len(output_defs) > 1:
+            annotation_subitems = get_args(op_def.get_output_annotation())
+            if len(annotation_subitems) == len(output_defs):
+                return annotation_subitems[position]
         else:
             return op_def.get_output_annotation()
-    return NoAnnotationSentinel()
+
+    return inspect.Parameter.empty
 
 
 def _check_output_object_name(
@@ -242,7 +264,9 @@ def _check_output_object_name(
 
 
 def validate_and_coerce_op_result_to_iterator(
-    result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+    result: Any,
+    context: ExecutionContextTypes,
+    output_defs: Sequence[OutputDefinition],
 ) -> Iterator[Any]:
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
@@ -254,12 +278,13 @@ def validate_and_coerce_op_result_to_iterator(
             "returning an AssetMaterialization "
             "or an ExpectationResult from "
             f"{context.op_def.node_type_str} you must yield them "
-            "directly, or log them using the OpExecutionContext.log_event method to avoid "
+            "directly, or log them using the context.log_event method to avoid "
             "ambiguity with an implied result from returning a "
             "value. Check out the docs on logging events here: "
             "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
         )
-    elif isinstance(result, AssetCheckResult):
+    # These don't correspond to output defs so pass them through
+    elif isinstance(result, (AssetCheckResult, ObserveResult)):
         yield result
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
@@ -271,7 +296,7 @@ def validate_and_coerce_op_result_to_iterator(
     # results that will be registered in the instance, without additional fancy inference (like
     # wrapping `None` in an `Output`). We therefore skip any return-specific validation for this
     # mode and treat returned values as if they were yielded.
-    elif output_defs and context.requires_typed_event_stream:
+    elif output_defs and context.op_execution_context.requires_typed_event_stream:
         # If nothing was returned, treat it as an empty tuple instead of a `(None,)`.
         # This is important for delivering the correct error message when an output is missing.
         if result is None:
@@ -312,7 +337,7 @@ def validate_and_coerce_op_result_to_iterator(
                             mapping_key=dynamic_output.mapping_key,
                             metadata=dynamic_output.metadata,
                         )
-            elif isinstance(element, MaterializeResult):
+            elif isinstance(element, AssetResult):
                 yield element  # coerced in to Output in outer iterator
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(

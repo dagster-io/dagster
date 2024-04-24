@@ -11,24 +11,24 @@ export const ExecutionStateDot = styled.div<{state: IStepState}>`
   transition: background 200ms linear;
   background: ${({state}) =>
     ({
-      [IStepState.RUNNING]: Colors.Gray400,
-      [IStepState.SUCCEEDED]: Colors.Green700,
-      [IStepState.SKIPPED]: Colors.Yellow500,
-      [IStepState.FAILED]: Colors.Red500,
-      [IStepState.PREPARING]: Colors.Red500,
-      [IStepState.RETRY_REQUESTED]: Colors.Red500,
-      [IStepState.UNKNOWN]: Colors.Red500,
+      [IStepState.RUNNING]: Colors.accentGray(),
+      [IStepState.SUCCEEDED]: Colors.accentGreen(),
+      [IStepState.SKIPPED]: Colors.accentYellow(),
+      [IStepState.FAILED]: Colors.accentRed(),
+      [IStepState.PREPARING]: Colors.accentRed(),
+      [IStepState.RETRY_REQUESTED]: Colors.accentRed(),
+      [IStepState.UNKNOWN]: Colors.accentRed(),
     })[state]};
   &:hover {
     background: ${({state}) =>
       ({
-        [IStepState.RUNNING]: Colors.Gray400,
-        [IStepState.SUCCEEDED]: Colors.Green700,
-        [IStepState.SKIPPED]: Colors.Yellow500,
-        [IStepState.FAILED]: Colors.Red200,
-        [IStepState.PREPARING]: Colors.Red500,
-        [IStepState.RETRY_REQUESTED]: Colors.Red500,
-        [IStepState.UNKNOWN]: Colors.Red500,
+        [IStepState.RUNNING]: Colors.accentGrayHover(),
+        [IStepState.SUCCEEDED]: Colors.accentGreenHover(),
+        [IStepState.SKIPPED]: Colors.accentYellowHover(),
+        [IStepState.FAILED]: Colors.accentRedHover(),
+        [IStepState.PREPARING]: Colors.accentRedHover(),
+        [IStepState.RETRY_REQUESTED]: Colors.accentRedHover(),
+        [IStepState.UNKNOWN]: Colors.accentRedHover(),
       })[state]};
   }
 `;

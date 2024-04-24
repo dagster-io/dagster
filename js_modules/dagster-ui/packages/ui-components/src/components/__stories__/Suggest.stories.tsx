@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {MenuItem} from '../Menu';
 import {Suggest} from '../Suggest';
@@ -64,7 +64,7 @@ const US_STATES = [
 ];
 
 export const Default = () => {
-  const [selectedItem, setSelectedItem] = React.useState<string>('');
+  const [selectedItem, setSelectedItem] = useState<string>('');
   return (
     <Suggest<string>
       key="loading"
@@ -72,6 +72,7 @@ export const Default = () => {
         placeholder: 'Type the name of a US state…',
         style: {width: '250px'},
       }}
+      icon="search"
       items={US_STATES}
       inputValueRenderer={(item) => item}
       itemPredicate={(query, item) => item.toLocaleLowerCase().includes(query.toLocaleLowerCase())}

@@ -266,8 +266,8 @@ class DagsterType(RequiresResources):
 
     def get_inner_type_for_fan_in(self) -> "DagsterType":
         check.failed(
-            "DagsterType {name} does not support fan-in, should have checked supports_fan_in before"
-            " calling getter.".format(name=self.display_name)
+            f"DagsterType {self.display_name} does not support fan-in, should have checked supports_fan_in before"
+            " calling getter."
         )
 
     def get_resource_requirements(
@@ -330,8 +330,8 @@ class BuiltinScalarDagsterType(DagsterType):
 
 
 def _typemismatch_error_str(value: object, expected_type_desc: str) -> str:
-    return 'Value "{value}" of python type "{python_type}" must be a {type_desc}.'.format(
-        value=value, python_type=type(value).__name__, type_desc=expected_type_desc
+    return (
+        f'Value "{value}" of python type "{type(value).__name__}" must be a {expected_type_desc}.'
     )
 
 
@@ -840,6 +840,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._utils.typing_api import is_typing_type
 
+    from ..definitions.result import MaterializeResult, ObserveResult
     from .primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
@@ -871,6 +872,14 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         dynamic_out_annotation = get_args(dagster_type)[0]
         type_args = get_args(dynamic_out_annotation)
         dagster_type = type_args[0] if len(type_args) == 1 else Any
+    elif dagster_type == MaterializeResult:
+        # convert MaterializeResult type annotation to Nothing until returning
+        # scalar values via MaterializeResult is supported
+        # https://github.com/dagster-io/dagster/issues/16887
+        dagster_type = Nothing
+    elif dagster_type == ObserveResult:
+        # ObserveResult does not include a value
+        dagster_type = Nothing
 
     # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):
@@ -989,9 +998,9 @@ def construct_dagster_type_dictionary(
             if type_dict_by_name[dagster_type.unique_name] is not dagster_type:
                 raise DagsterInvalidDefinitionError(
                     (
-                        'You have created two dagster types with the same name "{type_name}". '
+                        f'You have created two dagster types with the same name "{dagster_type.display_name}". '
                         "Dagster types have must have unique names."
-                    ).format(type_name=dagster_type.display_name)
+                    )
                 )
 
         if isinstance(node_def, GraphDefinition):

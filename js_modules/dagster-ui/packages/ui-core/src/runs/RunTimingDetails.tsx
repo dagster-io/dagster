@@ -2,11 +2,10 @@ import {gql} from '@apollo/client';
 import {Colors, MetadataTable} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {RunStatus} from '../graphql/types';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-
 import {TimeElapsed} from './TimeElapsed';
 import {RunTimingFragment} from './types/RunTimingDetails.types';
+import {RunStatus} from '../graphql/types';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {
@@ -31,18 +30,23 @@ export const timingStringForStatus = (status?: RunStatus) => {
   }
 };
 
-const LoadingOrValue: React.FC<{
+const LoadingOrValue = ({
+  loading,
+  children,
+}: {
   loading: boolean;
   children: () => React.ReactNode;
-}> = ({loading, children}) =>
-  loading ? <div style={{color: Colors.Gray400}}>Loading…</div> : <div>{children()}</div>;
+}) => (loading ? <div style={{color: Colors.textLight()}}>Loading…</div> : <div>{children()}</div>);
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-export const RunTimingDetails: React.FC<{
+export const RunTimingDetails = ({
+  loading,
+  run,
+}: {
   loading: boolean;
   run: RunTimingFragment | undefined;
-}> = ({loading, run}) => {
+}) => {
   return (
     <MetadataTable
       spacing={0}
@@ -56,7 +60,9 @@ export const RunTimingDetails: React.FC<{
                   return <TimestampDisplay timestamp={run.startTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.textLight()}}>
+                    {timingStringForStatus(run?.status)}
+                  </div>
                 );
               }}
             </LoadingOrValue>
@@ -71,7 +77,9 @@ export const RunTimingDetails: React.FC<{
                   return <TimestampDisplay timestamp={run.endTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.textLight()}}>
+                    {timingStringForStatus(run?.status)}
+                  </div>
                 );
               }}
             </LoadingOrValue>
@@ -86,7 +94,9 @@ export const RunTimingDetails: React.FC<{
                   return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
                 }
                 return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.textLight()}}>
+                    {timingStringForStatus(run?.status)}
+                  </div>
                 );
               }}
             </LoadingOrValue>

@@ -13,7 +13,7 @@ duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 
 @asset(compute_kind="python")
-def raw_customers(context) -> None:
+def raw_customers(context: AssetExecutionContext) -> None:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     connection = duckdb.connect(os.fspath(duckdb_database_path))
     connection.execute("create schema if not exists jaffle_shop")

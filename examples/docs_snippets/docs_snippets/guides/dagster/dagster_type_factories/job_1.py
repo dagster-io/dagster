@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from dagster import AssetMaterialization, job, op
+from dagster import AssetMaterialization, OpExecutionContext, job, op
 
 
 @op
@@ -14,7 +14,7 @@ def load_trips():
 
 
 @op
-def generate_plot(context, trips):
+def generate_plot(context: OpExecutionContext, trips):
     minute_lengths = [x.total_seconds() / 60 for x in trips.end_time - trips.start_time]
     bin_edges = np.histogram_bin_edges(minute_lengths, 15)
     fig, ax = plt.subplots(figsize=(10, 5))

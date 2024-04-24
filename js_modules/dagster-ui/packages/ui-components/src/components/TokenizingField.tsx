@@ -4,8 +4,8 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Box} from './Box';
-import {Colors} from './Colors';
-import {MenuItem, Menu} from './Menu';
+import {Colors} from './Color';
+import {Menu, MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
@@ -116,7 +116,7 @@ const isEqual = (a: TokenizingFieldValue, b?: TokenizingFieldValue) =>
  *  to build the tree of autocompletions.
  *
  *  The input also allows for freeform typing (`value` items with no token value) */
-export const TokenizingField: React.FC<TokenizingFieldProps> = ({
+export const TokenizingField = ({
   suggestionProviders,
   suggestionProvidersFilter,
   values: externalValues,
@@ -131,7 +131,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   className,
   fullwidth,
   suggestionRenderer,
-}) => {
+}: TokenizingFieldProps) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>('');
@@ -448,28 +448,31 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 };
 
 export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
+  background-color: ${Colors.backgroundDefault()};
   border: none;
   border-radius: 8px;
-  box-shadow:
-    ${Colors.Gray300} inset 0px 0px 0px 1px,
-    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  color: ${Colors.textDefault()};
   min-width: 400px;
   max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
-  &.bp4-active {
-    box-shadow:
-      ${Colors.Gray300} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px,
-      rgba(58, 151, 212, 0.6) 0 0 0 3px;
-  }
-
   input {
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     font-size: 14px;
     font-weight: 400;
     padding-left: 4px;
     padding-bottom: 2px;
     padding-top: 2px;
+  }
+
+  &&.bp4-tag-input.bp4-active {
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
+    box-shadow:
+      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+      ${Colors.focusRing()} 0 0 0 3px;
   }
 
   && .bp4-tag-input-values:first-child .bp4-input-ghost:first-child {
@@ -501,23 +504,23 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   }
 
   .bp4-tag.bp4-minimal:not([class*='bp4-intent-']) {
-    background-color: ${Colors.Gray100};
-    color: ${Colors.Gray900};
+    background-color: ${Colors.backgroundGray()};
+    color: ${Colors.textDefault()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-success {
-    background-color: ${Colors.Green50};
-    color: ${Colors.Green700};
+    background-color: ${Colors.backgroundGreen()};
+    color: ${Colors.textGreen()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-warning {
-    background-color: ${Colors.Yellow50};
-    color: ${Colors.Yellow700};
+    background-color: ${Colors.backgroundYellow()};
+    color: ${Colors.textYellow()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-danger {
-    background-color: ${Colors.Red50};
-    color: ${Colors.Red700};
+    background-color: ${Colors.backgroundRed()};
+    color: ${Colors.textRed()};
   }
 `;
 

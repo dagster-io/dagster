@@ -1,10 +1,15 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {buildPipelineSelector} from './WorkspaceContext';
+import {RepoAddress} from './types';
+import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
+import {workspacePathFromAddress} from './workspacePath';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -13,12 +18,6 @@ import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
-import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {buildPipelineSelector} from './WorkspaceContext';
-import {RepoAddress} from './types';
-import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
-import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
 
@@ -46,24 +45,26 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const {data} = queryResult;
+  const pipeline =
+    data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError : undefined;
 
-  const {schedules, sensors} = React.useMemo(() => {
-    if (data?.pipelineOrError.__typename === 'Pipeline') {
-      const {schedules, sensors} = data.pipelineOrError;
+  const {schedules, sensors} = useMemo(() => {
+    if (pipeline) {
+      const {schedules, sensors} = pipeline;
       return {schedules, sensors};
     }
     return {schedules: [], sensors: []};
-  }, [data]);
+  }, [pipeline]);
 
-  const latestRuns = React.useMemo(() => {
-    if (data?.pipelineOrError.__typename === 'Pipeline') {
-      const runs = data.pipelineOrError.runs;
+  const latestRuns = useMemo(() => {
+    if (pipeline) {
+      const {runs} = pipeline;
       if (runs.length) {
         return [...runs];
       }
     }
     return [];
-  }, [data]);
+  }, [pipeline]);
 
   return (
     <Row $height={height} $start={start}>
@@ -74,11 +75,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
               <MiddleTruncate text={name} />
             </Link>
           </div>
-          <CaptionText>
-            {data?.pipelineOrError.__typename === 'Pipeline'
-              ? data.pipelineOrError.description
-              : ''}
-          </CaptionText>
+          <CaptionText>{pipeline?.description || ''}</CaptionText>
         </RowCell>
         <RowCell>
           {schedules.length || sensors.length ? (
@@ -119,7 +116,11 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
         </RowCell>
         <RowCell>
           <Box flex={{justifyContent: 'flex-end'}} style={{marginTop: '-2px'}}>
-            <JobMenu job={{isJob, name, runs: latestRuns}} repoAddress={repoAddress} />
+            <JobMenu
+              job={{name, isJob, runs: latestRuns}}
+              isAssetJob={pipeline ? pipeline.isAssetJob : 'loading'}
+              repoAddress={repoAddress}
+            />
           </Box>
         </RowCell>
       </RowGrid>
@@ -136,7 +137,7 @@ export const VirtualizedJobHeader = () => {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: Colors.textLight(),
       }}
     >
       <HeaderCell>Name</HeaderCell>
@@ -169,6 +170,7 @@ const SINGLE_JOB_QUERY = gql`
         id
         name
         isJob
+        isAssetJob
         description
         runs(limit: 5) {
           id

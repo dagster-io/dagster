@@ -4,15 +4,9 @@ from typing import Type
 import dagster as dagster
 import pytest
 from dagster._utils import IHasInternalInit
+from dagster._utils.test import get_all_direct_subclasses_of_marker
 
-INTERNAL_INIT_SUBCLASSES = [
-    symbol
-    for symbol in dagster.__dict__.values()
-    if isinstance(symbol, type)
-    and issubclass(symbol, IHasInternalInit)
-    and IHasInternalInit
-    in symbol.__bases__  # ensure that the class is a direct subclass of IHasInternalInit (not a subclass of a subclass)
-]
+INTERNAL_INIT_SUBCLASSES = get_all_direct_subclasses_of_marker(IHasInternalInit)
 
 
 @pytest.mark.parametrize("cls", INTERNAL_INIT_SUBCLASSES)

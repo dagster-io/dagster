@@ -1,15 +1,19 @@
 import asyncio
+import sys
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.host_representation.external import ExternalRepository
+import graphene
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from typing_extensions import Protocol, TypeAlias, TypedDict
 
+from dagster_graphql import __file__ as dagster_graphql_init_py
 from dagster_graphql.schema import create_schema
 
 
@@ -52,9 +56,12 @@ SCHEMA = create_schema()
 
 
 def execute_dagster_graphql(
-    context: WorkspaceRequestContext, query: str, variables: Optional[GqlVariables] = None
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
 ) -> GqlResult:
-    result = SCHEMA.execute(
+    result = schema.execute(
         query,
         context_value=context,
         variable_values=variables,
@@ -74,10 +81,11 @@ def execute_dagster_graphql_subscription(
     context: WorkspaceRequestContext,
     query: str,
     variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
 ) -> Sequence[GqlResult]:
     results = []
 
-    subscription = SCHEMA.subscribe(
+    subscription = schema.subscribe(
         query,
         context_value=context,
         variable_values=variables,
@@ -172,9 +180,9 @@ def infer_repository_selector(graphql_context: WorkspaceRequestContext) -> Selec
     }
 
 
-def infer_job_or_pipeline_selector(
+def infer_job_selector(
     graphql_context: WorkspaceRequestContext,
-    pipeline_name: str,
+    job_name: str,
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[GqlAssetKey]] = None,
     asset_check_selection: Optional[Sequence[GqlAssetCheckHandle]] = None,
@@ -182,25 +190,10 @@ def infer_job_or_pipeline_selector(
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
-            "pipelineName": pipeline_name,
+            "pipelineName": job_name,
             "solidSelection": op_selection,
             "assetSelection": asset_selection,
             "assetCheckSelection": asset_check_selection,
-        }
-    )
-    return selector
-
-
-def infer_pipeline_selector(
-    graphql_context: WorkspaceRequestContext,
-    pipeline_name: str,
-    op_selection: Optional[Sequence[str]] = None,
-) -> Selector:
-    selector = infer_repository_selector(graphql_context)
-    selector.update(
-        {
-            "pipelineName": pipeline_name,
-            "solidSelection": op_selection,
         }
     )
     return selector
@@ -230,3 +223,11 @@ def infer_resource_selector(graphql_context: WorkspaceRequestContext, name: str)
     selector = infer_repository_selector(graphql_context)
     selector = {**selector, **{"resourceName": name}}
     return selector
+
+
+def ensure_dagster_graphql_tests_import() -> None:
+    dagster_package_root = (Path(dagster_graphql_init_py) / ".." / "..").resolve()
+    assert (
+        dagster_package_root / "dagster_graphql_tests"
+    ).exists(), "Could not find dagster_graphql_tests where expected"
+    sys.path.append(dagster_package_root.as_posix())

@@ -1,17 +1,17 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey
-from dagster._core.events.log import EventLogEntry
-from dagster._core.host_representation import ExternalRepository
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
@@ -129,7 +129,7 @@ class RepositoryScopedBatchLoader:
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
 
-    def get_sensor_state(self, sensor_name: str) -> Optional[Sequence[Any]]:
+    def get_sensor_state(self, sensor_name: str) -> Optional[InstigatorState]:
         check.invariant(self._repository.has_external_sensor(sensor_name))
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_name, 1)
         return states[0] if states else None
@@ -179,38 +179,6 @@ class BatchRunLoader:
             self._records[record.dagster_run.run_id] = record
 
 
-class BatchMaterializationLoader:
-    """A batch loader that fetches materializations for asset keys.  This loader is expected to be
-    instantiated with a set of asset keys.
-    """
-
-    def __init__(self, instance: DagsterInstance, asset_keys: Iterable[AssetKey]):
-        self._instance = instance
-        self._asset_keys: List[AssetKey] = list(asset_keys)
-        self._fetched = False
-        self._materializations: Mapping[AssetKey, Optional[EventLogEntry]] = {}
-
-    def get_latest_materialization_for_asset_key(
-        self, asset_key: AssetKey
-    ) -> Optional[EventLogEntry]:
-        if asset_key not in self._asset_keys:
-            check.failed(
-                f"Asset key {asset_key} not recognized for this loader.  Expected one of:"
-                f" {self._asset_keys}"
-            )
-
-        if not self._fetched:
-            self._fetch()
-        return self._materializations.get(asset_key)
-
-    def _fetch(self) -> None:
-        self._fetched = True
-        self._materializations = {
-            record.asset_entry.asset_key: record.asset_entry.last_materialization
-            for record in self._instance.get_asset_records(self._asset_keys)
-        }
-
-
 class CrossRepoAssetDependedByLoader:
     """A batch loader that computes cross-repository asset dependencies. Locates source assets
     within all workspace repositories, and determines if they are derived (defined) assets in
@@ -252,9 +220,9 @@ class CrossRepoAssetDependedByLoader:
         ] = defaultdict(lambda: defaultdict(list))
 
         # A mapping containing all derived (non-source) assets and their location
-        map_derived_asset_to_location: Dict[AssetKey, Tuple[str, str]] = (
-            {}
-        )  # key is asset key, value is tuple (location_name, repo_name)
+        map_derived_asset_to_location: Dict[
+            AssetKey, Tuple[str, str]
+        ] = {}  # key is asset key, value is tuple (location_name, repo_name)
 
         for location in self._context.code_locations:
             repositories = location.get_repositories()
@@ -315,6 +283,7 @@ class CrossRepoAssetDependedByLoader:
                         )
                     ],
                     depended_by=[],
+                    execution_type=AssetExecutionType.UNEXECUTABLE,
                 )
 
         return sink_assets, external_asset_deps

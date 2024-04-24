@@ -1,5 +1,5 @@
 import {Box, Checkbox} from '@dagster-io/ui-components';
-import React from 'react';
+import {useState} from 'react';
 
 import {assertUnreachable} from '../../app/Util';
 import {
@@ -9,7 +9,7 @@ import {
   TableSchemaMetadataEntry,
 } from '../../graphql/types';
 import {MetadataEntries} from '../MetadataEntry';
-import {MetadataEntryFragment} from '../types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../types/MetadataEntryFragment.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -30,9 +30,12 @@ const MetadataEntryTypes: MetadataEntryFragment['__typename'][] = [
   'NullMetadataEntry',
   'PipelineRunMetadataEntry',
   'AssetMetadataEntry',
+  'JobMetadataEntry',
+  'TableColumnLineageMetadataEntry',
   'TableMetadataEntry',
   'TableSchemaMetadataEntry',
   'NotebookMetadataEntry',
+  'TimestampMetadataEntry',
 ];
 
 const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
@@ -195,6 +198,34 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         label: 'my_asset',
         assetKey: {__typename: 'AssetKey', path: ['asset_1']},
       };
+    case 'JobMetadataEntry':
+      return {
+        __typename: 'JobMetadataEntry',
+        description: 'This is the description',
+        label: 'my_job',
+        jobName: 'my_job',
+        locationName: 'my_location_name',
+        repositoryName: null,
+      };
+    case 'TableColumnLineageMetadataEntry':
+      return {
+        __typename: 'TableColumnLineageMetadataEntry',
+        description: 'This is the description',
+        label: 'my_table_column_lineage',
+        lineage: [
+          {
+            __typename: 'TableColumnLineageEntry',
+            columnName: 'column_a',
+            columnDeps: [
+              {
+                __typename: 'TableColumnDep',
+                assetKey: {path: ['asset_1'], __typename: 'AssetKey'},
+                columnName: 'column_a',
+              },
+            ],
+          },
+        ],
+      };
     case 'TableMetadataEntry':
       return {
         __typename: 'TableMetadataEntry',
@@ -219,6 +250,13 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_path',
         path: '/this/is/a/notebook-path',
+      };
+    case 'TimestampMetadataEntry':
+      return {
+        __typename: 'TimestampMetadataEntry',
+        description: 'This is the description',
+        label: 'my_timestamp',
+        timestamp: 1710187280.5,
       };
     default:
       return assertUnreachable(type);
@@ -271,7 +309,7 @@ const MetadataEntryMocks = [
 ];
 
 export const EmptyState = () => {
-  const [expandSmallValues, setExpandSmallValues] = React.useState(false);
+  const [expandSmallValues, setExpandSmallValues] = useState(false);
   return (
     <Box style={{width: '950px', display: 'flex', flexDirection: 'column', gap: 12}}>
       <Checkbox

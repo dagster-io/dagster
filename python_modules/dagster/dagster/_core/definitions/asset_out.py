@@ -1,7 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import (
@@ -11,12 +11,15 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
-from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 
+from .utils import validate_definition_tags
 
+
+@experimental_param(param="owners")
+@experimental_param(param="tags")
 class AssetOut(
     NamedTuple(
         "_AssetOut",
@@ -33,6 +36,8 @@ class AssetOut(
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
+            ("owners", PublicAttr[Optional[Sequence[str]]]),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
         ],
     )
 ):
@@ -59,11 +64,16 @@ class AssetOut(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
         code_version (Optional[str]): The version of the code that generates this asset.
-        freshness_policy (Optional[FreshnessPolicy]): A policy which indicates how up to date this
-            asset is intended to be.
+        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
+            to date this asset is intended to be.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
     """
 
     def __new__(
@@ -74,12 +84,14 @@ class AssetOut(
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        owners: Optional[Sequence[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -110,6 +122,8 @@ class AssetOut(
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            tags=validate_definition_tags(tags),
         )
 
     def to_out(self) -> Out:

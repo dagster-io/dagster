@@ -1,34 +1,207 @@
 import {Colors} from '@dagster-io/ui-components';
-import React from 'react';
+import {useWorker} from '@koale/useworker';
+import {Fragment, memo, useEffect, useRef, useState} from 'react';
 
-import {buildSVGPath} from './Utils';
-import {AssetLayoutEdge} from './layout';
+import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
+import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
-export const AssetEdges: React.FC<{
+interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
-  highlighted: string | null;
+  selected: string[] | null;
+  highlighted: string[] | null;
+  direction: AssetLayoutDirection;
   strokeWidth?: number;
-  baseColor?: string;
-}> = ({edges, highlighted, strokeWidth = 4, baseColor = Colors.KeylineGray}) => {
-  // Note: we render the highlighted edges twice, but it's so that the first item with
-  // all the edges in it can remain memoized.
+  viewportRect: {top: number; left: number; right: number; bottom: number};
+}
+
+function getEdgesToShow({
+  viewportRect,
+  highlighted,
+  selected,
+  edges,
+}: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
+  try {
+    const viewportDistance =
+      Math.pow(viewportRect.right - viewportRect.left, 2) +
+      Math.pow(viewportRect.top - viewportRect.bottom, 2);
+    const MAX_EDGES = 50; // arbitrary number
+
+    //https://stackoverflow.com/a/20925869/1162881
+    function doesViewportContainEdge(
+      edge: {from: {x: number; y: number}; to: {x: number; y: number}},
+      viewportRect: {top: number; left: number; right: number; bottom: number},
+    ) {
+      return (
+        isOverlapping1D(
+          Math.max(edge.from.x, edge.to.x),
+          Math.max(viewportRect.left, viewportRect.right),
+          Math.min(edge.from.x, edge.to.x),
+          Math.min(viewportRect.left, viewportRect.right),
+        ) &&
+        isOverlapping1D(
+          Math.max(edge.from.y, edge.to.y),
+          Math.max(viewportRect.top, viewportRect.bottom),
+          Math.min(edge.from.y, edge.to.y),
+          Math.min(viewportRect.top, viewportRect.bottom),
+        )
+      );
+    }
+
+    function isOverlapping1D(xmax1: number, xmax2: number, xmin1: number, xmin2: number) {
+      return xmax1 >= xmin2 && xmax2 >= xmin1;
+    }
+
+    function doesViewportContainPoint(
+      point: {x: number; y: number},
+      viewportRect: {top: number; left: number; right: number; bottom: number},
+    ) {
+      return (
+        point.x >= viewportRect.left &&
+        point.x <= viewportRect.right &&
+        point.y >= viewportRect.top &&
+        point.y <= viewportRect.bottom
+      );
+    }
+
+    const edgesToShow = (() => {
+      const intersectedEdges = edges.filter((edge) => doesViewportContainEdge(edge, viewportRect));
+      if (intersectedEdges.length <= 10) {
+        return intersectedEdges;
+      }
+      const visibleToAndFromEdges = new Set(
+        intersectedEdges.filter(
+          (edge) =>
+            doesViewportContainPoint(edge.from, viewportRect) &&
+            doesViewportContainPoint(edge.to, viewportRect),
+        ),
+      );
+      const visibleToFromEdges = intersectedEdges.filter(
+        (edge) =>
+          doesViewportContainPoint(edge.from, viewportRect) ||
+          doesViewportContainPoint(edge.to, viewportRect),
+      );
+      if (visibleToFromEdges.length < 50) {
+        return visibleToFromEdges;
+      }
+      const center = {
+        x: (viewportRect.left + viewportRect.right) / 2,
+        y: (viewportRect.top + viewportRect.bottom) / 2,
+      };
+      const edgesWithDistance = visibleToFromEdges.map((edge) => {
+        const distance = Math.min(
+          Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2),
+          Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2),
+        );
+
+        return {
+          edge,
+          // Effectively sorts edges with both nodes visible to the front.
+          distance: visibleToAndFromEdges.has(edge) ? distance : viewportDistance + distance,
+        };
+      });
+      edgesWithDistance.sort((a, b) => a.distance - b.distance);
+      return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
+    })();
+
+    const selectedOrHighlightedEdges = (() => {
+      const selectedOrHighlighted = edges.filter(
+        ({fromId, toId}) =>
+          selected?.includes(fromId) ||
+          selected?.includes(toId) ||
+          highlighted?.includes(fromId) ||
+          highlighted?.includes(toId),
+      );
+      const center = {
+        x: (viewportRect.left + viewportRect.right) / 2,
+        y: (viewportRect.top + viewportRect.bottom) / 2,
+      };
+      const edgesWithDistance = selectedOrHighlighted.map((edge) => {
+        return {
+          edge,
+          distance: Math.min(
+            Math.pow(edge.from.x - center.x, 2) + Math.pow(edge.from.y - center.y, 2),
+            Math.pow(edge.to.x - center.x, 2) + Math.pow(edge.to.y - center.y, 2),
+          ),
+        };
+      });
+      edgesWithDistance.sort((a, b) => a.distance - b.distance);
+      return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
+    })();
+    return {edgesToShow, selectedOrHighlightedEdges};
+  } catch (e) {
+    console.error(e);
+    return {edgesToShow: [], selectedOrHighlightedEdges: []};
+  }
+}
+
+type EdgeState = {edgesToShow: AssetLayoutEdge[]; selectedOrHighlightedEdges: AssetLayoutEdge[]};
+export const AssetEdges = ({
+  edges,
+  selected,
+  highlighted,
+  direction,
+  strokeWidth = 4,
+  viewportRect,
+}: AssetEdgesProps) => {
+  const [getEdgesToShowWorker] = useWorker(getEdgesToShow);
+
+  const [{edgesToShow, selectedOrHighlightedEdges}, setEdges] = useState<EdgeState>({
+    edgesToShow: [],
+    selectedOrHighlightedEdges: [],
+  });
+
+  const isRunning = useRef(false);
+  const needsUpdate = useRef(false);
+  const currentStateRef = useUpdatingRef({highlighted, edges, selected, viewportRect});
+  useEffect(() => {
+    if (!isRunning.current) {
+      (async () => {
+        needsUpdate.current = true;
+        isRunning.current = true;
+        while (needsUpdate.current) {
+          needsUpdate.current = false;
+          const edgesToShow = await new Promise<EdgeState>((res) => {
+            getEdgesToShowWorker(currentStateRef.current).then((edgesToShow) => {
+              res(edgesToShow);
+            });
+          });
+          setEdges(edgesToShow);
+        }
+        isRunning.current = false;
+      })();
+    } else {
+      needsUpdate.current = true;
+    }
+  }, [edges, getEdgesToShowWorker, highlighted, selected, viewportRect, currentStateRef]);
+
+  // Show up to 50 edges....
   return (
-    <React.Fragment>
-      <AssetEdgeSet color={baseColor} edges={edges} strokeWidth={strokeWidth} />
+    <Fragment>
       <AssetEdgeSet
-        color={Colors.Blue500}
-        edges={edges.filter(({fromId, toId}) => highlighted === fromId || highlighted === toId)}
+        color={Colors.lineageEdge()}
+        edges={edgesToShow}
         strokeWidth={strokeWidth}
+        direction={direction}
       />
-    </React.Fragment>
+      <AssetEdgeSet
+        color={Colors.lineageEdgeHighlighted()}
+        edges={selectedOrHighlightedEdges}
+        strokeWidth={strokeWidth}
+        direction={direction}
+      />
+    </Fragment>
   );
 };
 
-const AssetEdgeSet: React.FC<{
+interface AssetEdgeSetProps {
   edges: AssetLayoutEdge[];
   color: string;
+  direction: AssetLayoutDirection;
   strokeWidth: number;
-}> = React.memo(({edges, color, strokeWidth}) => (
+}
+
+const AssetEdgeSet = memo(({edges, color, strokeWidth, direction}: AssetEdgeSetProps) => (
   <>
     <defs>
       <marker
@@ -46,7 +219,11 @@ const AssetEdgeSet: React.FC<{
     {edges.map((edge, idx) => (
       <path
         key={idx}
-        d={buildSVGPath({source: edge.from, target: edge.to})}
+        d={
+          direction === 'horizontal'
+            ? buildSVGPathHorizontal({source: edge.from, target: edge.to})
+            : buildSVGPathVertical({source: edge.from, target: edge.to})
+        }
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"

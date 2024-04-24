@@ -6,13 +6,11 @@ from dagster import graph, job, multiprocess_executor
 
 # Providing an executor using the job decorator
 @job(executor_def=multiprocess_executor)
-def the_job():
-    ...
+def the_job(): ...
 
 
 @graph
-def the_graph():
-    ...
+def the_graph(): ...
 
 
 # Providing an executor using graph_def.to_job(...)
@@ -34,8 +32,7 @@ asset_job = define_asset_job("the_job", selection="*")
 
 
 @job
-def op_job():
-    ...
+def op_job(): ...
 
 
 # op_job and asset_job will both use the multiprocess_executor,

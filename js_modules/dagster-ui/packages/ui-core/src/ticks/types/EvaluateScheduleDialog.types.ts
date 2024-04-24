@@ -4,9 +4,9 @@ import * as Types from '../../graphql/types';
 
 export type GetScheduleQueryVariables = Types.Exact<{
   scheduleSelector: Types.ScheduleSelector;
-  startTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
-  ticksAfter?: Types.InputMaybe<Types.Scalars['Int']>;
-  ticksBefore?: Types.InputMaybe<Types.Scalars['Int']>;
+  startTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  ticksAfter?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  ticksBefore?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type GetScheduleQuery = {
@@ -19,7 +19,7 @@ export type GetScheduleQuery = {
 
 export type ScheduleDryRunMutationVariables = Types.Exact<{
   selectorData: Types.ScheduleSelector;
-  timestamp?: Types.InputMaybe<Types.Scalars['Float']>;
+  timestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
 }>;
 
 export type ScheduleDryRunMutation = {
@@ -35,6 +35,7 @@ export type ScheduleDryRunMutation = {
             __typename: 'RunRequest';
             runConfigYaml: string;
             runKey: string | null;
+            jobName: string | null;
             tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
             assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
           }> | null;

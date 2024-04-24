@@ -1,13 +1,12 @@
 import * as React from 'react';
 
-import {useCodeLocationsStatus} from '../nav/useCodeLocationsStatus';
-
 import {StatusAndMessage} from './DeploymentStatusType';
 import {useDaemonStatus} from './useDaemonStatus';
+import {useCodeLocationsStatus} from '../nav/useCodeLocationsStatus';
 
 export type DeploymentStatusType = 'code-locations' | 'daemons';
 
-type DeploymentStatus = {
+export type DeploymentStatus = {
   codeLocations: StatusAndMessage | null;
   daemons: StatusAndMessage | null;
 };
@@ -22,7 +21,7 @@ interface Props {
   include: Set<DeploymentStatusType>;
 }
 
-export const DeploymentStatusProvider: React.FC<Props> = (props) => {
+export const DeploymentStatusProvider = (props: Props) => {
   const {children, include} = props;
 
   const codeLocations = useCodeLocationsStatus(!include.has('code-locations'));

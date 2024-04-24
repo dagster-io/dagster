@@ -29,7 +29,7 @@ from dagster import (
     op,
     with_resources,
 )
-from dagster._core.definitions import AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions import AssetIn, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
@@ -223,9 +223,10 @@ def get_assets_job(io_manager_def, partitions_def=None):
     def asset2(asset1):
         return asset1 + [4]
 
-    return build_assets_job(
-        name="a", assets=[asset1, asset2], resource_defs={"io_manager": io_manager_def}
-    )
+    return Definitions(
+        assets=[asset1, asset2],
+        resources={"io_manager": io_manager_def},
+    ).get_implicit_job_def_for_assets([asset1.key, asset2.key])
 
 
 def test_fs_io_manager_handles_assets():
@@ -295,6 +296,7 @@ def test_fs_io_manager_partitioned_no_partitions():
             def get_upstream_mapped_partitions_result_for_partitions(
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
+                downstream_partitions_def: Optional[PartitionsDefinition],
                 upstream_partitions_def: PartitionsDefinition,
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -304,10 +306,15 @@ def test_fs_io_manager_partitioned_no_partitions():
             def get_downstream_partitions_for_partitions(
                 self,
                 upstream_partitions_subset,
+                upstream_partitions_def,
                 downstream_partitions_def,
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ):
+                raise NotImplementedError()
+
+            @property
+            def description(self) -> str:
                 raise NotImplementedError()
 
         partitions_def = DailyPartitionsDefinition(start_date="2020-02-01")
@@ -390,13 +397,12 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
             partitions_def=partitions_def,
         )
 
-        job_def = build_assets_job(
-            name="a",
+        result = materialize(
             assets=[one, four_asset],
-            resource_defs={"io_manager": io_manager_def},
+            resources={"io_manager": io_manager_def},
+            partition_key="A",
         )
 
-        result = job_def.execute_in_process(partition_key="A")
         assert result.success
 
         handled_output_events = list(
@@ -468,7 +474,7 @@ def test_fs_io_manager_none():
         handled_output_events = list(
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
-        assert len(handled_output_events) == 2
+        assert len(handled_output_events) == 0
 
         for event in handled_output_events:
             assert len(event.event_specific_data.metadata) == 0
@@ -495,7 +501,7 @@ def test_fs_io_manager_ops_none():
         handled_output_events = list(
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
-        assert len(handled_output_events) == 2
+        assert len(handled_output_events) == 0
 
         for event in handled_output_events:
             assert len(event.event_specific_data.metadata) == 0
@@ -567,6 +573,7 @@ def test_backcompat_multipartitions_fs_io_manager():
             return 1
 
         # Upstream partition was never materialized, so this run should error
+        # the error will have the old backcompat path mentioned, because the UPathIOManager will first try to use the normal path, catch the error, and then try to load from the backcompat path, which will cause the actual raised error
         with pytest.raises(FileNotFoundError, match="c/2020-04-21"):
             my_job = define_asset_job(
                 "my_job", [multipartitioned, downstream_of_multipartitioned]

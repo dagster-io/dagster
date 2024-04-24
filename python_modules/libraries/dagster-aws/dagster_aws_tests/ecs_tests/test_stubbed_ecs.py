@@ -322,7 +322,8 @@ def test_run_task(ecs, ec2, subnet):
     response = ecs.run_task(taskDefinition="bridge", cluster="dagster")
     assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
     response = ecs.run_task(
-        taskDefinition="bridge", cluster=ecs._cluster_arn("dagster")  # noqa: SLF001
+        taskDefinition="bridge",
+        cluster=ecs._cluster_arn("dagster"),  # noqa: SLF001
     )
     assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
 

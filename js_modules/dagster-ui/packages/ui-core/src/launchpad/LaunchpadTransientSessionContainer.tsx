@@ -1,13 +1,4 @@
-import * as React from 'react';
-
-import {
-  createSingleSession,
-  IExecutionSession,
-  IExecutionSessionChanges,
-  useInitialDataForMode,
-} from '../app/ExecutionSessionStorage';
-import {useFeatureFlags} from '../app/Flags';
-import {RepoAddress} from '../workspace/types';
+import {useState} from 'react';
 
 import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadType} from './types';
@@ -15,6 +6,15 @@ import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
 } from './types/LaunchpadAllowedRoot.types';
+import {
+  IExecutionSession,
+  IExecutionSessionChanges,
+  createSingleSession,
+  useInitialDataForMode,
+} from '../app/ExecutionSessionStorage';
+import {useFeatureFlags} from '../app/Flags';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   launchpadType: LaunchpadType;
@@ -43,12 +43,14 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
     ...(initialData.runConfigYaml ? {runConfigYaml: initialData.runConfigYaml} : {}),
   });
 
-  const [session, setSession] = React.useState<IExecutionSession>(initialSessionComplete);
+  const [session, setSession] = useState<IExecutionSession>(initialSessionComplete);
 
-  const onSaveSession = (changes: IExecutionSessionChanges) => {
-    const newSession = {...session, ...changes};
-    setSession(newSession);
-  };
+  const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(
+    session,
+    (changes: IExecutionSessionChanges) => {
+      setSession((session) => ({...session, ...changes}));
+    },
+  );
 
   return (
     <LaunchpadSession

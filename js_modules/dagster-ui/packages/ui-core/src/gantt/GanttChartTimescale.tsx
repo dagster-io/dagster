@@ -2,9 +2,8 @@ import {Colors, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {formatElapsedTime} from '../app/Util';
-
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 
 const ONE_MIN = 60 * 1000;
 const ONE_HOUR = 60 * 60 * 1000;
@@ -12,11 +11,11 @@ const ONE_HOUR = 60 * 60 * 1000;
 // If we're zoomed in to second or minute resolution but showing large values,
 // switch to the "1:00:05" format used elsewhere in the Dagster UI.
 const subsecondResolutionLabel = (ms: number) =>
-  ms > 5 * ONE_MIN ? formatElapsedTime(ms) : `${(ms / 1000).toFixed(1)}s`;
+  ms > 5 * ONE_MIN ? formatElapsedTimeWithoutMsec(ms) : `${(ms / 1000).toFixed(1)}s`;
 const secondResolutionLabel = (ms: number) =>
-  ms > 5 * ONE_MIN ? formatElapsedTime(ms) : `${(ms / 1000).toFixed(0)}s`;
+  ms > 5 * ONE_MIN ? formatElapsedTimeWithoutMsec(ms) : `${(ms / 1000).toFixed(0)}s`;
 const minuteResolutionLabel = (ms: number) =>
-  ms > 59 * ONE_MIN ? formatElapsedTime(ms) : `${Math.round(ms / ONE_MIN)}m`;
+  ms > 59 * ONE_MIN ? formatElapsedTimeWithoutMsec(ms) : `${Math.round(ms / ONE_MIN)}m`;
 const hourResolutionLabel = (ms: number) => `${Math.round(ms / ONE_HOUR)}h`;
 
 // We want to gracefully transition the tick marks shown as you zoom, but it's
@@ -151,7 +150,7 @@ export const GanttChartTimescale = ({
               transform,
             }}
           >
-            {formatElapsedTime(highlightedMs[1]! - highlightedMs[0]!)}
+            {formatElapsedTimeWithoutMsec(highlightedMs[1]! - highlightedMs[0]!)}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {
@@ -209,31 +208,31 @@ const TimescaleContainer = styled.div`
     text-align: center;
   }
   & .tick.duration {
-    color: ${Colors.Gray500};
-    background: ${Colors.Gray100};
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: ${Colors.textLight()};
+    background: ${Colors.backgroundLight()};
+    box-shadow: 0 1px 1px ${Colors.shadowDefault()};
   }
   & .tick.highlight {
-    color: white;
+    color: ${Colors.accentReversed()};
     height: ${TICKS_ROW_HEIGHT + 2}px;
-    background: ${Colors.Gray900};
+    background: ${Colors.accentPrimary()};
   }
   & .line {
     position: absolute;
-    border-left: 1px solid #f0f0f0;
+    border-left: 1px solid ${Colors.keylineDefault()};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
   }
   & .line.highlight {
-    border-left: 2px solid ${Colors.Gray900};
+    border-left: 2px solid ${Colors.borderDefault()};
     z-index: 1111;
     top: -1px;
   }
 
   & .fog-of-war {
     position: absolute;
-    background: ${Colors.Gray50};
+    background: ${Colors.backgroundLight()};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
@@ -245,12 +244,12 @@ const TimescaleTicksContainer = styled.div`
   height: ${TICKS_ROW_HEIGHT}px;
   z-index: 4;
   position: relative;
-  background: ${Colors.White};
+  background: ${Colors.backgroundLight()};
   display: flex;
-  color: ${Colors.Gray500};
-  font-size: 13px;
+  color: ${Colors.textLight()};
+  font-size: 11px;
   font-family: ${FontFamily.monospace};
-  box-shadow: inset 0 -1px ${Colors.KeylineGray};
+  box-shadow: inset 0 -1px ${Colors.keylineDefault()};
   overflow: hidden;
 `;
 

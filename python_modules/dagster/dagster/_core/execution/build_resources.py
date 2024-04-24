@@ -113,7 +113,7 @@ def build_resources(
 
 
 def wrap_resources_for_execution(
-    resources: Optional[Mapping[str, Any]] = None
+    resources: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, ResourceDefinition]:
     return (
         {

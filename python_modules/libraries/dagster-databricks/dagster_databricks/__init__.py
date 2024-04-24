@@ -25,10 +25,10 @@ from .ops import (
     create_databricks_submit_run_op as create_databricks_submit_run_op,
 )
 from .pipes import (
-    ExtDatabricks as ExtDatabricks,
-    ExtDbfsContextInjector as ExtDbfsContextInjector,
-    ExtDbfsMessageReader as ExtDbfsMessageReader,
-    dbfs_tempdir as dbfs_tempdir,
+    PipesDatabricksClient as PipesDatabricksClient,
+    PipesDbfsContextInjector as PipesDbfsContextInjector,
+    PipesDbfsLogReader as PipesDbfsLogReader,
+    PipesDbfsMessageReader as PipesDbfsMessageReader,
 )
 from .resources import (
     DatabricksClientResource as DatabricksClientResource,

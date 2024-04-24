@@ -17,16 +17,8 @@ import {
   Tag,
   useViewport,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {TimeContext} from '../app/time/TimeContext';
-import {timestampToString} from '../app/time/timestampToString';
-import {testId} from '../testing/testId';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
 
 import {RunRequestTable} from './DryRunRequestTable';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
@@ -36,6 +28,13 @@ import {
   ScheduleDryRunMutation,
   ScheduleDryRunMutationVariables,
 } from './types/EvaluateScheduleDialog.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {TimeContext} from '../app/time/TimeContext';
+import {timestampToString} from '../app/time/timestampToString';
+import {testId} from '../testing/testId';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
 
 const locale = navigator.language;
 
@@ -47,7 +46,7 @@ type Props = {
   jobName: string;
 };
 
-export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
+export const EvaluateScheduleDialog = (props: Props) => {
   return (
     <Dialog
       {...props}
@@ -64,8 +63,8 @@ export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
   );
 };
 
-const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}) => {
-  const [_selectedTimestamp, setSelectedTimestamp] = React.useState<{ts: number; label: string}>();
+const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
+  const [_selectedTimestamp, setSelectedTimestamp] = useState<{ts: number; label: string}>();
   const {data} = useQuery<GetScheduleQuery, GetScheduleQueryVariables>(GET_SCHEDULE_QUERY, {
     variables: {
       scheduleSelector: {
@@ -77,12 +76,12 @@ const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}
   });
   const {
     timezone: [userTimezone],
-  } = React.useContext(TimeContext);
-  const [isTickSelectionOpen, setIsTickSelectionOpen] = React.useState<boolean>(false);
-  const selectedTimestampRef = React.useRef<{ts: number; label: string} | null>(null);
+  } = useContext(TimeContext);
+  const [isTickSelectionOpen, setIsTickSelectionOpen] = useState<boolean>(false);
+  const selectedTimestampRef = useRef<{ts: number; label: string} | null>(null);
   const {viewport, containerProps} = useViewport();
-  const [shouldEvaluate, setShouldEvaluate] = React.useState(false);
-  const content = React.useMemo(() => {
+  const [shouldEvaluate, setShouldEvaluate] = useState(false);
+  const content = useMemo(() => {
     if (shouldEvaluate) {
       return (
         <EvaluateScheduleContent
@@ -166,7 +165,7 @@ const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}
     viewport.width,
   ]);
 
-  const buttons = React.useMemo(() => {
+  const buttons = useMemo(() => {
     if (!shouldEvaluate) {
       return (
         <>
@@ -222,21 +221,26 @@ export const GET_SCHEDULE_QUERY = gql`
   }
 `;
 
-const EvaluateScheduleContent: React.FC<{
+const EvaluateScheduleContent = ({
+  repoAddress,
+  name,
+  timestamp,
+  jobName,
+}: {
   repoAddress: RepoAddress;
   name: string;
   timestamp: number;
   jobName: string;
-}> = ({repoAddress, name, timestamp, jobName}) => {
+}) => {
   const {
     timezone: [userTimezone],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
   const [scheduleDryRunMutation] = useMutation<
     ScheduleDryRunMutation,
     ScheduleDryRunMutationVariables
   >(
     SCHEDULE_DRY_RUN_MUTATION,
-    React.useMemo(() => {
+    useMemo(() => {
       const repositorySelector = repoAddressToSelector(repoAddress);
       return {
         variables: {
@@ -249,10 +253,10 @@ const EvaluateScheduleContent: React.FC<{
       };
     }, [name, repoAddress, timestamp]),
   );
-  const [result, setResult] = React.useState<Awaited<
-    ReturnType<typeof scheduleDryRunMutation>
-  > | null>(null);
-  React.useEffect(() => {
+  const [result, setResult] = useState<Awaited<ReturnType<typeof scheduleDryRunMutation>> | null>(
+    null,
+  );
+  useEffect(() => {
     scheduleDryRunMutation().then((result) => {
       setResult(() => result);
     });
@@ -391,7 +395,7 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   margin-bottom: 12px;
   ${Subheading} {
     padding-bottom: 4px;

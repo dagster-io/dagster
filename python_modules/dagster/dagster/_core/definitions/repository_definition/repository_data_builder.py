@@ -4,7 +4,9 @@ from inspect import isfunction
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -22,10 +24,14 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.assets_job import (
+from dagster._core.definitions.asset_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
 )
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
+)
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
@@ -44,6 +50,7 @@ from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import AssetKey
 
 
@@ -99,6 +106,40 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
     return env_vars
 
 
+def _resolve_unresolved_job_def_lambda(
+    unresolved_job_def: UnresolvedAssetJobDefinition,
+    asset_graph: AssetGraph,
+    default_executor_def: Optional[ExecutorDefinition],
+    top_level_resources: Optional[Mapping[str, ResourceDefinition]],
+    default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
+) -> Callable[[], JobDefinition]:
+    def resolve_unresolved_job_def() -> JobDefinition:
+        job_def = unresolved_job_def.resolve(
+            asset_graph=asset_graph,
+            default_executor_def=default_executor_def,
+            resource_defs=top_level_resources,
+        )
+        return _process_resolved_job(job_def, default_executor_def, default_logger_defs)
+
+    return resolve_unresolved_job_def
+
+
+def _process_resolved_job(
+    job_def: JobDefinition,
+    default_executor_def: Optional[ExecutorDefinition],
+    default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
+) -> JobDefinition:
+    job_def.validate_resource_requirements_satisfied()
+
+    if default_executor_def and not job_def.has_specified_executor:
+        job_def = job_def.with_executor_def(default_executor_def)
+
+    if default_logger_defs and not job_def.has_specified_loggers:
+        job_def = job_def.with_logger_defs(default_logger_defs)
+
+    return job_def
+
+
 def build_caching_repository_data_from_list(
     repository_definitions: Sequence[RepositoryListDefinition],
     default_executor_def: Optional[ExecutorDefinition] = None,
@@ -112,7 +153,7 @@ def build_caching_repository_data_from_list(
     )
 
     schedule_and_sensor_names: Set[str] = set()
-    jobs: Dict[str, JobDefinition] = {}
+    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]] = {}
     coerced_graphs: Dict[str, JobDefinition] = {}
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
     schedules: Dict[str, ScheduleDefinition] = {}
@@ -122,6 +163,7 @@ def build_caching_repository_data_from_list(
     sensors: Dict[str, SensorDefinition] = {}
     assets_defs: List[AssetsDefinition] = []
     asset_keys: Set[AssetKey] = set()
+    asset_check_keys: Set["AssetCheckKey"] = set()
     source_assets: List[SourceAsset] = []
     asset_checks_defs: List[AssetChecksDefinition] = []
     for definition in repository_definitions:
@@ -177,35 +219,43 @@ def build_caching_repository_data_from_list(
                 )
             # we can only resolve these once we have all assets
             unresolved_jobs[definition.name] = definition
+        elif isinstance(definition, AssetChecksDefinition):
+            for key in definition.check_keys:
+                if key in asset_check_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
+            asset_check_keys.update(definition.check_keys)
+            asset_checks_defs.append(definition)
         elif isinstance(definition, AssetsDefinition):
             for key in definition.keys:
                 if key in asset_keys:
                     raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
+            for key in definition.check_keys:
+                if key in asset_check_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
 
             asset_keys.update(definition.keys)
+            asset_check_keys.update(definition.check_keys)
             assets_defs.append(definition)
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
-        elif isinstance(definition, AssetChecksDefinition):
-            asset_checks_defs.append(definition)
+            asset_keys.add(definition.key)
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
-    if assets_defs or source_assets or asset_checks_defs:
-        for job_def in get_base_asset_jobs(
-            assets=assets_defs,
-            source_assets=source_assets,
+    asset_graph = AssetGraph.from_assets([*assets_defs, *asset_checks_defs, *source_assets])
+    source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
+    assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
+    asset_checks_defs_by_key = {
+        key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
+    }
+    if assets_defs or asset_checks_defs or source_assets:
+        for job_name, job_def in get_base_asset_jobs(
+            asset_graph=asset_graph,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
-            asset_checks=asset_checks_defs,
-        ):
-            jobs[job_def.name] = job_def
-
-        source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
-        assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
-    else:
-        source_assets_by_key = {}
-        assets_defs_by_key = {}
+            logger_defs=default_logger_defs,
+        ).items():
+            jobs[job_name] = job_def
 
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():
@@ -222,9 +272,7 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, jobs, target
             )
 
-    asset_graph = AssetGraph.from_assets(
-        [*assets_defs, *source_assets], asset_checks=asset_checks_defs
-    )
+    _validate_auto_materialize_sensors(sensors.values(), asset_graph)
 
     if unresolved_partitioned_asset_schedules:
         for (
@@ -240,39 +288,28 @@ def build_caching_repository_data_from_list(
             )
 
     # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
+    # resolving jobs is potentially time-consuming if there are many of them,
+    # so do the resolving lazily in a lambda
     if unresolved_jobs:
         for name, unresolved_job_def in unresolved_jobs.items():
-            resolved_job = unresolved_job_def.resolve(
-                asset_graph=asset_graph,
-                default_executor_def=default_executor_def,
-                resource_defs=top_level_resources,
-            )
-            jobs[name] = resolved_job
-
-    # resolve all the UnresolvedPartitionedAssetScheduleDefinitions using
-    # the resolved job containing the partitions def
-    if unresolved_partitioned_asset_schedules:
-        for (
-            name,
-            unresolved_partitioned_asset_schedule,
-        ) in unresolved_partitioned_asset_schedules.items():
-            resolved_job = jobs[unresolved_partitioned_asset_schedule.job.name]
-            schedules[name] = unresolved_partitioned_asset_schedule.resolve(
-                cast(JobDefinition, resolved_job)
+            jobs[name] = _resolve_unresolved_job_def_lambda(
+                unresolved_job_def,
+                asset_graph,
+                default_executor_def,
+                top_level_resources,
+                default_logger_defs,
             )
 
-    for job_def in jobs.values():
-        job_def.validate_resource_requirements_satisfied()
-
-    if default_executor_def:
-        for name, job_def in jobs.items():
-            if not job_def.has_specified_executor:
-                jobs[name] = job_def.with_executor_def(default_executor_def)
-
-    if default_logger_defs:
-        for name, job_def in jobs.items():
-            if not job_def.has_specified_loggers:
-                jobs[name] = job_def.with_logger_defs(default_logger_defs)
+    jobs = {
+        name: (
+            job_def
+            if isfunction(job_def)
+            else _process_resolved_job(
+                cast(JobDefinition, job_def), default_executor_def, default_logger_defs
+            )
+        )
+        for name, job_def in jobs.items()
+    }
 
     top_level_resources = top_level_resources or {}
 
@@ -289,14 +326,16 @@ def build_caching_repository_data_from_list(
         sensors=sensors,
         source_assets_by_key=source_assets_by_key,
         assets_defs_by_key=assets_defs_by_key,
+        asset_checks_defs_by_key=asset_checks_defs_by_key,
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
         resource_key_mapping=resource_key_mapping or {},
+        unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
     )
 
 
 def build_caching_repository_data_from_dict(
-    repository_definitions: Dict[str, Dict[str, Any]]
+    repository_definitions: Dict[str, Dict[str, Any]],
 ) -> "CachingRepositoryData":
     check.dict_param(repository_definitions, "repository_definitions", key_type=str)
     check.invariant(
@@ -350,9 +389,11 @@ def build_caching_repository_data_from_dict(
         **repository_definitions,
         source_assets_by_key={},
         assets_defs_by_key={},
+        asset_checks_defs_by_key={},
         top_level_resources={},
         utilized_env_vars={},
         resource_key_mapping={},
+        unresolved_partitioned_asset_schedules={},
     )
 
 
@@ -362,7 +403,7 @@ def _process_and_validate_target(
     ],
     coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
-    jobs: Dict[str, JobDefinition],
+    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
     target: Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition],
 ):
     """This function modifies the state of coerced_graphs, unresolved_jobs, and jobs."""
@@ -408,12 +449,34 @@ def _process_and_validate_target(
             dupe_target_type = (
                 "graph"
                 if target.name in coerced_graphs
-                else "unresolved asset job" if target.name in unresolved_jobs else "job"
+                else "unresolved asset job"
+                if target.name in unresolved_jobs
+                else "job"
             )
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)
             )
         jobs[target.name] = target
+
+
+def _validate_auto_materialize_sensors(
+    sensors: Iterable[SensorDefinition], asset_graph: BaseAssetGraph
+) -> None:
+    """Raises an error if two or more automation policy sensors target the same asset."""
+    sensor_names_by_asset_key: Dict[AssetKey, str] = {}
+    for sensor in sensors:
+        if isinstance(sensor, AutoMaterializeSensorDefinition):
+            asset_keys = sensor.asset_selection.resolve(asset_graph)
+            for asset_key in asset_keys:
+                if asset_key in sensor_names_by_asset_key:
+                    raise DagsterInvalidDefinitionError(
+                        f"Automation policy sensors '{sensor.name}' and "
+                        f"'{sensor_names_by_asset_key[asset_key]}' have overlapping asset "
+                        f"selections: they both target '{asset_key.to_user_string()}'. Each asset "
+                        "must only be targeted by one automation policy sensor."
+                    )
+                else:
+                    sensor_names_by_asset_key[asset_key] = sensor.name
 
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):

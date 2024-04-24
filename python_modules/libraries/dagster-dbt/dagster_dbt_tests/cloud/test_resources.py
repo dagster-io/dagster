@@ -1,14 +1,11 @@
 import re
-from typing import Any
 
 import pytest
 import responses
-from dagster import Failure, build_init_resource_context
+from dagster import Failure
 from dagster._check import CheckError
-from dagster_dbt import DbtCloudClientResource, dbt_cloud_resource
 
 from .utils import (
-    SAMPLE_ACCOUNT_ID,
     SAMPLE_API_PREFIX,
     SAMPLE_API_V3_PREFIX,
     SAMPLE_JOB_ID,
@@ -23,25 +20,6 @@ from .utils import (
     sample_runs_details,
     sample_set_environment_variable,
 )
-
-
-@pytest.fixture(name="get_dbt_cloud_resource", params=["pythonic", "legacy"])
-def get_dbt_cloud_resource_fixture(request) -> Any:
-    if request.param == "pythonic":
-        return (
-            lambda **kwargs: DbtCloudClientResource(
-                auth_token="some_auth_token", account_id=SAMPLE_ACCOUNT_ID, **kwargs
-            )
-            .with_replaced_resource_context(build_init_resource_context())
-            .get_dbt_client()  # type: ignore
-        )
-
-    else:
-        return lambda **kwargs: dbt_cloud_resource(
-            build_init_resource_context(
-                config={"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID, **kwargs}
-            )
-        )
 
 
 @responses.activate

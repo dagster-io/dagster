@@ -25,7 +25,7 @@ interface Props {
   onSetFilter: (level: LogLevel, enabled: boolean) => void;
 }
 
-export const LogFilterSelect: React.FC<Props> = ({options, onSetFilter}) => {
+export const LogFilterSelect = ({options, onSetFilter}: Props) => {
   const [showMenu, setShowMenu] = React.useState(false);
 
   const levels = Object.keys(options);
@@ -72,7 +72,7 @@ export const LogFilterSelect: React.FC<Props> = ({options, onSetFilter}) => {
                           style={{flex: 1}}
                         >
                           <div>{label}</div>
-                          <div style={{color: Colors.Gray500}}>{compactNumber(count)}</div>
+                          <div style={{color: Colors.textLight()}}>{compactNumber(count)}</div>
                         </Box>
                       }
                     />

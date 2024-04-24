@@ -16,7 +16,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
@@ -62,7 +62,7 @@ def _get_host_mode_executor(
     init_context = InitExecutorContext(
         job=recon_job,
         executor_def=executor_def,
-        executor_config=executor_config["config"],  # type: ignore  # (config typing)
+        executor_config=executor_config["config"],
         instance=instance,
     )
     check_cross_process_constraints(init_context)
@@ -146,10 +146,13 @@ def host_mode_execution_context_event_generator(
                     f' "{pipeline_run.job_name}". This may be due to a failure in initializing'
                     " the executor or one of the loggers."
                 ),
+                failure_reason=RunFailureReason.JOB_INITIALIZATION_FAILURE,
                 error_info=error_info,
             )
             log_manager.log_dagster_event(
-                level=logging.ERROR, msg=event.message, dagster_event=event  # type: ignore
+                level=logging.ERROR,
+                msg=event.message,  # type: ignore
+                dagster_event=event,
             )
             yield event
         else:
@@ -184,9 +187,7 @@ def execute_run_host_mode(
     check.invariant(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
-        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.job_name, dagster_run.run_id, dagster_run.status
-        ),
+        desc=f"Pipeline run {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected NOT_STARTED or STARTING",
     )
 
     recon_job = recon_job.get_subset(

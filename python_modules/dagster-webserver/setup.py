@@ -22,7 +22,7 @@ ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
-    name="dagster_webserver",
+    name="dagster-webserver",
     version=ver,
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
@@ -36,17 +36,19 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_webserver_tests*"]),
     include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         # cli
         "click>=7.0,<9.0",
         f"dagster{pin}",
         f"dagster-graphql{pin}",
-        "starlette",
+        "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
         "uvicorn[standard]",
     ],
     extras_require={

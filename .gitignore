@@ -112,7 +112,6 @@ tags
 
 docs/_build
 python_modules/dagster/docs/_build
-.vscode/
 
 dagit_run_logs
 
@@ -143,7 +142,7 @@ data
 dask-worker-space
 
 # PyCharm IDE Config files
-.idea
+.idea/
 
 # Codemod bookmarks
 .codemod.bookmark
@@ -168,7 +167,7 @@ pythonenv*/
 *.duckdb
 
 # PyRight config
-pyrightconfig.json
+pyrightconfig*
 
 # Scripts working directory
 scripts/.build

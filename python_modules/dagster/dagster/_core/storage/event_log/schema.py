@@ -15,7 +15,7 @@ SqlEventLogStorageTable = db.Table(
         autoincrement=True,
     ),
     db.Column("run_id", db.String(255)),
-    db.Column("event", db.Text, nullable=False),
+    db.Column("event", MySQLCompatabilityTypes.LongText, nullable=False),
     db.Column("dagster_event_type", db.Text),
     db.Column("timestamp", db.types.TIMESTAMP),
     db.Column("step_key", db.Text),
@@ -56,7 +56,7 @@ AssetKeyTable = db.Table(
         autoincrement=True,
     ),
     db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, unique=True),
-    db.Column("last_materialization", db.Text),
+    db.Column("last_materialization", MySQLCompatabilityTypes.LongText),
     db.Column("last_run_id", db.String(255)),
     db.Column("asset_details", db.Text),
     db.Column("wipe_timestamp", db.types.TIMESTAMP),  # guarded by secondary index check
@@ -81,7 +81,6 @@ AssetEventTagsTable = db.Table(
     db.Column(
         "event_id",
         db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-        db.ForeignKey("event_logs.id", ondelete="CASCADE"),
     ),
     db.Column("asset_key", db.Text, nullable=False),
     db.Column("key", db.Text, nullable=False),
@@ -101,6 +100,21 @@ DynamicPartitionsTable = db.Table(
     ),
     db.Column("partitions_def_name", db.Text, nullable=False),
     db.Column("partition", db.Text, nullable=False),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+ConcurrencyLimitsTable = db.Table(
+    "concurrency_limits",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("concurrency_key", MySQLCompatabilityTypes.UniqueText, nullable=False, unique=True),
+    db.Column("limit", db.Integer, nullable=False),
+    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
@@ -151,7 +165,9 @@ AssetCheckExecutionsTable = db.Table(
     db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
     db.Column("run_id", db.String(255)),
     db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
+    # Either an AssetCheckEvaluationPlanned or AssetCheckEvaluation event
     db.Column("evaluation_event", db.Text),
+    # Timestamp for an AssetCheckEvaluationPlanned, then replaced by timestamp for the AssetCheckEvaluation event
     db.Column("evaluation_event_timestamp", db.DateTime),
     db.Column(
         "evaluation_event_storage_id",

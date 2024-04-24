@@ -1,18 +1,12 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetNode} from '../asset-graph/AssetNode';
-import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-
-export const AssetNodeList: React.FC<{
-  items: AssetNodeForGraphQueryFragment[] | null;
-  liveDataByNode: LiveData;
-}> = ({items, liveDataByNode}) => {
+export const AssetNodeList = ({items}: {items: AssetNodeForGraphQueryFragment[] | null}) => {
   const history = useHistory();
 
   if (items === null) {
@@ -33,11 +27,7 @@ export const AssetNodeList: React.FC<{
             history.push(assetDetailsPathForKey(asset.assetKey, {view: 'definition'}));
           }}
         >
-          <AssetNode
-            definition={asset}
-            selected={false}
-            liveData={liveDataByNode[toGraphId(asset.assetKey)]}
-          />
+          <AssetNode definition={asset} selected={false} />
         </AssetNodeWrapper>
       ))}
     </Container>
@@ -55,4 +45,5 @@ const AssetNodeWrapper = styled.div`
   cursor: pointer;
   width: 260px;
   flex-shrink: 0;
+  position: relative;
 `;

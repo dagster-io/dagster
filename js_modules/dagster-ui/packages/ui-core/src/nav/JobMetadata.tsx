@@ -4,22 +4,13 @@ import {
   Button,
   ButtonLink,
   Colors,
-  DialogFooter,
   Dialog,
+  DialogFooter,
   Tag,
 } from '@dagster-io/ui-components';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-
-import {tokenForAssetKey} from '../asset-graph/Utils';
-import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
-import {DagsterTag} from '../runs/RunTag';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {repoAddressAsTag} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
@@ -30,6 +21,14 @@ import {
   JobMetadataQueryVariables,
   RunMetadataFragment,
 } from './types/JobMetadata.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
+import {DagsterTag} from '../runs/RunTag';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 
 type JobMetadata = {
   assetNodes: JobMetadataAssetNodeFragment[] | null;
@@ -57,7 +56,7 @@ function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
     },
   });
 
-  return React.useMemo<JobMetadata>(() => {
+  return useMemo<JobMetadata>(() => {
     return {
       assetNodes: data?.assetNodes || null,
       job:
@@ -77,7 +76,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const JobMetadata: React.FC<Props> = (props) => {
+export const JobMetadata = (props: Props) => {
   const {pipelineName, repoAddress} = props;
   const metadata = useJobNavMetadata(repoAddress, pipelineName);
 
@@ -97,18 +96,21 @@ export const JobMetadata: React.FC<Props> = (props) => {
   );
 };
 
-const JobScheduleOrSensorTag: React.FC<{
+const JobScheduleOrSensorTag = ({
+  job,
+  repoAddress,
+}: {
   job: JobMetadataFragment;
   repoAddress: RepoAddress;
-}> = ({job, repoAddress}) => {
-  const matchingSchedules = React.useMemo(() => {
+}) => {
+  const matchingSchedules = useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
       return job.schedules;
     }
     return [];
   }, [job]);
 
-  const matchingSensors = React.useMemo(() => {
+  const matchingSensors = useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
       return job.sensors;
     }
@@ -134,8 +136,8 @@ function getRelatedAssets(metadata: JobMetadata) {
   );
 }
 
-const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) => {
-  const [open, setOpen] = React.useState(false);
+const RelatedAssetsTag = ({relatedAssets}: {relatedAssets: string[]}) => {
+  const [open, setOpen] = useState(false);
 
   if (relatedAssets.length === 0) {
     return null;
@@ -154,7 +156,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
     <>
       <Tag icon="asset">
         <ButtonLink
-          color={Colors.Link}
+          color={Colors.linkDefault()}
           onClick={() => setOpen(true)}
         >{`View ${relatedAssets.length} assets`}</ButtonLink>
       </Tag>
@@ -187,7 +189,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
   );
 };
 
-const JOB_METADATA_QUERY = gql`
+export const JOB_METADATA_QUERY = gql`
   query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter!) {
     pipelineOrError(params: $params) {
       ... on Pipeline {
@@ -212,7 +214,7 @@ const JOB_METADATA_QUERY = gql`
   fragment JobMetadataAssetNode on AssetNode {
     id
     autoMaterializePolicy {
-      policyType
+      __typename
     }
     assetKey {
       path

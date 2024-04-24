@@ -11,16 +11,16 @@ import {
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useState, useRef} from 'react';
+import {useRef, useState} from 'react';
+import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 
+import {FilterObject} from './useFilter';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
-
-import {FilterObject} from './useFilter';
 
 interface FilterDropdownProps {
   filters: FilterObject[];
@@ -126,7 +126,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               setFocusedItemIndex(-1);
             }}
             text={
-              <Box flex={{direction: 'row', gap: 12}}>
+              <Box flex={{direction: 'row', gap: 4}}>
                 <Icon name={filter.icon} />
                 {filter.name}
               </Box>
@@ -205,7 +205,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   const rowVirtualizer = useVirtualizer({
     count: allResultsJsx.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (_: number) => 32,
+    estimateSize: () => 32,
     overscan: 10,
   });
 
@@ -256,9 +256,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               }}
             >
               <Inner $totalHeight={totalHeight}>
-                {items.map(({index, end, start}) => {
+                {items.map(({index, size, start}) => {
                   return (
-                    <Row $height={end - start} $start={start} key={index}>
+                    <Row $height={size} $start={start} key={index}>
                       {allResultsJsx[index]}
                     </Row>
                   );
@@ -266,7 +266,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               </Inner>
             </Container>
           ) : (
-            <Box padding={{vertical: 12, horizontal: 16}}>No results</Box>
+            <Box padding={{vertical: 12, horizontal: 12}} style={{color: Colors.textLight()}}>
+              {selectedFilter?.getNoResultsPlaceholder?.(search) || 'No results'}
+            </Box>
           )}
         </DropdownMenuContainer>
       </Menu>
@@ -312,9 +314,9 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
       }
       setIsOpen(false);
     };
-    document.body.addEventListener('click', listener);
+    document.body.addEventListener('mousedown', listener);
     return () => {
-      document.body.removeEventListener('click', listener);
+      document.body.removeEventListener('mousedown', listener);
     };
   }, [setIsOpen]);
 
@@ -379,16 +381,21 @@ const TextInputWrapper = styled.div`
   display: flex;
   flex-direction: row;
   flex-gap: 12px;
+
   > *:first-child {
     flex-grow: 1;
   }
+
   input {
+    background-color: ${Colors.popoverBackground()};
     padding: 12px 16px;
+
     &,
     :focus,
     :active,
     :hover {
       box-shadow: none;
+      background-color: ${Colors.popoverBackground()};
     }
   }
 `;
@@ -422,7 +429,6 @@ export const FilterDropdownMenuItem = React.memo(
 
 const StyledMenuItem = styled(MenuItem)`
   &.bp4-active:focus {
-    color: white;
     box-shadow: initial;
   }
 `;
@@ -430,8 +436,8 @@ const StyledMenuItem = styled(MenuItem)`
 const SlashShortcut = styled.div`
   border-radius: 4px;
   padding: 0px 6px;
-  background: ${Colors.Gray100};
-  color: ${Colors.Gray500};
+  background: ${Colors.backgroundLight()};
+  color: ${Colors.textLight()};
 `;
 
 const PopoverStyle = createGlobalStyle`

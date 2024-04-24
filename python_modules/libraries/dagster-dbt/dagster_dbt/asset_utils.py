@@ -16,15 +16,16 @@ from typing import (
 )
 
 from dagster import (
+    AssetCheckKey,
     AssetCheckSpec,
     AssetKey,
     AssetsDefinition,
     AssetSelection,
     AutoMaterializePolicy,
     DagsterInvariantViolationError,
+    DefaultScheduleStatus,
     FreshnessPolicy,
     In,
-    MetadataValue,
     Nothing,
     Out,
     RunConfig,
@@ -37,25 +38,30 @@ from dagster import (
 from dagster._core.definitions.decorators.asset_decorator import (
     _validate_and_assign_output_names_to_check_specs,
 )
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
+from dbt.version import __version__ as dbt_version
+from packaging import version
 
-from .utils import input_name_fn, output_name_fn
+from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 
-MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
+DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
+DAGSTER_DBT_SELECT_METADATA_KEY = "dagster_dbt/select"
+DAGSTER_DBT_EXCLUDE_METADATA_KEY = "dagster_dbt/exclude"
 
 
 def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
-    """Return the corresponding Dagster asset key for a dbt model.
+    """Return the corresponding Dagster asset key for a dbt model, seed, or snapshot.
 
     Args:
         dbt_assets (AssetsDefinition): An AssetsDefinition object produced by
             load_assets_from_dbt_project, load_assets_from_dbt_manifest, or @dbt_assets.
-        model_name (str): The name of the dbt model.
+        model_name (str): The name of the dbt model, seed, or snapshot.
 
     Returns:
         AssetKey: The corresponding Dagster asset key.
@@ -83,11 +89,11 @@ def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: 
     matching_models = [
         value
         for value in manifest["nodes"].values()
-        if value["name"] == model_name and value["resource_type"] == "model"
+        if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
     ]
 
     if len(matching_models) == 0:
-        raise KeyError(f"Could not find a dbt model with name: {model_name}")
+        raise KeyError(f"Could not find a dbt model, seed, or snapshot with name: {model_name}")
 
     return dagster_dbt_translator.get_asset_key(next(iter(matching_models)))
 
@@ -142,7 +148,7 @@ def get_asset_keys_by_output_name_for_source(
         raise KeyError(f"Could not find a dbt source with name: {source_name}")
 
     return {
-        output_name_fn(value): dagster_dbt_translator.get_asset_key(value)
+        dagster_name_fn(value): dagster_dbt_translator.get_asset_key(value)
         for value in matching_nodes
     }
 
@@ -219,11 +225,44 @@ def build_dbt_asset_selection(
             # of them (dbt-related or otherwise)
             foo_and_downstream_selection = foo_selection.downstream()
 
+        Building an asset selection on a dbt assets definition with an existing selection:
+
+        .. code-block:: python
+
+            from dagster_dbt import dbt_assets, build_dbt_asset_selection
+
+            @dbt_assets(
+                manifest=...
+                select="bar+",
+            )
+            def bar_plus_dbt_assets():
+                ...
+
+            # Select the dbt assets that are in the intersection of having the tag "foo" and being
+            # in the existing selection "bar+".
+            bar_plus_and_foo_selection = build_dbt_asset_selection(
+                [bar_plus_dbt_assets],
+                dbt_select="tag:foo"
+            )
+
+            # Furthermore, select all assets downstream (dbt-related or otherwise).
+            bar_plus_and_foo_and_downstream_selection = bar_plus_and_foo_selection.downstream()
+
     """
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
+    [dbt_assets_definition] = dbt_assets
+
+    dbt_assets_select = dbt_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
+    dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY)
+
     from .dbt_manifest_asset_selection import DbtManifestAssetSelection
 
-    return DbtManifestAssetSelection(
+    return DbtManifestAssetSelection.build(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        select=dbt_assets_select,
+        exclude=dbt_assets_exclude,
+    ) & DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
@@ -237,9 +276,11 @@ def build_schedule_from_dbt_selection(
     cron_schedule: str,
     dbt_select: str = "fqn:*",
     dbt_exclude: Optional[str] = None,
+    schedule_name: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     config: Optional[RunConfig] = None,
     execution_timezone: Optional[str] = None,
+    default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
 ) -> ScheduleDefinition:
     """Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
 
@@ -251,6 +292,7 @@ def build_schedule_from_dbt_selection(
         cron_schedule (str): The cron schedule to define the schedule.
         dbt_select (str): A dbt selection string to specify a set of dbt resources.
         dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+        schedule_name (Optional[str]): The name of the dbt schedule to create.
         tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         config (Optional[RunConfig]): The config that parameterizes the execution of this schedule.
@@ -278,6 +320,7 @@ def build_schedule_from_dbt_selection(
             )
     """
     return ScheduleDefinition(
+        name=schedule_name,
         cron_schedule=cron_schedule,
         job=define_asset_job(
             name=job_name,
@@ -290,6 +333,7 @@ def build_schedule_from_dbt_selection(
             tags=tags,
         ),
         execution_timezone=execution_timezone,
+        default_status=default_status,
     )
 
 
@@ -299,9 +343,11 @@ def get_manifest_and_translator_from_dbt_assets(
     check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
     dbt_assets_def = dbt_assets[0]
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
-    first_asset_key = next(iter(dbt_assets_def.keys))
+    first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
-    manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(MANIFEST_METADATA_KEY)
+    manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(
+        DAGSTER_DBT_MANIFEST_METADATA_KEY
+    )
     if manifest_wrapper is None:
         raise DagsterInvariantViolationError(
             f"Expected to find dbt manifest metadata on asset {first_asset_key.to_user_string()},"
@@ -336,13 +382,18 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         dbt models: a dbt model's key is the union of its model name and any schema configured on
             the model itself.
     """
-    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    dbt_meta = dbt_resource_props.get("config", {}).get("meta", {}) or dbt_resource_props.get(
+        "meta", {}
+    )
+    dagster_metadata = dbt_meta.get("dagster", {})
     asset_key_config = dagster_metadata.get("asset_key", [])
     if asset_key_config:
         return AssetKey(asset_key_config)
 
     if dbt_resource_props["resource_type"] == "source":
         components = [dbt_resource_props["source_name"], dbt_resource_props["name"]]
+    elif dbt_resource_props.get("version"):
+        components = [dbt_resource_props["alias"]]
     else:
         configured_schema = dbt_resource_props["config"].get("schema")
         if configured_schema is not None:
@@ -354,21 +405,23 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
 
 
 def default_metadata_from_dbt_resource_props(
-    dbt_resource_props: Mapping[str, Any]
+    dbt_resource_props: Mapping[str, Any],
 ) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
-        metadata["table_schema"] = MetadataValue.table_schema(
-            TableSchema(
-                columns=[
-                    TableColumn(
-                        name=column_name,
-                        type=column_info.get("data_type") or "?",
-                        description=column_info.get("description"),
-                    )
-                    for column_name, column_info in columns.items()
-                ]
+        return dict(
+            TableMetadataSet(
+                column_schema=TableSchema(
+                    columns=[
+                        TableColumn(
+                            name=column_name,
+                            type=column_info.get("data_type") or "?",
+                            description=column_info.get("description"),
+                        )
+                        for column_name, column_info in columns.items()
+                    ]
+                )
             )
         )
     return metadata
@@ -395,7 +448,7 @@ def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any])
 
 
 def group_from_dbt_resource_props_fallback_to_directory(
-    dbt_resource_props: Mapping[str, Any]
+    dbt_resource_props: Mapping[str, Any],
 ) -> Optional[str]:
     """Get the group name for a dbt node.
 
@@ -427,6 +480,23 @@ def group_from_dbt_resource_props_fallback_to_directory(
     return fqn[1]
 
 
+def default_owners_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[Sequence[str]]:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    owners_config = dagster_metadata.get("owners")
+
+    if owners_config:
+        return owners_config
+
+    owner: Optional[str] = (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
+
+    if not owner:
+        return None
+
+    return [owner]
+
+
 def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
@@ -452,7 +522,7 @@ def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Option
 
 
 def _legacy_freshness_policy_fn(
-    freshness_policy_config: Mapping[str, Any]
+    freshness_policy_config: Mapping[str, Any],
 ) -> Optional[FreshnessPolicy]:
     if freshness_policy_config:
         return FreshnessPolicy(
@@ -464,7 +534,7 @@ def _legacy_freshness_policy_fn(
 
 
 def default_auto_materialize_policy_fn(
-    dbt_resource_props: Mapping[str, Any]
+    dbt_resource_props: Mapping[str, Any],
 ) -> Optional[AutoMaterializePolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
@@ -492,7 +562,7 @@ def default_auto_materialize_policy_fn(
 
 
 def _auto_materialize_policy_fn(
-    auto_materialize_policy_config: Mapping[str, Any]
+    auto_materialize_policy_config: Mapping[str, Any],
 ) -> Optional[AutoMaterializePolicy]:
     if auto_materialize_policy_config.get("type") == "eager":
         return AutoMaterializePolicy.eager()
@@ -514,21 +584,39 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
     return "\n\n".join(filter(None, description_sections))
 
 
-def is_asset_check_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> bool:
-    return dbt_resource_props["meta"].get("dagster", {}).get("asset_check", False)
-
-
 def default_asset_check_fn(
-    asset_key: AssetKey, dbt_resource_props: Mapping[str, Any]
+    manifest: Mapping[str, Any],
+    dbt_nodes: Mapping[str, Any],
+    dagster_dbt_translator: "DagsterDbtTranslator",
+    asset_key: AssetKey,
+    test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
-    is_asset_check = is_asset_check_from_dbt_resource_props(dbt_resource_props)
-    if not is_asset_check:
+    if not dagster_dbt_translator.settings.enable_asset_checks:
         return None
 
+    test_resource_props = dbt_nodes[test_unique_id]
+    parent_unique_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
+
+    asset_check_key = get_asset_check_key_for_test(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        test_unique_id=test_unique_id,
+    )
+
+    if not (asset_check_key and asset_check_key.asset_key == asset_key):
+        return None
+
+    additional_deps = {
+        dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id])
+        for parent_id in parent_unique_ids
+    }
+    additional_deps.discard(asset_key)
+
     return AssetCheckSpec(
-        name=dbt_resource_props["name"],
+        name=test_resource_props["name"],
         asset=asset_key,
-        description=dbt_resource_props["description"],
+        description=test_resource_props.get("meta", {}).get("description"),
+        additional_deps=additional_deps,
     )
 
 
@@ -548,14 +636,15 @@ def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
 def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
     # some nodes exist inside the dbt graph but are not assets
     resource_type = dbt_resource_props["resource_type"]
-    if resource_type == "metric":
-        return True
-    if (
-        resource_type == "model"
-        and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral"
-    ):
-        return True
-    return False
+
+    return any(
+        [
+            resource_type == "metric",
+            resource_type == "semantic_model",
+            resource_type == "model"
+            and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
+        ]
+    )
 
 
 def get_deps(
@@ -572,7 +661,7 @@ def get_deps(
         dbt_resource_props = dbt_nodes[unique_id]
         node_resource_type = dbt_resource_props["resource_type"]
 
-        # skip non-assets, such as metrics, tests, and ephemeral models
+        # skip non-assets, such as semantic models, metrics, tests, and ephemeral models
         if is_non_asset_node(dbt_resource_props) or node_resource_type not in asset_resource_types:
             continue
 
@@ -626,7 +715,9 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
-    from .dagster_dbt_translator import DbtManifestWrapper
+    from .dagster_dbt_translator import DbtManifestWrapper, validate_translator
+
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
@@ -637,14 +728,14 @@ def get_asset_deps(
     group_names_by_key: Dict[AssetKey, str] = {}
     freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
     auto_materialize_policies_by_key: Dict[AssetKey, AutoMaterializePolicy] = {}
-    check_specs: List[AssetCheckSpec] = []
+    check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
     for unique_id, parent_unique_ids in deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(dbt_resource_props)
+        output_name = dagster_name_fn(dbt_resource_props)
         fqns_by_output_name[output_name] = dbt_resource_props["fqn"]
 
         metadata_by_output_name[output_name] = {
@@ -658,7 +749,9 @@ def get_asset_deps(
         metadata = merge_dicts(
             dagster_dbt_translator.get_metadata(dbt_resource_props),
             {
-                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest) if manifest else None,
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest)
+                if manifest
+                else None,
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
         )
@@ -697,11 +790,15 @@ def get_asset_deps(
             ]
 
             for test_unique_id in test_unique_ids:
-                test_resource_props = manifest["nodes"][test_unique_id]
-                check_spec = default_asset_check_fn(asset_key, test_resource_props)
-
+                check_spec = default_asset_check_fn(
+                    manifest,
+                    dbt_nodes,
+                    dagster_dbt_translator,
+                    asset_key,
+                    test_unique_id,
+                )
                 if check_spec:
-                    check_specs.append(check_spec)
+                    check_specs_by_key[check_spec.key] = check_spec
 
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
@@ -711,12 +808,14 @@ def get_asset_deps(
 
             # if this parent is not one of the selected nodes, it's an input
             if parent_unique_id not in deps:
-                input_name = input_name_fn(parent_node_info)
+                input_name = dagster_name_fn(parent_node_info)
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
     check_specs_by_output_name = cast(
         Dict[str, AssetCheckSpec],
-        _validate_and_assign_output_names_to_check_specs(check_specs, list(asset_outs.keys())),
+        _validate_and_assign_output_names_to_check_specs(
+            list(check_specs_by_key.values()), list(asset_outs.keys())
+        ),
     )
 
     return (
@@ -729,4 +828,75 @@ def get_asset_deps(
         check_specs_by_output_name,
         fqns_by_output_name,
         metadata_by_output_name,
+    )
+
+
+def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    has_self_dependency = dagster_metadata.get("has_self_dependency", False)
+
+    return has_self_dependency
+
+
+def get_asset_check_key_for_test(
+    manifest: Mapping[str, Any],
+    dagster_dbt_translator: "DagsterDbtTranslator",
+    test_unique_id: str,
+) -> Optional[AssetCheckKey]:
+    if not test_unique_id.startswith("test"):
+        return None
+
+    test_resource_props = manifest["nodes"][test_unique_id]
+    upstream_unique_ids: AbstractSet[str] = set(test_resource_props["depends_on"]["nodes"])
+
+    # If the test is generic, it will have an attached node that we can use.
+    attached_node_unique_id = test_resource_props.get("attached_node")
+
+    # If the test is singular, infer the attached node from the upstream nodes.
+    if len(upstream_unique_ids) == 1:
+        [attached_node_unique_id] = upstream_unique_ids
+
+    # If the test is singular, but has multiple dependencies, infer the attached node from
+    # from the dbt meta.
+    attached_node_ref = (
+        (
+            test_resource_props.get("config", {}).get("meta", {})
+            or test_resource_props.get("meta", {})
+        )
+        .get("dagster", {})
+        .get("ref", {})
+    )
+
+    # Attempt to find the attached node from the ref.
+    if attached_node_ref and version.parse(dbt_version) >= version.parse("1.6.0"):
+        ref_name, ref_package, ref_version = (
+            attached_node_ref["name"],
+            attached_node_ref.get("package"),
+            attached_node_ref.get("version"),
+        )
+
+        project_name = manifest["metadata"]["project_name"]
+        if not ref_package:
+            ref_package = project_name
+
+        unique_id_by_ref: Mapping[Tuple[str, str, Optional[str]], str] = {
+            (
+                dbt_resource_props["name"],
+                dbt_resource_props["package_name"],
+                dbt_resource_props.get("version"),
+            ): unique_id
+            for unique_id, dbt_resource_props in manifest["nodes"].items()
+        }
+
+        attached_node_unique_id = unique_id_by_ref.get((ref_name, ref_package, ref_version))
+
+    if not attached_node_unique_id:
+        return None
+
+    return AssetCheckKey(
+        name=test_resource_props["name"],
+        asset_key=dagster_dbt_translator.get_asset_key(
+            manifest["nodes"].get(attached_node_unique_id)
+            or manifest["sources"].get(attached_node_unique_id)
+        ),
     )

@@ -1,12 +1,13 @@
 import logging
 import sys
-from typing import Iterable, Mapping, Optional, cast
+from typing import Iterable, Mapping, Optional, Sequence, cast
 
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._daemon.utils import DaemonErrorCapture
+from dagster._utils.error import SerializableErrorInfo
 
 
 def execute_backfill_iteration(
@@ -24,7 +25,22 @@ def execute_backfill_iteration(
         yield None
         return
 
-    for backfill_job in [*in_progress_backfills, *canceling_backfills]:
+    backfill_jobs = [*in_progress_backfills, *canceling_backfills]
+
+    yield from execute_backfill_jobs(
+        workspace_process_context, logger, backfill_jobs, debug_crash_flags
+    )
+
+
+def execute_backfill_jobs(
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    backfill_jobs: Sequence[PartitionBackfill],
+    debug_crash_flags: Optional[Mapping[str, int]] = None,
+) -> Iterable[Optional[SerializableErrorInfo]]:
+    instance = workspace_process_context.instance
+
+    for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
 
         # refetch, in case the backfill was updated in the meantime
@@ -39,9 +55,12 @@ def execute_backfill_iteration(
                     backfill, logger, workspace_process_context, debug_crash_flags, instance
                 )
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            error_info = DaemonErrorCapture.on_exception(
+                sys.exc_info(),
+                logger=logger,
+                log_message=f"Backfill failed for {backfill.backfill_id}",
+            )
             instance.update_backfill(
                 backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
             )
-            logger.error(f"Backfill failed for {backfill.backfill_id}: {error_info.to_string()}")
             yield error_info

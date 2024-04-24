@@ -33,9 +33,14 @@ from dagster._core.errors import (
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
+from dagster._core.events import (
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    DagsterEvent,
+    DagsterEventType,
+    RunFailureReason,
+)
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
     JobSnapshot,
@@ -54,6 +59,7 @@ from dagster._core.storage.tags import (
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import (
@@ -161,6 +167,8 @@ class SqlRunStorage(RunStorage):
         return dagster_run
 
     def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+        from dagster._core.events import JobFailureData
+
         check.str_param(run_id, "run_id")
         check.inst_param(event, "event", DagsterEvent)
 
@@ -204,6 +212,14 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
+        if event.event_type == DagsterEventType.PIPELINE_FAILURE and isinstance(
+            event.event_specific_data, JobFailureData
+        ):
+            failure_reason = event.event_specific_data.failure_reason
+
+            if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
+                self.add_run_tags(run_id, {RUN_FAILURE_REASON_TAG: failure_reason.value})
+
     def _row_to_run(self, row: Dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
@@ -226,7 +242,10 @@ class SqlRunStorage(RunStorage):
         """Helper function to deal with cursor/limit pagination args."""
         if cursor:
             cursor_query = db_select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
-            query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
+            if ascending:
+                query = query.where(RunsTable.c.id > db_scalar_subquery(cursor_query))
+            else:
+                query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
 
         if limit:
             query = query.limit(limit)
@@ -236,10 +255,6 @@ class SqlRunStorage(RunStorage):
         query = query.order_by(direction(sorting_column))
 
         return query
-
-    @property
-    def supports_intersect(self) -> bool:
-        return True
 
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
@@ -270,6 +285,9 @@ class SqlRunStorage(RunStorage):
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
 
+        if filters.tags:
+            query = self._apply_tags_table_filters(query, filters.tags)
+
         return query
 
     def _runs_query(
@@ -292,44 +310,51 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        if filters.tags:
-            table = self._apply_tags_table_joins(RunsTable, filters.tags)
-        else:
-            table = RunsTable
-
+        table = RunsTable
         base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
             table
         )
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
-    def _apply_tags_table_joins(
-        self,
-        table: db.Table,
-        tags: Mapping[str, Union[str, Sequence[str]]],
-    ) -> db.Table:
-        multi_join = len(tags) > 1
-        i = 0
-        for key, value in tags.items():
-            i += 1
-            tags_table = (
-                db_subquery(db_select([RunTagsTable]), f"run_tags_subquery_{i}")
-                if multi_join
-                else RunTagsTable
+    def _apply_tags_table_filters(
+        self, query: SqlAlchemyQuery, tags: Mapping[str, Union[str, Sequence[str]]]
+    ) -> SqlAlchemyQuery:
+        """Efficient query pattern for filtering by multiple tags."""
+        expected_count = len(tags)
+        if expected_count == 1:
+            key, value = next(iter(tags.items()))
+            # since run tags should be much larger than runs, select where exists
+            # should be more efficient than joining
+            subquery = db.exists().where(
+                (RunsTable.c.run_id == RunTagsTable.c.run_id)
+                & (RunTagsTable.c.key == key)
+                & (
+                    (RunTagsTable.c.value == value)
+                    if isinstance(value, str)
+                    else RunTagsTable.c.value.in_(value)
+                )
             )
-            table = table.join(
-                tags_table,
-                db.and_(
-                    RunsTable.c.run_id == tags_table.c.run_id,
-                    tags_table.c.key == key,
-                    (
-                        tags_table.c.value == value
-                        if isinstance(value, str)
-                        else tags_table.c.value.in_(value)
-                    ),
-                ),
+            query = query.where(subquery)
+        elif expected_count > 1:
+            # efficient query for filtering by multiple tags. first find all run_ids that match
+            # all tags, then select from runs table where run_id in that set
+            subquery = db_select([RunTagsTable.c.run_id])
+            expressions = []
+            for key, value in tags.items():
+                expression = RunTagsTable.c.key == key
+                if isinstance(value, str):
+                    expression &= RunTagsTable.c.value == value
+                else:
+                    expression &= RunTagsTable.c.value.in_(value)
+                expressions.append(expression)
+            subquery = subquery.where(db.or_(*expressions))
+            subquery = subquery.group_by(RunTagsTable.c.run_id)
+            subquery = subquery.having(
+                db.func.count(db.distinct(RunTagsTable.c.key)) == expected_count
             )
-        return table
+            query = query.where(RunsTable.c.run_id.in_(subquery))
+        return query
 
     def get_runs(
         self,
@@ -337,8 +362,9 @@ class SqlRunStorage(RunStorage):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        ascending: bool = False,
     ) -> Sequence[DagsterRun]:
-        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
+        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by, ascending=ascending)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
@@ -412,7 +438,7 @@ class SqlRunStorage(RunStorage):
 
     def get_run_tags(
         self,
-        tag_keys: Optional[Sequence[str]] = None,
+        tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[Tuple[str, Set[str]]]:
@@ -421,9 +447,8 @@ class SqlRunStorage(RunStorage):
             db_select([RunTagsTable.c.key, RunTagsTable.c.value])
             .distinct()
             .order_by(RunTagsTable.c.key, RunTagsTable.c.value)
+            .where(RunTagsTable.c.key.in_(tag_keys))
         )
-        if tag_keys:
-            query = query.where(RunTagsTable.c.key.in_(tag_keys))
         if value_prefix:
             query = query.where(RunTagsTable.c.value.startswith(value_prefix))
         if limit:
@@ -627,7 +652,11 @@ class SqlRunStorage(RunStorage):
 
         row = self.fetchone(query)
 
-        return defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]]) if row else None  # type: ignore
+        return (
+            defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]])  # type: ignore
+            if row
+            else None
+        )
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
@@ -894,14 +923,18 @@ class SqlRunStorage(RunStorage):
                 )
 
     # Migrating run history
-    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalJobOrigin) -> None:
-        new_label = job_origin.external_repository_origin.get_label()
+    def replace_job_origin(self, run: DagsterRun, job_origin: RemoteJobOrigin) -> None:
+        new_label = job_origin.repository_origin.get_label()
         with self.connect() as conn:
             conn.execute(
                 RunsTable.update()
                 .where(RunsTable.c.run_id == run.run_id)
                 .values(
-                    run_body=serialize_value(run.with_job_origin(job_origin)),
+                    run_body=serialize_value(
+                        run.with_job_origin(job_origin).with_tags(
+                            {**run.tags, REPOSITORY_LABEL_TAG: new_label}
+                        )
+                    ),
                 )
             )
             conn.execute(

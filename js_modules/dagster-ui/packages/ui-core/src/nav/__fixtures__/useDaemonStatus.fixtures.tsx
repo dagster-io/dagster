@@ -1,19 +1,19 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  buildWorkspace,
-  buildWorkspaceLocationEntry,
-  buildRepositoryLocation,
-  buildRepository,
-  buildSchedule,
-  buildInstigationState,
   InstigationStatus,
-  buildSensor,
-  buildInstance,
   buildDaemonHealth,
   buildDaemonStatus,
-  buildPartitionBackfills,
+  buildInstance,
+  buildInstigationState,
   buildPartitionBackfill,
+  buildPartitionBackfills,
+  buildRepository,
+  buildRepositoryLocation,
+  buildSchedule,
+  buildSensor,
+  buildWorkspace,
+  buildWorkspaceLocationEntry,
 } from '../../graphql/types';
 import {InstanceWarningQuery} from '../../instance/types/useDaemonStatus.types';
 import {INSTANCE_WARNING_QUERY} from '../../instance/useDaemonStatus';

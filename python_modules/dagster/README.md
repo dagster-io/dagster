@@ -1,9 +1,8 @@
 <div align="center">
   <!-- Note: Do not try adding the dark mode version here with the `picture` element, it will break formatting in PyPI -->
   <a target="_blank" href="https://dagster.io" style="background:none">
-    <img alt="dagster logo" src=".github/dagster-readme-header.svg" width="auto" height="100%">
+    <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-readme-header.svg" width="auto" height="100%">
   </a>
-<p style="text-align: center;">Remember to <a target="_blank" href="https://github.com/dagster-io/dagster">star the Dagster GitHub repo</a> for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
@@ -43,7 +42,7 @@ from sklearn.linear_model import LinearRegression
 @asset
 def country_populations() -> DataFrame:
     df = read_html("https://tinyurl.com/mry64ebh")[0]
-    df.columns = ["country", "continent", "rg", "pop2018", "pop2019", "change"]
+    df.columns = ["country", "pop2022", "pop2023", "change", "continent", "region"]
     df["change"] = df["change"].str.rstrip("%").str.replace("−", "-").astype("float")
     return df
 
@@ -62,16 +61,31 @@ def continent_stats(country_populations: DataFrame, continent_change_model: Line
 The graph loaded into Dagster's web UI:
 
 <p align="center">
-  <img width="400px" alt="An example asset graph as rendered in the Dagster UI" src="https://user-images.githubusercontent.com/654855/183537484-48dde394-91f2-4de0-9b17-a70b3e9a3823.png">
+  <img width="100%" alt="An example asset graph as rendered in the Dagster UI" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/example-lineage.png">
 </p>
 
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
+
+## Special Event: Introducing Dagster+
+
+<p align="center">
+  <img width="100%" alt="Join us on April 17 (12PM ET) for a special event introducing Dagster+" src="https://i.imgur.com/1r7hOep.png">
+</p>
+
+Join us on April 17 (12PM ET) for a special event introducing Dagster+. [Register for our Dagster+ launch event here](https://dagster.io/events/dagster-plus-launch-event)
+
+In addition to the core open-source project, we are excited to announce Dagster+, the next generation of Dagster's cloud offering.
+
+- Find out how to weave data reliability and quality checks into the execution of your data pipelines.
+- See how diff-based branch deployments will accelerate your development cycle and cut extraneous compute costs.
+- Get a deep understanding of what is driving the cost of your data pipelines, then optimize to get the best cost/performance outcomes.
+- Enjoy the benefits of built-in data cataloging, and asset-level rich metadata.
 
 ## Quick Start:
 
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
-Dagster is available on PyPI and officially supports Python 3.8+.
+Dagster is available on PyPI and officially supports Python 3.8 through Python 3.12.
 
 ```bash
 pip install dagster dagster-webserver
@@ -82,7 +96,7 @@ This installs two packages:
 - `dagster`: The core programming model.
 - `dagster-webserver`: The server that hosts Dagster's web UI for developing and operating Dagster jobs and assets.
 
-Running on Using a Mac with an M1 or M2 chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
+Running on a Mac with an Apple silicon chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
 
 ## Documentation
 
@@ -93,7 +107,7 @@ You can find the full Dagster documentation [here](https://docs.dagster.io), inc
 ## Key Features:
 
   <p align="center">
-    <img width="100%" alt="image" src=".github/key-features-cards.svg">
+    <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/key-features-cards.svg">
   </p>
 
 ### Dagster as a productivity platform
@@ -117,7 +131,7 @@ Dagster provides a growing library of integrations for today’s most popular da
 <br/>
 <p align="center">
     <a target="_blank" href="https://dagster.io/integrations" style="background:none">
-        <img width="100%" alt="image" src=".github/integrations-bar-for-readme.png">
+        <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/integrations-bar-for-readme.png">
     </a>
 </p>
 

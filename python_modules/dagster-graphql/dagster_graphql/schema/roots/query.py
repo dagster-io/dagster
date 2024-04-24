@@ -2,9 +2,11 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
+from dagster import AssetCheckKey
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
@@ -14,14 +16,30 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
-from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
+from dagster._core.scheduler.instigation import (
+    InstigatorStatus,
+    InstigatorType,
+)
+from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
+from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
+from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
+    fetch_asset_condition_evaluation_record_for_partition,
+    fetch_asset_condition_evaluation_records_for_asset_key,
+    fetch_asset_condition_evaluation_records_for_evaluation_id,
+)
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
+    fetch_auto_materialize_asset_evaluations_for_evaluation_id,
 )
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+from dagster_graphql.schema.asset_condition_evaluations import (
+    GrapheneAssetConditionEvaluation,
+    GrapheneAssetConditionEvaluationRecordsOrError,
+)
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
 )
@@ -33,8 +51,9 @@ from ...implementation.external import (
     fetch_repository,
     fetch_workspace,
 )
-from ...implementation.fetch_asset_checks import fetch_asset_checks
+from ...implementation.fetch_asset_checks import fetch_asset_check_executions
 from ...implementation.fetch_assets import (
+    get_additional_required_keys,
     get_asset,
     get_asset_node,
     get_asset_node_definition_collisions,
@@ -44,7 +63,6 @@ from ...implementation.fetch_assets import (
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
-    get_unloadable_instigator_states_or_error,
 )
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
@@ -72,8 +90,8 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
+from ...implementation.fetch_ticks import get_instigation_ticks
 from ...implementation.loader import (
-    BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -83,14 +101,16 @@ from ...implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
-from ..asset_checks import GrapheneAssetChecksOrError
+from ..asset_checks import GrapheneAssetCheckExecution
 from ..asset_graph import (
+    GrapheneAssetKey,
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
     GrapheneAssetNodeDefinitionCollision,
     GrapheneAssetNodeOrError,
 )
 from ..backfill import (
+    GrapheneAssetPartitions,
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
@@ -103,6 +123,7 @@ from ..external import (
     GrapheneWorkspaceOrError,
 )
 from ..inputs import (
+    GrapheneAssetBackfillPreviewParams,
     GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
     GrapheneGraphSelector,
@@ -117,16 +138,19 @@ from ..inputs import (
 from ..instance import GrapheneInstance
 from ..instigation import (
     GrapheneInstigationStateOrError,
-    GrapheneInstigationStatesOrError,
     GrapheneInstigationStatus,
-    GrapheneInstigationType,
+    GrapheneInstigationTick,
+    GrapheneInstigationTickStatus,
 )
 from ..logs.compute_logs import (
     GrapheneCapturedLogs,
     GrapheneCapturedLogsMetadata,
     from_captured_log_data,
 )
-from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
+from ..partition_sets import (
+    GraphenePartitionSetOrError,
+    GraphenePartitionSetsOrError,
+)
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
@@ -267,14 +291,6 @@ class GrapheneQuery(graphene.ObjectType):
         ),
     )
 
-    unloadableInstigationStatesOrError = graphene.Field(
-        graphene.NonNull(GrapheneInstigationStatesOrError),
-        instigationType=graphene.Argument(GrapheneInstigationType),
-        description=(
-            "Retrieve the running schedules and sensors that are missing from the workspace."
-        ),
-    )
-
     partitionSetsOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionSetsOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
@@ -403,9 +419,15 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve an asset node by asset key.",
     )
 
+    assetNodeAdditionalRequiredKeys = graphene.Field(
+        non_null_list(GrapheneAssetKey),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+        description="Retrieve a list of additional asset keys that must be materialized with the provided selection (due to @multi_assets with can_subset=False constraints.)",
+    )
+
     assetNodeDefinitionCollisions = graphene.Field(
         non_null_list(GrapheneAssetNodeDefinitionCollision),
-        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
         description=(
             "Retrieve a list of asset keys where two or more repos provide an asset definition."
             " Note: Assets should "
@@ -420,6 +442,12 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve a backfill by backfill id.",
     )
 
+    assetBackfillPreview = graphene.Field(
+        non_null_list(GrapheneAssetPartitions),
+        params=graphene.Argument(graphene.NonNull(GrapheneAssetBackfillPreviewParams)),
+        description="Fetch the partitions that would be targeted by a backfill, given the root partitions targeted.",
+    )
+
     partitionBackfillsOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionBackfillsOrError),
         status=graphene.Argument(GrapheneBulkActionStatus),
@@ -431,6 +459,11 @@ class GrapheneQuery(graphene.ObjectType):
     permissions = graphene.Field(
         non_null_list(GraphenePermission),
         description="Retrieve the set of permissions for the Dagster deployment.",
+    )
+
+    canBulkTerminate = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        description="Returns whether the user has permission to terminate runs in the deployment",
     )
 
     assetsLatestInfo = graphene.Field(
@@ -475,14 +508,58 @@ class GrapheneQuery(graphene.ObjectType):
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
-        description="Retrieve the auto materialization evaluation records for all assets.",
+        description="Retrieve the auto materialization evaluation records for an asset.",
     )
 
-    assetChecksOrError = graphene.Field(
-        graphene.NonNull(GrapheneAssetChecksOrError),
+    autoMaterializeEvaluationsForEvaluationId = graphene.Field(
+        GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        description=(
+            "Retrieve the auto materialization evaluation records for a given evaluation ID."
+        ),
+    )
+
+    assetConditionEvaluationForPartition = graphene.Field(
+        GrapheneAssetConditionEvaluation,
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
-        checkName=graphene.Argument(graphene.String()),
-        description="Retrieve the asset checks for a given asset key.",
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        partition=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="Retrieve the condition evaluation for an asset and partition.",
+    )
+
+    assetConditionEvaluationRecordsOrError = graphene.Field(
+        GrapheneAssetConditionEvaluationRecordsOrError,
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        limit=graphene.Argument(graphene.NonNull(graphene.Int)),
+        cursor=graphene.Argument(graphene.String),
+        description="Retrieve the condition evaluation records for an asset.",
+    )
+
+    assetConditionEvaluationsForEvaluationId = graphene.Field(
+        GrapheneAssetConditionEvaluationRecordsOrError,
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        description=("Retrieve the condition evaluation records for a given evaluation ID."),
+    )
+
+    autoMaterializeTicks = graphene.Field(
+        non_null_list(GrapheneInstigationTick),
+        dayRange=graphene.Int(),
+        dayOffset=graphene.Int(),
+        limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        beforeTimestamp=graphene.Float(),
+        afterTimestamp=graphene.Float(),
+        description="Fetch the history of auto-materialization ticks",
+    )
+
+    assetCheckExecutions = graphene.Field(
+        non_null_list(GrapheneAssetCheckExecution),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        checkName=graphene.Argument(graphene.NonNull(graphene.String)),
+        limit=graphene.NonNull(graphene.Int),
+        cursor=graphene.String(),
+        description="Retrieve the executions for a given asset check.",
     )
 
     @capture_error
@@ -571,7 +648,7 @@ class GrapheneQuery(graphene.ObjectType):
         scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if scheduleStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif scheduleStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -616,7 +693,7 @@ class GrapheneQuery(graphene.ObjectType):
         sensorStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if sensorStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif sensorStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -634,13 +711,6 @@ class GrapheneQuery(graphene.ObjectType):
         return get_instigator_state_or_error(
             graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
-
-    @capture_error
-    def resolve_unloadableInstigationStatesOrError(
-        self, graphene_info: ResolveInfo, instigationType: Optional[GrapheneInstigationType] = None
-    ):
-        instigation_type = InstigatorType(instigationType) if instigationType else None
-        return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
     @capture_error
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
@@ -732,7 +802,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runTagsOrError(
         self,
         graphene_info: ResolveInfo,
-        tagKeys: Optional[List[str]] = None,
+        tagKeys: List[str],
         valuePrefix: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -812,12 +882,17 @@ class GrapheneQuery(graphene.ObjectType):
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes()
+            asset_checks_loader = AssetChecksLoader(
+                context=graphene_info.context,
+                asset_keys=[node.asset_key for node in external_asset_nodes],
+            )
             results = (
                 [
                     GrapheneAssetNode(
                         repo_loc,
                         repo,
                         asset_node,
+                        asset_checks_loader=asset_checks_loader,
                         dynamic_partitions_loader=dynamic_partitions_loader,
                     )
                     for asset_node in external_asset_nodes
@@ -832,12 +907,17 @@ class GrapheneQuery(graphene.ObjectType):
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes(job_name)
+            asset_checks_loader = AssetChecksLoader(
+                context=graphene_info.context,
+                asset_keys=[node.asset_key for node in external_asset_nodes],
+            )
             results = (
                 [
                     GrapheneAssetNode(
                         repo_loc,
                         repo,
                         asset_node,
+                        asset_checks_loader=asset_checks_loader,
                         dynamic_partitions_loader=dynamic_partitions_loader,
                     )
                     for asset_node in external_asset_nodes
@@ -858,36 +938,51 @@ class GrapheneQuery(graphene.ObjectType):
         if not results:
             return []
 
-        materialization_loader = BatchMaterializationLoader(
-            instance=graphene_info.context.instance,
+        asset_record_loader = graphene_info.context.asset_record_loader
+        asset_record_loader.add_asset_keys([node.assetKey for node in results])
+        asset_checks_loader = AssetChecksLoader(
+            context=graphene_info.context,
             asset_keys=[node.assetKey for node in results],
         )
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-        def load_asset_graph() -> ExternalAssetGraph:
+        def load_asset_graph() -> RemoteAssetGraph:
             if repo is not None:
-                return ExternalAssetGraph.from_external_repository(repo)
+                return repo.asset_graph
             else:
-                return ExternalAssetGraph.from_workspace(graphene_info.context)
+                return graphene_info.context.asset_graph
 
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
             asset_graph=load_asset_graph,
         )
 
-        return [
+        base_deployment_context = graphene_info.context.get_base_deployment_context()
+
+        nodes = [
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
                 node.external_asset_node,
-                materialization_loader=materialization_loader,
+                asset_checks_loader=asset_checks_loader,
+                asset_record_loader=asset_record_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
+                # base_deployment_context will be None if we are not in a branch deployment
+                asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                    code_location_name=node.repository_location.name,
+                    repository_name=node.external_repository.name,
+                    branch_workspace=graphene_info.context,
+                    base_workspace=base_deployment_context,
+                )
+                if base_deployment_context is not None
+                else None,
             )
             for node in results
         ]
+        return sorted(nodes, key=lambda node: node.id)
 
     def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         asset_key_input = cast(Mapping[str, Sequence[str]], assetKey)
@@ -911,10 +1006,20 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
 
+    def resolve_assetNodeAdditionalRequiredKeys(
+        self,
+        graphene_info: ResolveInfo,
+        assetKeys: Sequence[GrapheneAssetKeyInput],
+    ):
+        assert assetKeys is not None
+        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
+        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
+        return get_additional_required_keys(graphene_info, asset_keys)
+
     def resolve_assetNodeDefinitionCollisions(
         self,
         graphene_info: ResolveInfo,
-        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
+        assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         assert assetKeys is not None
         raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
@@ -940,9 +1045,17 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
         )
 
+    def resolve_assetBackfillPreview(
+        self, graphene_info: ResolveInfo, params: GrapheneAssetBackfillPreviewParams
+    ) -> Sequence[GrapheneAssetPartitions]:
+        return get_asset_backfill_preview(graphene_info, params)
+
     def resolve_permissions(self, graphene_info: ResolveInfo):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
+
+    def resolve_canBulkTerminate(self, graphene_info: ResolveInfo) -> bool:
+        return graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
 
     def resolve_assetsLatestInfo(
         self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]
@@ -959,7 +1072,10 @@ class GrapheneQuery(graphene.ObjectType):
             if node.assetKey in asset_keys
         }
 
-        return get_assets_latest_info(graphene_info, step_keys_by_asset)
+        asset_record_loader = graphene_info.context.asset_record_loader
+        asset_record_loader.add_asset_keys(asset_keys)
+
+        return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
 
     @capture_error
     def resolve_logsForRun(
@@ -1008,10 +1124,93 @@ class GrapheneQuery(graphene.ObjectType):
             graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
         )
 
-    def resolve_assetChecksOrError(
+    def resolve_autoMaterializeEvaluationsForEvaluationId(
+        self,
+        graphene_info: ResolveInfo,
+        evaluationId: int,
+    ):
+        return fetch_auto_materialize_asset_evaluations_for_evaluation_id(
+            graphene_info=graphene_info, evaluation_id=evaluationId
+        )
+
+    def resolve_assetConditionEvaluationForPartition(
         self,
         graphene_info: ResolveInfo,
         assetKey: GrapheneAssetKeyInput,
-        checkName: Optional[str] = None,
+        evaluationId: int,
+        partition: str,
     ):
-        return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey), checkName)
+        return fetch_asset_condition_evaluation_record_for_partition(
+            graphene_info=graphene_info,
+            graphene_asset_key=assetKey,
+            evaluation_id=evaluationId,
+            partition_key=partition,
+        )
+
+    def resolve_assetConditionEvaluationRecordsOrError(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        limit: int,
+        cursor: Optional[str] = None,
+    ):
+        return fetch_asset_condition_evaluation_records_for_asset_key(
+            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+        )
+
+    def resolve_assetConditionEvaluationsForEvaluationId(
+        self, graphene_info: ResolveInfo, evaluationId: int
+    ):
+        return fetch_asset_condition_evaluation_records_for_evaluation_id(
+            graphene_info=graphene_info, evaluation_id=evaluationId
+        )
+
+    def resolve_autoMaterializeTicks(
+        self,
+        graphene_info,
+        dayRange=None,
+        dayOffset=None,
+        limit=None,
+        cursor=None,
+        statuses=None,
+        beforeTimestamp=None,
+        afterTimestamp=None,
+    ):
+        # Only valid for ticks from before auto-materialize was moved to be powered by multiple
+        # sensors
+        from dagster._daemon.asset_daemon import (
+            _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+        )
+
+        return get_instigation_ticks(
+            graphene_info=graphene_info,
+            instigator_type=InstigatorType.AUTO_MATERIALIZE,
+            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+            batch_loader=None,
+            dayRange=dayRange,
+            dayOffset=dayOffset,
+            limit=limit,
+            cursor=cursor,
+            status_strings=statuses,
+            before=beforeTimestamp,
+            after=afterTimestamp,
+        )
+
+    def resolve_assetCheckExecutions(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        checkName: str,
+        limit: int,
+        cursor: Optional[str] = None,
+    ):
+        return fetch_asset_check_executions(
+            graphene_info.context.instance,
+            asset_check_key=AssetCheckKey(
+                asset_key=AssetKey.from_graphql_input(assetKey), name=checkName
+            ),
+            limit=limit,
+            cursor=cursor,
+        )

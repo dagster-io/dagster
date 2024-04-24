@@ -1,7 +1,8 @@
 import {Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useMemo, useRef} from 'react';
 
+import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
@@ -9,8 +10,6 @@ import {VirtualizedJobHeader, VirtualizedJobRow} from '../workspace/VirtualizedJ
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
-import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
 
 type Repository = {
   repoAddress: RepoAddress;
@@ -28,9 +27,9 @@ type RowType =
   | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
   | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
 
-export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const allKeys = React.useMemo(
+export const OverviewJobsTable = ({repos}: Props) => {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const allKeys = useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
     [repos],
   );
@@ -40,7 +39,7 @@ export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
     allKeys,
   );
 
-  const flattened: RowType[] = React.useMemo(() => {
+  const flattened: RowType[] = useMemo(() => {
     const flat: RowType[] = [];
     repos.forEach(({repoAddress, jobs}) => {
       flat.push({type: 'header', repoAddress, jobCount: jobs.length});

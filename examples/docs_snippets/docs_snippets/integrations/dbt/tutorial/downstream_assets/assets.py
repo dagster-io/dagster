@@ -16,7 +16,7 @@ duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 
 @asset(compute_kind="python")
-def raw_customers(context) -> None:
+def raw_customers(context: AssetExecutionContext) -> None:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     connection = duckdb.connect(os.fspath(duckdb_database_path))
     connection.execute("create schema if not exists jaffle_shop")
@@ -38,7 +38,7 @@ def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     compute_kind="python",
     deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"),
 )
-def order_count_chart(context):
+def order_count_chart(context: AssetExecutionContext):
     # read the contents of the customers table into a Pandas DataFrame
     connection = duckdb.connect(os.fspath(duckdb_database_path))
     customers = connection.sql("select * from customers").df()

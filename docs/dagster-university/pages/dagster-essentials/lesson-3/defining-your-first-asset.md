@@ -24,7 +24,7 @@ Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yello
    ```python
    def taxi_trips_file():
        """
-           The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+         The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
        """
        month_to_fetch = '2023-03'
        raw_trips = requests.get(
@@ -53,7 +53,7 @@ Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yello
       @asset
       def taxi_trips_file():
           """
-              The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+            The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
           """
           month_to_fetch = '2023-03'
           raw_trips = requests.get(

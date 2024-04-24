@@ -1,13 +1,12 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
-import * as React from 'react';
 
 import {PermissionsProvider, usePermissionsForLocation} from '../../app/Permissions';
 import {ChildProps, ReloadRepositoryLocationButton} from '../ReloadRepositoryLocationButton';
 import {buildPermissionsQuery} from '../__fixtures__/ReloadRepositoryLocationButton.fixtures';
 
 describe('ReloadRepositoryLocationButton', () => {
-  const Test: React.FC<ChildProps> = (props) => {
+  const Test = (props: ChildProps) => {
     const {tryReload, hasReloadPermission} = props;
     const {loading} = usePermissionsForLocation(props.codeLocation);
     return (

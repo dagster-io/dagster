@@ -19,7 +19,8 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
-from dagster._utils import DebugCrashFlags, datetime_as_float
+from dagster._daemon.utils import DaemonErrorCapture
+from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
@@ -73,13 +74,7 @@ def monitor_canceling_run(
 
     event = canceling_events[0]
 
-    event_timestamp = (
-        event.timestamp
-        if isinstance(event.timestamp, float)
-        else datetime_as_float(event.timestamp)
-    )
-
-    if time.time() - event_timestamp >= instance.run_monitoring_cancel_timeout_seconds:
+    if time.time() - event.timestamp >= instance.run_monitoring_cancel_timeout_seconds:
         msg = (
             "Run timed out due to taking longer than"
             f" {instance.run_monitoring_cancel_timeout_seconds} seconds to cancel."
@@ -199,11 +194,11 @@ def execute_run_monitoring_iteration(
             else:
                 check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                f"Hit error while monitoring run {run_record.dagster_run.run_id}: {error_info}"
+            yield DaemonErrorCapture.on_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"Hit error while monitoring run {run_record.dagster_run.run_id}",
             )
-            yield error_info
         else:
             yield
 

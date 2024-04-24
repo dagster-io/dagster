@@ -4,7 +4,6 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
-    KeysView,
     List,
     Mapping,
     Optional,
@@ -27,7 +26,9 @@ from dagster._core.storage.tags import TagType, get_tag_type
 from .external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
-    from ..schema.asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode
+    from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
+
+    from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.execution import GrapheneExecutionPlan
     from ..schema.logs.events import GrapheneRunStepStats
@@ -66,7 +67,7 @@ def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
 
 def get_run_tags(
     graphene_info: "ResolveInfo",
-    tag_keys: Optional[List[str]] = None,
+    tag_keys: List[str],
     value_prefix: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneRunTags":
@@ -158,28 +159,10 @@ IN_PROGRESS_STATUSES = [
 ]
 
 
-def add_all_upstream_keys(
-    all_asset_nodes: Mapping[AssetKey, "GrapheneAssetNode"],
-    requested_asset_keys: KeysView[AssetKey],
-) -> Sequence[AssetKey]:
-    required: Dict[AssetKey, bool] = {}
-
-    def append_key_and_upstream(key: AssetKey):
-        if required.get(key):
-            return
-        required[key] = True
-        asset_node = all_asset_nodes[key].external_asset_node
-        for dep in asset_node.dependencies:
-            append_key_and_upstream(dep.upstream_asset_key)
-
-    for asset_key in requested_asset_keys:
-        append_key_and_upstream(asset_key)
-
-    return list(required.keys())
-
-
 def get_assets_latest_info(
-    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+    graphene_info: "ResolveInfo",
+    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
+    asset_record_loader: "BatchAssetRecordLoader",
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 
@@ -189,12 +172,14 @@ def get_assets_latest_info(
 
     instance = graphene_info.context.instance
 
-    asset_nodes = get_asset_nodes_by_asset_key(graphene_info)
-    asset_record_keys_needed = add_all_upstream_keys(asset_nodes, step_keys_by_asset.keys())
-    if not asset_record_keys_needed:
+    asset_keys = list(step_keys_by_asset.keys())
+
+    if not asset_keys:
         return []
 
-    asset_records = instance.get_asset_records(asset_record_keys_needed)
+    asset_nodes = get_asset_nodes_by_asset_key(graphene_info, asset_keys)
+
+    asset_records = asset_record_loader.get_asset_records(asset_keys)
 
     latest_materialization_by_asset = {
         asset_record.asset_entry.asset_key: (
@@ -206,13 +191,26 @@ def get_assets_latest_info(
         for asset_record in asset_records
     }
 
-    latest_run_ids_by_asset: Dict[AssetKey, str] = (
-        {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-            asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
-            for asset_record in asset_records
-            if asset_record.asset_entry.last_run_id
-        }
-    )
+    # Build a lookup table of asset keys to last materialization run IDs. We will filter these
+    # run IDs out of the "in progress" run lists that are generated below since they have already
+    # emitted an output for the run.
+    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]] = {
+        asset_record.asset_entry.asset_key: (
+            asset_record.asset_entry.last_materialization.run_id
+            if asset_record.asset_entry.last_materialization
+            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            else None
+        )
+        for asset_record in asset_records
+    }
+
+    latest_run_ids_by_asset: Dict[
+        AssetKey, str
+    ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
+        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
+        for asset_record in asset_records
+        if asset_record.asset_entry.last_run_id
+    }
 
     run_records_by_run_id = {}
     in_progress_records = []
@@ -227,10 +225,26 @@ def get_assets_latest_info(
     (
         in_progress_run_ids_by_asset,
         unstarted_run_ids_by_asset,
-    ) = _get_in_progress_runs_for_assets(graphene_info, in_progress_records, step_keys_by_asset)
+    ) = _get_in_progress_runs_for_assets(
+        graphene_info,
+        in_progress_records,
+        step_keys_by_asset,
+        latest_materialization_run_id_by_asset,
+    )
+
+    from .fetch_assets import get_unique_asset_id
 
     return [
         GrapheneAssetLatestInfo(
+            (
+                get_unique_asset_id(
+                    asset_key,
+                    asset_nodes[asset_key].repository_location.name,
+                    asset_nodes[asset_key].external_repository.name,
+                )
+                if asset_nodes[asset_key]
+                else get_unique_asset_id(asset_key)
+            ),
             asset_key,
             latest_materialization_by_asset.get(asset_key),
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
@@ -252,6 +266,7 @@ def _get_in_progress_runs_for_assets(
     graphene_info: "ResolveInfo",
     in_progress_records: Sequence[RunRecord],
     step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
+    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]],
 ) -> Tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
     # Build mapping of step key to the assets it generates
     asset_key_by_step_key = defaultdict(set)
@@ -286,6 +301,8 @@ def _get_in_progress_runs_for_assets(
                     step_stats_by_asset[asset_key].append(step_stat)
 
             for asset in selected_assets:
+                if latest_materialization_run_id_by_asset.get(asset) == run.run_id:
+                    continue
                 asset_step_stats = step_stats_by_asset.get(asset)
                 if asset_step_stats:
                     # asset_step_stats will contain all steps that are in progress or complete
@@ -302,6 +319,8 @@ def _get_in_progress_runs_for_assets(
         else:
             # the run never began execution, all steps are unstarted
             for asset in selected_assets:
+                if latest_materialization_run_id_by_asset.get(asset) == run.run_id:
+                    continue
                 unstarted_run_ids_by_asset[asset].add(record.dagster_run.run_id)
 
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset

@@ -1,4 +1,4 @@
-from pathlib import Path
+from argparse import Namespace
 from typing import (
     AbstractSet,
     Any,
@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    cast,
 )
 
 import dateutil
@@ -38,14 +37,8 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def input_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    # * can be present when sources are sharded tables
-    return dbt_resource_props["unique_id"].replace(".", "_").replace("*", "_star")
-
-
-def output_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    # hyphens are valid in dbt model names, but not in output names
-    return dbt_resource_props["unique_id"].split(".")[-1].replace("-", "_")
+def dagster_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
+    return dbt_resource_props["unique_id"].replace(".", "_").replace("-", "_").replace("*", "_star")
 
 
 def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -104,7 +97,11 @@ def result_to_events(
         status = (
             "fail"
             if result.get("fail")
-            else "skip" if result.get("skip") else "error" if result.get("error") else "success"
+            else "skip"
+            if result.get("skip")
+            else "error"
+            if result.get("error")
+            else "success"
         )
     else:
         status = result["status"]
@@ -137,7 +134,7 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=output_name_fn(dbt_resource_props),
+                output_name=dagster_name_fn(dbt_resource_props),
                 metadata=metadata,
             )
         else:
@@ -186,7 +183,7 @@ def generate_events(
             manifest_json=manifest_json,
         ):
             yield check.inst(
-                cast(Union[AssetMaterialization, AssetObservation], event),
+                event,
                 (AssetMaterialization, AssetObservation),
             )
 
@@ -227,94 +224,87 @@ def generate_materializations(
             asset_key_prefix + info["unique_id"].split(".")
         ),
     ):
-        yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+        yield check.inst(event, AssetMaterialization)
 
 
 def select_unique_ids_from_manifest(
     select: str,
     exclude: str,
-    state_path: Optional[str] = None,
-    manifest_json_path: Optional[str] = None,
-    manifest_json: Optional[Mapping[str, Any]] = None,
-    manifest_parsed: Optional[Any] = None,
+    manifest_json: Mapping[str, Any],
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
-    from dbt.contracts.graph.manifest import Manifest, WritableManifest
-    from dbt.contracts.state import PreviousState
+    from dbt.contracts.graph.manifest import Manifest
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
-    if state_path is not None:
-        previous_state = PreviousState(
-            path=Path(state_path),  # type: ignore  # (unused path, slated for deletion)
-            current_path=(  # type: ignore  # (unused path, slated for deletion)
-                Path("/tmp/null") if manifest_json_path is None else Path(manifest_json_path)
-            ),
-        )
-    else:
-        previous_state = None
+    # NOTE: this was faster than calling `Manifest.from_dict`, so we are keeping this.
+    class _DictShim(dict):
+        """Shim to enable hydrating a dictionary into a dot-accessible object. We need this because
+        dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries.
 
-    if manifest_json_path is not None:
-        manifest = WritableManifest.read_and_check_versions(manifest_json_path)
-        child_map = manifest.child_map
-    elif manifest_json is not None:
+        See https://stackoverflow.com/a/23689767.
+        """
 
-        class _DictShim(dict):
-            """Shim to enable hydrating a dictionary into a dot-accessible object."""
+        def __getattr__(self, item):
+            ret = super().get(item)
+            # allow recursive access e.g. foo.bar.baz
+            return _DictShim(ret) if isinstance(ret, dict) else ret
 
-            def __getattr__(self, item):
-                ret = super().get(item)
-                # allow recursive access e.g. foo.bar.baz
-                return _DictShim(ret) if isinstance(ret, dict) else ret
+    manifest = Manifest(
+        nodes={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["nodes"].items()  # type: ignore
+        },
+        sources={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["sources"].items()  # type: ignore
+        },
+        metrics={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+        },
+        exposures={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+        },
+        **(  # type: ignore
+            {
+                "semantic_models": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json.get("semantic_models", {}).items()
+                }
+            }
+            if manifest_json.get("semantic_models")
+            else {}
+        ),
+    )
+    child_map = manifest_json["child_map"]
 
-        manifest = Manifest(
-            # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-            nodes={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()  # type: ignore
-            },
-            sources={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
-            },
-            metrics={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
-            },
-            exposures={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
-            },
-        )
-        child_map = manifest_json["child_map"]
-    elif manifest_parsed is not None:
-        manifest = manifest_parsed
-        child_map = manifest.child_map
-    else:
-        check.failed("Must provide either a manifest_json_path, manifest_json, or manifest_parsed.")
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string
-    try:
-        from dbt.flags import GLOBAL_FLAGS
-    except ImportError:
-        # dbt < 1.5.0 compat
-        import dbt.flags as GLOBAL_FLAGS
-    setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
-    setattr(GLOBAL_FLAGS, "WARN_ERROR", True)
+    _set_flag_attrs(
+        {
+            "INDIRECT_SELECTION": IndirectSelection.Eager,
+            "WARN_ERROR": True,
+        }
+    )
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
-        parsed_spec = graph_cli.SelectionDifference(
-            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
-        )
+        parsed_exclude_spec = graph_cli.parse_union([exclude], False)
+        parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
     # execute this selection against the graph
-    selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
+    selector = graph_selector.NodeSelector(graph, manifest)
     selected, _ = selector.select_nodes(parsed_spec)
     return selected
 
 
 def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
-    manifest: Mapping[str, Any]
+    manifest: Mapping[str, Any],
 ) -> Mapping[str, Mapping[str, Any]]:
     """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest."""
     return {
@@ -322,4 +312,16 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["sources"],
         **manifest["exposures"],
         **manifest["metrics"],
+        **manifest.get("semantic_models", {}),
     }
+
+
+def _set_flag_attrs(kvs: Dict[str, Any]):
+    from dbt.flags import get_flag_dict, set_flags
+
+    new_flags = Namespace()
+    for global_key, global_value in get_flag_dict().items():
+        setattr(new_flags, global_key.upper(), global_value)
+    for key, value in kvs.items():
+        setattr(new_flags, key.upper(), value)
+    set_flags(new_flags)

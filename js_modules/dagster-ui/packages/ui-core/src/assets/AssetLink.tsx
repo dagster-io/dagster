@@ -1,16 +1,15 @@
 import {Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
-export const AssetLink: React.FC<{
+export const AssetLink = (props: {
   path: string[];
   icon?: 'asset' | 'asset_non_sda' | 'folder';
   textStyle?: 'break-word' | 'middle-truncate';
   url?: string;
   isGroup?: boolean;
-}> = (props) => {
+}) => {
   const {path, icon, url, isGroup, textStyle = 'break-word'} = props;
   const linkUrl = url ? url : assetDetailsPathForKey({path});
   const assetPath =
@@ -25,7 +24,7 @@ export const AssetLink: React.FC<{
     >
       {icon ? (
         <Box margin={{right: 8, top: 2}}>
-          <Icon name={icon} color={Colors.Gray400} />
+          <Icon name={icon} color={Colors.accentGray()} />
         </Box>
       ) : null}
       <Link to={linkUrl} style={{overflow: 'hidden'}}>

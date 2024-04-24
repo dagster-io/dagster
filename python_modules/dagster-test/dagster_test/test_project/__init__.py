@@ -13,22 +13,22 @@ from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.build_resources import build_resources
 from dagster._core.execution.context.output import build_output_context
-from dagster._core.host_representation import (
-    ExternalJob,
-    ExternalSchedule,
-    GrpcServerCodeLocationOrigin,
-    InProcessCodeLocationOrigin,
-)
-from dagster._core.host_representation.origin import (
-    ExternalInstigatorOrigin,
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
-)
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
+)
+from dagster._core.remote_representation import (
+    ExternalJob,
+    ExternalSchedule,
+    GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
+)
+from dagster._core.remote_representation.origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -102,8 +102,8 @@ def find_local_test_image(docker_image):
         client = docker.from_env()
         client.images.get(docker_image)
         print(  # noqa: T201
-            "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-            "docker rmi {image}".format(image=docker_image)
+            f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
+            f"docker rmi {docker_image}"
         )
     except docker.errors.ImageNotFound:
         build_and_tag_test_image(docker_image)
@@ -112,7 +112,7 @@ def find_local_test_image(docker_image):
 def build_and_tag_test_image(tag):
     check.str_param(tag, "tag")
 
-    base_python = "3.8.8"
+    base_python = "3.11"
 
     # Build and tag local dagster test image
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
@@ -200,14 +200,14 @@ class ReOriginatedExternalJobForTest(ExternalJob):
             ),
         )
 
-    def get_external_origin(self) -> ExternalJobOrigin:
+    def get_external_origin(self) -> RemoteJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return ExternalJobOrigin(
-            external_repository_origin=ExternalRepositoryOrigin(
+        return RemoteJobOrigin(
+            repository_origin=RemoteRepositoryOrigin(
                 code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
@@ -240,8 +240,8 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.
         """
-        return ExternalInstigatorOrigin(
-            external_repository_origin=ExternalRepositoryOrigin(
+        return RemoteInstigatorOrigin(
+            repository_origin=RemoteRepositoryOrigin(
                 code_location_origin=GrpcServerCodeLocationOrigin(
                     host="user-code-deployment-1",
                     port=3030,

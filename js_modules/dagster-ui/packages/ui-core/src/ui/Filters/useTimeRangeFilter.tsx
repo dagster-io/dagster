@@ -1,23 +1,20 @@
-import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Dialog, DialogFooter, Icon, IconName} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
-import React from 'react';
-import {DateRangePicker} from 'react-dates';
+import {Suspense, lazy, useContext, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
-import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
+const DateRangePicker = lazy(() => import('./DateRangePickerWrapper'));
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-import 'react-dates/initialize';
-import 'react-dates/lib/css/_datepicker.css';
 
 export type TimeRangeState = [number | null, number | null];
 
@@ -40,14 +37,14 @@ export function calculateTimeRanges(timezone: string) {
     LAST_7_DAYS: {
       label: 'Within last 7 days',
       range: [
-        dayjs(nowTimestamp).tz(targetTimezone).subtract(1, 'week').valueOf(),
+        dayjs(nowTimestamp).tz(targetTimezone).startOf('day').subtract(1, 'week').valueOf(),
         null,
       ] as TimeRangeState,
     },
     LAST_30_DAYS: {
       label: 'Within last 30 days',
       range: [
-        dayjs(nowTimestamp).tz(targetTimezone).subtract(30, 'days').valueOf(),
+        dayjs(nowTimestamp).tz(targetTimezone).startOf('day').subtract(30, 'days').valueOf(),
         null,
       ] as TimeRangeState,
     },
@@ -68,34 +65,45 @@ export type TimeRangeFilter = FilterObject & {
   state: [number | null, number | null];
   setState: (state: TimeRangeState) => void;
 };
+
 type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
+
 type Args = {
   name: string;
   icon: IconName;
-  initialState?: TimeRangeState;
+
+  // This hook is NOT a "controlled component". Changing state only updates the component's current state.
+  // To make this fully controlled you need to implement `onStateChanged` and maintain your own copy of the state.
+  // The one tricky footgun is if you want to ignore (ie. cancel) a state change then you need to make a new reference
+  // to the old state and pass that in.
+  state?: TimeRangeState;
   onStateChanged?: (state: TimeRangeState) => void;
+  activeFilterTerm?: string;
 };
+
 export function useTimeRangeFilter({
   name,
+  activeFilterTerm = 'Timestamp',
   icon,
-  initialState,
+  state,
   onStateChanged,
 }: Args): TimeRangeFilter {
   const {
     timezone: [_timezone],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
   const timezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
-  const [state, setState] = React.useState<TimeRangeState>(initialState || [null, null]);
-  React.useEffect(() => {
-    onStateChanged?.(state);
+  const [innerState, setState] = useState<TimeRangeState>(state || [null, null]);
+
+  useEffect(() => {
+    onStateChanged?.(innerState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state[0], state[1]]);
+  }, [innerState[0], innerState[1]]);
 
-  React.useEffect(() => {
-    setState(initialState || [null, null]);
-  }, [initialState]);
+  useEffect(() => {
+    setState(state || [null, null]);
+  }, [state]);
 
-  const {timeRanges, timeRangesArray} = React.useMemo(
+  const {timeRanges, timeRangesArray} = useMemo(
     () => calculateTimeRanges(timezone),
     [
       timezone,
@@ -109,13 +117,13 @@ export function useTimeRangeFilter({
     setState([null, null]);
   };
 
-  const filterObj = React.useMemo(
+  const filterObj = useMemo(
     () => ({
       name,
       icon,
-      state,
+      state: innerState,
       setState,
-      isActive: state[0] !== null || state[1] !== null,
+      isActive: innerState[0] !== null || innerState[1] !== null,
       getResults: (
         query: string,
       ): {
@@ -155,15 +163,16 @@ export function useTimeRangeFilter({
       },
       activeJSX: (
         <ActiveFilterState
+          activeFilterTerm={activeFilterTerm}
           timeRanges={timeRanges}
-          state={state}
+          state={innerState}
           timezone={timezone}
           remove={onReset}
         />
       ),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, icon, state, timeRanges, timezone, timeRangesArray],
+    [name, icon, innerState, timeRanges, timezone, timeRangesArray, activeFilterTerm],
   );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
@@ -171,25 +180,27 @@ export function useTimeRangeFilter({
 
 function TimeRangeResult({range}: {range: string}) {
   return (
-    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-      <Icon name="date" color={Colors.Dark} />
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Icon name="date" color={Colors.accentPrimary()} />
       {range}
     </Box>
   );
 }
 
 export function ActiveFilterState({
+  activeFilterTerm,
   state,
   remove,
   timezone,
   timeRanges,
 }: {
+  activeFilterTerm: string;
   state: TimeRangeState;
   remove: () => void;
   timezone: string;
   timeRanges: ReturnType<typeof calculateTimeRanges>['timeRanges'];
 }) {
-  const L_FORMAT = React.useMemo(
+  const L_FORMAT = useMemo(
     () =>
       new Intl.DateTimeFormat(navigator.language, {
         year: 'numeric',
@@ -199,53 +210,58 @@ export function ActiveFilterState({
       }),
     [timezone],
   );
-  const dateLabel = React.useMemo(() => {
+  const dateLabel = useMemo(() => {
     if (isEqual(state, timeRanges.TODAY.range)) {
       return (
         <>
-          is <FilterTagHighlightedText>Today</FilterTagHighlightedText>
+          <FilterTagHighlightedText>Today</FilterTagHighlightedText>
         </>
       );
     } else if (isEqual(state, timeRanges.YESTERDAY.range)) {
       return (
         <>
-          is <FilterTagHighlightedText>Yesterday</FilterTagHighlightedText>
+          <FilterTagHighlightedText>Yesterday</FilterTagHighlightedText>
         </>
       );
     } else if (isEqual(state, timeRanges.LAST_7_DAYS.range)) {
       return (
         <>
-          is within <FilterTagHighlightedText>Last 7 days</FilterTagHighlightedText>
+          in <FilterTagHighlightedText>Last 7 days</FilterTagHighlightedText>
         </>
       );
     } else if (isEqual(state, timeRanges.LAST_30_DAYS.range)) {
       return (
         <>
-          is within <FilterTagHighlightedText>Last 30 days</FilterTagHighlightedText>
+          in <FilterTagHighlightedText>Last 30 days</FilterTagHighlightedText>
         </>
       );
     } else {
       if (!state[0]) {
         return (
           <>
-            is before{' '}
-            <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
+            before <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
           </>
         );
       }
       if (!state[1]) {
         return (
           <>
-            is after{' '}
+            after <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
+          </>
+        );
+      }
+      if (state[1] - state[0] === (24 * 60 * 60 - 1) * 1000) {
+        return (
+          <>
+            on
             <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
           </>
         );
       }
       return (
         <>
-          is in range{' '}
-          <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
-          {' - '}
+          from <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
+          {' through '}
           <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
         </>
       );
@@ -256,7 +272,9 @@ export function ActiveFilterState({
     <FilterTag
       iconName="date"
       label={
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>Timestamp {dateLabel}</Box>
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          {activeFilterTerm} {dateLabel}
+        </Box>
       }
       onRemove={remove}
     />
@@ -270,11 +288,11 @@ export function CustomTimeRangeFilterDialog({
   filter: TimeRangeFilter;
   closeRef: {current: () => void};
 }) {
-  const [startDate, setStartDate] = React.useState<moment.Moment | null>(null);
-  const [endDate, setEndDate] = React.useState<moment.Moment | null>(null);
-  const [focusedInput, setFocusedInput] = React.useState<'startDate' | 'endDate'>('startDate');
+  const [startDate, setStartDate] = useState<moment.Moment | null>(null);
+  const [endDate, setEndDate] = useState<moment.Moment | null>(null);
+  const [focusedInput, setFocusedInput] = useState<'startDate' | 'endDate'>('startDate');
 
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <Dialog
@@ -288,23 +306,26 @@ export function CustomTimeRangeFilterDialog({
     >
       <Container>
         <Box flex={{direction: 'row', gap: 8}} padding={16}>
-          <DateRangePicker
-            onDatesChange={({startDate, endDate}) => {
-              setStartDate(startDate);
-              setEndDate(endDate);
-            }}
-            onFocusChange={(focusedInput) => {
-              focusedInput && setFocusedInput(focusedInput);
-            }}
-            startDate={startDate}
-            endDate={endDate}
-            startDateId="start"
-            endDateId="end"
-            focusedInput={focusedInput}
-            withPortal={false}
-            keepOpenOnDateSelect
-            isOutsideRange={() => false}
-          />
+          <Suspense fallback={<div />}>
+            <DateRangePicker
+              minimumNights={0}
+              onDatesChange={({startDate, endDate}) => {
+                setStartDate(startDate ? startDate.clone().startOf('day') : null);
+                setEndDate(endDate ? endDate.clone().endOf('day') : null);
+              }}
+              onFocusChange={(focusedInput) => {
+                focusedInput && setFocusedInput(focusedInput);
+              }}
+              startDate={startDate}
+              endDate={endDate}
+              startDateId="start"
+              endDateId="end"
+              focusedInput={focusedInput}
+              withPortal={false}
+              keepOpenOnDateSelect
+              isOutsideRange={() => false}
+            />
+          </Suspense>
         </Box>
       </Container>
       <DialogFooter topBorder>
@@ -356,17 +377,17 @@ const Container = styled.div`
   .CalendarDay__hovered_span:hover,
   .CalendarDay__selected_span,
   .CalendarDay__selected_span:hover {
-    background: ${Colors.Blue50};
-    color: ${Colors.Blue700};
+    background: ${Colors.backgroundBlue()};
+    color: ${Colors.textBlue()};
     border: 1px solid #e4e7e7;
   }
   .CalendarDay__selected,
   .CalendarDay__selected:active,
   .CalendarDay__selected:hover {
-    background: ${Colors.Blue200};
+    background: ${Colors.backgroundBlueHover()};
     border: 1px solid #e4e7e7;
   }
   .DateInput_input__focused {
-    border-color: ${Colors.Blue500};
+    border-color: ${Colors.borderDefault()};
   }
 `;

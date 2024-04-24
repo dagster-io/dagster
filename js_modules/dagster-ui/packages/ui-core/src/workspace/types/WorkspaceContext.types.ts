@@ -27,6 +27,7 @@ export type RootWorkspaceQuery = {
           loadStatus: Types.RepositoryLocationLoadStatus;
           updatedTimestamp: number;
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+          featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
           locationOrLoadError:
             | {
                 __typename: 'PythonError';
@@ -81,6 +82,7 @@ export type RootWorkspaceQuery = {
                     id: string;
                     jobOriginId: string;
                     name: string;
+                    sensorType: Types.SensorType;
                     targets: Array<{
                       __typename: 'Target';
                       mode: string;
@@ -91,6 +93,10 @@ export type RootWorkspaceQuery = {
                       id: string;
                       selectorId: string;
                       status: Types.InstigationStatus;
+                      typeSpecificData:
+                        | {__typename: 'ScheduleData'}
+                        | {__typename: 'SensorData'; lastCursor: string | null}
+                        | null;
                     };
                   }>;
                   partitionSets: Array<{
@@ -99,8 +105,12 @@ export type RootWorkspaceQuery = {
                     mode: string;
                     pipelineName: string;
                   }>;
-                  assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+                  assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+                  allTopLevelResourceDetails: Array<{
+                    __typename: 'ResourceDetails';
+                    id: string;
+                    name: string;
+                  }>;
                   location: {__typename: 'RepositoryLocation'; id: string; name: string};
                   displayMetadata: Array<{
                     __typename: 'RepositoryMetadata';
@@ -121,6 +131,7 @@ export type WorkspaceLocationNodeFragment = {
   loadStatus: Types.RepositoryLocationLoadStatus;
   updatedTimestamp: number;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+  featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
   locationOrLoadError:
     | {
         __typename: 'PythonError';
@@ -175,12 +186,17 @@ export type WorkspaceLocationNodeFragment = {
             id: string;
             jobOriginId: string;
             name: string;
+            sensorType: Types.SensorType;
             targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
             sensorState: {
               __typename: 'InstigationState';
               id: string;
               selectorId: string;
               status: Types.InstigationStatus;
+              typeSpecificData:
+                | {__typename: 'ScheduleData'}
+                | {__typename: 'SensorData'; lastCursor: string | null}
+                | null;
             };
           }>;
           partitionSets: Array<{
@@ -189,8 +205,12 @@ export type WorkspaceLocationNodeFragment = {
             mode: string;
             pipelineName: string;
           }>;
-          assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-          allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+          assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+          allTopLevelResourceDetails: Array<{
+            __typename: 'ResourceDetails';
+            id: string;
+            name: string;
+          }>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         }>;
@@ -247,12 +267,17 @@ export type WorkspaceLocationFragment = {
       id: string;
       jobOriginId: string;
       name: string;
+      sensorType: Types.SensorType;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
       sensorState: {
         __typename: 'InstigationState';
         id: string;
         selectorId: string;
         status: Types.InstigationStatus;
+        typeSpecificData:
+          | {__typename: 'ScheduleData'}
+          | {__typename: 'SensorData'; lastCursor: string | null}
+          | null;
       };
     }>;
     partitionSets: Array<{
@@ -261,8 +286,8 @@ export type WorkspaceLocationFragment = {
       mode: string;
       pipelineName: string;
     }>;
-    assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-    allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+    assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+    allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; id: string; name: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
     displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   }>;
@@ -300,12 +325,17 @@ export type WorkspaceRepositoryFragment = {
     id: string;
     jobOriginId: string;
     name: string;
+    sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
     sensorState: {
       __typename: 'InstigationState';
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
+      typeSpecificData:
+        | {__typename: 'ScheduleData'}
+        | {__typename: 'SensorData'; lastCursor: string | null}
+        | null;
     };
   }>;
   partitionSets: Array<{
@@ -314,8 +344,8 @@ export type WorkspaceRepositoryFragment = {
     mode: string;
     pipelineName: string;
   }>;
-  assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+  assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; id: string; name: string}>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
@@ -341,11 +371,16 @@ export type WorkspaceSensorFragment = {
   id: string;
   jobOriginId: string;
   name: string;
+  sensorType: Types.SensorType;
   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
   sensorState: {
     __typename: 'InstigationState';
     id: string;
     selectorId: string;
     status: Types.InstigationStatus;
+    typeSpecificData:
+      | {__typename: 'ScheduleData'}
+      | {__typename: 'SensorData'; lastCursor: string | null}
+      | null;
   };
 };

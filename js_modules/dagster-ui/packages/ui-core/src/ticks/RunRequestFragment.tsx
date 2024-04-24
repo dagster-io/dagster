@@ -8,6 +8,7 @@ export const RUN_REQUEST_FRAGMENT = gql`
       value
     }
     runKey
+    jobName
     assetSelection {
       path
     }

@@ -1,22 +1,21 @@
 import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {showSharedToaster} from '../app/DomUtils';
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {ReexecutionStrategy} from '../graphql/types';
-import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
-import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
+import {useCallback, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {DagsterTag} from './RunTag';
 import {getReexecutionParamsForSelection} from './RunUtils';
 import {StepSelection} from './StepSelection';
-import {TerminationDialog, TerminationState} from './TerminationDialog';
+import {TerminationDialog, TerminationDialogResult} from './TerminationDialog';
 import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
+import {showSharedToaster} from '../app/DomUtils';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {ReexecutionStrategy} from '../graphql/types';
+import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
+import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 interface RunActionButtonsProps {
   run: RunPageFragment;
@@ -25,14 +24,14 @@ interface RunActionButtonsProps {
   metadata: IRunMetadataDict;
 }
 
-export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
+export const CancelRunButton = ({run}: {run: RunFragment}) => {
   const {id: runId, canTerminate} = run;
-  const [showDialog, setShowDialog] = React.useState<boolean>(false);
-  const closeDialog = React.useCallback(() => setShowDialog(false), []);
+  const [showDialog, setShowDialog] = useState<boolean>(false);
+  const closeDialog = useCallback(() => setShowDialog(false), []);
 
-  const onComplete = React.useCallback(
-    async (terminationState: TerminationState) => {
-      const {errors} = terminationState;
+  const onComplete = useCallback(
+    async (result: TerminationDialogResult) => {
+      const {errors} = result;
       const error = runId && errors[runId];
       if (error && 'message' in error) {
         await showSharedToaster({
@@ -99,11 +98,11 @@ function stepSelectionFromRunTags(
   );
 }
 
-export const canRunAllSteps = (run: RunFragment) => doneStatuses.has(run.status);
-export const canRunFromFailure = (run: RunFragment) =>
+export const canRunAllSteps = (run: Pick<RunFragment, 'status'>) => doneStatuses.has(run.status);
+export const canRunFromFailure = (run: Pick<RunFragment, 'status' | 'executionPlan'>) =>
   run.executionPlan && failedStatuses.has(run.status);
 
-export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
+export const RunActionButtons = (props: RunActionButtonsProps) => {
   const {metadata, graph, run} = props;
 
   const repoMatch = useRepositoryForRunWithParentSnapshot(run);
@@ -260,7 +259,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   );
 };
 
-const StepSelectionDescription: React.FC<{selection: StepSelection | null}> = ({selection}) => (
+const StepSelectionDescription = ({selection}: {selection: StepSelection | null}) => (
   <div style={{paddingLeft: '10px'}}>
     {(selection?.keys || []).map((step) => (
       <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>

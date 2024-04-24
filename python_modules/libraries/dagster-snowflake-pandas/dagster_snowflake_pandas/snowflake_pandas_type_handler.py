@@ -1,27 +1,31 @@
 from typing import Mapping, Optional, Sequence, Type
 
+import numpy as np
 import pandas as pd
-import pandas.core.dtypes.common as pd_core_dtypes_common
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
-from snowflake.connector.pandas_tools import pd_writer
+from snowflake.connector.pandas_tools import write_pandas
 
 
 def _table_exists(table_slice: TableSlice, connection):
-    tables = connection.execute(
-        f"SHOW TABLES LIKE '{table_slice.table}' IN SCHEMA"
-        f" {table_slice.database}.{table_slice.schema}"
-    ).fetchall()
+    tables = (
+        connection.cursor()
+        .execute(
+            f"SHOW TABLES LIKE '{table_slice.table}' IN SCHEMA"
+            f" {table_slice.database}.{table_slice.schema}"
+        )
+        .fetchall()
+    )
     return len(tables) > 0
 
 
 def _get_table_column_types(table_slice: TableSlice, connection) -> Optional[Mapping[str, str]]:
     if _table_exists(table_slice, connection):
-        schema_list = connection.execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
+        schema_list = connection.cursor().execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
         return {item[0]: item[1] for item in schema_list}
 
 
@@ -32,7 +36,7 @@ def _convert_timestamp_to_string(
     snowflake.
     """
     column_name = str(s.name)
-    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
+    if issubclass(s.dtype.type, (np.datetime64, np.timedelta64)):
         if column_types:
             if "VARCHAR" not in column_types[column_name]:
                 raise DagsterInvariantViolationError(
@@ -62,23 +66,6 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
             return s
     else:
         return s
-
-
-def _add_missing_timezone(
-    s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
-) -> pd.Series:
-    column_name = str(s.name)
-    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
-        if column_types:
-            if "VARCHAR" in column_types[column_name]:
-                raise DagsterInvariantViolationError(
-                    f"Snowflake I/O manager: The Snowflake column {column_name.upper()} in table"
-                    f" {table_name} is of type {column_types[column_name]} and should be of type"
-                    f" TIMESTAMP to store the time data in dataframe column {column_name}. Please"
-                    " migrate this column to be of time TIMESTAMP_NTZ(9) to store time data."
-                )
-        return s.dt.tz_localize("UTC")
-    return s
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -126,16 +113,19 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 lambda x: _convert_timestamp_to_string(x, column_types, table_slice.table),
                 axis="index",
             )
-        else:
-            with_uppercase_cols = with_uppercase_cols.apply(
-                lambda x: _add_missing_timezone(x, column_types, table_slice.table), axis="index"
-            )
-        with_uppercase_cols.to_sql(
-            table_slice.table,
-            con=connection.engine,
-            if_exists="append",
-            index=False,
-            method=pd_writer,
+
+        write_pandas(
+            conn=connection,
+            df=with_uppercase_cols,
+            # originally we used pd.to_sql with pd_writer method to write the df to snowflake. pd_writer
+            # forced the database, schema, and table name to be uppercase, so we mimic that behavior here for feature parity
+            # in the future we could allow non-uppercase names
+            table_name=table_slice.table.upper(),
+            schema=table_slice.schema.upper(),
+            database=table_slice.database.upper() if table_slice.database else None,
+            auto_create_table=True,
+            use_logical_type=True,
+            quote_identifiers=True,
         )
 
         return {
@@ -206,10 +196,38 @@ Examples:
             }
         )
 
-    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the I/O Manager. For assets, the schema will be determined from the asset key.
-    For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-    via config or on the asset/op, "public" will be used for the schema.
+    You can set a default schema to store the assets using the ``schema`` configuration value of the Snowflake I/O
+    Manager. This schema will be used if no other schema is specified directly on an asset or op.
+
+    .. code-block:: python
+
+        defs = Definitions(
+            assets=[my_table]
+            resources={"io_manager" snowflake_pandas_io_manager.configured(
+                {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
+            )}
+        )
+
+
+    On individual assets, you an also specify the schema where they should be stored using metadata or
+    by adding a ``key_prefix`` to the asset key. If both ``key_prefix`` and metadata are defined, the metadata will
+    take precedence.
+
+    .. code-block:: python
+
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema in snowflake
+        )
+        def my_table() -> pd.DataFrame:
+            ...
+
+        @asset(
+            metadata={"schema": "my_schema"}  # will be used as the schema in snowflake
+        )
+        def my_other_table() -> pd.DataFrame:
+            ...
+
+    For ops, the schema can be specified by including a "schema" entry in output metadata.
 
     .. code-block:: python
 
@@ -217,8 +235,9 @@ Examples:
             out={"my_table": Out(metadata={"schema": "my_schema"})}
         )
         def make_my_table() -> pd.DataFrame:
-            # the returned value will be stored at my_schema.my_table
             ...
+
+    If none of these is provided, the schema will default to "public".
 
     To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
     In or AssetIn.
@@ -263,10 +282,38 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
                 }
             )
 
-        If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-        the I/O Manager. For assets, the schema will be determined from the asset key, as in the above example.
-        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-        via config or on the asset/op, "public" will be used for the schema.
+        You can set a default schema to store the assets using the ``schema`` configuration value of the Snowflake I/O
+        Manager. This schema will be used if no other schema is specified directly on an asset or op.
+
+        .. code-block:: python
+
+            defs = Definitions(
+                assets=[my_table]
+                resources={
+                    "io_manager" SnowflakePandasIOManager(database="my_database", schema="my_schema", ...)
+                }
+            )
+
+
+        On individual assets, you an also specify the schema where they should be stored using metadata or
+        by adding a ``key_prefix`` to the asset key. If both ``key_prefix`` and metadata are defined, the metadata will
+        take precedence.
+
+        .. code-block:: python
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_table() -> pd.DataFrame:
+                ...
+
+            @asset(
+                metadata={"schema": "my_schema"}  # will be used as the schema in snowflake
+            )
+            def my_other_table() -> pd.DataFrame:
+                ...
+
+        For ops, the schema can be specified by including a "schema" entry in output metadata.
 
         .. code-block:: python
 
@@ -274,8 +321,9 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
                 out={"my_table": Out(metadata={"schema": "my_schema"})}
             )
             def make_my_table() -> pd.DataFrame:
-                # the returned value will be stored at my_schema.my_table
                 ...
+
+        If none of these is provided, the schema will default to "public".
 
         To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
         In or AssetIn.

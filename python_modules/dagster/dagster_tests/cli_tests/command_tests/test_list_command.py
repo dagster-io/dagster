@@ -19,8 +19,7 @@ def no_print(_):
 def assert_correct_bar_repository_output(result):
     assert result.exit_code == 0
     assert (
-        result.output
-        == "Repository bar\n"
+        result.output == "Repository bar\n"
         "**************\n"
         "Job: baz\n"
         "Description:\n"
@@ -61,8 +60,7 @@ def assert_correct_bar_repository_output(result):
 def assert_correct_extra_repository_output(result):
     assert result.exit_code == 0
     assert (
-        result.output
-        == "Repository extra\n"
+        result.output == "Repository extra\n"
         "****************\n"
         "Job: extra_job\n"
         "Ops: (Execution Order)\n"

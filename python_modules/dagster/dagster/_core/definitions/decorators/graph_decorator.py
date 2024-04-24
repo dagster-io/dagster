@@ -75,7 +75,7 @@ class _Graph:
             node_defs,
             config_mapping,
             positional_inputs,
-            node_input_source_assets,
+            input_assets,
         ) = do_composition(
             decorator_name="@graph",
             graph_name=self.name,
@@ -96,14 +96,14 @@ class _Graph:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
-            node_input_source_assets=node_input_source_assets,
+            input_assets=input_assets,
         )
         update_wrapper(graph_def, fn)
         return graph_def
 
 
 @overload
-def graph(compose_fn: Callable) -> GraphDefinition: ...
+def graph(compose_fn: Callable[..., Any]) -> GraphDefinition: ...
 
 
 @overload

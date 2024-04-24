@@ -1,17 +1,19 @@
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
+  GlobalGeistMono,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
+  GlobalThemeStyle,
   Colors,
+  GlobalGeist,
 } from '../src';
 
+import {withThemeByClassName} from '@storybook/addon-themes';
+
 import {MemoryRouter} from 'react-router-dom';
-import * as React from 'react';
 
 import {createGlobalStyle} from 'styled-components/macro';
 
@@ -23,7 +25,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body {
-    color: ${Colors.Gray800};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -31,7 +34,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${Colors.Link};
+    color: ${Colors.linkDefault()};
   }
 
   body {
@@ -40,6 +43,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body, input, select, textarea {
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     font-family: ${FontFamily.default};
   }
 
@@ -51,6 +56,10 @@ const GlobalStyle = createGlobalStyle`
     font-family: ${FontFamily.monospace};
     font-size: 16px;
   }
+
+  input::placeholder {
+    color: ${Colors.textLight()};
+  }
 `;
 
 // Global decorator to apply the styles to all stories
@@ -58,8 +67,9 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
-      <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalThemeStyle />
+      <GlobalGeist />
+      <GlobalGeistMono />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
@@ -68,6 +78,15 @@ export const decorators = [
       <Story />
     </MemoryRouter>
   ),
+  withThemeByClassName({
+    themes: {
+      light: 'themeLight',
+      dark: 'themeDark',
+      system: 'themeSystem',
+    },
+    defaultTheme: 'system',
+    parentSelector: 'body',
+  }),
 ];
 
 export const parameters = {

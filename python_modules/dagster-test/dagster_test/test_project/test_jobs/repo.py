@@ -385,6 +385,26 @@ def slow_graph():
     slow_op()
 
 
+@op
+def slow_execute_k8s_op(context):
+    # lazily import, since this repo is used in docker-tests and we can avoid the k8s import
+    from dagster_k8s import execute_k8s_job
+
+    execute_k8s_job(
+        context,
+        image="busybox",
+        command=["/bin/sh", "-c"],
+        args=["sleep 1200; echo HI"],
+        namespace=context.op_config["namespace"],
+        k8s_job_name=context.op_config["k8s_job_name"],
+    )
+
+
+@graph
+def slow_execute_k8s_op_graph():
+    slow_execute_k8s_op()
+
+
 @resource
 @contextmanager
 def s3_resource_with_context_manager(context):
@@ -559,6 +579,7 @@ def define_demo_execution_repo():
                 "retry_job_k8s": define_job(retry_graph, "k8s"),
                 "slow_job_celery_k8s": define_job(slow_graph, "celery_k8s"),
                 "slow_job_k8s": define_job(slow_graph, "k8s"),
+                "slow_execute_k8s_op_job": define_job(slow_execute_k8s_op_graph),
                 "step_retries_job_docker": define_job(step_retries_graph, "docker"),
                 "volume_mount_job_celery_k8s": define_job(volume_mount_graph, "celery_k8s"),
             },

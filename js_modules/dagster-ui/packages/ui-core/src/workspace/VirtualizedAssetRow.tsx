@@ -4,10 +4,16 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {RepoAddress} from './types';
+import {
+  SingleNonSdaAssetQuery,
+  SingleNonSdaAssetQueryVariables,
+} from './types/VirtualizedAssetRow.types';
+import {workspacePathFromAddress} from './workspacePath';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {MISSING_LIVE_DATA, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
-import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {MISSING_LIVE_DATA, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
 import {PartitionCountLabels, partitionCountString} from '../assets/AssetNodePartitionCounts';
@@ -21,13 +27,6 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
-import {RepoAddress} from './types';
-import {
-  SingleNonSdaAssetQuery,
-  SingleNonSdaAssetQueryVariables,
-} from './types/VirtualizedAssetRow.types';
-import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
 const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
@@ -111,7 +110,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               textOverflow: 'ellipsis',
             }}
           >
-            <Caption style={{color: Colors.Gray500, whiteSpace: 'nowrap'}}>
+            <Caption style={{color: Colors.textLight(), whiteSpace: 'nowrap'}}>
               {definition?.description}
             </Caption>
           </div>
@@ -132,7 +131,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                     )}
                   >
                     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                      <Icon color={Colors.Gray400} name="asset_group" />
+                      <Icon color={Colors.accentGray()} name="asset_group" />
                       {definition.groupName}
                     </Box>
                   </Link>
@@ -144,7 +143,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          {definition?.partitionDefinition ? (
+          {definition?.partitionDefinition && !definition?.isSource ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               <PartitionCountLabels partitionStats={liveData?.partitionStats} />
               <Caption>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Caption>
@@ -167,6 +166,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 </Box>
               ) : liveData?.lastMaterialization ? (
                 <AssetRunLink
+                  assetKey={{path}}
                   runId={liveData.lastMaterialization.runId}
                   event={{
                     stepKey: liveData.stepKey,
@@ -179,13 +179,11 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                   />
                 </AssetRunLink>
               ) : (
-                <div style={{color: Colors.Gray500}}>
+                <div style={{color: Colors.textLight()}}>
                   {!liveData && type !== 'folder' ? 'Loading' : '\u2013'}
                 </div>
               )}
-              {liveData && (
-                <StaleReasonsLabel assetKey={{path}} liveData={liveData} include="all" />
-              )}
+              {liveData && <StaleReasonsLabel assetKey={{path}} liveData={liveData} />}
             </Box>
           )}
         </RowCell>
@@ -204,20 +202,23 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   );
 };
 
-export const VirtualizedAssetCatalogHeader: React.FC<{
+export const VirtualizedAssetCatalogHeader = ({
+  headerCheckbox,
+  view,
+}: {
   headerCheckbox: React.ReactNode;
   view: AssetViewType;
-}> = ({headerCheckbox, view}) => {
+}) => {
   return (
     <Box
-      background={Colors.White}
+      background={Colors.backgroundDefault()}
       border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS_FOR_CATALOG,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: Colors.textLight(),
         position: 'sticky',
         top: 0,
         zIndex: 1,
@@ -232,9 +233,7 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
   );
 };
 
-export const VirtualizedAssetHeader: React.FC<{
-  nameLabel: React.ReactNode;
-}> = ({nameLabel}) => {
+export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}) => {
   return (
     <Box
       border="top-and-bottom"
@@ -243,7 +242,7 @@ export const VirtualizedAssetHeader: React.FC<{
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: Colors.textLight(),
       }}
     >
       <HeaderCell>{nameLabel}</HeaderCell>
@@ -263,11 +262,11 @@ const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
 const LIVE_QUERY_DELAY = 250;
 
 /**
- * This hook maps through to `useLiveDataForAssetKeys` for the `asset` case and a per-row
+ * This hook maps through to `AssetLiveDataProvider` for the `asset` case and a per-row
  * query for the latest materialization for the `asset_non_sda` case.
  *
  * It uses internal state and `skip` to implement a debounce that prevents a ton of queries
- * as the user scans past rows. (The best way to skip the useLiveDataForAssetKeys work is
+ * as the user scans past rows. (The best way to skip the AssetLiveDataProvider work is
  * to pass it an empty array of asset keys.)
  */
 export function useLiveDataOrLatestMaterializationDebounced(
@@ -277,7 +276,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
   const debouncedKey = (debouncedKeys[0] || '') as AssetKeyInput;
 
-  const {liveDataByNode} = useLiveDataForAssetKeys(type === 'asset' ? debouncedKeys : []);
+  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : []);
 
   const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
     SINGLE_NON_SDA_ASSET_QUERY,
@@ -298,7 +297,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   }, [type, path]);
 
   if (type === 'asset') {
-    return liveDataByNode[toGraphId({path})]!;
+    return liveDataByNode[tokenForAssetKey({path})]!;
   }
 
   if (type === 'asset_non_sda') {

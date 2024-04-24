@@ -1,9 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 import {MemoryRouter} from 'react-router';
 
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
@@ -27,13 +27,28 @@ const MOCKS = [
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 describe('AssetTable', () => {
+  let nativeGBRC: any;
+
+  beforeAll(() => {
+    nativeGBRC = window.Element.prototype.getBoundingClientRect;
+    window.Element.prototype.getBoundingClientRect = jest
+      .fn()
+      .mockReturnValue({height: 400, width: 400});
+  });
+
+  afterAll(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  });
+
   describe('Materialize button', () => {
     it('is enabled when rows are selected', async () => {
       const Test = () => {
         return (
           <MemoryRouter>
             <MockedProvider mocks={MOCKS}>
-              <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+              <WorkspaceProvider>
+                <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+              </WorkspaceProvider>
             </MockedProvider>
           </MemoryRouter>
         );

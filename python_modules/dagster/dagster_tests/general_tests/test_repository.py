@@ -1,5 +1,4 @@
-"""Repository of test jobs.
-"""
+"""Repository of test jobs."""
 
 import pytest
 from dagster import (
@@ -200,8 +199,8 @@ def test_asset_value_loader_with_metadata():
             assert False
 
         def load_input(self, context):
-            assert context.metadata is not None
-            return context.metadata.get("return") or 5
+            assert context.definition_metadata is not None
+            return context.definition_metadata.get("return") or 5
 
     @io_manager()
     def my_io_manager():

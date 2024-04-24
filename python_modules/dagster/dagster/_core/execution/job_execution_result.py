@@ -126,9 +126,7 @@ class JobExecutionResult(ExecutionResult):
                     if result is None:
                         result = {mapping_key: value}
                     else:
-                        result[mapping_key] = (
-                            value  # pylint:disable=unsupported-assignment-operation
-                        )
+                        result[mapping_key] = value  # pylint:disable=unsupported-assignment-operation
                 else:
                     result = value
 
@@ -148,7 +146,7 @@ class JobExecutionResult(ExecutionResult):
             context.for_input_manager(
                 name=None,
                 config=None,
-                metadata=None,
+                definition_metadata=None,
                 dagster_type=dagster_type,
                 source_handle=step_output_handle,
                 resource_config=context.resolved_run_config.resources[manager_key].config,

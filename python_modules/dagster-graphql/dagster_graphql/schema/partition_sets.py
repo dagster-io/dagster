@@ -3,8 +3,8 @@ from typing import Optional, cast
 import dagster._check as check
 import graphene
 from dagster import MultiPartitionsDefinition
-from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._core.remote_representation.external_data import (
     ExternalDynamicPartitionsDefinitionData,
     ExternalMultiPartitionsDefinitionData,
     ExternalPartitionsDefinitionData,
@@ -342,7 +342,7 @@ class GraphenePartitionSet(graphene.ObjectType):
         )
 
     def resolve_repositoryOrigin(self, _):
-        origin = self._external_partition_set.get_external_origin().external_repository_origin
+        origin = self._external_partition_set.get_external_origin().repository_origin
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_backfills(
@@ -356,7 +356,7 @@ class GraphenePartitionSet(graphene.ObjectType):
             if backfill.partition_set_origin
             and backfill.partition_set_origin.partition_set_name
             == self._external_partition_set.name
-            and backfill.partition_set_origin.external_repository_origin.repository_name
+            and backfill.partition_set_origin.repository_origin.repository_name
             == self._external_repository_handle.repository_name
         ]
         return [GraphenePartitionBackfill(backfill) for backfill in matching[:limit]]

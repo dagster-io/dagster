@@ -11,30 +11,29 @@ import {
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
-
-import {LiveDataForNode} from '../asset-graph/Utils';
-import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
-import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
-import {testId} from '../testing/testId';
+import {useMemo, useState} from 'react';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {AssetPartitionStatusCheckboxes} from './AssetPartitionStatusCheckboxes';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {
-  usePartitionHealthData,
-  rangesClippedToSelection,
   keyCountByStateInSelection,
   partitionStatusAtIndex,
+  rangesClippedToSelection,
   selectionRangeWithSingleKey,
+  usePartitionHealthData,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
+import {LiveDataForNode} from '../asset-graph/Utils';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
+import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
+import {testId} from '../testing/testId';
 
 interface Props {
   assetKey: AssetKey;
@@ -66,13 +65,13 @@ enum SortType {
   REVERSE_ALPHABETICAL,
 }
 
-export const AssetPartitions: React.FC<Props> = ({
+export const AssetPartitions = ({
   assetKey,
   assetPartitionDimensions,
   params,
   setParams,
   dataRefreshHint,
-}) => {
+}: Props) => {
   const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
@@ -81,7 +80,7 @@ export const AssetPartitions: React.FC<Props> = ({
     shouldReadPartitionQueryStringParam: false,
   });
 
-  const [sortTypes, setSortTypes] = React.useState<Array<SortType>>([]);
+  const [sortTypes, setSortTypes] = useState<Array<SortType>>([]);
 
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
@@ -105,7 +104,7 @@ export const AssetPartitions: React.FC<Props> = ({
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
-  const rangesForEachDimension = React.useMemo(() => {
+  const rangesForEachDimension = useMemo(() => {
     if (!assetHealth) {
       return selections.map(() => []);
     }
@@ -228,12 +227,12 @@ export const AssetPartitions: React.FC<Props> = ({
               style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
               flex={{direction: 'column'}}
               border="right"
-              background={Colors.Gray50}
+              background={Colors.backgroundLight()}
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
                 flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-                background={Colors.White}
+                background={Colors.backgroundDefault()}
                 border="bottom"
                 padding={{horizontal: 24, vertical: 8}}
               >
@@ -315,7 +314,7 @@ export const AssetPartitions: React.FC<Props> = ({
                   position="bottom-left"
                 >
                   <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
-                    <Icon name="sort_by_alpha" color={Colors.Gray400} />
+                    <Icon name="sort_by_alpha" color={Colors.accentGray()} />
                   </SortButton>
                 </Popover>
               </Box>

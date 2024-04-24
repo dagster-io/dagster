@@ -49,14 +49,14 @@ class DatabricksRunState(NamedTuple):
 
     def has_terminated(self) -> bool:
         """Has the job terminated?"""
-        return self.life_cycle_state.has_terminated()  # type: ignore  # (possible none)
+        return self.life_cycle_state is not None and self.life_cycle_state.has_terminated()
 
     def is_skipped(self) -> bool:
-        return self.life_cycle_state.is_skipped()  # type: ignore  # (possible none)
+        return self.life_cycle_state is not None and self.life_cycle_state.is_skipped()
 
     def is_successful(self) -> bool:
         """Was the job successful?"""
-        return bool(self.result_state and self.result_state.is_successful())
+        return self.result_state is not None and self.result_state.is_successful()
 
     @classmethod
     def from_databricks(cls, run_state: jobs.RunState) -> "DatabricksRunState":

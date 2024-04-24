@@ -1,6 +1,9 @@
+from typing import Union
+
 import pytest
 from dagster import (
     AssetKey,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
     IOManager,
     IOManagerDefinition,
@@ -10,16 +13,20 @@ from dagster import (
     job,
     op,
 )
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
 
-def make_io_manager(source_asset: SourceAsset, input_value=5, expected_metadata={}):
+def make_io_manager(
+    asset: Union[AssetsDefinition, SourceAsset], input_value=5, expected_metadata={}
+):
     class MyIOManager(IOManager):
         def handle_output(self, context, obj): ...
 
         def load_input(self, context):
             self.loaded_input = True
-            assert context.asset_key == source_asset.key
-            assert context.upstream_output.metadata == expected_metadata
+            assert context.asset_key == asset.key
+            for key, value in expected_metadata.items():
+                assert context.upstream_output.definition_metadata[key] == value
             return input_value
 
     return MyIOManager()
@@ -27,6 +34,22 @@ def make_io_manager(source_asset: SourceAsset, input_value=5, expected_metadata=
 
 def test_source_asset_input_value():
     asset1 = SourceAsset("asset1", metadata={"foo": "bar"})
+
+    @op
+    def op1(input1):
+        assert input1 == 5
+
+    @graph
+    def graph1():
+        op1(asset1)
+
+    io_manager = make_io_manager(asset1, expected_metadata={"foo": "bar"})
+    assert graph1.execute_in_process(resources={"io_manager": io_manager}).success
+    assert io_manager.loaded_input
+
+
+def test_external_asset_input_value():
+    asset1 = create_external_asset_from_source_asset(SourceAsset("asset1", metadata={"foo": "bar"}))
 
     @op
     def op1(input1):

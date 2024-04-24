@@ -105,9 +105,16 @@ class StepFailureData(
     @property
     def error_display_string(self) -> str:
         """Creates a display string that hides framework frames if the error arose in user code."""
+        from dagster._core.errors import DagsterRedactedUserCodeError
+
         if not self.error:
             return ""
         if self.error_source == ErrorSource.USER_CODE_ERROR:
+            # For a redacted error, just return the redacted message without any
+            # internal user code error.
+            if self.error.cls_name == DagsterRedactedUserCodeError.__name__:
+                return self.error.message.strip() + ":\n\n" + self.error.to_string()
+
             user_code_error = self.error.cause
             check.invariant(
                 user_code_error,

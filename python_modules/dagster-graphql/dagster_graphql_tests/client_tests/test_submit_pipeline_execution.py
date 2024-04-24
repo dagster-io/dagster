@@ -1,10 +1,11 @@
 import pytest
 from dagster import Config, DagsterInvalidDefinitionError, RunConfig
+from dagster._core.utils import make_new_run_id
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
 from .conftest import MockClient, python_client_test_suite
 
-EXPECTED_RUN_ID = "foo"
+EXPECTED_RUN_ID = make_new_run_id()
 
 launch_job_success_response = {
     "launchPipelineExecution": {
@@ -297,6 +298,30 @@ def test_failure_with_job_config_invalid(mock_client: MockClient):
 @python_client_test_suite
 def test_failure_with_python_error(mock_client: MockClient):
     error_type, message = "PythonError", "some catastrophic error"
+    response = {
+        "launchPipelineExecution": {
+            "__typename": error_type,
+            "message": message,
+        }
+    }
+    mock_client.mock_gql_client.execute.return_value = response
+
+    with pytest.raises(DagsterGraphQLClientError) as exc_info:
+        mock_client.python_client.submit_job_execution(
+            "bar",
+            repository_location_name="baz",
+            repository_name="quux",
+            run_config={},
+        )
+    exc_args = exc_info.value.args
+
+    assert exc_args[0] == error_type
+    assert exc_args[1] == message
+
+
+@python_client_test_suite
+def test_failure_with_unauthorized_error(mock_client: MockClient):
+    error_type, message = "UnauthorizedError", "permissions failure"
     response = {
         "launchPipelineExecution": {
             "__typename": error_type,

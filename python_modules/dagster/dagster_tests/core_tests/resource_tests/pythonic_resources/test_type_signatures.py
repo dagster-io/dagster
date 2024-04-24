@@ -29,7 +29,8 @@ def test_type_signatures_constructor_nested_resource():
         filename = os.path.join(tempdir, "test.py")
 
         with open(filename, "w") as f:
-            f.write("""
+            f.write(
+                """
 from dagster import ConfigurableResource
 
 class InnerResource(ConfigurableResource):
@@ -44,7 +45,8 @@ reveal_type(OuterResource.__init__)
 
 my_outer = OuterResource(inner=InnerResource(a_string="foo"), a_bool=True)
 reveal_type(my_outer.inner)
-""")
+"""
+            )
 
         pyright_out = get_pyright_reveal_type_output(filename)
         mypy_out = get_mypy_type_output(filename)
@@ -52,8 +54,7 @@ reveal_type(my_outer.inner)
         # Ensure constructor signature is correct (mypy doesn't yet support Pydantic model constructor type hints)
         assert pyright_out[0] == "(self: InnerResource, *, a_string: str) -> None"
         assert (
-            pyright_out[1]
-            == "(self: OuterResource, *, inner: InnerResource | PartialResource[InnerResource],"
+            pyright_out[1] == "(self: OuterResource, *, inner: Any | PartialResource[Any],"
             " a_bool: bool) -> None"
         )
 
@@ -68,14 +69,16 @@ def test_type_signatures_config_at_launch():
         filename = os.path.join(tempdir, "test.py")
 
         with open(filename, "w") as f:
-            f.write("""
+            f.write(
+                """
 from dagster import ConfigurableResource
 
 class MyResource(ConfigurableResource):
     a_string: str
 
 reveal_type(MyResource.configure_at_launch())
-""")
+"""
+            )
 
         pyright_out = get_pyright_reveal_type_output(filename)
         mypy_out = get_mypy_type_output(filename)
@@ -91,7 +94,8 @@ def test_type_signatures_constructor_resource_dependency():
         filename = os.path.join(tempdir, "test.py")
 
         with open(filename, "w") as f:
-            f.write("""
+            f.write(
+                """
 from dagster import ConfigurableResource, ResourceDependency
 
 class StringDependentResource(ConfigurableResource):
@@ -101,7 +105,8 @@ reveal_type(StringDependentResource.__init__)
 
 my_str_resource = StringDependentResource(a_string="foo")
 reveal_type(my_str_resource.a_string)
-""")
+"""
+            )
 
         pyright_out = get_pyright_reveal_type_output(filename)
         mypy_out = get_mypy_type_output(filename)
@@ -125,17 +130,19 @@ def test_type_signatures_alias():
         filename = os.path.join(tempdir, "test.py")
 
         with open(filename, "w") as f:
-            f.write("""
+            f.write(
+                """
 from dagster import ConfigurableResource
 from pydantic import Field
 
 class ResourceWithAlias(ConfigurableResource):
-    _schema: str = Field(alias="schema")
+    _my_schema: str = Field(alias="schema")
 
 reveal_type(ResourceWithAlias.__init__)
 
 my_resource = ResourceWithAlias(schema="foo")
-""")
+"""
+            )
 
         pyright_out = get_pyright_reveal_type_output(filename)
 

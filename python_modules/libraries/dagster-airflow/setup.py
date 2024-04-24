@@ -30,11 +30,12 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         "docker>=5.0.3,<6.0.0",
+        "urllib3<2",  # docker version pinned above requires this but has no pin
         "lazy_object_proxy",
-        "pendulum",
     ],
     project_urls={
         # airflow will embed a link this in the providers page UI
@@ -43,13 +44,17 @@ setup(
     extras_require={
         "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
         "test_airflow_2": [
-            "apache-airflow>=2.0.0",
+            "apache-airflow>=2.0.0,<2.8",
             "boto3>=1.26.7",
+            # Flask-session 0.6 is incompatible with certain airflow-provided test
+            # utilities.
+            "flask-session<0.6.0",
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
             "apache-airflow-providers-apache-spark",
             # Logging messages are set to debug starting 4.1.1
             "apache-airflow-providers-http<4.1.1",
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
         ],
         "test_airflow_1": [
             "apache-airflow>=1.0.0,<2.0.0",
@@ -63,6 +68,10 @@ setup(
             # https://github.com/dagster-io/dagster/issues/3858
             "sqlalchemy>=1.0,<1.4.0",
             "marshmallow-sqlalchemy<0.26.0",
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+        ],
+        "test": [
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
         ],
     },
     entry_points={

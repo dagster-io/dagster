@@ -1,7 +1,8 @@
 import os
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import (
-    TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -11,6 +12,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
@@ -20,7 +22,9 @@ from typing_extensions import Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, experimental, public
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
+from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -37,33 +41,34 @@ from dagster._utils.warnings import (
 from .table import (  # re-exported
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
+    TableColumnDep as TableColumnDep,
+    TableColumnLineage as TableColumnLineage,
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
 )
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.events import AssetKey
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 
 RawMetadataValue = Union[
     "MetadataValue",
     TableSchema,
-    "AssetKey",
+    AssetKey,
     os.PathLike,
     Dict[Any, Any],
     float,
     int,
     List[Any],
     str,
+    datetime,
     None,
 ]
 
 MetadataMapping: TypeAlias = Mapping[str, "MetadataValue"]
-MetadataUserInput: TypeAlias = Mapping[str, RawMetadataValue]
+RawMetadataMapping: TypeAlias = Mapping[str, RawMetadataValue]
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
+
 
 # ########################
 # ##### NORMALIZATION
@@ -103,9 +108,11 @@ def normalize_metadata(
     return normalized_metadata
 
 
-def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]":
-    from dagster._core.definitions.events import AssetKey
+def has_corresponding_metadata_value_class(obj: Any) -> bool:
+    return isinstance(obj, (str, float, bool, int, list, dict, os.PathLike, AssetKey, TableSchema))
 
+
+def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]":
     if isinstance(raw_value, MetadataValue):
         return raw_value
     elif isinstance(raw_value, str):
@@ -124,6 +131,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
+    elif isinstance(raw_value, TableColumnLineage):
+        return MetadataValue.column_lineage(raw_value)
     elif raw_value is None:
         return MetadataValue.null()
 
@@ -309,7 +318,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def python_artifact(python_artifact: Callable) -> "PythonArtifactMetadataValue":
+    def python_artifact(python_artifact: Callable[..., Any]) -> "PythonArtifactMetadataValue":
         """Static constructor for a metadata value wrapping a python artifact as
         :py:class:`PythonArtifactMetadataValue`. Can be used as the value type for the
         `metadata` parameter for supported events.
@@ -407,6 +416,30 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
+    def timestamp(value: Union["float", datetime]) -> "TimestampMetadataValue":
+        """Static constructor for a metadata value wrapping a UNIX timestamp as a
+        :py:class:`TimestampMetadataValue`. Can be used as the value type for the `metadata`
+        parameter for supported events.
+
+        Args:
+            value (Union[float, datetime]): The unix timestamp value for a metadata entry. If a
+                datetime is provided, the timestamp will be extracted. datetimes without timezones
+                are not accepted, because their timestamps can be ambiguous.
+        """
+        if isinstance(value, float):
+            return TimestampMetadataValue(value)
+        elif isinstance(value, datetime):
+            if value.tzinfo is None:
+                check.failed(
+                    "Datetime values provided to MetadataValue.timestamp must have timezones, "
+                    f"but {value.isoformat()} does not"
+                )
+            return TimestampMetadataValue(value.timestamp())
+        else:
+            check.failed(f"Expected either a float or a datetime, but received a {type(value)}")
+
+    @public
+    @staticmethod
     def dagster_run(run_id: str) -> "DagsterRunMetadataValue":
         """Static constructor for a metadata value wrapping a reference to a Dagster run.
 
@@ -440,6 +473,41 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
         check.inst_param(asset_key, "asset_key", AssetKey)
         return DagsterAssetMetadataValue(asset_key)
+
+    @public
+    @staticmethod
+    def job(
+        job_name: str,
+        location_name: str,
+        *,
+        repository_name: Optional[str] = None,
+    ) -> "DagsterJobMetadataValue":
+        """Static constructor for a metadata value referencing a Dagster job, by name.
+
+        For example:
+
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset"
+                    metadata={
+                        "Producing job": MetadataValue.job('my_other_job'),
+                    },
+                )
+
+        Args:
+            job_name (str): The name of the job.
+            location_name (Optional[str]): The code location name for the job.
+            repository_name (Optional[str]): The repository name of the job, if different from the
+                default.
+        """
+        return DagsterJobMetadataValue(
+            job_name=check.str_param(job_name, "job_name"),
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.opt_str_param(repository_name, "repository_name"),
+        )
 
     @public
     @staticmethod
@@ -508,6 +576,20 @@ class MetadataValue(ABC, Generic[T_Packable]):
             schema (TableSchema): The table schema for a metadata entry.
         """
         return TableSchemaMetadataValue(schema)
+
+    @public
+    @staticmethod
+    def column_lineage(
+        lineage: TableColumnLineage,
+    ) -> "TableColumnLineageMetadataValue":
+        """Static constructor for a metadata value wrapping a column lineage as
+        :py:class:`TableColumnLineageMetadataValue`. Can be used as the value type
+        for the `metadata` parameter for supported events.
+
+        Args:
+            lineage (TableColumnLineage): The column lineage for a metadata entry.
+        """
+        return TableColumnLineageMetadataValue(lineage)
 
     @public
     @staticmethod
@@ -776,6 +858,24 @@ class BoolMetadataValue(
         return super(BoolMetadataValue, cls).__new__(cls, check.opt_bool_param(value, "value"))
 
 
+@whitelist_for_serdes
+class TimestampMetadataValue(
+    NamedTuple(
+        "_DateTimeMetadataValue",
+        [("value", PublicAttr[float])],
+    ),
+    MetadataValue[float],
+):
+    """Container class for metadata value that's a unix timestamp.
+
+    Args:
+        value (float): Seconds since the unix epoch.
+    """
+
+    def __new__(cls, value: float):
+        return super(TimestampMetadataValue, cls).__new__(cls, check.float_param(value, "value"))
+
+
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
 class DagsterRunMetadataValue(
     NamedTuple(
@@ -800,6 +900,46 @@ class DagsterRunMetadataValue(
     def value(self) -> str:
         """str: The wrapped run id."""
         return self.run_id
+
+
+@whitelist_for_serdes
+class DagsterJobMetadataValue(
+    NamedTuple(
+        "_DagsterJobMetadataValue",
+        [
+            ("job_name", PublicAttr[str]),
+            ("location_name", PublicAttr[str]),
+            ("repository_name", PublicAttr[Optional[str]]),
+        ],
+    ),
+    MetadataValue["DagsterJobMetadataValue"],
+):
+    """Representation of a dagster run.
+
+    Args:
+        job_name (str): The job's name
+        location_name (str): The job's code location name
+        repository_name (Optional[str]): The job's repository name. If not provided, the job is
+            assumed to be in the same repository as this object.
+    """
+
+    def __new__(
+        cls,
+        job_name: str,
+        location_name: str,
+        repository_name: Optional[str] = None,
+    ):
+        return super(DagsterJobMetadataValue, cls).__new__(
+            cls,
+            check.str_param(job_name, "job_name"),
+            check.str_param(location_name, "location_name"),
+            check.opt_str_param(repository_name, "repository_name"),
+        )
+
+    @public
+    @property
+    def value(self) -> Self:
+        return self
 
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
@@ -845,6 +985,19 @@ class TableMetadataValue(
     Args:
         records (TableRecord): The data as a list of records (i.e. rows).
         schema (Optional[TableSchema]): A schema for the table.
+
+    Example:
+        .. code-block:: python
+
+            from dagster import TableMetadataValue, TableRecord
+
+            TableMetadataValue(
+                schema=None,
+                records=[
+                    TableRecord({"column1": 5, "column2": "x"}),
+                    TableRecord({"column1": 7, "column2": "y"}),
+                ]
+            )
     """
 
     @public
@@ -913,6 +1066,32 @@ class TableSchemaMetadataValue(
     def value(self) -> TableSchema:
         """TableSchema: The wrapped :py:class:`TableSchema`."""
         return self.schema
+
+
+@whitelist_for_serdes
+class TableColumnLineageMetadataValue(
+    NamedTuple(
+        "_TableColumnLineageMetadataValue", [("column_lineage", PublicAttr[TableColumnLineage])]
+    ),
+    MetadataValue[TableColumnLineage],
+):
+    """Representation of the lineage of column inputs to column outputs of arbitrary tabular data.
+
+    Args:
+        column_lineage (TableColumnLineage): The lineage of column inputs to column outputs
+            for the table.
+    """
+
+    def __new__(cls, column_lineage: TableColumnLineage):
+        return super(TableColumnLineageMetadataValue, cls).__new__(
+            cls, check.inst_param(column_lineage, "column_lineage", TableColumnLineage)
+        )
+
+    @public
+    @property
+    def value(self) -> TableColumnLineage:
+        """TableSpec: The wrapped :py:class:`TableSpec`."""
+        return self.column_lineage
 
 
 @whitelist_for_serdes(storage_name="NullMetadataEntryData")
@@ -1040,3 +1219,94 @@ class MetadataEntry(
     def value(self):
         """Alias of `entry_data`."""
         return self.entry_data
+
+
+T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
+
+
+class NamespacedMetadataSet(ABC, DagsterModel):
+    """Extend this class to define a set of metadata fields in the same namespace.
+
+    Supports splatting to a dictionary that can be placed inside a metadata argument along with
+    other dictionary-structured metadata.
+
+    .. code-block:: python
+
+        my_metadata: NamespacedMetadataSet = ...
+        return MaterializeResult(metadata={**my_metadata, ...})
+    """
+
+    @classmethod
+    @abstractmethod
+    def namespace(cls) -> str:
+        raise NotImplementedError()
+
+    @classmethod
+    def _namespaced_key(cls, key: str) -> str:
+        return f"{cls.namespace()}/{key}"
+
+    @staticmethod
+    def _strip_namespace_from_key(key: str) -> str:
+        return key.split("/", 1)[1]
+
+    def keys(self) -> AbstractSet[str]:
+        return {
+            self._namespaced_key(key)
+            for key in self.__fields__.keys()
+            # getattr returns the pydantic property on the subclass
+            if getattr(self, key) is not None
+        }
+
+    def __getitem__(self, key: str) -> Any:
+        # getattr returns the pydantic property on the subclass
+        return getattr(self, self._strip_namespace_from_key(key))
+
+    @classmethod
+    def extract(
+        cls: Type[T_NamespacedMetadataSet], metadata: Mapping[str, Any]
+    ) -> T_NamespacedMetadataSet:
+        """Extracts entries from the provided metadata dictionary into an instance of this class.
+
+        Ignores any entries in the metadata dictionary whose keys don't correspond to fields on this
+        class.
+
+        In general, the following should always pass:
+
+        .. code-block:: python
+
+            class MyMetadataSet(NamedspacedMetadataSet):
+                ...
+
+            metadata: MyMetadataSet  = ...
+            assert MyMetadataSet.extract(dict(metadata)) == metadata
+
+        Args:
+            metadata (Mapping[str, Any]): A dictionary of metadata entries.
+        """
+        kwargs = {}
+        for namespaced_key, value in metadata.items():
+            splits = namespaced_key.split("/")
+            if len(splits) == 2:
+                namespace, key = splits
+                if namespace == cls.namespace() and key in cls.__fields__:
+                    kwargs[key] = value.value if isinstance(value, MetadataValue) else value
+
+        return cls(**kwargs)
+
+
+class TableMetadataSet(NamespacedMetadataSet):
+    """Metadata entries that apply to definitions, observations, or materializations of assets that
+    are tables.
+
+    Args:
+        column_schema (Optional[TableSchema]): The schema of the columns in the table.
+        column_lineage (Optional[TableColumnLineage]): The lineage of column inputs to column
+            outputs for the table.
+    """
+
+    column_schema: Optional[TableSchema] = None
+    column_lineage: Optional[TableColumnLineage] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster"

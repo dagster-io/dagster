@@ -1,15 +1,16 @@
-import {PageHeader, Heading, Box, JoinedButtons} from '@dagster-io/ui-components';
+import {Box, JoinedButtons} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
+import {OverviewAssetsRoot} from './OverviewAssetsRoot';
+import {OverviewPageHeader} from './OverviewPageHeader';
+import {OverviewTabs} from './OverviewTabs';
+import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 import {useTrackPageView} from '../app/analytics';
+import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ActivatableButton} from '../runs/RunListTabs';
-
-import {OverviewAssetsRoot} from './OverviewAssetsRoot';
-import {OverviewTabs} from './OverviewTabs';
-import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 
 export const OverviewActivityRoot = () => {
   useTrackPageView();
@@ -17,21 +18,24 @@ export const OverviewActivityRoot = () => {
 
   const header = React.useCallback(
     ({refreshState}: {refreshState: React.ComponentProps<typeof OverviewTabs>['refreshState']}) => (
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="activity" refreshState={refreshState} />}
-      />
+      <OverviewPageHeader tab="activity" refreshState={refreshState} />
     ),
     [],
   );
 
-  const [defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets'>(
+  const [_defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets'>(
     'overview-activity-tab',
     (json) => (['timeline', 'assets'].includes(json) ? json : 'timeline'),
   );
 
+  const {enableAssetHealthOverviewPreview} = React.useContext(AssetFeatureContext);
+  const defaultTab = enableAssetHealthOverviewPreview ? 'timeline' : _defaultTab;
+
   const tabButton = React.useCallback(
     ({selected}: {selected: 'timeline' | 'assets'}) => {
+      if (enableAssetHealthOverviewPreview) {
+        return null;
+      }
       if (defaultTab !== selected) {
         setDefaultTab(selected);
       }
@@ -46,15 +50,17 @@ export const OverviewActivityRoot = () => {
         </JoinedButtons>
       );
     },
-    [defaultTab, setDefaultTab],
+    [defaultTab, setDefaultTab, enableAssetHealthOverviewPreview],
   );
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <Switch>
-        <Route path="/overview/activity/assets">
-          <OverviewAssetsRoot Header={header} TabButton={tabButton} />
-        </Route>
+        {!enableAssetHealthOverviewPreview && (
+          <Route path="/overview/activity/assets">
+            <OverviewAssetsRoot Header={header} TabButton={tabButton} />
+          </Route>
+        )}
         <Route path="/overview/activity/timeline">
           <OverviewTimelineRoot Header={header} TabButton={tabButton} />
         </Route>

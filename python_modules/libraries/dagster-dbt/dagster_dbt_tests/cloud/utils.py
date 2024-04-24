@@ -1,12 +1,19 @@
 from dagster._utils.merger import deep_merge_dicts
 
-SAMPLE_ACCOUNT_ID = 30000
 SAMPLE_PROJECT_ID = 35000
 SAMPLE_JOB_ID = 40000
 SAMPLE_RUN_ID = 5000000
 
-SAMPLE_API_PREFIX = f"https://cloud.getdbt.com/api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
-SAMPLE_API_V3_PREFIX = f"https://cloud.getdbt.com/api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
+DBT_CLOUD_API_TOKEN = "abc"
+DBT_CLOUD_ACCOUNT_ID = 30000
+DBT_CLOUD_US_HOST = "https://cloud.getdbt.com/"
+DBT_CLOUD_EMEA_HOST = "https://emea.dbt.com/"
+
+SAMPLE_API_PREFIX = f"{DBT_CLOUD_US_HOST}api/v2/accounts/{DBT_CLOUD_ACCOUNT_ID}"
+SAMPLE_API_V3_PREFIX = f"{DBT_CLOUD_US_HOST}api/v3/accounts/{DBT_CLOUD_ACCOUNT_ID}"
+
+SAMPLE_EMEA_API_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v2/accounts/{DBT_CLOUD_ACCOUNT_ID}"
+SAMPLE_EMEA_API_V3_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v3/accounts/{DBT_CLOUD_ACCOUNT_ID}"
 
 
 def job_details_data(job_id: int):
@@ -15,7 +22,7 @@ def job_details_data(job_id: int):
         "generate_docs": False,
         "run_generate_sources": False,
         "id": job_id,
-        "account_id": SAMPLE_ACCOUNT_ID,
+        "account_id": DBT_CLOUD_ACCOUNT_ID,
         "project_id": 50000,
         "environment_id": 47000,
         "name": "MyCoolJob",
@@ -79,7 +86,7 @@ def sample_runs_details(include_related=None, **kwargs):
                 "dbt_project_subdirectory": None,
                 "project_id": 50000,
                 "id": 47000,
-                "account_id": SAMPLE_ACCOUNT_ID,
+                "account_id": DBT_CLOUD_ACCOUNT_ID,
                 "connection_id": 56000,
                 "repository_id": 58000,
                 "credentials_id": 52000,
@@ -107,7 +114,7 @@ def sample_run_details(include_related=None, **kwargs):
     base_data = {
         "id": SAMPLE_RUN_ID,
         "trigger_id": 33000000,
-        "account_id": SAMPLE_ACCOUNT_ID,
+        "account_id": DBT_CLOUD_ACCOUNT_ID,
         "environment_id": 47000,
         "project_id": 50000,
         "job_definition_id": SAMPLE_JOB_ID,
@@ -182,7 +189,7 @@ def sample_run_details(include_related=None, **kwargs):
                 "generate_docs": False,
                 "run_generate_sources": False,
                 "id": SAMPLE_JOB_ID,
-                "account_id": SAMPLE_ACCOUNT_ID,
+                "account_id": DBT_CLOUD_ACCOUNT_ID,
                 "project_id": 50000,
                 "environment_id": 47071,
                 "name": "MyCoolJob",
@@ -342,7 +349,7 @@ def sample_set_environment_variable(environment_variable_id: int, name: str, val
             "developer_message": "",
         },
         "data": {
-            "account_id": SAMPLE_ACCOUNT_ID,
+            "account_id": DBT_CLOUD_ACCOUNT_ID,
             "project_id": SAMPLE_PROJECT_ID,
             "name": name,
             "type": "job",

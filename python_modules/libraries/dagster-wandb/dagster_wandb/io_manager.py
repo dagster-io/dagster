@@ -44,6 +44,8 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import TypedDict
 
+UNIT_TEST_RUN_ID = "0ab2e48b-6d63-4ff5-b160-662cc60145f4"
+
 
 class Config(TypedDict):
     dagster_run_id: str
@@ -161,8 +163,8 @@ class ArtifactsIOManager(IOManager):
 
         with self.wandb_run() as run:
             parameters = {}
-            if context.metadata is not None:
-                parameters = context.metadata.get("wandb_artifact_configuration", {})
+            if context.definition_metadata is not None:
+                parameters = context.definition_metadata.get("wandb_artifact_configuration", {})
 
             raise_on_unknown_write_configuration_keys(parameters)
 
@@ -179,8 +181,8 @@ class ArtifactsIOManager(IOManager):
             serialization_module_parameters = serialization_module.get("parameters", {})
             serialization_module_parameters_with_protocol = {
                 "protocol": (
-                    pickle.HIGHEST_PROTOCOL
-                ),  # we use the highest available protocol if we don't pass one
+                    pickle.HIGHEST_PROTOCOL  # we use the highest available protocol if we don't pass one
+                ),
                 **serialization_module_parameters,
             }
 
@@ -364,8 +366,8 @@ class ArtifactsIOManager(IOManager):
     def _download_artifact(self, context: InputContext):
         with self.wandb_run() as run:
             parameters = {}
-            if context.metadata is not None:
-                parameters = context.metadata.get("wandb_artifact_configuration", {})
+            if context.definition_metadata is not None:
+                parameters = context.definition_metadata.get("wandb_artifact_configuration", {})
 
             raise_on_unknown_read_configuration_keys(parameters)
 
@@ -711,7 +713,7 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         cache_duration_in_minutes = context.resource_config.get("cache_duration_in_minutes")
 
     if "PYTEST_CURRENT_TEST" in os.environ:
-        dagster_run_id = "unit-testing"
+        dagster_run_id = UNIT_TEST_RUN_ID
     else:
         dagster_run_id = context.run_id
 

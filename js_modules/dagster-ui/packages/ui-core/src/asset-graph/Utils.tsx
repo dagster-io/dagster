@@ -1,12 +1,11 @@
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
-
-import {featureEnabled, FeatureFlag} from '../app/Flags';
-import {COMMON_COLLATOR} from '../app/Util';
-import {RunStatus, StaleStatus} from '../graphql/types';
+import memoize from 'lodash/memoize';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
+import {COMMON_COLLATOR} from '../app/Util';
 import {
+  AssetCheckLiveFragment,
   AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
@@ -14,7 +13,17 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-} from './types/useLiveDataForAssetKeys.types';
+} from '../asset-data/types/AssetBaseDataProvider.types';
+import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import {RunStatus} from '../graphql/types';
+
+/**
+ * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
+ */
+
+/**
+ * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
+ */
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
@@ -36,6 +45,10 @@ export function isHiddenAssetGroupJob(jobName: string) {
 //
 export type GraphId = string;
 export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
+export const fromGraphId = (graphId: GraphId): AssetNodeKeyFragment => ({
+  path: JSON.parse(graphId),
+  __typename: 'AssetKey',
+});
 
 export interface GraphNode {
   id: GraphId;
@@ -47,6 +60,7 @@ export interface GraphData {
   nodes: {[assetId: GraphId]: GraphNode};
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
+  expandedGroups?: string[];
 }
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
@@ -116,19 +130,18 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
-  ? pathHorizontalDiagonal({
-      source: (s: any) => s.source,
-      target: (s: any) => s.target,
-      x: (s: any) => s.x,
-      y: (s: any) => s.y,
-    })
-  : pathVerticalDiagonal({
-      source: (s: any) => s.source,
-      target: (s: any) => s.target,
-      x: (s: any) => s.x,
-      y: (s: any) => s.y,
-    });
+export const buildSVGPathHorizontal = pathHorizontalDiagonal({
+  source: (s: any) => s.source,
+  target: (s: any) => s.target,
+  x: (s: any) => s.x,
+  y: (s: any) => s.y,
+});
+export const buildSVGPathVertical = pathVerticalDiagonal({
+  source: (s: any) => s.source,
+  target: (s: any) => s.target,
+  x: (s: any) => s.x,
+  y: (s: any) => s.y,
+});
 
 export interface LiveDataForNode {
   stepKey: string;
@@ -139,18 +152,22 @@ export interface LiveDataForNode {
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
-  staleStatus: StaleStatus | null;
-  staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
-  assetChecks: AssetGraphLiveQuery['assetNodes'][0]['assetChecks'];
+  assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
     numPartitions: number;
     numFailed: number;
   } | null;
+  opNames: string[];
 }
 
-export const MISSING_LIVE_DATA: LiveDataForNode = {
+export type LiveDataForNodeWithStaleData = LiveDataForNode & {
+  staleStatus: AssetStaleDataFragment['staleStatus'];
+  staleCauses: AssetStaleDataFragment['staleCauses'];
+};
+
+export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
@@ -162,6 +179,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],
+  opNames: [],
   stepKey: '',
 };
 
@@ -169,7 +187,10 @@ export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
 
-export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
+export const buildLiveData = ({
+  assetNodes,
+  assetsLatestInfo,
+}: Pick<AssetGraphLiveQuery, 'assetNodes' | 'assetsLatestInfo'>) => {
   const data: LiveData = {};
 
   for (const liveNode of assetNodes) {
@@ -205,20 +226,26 @@ export const buildLiveDataForNode = (
         ? latestRunForAsset.status
         : null,
     lastObservation,
-    assetChecks: assetNode.assetChecks,
-    staleStatus: assetNode.staleStatus,
-    staleCauses: assetNode.staleCauses,
+    assetChecks:
+      assetNode.assetChecksOrError.__typename === 'AssetChecks'
+        ? assetNode.assetChecksOrError.checks
+        : [],
     stepKey: stepKeyForAsset(assetNode),
     freshnessInfo: assetNode.freshnessInfo,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,
     runWhichFailedToMaterialize,
+    opNames: assetNode.opNames,
   };
 };
 
 export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
+}
+
+export function tokenToAssetKey(token: string) {
+  return {path: token.split('/')};
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {
@@ -241,20 +268,31 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
 
-export function walkTreeUpwards(
-  nodeId: string,
-  graphData: GraphData,
-  callback: (nodeId: string) => void,
-) {
-  // TODO
-  console.log({nodeId, graphData, callback});
-}
+export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:.+$/.test(str);
 
-export function walkTreeDownwards(
-  nodeId: string,
-  graphData: GraphData,
-  callback: (nodeId: string) => void,
-) {
-  // TODO
-  console.log({nodeId, graphData, callback});
-}
+export const groupIdForNode = (node: GraphNode) =>
+  [
+    node.definition.repository.name,
+    '@',
+    node.definition.repository.location.name,
+    ':',
+    node.definition.groupName,
+  ].join('');
+
+// Inclusive
+export const getUpstreamNodes = memoize(
+  (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
+    const upstream = Object.keys(graphData.upstream[toGraphId(assetKey)] || {});
+    const currentUpstream = upstream.map((graphId) => fromGraphId(graphId));
+    return [
+      assetKey,
+      ...currentUpstream,
+      ...currentUpstream.map((graphId) => getUpstreamNodes(graphId, graphData)).flat(),
+    ].filter(
+      (key, index, arr) =>
+        // Filter out non uniques
+        arr.findIndex((key2) => JSON.stringify(key2) === JSON.stringify(key)) === index,
+    );
+  },
+  (key, data) => JSON.stringify({key, data}),
+);

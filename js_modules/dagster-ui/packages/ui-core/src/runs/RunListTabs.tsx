@@ -1,17 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
 import {Colors, JoinedButtons, TokenizingFieldValue} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
-import * as React from 'react';
+import {useMemo} from 'react';
 import {useLocation} from 'react-router-dom';
-import styled from 'styled-components';
-
-import {RunStatus, RunsFilter} from '../graphql/types';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {AnchorButton} from '../ui/AnchorButton';
+import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
+import {RunStatus, RunsFilter} from '../graphql/types';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {AnchorButton} from '../ui/AnchorButton';
 
 const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
   switch (selected) {
@@ -42,7 +41,7 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
   );
 
   const {data: countData} = queryResult;
-  const {queuedCount, inProgressCount} = React.useMemo(() => {
+  const {queuedCount, inProgressCount} = useMemo(() => {
     return {
       queuedCount:
         countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
@@ -103,11 +102,26 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
 };
 
 export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
-  ${(props) =>
-    props.$active &&
-    `
-    background: ${Colors.Gray200};
-  `}
+  color: ${Colors.textLight()};
+
+  &&:hover {
+    color: ${Colors.textLight()};
+  }
+
+  ${({$active}) =>
+    $active
+      ? css`
+          background-color: ${Colors.backgroundLighterHover()};
+          color: ${Colors.textDefault()};
+
+          &&:hover {
+            background-color: ${Colors.backgroundLighterHover()};
+            color: ${Colors.textDefault()};
+          }
+        `
+      : css`
+          background-color: ${Colors.backgroundDefault()};
+        `}
 `;
 
 export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {

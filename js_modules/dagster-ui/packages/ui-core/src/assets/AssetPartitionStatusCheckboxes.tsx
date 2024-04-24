@@ -1,17 +1,21 @@
 import {Box, Checkbox} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {testId} from '../testing/testId';
 
 import {AssetPartitionStatus, assetPartitionStatusToText} from './AssetPartitionStatus';
+import {testId} from '../testing/testId';
 
-export const AssetPartitionStatusCheckboxes: React.FC<{
+export const AssetPartitionStatusCheckboxes = ({
+  counts,
+  value,
+  onChange,
+  allowed,
+  disabled,
+}: {
   counts: {[status: string]: number};
   value: AssetPartitionStatus[];
   allowed: AssetPartitionStatus[];
   onChange: (selected: AssetPartitionStatus[]) => void;
   disabled?: boolean;
-}> = ({counts, value, onChange, allowed, disabled}) => {
+}) => {
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} style={{overflow: 'hidden'}}>
       {allowed.map((status) => (

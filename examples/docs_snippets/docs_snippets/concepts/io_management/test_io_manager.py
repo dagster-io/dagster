@@ -1,5 +1,7 @@
 from dagster import (
+    InputContext,
     IOManager,
+    OutputContext,
     build_input_context,
     build_output_context,
 )
@@ -9,13 +11,14 @@ class MyIOManager(IOManager):
     def __init__(self):
         self.storage_dict = {}
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         self.storage_dict[(context.step_key, context.name)] = obj
 
-    def load_input(self, context):
-        return self.storage_dict[
-            (context.upstream_output.step_key, context.upstream_output.name)
-        ]
+    def load_input(self, context: InputContext):
+        if context.upstream_output:
+            return self.storage_dict[
+                (context.upstream_output.step_key, context.upstream_output.name)
+            ]
 
 
 def test_my_io_manager_handle_output():
