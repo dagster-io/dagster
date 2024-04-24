@@ -8,7 +8,7 @@ from time import sleep
 from typing import Dict, List, Optional, Tuple, Union
 
 import dagster._check as check
-from dagster._core.execution.types import RunTelemetryData, TelemetryDataPoint
+from dagster._core.execution.types import RunTelemetryData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.container import (
@@ -110,16 +110,12 @@ def _report_run_metrics(
     metrics: Dict[str, float],
     run_tags: Dict[str, str],
 ):
-    datapoints: List[TelemetryDataPoint] = []
+    datapoints: Dict[str, float] = {}
     for metric, value in metrics.items():
         if value is None:
             continue
         try:
-            datapoint = TelemetryDataPoint(
-                name=metric,
-                value=float(value),
-            )
-            datapoints.append(datapoint)
+            datapoints[metric] = float(value)
         except ValueError:
             logging.warning(f"Failed to convert metric value to float: {metric}={value}, skipping")
 

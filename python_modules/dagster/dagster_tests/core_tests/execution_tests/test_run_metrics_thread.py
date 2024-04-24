@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import dagster._core.execution.run_metrics_thread as run_metrics_thread
 from dagster import DagsterInstance, DagsterRun
+from dagster._core.execution.types import RunTelemetryData
 from pytest import fixture, mark
 
 
@@ -148,3 +149,20 @@ def test_start_run_metrics_thread(dagster_instance, dagster_run, mock_container_
             thread.join()
             assert thread.is_alive() is False
             assert "Starting run metrics thread" in caplog.messages[0]
+
+def test_report_run_metrics(dagster_instance: DagsterInstance, dagster_run: DagsterRun):
+    with patch.object(dagster_instance.run_storage, "add_run_telemetry") as mock_add_run_telemetry:
+        metrics = {
+            "foo": 1.0,
+            "bar": 2.0,
+        }
+        tags = {
+            "baz": "qux",
+        }
+
+        run_metrics_thread._report_run_metrics(dagster_instance, dagster_run, metrics, tags)
+
+        mock_add_run_telemetry.assert_called_once_with(
+            RunTelemetryData(run_id=dagster_run.run_id, datapoints={"foo": 1.0, "bar": 2.0}),
+            tags = tags,
+        )
