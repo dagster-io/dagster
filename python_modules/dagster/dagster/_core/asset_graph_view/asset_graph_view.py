@@ -355,6 +355,12 @@ class AssetGraphView:
             ),
         )
 
+    def compute_in_progress_slice(self, asset_key: AssetKey) -> "AssetSlice":
+        """Return an AssetSlice with only AssetPartitions which are currently in progress."""
+        return _slice_from_subset(
+            self, self._queryer.get_in_progress_asset_subset(asset_key=asset_key)
+        )
+
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str], asset_slice: AssetSlice
     ) -> "AssetSlice":

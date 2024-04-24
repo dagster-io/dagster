@@ -417,6 +417,15 @@ class AssetCondition(ABC, DagsterModel):
 
         return RecentTimePartitionsCondition(lookback_duration=lookback_duration)
 
+    @staticmethod
+    def in_progress() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when it is targeted by an
+        in-progress run.
+        """
+        from .in_progress_condition import InProgressRunCondition
+
+        return InProgressRunCondition()
+
 
 @experimental
 @whitelist_for_serdes
