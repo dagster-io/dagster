@@ -243,7 +243,7 @@ def execute_scheduler_iteration_loop(
                 error_info = DaemonErrorCapture.on_exception(
                     exc_info=sys.exc_info(),
                     logger=logger,
-                    log_message="ScheulderDaemon caught an error",
+                    log_message="SchedulerDaemon caught an error",
                 )
                 yield error_info
                 # Wait a few seconds after an error
