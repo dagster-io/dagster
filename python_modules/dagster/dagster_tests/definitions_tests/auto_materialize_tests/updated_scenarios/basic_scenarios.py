@@ -1,8 +1,8 @@
 from dagster import AssetSpec, AutoMaterializePolicy, AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule import SkipOnRunInProgressRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
+from dagster._core.definitions.auto_materialize_rule_impls import SkipOnRunInProgressRule
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
