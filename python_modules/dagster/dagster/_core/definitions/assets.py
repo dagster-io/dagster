@@ -59,6 +59,7 @@ from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
 
+from .default_asset_attrs import default_asset_attrs_context
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
@@ -182,6 +183,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetCheckSpec,
         )
 
+        default_asset_attrs = default_asset_attrs_context.get()
+
         # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
         input_asset_keys = set(keys_by_input_name.values())
@@ -232,7 +235,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._group_names_by_key = {}
         # assets that don't have a group name get a DEFAULT_GROUP_NAME
         for key in all_asset_keys:
-            group_name = group_names_by_key.get(key)
+            group_name = group_names_by_key.get(key, default_asset_attrs.group_name)
             self._group_names_by_key[key] = validate_group_name(group_name)
 
         all_check_keys = {spec.key for spec in (check_specs_by_output_name or {}).values()}
@@ -314,15 +317,27 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=FreshnessPolicy,
         )
 
-        self._auto_materialize_policies_by_key = check.opt_mapping_param(
+        auto_materialize_policies_by_key = check.opt_mapping_param(
             auto_materialize_policies_by_key,
             "auto_materialize_policies_by_key",
             key_type=AssetKey,
             value_type=AutoMaterializePolicy,
         )
+        if default_asset_attrs.auto_materialize_policy is not None:
+            self._auto_materialize_policies_by_key = {
+                asset_key: auto_materialize_policies_by_key.get(
+                    asset_key, default_asset_attrs.auto_materialize_policy
+                )
+                for asset_key in all_asset_keys
+            }
+        else:
+            self._auto_materialize_policies_by_key = auto_materialize_policies_by_key
 
         self._backfill_policy = check.opt_inst_param(
-            backfill_policy, "backfill_policy", BackfillPolicy
+            backfill_policy,
+            "backfill_policy",
+            BackfillPolicy,
+            default=default_asset_attrs.backfill_policy,
         )
 
         if self._partitions_def is None:

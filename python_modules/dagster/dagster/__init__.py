@@ -177,6 +177,9 @@ from dagster._core.definitions.decorators.source_asset_decorator import (
     multi_observable_source_asset as multi_observable_source_asset,
     observable_source_asset as observable_source_asset,
 )
+from dagster._core.definitions.default_asset_attrs import (
+    default_asset_attrs as default_asset_attrs,
+)
 from dagster._core.definitions.definitions_class import (
     BindResourcesToJobs as BindResourcesToJobs,
     Definitions as Definitions,
