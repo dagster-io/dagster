@@ -85,10 +85,12 @@ def completion(
     with openai.get_client(context) as client:
         prompt = stuff_prompt.PROMPT
         model = ChatOpenAI(client=client.chat.completions, model=config.model, temperature=0)
-        summaries = " ".join([
-            SUMMARY_TEMPLATE.format(content=doc.page_content, source=doc.metadata["source"])
-            for doc in search_index.similarity_search(config.question, k=4)
-        ])
+        summaries = " ".join(
+            [
+                SUMMARY_TEMPLATE.format(content=doc.page_content, source=doc.metadata["source"])
+                for doc in search_index.similarity_search(config.question, k=4)
+            ]
+        )
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
         context.log.info(chain.invoke({"summaries": summaries, "question": config.question}))
