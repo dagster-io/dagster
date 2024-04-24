@@ -52,7 +52,7 @@ export const useAssetDefinitionFilterState = () => {
       owners: owners?.length ? JSON.stringify(owners) : undefined,
       tags: tags?.length ? JSON.stringify(tags) : undefined,
       repos: repos?.length ? JSON.stringify(repos) : undefined,
-      selectAllFilters: selectAllFilters.length ? JSON.stringify(selectAllFilters) : undefined,
+      selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
     }),
     decode: (qs) => ({
       groups: qs.groups ? JSON.parse(qs.groups) : [],
