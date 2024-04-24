@@ -1,4 +1,5 @@
 import logging
+import os
 from collections import defaultdict
 from datetime import datetime
 from typing import (
@@ -619,28 +620,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     }
                     break
 
-                updated_parents = self.get_asset_partitions_updated_after_cursor(
-                    asset_key=parent_asset_key,
-                    asset_partitions=None,
-                    after_cursor=latest_storage_id,
-                    respect_materialization_data_versions=False,
-                )
-
-                if len(updated_parents) >= 100:
-                    parent_partitions_subset = parent_partitions_def.subset_with_partition_keys(
-                        sorted(
-                            [
-                                ap.partition_key
-                                for ap in updated_parents
-                                if ap.partition_key is not None
-                            ]
-                        )[-100:]
-                    )
-                else:
-                    # the set of asset partitions which have been updated since the latest storage id
-                    parent_partitions_subset = self.get_asset_subset_updated_after_cursor(
-                        asset_key=parent_asset_key, after_cursor=latest_storage_id
-                    ).subset_value
+                # the set of asset partitions which have been updated since the latest storage id
+                parent_partitions_subset = self.get_asset_subset_updated_after_cursor(
+                    asset_key=parent_asset_key, after_cursor=latest_storage_id
+                ).subset_value
 
                 # we are mapping from the partitions of the parent asset to the partitions of
                 # the child asset
@@ -663,7 +646,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         f"Could not map partitions between parent {parent_asset_key.to_string()} "
                         f"and child {child_asset_key.to_string()}."
                     ) from e
-                for child_partition in child_partitions_subset.get_partition_keys():
+
+                child_partitions = reversed(child_partitions_subset.get_partition_keys())
+                max_child_partitions = os.getenv("DAGSTER_MAX_AMP_CHILD_PARTITIONS", 10)
+                if max_child_partitions:
+                    child_partitions = list(child_partitions)[: int(max_child_partitions)]
+
+                for child_partition in child_partitions:
                     # we need to see if the child is planned for the same run, but this is
                     # expensive, so we try to avoid doing so in as many situations as possible
                     child_asset_partition = AssetKeyPartitionKey(child_asset_key, child_partition)
