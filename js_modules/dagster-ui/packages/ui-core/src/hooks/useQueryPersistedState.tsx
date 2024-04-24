@@ -1,3 +1,4 @@
+import {memoize} from 'lodash';
 import isEqual from 'lodash/isEqual';
 import qs from 'qs';
 import {useCallback, useMemo, useRef} from 'react';
@@ -20,6 +21,13 @@ export type QueryPersistedStateConfig<T extends QueryPersistedDataType> = {
   decode?: (raw: {[key: string]: any}) => T;
   encode?: (raw: T) => {[key: string]: any};
 };
+
+const defaultEncode = memoize(<T,>(queryKey: string) => (raw: T) => ({[queryKey]: raw}));
+const defaultDecode = memoize(
+  <T,>(queryKey: string) =>
+    (qs: {[key: string]: any}) =>
+      inferTypeOfQueryParam<T>(qs[queryKey]),
+);
 
 /**
  * This goal of this hook is to make it easy to replace `React.useState` with a version
@@ -60,10 +68,10 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
   if (queryKey) {
     // Just a short-hand way of providing encode/decode that go from qs object => string
     if (!encode) {
-      encode = (raw: T) => ({[queryKey]: raw});
+      encode = defaultEncode(queryKey);
     }
     if (!decode) {
-      decode = (qs: {[key: string]: any}) => inferTypeOfQueryParam<T>(qs[queryKey]);
+      decode = defaultDecode(queryKey);
     }
   }
 
