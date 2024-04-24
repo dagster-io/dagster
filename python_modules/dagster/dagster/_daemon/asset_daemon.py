@@ -415,12 +415,20 @@ class AssetDaemon(DagsterDaemon):
             while True:
                 start_time = pendulum.now("UTC").timestamp()
                 yield SpanMarker.START_SPAN
-                yield from self._run_iteration_impl(
-                    workspace_process_context,
-                    threadpool_executor=threadpool_executor,
-                    amp_tick_futures=amp_tick_futures,
-                    debug_crash_flags={},
-                )
+                try:
+                    yield from self._run_iteration_impl(
+                        workspace_process_context,
+                        threadpool_executor=threadpool_executor,
+                        amp_tick_futures=amp_tick_futures,
+                        debug_crash_flags={},
+                    )
+                except Exception:
+                    error_info = DaemonErrorCapture.on_exception(
+                        exc_info=sys.exc_info(),
+                        logger=self._logger,
+                        log_message="AssetDaemon caught an error",
+                    )
+                    yield error_info
                 yield SpanMarker.END_SPAN
                 end_time = pendulum.now("UTC").timestamp()
                 loop_duration = end_time - start_time

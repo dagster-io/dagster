@@ -2950,6 +2950,7 @@ type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
   assets: [Asset!]!
+  assetsOrError: AssetsOrError!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError

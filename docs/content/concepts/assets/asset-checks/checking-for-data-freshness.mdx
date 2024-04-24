@@ -28,7 +28,7 @@ Additionally, freshness checks can help communicate SLAs for their data freshnes
 
 Freshness checks use an asset's latest update time to determine if it's overdue. How Dagster determines the last update time varies on the type of asset being targeted:
 
-- **For source assets**, which are assets whose data feeds a Dagster pipeline, freshness checks utilize the time the asset was last updated to determine freshness. In this guide, we'll demonstrate how to use [observable source assets and a schedule](#defining-freshness-checks-for-source-assets) to achieve this.
+- **For source assets**, which are assets whose data feeds a Dagster pipeline, freshness checks depend on asset observations to report the time the asset was last updated. In this guide, we'll demonstrate how to use [observable source assets and a schedule](#defining-freshness-checks-for-source-assets) to achieve this.
 
 - **For materializable assets**, which are assets materialized by Dagster, Dagster infers the asset's last update time using the its latest materialization timestamp. In this guide, we'll demonstrate how to use [`@asset`-decorated assets and a sensor](#defining-freshness-checks-for-materializable-assets) to achieve this.
 
@@ -50,9 +50,9 @@ In this section, we'll demonstrate how to implement freshness checks for source 
 
 ### Step 1: Track the asset's last update time
 
-To run freshness checks on source assets, the checks need to know when the source assets were last updated. [Observable source assets](/concepts/assets/asset-observations#observable-source-assets) - in this case, <PyObject object="multi_observable_source_asset" decorator /> can be used to track the update times of these assets.
+To run freshness checks on source assets, the checks need to know when the source assets were last updated. [Observable source assets](/concepts/assets/asset-observations#observable-source-assets) can be used to track the update times of these assets.
 
-The following is an example of multiple Snowflake tables, backed by an observation function that queries Snowflake to find the most recent time the tables were updated. The function yields the update time as metadata to be stored in the Dagster event log:
+The following example implements this using the <PyObject object="multi_observable_source_asset" decorator /> decorator. In it, multiple Snowflake tables are backed by an observation function that queries Snowflake to find the most recent time the tables were updated. The function yields the update time as metadata to be stored in the Dagster event log:
 
 ```python file=/concepts/assets/asset_checks/source_data_freshness_in_pieces.py startafter=start_multi_observable_marker endbefore=end_multi_observable_marker
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps
@@ -137,7 +137,7 @@ These checks will automatically execute after the observations of the source ass
 
 <Note>A Dagster+ Pro plan is required to use this feature.</Note>
 
-Setting custom freshness policies on a large number of source assets can be time-consuming. Dagster+ Pro users can take advantage of a time series anomaly detection model instead of applying policies on an asset-by-asset basis. Freshness checks that use this approach function the same way checks with hardcoded parameters do.
+Setting custom freshness policies on a large number of assets can be time-consuming. Dagster+ Pro users can take advantage of a time series anomaly detection model instead of applying policies on an asset-by-asset basis. Freshness checks that use this approach function the same way checks with hardcoded parameters do.
 
 This model uses data from past materializations/observations to determine if data is arriving later than expected. **Note**: If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.
 

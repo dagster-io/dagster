@@ -1,4 +1,3 @@
-import hashlib
 from abc import ABC, abstractproperty
 from collections import defaultdict
 from enum import Enum
@@ -314,7 +313,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
                 OrAssetCondition.__name__,
                 *[e.condition_snapshot.unique_id for e in child_evaluations],
             ]
-            unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+            unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
             decision_type_snapshot = AssetConditionSnapshot(
                 class_name=OrAssetCondition.__name__, description="Any of", unique_id=unique_id
             )
@@ -341,7 +340,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
             NotAssetCondition.__name__,
             evaluation.condition_snapshot.unique_id,
         ]
-        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
 
         if is_partitioned:
             # In reality, we'd like to invert the inner true_subset here, but this is an
@@ -432,7 +431,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
             AndAssetCondition.__name__,
             *[e.condition_snapshot.unique_id for e in child_evaluations],
         ]
-        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
         condition_snapshot = AssetConditionSnapshot(
             class_name=AndAssetCondition.__name__, description="All of", unique_id=unique_id
         )

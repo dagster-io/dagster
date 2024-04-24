@@ -889,3 +889,23 @@ def test_multi_asset_check(
 
     for key in [biz_check.key, buz_check.key]:
         assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
+
+
+def test_cross_code_location_partition_mapping() -> None:
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
+    def a(): ...
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"), deps=["a"])
+    def b(): ...
+
+    a_nodes = external_asset_nodes_from_defs([], AssetGraph.from_assets([a]))
+    b_nodes = external_asset_nodes_from_defs([], AssetGraph.from_assets([b]))
+
+    asset_graph = RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
+        [(MagicMock(), asset_node) for asset_node in [*a_nodes, *b_nodes]], []
+    )
+
+    assert isinstance(
+        asset_graph.get_partition_mapping(asset_key=b.key, parent_asset_key=a.key),
+        TimeWindowPartitionMapping,
+    )
