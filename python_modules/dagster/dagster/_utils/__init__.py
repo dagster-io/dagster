@@ -45,6 +45,7 @@ from typing import (
 )
 
 import packaging.version
+from filelock import FileLock
 from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
@@ -821,62 +822,15 @@ def run_with_concurrent_update_guard(
             Default: 60 seconds.
         **kwargs: The keyword arguments to pass to the function.
     """
-    lock_path = target_file_path.with_suffix(".dagster-lock")
-
     start_mtime = 0
     if target_file_path.exists():
         start_mtime = target_file_path.lstat().st_mtime
 
-    if not lock_path.parent.exists():
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-
-    own_lock = False
-    try:
-        with open(lock_path, "x") as f:
-            own_lock = True
-            f.write(f"{os.getpid()}")
-
-        fn(**kwargs)
-        return
-    except FileExistsError as e:
-        if os.path.realpath(e.filename) != os.path.realpath(lock_path):
-            raise
-    finally:
-        if own_lock and lock_path.exists():
-            lock_path.unlink()
-
-    their_pid = 0
-    try:
-        their_pid = int(lock_path.read_text())
-    except Exception:
-        pass
-
-    while lock_path.exists() and (time.time() - start_time) <= guard_timeout_seconds:
-        # previous update successful, return
+    with FileLock(target_file_path.with_suffix(".concurrent-update-lock")).acquire(
+        timeout=guard_timeout_seconds
+    ):
+        # double check if the target file has been updated by another process while waiting for lock
         if target_file_path.exists() and target_file_path.lstat().st_mtime > start_mtime:
             return
-
-        # if their process is gone, remove the lock and break
-        if their_pid and not process_is_alive(their_pid):
-            lock_path.unlink()
-            break
-
-        time.sleep(0.01)
-
-    # previous update successful, return
-    if target_file_path.exists():
-        target_mtime = target_file_path.lstat().st_mtime
-        if target_mtime > start_mtime:
-            return
-
-    if (time.time() - start_time) > guard_timeout_seconds:
-        raise Exception(f"Timed out waiting for concurrent update guard lock on {target_file_path}")
-
-    # otherwise try again
-    run_with_concurrent_update_guard(
-        target_file_path,
-        fn,
-        guard_timeout_seconds=guard_timeout_seconds,
-        start_time=start_time,
-        **kwargs,
-    )
+        update_fn(**kwargs)
+        return
