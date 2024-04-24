@@ -5,7 +5,7 @@ import os.path
 import threading
 from sys import platform
 from time import sleep
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import dagster._check as check
 from dagster._core.execution.types import RunTelemetryData
