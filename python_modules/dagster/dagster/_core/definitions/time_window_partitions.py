@@ -1,4 +1,3 @@
-import functools
 import hashlib
 import json
 import re
@@ -30,6 +29,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._model import DagsterModel
 from dagster._serdes import (
     whitelist_for_serdes,
 )
@@ -48,6 +48,7 @@ from dagster._seven.compat.pendulum import (
     create_pendulum_time,
     to_timezone,
 )
+from dagster._utils.cached_method import cached_method
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -249,17 +250,7 @@ class TimeWindow(NamedTuple):
 )
 class TimeWindowPartitionsDefinition(
     PartitionsDefinition,
-    NamedTuple(
-        "_TimeWindowPartitionsDefinition",
-        [
-            ("start", PublicAttr[datetime]),
-            ("timezone", PublicAttr[str]),
-            ("end", PublicAttr[Optional[datetime]]),
-            ("fmt", PublicAttr[str]),
-            ("end_offset", PublicAttr[int]),
-            ("cron_schedule", PublicAttr[str]),
-        ],
-    ),
+    DagsterModel,
 ):
     r"""A set of partitions where each partition corresponds to a time window.
 
@@ -297,8 +288,15 @@ class TimeWindowPartitionsDefinition(
             and so on.
     """
 
-    def __new__(
-        cls,
+    start: PublicAttr[datetime]
+    timezone: PublicAttr[str]
+    end: PublicAttr[Optional[datetime]]
+    fmt: PublicAttr[str]
+    end_offset: PublicAttr[int]
+    cron_schedule: PublicAttr[str]
+
+    def __init__(
+        self,
         start: Union[datetime, str],
         fmt: str,
         end: Union[datetime, str, None] = None,
@@ -356,8 +354,13 @@ class TimeWindowPartitionsDefinition(
                 " TimeWindowPartitionsDefinition."
             )
 
-        return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone, end_dt, fmt, end_offset, cron_schedule
+        super().__init__(
+            start=start_dt,
+            timezone=timezone,
+            end=end_dt,
+            fmt=fmt,
+            end_offset=end_offset,
+            cron_schedule=cron_schedule,
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -502,12 +505,12 @@ class TimeWindowPartitionsDefinition(
         # https://github.com/dagster-io/dagster/issues/2372
         raise DagsterInvariantViolationError("TimeWindowPartitionsDefinition is not pickleable")
 
-    @functools.lru_cache(maxsize=100)
+    @cached_method
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
         return next(iter(self._iterate_time_windows(partition_key_dt)))
 
-    @functools.lru_cache(maxsize=5)
+    @cached_method
     def time_windows_for_partition_keys(
         self,
         partition_keys: FrozenSet[str],
@@ -616,7 +619,7 @@ class TimeWindowPartitionsDefinition(
 
         return prev_window
 
-    @functools.lru_cache(maxsize=256)
+    @cached_method
     def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         current_timestamp = current_time.timestamp()
 
@@ -662,7 +665,7 @@ class TimeWindowPartitionsDefinition(
         )
         return self._get_first_partition_window(current_time=current_time)
 
-    @functools.lru_cache(maxsize=256)
+    @cached_method
     def _get_last_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         if self.get_first_partition_window(current_time) is None:
             return None
@@ -725,7 +728,7 @@ class TimeWindowPartitionsDefinition(
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
 
-    @functools.lru_cache(maxsize=5)
+    @cached_method
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
         result: List[str] = []
         time_window_end_timestamp = time_window.end.timestamp()
@@ -1065,8 +1068,8 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         start_date: Union[datetime, str],
         end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
@@ -1077,8 +1080,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
 
-        return super(DailyPartitionsDefinition, cls).__new__(
-            cls,
+        super().__init__(
             schedule_type=ScheduleType.DAILY,
             start=start_date,
             end=end_date,
@@ -1231,8 +1233,8 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         start_date: Union[datetime, str],
         end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
@@ -1242,8 +1244,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     ):
         _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
-        return super(HourlyPartitionsDefinition, cls).__new__(
-            cls,
+        super().__init__(
             schedule_type=ScheduleType.HOURLY,
             start=start_date,
             end=end_date,
@@ -1365,8 +1366,8 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         start_date: Union[datetime, str],
         end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
@@ -1378,8 +1379,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
 
-        return super(MonthlyPartitionsDefinition, cls).__new__(
-            cls,
+        super().__init__(
             schedule_type=ScheduleType.MONTHLY,
             start=start_date,
             end=end_date,
@@ -1513,8 +1513,8 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         start_date: Union[datetime, str],
         end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
@@ -1526,8 +1526,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
 
-        return super(WeeklyPartitionsDefinition, cls).__new__(
-            cls,
+        super().__init__(
             schedule_type=ScheduleType.WEEKLY,
             start=start_date,
             end=end_date,

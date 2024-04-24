@@ -42,7 +42,7 @@ def time_window(start: str, end: str) -> TimeWindow:
     )
 
 
-def test_daily_partitions():
+def test_daily_partitions() -> None:
     @daily_partitioned_config(start_date="2021-05-05")
     def my_partitioned_config(_start, _end):
         return {}
