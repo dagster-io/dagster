@@ -28,6 +28,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
+    PartitionsDefinition,
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
@@ -574,7 +575,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 )
             )
 
-            parent_partitions_def = self.asset_graph.get(parent_asset_key).partitions_def
+            parent_partitions_def: PartitionsDefinition = self.asset_graph.get(
+                parent_asset_key
+            ).partitions_def
             if parent_partitions_def is None:
                 latest_parent_record = check.not_none(
                     self.get_latest_materialization_or_observation_record(
@@ -615,10 +618,30 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         AssetKeyPartitionKey(child_asset_key)
                     }
                     break
-                # the set of asset partitions which have been updated since the latest storage id
-                parent_partitions_subset = self.get_asset_subset_updated_after_cursor(
-                    asset_key=parent_asset_key, after_cursor=latest_storage_id
-                ).subset_value
+
+                updated_parents = self.get_asset_partitions_updated_after_cursor(
+                    asset_key=parent_asset_key,
+                    asset_partitions=None,
+                    after_cursor=latest_storage_id,
+                    respect_materialization_data_versions=False,
+                )
+
+                if len(updated_parents) >= 100:
+                    parent_partitions_subset = parent_partitions_def.subset_with_partition_keys(
+                        sorted(
+                            [
+                                ap.partition_key
+                                for ap in updated_parents
+                                if ap.partition_key is not None
+                            ]
+                        )[-100:]
+                    )
+                else:
+                    # the set of asset partitions which have been updated since the latest storage id
+                    parent_partitions_subset = self.get_asset_subset_updated_after_cursor(
+                        asset_key=parent_asset_key, after_cursor=latest_storage_id
+                    ).subset_value
+
                 # we are mapping from the partitions of the parent asset to the partitions of
                 # the child asset
                 partition_mapping = self.asset_graph.get_partition_mapping(
