@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Caption,
   Colors,
@@ -151,6 +152,18 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
               setSearchValue(e.target.value);
             }}
             placeholder="Filter asset groups…"
+          />
+        </Box>
+        <Box padding={{horizontal: 24, vertical: 16}} border="top">
+          <Alert
+            intent="info"
+            title="This Assets tab will be removed in an upcoming release."
+            description={
+              <>
+                Use the <Link to="/asset-groups">global asset lineage page</Link> to view grouped
+                asset status details.
+              </>
+            }
           />
         </Box>
       </div>
