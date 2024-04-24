@@ -7,7 +7,6 @@ import yaml
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
-from filelock import FileLock
 
 from .errors import (
     DagsterDbtManifestNotFoundError,
@@ -62,13 +61,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
     def on_load(self, project: "DbtProject"):
         if self.using_dagster_dev() or self.parse_on_load_opt_in():
-            # guard against multiple Dagster processes trying to update this at the same time
-            run_with_concurrent_update_guard(
-                project.manifest_path,
-                self.prepare,
-                project=project,
-            )
-
+            self.prepare(project)
             if not project.manifest_path.exists():
                 raise DagsterDbtManifestNotFoundError(
                     f"Did not find manifest.json at expected path {project.manifest_path} "
@@ -77,24 +70,33 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
                 )
 
     def prepare(self, project: "DbtProject") -> None:
-        from .core.resources_v2 import DbtCliResource
-
+        # guard against multiple Dagster processes trying to update this at the same time
         if (
             project.dependencies_path.exists() or project.packages_path.exists()
         ) and not project.packages_install_path.exists():
-            file_path = (
-                project.dependencies_path
-                if project.dependencies_path.exists()
-                else project.packages_path
+            run_with_concurrent_update_guard(
+                project.project_dir.joinpath("package-lock.yml"),
+                self._prepare_packages,
+                project=project,
             )
-            lock_path = file_path.with_suffix(".lock")
-            lock = FileLock(lock_path)
-            with lock:
-                (
-                    DbtCliResource(project_dir=project)
-                    .cli(["deps", "--quiet"], target_path=project.target_path)
-                    .wait()
-                )
+
+        run_with_concurrent_update_guard(
+            project.manifest_path,
+            self._prepare_manifest,
+            project=project,
+        )
+
+    def _prepare_packages(self, project: "DbtProject") -> None:
+        from .core.resources_v2 import DbtCliResource
+
+        (
+            DbtCliResource(project_dir=project)
+            .cli(["deps", "--quiet"], target_path=project.target_path)
+            .wait()
+        )
+
+    def _prepare_manifest(self, project: "DbtProject") -> None:
+        from .core.resources_v2 import DbtCliResource
 
         (
             DbtCliResource(project_dir=project)
