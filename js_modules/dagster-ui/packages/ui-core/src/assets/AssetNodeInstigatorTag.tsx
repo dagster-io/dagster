@@ -11,7 +11,6 @@ import {RepoAddress} from '../workspace/types';
 
 export const insitigatorsByType = (assetNode: AssetNodeInstigatorsFragment) => {
   const instigators = assetNode.targetingInstigators;
-  console.log({instigators});
   const schedules = instigators?.filter(
     (instigator): instigator is ScheduleSwitchFragment => instigator.__typename === 'Schedule',
   );
