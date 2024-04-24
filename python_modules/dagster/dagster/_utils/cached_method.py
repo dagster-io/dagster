@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Callable, Dict, Hashable, Mapping, Tuple, TypeVar
+from typing import Callable, Hashable, Mapping, Tuple, TypeVar
 
 from typing_extensions import Concatenate, ParamSpec
 
@@ -13,7 +13,7 @@ P = ParamSpec("P")
 
 NO_ARGS_HASH_VALUE = 0
 
-CACHED_METHOD_FIELD_SUFFIX = "_cached__internal__"
+CACHED_METHOD_CACHE_FIELD = "_cached_method_cache__internal__"
 
 
 def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
@@ -60,17 +60,19 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
     call is immaterial.  See for https://github.com/dagster-io/dagster/pull/20212
     script, data, and discussion of these matters.
     """
-    cache_attr_name = method.__name__ + CACHED_METHOD_FIELD_SUFFIX
-
+    # Cache these once self is first observed to avoid expensive work on each access
     arg_names = None
 
     @wraps(method)
     def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
-        if not hasattr(self, cache_attr_name):
-            cache: Dict[Hashable, T] = {}
-            setattr(self, cache_attr_name, cache)
-        else:
-            cache = getattr(self, cache_attr_name)
+        if not hasattr(self, CACHED_METHOD_CACHE_FIELD):
+            setattr(self, CACHED_METHOD_CACHE_FIELD, {})
+
+        cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
+        if method.__name__ not in cache_dict:
+            cache_dict[method.__name__] = {}
+
+        cache = cache_dict[method.__name__]
 
         canonical_kwargs = None
         if args:

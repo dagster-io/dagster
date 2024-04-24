@@ -1,7 +1,7 @@
 from functools import cached_property
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Hashable, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 from typing_extensions import Self
 
 from .pydantic_compat_layer import USING_PYDANTIC_2
@@ -14,6 +14,8 @@ class DagsterModel(BaseModel):
     - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
     - Avoid pydantic reading a cached property class as part of the schema.
     """
+
+    _cached_method_cache__internal__: Dict[Hashable, Any] = PrivateAttr(default_factory=dict)
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)

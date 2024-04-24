@@ -40,7 +40,7 @@ from dagster._model.pydantic_compat_layer import (
     model_config,
     model_fields,
 )
-from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
+from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
@@ -65,7 +65,7 @@ def _is_field_internal(name: str) -> bool:
 
 
 # ensure that this ends with the internal marker so we can do a single check
-assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
+assert CACHED_METHOD_CACHE_FIELD.endswith(INTERNAL_MARKER)
 
 
 def _is_frozen_pydantic_error(e: Exception) -> bool:
