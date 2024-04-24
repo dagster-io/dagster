@@ -199,7 +199,11 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     partition_subsets_by_asset_key = {}
     for key_str, serialized_str in data.get("handled_root_partitions_by_asset_key", {}).items():
         asset_key = AssetKey.from_user_string(key_str)
-        partitions_def = asset_graph.get(asset_key).partitions_def if asset_graph else None
+        partitions_def = (
+            asset_graph.get(asset_key).partitions_def
+            if asset_graph and asset_graph.has(asset_key)
+            else None
+        )
         if not partitions_def:
             continue
         try:
@@ -221,7 +225,9 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     latest_evaluation_by_asset_key = {}
     for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
         key = AssetKey.from_user_string(key_str)
-        partitions_def = asset_graph.get(key).partitions_def if asset_graph else None
+        partitions_def = (
+            asset_graph.get(key).partitions_def if asset_graph and asset_graph.has(key) else None
+        )
 
         evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
             serialized_evaluation, partitions_def
@@ -239,7 +245,11 @@ def backcompat_deserialize_asset_daemon_cursor_str(
         latest_evaluation_result = latest_evaluation_by_asset_key.get(asset_key)
         # create a placeholder evaluation result if we don't have one
         if not latest_evaluation_result:
-            partitions_def = asset_graph.get(asset_key).partitions_def if asset_graph else None
+            partitions_def = (
+                asset_graph.get(asset_key).partitions_def
+                if asset_graph and asset_graph.has(key)
+                else None
+            )
             latest_evaluation_result = AssetConditionEvaluation(
                 condition_snapshot=AssetConditionSnapshot(
                     class_name="", description="", unique_id=""
