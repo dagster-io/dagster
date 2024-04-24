@@ -647,8 +647,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         f"and child {child_asset_key.to_string()}."
                     ) from e
 
-                child_partitions = reversed(child_partitions_subset.get_partition_keys())
-                max_child_partitions = os.getenv("DAGSTER_MAX_AMP_CHILD_PARTITIONS", 10)
+                child_partitions = reversed(list(child_partitions_subset.get_partition_keys()))
+                max_child_partitions = os.getenv("DAGSTER_MAX_AMP_CHILD_PARTITIONS", None)
                 if max_child_partitions:
                     child_partitions = list(child_partitions)[: int(max_child_partitions)]
 
