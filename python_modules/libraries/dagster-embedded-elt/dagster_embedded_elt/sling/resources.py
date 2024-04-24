@@ -247,10 +247,12 @@ class SlingResource(ConfigurableResource):
         assets_def = context.assets_def
         run_config = context.run_config
         if run_config:  # triggered via sensor
-            ops_with_config = run_config.get("ops", {})
-            assets_op = vars(ops_with_config).get(assets_def.op.name, {})
-            assets_op_config = vars(assets_op).get("config", {})
-            context_streams = vars(assets_op_config).get("context_streams", {})
+            run_config_ops = run_config.get("ops", {})
+            if isinstance(run_config_ops, dict):
+                assets_op_config = run_config_ops.get(assets_def.op.name, {}).get("config", {})
+            else:
+                assets_op_config = {}
+            context_streams = assets_op_config.get("context_streams", {})
             if not context_streams:
                 no_context_streams_config_message = f"""
                 It was expected that your `run_config` would provide a `context_streams` config for
@@ -274,13 +276,12 @@ class SlingResource(ConfigurableResource):
             )
             raw_streams = get_streams_from_replication(replication_config)
             streams = streams_with_default_dagster_meta(raw_streams, replication_config)
-            for asset_key in context.selected_asset_keys:
-                for stream in streams:
-                    if dagster_sling_translator.get_asset_key(stream) == asset_key:
-                        name = stream["name"]
-                        config = stream["config"]
-                        context_streams[name] = config
-                        break
+            selected_asset_keys = context.selected_asset_keys
+            for stream in streams:
+                asset_key = dagster_sling_translator.get_asset_key(stream)
+                if asset_key in selected_asset_keys:
+                    context_streams.update({stream["name"]: stream["config"]})
+
         return context_streams
 
     @classmethod
