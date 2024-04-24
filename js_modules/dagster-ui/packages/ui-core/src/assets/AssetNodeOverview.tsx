@@ -24,7 +24,6 @@ import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNo
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
-import {AutomaterializePolicyTag} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {LargeCollapsibleSection} from './LargeCollapsibleSection';
 import {MaterializationTag} from './MaterializationTag';
@@ -276,12 +275,6 @@ export const AssetNodeOverview = ({
         label: 'Schedules',
         children: schedules.length > 0 && (
           <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
-        ),
-      },
-      {
-        label: 'Auto-materialize policy',
-        children: assetNode.autoMaterializePolicy && (
-          <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
         ),
       },
       {

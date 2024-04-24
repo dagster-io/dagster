@@ -263,6 +263,7 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
     }
   };
 
+  console.log({definition});
   const reportEvents = useReportEventsModal(
     definition
       ? {

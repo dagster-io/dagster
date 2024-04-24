@@ -240,7 +240,7 @@ export const SENSOR_ASSET_SELECTIONS_QUERY = gql`
           definition {
             id
             autoMaterializePolicy {
-              policyType
+              __typename
             }
           }
         }

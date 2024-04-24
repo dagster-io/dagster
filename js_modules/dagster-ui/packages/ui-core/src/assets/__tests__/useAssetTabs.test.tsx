@@ -2,7 +2,6 @@ import {renderHook} from '@testing-library/react';
 
 import {
   AutoMaterializeDecisionType,
-  AutoMaterializePolicyType,
   buildAssetKey,
   buildAssetNode,
   buildAutoMaterializePolicy,
@@ -20,7 +19,6 @@ import {useAssetTabs} from '../AssetTabs';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 const autoMaterializePolicy = buildAutoMaterializePolicy({
-  policyType: AutoMaterializePolicyType.EAGER,
   rules: [
     buildAutoMaterializeRule({
       decisionType: AutoMaterializeDecisionType.MATERIALIZE,
