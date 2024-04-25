@@ -23,7 +23,7 @@ const TrackedSuspenseContext = createContext({
   },
 });
 
-type Boundary = {
+export type Boundary = {
   id: string;
   name: string;
 };
