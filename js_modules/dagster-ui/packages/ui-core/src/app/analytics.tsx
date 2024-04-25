@@ -1,4 +1,5 @@
 import {createContext, useCallback, useContext, useEffect} from 'react';
+import {useLocation, useRouteMatch} from 'react-router-dom';
 import {atom, useRecoilValue, useSetRecoilState} from 'recoil';
 
 export const currentPageAtom = atom<{path: string; specificPath: string}>({
@@ -54,7 +55,9 @@ export const dummyAnalytics = () => ({
 
 export const useTrackPageView = () => {
   const analytics = useAnalytics();
-  const {path, specificPath} = usePageContext();
+  const match = useRouteMatch();
+  const {pathname: specificPath} = useLocation();
+  const {path} = match;
 
   const setCurrentPage = useSetRecoilState(currentPageAtom);
 
