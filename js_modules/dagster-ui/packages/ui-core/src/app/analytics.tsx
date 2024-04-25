@@ -1,4 +1,4 @@
-import {createContext, useCallback, useContext, useEffect} from 'react';
+import {createContext, useCallback, useContext, useLayoutEffect} from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
 import {atom, useRecoilValue, useSetRecoilState} from 'recoil';
 
@@ -61,7 +61,7 @@ export const useTrackPageView = () => {
 
   const setCurrentPage = useSetRecoilState(currentPageAtom);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Wait briefly to allow redirects.
     const timer = setTimeout(() => {
       analytics.page(path, specificPath);
@@ -71,7 +71,7 @@ export const useTrackPageView = () => {
     return () => {
       clearTimeout(timer);
     };
-  }, [analytics, path, specificPath]);
+  }, [analytics, path, setCurrentPage, specificPath]);
 };
 
 export const useTrackEvent = () => {
