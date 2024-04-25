@@ -2406,6 +2406,7 @@ __metadata:
     react-router: "npm:^5.2.1"
     react-router-dom: "npm:^5.3.0"
     react-router-dom-v5-compat: "npm:^6.3.0"
+    recoil: "npm:^0.7.7"
     styled-components: "npm:^5.3.3"
     typescript: "npm:5.4.5"
     uuid: "npm:^9.0.0"
@@ -2648,6 +2649,7 @@ __metadata:
     react-router-dom: "npm:^5.3.0"
     react-router-dom-v5-compat: "npm:^6.3.0"
     react-virtualized: "npm:^9.22.3"
+    recoil: "npm:^0.7.7"
     rehype-highlight: "npm:^6.0.0"
     rehype-sanitize: "npm:^5.0.1"
     remark: "npm:^14.0.2"
@@ -14932,6 +14934,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hamt_plus@npm:1.0.2":
+  version: 1.0.2
+  resolution: "hamt_plus@npm:1.0.2"
+  checksum: 10/3680a1820b8e03c79e5977edb7e1ccb48b9db853f5a1fbee2d3b3615f8dded7fa276e158f52d3eea8cb6192a27b2622ae2112e197be7602a8f99814793dc096f
+  languageName: node
+  linkType: hard
+
 "handlebars@npm:^4.7.7":
   version: 4.7.8
   resolution: "handlebars@npm:4.7.8"
@@ -21285,6 +21294,22 @@ __metadata:
     source-map: "npm:~0.6.1"
     tslib: "npm:^2.0.1"
   checksum: 10/198105aa83f39afd0df7f3ddf9906eef4be147bfaa1c255a27a8ed1d191f996e373ac2f58a6e6753216e85acfaa56408dd729b33b32dd192dcfdcecb96dd4d39
+  languageName: node
+  linkType: hard
+
+"recoil@npm:^0.7.7":
+  version: 0.7.7
+  resolution: "recoil@npm:0.7.7"
+  dependencies:
+    hamt_plus: "npm:1.0.2"
+  peerDependencies:
+    react: ">=16.13.1"
+  peerDependenciesMeta:
+    react-dom:
+      optional: true
+    react-native:
+      optional: true
+  checksum: 10/4ac9dfeddda2795f213b14290de09767b04fb98f1a760bcabe796c53830229f51de63a02cf54c18991c557f25cfeb9571a129ae0a19d734bd98cfc45eebbc82d
   languageName: node
   linkType: hard
 

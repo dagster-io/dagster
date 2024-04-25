@@ -10,6 +10,7 @@ import {logLink, timeStartLink} from '@dagster-io/ui-core/app/apolloLinks';
 import {DeploymentStatusType} from '@dagster-io/ui-core/instance/DeploymentStatusProvider';
 import {LiveDataPollRateContext} from '@dagster-io/ui-core/live-data-provider/LiveDataProvider';
 import {Suspense} from 'react';
+import {RecoilRoot} from 'recoil';
 
 import {InjectedComponents} from './InjectedComponents';
 import {CommunityNux} from './NUX/CommunityNux';
@@ -40,21 +41,23 @@ const appCache = createAppCache();
 // eslint-disable-next-line import/no-default-export
 export default function AppPage() {
   return (
-    <InjectedComponents>
-      <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
-        <AppProvider appCache={appCache} config={config}>
-          <AppTopNav allowGlobalReload>
-            <HelpMenu showContactSales={false} />
-            <UserSettingsButton />
-          </AppTopNav>
-          <App>
-            <ContentRoot />
-            <Suspense>
-              <CommunityNux />
-            </Suspense>
-          </App>
-        </AppProvider>
-      </LiveDataPollRateContext.Provider>
-    </InjectedComponents>
+    <RecoilRoot>
+      <InjectedComponents>
+        <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
+          <AppProvider appCache={appCache} config={config}>
+            <AppTopNav allowGlobalReload>
+              <HelpMenu showContactSales={false} />
+              <UserSettingsButton />
+            </AppTopNav>
+            <App>
+              <ContentRoot />
+              <Suspense>
+                <CommunityNux />
+              </Suspense>
+            </App>
+          </AppProvider>
+        </LiveDataPollRateContext.Provider>
+      </InjectedComponents>
+    </RecoilRoot>
   );
 }
