@@ -463,6 +463,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -507,7 +508,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
             tags_by_output_name (Optional[Mapping[str, Optional[Mapping[str, str]]]]): Defines
-                tags to be associated with each othe output assets for this node. Keys are the names
+                tags to be associated with each of the output assets for this node. Keys are the names
                 of outputs, and values are dictionaries of tags to be associated with the related
                 asset.
             freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
@@ -519,6 +520,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
+            owners_by_key (Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]]): Defines
+                owners to be associated with each of the asset keys for this node.
 
         """
         return AssetsDefinition._from_node(
@@ -540,6 +543,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=backfill_policy,
             can_subset=can_subset,
             check_specs=check_specs,
+            owners_by_key=owners_by_key,
         )
 
     @public
