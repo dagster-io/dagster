@@ -1,6 +1,6 @@
 import pytest
 from dagster._model import DagsterModel
-from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
+from dagster._utils.cached_method import cached_method
 from pydantic import ValidationError
 
 
@@ -67,8 +67,6 @@ def test_non_model_param():
 
 
 def test_cached_method() -> None:
-    assert DagsterModel._cached_method_cache__internal__.__name__ == CACHED_METHOD_CACHE_FIELD  # noqa # type: ignore
-
     class CoolModel(DagsterModel):
         name: str
 
