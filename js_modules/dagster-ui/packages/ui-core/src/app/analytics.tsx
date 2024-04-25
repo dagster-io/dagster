@@ -76,12 +76,14 @@ export const useTrackPageView = () => {
 
 export const useTrackEvent = () => {
   const analytics = useAnalytics();
-  const pathValues = usePageContext();
+  const match = useRouteMatch();
+  const {pathname: specificPath} = useLocation();
+  const {path} = match;
 
   return useCallback(
     (eventName: string, properties?: Record<string, any>) => {
-      analytics.track(eventName, {...properties, ...pathValues});
+      analytics.track(eventName, {...properties, path, specificPath});
     },
-    [analytics, pathValues],
+    [analytics, path, specificPath],
   );
 };
