@@ -66,7 +66,6 @@ export const useTrackPageView = () => {
     const timer = setTimeout(() => {
       analytics.page(path, specificPath);
     }, PAGEVIEW_DELAY);
-    console.log('setting current path', {path, specificPath});
     setCurrentPage({path, specificPath});
 
     return () => {
