@@ -157,6 +157,56 @@ defs = Definitions(
 )
 ```
 
+### Subsetting asset checks
+
+To execute a set of asset checks together in the same op, use the <PyObject object="multi_asset_check" decorator /> decorator.
+
+Inside the body of the function, we can use <PyObject object="AssetCheckExecutionContext" display="AssetCheckExecutionContext.selected_asset_check_keys" /> to identify which computations to run. We can also set the decorator's `can_subset` parameter to `True` to allow the computation to compute an arbitrary subset of the asset checks it contains.
+
+Setting `can_subset` to `True` means that not all asset checks may be computed when the function runs. As we don't know in advance which checks will be executed, we explicitly `yield` each asset check result that we're expected to create.
+
+```python file=/concepts/assets/asset_checks/subset_multi_asset_check.py
+import random
+from typing import Iterable
+
+from dagster import (
+    AssetCheckExecutionContext,
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetCheckSpec,
+    multi_asset_check,
+)
+
+
+@multi_asset_check(
+    specs=[
+        AssetCheckSpec(name="asset_check_one", asset="my_asset_one"),
+        AssetCheckSpec(name="asset_check_two", asset="my_asset_two"),
+    ],
+    can_subset=True,
+)
+def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
+    for check_key in context.selected_asset_check_keys:
+        asset_key = check_key.asset_key
+
+        # TODO: populate metadata
+        metadata = {}
+        if random.random() > 0.5:
+            yield AssetCheckResult(
+                passed=False,
+                severity=AssetCheckSeverity.WARN,
+                description="The asset is over 0.5",
+                asset_key=asset_key,
+            )
+        else:
+            yield AssetCheckResult(
+                passed=True,
+                metadata=metadata,
+                description="The asset is fresh.",
+                asset_key=asset_key,
+            )
+```
+
 ### Loading dbt tests as asset checks
 
 Using the <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />, you can model your existing dbt tests as asset checks. Refer to the [dbt integration reference](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks) for more information.
@@ -350,12 +400,13 @@ defs = Definitions(
 
 ## APIs in this guide
 
-| Name                                                         | Description                                                                                                                           |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset_check" displayText="@asset_check" /> | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).                                |
-| <PyObject object="AssetCheckResult" />                       | The class returned by asset checks.                                                                                                   |
-| <PyObject object="AssetCheckSeverity" />                     | Defines the severity of a given asset check result.                                                                                   |
-| <PyObject object="AssetCheckSpec" />                         | A class that's passed to asset decorators to define checks that execute in the same [op](/concepts/ops-jobs-graphs/ops) as the asset. |
+| Name                                              | Description                                                                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset_check" decorator />       | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).                                |
+| <PyObject object="multi_asset_check" decorator /> | A decorator used to define a set of asset checks that execute together in the same [op](/concepts/ops-jobs-graphs/ops).               |
+| <PyObject object="AssetCheckResult" />            | The class returned by asset checks.                                                                                                   |
+| <PyObject object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                                                   |
+| <PyObject object="AssetCheckSpec" />              | A class that's passed to asset decorators to define checks that execute in the same [op](/concepts/ops-jobs-graphs/ops) as the asset. |
 
 ---
 
