@@ -54,10 +54,7 @@ export type JobMetadataQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    autoMaterializePolicy: {
-      __typename: 'AutoMaterializePolicy';
-      policyType: Types.AutoMaterializePolicyType;
-    } | null;
+    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }>;
   pipelineRunsOrError:
@@ -84,10 +81,7 @@ export type JobMetadataQuery = {
 export type JobMetadataAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
-  autoMaterializePolicy: {
-    __typename: 'AutoMaterializePolicy';
-    policyType: Types.AutoMaterializePolicyType;
-  } | null;
+  autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 

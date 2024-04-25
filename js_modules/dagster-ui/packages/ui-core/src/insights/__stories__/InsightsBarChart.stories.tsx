@@ -1,9 +1,9 @@
+import {Colors} from '@dagster-io/ui-components';
 import {faker} from '@faker-js/faker';
 import {Meta} from '@storybook/react';
 import {useEffect, useMemo, useState} from 'react';
 
 import {InsightsBarChart} from '../InsightsBarChart';
-import {orderedColors} from '../InsightsColors';
 import {ReportingUnitType} from '../types';
 
 // eslint-disable-next-line import/no-default-export
@@ -24,34 +24,24 @@ const randomDataPoint = (min: number, max: number) => {
 
 export const Default = () => {
   const numDates = 50;
-  const numLines = 1;
 
-  const datapoints = useMemo(() => {
-    const listOfDatapointLists = new Array(numLines).fill(null).map((_) => {
-      return new Array(numDates).fill(null).map(() => {
-        const key = faker.random.alphaNumeric(8);
-        return {
-          value: randomDataPoint(MIN, MAX),
-          key,
-          href: `/runs/${key}`,
-          label: `Run ${key}`,
-        };
-      });
+  const datapoint = useMemo(() => {
+    const barValues = new Array(numDates).fill(null).map(() => {
+      const key = faker.random.alphaNumeric(8);
+      return {
+        value: randomDataPoint(MIN, MAX),
+        key,
+        href: `/runs/${key}`,
+        label: `Run ${key}`,
+      };
     });
-    return Object.fromEntries(
-      listOfDatapointLists.map((datapointsForKey, ii) => {
-        const key = faker.random.words(3).replaceAll(' ', '-').toLowerCase();
-        return [
-          key,
-          {
-            barColor: orderedColors[ii % numLines]!,
-            type: 'asset-group' as const,
-            label: key,
-            values: datapointsForKey,
-          },
-        ];
-      }),
-    );
+
+    return {
+      barColor: Colors.dataVizBlurple(),
+      type: 'asset-group' as const,
+      label: faker.random.words(3).replaceAll(' ', '-').toLowerCase(),
+      values: barValues,
+    };
   }, []);
 
   const timestamps = useMemo(() => {
@@ -62,7 +52,7 @@ export const Default = () => {
     <div style={{height: '600px'}}>
       <InsightsBarChart
         datapointType="asset-group"
-        datapoints={datapoints}
+        datapoint={datapoint}
         loading={false}
         metricLabel="Dagster credits"
         metricName="__dagster_dagster_credits"
@@ -85,7 +75,12 @@ export const Empty = () => {
     <div style={{height: '600px'}}>
       <InsightsBarChart
         datapointType="asset-group"
-        datapoints={{}}
+        datapoint={{
+          barColor: Colors.dataVizBlurple(),
+          type: 'asset-group' as const,
+          label: faker.random.words(3).replaceAll(' ', '-').toLowerCase(),
+          values: [],
+        }}
         loading={false}
         metricLabel="Dagster credits"
         metricName="__dagster_dagster_credits"
@@ -118,7 +113,12 @@ export const InitiallyLoading = () => {
     <div style={{height: '600px'}}>
       <InsightsBarChart
         datapointType="asset-group"
-        datapoints={{}}
+        datapoint={{
+          barColor: Colors.dataVizBlurple(),
+          type: 'asset-group' as const,
+          label: faker.random.words(3).replaceAll(' ', '-').toLowerCase(),
+          values: [],
+        }}
         loading={loading}
         metricLabel="Dagster credits"
         metricName="__dagster_dagster_credits"

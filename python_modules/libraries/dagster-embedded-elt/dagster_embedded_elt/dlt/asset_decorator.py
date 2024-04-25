@@ -1,8 +1,9 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from dagster import (
     AssetsDefinition,
     AssetSpec,
+    _check as check,
     multi_asset,
 )
 from dlt.extract.source import DltSource
@@ -18,8 +19,8 @@ def dlt_assets(
     dlt_pipeline: Pipeline,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
-    dlt_dagster_translator: DagsterDltTranslator = DagsterDltTranslator(),
-) -> Callable[..., AssetsDefinition]:
+    dlt_dagster_translator: Optional[DagsterDltTranslator] = None,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
     Args:
@@ -76,9 +77,16 @@ def dlt_assets(
                 yield from dlt.run(context=context)
 
     """
-
-    def inner(fn) -> AssetsDefinition:
-        specs = [
+    dlt_dagster_translator = (
+        check.opt_inst_param(dlt_dagster_translator, "dlt_dagster_translator", DagsterDltTranslator)
+        or DagsterDltTranslator()
+    )
+    return multi_asset(
+        name=name,
+        group_name=group_name,
+        compute_kind="dlt",
+        can_subset=True,
+        specs=[
             AssetSpec(
                 key=dlt_dagster_translator.get_asset_key(dlt_source_resource),
                 deps=dlt_dagster_translator.get_deps_asset_keys(dlt_source_resource),
@@ -91,11 +99,6 @@ def dlt_assets(
                     META_KEY_TRANSLATOR: dlt_dagster_translator,
                 },
             )
-            for dlt_source_resource in dlt_source.resources.values()
-        ]
-        assets_definition = multi_asset(
-            specs=specs, name=name, group_name=group_name, compute_kind="dlt", can_subset=True
-        )(fn)
-        return assets_definition
-
-    return inner
+            for dlt_source_resource in dlt_source.selected_resources.values()
+        ],
+    )

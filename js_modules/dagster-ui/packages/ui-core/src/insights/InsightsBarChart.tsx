@@ -18,7 +18,8 @@ import {InsightsBarChartTooltip} from './InsightsBarChartTooltip';
 import {EmptyStateContainer, LoadingStateContainer} from './InsightsChartShared';
 import {formatMetric} from './formatMetric';
 import {RenderTooltipFn, renderInsightsChartTooltip} from './renderInsightsChartTooltip';
-import {BarDatapoint, DatapointType, ReportingUnitType} from './types';
+import {BarDatapoint, BarValue, DatapointType, ReportingUnitType} from './types';
+import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Filler);
@@ -31,7 +32,7 @@ interface Props {
   metricName: string;
   metricLabel: string;
   timestamps: number[];
-  datapoints: Record<string, BarDatapoint>;
+  datapoint: BarDatapoint;
   emptyState?: React.ReactNode;
 }
 
@@ -45,13 +46,13 @@ export const InsightsBarChart = (props: Props) => {
     metricLabel,
     metricName,
     timestamps,
-    datapoints,
+    datapoint,
     costMultiplier,
     emptyState,
   } = props;
-  const dataValues = React.useMemo(() => Object.values(datapoints), [datapoints]);
-  const dataEntries = React.useMemo(() => Object.entries(datapoints), [datapoints]);
+  const {label, barColor, values} = datapoint;
 
+  const rgbColors = useRGBColorsForTheme();
   const [canShowSpinner, setCanShowSpinner] = React.useState(false);
 
   React.useEffect(() => {
@@ -62,46 +63,47 @@ export const InsightsBarChart = (props: Props) => {
   }, []);
 
   const yMax = React.useMemo(() => {
-    const allData = dataValues
-      .map(({values}) => values.map((item) => item?.value))
-      .flat()
-      .filter((value) => value !== null) as number[];
-    const maxValue = Math.max(...allData);
+    const allValues = values
+      .filter((value): value is BarValue => value !== null)
+      .map(({value}) => value);
+    const maxValue = Math.max(...allValues);
     return Math.ceil(maxValue * 1.05);
-  }, [dataValues]);
+  }, [values]);
 
   const formatDateTime = useFormatDateTime();
 
   // Don't show the y axis while loading datapoints, to avoid jumping renders.
-  const showYAxis = dataValues.length > 0;
+  const showYAxis = values.length > 0;
+
+  const barColorRGB = rgbColors[barColor]!;
+  const keylineDefaultRGB = rgbColors[Colors.keylineDefault()];
+  const textLighterRGB = rgbColors[Colors.textLighter()];
 
   const data = React.useMemo(() => {
     return {
       labels: timestamps,
-      datasets: dataEntries.map(([_key, {label, barColor, values}]) => {
-        return {
+      datasets: [
+        {
           label,
           data: values.map((value) => value?.value),
-          backgroundColor: barColor.replace(/, 1\)/, ', 0.6)'),
-          hoverBackgroundColor: barColor,
-        };
-      }),
+          backgroundColor: barColorRGB.replace(/, 1\)/, ', 0.6)'),
+          hoverBackgroundColor: barColorRGB,
+        },
+      ],
     };
-  }, [dataEntries, timestamps]);
+  }, [timestamps, label, values, barColorRGB]);
 
   const onClick = useCallback(
     (element: ActiveElement | null) => {
       if (element) {
-        const dataEntry = dataEntries[element.datasetIndex];
-        if (dataEntry) {
-          const [_, datapoint] = dataEntry;
-          const whichBar = datapoint.values[element.index];
-          console.log('Clicked', whichBar?.href);
-          return;
+        const whichBar = values[element.index];
+        if (whichBar?.href) {
+          window.open(whichBar.href);
         }
+        return;
       }
     },
-    [dataEntries],
+    [values],
   );
 
   const renderTooltipFn: RenderTooltipFn = useCallback(
@@ -126,20 +128,23 @@ export const InsightsBarChart = (props: Props) => {
   const yAxis = useMemo(() => {
     return {
       display: showYAxis,
+      grid: {
+        color: keylineDefaultRGB,
+      },
       title: {
         display: true,
         text: metricLabel,
         font: {
           weight: '700',
-          size: 14,
+          size: 12,
         },
       },
       ticks: {
         font: {
           color: {
-            color: Colors.textLighter(),
+            color: textLighterRGB,
           },
-          size: 14,
+          size: 12,
           family: FontFamily.monospace,
         },
         callback(value: string | number) {
@@ -153,10 +158,14 @@ export const InsightsBarChart = (props: Props) => {
       min: 0,
       suggestedMax: yMax,
     };
-  }, [metricLabel, showYAxis, unitType, yMax]);
+  }, [keylineDefaultRGB, metricLabel, showYAxis, textLighterRGB, unitType, yMax]);
 
   const options: ChartOptions<'bar'> = React.useMemo(() => {
     return {
+      // dish: Disable animation until I can figure out why it's acting crazy.
+      // When rendering a responsive grid of charts, it's doing a distracting
+      // zoom-like animation on initial render.
+      animation: false,
       responsive: true,
       maintainAspectRatio: false,
       onClick: (_event, elements) => onClick(elements[0] || null),
@@ -187,9 +196,9 @@ export const InsightsBarChart = (props: Props) => {
           ticks: {
             font: {
               color: {
-                color: Colors.textLighter(),
+                color: textLighterRGB,
               },
-              size: 14,
+              size: 12,
               family: FontFamily.monospace,
             },
             callback(timestamp) {
@@ -207,10 +216,10 @@ export const InsightsBarChart = (props: Props) => {
         y: yAxis,
       },
     };
-  }, [yAxis, onClick, renderTooltipFn, formatDateTime]);
+  }, [textLighterRGB, yAxis, onClick, renderTooltipFn, formatDateTime]);
 
   const emptyContent = () => {
-    const anyDatapoints = Object.keys(datapoints).length > 0;
+    const anyDatapoints = values.length > 0;
 
     // If there is some data, we don't want to show a loading or empty state.
     // Or, if we shouldn't show the spinner yet (due to the delay) we also shouldn't

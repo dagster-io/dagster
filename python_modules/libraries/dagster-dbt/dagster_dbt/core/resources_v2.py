@@ -38,16 +38,16 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
+    TableColumnDep,
+    TableColumnLineage,
     get_dagster_logger,
 )
 from dagster._annotations import public
-from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.metadata import (
-    TableColumnDep,
-    TableColumnLineage,
-    TableMetadataEntries,
+    TableMetadataSet,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
+from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.adapters.base.impl import BaseAdapter
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
@@ -217,8 +217,23 @@ class DbtCliEventMessage:
         unique_id: str = event_node_info["unique_id"]
         invocation_id: str = self.raw_event["info"]["invocation_id"]
         dbt_resource_props = manifest["nodes"][unique_id]
+
+        column_schema_metadata = {}
+        try:
+            column_schema_metadata = default_metadata_from_dbt_resource_props(
+                self._event_history_metadata
+            )
+        except Exception as e:
+            logger.warning(
+                "An error occurred while building column schema metadata from event history"
+                f" `{self._event_history_metadata}` for the dbt resource"
+                f" `{dbt_resource_props['original_file_path']}`."
+                " Column schema metadata will not be included in the event.\n\n"
+                f"Exception: {e}"
+            )
+
         default_metadata = {
-            **default_metadata_from_dbt_resource_props(self._event_history_metadata),
+            **column_schema_metadata,
             "unique_id": unique_id,
             "invocation_id": invocation_id,
         }
@@ -489,9 +504,7 @@ class DbtCliEventMessage:
         # 4. Render the lineage as metadata.
         with disable_dagster_warnings():
             return dict(
-                TableMetadataEntries(
-                    column_lineage=TableColumnLineage(deps_by_column=deps_by_column)
-                )
+                TableMetadataSet(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
             )
 
 
@@ -842,8 +855,8 @@ class DbtCliResource(ConfigurableResource):
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
         dbt_executable (str): The path to the dbt executable. By default, this is `dbt`.
-        state_dir (Optional[str]): The path to a directory of dbt artifacts to be used
-            with the --state or --defer-state cli arguments.
+        state_path (Optional[str]): The path, relative to the project directory, to a directory of
+            dbt artifacts to be used with `--state` / `--defer-state`.
 
     Examples:
         Creating a dbt resource with only a reference to ``project_dir``:
@@ -944,11 +957,12 @@ class DbtCliResource(ConfigurableResource):
         default=DBT_EXECUTABLE,
         description="The path to the dbt executable.",
     )
-    state_dir: Optional[str] = Field(
+    state_path: Optional[str] = Field(
         description=(
-            "The path to a directory of dbt artifacts to be used with --state / --defer-state. "
-            "This can be used with methods such as get_defer_args to allow for a @dbt_assets to "
-            "use defer in the appropriate environments."
+            "The path, relative to the project directory, to a directory of dbt artifacts to be"
+            " used with --state / --defer-state."
+            " This can be used with methods such as get_defer_args to allow for a @dbt_assets to"
+            " use defer in the appropriate environments."
         )
     )
 
@@ -960,11 +974,15 @@ class DbtCliResource(ConfigurableResource):
         profile: Optional[str] = None,
         target: Optional[str] = None,
         dbt_executable: str = DBT_EXECUTABLE,
-        state_dir: Optional[str] = None,
+        state_path: Optional[str] = None,
+        **kwargs,  # allow custom subclasses to add fields
     ):
         if isinstance(project_dir, DbtProject):
-            if not state_dir and project_dir.state_dir:
-                state_dir = os.fspath(project_dir.state_dir)
+            if not state_path and project_dir.state_path:
+                state_path = os.fspath(project_dir.state_path)
+
+            if not target and project_dir.target:
+                target = project_dir.target
 
             project_dir = os.fspath(project_dir.project_dir)
 
@@ -976,7 +994,8 @@ class DbtCliResource(ConfigurableResource):
             profile=profile,  # type: ignore
             target=target,  # type: ignore
             dbt_executable=dbt_executable,  # type: ignore
-            state_dir=state_dir,  # type: ignore
+            state_path=state_path,  # type: ignore
+            **kwargs,
         )
 
     @classmethod
@@ -1065,12 +1084,12 @@ class DbtCliResource(ConfigurableResource):
 
         return values
 
-    @validator("state_dir")
-    def validate_state_dir(cls, state_dir: Optional[str]) -> Optional[str]:
-        if state_dir is None:
+    @validator("state_path")
+    def validate_state_path(cls, state_path: Optional[str]) -> Optional[str]:
+        if state_path is None:
             return None
 
-        return os.fspath(Path(state_dir).absolute().resolve())
+        return os.fspath(Path(state_path).absolute().resolve())
 
     def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
         """Get a unique target path for the dbt CLI invocation.
@@ -1113,16 +1132,29 @@ class DbtCliResource(ConfigurableResource):
         comparison, an empty list of arguments is returned.
 
         Returns:
-            Sequence[str]: The defer arguements for the dbt CLI command.
+            Sequence[str]: The defer arguments for the dbt CLI command.
         """
-        if not (self.state_dir and Path(self.state_dir).joinpath("manifest.json").exists()):
+        if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
             return []
 
         state_flag = "--defer-state"
         if version.parse(dbt_version) < version.parse("1.6.0"):
             state_flag = "--state"
 
-        return ["--defer", state_flag, self.state_dir]
+        return ["--defer", state_flag, self.state_path]
+
+    def get_state_args(self) -> Sequence[str]:
+        """Build the state arguments for the dbt CLI command, using the supplied state directory.
+        If no state directory is supplied, or the state directory does not have a manifest for.
+        comparison, an empty list of arguments is returned.
+
+        Returns:
+            Sequence[str]: The state arguments for the dbt CLI command.
+        """
+        if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
+            return []
+
+        return ["--state", self.state_path]
 
     @public
     def cli(

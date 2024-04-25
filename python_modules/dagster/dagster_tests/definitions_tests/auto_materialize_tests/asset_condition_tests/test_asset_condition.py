@@ -1,7 +1,11 @@
 from dagster import AutoMaterializePolicy, Definitions, asset
-from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
+from dagster._core.definitions.asset_condition.asset_condition import (
+    AssetCondition,
+    AssetConditionEvaluation,
+)
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
@@ -19,9 +23,17 @@ def test_missing_unpartitioned() -> None:
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
 
+    evaluation1 = deserialize_value(
+        serialize_value(AssetConditionEvaluation.from_result(result)), AssetConditionEvaluation
+    )
+
     # still true
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
+
+    evaluation2 = AssetConditionEvaluation.from_result(result)
+
+    assert evaluation2.equivalent_to_stored_evaluation(evaluation1)
 
     # after a run of A it's now False
     state, result = state.with_runs(run_request("A")).evaluate("A")

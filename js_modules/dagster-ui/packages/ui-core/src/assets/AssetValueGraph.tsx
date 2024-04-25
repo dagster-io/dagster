@@ -4,6 +4,8 @@ import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
+import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
+
 export interface AssetValueGraphData {
   minY: number;
   maxY: number;
@@ -25,6 +27,7 @@ export const AssetValueGraph = (props: {
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
 }) => {
+  const rgbColors = useRGBColorsForTheme();
   // Note: To get partitions on the X axis, we pass the partition names in as the `labels`,
   // and pass the partition index as the x value. This prevents ChartJS from auto-coercing
   // ISO date partition names to dates and then re-formatting the labels away from 2020-01-01.
@@ -40,6 +43,11 @@ export const AssetValueGraph = (props: {
     xHover = xHover ? labels.indexOf(xHover) : null;
   }
 
+  const borderColor = rgbColors[Colors.accentBlue()];
+  const backgroundColor = rgbColors[Colors.backgroundBlue()];
+  const pointHoverBorderColor = rgbColors[Colors.accentBlue()];
+  const tickColor = rgbColors[Colors.textLighter()];
+
   const graphData = {
     labels,
     datasets: [
@@ -47,12 +55,12 @@ export const AssetValueGraph = (props: {
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: Colors.accentBlue(),
-        backgroundColor: Colors.backgroundBlue(),
+        borderColor,
+        backgroundColor,
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: Colors.accentBlue(),
+        pointHoverBorderColor,
       },
     ],
   };
@@ -72,7 +80,7 @@ export const AssetValueGraph = (props: {
         id: 'x',
         display: true,
         ticks: {
-          color: Colors.textLighter(),
+          color: tickColor,
         },
         ...(props.data.xAxis === 'time'
           ? {
@@ -80,7 +88,7 @@ export const AssetValueGraph = (props: {
               title: {
                 display: true,
                 text: 'Timestamp',
-                color: Colors.textLighter(),
+                color: tickColor,
               },
             }
           : {
@@ -88,7 +96,7 @@ export const AssetValueGraph = (props: {
               title: {
                 display: true,
                 text: 'Partition',
-                color: Colors.textLighter(),
+                color: tickColor,
               },
             }),
       },
@@ -96,9 +104,9 @@ export const AssetValueGraph = (props: {
         id: 'y',
         display: true,
         ticks: {
-          color: Colors.textLighter(),
+          color: tickColor,
         },
-        title: {display: true, color: Colors.textLighter(), text: props.yAxisLabel || 'Value'},
+        title: {display: true, color: tickColor, text: props.yAxisLabel || 'Value'},
       },
     },
     plugins: {

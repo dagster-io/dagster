@@ -378,6 +378,36 @@ GET_ASSET_OBSERVATIONS = """
     }
 """
 
+
+GET_LAST_ASSET_OBSERVATIONS = """
+    query AssetGraphQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                assetObservations(limit: 1) {
+                    label
+                    description
+                    runOrError {
+                        ... on Run {
+                            jobName
+                        }
+                    }
+                    assetKey {
+                        path
+                    }
+                    metadataEntries {
+                        label
+                        description
+                        ... on TextMetadataEntry {
+                            text
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+
 HAS_ASSET_CHECKS = """
     query AssetNodeQuery {
         assetNodes {
@@ -472,19 +502,6 @@ GET_PARTITION_STATS = """
                 numPartitions
                 numFailed
                 numMaterializing
-            }
-        }
-    }
-"""
-
-GET_MATERIALIZATION_FOR_DIMENSION_PARTITION = """
-    query AssetGraphQuery($assetKey: AssetKeyInput!, $partitions: [String!], $tags: [InputTag!]) {
-        assetOrError(assetKey: $assetKey) {
-            ...on Asset{
-                assetMaterializations(partitions: $partitions, tags: $tags) {
-                    partition
-                    runId
-                }
             }
         }
     }
@@ -1655,6 +1672,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         observations = result.data["assetOrError"]["assetObservations"]
 
         assert observations
+        assert len(observations) == 2
         assert observations[0]["runOrError"]["jobName"] == "observation_job"
 
         asset_key_path = observations[0]["assetKey"]["path"]
@@ -1663,7 +1681,33 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         metadata = observations[0]["metadataEntries"]
         assert metadata
-        assert metadata[0]["text"] == "FOO"
+        assert metadata[0]["text"] == "BAR"
+
+        assert observations[0]["label"] == "asset_yields_observation"
+
+        assert observations[1]["metadataEntries"][0]["text"] == "FOO"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LAST_ASSET_OBSERVATIONS,
+            variables={"assetKey": {"path": ["asset_yields_observation"]}},
+        )
+
+        assert result.data
+        assert result.data["assetOrError"]
+        observations = result.data["assetOrError"]["assetObservations"]
+
+        assert observations
+        assert len(observations) == 1
+        assert observations[0]["runOrError"]["jobName"] == "observation_job"
+
+        asset_key_path = observations[0]["assetKey"]["path"]
+        assert asset_key_path
+        assert asset_key_path == ["asset_yields_observation"]
+
+        metadata = observations[0]["metadataEntries"]
+        assert metadata
+        assert metadata[0]["text"] == "BAR"
 
         assert observations[0]["label"] == "asset_yields_observation"
 
@@ -1716,6 +1760,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
 
+        graphql_context.asset_record_loader.clear_cache()
+
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
 
@@ -1733,6 +1779,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetsLatestInfo"]
+
         result = get_response_by_asset(result.data["assetsLatestInfo"])
 
         assert result["asset_1"]["latestRun"]["id"] == first_run_id
@@ -1741,6 +1788,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_2"]["latestMaterialization"] is None
         assert result["asset_3"]["latestRun"]["id"] == first_run_id
         assert result["asset_3"]["latestMaterialization"] is None
+
+        graphql_context.asset_record_loader.clear_cache()
 
         # Confirm that asset selection is respected
         run_id = _create_run(
@@ -2369,59 +2418,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(ranges[0]["secondaryDim"]["failedPartitions"]) == 1
         assert ranges[0]["secondaryDim"]["failedPartitions"] == ["a"]
         assert len(ranges[0]["secondaryDim"]["materializedPartitions"]) == 0
-
-    def test_get_materialization_for_multipartition(self, graphql_context: WorkspaceRequestContext):
-        first_run_id = _create_partitioned_run(
-            graphql_context,
-            "multipartitions_job",
-            MultiPartitionKey({"date": "2022-01-01", "ab": "a"}),
-            [AssetKey("multipartitions_1")],
-        )
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_MATERIALIZATION_FOR_DIMENSION_PARTITION,
-            variables={
-                "assetKey": {"path": ["multipartitions_1"]},
-                "tags": [{"name": "dagster/partition/ab", "value": "a"}],
-            },
-        )
-        assert result.data
-        materializations = result.data["assetOrError"]["assetMaterializations"]
-        assert len(materializations) == 1
-        assert materializations[0]["partition"] == "a|2022-01-01"
-        assert materializations[0]["runId"] == first_run_id
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_MATERIALIZATION_FOR_DIMENSION_PARTITION,
-            variables={
-                "assetKey": {"path": ["multipartitions_2"]},
-                "tags": [{"name": "dagster/partition/ab", "value": "a"}],
-            },
-        )
-        materializations = result.data["assetOrError"]["assetMaterializations"]
-        assert len(materializations) == 0
-
-        second_run_id = _create_partitioned_run(
-            graphql_context,
-            "multipartitions_job",
-            MultiPartitionKey({"ab": "b", "date": "2022-01-01"}),
-            [AssetKey("multipartitions_1")],
-        )
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_MATERIALIZATION_FOR_DIMENSION_PARTITION,
-            variables={
-                "assetKey": {"path": ["multipartitions_1"]},
-                "tags": [{"name": "dagster/partition/ab", "value": "b"}],
-            },
-        )
-        assert result.data
-        materializations = result.data["assetOrError"]["assetMaterializations"]
-        # Should only fetch materializations where dimension "ab" partition is "b"
-        assert len(materializations) == 1
-        assert materializations[0]["partition"] == "b|2022-01-01"
-        assert materializations[0]["runId"] == second_run_id
 
     def test_freshness_info(self, graphql_context: WorkspaceRequestContext, snapshot):
         _create_run(graphql_context, "fresh_diamond_assets_job")

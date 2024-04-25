@@ -517,7 +517,10 @@ class CachingStaleStatusResolver:
         partition_deps = self._get_partition_dependencies(key=key)
         for dep_key in sorted(partition_deps):
             dep_asset = self.asset_graph.get(dep_key.asset_key)
-            if self._get_status(key=dep_key) == StaleStatus.STALE:
+            if (
+                self._instance.use_transitive_stale_causes
+                and self._get_status(key=dep_key) == StaleStatus.STALE
+            ):
                 yield StaleCause(
                     key,
                     StaleCauseCategory.DATA,
@@ -533,8 +536,6 @@ class CachingStaleStatusResolver:
                         f"has a new dependency on {dep_key.asset_key.to_user_string()}",
                         dep_key,
                     )
-                # Currently we exclude assets downstream of AllPartitionMappings from stale
-                # status logic due to potentially huge numbers of dependencies.
                 elif self._is_dep_updated(provenance, dep_key):
                     report_data_version = (
                         dep_asset.code_version is not None
@@ -694,33 +695,40 @@ class CachingStaleStatusResolver:
         )
 
     # If a partition has greater than or equal to SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD
-    # of dependencies, it is not included in partition_deps. This is for performance reasons. This
-    # constraint can be removed when we have thoroughly tested performance for large upstream
-    # partition counts. At that time, the body of this method can just be replaced with a call to
-    # `asset_graph.get_parents_partitions`, which the logic here largely replicates.
+    # of dependencies, or is downstream of a time window partition with an AllPartitionsMapping,
+    # it is not included in partition_deps. This is for performance reasons. Besides this, the
+    # logic here largely replicates `asset_graph.get_parents_partitions`.
     #
-    # If an asset is self-dependent and has greater than or equal to
+    # Similarly, If an asset is self-dependent and has greater than or equal to
     # SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD partitions, we don't check the
     # self-edge for updated data or propagate other stale causes through the edge. That is because
     # the current logic will recurse to the first partition, potentially throwing a recursion error.
-    # This constraint can be removed when we have thoroughly tested performance for large partition
-    # counts on self-dependent assets.
     @cached_method
     def _get_partition_dependencies(
         self, *, key: "AssetKeyPartitionKey"
     ) -> Sequence["AssetKeyPartitionKey"]:
+        from dagster import AllPartitionMapping
         from dagster._core.definitions.events import (
             AssetKeyPartitionKey,
         )
+        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
         asset_deps = self.asset_graph.get(key.asset_key).parent_keys
 
         deps = []
         for dep_asset_key in asset_deps:
-            if not self.asset_graph.get(dep_asset_key).is_partitioned:
+            dep_asset = self.asset_graph.get(dep_asset_key)
+            if not dep_asset.is_partitioned:
                 deps.append(AssetKeyPartitionKey(dep_asset_key, None))
             elif key.asset_key == dep_asset_key and self._exceeds_self_partition_limit(
                 key.asset_key
+            ):
+                continue
+            elif isinstance(
+                dep_asset.partitions_def, TimeWindowPartitionsDefinition
+            ) and isinstance(
+                self.asset_graph.get_partition_mapping(key.asset_key, dep_asset_key),
+                AllPartitionMapping,
             ):
                 continue
             else:

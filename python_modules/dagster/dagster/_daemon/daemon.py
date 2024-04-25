@@ -27,6 +27,7 @@ from dagster._daemon.monitoring import (
 )
 from dagster._daemon.sensor import execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster._utils.error import (
     SerializableErrorInfo,
@@ -124,9 +125,10 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
                         break
                     except Exception:
-                        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                        self._logger.error(
-                            "Caught error, daemon loop will restart:\n%s", error_info
+                        error_info = DaemonErrorCapture.on_exception(
+                            exc_info=sys.exc_info(),
+                            logger=self._logger,
+                            log_message="Caught error, daemon loop will restart",
                         )
                         self._errors.appendleft((error_info, pendulum.now("UTC")))
                         daemon_generator.close()

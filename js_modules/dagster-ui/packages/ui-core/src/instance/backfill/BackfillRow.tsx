@@ -157,7 +157,7 @@ export const BackfillRowContent = ({
   return (
     <tr>
       <td style={{width: 120}}>
-        <Mono style={{fontSize: '16px', lineHeight: '18px'}}>
+        <Mono>
           <Link
             to={
               backfill.isAssetBackfill

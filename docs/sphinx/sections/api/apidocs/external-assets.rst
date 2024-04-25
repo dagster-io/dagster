@@ -87,13 +87,13 @@ Returns JSON:
      - Optional
      - **May be passed in JSON body or as query parameter.** Value is passed to the :py:class:`AssetMaterialization` constructor.
 
-**Example:** report an asset materialization against locally running webserver
+**Example:** Report an asset materialization against locally running webserver.
 
 .. code-block:: bash
 
     curl -X POST localhost:3000/report_asset_materialization/example_asset
 
-**Example:** report an asset materialization against Dagster Cloud with json body via curl (required authentication done via `Dagster-Cloud-Api-Token` header).
+**Example:** Report an asset materialization against Dagster+ with a JSON body via cURL. Required authentication done via `Dagster-Cloud-Api-Token` header.
 
 .. code-block:: bash
 
@@ -109,7 +109,7 @@ Returns JSON:
         }'
 
 
-**Example:** report an asset materialization against an open source deployment (hosted at `DAGSTER_WEBSERVER_HOST`) in python using `requests`.
+**Example:** Report an asset materialization against an open source deployment (hosted at `DAGSTER_WEBSERVER_HOST`) in Python using `requests`.
 
 .. code-block:: python
 
@@ -119,7 +119,7 @@ Returns JSON:
     response = requests.request("POST", url)
     response.raise_for_status()
 
-**Example:** report an asset materialization against Dagster Cloud in python using `requests` (required authentication done via `Dagster-Cloud-Api-Token` header).
+**Example:** Report an asset materialization against Dagster+ in Python using `requests`. Required authentication done via `Dagster-Cloud-Api-Token` header.
 
 .. code-block:: python
 
@@ -196,7 +196,7 @@ Returns JSON:
 
     curl -X POST "localhost:3000/report_asset_check/example_asset?check_name=example_check&passed=true"
 
-**Example:** report a failed asset check against Dagster Cloud with json body via curl (required authentication done via `Dagster-Cloud-Api-Token` header).
+**Example:** report a failed asset check against Dagster+ with JSON body via cURL (required authentication done via `Dagster-Cloud-Api-Token` header).
 
 .. code-block:: bash
 
@@ -272,7 +272,7 @@ Returns JSON:
 
     curl -X POST "localhost:3000/report_asset_observation/example_asset?data_version=example_data_version"
 
-**Example:** report an asset observation against Dagster Cloud with json body via curl (required authentication done via `Dagster-Cloud-Api-Token` header).
+**Example:** report an asset observation against Dagster+ with json body via curl (required authentication done via `Dagster-Cloud-Api-Token` header).
 
 .. code-block:: bash
 

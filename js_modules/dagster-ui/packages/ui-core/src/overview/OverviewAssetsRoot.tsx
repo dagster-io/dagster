@@ -1,5 +1,5 @@
-import {useQuery} from '@apollo/client';
 import {
+  Alert,
   Box,
   Caption,
   Colors,
@@ -17,49 +17,45 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, RefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useAssetsBaseData} from '../asset-data/AssetBaseDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {groupAssetsByStatus} from '../asset-graph/util';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
-import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
+import {useAllAssets} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {
-  AssetCatalogTableQuery,
-  AssetCatalogTableQueryVariables,
-} from '../assets/types/AssetsCatalogTable.types';
+import {AssetCatalogTableQuery} from '../assets/types/AssetsCatalogTable.types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {usePageLoadTrace} from '../performance';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
-  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  Header: React.ComponentType<{refreshState: RefreshState}>;
   TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Assets');
 
-  const query = useQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>(
-    ASSET_CATALOG_TABLE_QUERY,
-    {
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-  const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
+  const {assets, query, error, loading} = useAllAssets();
+  const refreshState = useRefreshAtInterval({
+    refresh: query,
+    intervalMs: FIFTEEN_SECONDS,
+    leading: true,
+  });
 
   const groupedAssetsUnfiltered = React.useMemo(() => {
-    if (query.data?.assetsOrError.__typename === 'AssetConnection') {
-      const assets = query.data.assetsOrError.nodes;
+    if (assets) {
       return groupAssets(assets);
     }
     return [];
-  }, [query.data?.assetsOrError]);
+  }, [assets]);
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'q',
@@ -79,6 +75,19 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     });
   }, [groupedAssetsUnfiltered, searchValue]);
 
+  const orderedAssets = React.useMemo(
+    () => groupedAssets.flatMap((group) => group.assets.map((asset) => asset.key)) ?? [],
+    [groupedAssets],
+  );
+  const {liveDataByNode} = useAssetsBaseData(orderedAssets, 'OverviewAssetsRoot');
+  const trace = usePageLoadTrace('OverviewAssetsRoot');
+  const isFullyLoaded = Object.keys(liveDataByNode).length === orderedAssets.length;
+  React.useEffect(() => {
+    if (isFullyLoaded) {
+      trace.endTrace();
+    }
+  }, [isFullyLoaded, trace]);
+
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -92,8 +101,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   function content() {
-    const result = query.data?.assetsOrError;
-    if (!query.data && query.loading) {
+    if (loading) {
       return (
         <Box
           flex={{alignItems: 'center', justifyContent: 'center', direction: 'column', grow: 1}}
@@ -103,13 +111,13 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
         </Box>
       );
     }
-    if (result?.__typename === 'PythonError') {
+    if (error) {
       return (
         <Box
           flex={{alignItems: 'center', justifyContent: 'center', direction: 'column', grow: 1}}
           style={{width: '100%'}}
         >
-          <PythonErrorInfo error={result} />
+          <PythonErrorInfo error={error} />
         </Box>
       );
     }
@@ -144,6 +152,18 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
               setSearchValue(e.target.value);
             }}
             placeholder="Filter asset groups…"
+          />
+        </Box>
+        <Box padding={{horizontal: 24, vertical: 16}} border="top">
+          <Alert
+            intent="info"
+            title="This Assets tab will be removed in an upcoming release."
+            description={
+              <>
+                Use the <Link to="/asset-groups">global asset lineage page</Link> to view grouped
+                asset status details.
+              </>
+            }
           />
         </Box>
       </div>
@@ -224,7 +244,8 @@ function VirtualRow({height, start, group}: RowProps) {
     [group.assets],
   );
 
-  const {liveDataByNode} = useAssetsLiveData(assetKeys);
+  const {liveDataByNode} = useAssetsBaseData(assetKeys);
+  const trace = usePageLoadTrace('OverviewAssetsRoot:GroupBatch');
 
   const statuses = React.useMemo(() => {
     return groupAssetsByStatus(group.assets, liveDataByNode);
@@ -237,6 +258,12 @@ function VirtualRow({height, start, group}: RowProps) {
 
   const isBatchStillLoading = assetKeys.length !== Object.keys(liveDataByNode).length;
   const zeroOrBlank = isBatchStillLoading ? '' : '0';
+
+  React.useEffect(() => {
+    if (!isBatchStillLoading) {
+      trace.endTrace();
+    }
+  }, [trace, isBatchStillLoading]);
 
   return (
     <Row $height={height} $start={start}>

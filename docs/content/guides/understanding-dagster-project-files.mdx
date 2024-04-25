@@ -100,7 +100,7 @@ Let's take a look at what each of these files and directories does:
         For example, you can put all analytics-related assets in a <code>my_dagster_project/assets/analytics/</code>
         folder and use <PyObject object="load_assets_from_package_module" /> in the top-level definitions
         to load them, rather than needing to manually add assets to the top-level definitions every time
-        you define one. 
+        you define one.
         <br />
         <br />
         Similarly, you can also use <PyObject object="load_assets_from_modules" /> to
@@ -154,7 +154,7 @@ Let's take a look at what each of these files and directories does:
         A build script with Python package dependencies for your new project as
         a package. Use this file to specify dependencies.
         <br /><br />
-        <strong>Note</strong>: If using Dagster Cloud, add <code>dagster-cloud</code> as a dependency.
+        <strong>Note</strong>: If using Dagster+, add <code>dagster-cloud</code> as a dependency.
       </td>
     </tr>
     <tr>
@@ -171,7 +171,7 @@ Let's take a look at what each of these files and directories does:
 
 ## Configuration files
 
-Depending on your use case or if you're using Dagster Cloud, you may also need to add additional configuration files to your project. Refer to the [Example project structures section](#example-project-structures) for a look at how these files might fit into your projects.
+Depending on your use case or if you're using Dagster+, you may also need to add additional configuration files to your project. Refer to the [Example project structures section](#example-project-structures) for a look at how these files might fit into your projects.
 
 <table
   className="table"
@@ -201,7 +201,7 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
           width: "10%",
         }}
       >
-        Cloud
+        Dagster+
       </th>
     </tr>
   </thead>
@@ -215,9 +215,9 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
         more info, including a list of use cases and available options.
         <br />
         <br />
-        For Dagster Cloud <a href="/dagster-cloud/deployment/hybrid">
+        For Dagster+ <a href="/dagster-plus/deployment/hybrid">
           Hybrid deployments
-        </a>, this file can be used to <a href="/dagster-cloud/deployment/agents/customizing-configuration">
+        </a>, this file can be used to <a href="/dagster-plus/deployment/agents/customizing-configuration">
           customize the Hybrid agent
         </a>.
       </td>
@@ -227,8 +227,8 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
     <tr>
       <td>dagster_cloud.yaml</td>
       <td>
-        Defines code locations for Dagster Cloud. Refer to the{" "}
-        <a href="/dagster-cloud/managing-deployments/dagster-cloud-yaml">
+        Defines code locations for Dagster+. Refer to the{" "}
+        <a href="/dagster-plus/managing-deployments/dagster-cloud-yaml">
           <code>dagster_cloud.yaml</code> reference
         </a>{" "}
         for more info.
@@ -239,9 +239,9 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
     <tr>
       <td>deployment_settings.yaml</td>
       <td>
-        Configures settings for full deployments in Dagster Cloud, including run
+        Configures settings for full deployments in Dagster+, including run
         queue priority and concurrency limits. Refer to the{" "}
-        <a href="/dagster-cloud/managing-deployments/deployment-settings-reference">
+        <a href="/dagster-plus/managing-deployments/deployment-settings-reference">
           Deployment settings reference
         </a>{" "}
         for more info.
@@ -348,16 +348,16 @@ A Dagster project deployed to your infrastructure might look like this:
 └── workspace.yaml    ## defines multiple code locations
 ```
 
-### Dagster Cloud
+### Dagster+
 
-Depending on the type of deployment you're using in Dagster Cloud - Serverless or Hybrid - your project structure might look slightly different. Click the tabs for more info.
+Depending on the type of deployment you're using in Dagster+ - Serverless or Hybrid - your project structure might look slightly different. Click the tabs for more info.
 
 <TabGroup>
 <TabItem name="Serverless deployment">
 
 #### Serverless deployment
 
-For a Dagster Cloud Serverless deployment, a project might look like this:
+For a Dagster+ Serverless deployment, a project might look like this:
 
 ```shell
 .
@@ -379,7 +379,7 @@ For a Dagster Cloud Serverless deployment, a project might look like this:
 
 #### Hybrid deployment
 
-For a Dagster Cloud Hybrid deployment, a project might look like this:
+For a Dagster+ Hybrid deployment, a project might look like this:
 
 ```shell
 .
@@ -430,7 +430,7 @@ To sustainably scale your project, check out our best practices and recommendati
     href="/concepts/code-locations"
   ></ArticleListItem>
   <ArticleListItem
-    title="Dagster Cloud deployment settings"
-    href="/dagster-cloud/managing-deployments/deployment-settings-reference"
+    title="Dagster+ deployment settings"
+    href="/dagster-plus/managing-deployments/deployment-settings-reference"
   ></ArticleListItem>
 </ArticleList>

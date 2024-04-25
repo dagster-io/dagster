@@ -21,11 +21,11 @@ export function buildConsolidatedColumnSchema({
   definition: Pick<AssetDefinitionWithMetadata, 'metadataEntries'> | undefined;
   definitionLoadTimestamp: number | undefined;
 }) {
-  const materializationTableSchema = materialization?.metadataEntries.find(
+  const materializationTableSchema = materialization?.metadataEntries?.find(
     isCanonicalColumnSchemaEntry,
   );
   const materializationTimestamp = materialization ? Number(materialization.timestamp) : undefined;
-  const definitionTableSchema = definition?.metadataEntries.find(isCanonicalColumnSchemaEntry);
+  const definitionTableSchema = definition?.metadataEntries?.find(isCanonicalColumnSchemaEntry);
 
   let tableSchema = materializationTableSchema ?? definitionTableSchema;
   const tableSchemaLoadTimestamp = materializationTimestamp ?? definitionLoadTimestamp;
@@ -33,12 +33,16 @@ export function buildConsolidatedColumnSchema({
   // Merge the descriptions from the definition table schema with the materialization table schema
   if (materializationTableSchema && definitionTableSchema) {
     const definitionTableSchemaColumnDescriptionsByName = Object.fromEntries(
-      definitionTableSchema.schema.columns.map((column) => [column.name, column.description]),
+      definitionTableSchema.schema.columns.map((column) => [
+        column.name.toLowerCase(),
+        column.description,
+      ]),
     );
     const mergedColumns = materializationTableSchema.schema.columns.map((column) => {
       const description =
-        definitionTableSchemaColumnDescriptionsByName[column.name] || column.description;
-      return {...column, description};
+        definitionTableSchemaColumnDescriptionsByName[column.name.toLowerCase()] ||
+        column.description;
+      return {...column, name: column.name.toLowerCase(), description};
     });
 
     tableSchema = {

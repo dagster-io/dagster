@@ -262,7 +262,6 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       cronScheduleTimezone
     }
     autoMaterializePolicy {
-      policyType
       rules {
         className
         decisionType

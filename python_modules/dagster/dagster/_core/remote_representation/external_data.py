@@ -1745,7 +1745,9 @@ def external_asset_nodes_from_defs(
         partition_mappings: Dict[AssetKey, Optional[PartitionMapping]] = {}
         builtin_partition_mapping_types = get_builtin_partition_mapping_types()
         for pk in asset_node.parent_keys:
-            partition_mapping = asset_graph.get_partition_mapping(key, pk)
+            # directly access the partition mapping to avoid the inference step of
+            # get_partition_mapping, as we want to defer the inference to the global RemoteAssetGraph
+            partition_mapping = asset_graph.get(key).partition_mappings.get(pk)
             if (asset_node.partitions_def or asset_graph.get(pk).partitions_def) and isinstance(
                 partition_mapping, builtin_partition_mapping_types
             ):

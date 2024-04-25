@@ -17,7 +17,6 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -25,6 +24,8 @@ import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, experimental, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
+from dagster._model import DagsterModel
+from dagster._model.pydantic_compat_layer import model_fields
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -1221,12 +1222,10 @@ class MetadataEntry(
         return self.entry_data
 
 
-T_NamespacedMetadataEntries = TypeVar(
-    "T_NamespacedMetadataEntries", bound="NamespacedMetadataEntries"
-)
+T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
 
 
-class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
+class NamespacedMetadataSet(ABC, DagsterModel):
     """Extend this class to define a set of metadata fields in the same namespace.
 
     Supports splatting to a dictionary that can be placed inside a metadata argument along with
@@ -1234,7 +1233,7 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
 
     .. code-block:: python
 
-        my_metadata: NamespacedMetadataEntries = ...
+        my_metadata: NamespacedMetadataSet = ...
         return MaterializeResult(metadata={**my_metadata, ...})
     """
 
@@ -1254,7 +1253,7 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
     def keys(self) -> AbstractSet[str]:
         return {
             self._namespaced_key(key)
-            for key in self.__fields__.keys()
+            for key in model_fields(self).keys()
             # getattr returns the pydantic property on the subclass
             if getattr(self, key) is not None
         }
@@ -1265,8 +1264,8 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
 
     @classmethod
     def extract(
-        cls: Type[T_NamespacedMetadataEntries], metadata: Mapping[str, Any]
-    ) -> T_NamespacedMetadataEntries:
+        cls: Type[T_NamespacedMetadataSet], metadata: Mapping[str, Any]
+    ) -> T_NamespacedMetadataSet:
         """Extracts entries from the provided metadata dictionary into an instance of this class.
 
         Ignores any entries in the metadata dictionary whose keys don't correspond to fields on this
@@ -1276,11 +1275,11 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
 
         .. code-block:: python
 
-            class MyMetadataEntries(NamedspacedMetadataEntries):
+            class MyMetadataSet(NamedspacedMetadataSet):
                 ...
 
-            metadata_entries: MyMetadataEntries  = ...
-            assert MyMetadataEntries.extract(dict(metadata_entries)) == metadata_entries
+            metadata: MyMetadataSet  = ...
+            assert MyMetadataSet.extract(dict(metadata)) == metadata
 
         Args:
             metadata (Mapping[str, Any]): A dictionary of metadata entries.
@@ -1290,13 +1289,13 @@ class NamespacedMetadataEntries(ABC, BaseModel, frozen=True):
             splits = namespaced_key.split("/")
             if len(splits) == 2:
                 namespace, key = splits
-                if namespace == cls.namespace() and key in cls.__fields__:
+                if namespace == cls.namespace() and key in model_fields(cls):
                     kwargs[key] = value.value if isinstance(value, MetadataValue) else value
 
         return cls(**kwargs)
 
 
-class TableMetadataEntries(NamespacedMetadataEntries, frozen=True):
+class TableMetadataSet(NamespacedMetadataSet):
     """Metadata entries that apply to definitions, observations, or materializations of assets that
     are tables.
 

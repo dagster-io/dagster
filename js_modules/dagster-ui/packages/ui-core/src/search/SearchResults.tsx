@@ -82,24 +82,17 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] 
   // Fuse provides indices of the label that match the query string.
   // Use these match indices to display the label with the matching parts bolded.
 
-  // Match indices can overlap, i.e. [0, 4] and [1, 1] can both be matches
-  // So we merge them to be non-overlapping
-  const mergedIndices: Fuse.RangeTuple[] = [];
+  let longestMatch: Fuse.RangeTuple | undefined;
+  // Only bold longest match
   if (result.matches && result.matches.length > 0) {
     const match = result.matches[0]!; // Only one match per row, since we only match by label
 
-    // The indices should be returned in sorted order, but we sort just in case
-    const sortedIndices = Array.from(match.indices).sort((a, b) => (a[0] < b[0] ? -1 : 1));
-    // Merge overlapping indices
-    if (sortedIndices.length > 0) {
-      mergedIndices.push(sortedIndices[0]!);
-      for (let i = 1; i < sortedIndices.length; i++) {
-        const last = mergedIndices[mergedIndices.length - 1]!;
-        const current = sortedIndices[i]!;
-        if (current[0] <= last[1]) {
-          last[1] = Math.max(last[1], current[1]);
-        } else {
-          mergedIndices.push(current);
+    if (match.indices.length > 0) {
+      longestMatch = match.indices[0]!;
+      for (let i = 1; i < match.indices.length; i++) {
+        const current: [number, number] = match.indices[i]!;
+        if (current[1] - current[0] > longestMatch[1]! - longestMatch[0]!) {
+          longestMatch = current;
         }
       }
     }
@@ -107,15 +100,15 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] 
 
   const labelComponents = [];
   let parsedString = '';
-  mergedIndices.forEach((indices) => {
-    const stringBeforeMatch = result.item.label.slice(parsedString.length, indices[0]);
+  if (longestMatch) {
+    const stringBeforeMatch = result.item.label.slice(parsedString.length, longestMatch[0]);
     labelComponents.push(<Caption>{stringBeforeMatch}</Caption>);
     parsedString += stringBeforeMatch;
 
-    const match = result.item.label.slice(indices[0], indices[1] + 1);
+    const match = result.item.label.slice(longestMatch[0], longestMatch[1] + 1);
     labelComponents.push(<CaptionBolded>{match}</CaptionBolded>);
     parsedString += match;
-  });
+  }
 
   const stringAfterMatch = result.item.label.substring(parsedString.length);
   labelComponents.push(<Caption>{stringAfterMatch}</Caption>);

@@ -98,10 +98,10 @@ export const Code = styled(Text)`
 
 export const Mono = styled(Text)`
   font-family: ${FontFamily.monospace};
-  font-size: 16px;
+  font-size: 14px;
 `;
 
 export const CaptionMono = styled(Text)`
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
 `;

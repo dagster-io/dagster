@@ -17,6 +17,7 @@
    sections/api/apidocs/loggers
    sections/api/apidocs/ops
    sections/api/apidocs/io-managers
+   sections/api/apidocs/metadata
    sections/api/apidocs/partitions
    sections/api/apidocs/pipes
    sections/api/apidocs/definitions

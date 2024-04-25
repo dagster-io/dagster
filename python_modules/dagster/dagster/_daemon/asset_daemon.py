@@ -415,12 +415,20 @@ class AssetDaemon(DagsterDaemon):
             while True:
                 start_time = pendulum.now("UTC").timestamp()
                 yield SpanMarker.START_SPAN
-                yield from self._run_iteration_impl(
-                    workspace_process_context,
-                    threadpool_executor=threadpool_executor,
-                    amp_tick_futures=amp_tick_futures,
-                    debug_crash_flags={},
-                )
+                try:
+                    yield from self._run_iteration_impl(
+                        workspace_process_context,
+                        threadpool_executor=threadpool_executor,
+                        amp_tick_futures=amp_tick_futures,
+                        debug_crash_flags={},
+                    )
+                except Exception:
+                    error_info = DaemonErrorCapture.on_exception(
+                        exc_info=sys.exc_info(),
+                        logger=self._logger,
+                        log_message="AssetDaemon caught an error",
+                    )
+                    yield error_info
                 yield SpanMarker.END_SPAN
                 end_time = pendulum.now("UTC").timestamp()
                 loop_duration = end_time - start_time
@@ -983,8 +991,8 @@ class AssetDaemon(DagsterDaemon):
                 # asset keys for observation runs don't have evaluations
                 if asset_key in evaluations_by_asset_key:
                     evaluation = evaluations_by_asset_key[asset_key]
-                    evaluations_by_asset_key[asset_key] = evaluation._replace(
-                        run_ids=evaluation.run_ids | {submitted_run.run_id}
+                    evaluations_by_asset_key[asset_key] = evaluation.copy(
+                        update={"run_ids": evaluation.run_ids | {submitted_run.run_id}}
                     )
                     updated_evaluation_asset_keys.add(asset_key)
 

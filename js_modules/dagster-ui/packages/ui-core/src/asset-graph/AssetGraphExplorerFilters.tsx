@@ -1,10 +1,10 @@
 import {Box} from '@dagster-io/ui-components';
-import React, {useContext} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
+import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
@@ -24,41 +24,61 @@ type Props = {
   explorerPath: string;
   isGlobalGraph: boolean;
   assetFilterState?: AssetFilterState;
+  loading: boolean;
 };
 
-const defaultState = {filters: {}} as Partial<AssetFilterState> & {
-  filters: Partial<AssetFilterState['filters']>;
+const defaultState: AssetFilterState = {
+  filters: {
+    changedInBranch: [],
+    computeKindTags: [],
+    groups: [],
+    owners: [],
+    repos: [],
+    selectAllFilters: [],
+    tags: [],
+  },
+  setAssetTags: () => {},
+  setChangedInBranch: () => {},
+  setComputeKindTags: () => {},
+  setFilters: () => {},
+  setGroups: () => {},
+  setOwners: () => {},
+  setRepos: () => {},
+  setSelectAllFilters: () => {},
+  filterFn: () => true,
 };
 
 export function useAssetGraphExplorerFilters({
   nodes,
   isGlobalGraph,
   explorerPath,
+  loading,
   clearExplorerPath,
   assetFilterState,
 }: Props) {
   const allAssetTags = useAssetTagsForAssets(nodes);
 
-  const {allRepos} = useContext(WorkspaceContext);
+  const {allRepos, visibleRepos} = useContext(WorkspaceContext);
 
   const {
-    filters: {changedInBranch, computeKindTags, repos, owners, groups, tags},
+    filters: {changedInBranch, computeKindTags, repos, owners, groups, tags, selectAllFilters},
     setAssetTags,
     setChangedInBranch,
     setComputeKindTags,
     setGroups,
     setOwners,
     setRepos,
+    setSelectAllFilters,
   } = assetFilterState || defaultState;
 
-  const reposFilter = useCodeLocationFilter(repos && setRepos ? {repos, setRepos} : undefined);
+  const reposFilter = useCodeLocationFilter(repos ? {repos, setRepos} : undefined);
 
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
 
   const allAssetGroups = useAssetGroupsForAssets(nodes);
 
   const groupsFilter = useAssetGroupFilter({
-    assetGroups: groups,
+    assetGroups: selectAllFilters.includes('groups') ? allAssetGroups : groups,
     allAssetGroups,
     setGroups,
   });
@@ -67,22 +87,82 @@ export function useAssetGraphExplorerFilters({
 
   const kindTagsFilter = useComputeKindTagFilter({
     allComputeKindTags,
-    computeKindTags,
+    computeKindTags: selectAllFilters.includes('computeKindTags')
+      ? allComputeKindTags
+      : computeKindTags,
     setComputeKindTags,
   });
 
   const tagsFilter = useAssetTagFilter({
     allAssetTags,
-    tags,
+    tags: selectAllFilters.includes('tags') ? allAssetTags : tags,
     setTags: setAssetTags,
   });
 
   const allAssetOwners = useAssetOwnersForAssets(nodes);
   const ownerFilter = useAssetOwnerFilter({
     allAssetOwners,
-    owners,
+    owners: selectAllFilters.includes('owners') ? allAssetOwners : owners,
     setOwners,
   });
+
+  const [didWaitAfterLoading, setDidWaitAfterLoading] = useState(false);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+    if (!didWaitAfterLoading) {
+      // Wait for a render frame because the graphData is set in a useEffect in response to the data loading...
+      requestAnimationFrame(() => setDidWaitAfterLoading(true));
+      return;
+    }
+    let nextAllFilters = [...selectAllFilters];
+
+    let didChange = false;
+
+    [
+      ['owners', owners, allAssetOwners] as const,
+      ['tags', tags, allAssetTags] as const,
+      ['computeKindTags', computeKindTags, allComputeKindTags] as const,
+      ['groups', groups, allAssetGroups] as const,
+      ['changedInBranch', changedInBranch, Object.values(ChangeReason)] as const,
+      ['repos', visibleRepos, allRepos] as const,
+    ].forEach(([key, activeItems, allItems]) => {
+      if (!allItems.length) {
+        return;
+      }
+      if (activeItems.length !== allItems.length) {
+        if (selectAllFilters.includes(key)) {
+          didChange = true;
+          nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
+        }
+      } else if (activeItems.length && !selectAllFilters.includes(key)) {
+        didChange = true;
+        nextAllFilters.push(key);
+      }
+    });
+
+    if (didChange) {
+      setSelectAllFilters?.(nextAllFilters);
+    }
+  }, [
+    loading,
+    owners,
+    allAssetOwners,
+    selectAllFilters,
+    setSelectAllFilters,
+    tags,
+    allAssetTags,
+    computeKindTags,
+    allComputeKindTags,
+    groups,
+    allAssetGroups,
+    changedInBranch,
+    visibleRepos,
+    allRepos,
+    didWaitAfterLoading,
+  ]);
 
   const filters: FilterObject[] = [];
 
@@ -93,11 +173,7 @@ export function useAssetGraphExplorerFilters({
     filters.push(groupsFilter);
   }
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
-  if (
-    changedInBranch &&
-    featureEnabled(FeatureFlag.flagExperimentalBranchDiff) &&
-    isBranchDeployment
-  ) {
+  if (changedInBranch && isBranchDeployment) {
     filters.push(changedFilter);
   }
   filters.push(kindTagsFilter);

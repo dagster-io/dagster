@@ -5,6 +5,7 @@ from dagster import (
     AssetSpec,
     BackfillPolicy,
     PartitionsDefinition,
+    _check as check,
     multi_asset,
 )
 from dagster._utils.security import non_secure_md5_hash_str
@@ -29,12 +30,12 @@ def get_streams_from_replication(
 def sling_assets(
     *,
     replication_config: SlingReplicationParam,
-    dagster_sling_translator: DagsterSlingTranslator = DagsterSlingTranslator(),
+    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
     name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
-) -> Callable[..., AssetsDefinition]:
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to materialize a set of Sling replication streams as Dagster assets, as
     described by a Sling replication config. This will create on Asset for every Sling target stream.
 
@@ -80,14 +81,26 @@ def sling_assets(
     streams = get_streams_from_replication(replication_config)
     code_version = non_secure_md5_hash_str(str(replication_config).encode())
 
-    specs: list[AssetSpec] = []
-    for stream in streams:
-        specs.append(
+    dagster_sling_translator = (
+        check.opt_inst_param(
+            dagster_sling_translator, "dagster_sling_translator", DagsterSlingTranslator
+        )
+        or DagsterSlingTranslator()
+    )
+
+    return multi_asset(
+        name=name,
+        compute_kind="sling",
+        partitions_def=partitions_def,
+        can_subset=False,
+        op_tags=op_tags,
+        backfill_policy=backfill_policy,
+        specs=[
             AssetSpec(
                 key=dagster_sling_translator.get_asset_key(stream),
                 deps=dagster_sling_translator.get_deps_asset_key(stream),
                 description=dagster_sling_translator.get_description(stream),
-                metadata={  # type: ignore
+                metadata={
                     **dagster_sling_translator.get_metadata(stream),
                     METADATA_KEY_TRANSLATOR: dagster_sling_translator,
                     METADATA_KEY_REPLICATION_CONFIG: replication_config,
@@ -99,19 +112,6 @@ def sling_assets(
                 ),
                 code_version=code_version,
             )
-        )
-
-    def inner(fn) -> AssetsDefinition:
-        asset_definition = multi_asset(
-            name=name,
-            compute_kind="sling",
-            partitions_def=partitions_def,
-            can_subset=False,
-            op_tags=op_tags,
-            backfill_policy=backfill_policy,
-            specs=specs,
-        )(fn)
-
-        return asset_definition
-
-    return inner
+            for stream in streams
+        ],
+    )

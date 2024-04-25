@@ -6,7 +6,11 @@ import {
   buildRepositoryLocation,
   buildTeamAssetOwner,
 } from '../../graphql/types';
-import {filterAssetDefinition} from '../useAssetDefinitionFilterState';
+import {
+  AssetFilterBaseType,
+  AssetFilterType,
+  filterAssetDefinition,
+} from '../useAssetDefinitionFilterState';
 
 describe('filterAssetDefinition', () => {
   it('returns false when no definition is provided', () => {
@@ -159,5 +163,44 @@ describe('filterAssetDefinition', () => {
     };
 
     expect(filterAssetDefinition(filters, definition)).toBe(true);
+  });
+
+  (
+    ['changedInBranch', 'computeKindTags', 'groups', 'owners', 'repos', 'tags'] as Array<
+      keyof AssetFilterBaseType
+    >
+  ).forEach((filter) => {
+    it(`filters using selectAllFilter: ${filter}`, async () => {
+      const tag = buildDefinitionTag({
+        key: 'test',
+        value: 'test',
+      });
+      const group = buildAssetGroupSelector({
+        groupName: 'groupName',
+        repositoryLocationName: 'repositoryLocationName',
+        repositoryName: 'repositoryName',
+      });
+      const owner = buildTeamAssetOwner({
+        team: 'team1',
+      });
+      const filters: Partial<AssetFilterType> = {
+        selectAllFilters: [filter],
+      };
+      const definition = {
+        repository: buildRepository({
+          name: group.repositoryName,
+          location: buildRepositoryLocation({
+            name: group.repositoryLocationName,
+          }),
+        }),
+        groupName: group.groupName,
+        computeKind: 'computeKind1',
+        changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
+        owners: [owner],
+        tags: [tag],
+      };
+
+      expect(filterAssetDefinition(filters, definition)).toBe(true);
+    });
   });
 });

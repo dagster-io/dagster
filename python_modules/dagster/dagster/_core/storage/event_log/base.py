@@ -57,6 +57,9 @@ class AssetEntry(
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
             ("cached_status", Optional["AssetStatusCacheValue"]),
+            # This is an optional field which can be used for more performant last observation
+            # queries if the underlying storage supports it
+            ("last_observation_record", Optional[EventLogRecord]),
         ],
     )
 ):
@@ -67,6 +70,7 @@ class AssetEntry(
         last_run_id: Optional[str] = None,
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
+        last_observation_record: Optional[EventLogRecord] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -81,6 +85,9 @@ class AssetEntry(
             cached_status=check.opt_inst_param(
                 cached_status, "cached_status", AssetStatusCacheValue
             ),
+            last_observation_record=check.opt_inst_param(
+                last_observation_record, "last_observation_record", EventLogRecord
+            ),
         )
 
     @property
@@ -88,6 +95,12 @@ class AssetEntry(
         if self.last_materialization_record is None:
             return None
         return self.last_materialization_record.event_log_entry
+
+    @property
+    def last_observation(self) -> Optional["EventLogEntry"]:
+        if self.last_observation_record is None:
+            return None
+        return self.last_observation_record.event_log_entry
 
     @property
     def last_materialization_storage_id(self) -> Optional[int]:
@@ -413,6 +426,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @property
     def supports_global_concurrency_limits(self) -> bool:
         """Indicates that the EventLogStorage supports global concurrency limits."""
+        return False
+
+    @property
+    def asset_records_have_last_observation(self) -> bool:
         return False
 
     @abstractmethod

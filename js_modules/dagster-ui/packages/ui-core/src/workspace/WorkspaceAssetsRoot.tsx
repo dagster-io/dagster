@@ -14,7 +14,7 @@ import {
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {useAssetNodeSearch} from '../assets/useAssetSearch';
+import {useAssetSearch} from '../assets/useAssetSearch';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
@@ -51,7 +51,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     return [];
   }, [data]);
 
-  const filteredBySearch = useAssetNodeSearch(searchValue, assetNodes);
+  const filteredBySearch = useAssetSearch(searchValue, assetNodes);
 
   const content = () => {
     if (loading && !data) {

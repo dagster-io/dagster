@@ -113,7 +113,6 @@ export type AssetAssetMaterializationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
-  tags?: InputMaybe<Array<InputTag>>;
 };
 
 export type AssetAssetObservationsArgs = {
@@ -585,6 +584,7 @@ export type AssetSelection = {
   assetKeys: Array<AssetKey>;
   assetSelectionString: Maybe<Scalars['String']['output']>;
   assets: Array<Asset>;
+  assetsOrError: AssetsOrError;
 };
 
 export type AssetSubset = {
@@ -6520,6 +6520,12 @@ export const buildAssetSelection = (
         ? overrides.assetSelectionString!
         : 'dolores',
     assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
+    assetsOrError:
+      overrides && overrides.hasOwnProperty('assetsOrError')
+        ? overrides.assetsOrError!
+        : relationshipsToOmit.has('AssetConnection')
+        ? ({} as AssetConnection)
+        : buildAssetConnection({}, relationshipsToOmit),
   };
 };
 

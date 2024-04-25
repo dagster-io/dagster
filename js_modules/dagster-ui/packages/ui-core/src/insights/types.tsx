@@ -18,7 +18,7 @@ export type Datapoint = {
   values: (number | null)[];
 };
 
-type BarValue = {
+export type BarValue = {
   value: number;
   key: string;
   label: string;

@@ -1,7 +1,7 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, RefreshState, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -30,7 +30,7 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
 };
 
 type Props = {
-  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  Header: React.ComponentType<{refreshState: RefreshState}>;
   TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 
@@ -113,7 +113,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>
-          <TabButton selected="timeline" />
+          {TabButton && <TabButton selected="timeline" />}
           {allRepos.length > 1 && <RepoFilterButton />}
           <TextInput
             icon="search"

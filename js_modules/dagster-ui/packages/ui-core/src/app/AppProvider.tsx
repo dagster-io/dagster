@@ -8,28 +8,17 @@ import {
 } from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
-import {
-  Colors,
-  CustomTooltipProvider,
-  FontFamily,
-  GlobalDialogStyle,
-  GlobalInconsolata,
-  GlobalInter,
-  GlobalPopoverStyle,
-  GlobalSuggestStyle,
-  GlobalToasterStyle,
-  GlobalTooltipStyle,
-} from '@dagster-io/ui-components';
+import {CustomTooltipProvider} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
-import {createGlobalStyle} from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {AppContext} from './AppContext';
-import {CustomAlertProvider, GlobalCustomAlertPortalStyle} from './CustomAlertProvider';
+import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
+import {GlobalStyleProvider} from './GlobalStyleProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
@@ -50,69 +39,6 @@ import './blueprint.css';
 // break on underscores rather than arbitrary characters, but we need to remove these
 // when you copy-paste so they don't get pasted into editors, etc.
 patchCopyToRemoveZeroWidthUnderscores();
-
-const GlobalStyle = createGlobalStyle`
-  * {
-    box-sizing: border-box;
-  }
-
-  html, body, #root {
-    color-scheme: ${Colors.browserColorScheme()};
-    background-color: ${Colors.backgroundDefault()};
-    color: ${Colors.textDefault()};
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex: 1 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  a,
-  a:hover,
-  a:active {
-    color: ${Colors.linkDefault()};
-  }
-
-  #root {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
-  body, input, select, textarea {
-    font-family: ${FontFamily.default};
-  }
-
-  button {
-    color: ${Colors.textDefault()};
-    font-family: inherit;
-  }
-
-  code, pre {
-    font-family: ${FontFamily.monospace};
-    font-size: 16px;
-  }
-
-  :focus-visible {
-    outline: ${Colors.focusRing()} auto 1px;
-  }
-
-  :focus:not(:focus-visible) {
-    outline: none;
-  }
-
-  :not(a):focus,
-  :not(a):focus-visible {
-    outline-offset: 1px;
-  }
-`;
 
 export interface AppProviderProps {
   children: React.ReactNode;
@@ -205,15 +131,7 @@ export const AppProvider = (props: AppProviderProps) => {
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
-        <GlobalInter />
-        <GlobalInconsolata />
-        <GlobalStyle />
-        <GlobalToasterStyle />
-        <GlobalTooltipStyle />
-        <GlobalPopoverStyle />
-        <GlobalDialogStyle />
-        <GlobalCustomAlertPortalStyle />
-        <GlobalSuggestStyle />
+        <GlobalStyleProvider />
         <ApolloProvider client={apolloClient}>
           <AssetLiveDataProvider>
             <PermissionsProvider>

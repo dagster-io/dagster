@@ -916,13 +916,6 @@ class SqlEventLogStorage(EventLogStorage):
         if event_records_filter.storage_ids:
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
 
-        if event_records_filter.tags and self.has_table(AssetEventTagsTable.name):
-            # If we don't have the tags table, we'll filter the results after the query
-            check.invariant(
-                isinstance(event_records_filter.asset_key, AssetKey),
-                "Asset key must be set in event records filter to filter by tags.",
-            )
-
         return query
 
     def _apply_tags_table_joins(
@@ -979,16 +972,9 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             asset_details = None
 
-        if event_records_filter.tags and self.has_table(AssetEventTagsTable.name):
-            table = self._apply_tags_table_joins(
-                SqlEventLogStorageTable, event_records_filter.tags, event_records_filter.asset_key
-            )
-        else:
-            table = SqlEventLogStorageTable
-
         query = db_select(
             [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
-        ).select_from(table)
+        ).select_from(SqlEventLogStorageTable)
 
         query = self._apply_filter_to_query(
             query=query,
@@ -1015,20 +1001,6 @@ class SqlEventLogStorage(EventLogStorage):
                         "Could not resolve event record as EventLogEntry for id `%s`.", row_id
                     )
                     continue
-
-                if event_records_filter.tags and not self.has_table(AssetEventTagsTable.name):
-                    # If we can't filter tags via the tags table, filter the returned records
-                    if limit is not None:
-                        raise DagsterInvalidInvocationError(
-                            "Cannot filter events on tags with a limit, without the asset event "
-                            "tags table. To fix, run `dagster instance migrate`."
-                        )
-
-                    event_record_tags = event_record.tags
-                    if not event_record_tags or any(
-                        event_record_tags.get(k) != v for k, v in event_records_filter.tags.items()
-                    ):
-                        continue
 
                 event_records.append(
                     EventLogRecord(storage_id=row_id, event_log_entry=event_record)

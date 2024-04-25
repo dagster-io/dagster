@@ -98,7 +98,7 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 ### Make an existing table available in Dagster
 
-If you already have tables in your Delta Lake, you may want to make them available to other Dagster assets. You can accomplish this by using [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
+If you already have tables in your Delta Lake, you may want to make them available to other Dagster assets. You can accomplish this by using [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
 ```python file=/integrations/deltalake/source_asset.py
 from dagster import SourceAsset
@@ -132,7 +132,7 @@ def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
     return iris_dataset.dropna().drop_duplicates()
 ```
 
-In this example, we want to provide the `iris_dataset` asset to the `iris_cleaned` asset. Refer to the the [Store a Dagster asset as a table in Delta Lake](#store-a-dagster-asset-as-a-table-in-delta-lake) example for a look at the `iris_dataset` asset.
+In this example, we want to provide the `iris_dataset` asset to the `iris_cleaned` asset. Refer to the [Store a Dagster asset as a table in Delta Lake](#store-a-dagster-asset-as-a-table-in-delta-lake) example for a look at the `iris_dataset` asset.
 
 In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the docs for explicitly specifying dependencies.
 

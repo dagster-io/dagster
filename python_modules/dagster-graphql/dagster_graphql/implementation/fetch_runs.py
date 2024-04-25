@@ -4,7 +4,6 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
-    KeysView,
     List,
     Mapping,
     Optional,
@@ -27,7 +26,9 @@ from dagster._core.storage.tags import TagType, get_tag_type
 from .external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
-    from ..schema.asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode
+    from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
+
+    from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.execution import GrapheneExecutionPlan
     from ..schema.logs.events import GrapheneRunStepStats
@@ -158,28 +159,10 @@ IN_PROGRESS_STATUSES = [
 ]
 
 
-def add_all_upstream_keys(
-    all_asset_nodes: Mapping[AssetKey, "GrapheneAssetNode"],
-    requested_asset_keys: KeysView[AssetKey],
-) -> Sequence[AssetKey]:
-    required: Dict[AssetKey, bool] = {}
-
-    def append_key_and_upstream(key: AssetKey):
-        if required.get(key):
-            return
-        required[key] = True
-        asset_node = all_asset_nodes[key].external_asset_node
-        for dep in asset_node.dependencies:
-            append_key_and_upstream(dep.upstream_asset_key)
-
-    for asset_key in requested_asset_keys:
-        append_key_and_upstream(asset_key)
-
-    return list(required.keys())
-
-
 def get_assets_latest_info(
-    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+    graphene_info: "ResolveInfo",
+    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
+    asset_record_loader: "BatchAssetRecordLoader",
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 
@@ -189,12 +172,14 @@ def get_assets_latest_info(
 
     instance = graphene_info.context.instance
 
-    asset_nodes = get_asset_nodes_by_asset_key(graphene_info)
-    asset_record_keys_needed = add_all_upstream_keys(asset_nodes, step_keys_by_asset.keys())
-    if not asset_record_keys_needed:
+    asset_keys = list(step_keys_by_asset.keys())
+
+    if not asset_keys:
         return []
 
-    asset_records = instance.get_asset_records(asset_record_keys_needed)
+    asset_nodes = get_asset_nodes_by_asset_key(graphene_info, asset_keys)
+
+    asset_records = asset_record_loader.get_asset_records(asset_keys)
 
     latest_materialization_by_asset = {
         asset_record.asset_entry.asset_key: (

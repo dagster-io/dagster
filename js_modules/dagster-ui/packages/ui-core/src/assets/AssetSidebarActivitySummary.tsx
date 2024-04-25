@@ -4,10 +4,6 @@ import {Link} from 'react-router-dom';
 
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
-import {
-  AutomaterializePolicyTag,
-  automaterializePolicyDescription,
-} from './AutomaterializePolicyTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
@@ -17,13 +13,13 @@ import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {RecentAssetEvents} from './useRecentAssetEvents';
-import {LiveDataForNode} from '../asset-graph/Utils';
+import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
 interface Props {
   asset: SidebarAssetFragment;
-  liveData?: LiveDataForNode;
+  liveData?: LiveDataForNodeWithStaleData;
   isSourceAsset: boolean;
   stepKey: string;
   recentEvents: RecentAssetEvents;
@@ -83,12 +79,6 @@ export const AssetSidebarActivitySummary = ({
               View automation history
             </Link>
             <Icon name="open_in_new" color={Colors.linkDefault()} />
-          </Box>
-          <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1, marginBottom: 12}}>
-              {automaterializePolicyDescription(asset.autoMaterializePolicy)}
-            </Body>
-            <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />
           </Box>
         </SidebarSection>
       )}

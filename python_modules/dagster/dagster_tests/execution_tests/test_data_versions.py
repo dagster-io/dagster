@@ -33,6 +33,7 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition_mapping import AllPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.events import DagsterEventType
@@ -565,6 +566,51 @@ def test_stale_status_partitions_enabled() -> None:
         assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
 
 
+def test_stale_status_downstream_of_all_partitions_mapping():
+    start_date = datetime(2020, 1, 1)
+    end_date = start_date + timedelta(days=2)
+    start_key = start_date.strftime("%Y-%m-%d")
+
+    partitions_def = DailyPartitionsDefinition(start_date=start_date, end_date=end_date)
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        return 1
+
+    @asset(
+        ins={"asset1": AssetIn(partition_mapping=AllPartitionMapping())},
+    )
+    def asset2(asset1):
+        return 2
+
+    all_assets = [asset1, asset2]
+
+    # Downstream values are not stale even after upstream changed because of the partition mapping
+    with instance_for_test() as instance:
+        for k in partitions_def.get_partition_keys():
+            materialize_asset(all_assets, asset1, instance, partition_key=k)
+
+        materialize_asset(all_assets, asset2, instance)
+
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        for k in partitions_def.get_partition_keys():
+            assert status_resolver.get_status(asset1.key, k) == StaleStatus.FRESH
+
+        assert status_resolver.get_status(asset2.key, None) == StaleStatus.FRESH
+
+        materialize_asset(
+            all_assets,
+            asset1,
+            instance,
+            partition_key=start_key,
+        )
+
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+
+        # Still fresh b/c of the partition mapping
+        assert status_resolver.get_status(asset2.key, None) == StaleStatus.FRESH
+
+
 def test_stale_status_many_to_one_partitions() -> None:
     partitions_def = StaticPartitionsDefinition(["alpha", "beta"])
 
@@ -860,6 +906,71 @@ def test_stale_status_root_causes_general() -> None:
             StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
             StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
+
+
+def test_stale_status_non_transitive_root_causes() -> None:
+    with mock.patch.object(DagsterInstance, "use_transitive_stale_causes", False):
+        x = 0
+
+        @observable_source_asset
+        def source1(_context):
+            nonlocal x
+            x = x + 1
+            return DataVersion(str(x))
+
+        @asset(code_version="1")
+        def asset1(source1): ...
+
+        @asset(code_version="1")
+        def asset2(asset1): ...
+
+        @asset(code_version="1")
+        def asset3(asset2): ...
+
+        with instance_for_test() as instance:
+            all_assets = [source1, asset1, asset2, asset3]
+            status_resolver = get_stale_status_resolver(instance, all_assets)
+            assert status_resolver.get_stale_root_causes(asset1.key) == []
+            assert status_resolver.get_stale_root_causes(asset2.key) == []
+
+            materialize_assets(all_assets, instance)
+
+            # Simulate updating an asset with a new code version
+            @asset(name="asset1", code_version="2")
+            def asset1_v2(source1): ...
+
+            all_assets = [source1, asset1_v2, asset2, asset3]
+            status_resolver = get_stale_status_resolver(instance, all_assets)
+            assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
+            assert status_resolver.get_stale_root_causes(asset1.key) == [
+                StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
+            ]
+            assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
+            assert status_resolver.get_stale_root_causes(asset2.key) == []
+            assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
+            assert status_resolver.get_stale_root_causes(asset3.key) == []
+
+            observe([source1], instance=instance)
+            status_resolver = get_stale_status_resolver(instance, all_assets)
+            assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
+            assert status_resolver.get_stale_root_causes(asset1.key) == [
+                StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
+                StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
+            ]
+            assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
+            assert status_resolver.get_stale_root_causes(asset2.key) == []
+            assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
+            assert status_resolver.get_stale_root_causes(asset3.key) == []
+
+            materialize_assets(all_assets, instance=instance, selection=[asset1])
+            status_resolver = get_stale_status_resolver(instance, all_assets)
+            assert status_resolver.get_status(asset1.key) == StaleStatus.FRESH
+            assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
+            assert status_resolver.get_stale_root_causes(asset2.key) == [
+                StaleCause(asset1.key, StaleCauseCategory.DATA, "has a new data version"),
+            ]
+            assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
+            assert status_resolver.get_stale_root_causes(asset3.key) == []
 
 
 def test_stale_status_root_causes_dedup() -> None:

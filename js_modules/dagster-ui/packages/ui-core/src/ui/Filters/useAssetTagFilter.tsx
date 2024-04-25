@@ -66,7 +66,14 @@ export function useAssetTagsForAssets(
             .flatMap((a) => a.definition?.tags.map((tag) => JSON.stringify(tag)) ?? [])
             .filter((o) => o),
         ),
-      ).map((jsonTag) => buildDefinitionTag(JSON.parse(jsonTag))),
+      )
+        .map((jsonTag) => buildDefinitionTag(JSON.parse(jsonTag)))
+        .sort((a, b) =>
+          // Sort by key then by value
+          a.key.localeCompare(b.key) === 0
+            ? a.value.localeCompare(b.value)
+            : a.key.localeCompare(b.key),
+        ),
     [assets],
   );
 }
