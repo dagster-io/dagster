@@ -25,6 +25,7 @@ const TrackedSuspenseContext = createContext({
 
 type Boundary = {
   id: string;
+  name: string;
 };
 
 export const TrackedSuspenseProvider = ({
