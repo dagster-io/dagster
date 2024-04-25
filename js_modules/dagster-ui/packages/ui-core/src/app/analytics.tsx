@@ -1,5 +1,10 @@
-import {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
-import {useLocation, useRouteMatch} from 'react-router-dom';
+import {createContext, useCallback, useContext, useEffect} from 'react';
+import {atom, useRecoilValue, useSetRecoilState} from 'recoil';
+
+export const currentPageAtom = atom<{path: string; specificPath: string}>({
+  key: 'currentPageAtom',
+  default: {path: '/', specificPath: '/'},
+});
 
 export interface GenericAnalytics {
   group?: (groupId: string, traits?: Record<string, any>) => void;
@@ -13,10 +18,7 @@ export const AnalyticsContext = createContext<GenericAnalytics>(undefined!);
 const PAGEVIEW_DELAY = 300;
 
 export const usePageContext = () => {
-  const match = useRouteMatch();
-  const {pathname: specificPath} = useLocation();
-  const {path} = match;
-  return useMemo(() => ({path, specificPath}), [path, specificPath]);
+  return useRecoilValue(currentPageAtom);
 };
 
 const useAnalytics = () => {
@@ -54,11 +56,14 @@ export const useTrackPageView = () => {
   const analytics = useAnalytics();
   const {path, specificPath} = usePageContext();
 
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+
   useEffect(() => {
     // Wait briefly to allow redirects.
     const timer = setTimeout(() => {
       analytics.page(path, specificPath);
     }, PAGEVIEW_DELAY);
+    setCurrentPage({path, specificPath});
 
     return () => {
       clearTimeout(timer);

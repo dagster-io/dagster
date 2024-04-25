@@ -62,6 +62,7 @@
     "react-is": "^18.2.0",
     "react-markdown": "^8.0.6",
     "react-virtualized": "^9.22.3",
+    "recoil": "^0.7.7",
     "rehype-highlight": "^6.0.0",
     "rehype-sanitize": "^5.0.1",
     "remark": "^14.0.2",
