@@ -20,17 +20,41 @@ By the end of this guide, you'll understand what freshness checks are and how to
 
 ## How it works
 
-An asset is considered fresh if it's been materialized or observed within a defined time window. Otherwise, assets are considered overdue and in need of an update. To identify these assets, you can use **freshness checks**.
+An asset is considered fresh if it's been materialized or observed within a defined time window. 
+Otherwise, assets are considered overdue and in need of an update. To identify these assets, 
+you can use **freshness checks**.
 
-Let's say members of your team review a dashboard every morning as part of their daily stand up. To ensure they have the most up-to-date information, assets powering the dashboard should be materialized no later than 7AM. Using a freshness check, we can define the time that the asset should be updated by. If the check runs at that time and the asset hasn't been updated, the asset will be considered overdue and the check will fail.
+Let's say members of your team review a dashboard every morning as part of their daily stand up. 
+To ensure they have the most up-to-date information, assets powering the dashboard should be 
+materialized no later than 7AM. Using a freshness check, we can define the time that the asset 
+should be updated by. If the check runs at that time and the asset hasn't been updated, the 
+asset will be considered overdue and the check will fail.
 
-Additionally, freshness checks can help communicate SLAs for their data freshness. For example, downstream asset consumers can look at the checks that are defined on those assets to determine when and how often they’re expected to be updated.
+Additionally, freshness checks can help communicate SLAs for their data freshness. For example, 
+downstream asset consumers can look at the checks that are defined on those assets to determine 
+when and how often they’re expected to be updated.
 
-Freshness checks use an asset's latest update time to determine if it's overdue. How Dagster determines the last update time varies on the type of asset being targeted:
+`build_last_update_freshness_checks` will use the latest update time of the asset to determine if 
+it's overdue. `build_time_partition_freshness_checks` will use the latest partition time of the
+asset to determine if it's overdue (for time-window partitioned assets). Finally in Dagster+ Pro,
+`build_anomaly_detection_freshness_checks` will use proprietary anomaly detection models to
+determine if the asset is overdue based on it's history.
 
-- **For source assets**, which are assets whose data feeds a Dagster pipeline, freshness checks depend on asset observations to report the time the asset was last updated. In this guide, we'll demonstrate how to use [observable source assets and a schedule](#defining-freshness-checks-for-source-assets) to achieve this.
 
-- **For materializable assets**, which are assets materialized by Dagster, Dagster infers the asset's last update time using the its latest materialization timestamp. In this guide, we'll demonstrate how to use [`@asset`-decorated assets and a sensor](#defining-freshness-checks-for-materializable-assets) to achieve this.
+
+We'll provide real-world examples of how to implement freshness checks for different scenarios,
+how to run freshness checks, how to view the results in the Dagster UI, and how to be alerted on
+overdue assets. We
+
+- **For source assets**, which are assets whose data feeds a Dagster pipeline, freshness checks 
+depend on asset observations to report the time the asset was last updated. In this guide, we'll 
+demonstrate how to use [observable source assets and a schedule](#defining-freshness-checks-for-source-assets) 
+to achieve this.
+
+- **For materializable assets**, which are assets materialized by Dagster, Dagster infers the 
+asset's last update time using the its latest materialization timestamp. In this guide, we'll 
+demonstrate how to use [`@asset`-decorated assets and a sensor](#defining-freshness-checks-for-materializable-assets) 
+to achieve this.
 
 ---
 
