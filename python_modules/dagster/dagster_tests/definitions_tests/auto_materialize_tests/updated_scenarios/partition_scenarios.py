@@ -9,7 +9,10 @@ from dagster import (
     MultiPartitionMapping,
     TimeWindowPartitionMapping,
 )
-from dagster._core.definitions.auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
+from dagster._core.definitions.auto_materialize_rule import (
+    DiscardOnMaxMaterializationsExceededRule,
+    SkipOnRunInProgressRule
+)
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
@@ -739,6 +742,27 @@ partition_scenarios = [
             run_request("C", partition_key=hour_partition_key(state.current_time, delta=27))
         )
         .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+    # Ensure that with a rule that skips on run in progress, we don't launch a new run
+    AssetDaemonScenario(
+        id="partitioned_asset_in_progress-rule",
+        initial_spec=two_assets_in_sequence.with_asset_properties(
+            keys=["B"],
+            partitions_def=one_partitions_def,
+            auto_materialize_policy=AutoMaterializePolicy.eager().with_rules(
+                SkipOnRunInProgressRule(all_partitions=True)
+            ),
+        ),
+        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"]))
+        .with_not_started_runs()
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_runs(run_request(["A"]))
+        .with_in_progress_run_for_asset("B")
         .evaluate_tick()
         .assert_requested_runs(),
     ),
