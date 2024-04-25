@@ -1,5 +1,46 @@
 # Changelog
 
+# 1.7.3 (core) / 0.23.3 (libraries)
+
+### New
+
+- `@graph_asset` now accepts a `tags` argument
+- [ui] For users whose light/dark mode theme setting is set to match their system setting, the theme will update automatically when the system changes modes (e.g. based on time of day), with no page reload required.
+- [ui] We have introduced the typefaces Geist and Geist Mono as our new default fonts throughout the Dagster app, with the goal of improving legibility, consistency, and maintainability.
+- [ui] [experimental] We have begun experimenting with a [new navigation structure](https://github.com/dagster-io/dagster/discussions/21370) for the Dagster UI. The change can be enabled via User Settings.
+- [ui] [experimental] Made performance improvements to the Concurrency settings page.
+- [dagster-azure] [community-contribution] ADLS2 IOManager supports custom timeout. Thanks @tomas-gajarsky!
+- [dagster-fivetran] [community-contribution] It’s now possible to specify destination ids in `load_asset_defs_from_fivetran_instance`. Thanks @lamalex!
+
+### Bugfixes
+
+- Fixed an issue where pressing the “Reset sensor status” button in the UI would also reset the sensor’s cursor.
+- Fixed a bug that caused input loading time not to be included in the reported step duration.
+- Pydantic warnings are no longer raised when importing Dagster with Pydantic 2.0+.
+- Fixed an issue which would cause incorrect behavior when auto-materializing partitioned assets based on updates to a parent asset in a different code location.
+- Fixed an issue which would cause every tick of the auto-materialize sensor to produce an evaluation for each asset, even if nothing had changed from the previous tick.
+- [dagster-dbt] Fixed a bug that could raise `Duplicate check specs` errors with singular tests ingested as asset checks.
+- [embedded-elt] resolved an issue where subset of resources were not recognized when using `source.with_resources(...)`
+- [ui] Fixed an issue where a sensor that targeted an invalid set of asset keys could cause the asset catalog to fail to load.
+- [ui] Fixed an issue in which runs in the Timeline that should have been considered overlapping were not correctly grouped together, leading to visual bugs.
+- [ui] On the asset overview page, job tags no longer render poorly when an asset appears in several jobs.
+- [ui] On the asset overview page, hovering over the timestamp tags in the metadata table explains where each entry originated.
+- [ui] Right clicking the background of the asset graph now consistently shows a context menu, and the lineage view supports vertical as well as horizontal layout.
+
+### Documentation
+
+- Sidebar navigation now appropriately handles command-click and middle-click to open links in a new tab.
+- Added a section for asset checks to the [Testing guide](https://docs.dagster.io/concepts/testing#testing-asset-checks).
+- Added a guide about [Column-level lineage for assets](https://docs.dagster.io/concepts/metadata-tags/asset-metadata/column-level-lineage).
+- Lots of updates to examples to reflect the new opt-in approach to I/O managers.
+
+### Dagster+
+
+- [ui] [experimental] A new Overview > Asset Health page provides visibility into failed and missing materializations, check warnings and check errors.
+- [ui] You can now share feedback with the Dagster team directly from the app. Open the Help menu in the top nav, then “Share feedback”. Bugs and feature requests are submitted directly to the Dagster team.
+- [ui] When editing a team, the list of team members is now virtualized, allowing for the UI to scale better for very large team sizes.
+- [ui] Fixed dark mode for billing components.
+
 # 1.7.2 (core) / 0.23.2 (libraries)
 
 ### New
