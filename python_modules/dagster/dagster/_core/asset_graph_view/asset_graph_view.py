@@ -11,7 +11,7 @@ from typing import (
 
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -129,6 +129,9 @@ class AssetSlice:
             check.not_none(akpk.partition_key, "No None partition keys")
             for akpk in self._compatible_subset.asset_partitions
         }
+
+    def compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        return {akpk for akpk in self._compatible_subset.asset_partitions}
 
     @property
     def asset_key(self) -> AssetKey:
@@ -445,6 +448,16 @@ class AssetGraphView:
         return _slice_from_subset(
             self,
             AssetSubset.empty(asset_key, self._get_partitions_def(asset_key)),
+        )
+
+    def create_slice_for_asset_partition(self, asset_partition: AssetKeyPartitionKey) -> AssetSlice:
+        return _slice_from_subset(
+            self,
+            AssetSubset.from_asset_partitions_set(
+                asset_partition.asset_key,
+                self._get_partitions_def(asset_partition.asset_key),
+                {asset_partition},
+            ),
         )
 
     class MultiDimInfo(NamedTuple):
