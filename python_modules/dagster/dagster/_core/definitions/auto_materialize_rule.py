@@ -243,6 +243,14 @@ class AutoMaterializeRule(ABC):
     def skip_on_run_in_progress(
         all_partitions: bool = False,
     ) -> "SkipOnRunInProgressRule":
+        """Skip an asset if targeted by an in-progress run.
+
+        Args:
+            all_partitions (bool): If True, skips all partitions of the asset that is in-progress,
+                regardless of whether the specific partition is targeted by the specific run.
+                False is currently not supported on Non partitioned runs.
+        """
+
         return SkipOnRunInProgressRule(all_partitions)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
