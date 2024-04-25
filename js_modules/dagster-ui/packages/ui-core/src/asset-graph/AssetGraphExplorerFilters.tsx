@@ -27,8 +27,25 @@ type Props = {
   loading: boolean;
 };
 
-const defaultState = {filters: {selectAllFilters: [] as string[]}} as Partial<AssetFilterState> & {
-  filters: Partial<AssetFilterState['filters']>;
+const defaultState: AssetFilterState = {
+  filters: {
+    changedInBranch: [],
+    computeKindTags: [],
+    groups: [],
+    owners: [],
+    repos: [],
+    selectAllFilters: [],
+    tags: [],
+  },
+  setAssetTags: () => {},
+  setChangedInBranch: () => {},
+  setComputeKindTags: () => {},
+  setFilters: () => {},
+  setGroups: () => {},
+  setOwners: () => {},
+  setRepos: () => {},
+  setSelectAllFilters: () => {},
+  filterFn: () => true,
 };
 
 export function useAssetGraphExplorerFilters({
@@ -54,7 +71,7 @@ export function useAssetGraphExplorerFilters({
     setSelectAllFilters,
   } = assetFilterState || defaultState;
 
-  const reposFilter = useCodeLocationFilter(repos && setRepos ? {repos, setRepos} : undefined);
+  const reposFilter = useCodeLocationFilter(repos ? {repos, setRepos} : undefined);
 
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
 
@@ -114,6 +131,9 @@ export function useAssetGraphExplorerFilters({
     ].forEach(([key, activeItems, allItems]) => {
       if (!allItems.length) {
         return;
+      }
+      if (!activeItems || !allItems) {
+        debugger;
       }
       if (activeItems.length !== allItems.length) {
         if (selectAllFilters.includes(key)) {
