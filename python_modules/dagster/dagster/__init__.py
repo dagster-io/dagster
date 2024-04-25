@@ -131,8 +131,10 @@ from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
 )
 from dagster._core.definitions.auto_materialize_rule import (
-    AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
     AutoMaterializeRule as AutoMaterializeRule,
+)
+from dagster._core.definitions.auto_materialize_rule_impls import (
+    AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
 )
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition as AutoMaterializeSensorDefinition,

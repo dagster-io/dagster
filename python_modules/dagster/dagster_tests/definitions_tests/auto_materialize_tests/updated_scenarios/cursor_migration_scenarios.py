@@ -1,5 +1,7 @@
 from dagster import AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
+from dagster._core.definitions.auto_materialize_rule_impls import (
+    DiscardOnMaxMaterializationsExceededRule,
+)
 
 from dagster_tests.definitions_tests.auto_materialize_tests.updated_scenarios.cron_scenarios import (
     basic_hourly_cron_rule,

@@ -473,10 +473,8 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> AutoMaterializeRuleEvaluation:
-        from .auto_materialize_rule import (
-            AutoMaterializeRule,
-            DiscardOnMaxMaterializationsExceededRule,
-        )
+        from .auto_materialize_rule import AutoMaterializeRule
+        from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
 
         if self.klass in (
             FreshnessAutoMaterializeCondition,

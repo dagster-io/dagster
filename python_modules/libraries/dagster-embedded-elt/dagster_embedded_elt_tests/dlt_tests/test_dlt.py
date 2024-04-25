@@ -8,7 +8,7 @@ from dagster import (
     AutoMaterializeRule,
     Definitions,
 )
-from dagster._core.definitions.auto_materialize_rule import MaterializeOnCronRule
+from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnCronRule
 from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline

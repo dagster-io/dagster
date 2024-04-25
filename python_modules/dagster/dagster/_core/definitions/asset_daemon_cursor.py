@@ -152,7 +152,7 @@ def get_backcompat_asset_condition_evaluation_state(
         AssetConditionEvaluationState,
         RuleCondition,
     )
-    from dagster._core.definitions.auto_materialize_rule import MaterializeOnMissingRule
+    from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnMissingRule
 
     return AssetConditionEvaluationState(
         previous_evaluation=latest_evaluation,
