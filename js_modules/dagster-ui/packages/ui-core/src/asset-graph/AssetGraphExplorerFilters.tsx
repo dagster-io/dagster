@@ -132,9 +132,6 @@ export function useAssetGraphExplorerFilters({
       if (!allItems.length) {
         return;
       }
-      if (!activeItems || !allItems) {
-        debugger;
-      }
       if (activeItems.length !== allItems.length) {
         if (selectAllFilters.includes(key)) {
           didChange = true;
