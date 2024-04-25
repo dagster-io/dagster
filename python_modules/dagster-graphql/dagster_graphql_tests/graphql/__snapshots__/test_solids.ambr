@@ -243,7 +243,95 @@
           'invocations': list([
             dict({
               'pipeline': dict({
+                'name': '__ASSET_JOB_0',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_1',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_2',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_3',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_4',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_5',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_6',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_7',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_8',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB_9',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
                 'name': 'asset_check_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_1_my_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'failure_assets_job',
               }),
               'solidHandle': dict({
                 'handleID': 'asset_1_my_check',

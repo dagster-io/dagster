@@ -633,7 +633,12 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
                     assets_def.subset_for(asset_keys, selected_asset_check_keys=None)
                 )
 
-    return AssetGraph.from_assets(subsetted_assets_defs)
+    # We didn't color asset checks, so add any that are in their own node.
+    assets_defs_with_only_checks = [
+        ad for ad in asset_graph.assets_defs if has_only_asset_checks(ad)
+    ]
+
+    return AssetGraph.from_assets(subsetted_assets_defs + assets_defs_with_only_checks)
 
 
 def _ensure_resources_dont_conflict(
