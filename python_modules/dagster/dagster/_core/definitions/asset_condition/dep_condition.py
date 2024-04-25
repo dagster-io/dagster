@@ -45,6 +45,12 @@ class DepSchedulingCondition(AssetCondition):
     def all_dep_partitions(self) -> "DepSchedulingCondition":
         return self.copy(update={"dep_partition_selection_type": DepSelectionType.ALL})
 
+    @staticmethod
+    def dep_in_progress() -> "DepSchedulingCondition":
+        from .dep_in_progress_condition import DepInProgressCondition
+
+        return DepInProgressCondition()
+
     @property
     def description(self) -> str:
         if self.dep_partition_selection_type == DepSelectionType.ALL:

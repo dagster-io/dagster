@@ -171,6 +171,10 @@ class AssetSlice:
         """Return a new AssetSlice with only the given partition keys if they are in the slice."""
         return self._asset_graph_view.compute_intersection_with_partition_keys(partition_keys, self)
 
+    def contains_asset_partition(self, asset_partition: AssetKeyPartitionKey) -> bool:
+        """Determines if a given asset partition is in the slice."""
+        return asset_partition in self._compatible_subset
+
     @property
     def time_windows(self) -> Sequence[TimeWindow]:
         """Get the time windows for the asset slice. Only supports explicitly time-windowed partitions for now."""

@@ -31,6 +31,7 @@ from ..auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .dep_condition import DepSchedulingCondition
     from .recent_time_partitions import Duration
 
 
@@ -425,6 +426,12 @@ class AssetCondition(ABC, DagsterModel):
         from .in_progress_condition import InProgressRunCondition
 
         return InProgressRunCondition()
+
+    @staticmethod
+    def dep() -> Type["DepSchedulingCondition"]:
+        from .dep_condition import DepSchedulingCondition
+
+        return DepSchedulingCondition
 
 
 @experimental
