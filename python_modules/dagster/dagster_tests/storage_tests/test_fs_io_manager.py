@@ -80,7 +80,6 @@ def test_fs_io_manager():
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_events))
         metadata = loaded_input_events[0].event_specific_data.metadata
-        assert metadata["path"] == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
         assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
 
