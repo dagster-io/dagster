@@ -297,7 +297,7 @@ basic_scenarios = [
         initial_spec=two_assets_in_sequence.with_asset_properties(
             keys=["B"],
             auto_materialize_policy=AutoMaterializePolicy.eager().with_rules(
-                SkipOnRunInProgressRule()
+                SkipOnRunInProgressRule(all_partitions=True)
             ),
         ),
         execution_fn=lambda state: state.with_runs(run_request(["A"]))
