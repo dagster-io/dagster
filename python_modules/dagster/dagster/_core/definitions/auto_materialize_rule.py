@@ -240,8 +240,10 @@ class AutoMaterializeRule(ABC):
         return SkipOnBackfillInProgressRule(all_partitions)
 
     @staticmethod
-    def skip_on_run_in_progress() -> "SkipOnRunInProgressRule":
-        return SkipOnRunInProgressRule()
+    def skip_on_run_in_progress(
+        all_partitions: bool = False,
+    ) -> "SkipOnRunInProgressRule":
+        return SkipOnRunInProgressRule(all_partitions)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -1242,21 +1244,26 @@ class DiscardOnMaxMaterializationsExceededRule(
 
 
 @whitelist_for_serdes
-class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgressRule", [])):
+class SkipOnRunInProgressRule(
+    AutoMaterializeRule, NamedTuple("_SkipOnRunInProgressRule", [("all_partitions", bool)])
+):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
 
     @property
     def description(self) -> str:
-        return "in-progress run for asset"
+        if not self.all_partitions:
+            return "part of an asset targeted by an in-progress run"
+        else:
+            return "in-progress run for asset"
 
     def evaluate_for_asset(
         self, context: "AssetConditionEvaluationContext"
     ) -> "AssetConditionResult":
         from .asset_condition.asset_condition import AssetConditionResult
 
-        if context.partitions_def is not None:
+        if context.partitions_def is not None and not self.all_partitions:
             raise DagsterInvariantViolationError(
                 "SkipOnRunInProgressRule is currently only support for non-partitioned assets."
             )
