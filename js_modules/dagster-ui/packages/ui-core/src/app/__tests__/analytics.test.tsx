@@ -58,6 +58,7 @@ describe('Analytics', () => {
 
   describe('Event tracking', () => {
     const Page = () => {
+      useTrackPageView();
       const trackEvent = useTrackEvent();
       const onClick = () => {
         trackEvent('thingClick');
