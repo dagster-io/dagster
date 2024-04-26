@@ -1,12 +1,12 @@
 # start_marker
 from dagster import (
     AssetExecutionContext,
+    AssetsDefinition,
     BackfillPolicy,
     DailyPartitionsDefinition,
     InputContext,
     IOManager,
     OutputContext,
-    SourceAsset,
     asset,
 )
 
@@ -23,7 +23,7 @@ class MyIOManager(IOManager):
 
 daily_partition = DailyPartitionsDefinition(start_date="2020-01-01")
 
-raw_events = SourceAsset("raw_events", partitions_def=daily_partition)
+raw_events = AssetsDefinition.single("raw_events", partitions_def=daily_partition)
 
 
 @asset(

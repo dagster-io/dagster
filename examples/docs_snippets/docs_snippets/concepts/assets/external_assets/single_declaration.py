@@ -1,3 +1,3 @@
-from dagster import AssetSpec, Definitions, external_asset_from_spec
+from dagster import AssetsDefinition, Definitions
 
-defs = Definitions(assets=[external_asset_from_spec(AssetSpec("file_in_s3"))])
+defs = Definitions(assets=[AssetsDefinition.single("file_in_s3")])
