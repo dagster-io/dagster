@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Sequence
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
@@ -20,6 +20,7 @@ class AssetResult(
             ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
             ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
             ("data_version", PublicAttr[Optional[DataVersion]]),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
         ],
     )
 ):
@@ -32,6 +33,7 @@ class AssetResult(
         metadata: Optional[RawMetadataMapping] = None,
         check_results: Optional[Sequence[AssetCheckResult]] = None,
         data_version: Optional[DataVersion] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
 
@@ -47,6 +49,7 @@ class AssetResult(
                 check_results, "check_results", of_type=AssetCheckResult
             ),
             data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
+            tags=validate_asset_event_tags(tags),
         )
 
     def check_result_named(self, check_name: str) -> AssetCheckResult:

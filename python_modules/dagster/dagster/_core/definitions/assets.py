@@ -71,7 +71,7 @@ from .partition_mapping import (
 )
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
-from .utils import DEFAULT_GROUP_NAME, validate_tags_strict, validate_group_name
+from .utils import DEFAULT_GROUP_NAME, validate_group_name, validate_tags_strict
 
 if TYPE_CHECKING:
     from .base_asset_graph import AssetKeyOrCheckKey
