@@ -1,9 +1,11 @@
 import cx from 'classnames';
+import * as React from 'react';
 
 export const ButtonContainer = ({children}: {children: any}) => {
+  const buttons = React.Children.toArray(children);
   return (
     <div className="w-full inline-flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
-      {children}
+      {...buttons}
     </div>
   );
 };
@@ -29,7 +31,7 @@ export const Button = ({
           style === 'blurple' && 'bg-blurple text-white hover:bg-blurple-darker',
         )}
       >
-        {children}
+        <span>{React.Children.toArray(children)}</span>
       </a>
     </div>
   );
