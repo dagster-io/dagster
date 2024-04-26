@@ -17,7 +17,6 @@ from typing import (
     cast,
 )
 
-from pydantic import Field
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -615,124 +614,129 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
 
 @whitelist_for_serdes(storage_name="TextMetadataEntryData")
-class TextMetadataValue(DagsterModel, MetadataValue[str]):
+class TextMetadataValue(
+    NamedTuple(
+        "_TextMetadataValue",
+        [
+            ("text", PublicAttr[Optional[str]]),
+        ],
+    ),
+    MetadataValue[str],
+):
     """Container class for text metadata entry data.
 
     Args:
         text (Optional[str]): The text data.
     """
 
-    text_inner: Optional[str] = Field(..., alias="text")
-
-    def __init__(self, text: Optional[str]):
-        super().__init__(text=text or "")
-
-    @public
-    @property
-    def text(self) -> Optional[str]:
-        return self.text_inner
+    def __new__(cls, text: Optional[str]):
+        return super(TextMetadataValue, cls).__new__(
+            cls, check.opt_str_param(text, "text", default="")
+        )
 
     @public
     @property
     def value(self) -> Optional[str]:
         """Optional[str]: The wrapped text data."""
-        return self.text_inner
+        return self.text
 
 
 @whitelist_for_serdes(storage_name="UrlMetadataEntryData")
-class UrlMetadataValue(DagsterModel, MetadataValue[str]):
+class UrlMetadataValue(
+    NamedTuple(
+        "_UrlMetadataValue",
+        [
+            ("url", PublicAttr[Optional[str]]),
+        ],
+    ),
+    MetadataValue[str],
+):
     """Container class for URL metadata entry data.
 
     Args:
         url (Optional[str]): The URL as a string.
     """
 
-    url_inner: Optional[str] = Field(..., alias="url")
-
-    def __init__(self, url: Optional[str]):
-        super().__init__(url=url or "")
+    def __new__(cls, url: Optional[str]):
+        return super(UrlMetadataValue, cls).__new__(
+            cls, check.opt_str_param(url, "url", default="")
+        )
 
     @public
     @property
     def value(self) -> Optional[str]:
         """Optional[str]: The wrapped URL."""
-        return self.url_inner
-
-    @public
-    @property
-    def url(self) -> Optional[str]:
-        """Optional[str]: The wrapped URL."""
-        return self.url_inner
+        return self.url
 
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
-class PathMetadataValue(DagsterModel, MetadataValue[str]):
+class PathMetadataValue(
+    NamedTuple("_PathMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue[str]
+):
     """Container class for path metadata entry data.
 
     Args:
         path (Optional[str]): The path as a string or conforming to os.PathLike.
     """
 
-    path_inner: Optional[str] = Field(..., alias="path")
-
-    def __init__(self, path: Optional[Union[str, os.PathLike]]):
-        super().__init__(path=check.opt_path_param(path, "path", default=""))
-
-    @public
-    @property
-    def path(self) -> Optional[str]:
-        return self.path_inner
+    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
+        return super(PathMetadataValue, cls).__new__(
+            cls, check.opt_path_param(path, "path", default="")
+        )
 
     @public
     @property
     def value(self) -> Optional[str]:
         """Optional[str]: The wrapped path."""
-        return self.path_inner
+        return self.path
 
 
 @whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
-class NotebookMetadataValue(DagsterModel, MetadataValue[str]):
+class NotebookMetadataValue(
+    NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue[str]
+):
     """Container class for notebook metadata entry data.
 
     Args:
         path (Optional[str]): The path to the notebook as a string or conforming to os.PathLike.
     """
 
-    path_inner: Optional[str] = Field(..., alias="path")
-
-    def __init__(self, path: Optional[Union[str, os.PathLike]]):
-        super().__init__(path=check.opt_path_param(path, "path", default=""))
-
-    @public
-    @property
-    def path(self) -> Optional[str]:
-        return self.path_inner
+    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
+        return super(NotebookMetadataValue, cls).__new__(
+            cls, check.opt_path_param(path, "path", default="")
+        )
 
     @public
     @property
     def value(self) -> Optional[str]:
         """Optional[str]: The wrapped path to the notebook as a string."""
-        return self.path_inner
+        return self.path
 
 
 @whitelist_for_serdes(storage_name="JsonMetadataEntryData")
-class JsonMetadataValue(DagsterModel, MetadataValue[Union[Sequence[Any], Mapping[str, Any]]]):
+class JsonMetadataValue(
+    NamedTuple(
+        "_JsonMetadataValue",
+        [
+            ("data", PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]),
+        ],
+    ),
+    MetadataValue[Union[Sequence[Any], Mapping[str, Any]]],
+):
     """Container class for JSON metadata entry data.
 
     Args:
         data (Union[Sequence[Any], Dict[str, Any]]): The JSON data.
     """
 
-    data: PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]
-
-    def __init__(self, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
+    def __new__(cls, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
         data = check.opt_inst_param(data, "data", (Sequence, Mapping))
         try:
             # check that the value is JSON serializable
             seven.dumps(data)
         except TypeError:
             raise DagsterInvalidMetadata("Value is not JSON serializable.")
-        super().__init__(data=data)
+        return super(JsonMetadataValue, cls).__new__(cls, data)
 
     @public
     @property
@@ -742,17 +746,25 @@ class JsonMetadataValue(DagsterModel, MetadataValue[Union[Sequence[Any], Mapping
 
 
 @whitelist_for_serdes(storage_name="MarkdownMetadataEntryData")
-class MarkdownMetadataValue(DagsterModel, MetadataValue[str]):
+class MarkdownMetadataValue(
+    NamedTuple(
+        "_MarkdownMetadataValue",
+        [
+            ("md_str", PublicAttr[Optional[str]]),
+        ],
+    ),
+    MetadataValue[str],
+):
     """Container class for markdown metadata entry data.
 
     Args:
         md_str (Optional[str]): The markdown as a string.
     """
 
-    md_str: PublicAttr[Optional[str]]
-
-    def __init__(self, md_str: Optional[str]):
-        super().__init__(md_str=md_str or "")
+    def __new__(cls, md_str: Optional[str]):
+        return super(MarkdownMetadataValue, cls).__new__(
+            cls, check.opt_str_param(md_str, "md_str", default="")
+        )
 
     @public
     @property
@@ -763,7 +775,16 @@ class MarkdownMetadataValue(DagsterModel, MetadataValue[str]):
 
 # This should be deprecated or fixed so that `value` does not return itself.
 @whitelist_for_serdes(storage_name="PythonArtifactMetadataEntryData")
-class PythonArtifactMetadataValue(DagsterModel, MetadataValue["PythonArtifactMetadataValue"]):
+class PythonArtifactMetadataValue(
+    NamedTuple(
+        "_PythonArtifactMetadataValue",
+        [
+            ("module", PublicAttr[str]),
+            ("name", PublicAttr[str]),
+        ],
+    ),
+    MetadataValue["PythonArtifactMetadataValue"],
+):
     """Container class for python artifact metadata entry data.
 
     Args:
@@ -771,11 +792,10 @@ class PythonArtifactMetadataValue(DagsterModel, MetadataValue["PythonArtifactMet
         name (str): The name of the python artifact
     """
 
-    module: PublicAttr[str]
-    name: PublicAttr[str]
-
-    def __init__(self, module: str, name: str):
-        super().__init__(module=module, name=name)
+    def __new__(cls, module: str, name: str):
+        return super(PythonArtifactMetadataValue, cls).__new__(
+            cls, check.str_param(module, "module"), check.str_param(name, "name")
+        )
 
     @public
     @property
@@ -785,93 +805,96 @@ class PythonArtifactMetadataValue(DagsterModel, MetadataValue["PythonArtifactMet
 
 
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
-class FloatMetadataValue(DagsterModel, MetadataValue[float]):
+class FloatMetadataValue(
+    NamedTuple(
+        "_FloatMetadataValue",
+        [
+            ("value", PublicAttr[Optional[float]]),
+        ],
+    ),
+    MetadataValue[float],
+):
     """Container class for float metadata entry data.
 
     Args:
         value (Optional[float]): The float value.
     """
 
-    value_inner: Optional[float] = Field(..., alias="value")
-
-    def __init__(self, value: Optional[float]):
-        super().__init__(value=value)
-
-    @public
-    @property
-    def value(self) -> Optional[float]:
-        return self.value_inner
+    def __new__(cls, value: Optional[float]):
+        return super(FloatMetadataValue, cls).__new__(cls, check.opt_float_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
-class IntMetadataValue(DagsterModel, MetadataValue[int]):
+class IntMetadataValue(
+    NamedTuple(
+        "_IntMetadataValue",
+        [
+            ("value", PublicAttr[Optional[int]]),
+        ],
+    ),
+    MetadataValue[int],
+):
     """Container class for int metadata entry data.
 
     Args:
         value (Optional[int]): The int value.
     """
 
-    value_inner: Optional[int] = Field(..., alias="value")
-
-    def __init__(self, value: Optional[int]):
-        super().__init__(value=value)
-
-    @public
-    @property
-    def value(self) -> Optional[int]:
-        return self.value_inner
+    def __new__(cls, value: Optional[int]):
+        return super(IntMetadataValue, cls).__new__(cls, check.opt_int_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
-class BoolMetadataValue(DagsterModel, MetadataValue[bool]):
+class BoolMetadataValue(
+    NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
+    MetadataValue[bool],
+):
     """Container class for bool metadata entry data.
 
     Args:
         value (Optional[bool]): The bool value.
     """
 
-    value_inner: Optional[bool] = Field(..., alias="value")
-
-    def __init__(self, value: Optional[bool]):
-        super().__init__(value=value)
-
-    @public
-    @property
-    def value(self) -> Optional[bool]:
-        return self.value_inner
+    def __new__(cls, value: Optional[bool]):
+        return super(BoolMetadataValue, cls).__new__(cls, check.opt_bool_param(value, "value"))
 
 
 @whitelist_for_serdes
-class TimestampMetadataValue(DagsterModel, MetadataValue[float]):
+class TimestampMetadataValue(
+    NamedTuple(
+        "_DateTimeMetadataValue",
+        [("value", PublicAttr[float])],
+    ),
+    MetadataValue[float],
+):
     """Container class for metadata value that's a unix timestamp.
 
     Args:
         value (float): Seconds since the unix epoch.
     """
 
-    value_inner: Optional[float] = Field(..., alias="value")
-
-    def __init__(self, value: float):
-        super().__init__(value=value)
-
-    @public
-    @property
-    def value(self) -> Optional[float]:
-        return self.value_inner
+    def __new__(cls, value: float):
+        return super(TimestampMetadataValue, cls).__new__(cls, check.float_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
-class DagsterRunMetadataValue(DagsterModel, MetadataValue[str]):
+class DagsterRunMetadataValue(
+    NamedTuple(
+        "_DagsterRunMetadataValue",
+        [
+            ("run_id", PublicAttr[str]),
+        ],
+    ),
+    MetadataValue[str],
+):
     """Representation of a dagster run.
 
     Args:
         run_id (str): The run id
     """
 
-    run_id: PublicAttr[str]
-
-    def __init__(self, run_id: str):
-        super().__init__(run_id=run_id)
+    def __new__(cls, run_id: str):
+        return super(DagsterRunMetadataValue, cls).__new__(cls, check.str_param(run_id, "run_id"))
 
     @public
     @property
@@ -881,7 +904,17 @@ class DagsterRunMetadataValue(DagsterModel, MetadataValue[str]):
 
 
 @whitelist_for_serdes
-class DagsterJobMetadataValue(DagsterModel, MetadataValue["DagsterJobMetadataValue"]):
+class DagsterJobMetadataValue(
+    NamedTuple(
+        "_DagsterJobMetadataValue",
+        [
+            ("job_name", PublicAttr[str]),
+            ("location_name", PublicAttr[str]),
+            ("repository_name", PublicAttr[Optional[str]]),
+        ],
+    ),
+    MetadataValue["DagsterJobMetadataValue"],
+):
     """Representation of a dagster run.
 
     Args:
@@ -891,20 +924,17 @@ class DagsterJobMetadataValue(DagsterModel, MetadataValue["DagsterJobMetadataVal
             assumed to be in the same repository as this object.
     """
 
-    job_name: PublicAttr[str]
-    location_name: PublicAttr[str]
-    repository_name: PublicAttr[Optional[str]]
-
-    def __init__(
-        self,
+    def __new__(
+        cls,
         job_name: str,
         location_name: str,
         repository_name: Optional[str] = None,
     ):
-        super().__init__(
-            job_name=job_name,
-            location_name=location_name,
-            repository_name=repository_name,
+        return super(DagsterJobMetadataValue, cls).__new__(
+            cls,
+            check.str_param(job_name, "job_name"),
+            check.str_param(location_name, "location_name"),
+            check.opt_str_param(repository_name, "repository_name"),
         )
 
     @public
@@ -914,17 +944,22 @@ class DagsterJobMetadataValue(DagsterModel, MetadataValue["DagsterJobMetadataVal
 
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
-class DagsterAssetMetadataValue(DagsterModel, MetadataValue[AssetKey]):
+class DagsterAssetMetadataValue(
+    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", PublicAttr["AssetKey"])]),
+    MetadataValue["AssetKey"],
+):
     """Representation of a dagster asset.
 
     Args:
         asset_key (AssetKey): The dagster asset key
     """
 
-    asset_key: PublicAttr[AssetKey]
+    def __new__(cls, asset_key: "AssetKey"):
+        from dagster._core.definitions.events import AssetKey
 
-    def __init__(self, asset_key: AssetKey):
-        super().__init__(asset_key=asset_key)
+        return super(DagsterAssetMetadataValue, cls).__new__(
+            cls, check.inst_param(asset_key, "asset_key", AssetKey)
+        )
 
     @public
     @property
@@ -936,7 +971,16 @@ class DagsterAssetMetadataValue(DagsterModel, MetadataValue[AssetKey]):
 # This should be deprecated or fixed so that `value` does not return itself.
 @experimental
 @whitelist_for_serdes(storage_name="TableMetadataEntryData")
-class TableMetadataValue(DagsterModel, MetadataValue["TableMetadataValue"]):
+class TableMetadataValue(
+    NamedTuple(
+        "_TableMetadataValue",
+        [
+            ("records", PublicAttr[Sequence[TableRecord]]),
+            ("schema", PublicAttr[TableSchema]),
+        ],
+    ),
+    MetadataValue["TableMetadataValue"],
+):
     """Container class for table metadata entry data.
 
     Args:
@@ -957,9 +1001,6 @@ class TableMetadataValue(DagsterModel, MetadataValue["TableMetadataValue"]):
             )
     """
 
-    records: PublicAttr[Sequence[TableRecord]]
-    schema_inner: TableSchema = Field(..., alias="schema")
-
     @public
     @staticmethod
     def infer_column_type(value: object) -> str:
@@ -973,7 +1014,7 @@ class TableMetadataValue(DagsterModel, MetadataValue["TableMetadataValue"]):
         else:
             return "string"
 
-    def __init__(self, records: Sequence[TableRecord], schema: Optional[TableSchema] = None):
+    def __new__(cls, records: Sequence[TableRecord], schema: Optional[TableSchema]):
         check.sequence_param(records, "records", of_type=TableRecord)
         check.opt_inst_param(schema, "schema", TableSchema)
 
@@ -992,12 +1033,11 @@ class TableMetadataValue(DagsterModel, MetadataValue["TableMetadataValue"]):
                 ]
             )
 
-        super().__init__(records=records, schema=schema)
-
-    @public
-    @property
-    def schema(self) -> TableSchema:
-        return self.schema_inner
+        return super(TableMetadataValue, cls).__new__(
+            cls,
+            records,
+            schema,
+        )
 
     @public
     @property
@@ -1007,32 +1047,35 @@ class TableMetadataValue(DagsterModel, MetadataValue["TableMetadataValue"]):
 
 
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
-class TableSchemaMetadataValue(DagsterModel, MetadataValue[TableSchema]):
+class TableSchemaMetadataValue(
+    NamedTuple("_TableSchemaMetadataValue", [("schema", PublicAttr[TableSchema])]),
+    MetadataValue[TableSchema],
+):
     """Representation of a schema for arbitrary tabular data.
 
     Args:
         schema (TableSchema): The dictionary containing the schema representation.
     """
 
-    schema_inner: TableSchema = Field(..., alias="schema")
-
-    def __init__(self, schema: TableSchema):
-        super().__init__(schema=schema)
+    def __new__(cls, schema: TableSchema):
+        return super(TableSchemaMetadataValue, cls).__new__(
+            cls, check.inst_param(schema, "schema", TableSchema)
+        )
 
     @public
     @property
     def value(self) -> TableSchema:
         """TableSchema: The wrapped :py:class:`TableSchema`."""
-        return self.schema_inner
-
-    @public
-    @property
-    def schema(self) -> TableSchema:
-        return self.schema_inner
+        return self.schema
 
 
 @whitelist_for_serdes
-class TableColumnLineageMetadataValue(DagsterModel, MetadataValue[TableColumnLineage]):
+class TableColumnLineageMetadataValue(
+    NamedTuple(
+        "_TableColumnLineageMetadataValue", [("column_lineage", PublicAttr[TableColumnLineage])]
+    ),
+    MetadataValue[TableColumnLineage],
+):
     """Representation of the lineage of column inputs to column outputs of arbitrary tabular data.
 
     Args:
@@ -1040,20 +1083,20 @@ class TableColumnLineageMetadataValue(DagsterModel, MetadataValue[TableColumnLin
             for the table.
     """
 
-    column_lineage_inner: TableColumnLineage = Field(..., alias="column_lineage")
-
-    def __init__(self, column_lineage: TableColumnLineage):
-        super().__init__(column_lineage=column_lineage)
+    def __new__(cls, column_lineage: TableColumnLineage):
+        return super(TableColumnLineageMetadataValue, cls).__new__(
+            cls, check.inst_param(column_lineage, "column_lineage", TableColumnLineage)
+        )
 
     @public
     @property
     def value(self) -> TableColumnLineage:
         """TableSpec: The wrapped :py:class:`TableSpec`."""
-        return self.column_lineage_inner
+        return self.column_lineage
 
 
 @whitelist_for_serdes(storage_name="NullMetadataEntryData")
-class NullMetadataValue(DagsterModel, MetadataValue[None]):
+class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None]):
     """Representation of null."""
 
     @public
