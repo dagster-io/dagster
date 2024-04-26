@@ -249,6 +249,7 @@ class AssetConditionEvaluationContext:
             latest_storage_id=self.previous_max_storage_id,
             child_asset_key=self.root_context.asset_key,
             map_old_time_partitions=False,
+            limit_max_child_partitions=True,
         )
         return AssetSubset.from_asset_partitions_set(
             self.asset_key, self.partitions_def, asset_partitions
