@@ -7,6 +7,7 @@ import {
   useContext,
   useLayoutEffect,
   useMemo,
+  memo,
 } from 'react';
 
 // Context to store the active suspense count and a method to manipulate it
@@ -28,48 +29,50 @@ export type Boundary = {
   name: string;
 };
 
-export const TrackedSuspenseProvider = ({
-  children,
-  onContentRendered,
-  onContentRemoved,
-  onFallbackRendered,
-  onFallbackRemoved,
-}: {
-  children: ReactNode;
-  onContentRendered: (boundary: Boundary) => void;
-  onContentRemoved: (boundary: Boundary) => void;
-  onFallbackRendered: (boundary: Boundary) => void;
-  onFallbackRemoved: (boundary: Boundary) => void;
-}) => {
-  const useBoundary = useCallback(
-    (name: string) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const boundary: Boundary = useMemo(() => ({name, id: uniqueId()}), [name]);
+export const TrackedSuspenseProvider = memo(
+  ({
+    children,
+    onContentRendered,
+    onContentRemoved,
+    onFallbackRendered,
+    onFallbackRemoved,
+  }: {
+    children: ReactNode;
+    onContentRendered: (boundary: Boundary) => void;
+    onContentRemoved: (boundary: Boundary) => void;
+    onFallbackRendered: (boundary: Boundary) => void;
+    onFallbackRemoved: (boundary: Boundary) => void;
+  }) => {
+    const useBoundary = useCallback(
+      (name: string) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const boundary: Boundary = useMemo(() => ({name, id: uniqueId()}), [name]);
 
-      return {
-        onFallbackRendered: () => {
-          onFallbackRendered(boundary);
-          return () => {
-            onFallbackRemoved(boundary);
-          };
-        },
-        onContentRendered: () => {
-          onContentRendered(boundary);
-          return () => {
-            onContentRemoved(boundary);
-          };
-        },
-      };
-    },
-    [onContentRemoved, onContentRendered, onFallbackRemoved, onFallbackRendered],
-  );
+        return {
+          onFallbackRendered: () => {
+            onFallbackRendered(boundary);
+            return () => {
+              onFallbackRemoved(boundary);
+            };
+          },
+          onContentRendered: () => {
+            onContentRendered(boundary);
+            return () => {
+              onContentRemoved(boundary);
+            };
+          },
+        };
+      },
+      [onContentRemoved, onContentRendered, onFallbackRemoved, onFallbackRendered],
+    );
 
-  return (
-    <TrackedSuspenseContext.Provider value={useMemo(() => ({useBoundary}), [useBoundary])}>
-      {children}
-    </TrackedSuspenseContext.Provider>
-  );
-};
+    return (
+      <TrackedSuspenseContext.Provider value={useMemo(() => ({useBoundary}), [useBoundary])}>
+        {children}
+      </TrackedSuspenseContext.Provider>
+    );
+  },
+);
 
 export const TrackedSuspense = (props: ComponentProps<typeof Suspense> & {id: string}) => {
   const {useBoundary} = useContext(TrackedSuspenseContext);
@@ -83,16 +86,12 @@ export const TrackedSuspense = (props: ComponentProps<typeof Suspense> & {id: st
     </Suspense>
   );
 };
-const OnRendered = ({
-  onRendered,
-  children,
-}: {
-  children: React.ReactNode;
-  onRendered: () => () => void;
-}) => {
-  useLayoutEffect(onRendered, [onRendered]);
-  return children;
-};
+const OnRendered = memo(
+  ({onRendered, children}: {children: React.ReactNode; onRendered: () => () => void}) => {
+    useLayoutEffect(onRendered, [onRendered]);
+    return children;
+  },
+);
 
 let id = 0;
 function uniqueId() {

@@ -1,5 +1,5 @@
 import {Box} from '@dagster-io/ui-components';
-import {ReactNode} from 'react';
+import {ReactNode, memo} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {TopNavLink} from './AppTopNav';
@@ -20,7 +20,7 @@ export type AppNavLinkType = {
   element: ReactNode;
 };
 
-export const AppTopNavLinks = ({links}: {links: AppNavLinkType[]}) => {
+export const AppTopNavLinks = memo(({links}: {links: AppNavLinkType[]}) => {
   const history = useHistory();
   return (
     <Box margin={{left: 8}} flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -39,7 +39,7 @@ export const AppTopNavLinks = ({links}: {links: AppNavLinkType[]}) => {
       })}
     </Box>
   );
-};
+});
 
 export const navLinks = () => {
   const overview = {
