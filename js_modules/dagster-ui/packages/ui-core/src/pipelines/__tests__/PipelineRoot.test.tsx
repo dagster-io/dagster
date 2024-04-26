@@ -1,4 +1,5 @@
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
+import {Suspense} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
@@ -53,7 +54,9 @@ describe('PipelineRoot', () => {
     render(
       <JobFeatureProvider>
         <MemoryRouter initialEntries={[path]}>
-          <PipelineRoot repoAddress={repoAddress} />
+          <Suspense>
+            <PipelineRoot repoAddress={repoAddress} />
+          </Suspense>
         </MemoryRouter>
       </JobFeatureProvider>,
     );
@@ -73,7 +76,9 @@ describe('PipelineRoot', () => {
       <JobFeatureProvider>
         <TestPermissionsProvider locationOverrides={locationPermissions}>
           <MemoryRouter initialEntries={[`${path}/playground`]}>
-            <PipelineRoot repoAddress={repoAddress} />
+            <Suspense>
+              <PipelineRoot repoAddress={repoAddress} />
+            </Suspense>
           </MemoryRouter>
         </TestPermissionsProvider>
       </JobFeatureProvider>,
@@ -94,13 +99,17 @@ describe('PipelineRoot', () => {
       <JobFeatureProvider>
         <TestPermissionsProvider locationOverrides={locationPermissions}>
           <MemoryRouter initialEntries={[`${path}/playground`]}>
-            <PipelineRoot repoAddress={repoAddress} />
+            <Suspense>
+              <PipelineRoot repoAddress={repoAddress} />
+            </Suspense>
           </MemoryRouter>
         </TestPermissionsProvider>
       </JobFeatureProvider>,
     );
 
-    const overviewDummy = await screen.findByText(/pipeline or job disambiguation placeholder/i);
+    const overviewDummy = await waitFor(() =>
+      screen.findByText(/pipeline or job disambiguation placeholder/i),
+    );
     expect(overviewDummy).toBeVisible();
   });
 });

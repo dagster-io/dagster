@@ -1,4 +1,5 @@
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
+import {Suspense} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {PipelineNav} from '../../nav/PipelineNav';
@@ -38,13 +39,15 @@ describe('PipelineNav', () => {
       <JobFeatureProvider>
         <TestPermissionsProvider locationOverrides={locationOverrides}>
           <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
-            <PipelineNav repoAddress={repoAddress} />
+            <Suspense>
+              <PipelineNav repoAddress={repoAddress} />
+            </Suspense>
           </MemoryRouter>
         </TestPermissionsProvider>
       </JobFeatureProvider>,
     );
 
-    const launchpadTab = await screen.findByRole('tab', {name: /launchpad/i});
+    const launchpadTab = await waitFor(() => screen.findByRole('tab', {name: /launchpad/i}));
     expect(launchpadTab).toHaveAttribute('aria-disabled', 'false');
   });
 
@@ -59,13 +62,15 @@ describe('PipelineNav', () => {
       <JobFeatureProvider>
         <TestPermissionsProvider locationOverrides={locationOverrides}>
           <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
-            <PipelineNav repoAddress={repoAddress} />
+            <Suspense>
+              <PipelineNav repoAddress={repoAddress} />
+            </Suspense>
           </MemoryRouter>
         </TestPermissionsProvider>
       </JobFeatureProvider>,
     );
 
-    const launchpadTab = await screen.findByRole('tab', {name: /launchpad/i});
+    const launchpadTab = await waitFor(() => screen.findByRole('tab', {name: /launchpad/i}));
     expect(launchpadTab).toHaveAttribute('aria-disabled', 'true');
   });
 });

@@ -44,7 +44,7 @@ describe('autolinking', () => {
 
     const rendered = render(<Test message={message} useIdleCallback={false} />);
 
-    waitFor(() => expect(screen.getByRole('link')).toBeDefined());
+    waitFor(() => expect(screen.getAllByRole('link')).toBeDefined());
 
     const links = screen.getAllByRole('link');
     const hrefs = Array.from(links).map((el) => el.getAttribute('href'));

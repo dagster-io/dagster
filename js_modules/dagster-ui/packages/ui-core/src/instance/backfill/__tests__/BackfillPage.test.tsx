@@ -97,7 +97,7 @@ describe('BackfillPage', () => {
     );
 
     expect(await screen.findByTestId('page-loading-indicator')).toBeInTheDocument();
-    expect(await screen.findByText('assetA')).toBeVisible();
+    await waitFor(async () => expect(await screen.findByText('assetA')).toBeVisible());
   });
 
   it('renders the error state', async () => {

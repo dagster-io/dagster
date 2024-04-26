@@ -401,10 +401,13 @@ export const BackfillStatusTag = ({
       return (
         <Box margin={{bottom: 12}}>
           <TagButton
-            onClick={() =>
-              backfill.error &&
-              showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-            }
+            onClick={() => {
+              console.log('backfill error');
+              if (backfill.error) {
+                console.log('Show custom alert');
+                showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />});
+              }
+            }}
           >
             <Tag intent="danger">Failed</Tag>
           </TagButton>
@@ -429,7 +432,6 @@ export const BackfillStatusTag = ({
     case BulkActionStatus.CANCELED:
       return <Tag>Canceled</Tag>;
   }
-  return <span />;
 };
 
 const TagButton = styled.button`

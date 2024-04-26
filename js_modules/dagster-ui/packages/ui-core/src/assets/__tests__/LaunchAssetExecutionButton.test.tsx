@@ -1,6 +1,6 @@
 /* eslint-disable jest/expect-expect */
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {render, screen, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
@@ -8,6 +8,7 @@ import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
+import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {TestProvider} from '../../testing/TestProvider';
 import * as WorkspaceContext from '../../workspace/WorkspaceContext';
 import {ADDITIONAL_REQUIRED_KEYS_WARNING} from '../AssetDefinedInMultipleReposNotice';
@@ -301,8 +302,9 @@ describe('LaunchAssetExecutionButton', () => {
         launchMock,
       });
       await clickMaterializeButton();
-      await screen.findByTestId('choose-partitions-dialog');
-      await userEvent.click(await screen.findByTestId('latest-partition-button'));
+      await act(async () => {
+        await userEvent.click(await screen.findByTestId('latest-partition-button'));
+      });
 
       await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
     });
@@ -392,7 +394,9 @@ describe('LaunchAssetExecutionButton', () => {
       });
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
-      await userEvent.click(await screen.findByTestId('latest-partition-button'));
+      await act(async () => {
+        await userEvent.click(await screen.findByTestId('latest-partition-button'));
+      });
       await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
     });
 
@@ -457,7 +461,9 @@ describe('LaunchAssetExecutionButton', () => {
 
         const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
         await waitFor(async () => expect(rangesAsTags).toBeEnabled());
-        await userEvent.click(rangesAsTags);
+        await act(async () => {
+          await userEvent.click(rangesAsTags);
+        });
         await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
       });
 
@@ -610,8 +616,10 @@ describe('LaunchAssetExecutionButton', () => {
         await screen.findByText(displayNameForAssetKey(MULTI_ASSET_OUT_2.assetKey)),
       ).toBeDefined();
 
-      // Click Confirm
-      await userEvent.click(await screen.findByTestId('confirm-button-ok'));
+      await act(async () => {
+        // Click Confirm
+        await userEvent.click(await screen.findByTestId('confirm-button-ok'));
+      });
 
       // The launch should contain both MULTI_ASSET_OUT_1 and MULTI_ASSET_OUT_2
       await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
@@ -654,12 +662,21 @@ function renderButton({
 
   render(
     <TestProvider>
-      <CustomConfirmationProvider>
-        <CustomAlertProvider />
-        <MockedProvider mocks={mocks}>
-          <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
-        </MockedProvider>
-      </CustomConfirmationProvider>
+      <TestPermissionsProvider
+        locationOverrides={{
+          'test.py': {
+            canLaunchPipelineExecution: {enabled: true, disabledReason: ''},
+            canLaunchPartitionBackfill: {enabled: true, disabledReason: ''},
+          },
+        }}
+      >
+        <CustomConfirmationProvider>
+          <CustomAlertProvider />
+          <MockedProvider mocks={mocks}>
+            <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
+          </MockedProvider>
+        </CustomConfirmationProvider>
+      </TestPermissionsProvider>
     </TestProvider>,
   );
 }
@@ -667,7 +684,9 @@ function renderButton({
 async function clickMaterializeButton() {
   const materializeButton = await screen.findByTestId('materialize-button');
   expect(materializeButton).toBeVisible();
-  await userEvent.click(materializeButton);
+  await act(async () => {
+    await userEvent.click(materializeButton);
+  });
 }
 
 async function expectErrorShown(msg: string) {
@@ -681,9 +700,11 @@ async function expectLaunchExecutesMutationAndCloses(
     | MockedResponse<LaunchPartitionBackfillMutation>
     | MockedResponse<LaunchPipelineExecutionMutation>,
 ) {
-  const launchButton = await screen.findByTestId('launch-button');
+  const launchButton = await waitFor(() => screen.findByTestId('launch-button'));
   expect(launchButton.textContent).toEqual(label);
-  await userEvent.click(launchButton);
+  await act(async () => {
+    await userEvent.click(launchButton);
+  });
 
   // expect that it triggers the mutation (variables checked by mock matching)
   await waitFor(() => expect(mutation.result).toHaveBeenCalled());

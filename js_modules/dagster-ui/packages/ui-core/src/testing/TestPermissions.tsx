@@ -30,10 +30,10 @@ export const TestPermissionsProvider = (props: Props) => {
     };
   }, [locationOverrides, unscopedOverrides]);
 
-  const promise = React.useMemo(() => {
+  const wrapped = React.useMemo(() => {
     const p = Promise.resolve(value);
     return wrapPromise(p);
   }, [value]);
 
-  return <PermissionsContext.Provider value={promise}>{children}</PermissionsContext.Provider>;
+  return <PermissionsContext.Provider value={wrapped}>{children}</PermissionsContext.Provider>;
 };
