@@ -41,23 +41,25 @@ const appCache = createAppCache();
 // eslint-disable-next-line import/no-default-export
 export default function AppPage() {
   return (
-    <RecoilRoot>
-      <InjectedComponents>
-        <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
-          <AppProvider appCache={appCache} config={config}>
-            <AppTopNav allowGlobalReload>
-              <HelpMenu showContactSales={false} />
-              <UserSettingsButton />
-            </AppTopNav>
-            <App>
-              <ContentRoot />
-              <Suspense>
-                <CommunityNux />
-              </Suspense>
-            </App>
-          </AppProvider>
-        </LiveDataPollRateContext.Provider>
-      </InjectedComponents>
-    </RecoilRoot>
+    <Suspense fallback={<div />}>
+      <RecoilRoot>
+        <InjectedComponents>
+          <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
+            <AppProvider appCache={appCache} config={config}>
+              <AppTopNav allowGlobalReload>
+                <HelpMenu showContactSales={false} />
+                <UserSettingsButton />
+              </AppTopNav>
+              <App>
+                <ContentRoot />
+                <Suspense>
+                  <CommunityNux />
+                </Suspense>
+              </App>
+            </AppProvider>
+          </LiveDataPollRateContext.Provider>
+        </InjectedComponents>
+      </RecoilRoot>
+    </Suspense>
   );
 }
