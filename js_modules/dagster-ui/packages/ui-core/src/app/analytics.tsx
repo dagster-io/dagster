@@ -1,5 +1,11 @@
-import {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
+import {createContext, useCallback, useContext, useLayoutEffect} from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
+import {atom, useRecoilValue, useSetRecoilState} from 'recoil';
+
+export const currentPageAtom = atom<{path: string; specificPath: string}>({
+  key: 'currentPageAtom',
+  default: {path: '/', specificPath: '/'},
+});
 
 export interface GenericAnalytics {
   group?: (groupId: string, traits?: Record<string, any>) => void;
@@ -13,10 +19,7 @@ export const AnalyticsContext = createContext<GenericAnalytics>(undefined!);
 const PAGEVIEW_DELAY = 300;
 
 export const usePageContext = () => {
-  const match = useRouteMatch();
-  const {pathname: specificPath} = useLocation();
-  const {path} = match;
-  return useMemo(() => ({path, specificPath}), [path, specificPath]);
+  return useRecoilValue(currentPageAtom);
 };
 
 const useAnalytics = () => {
@@ -52,28 +55,35 @@ export const dummyAnalytics = () => ({
 
 export const useTrackPageView = () => {
   const analytics = useAnalytics();
-  const {path, specificPath} = usePageContext();
+  const match = useRouteMatch();
+  const {pathname: specificPath} = useLocation();
+  const {path} = match;
 
-  useEffect(() => {
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+
+  useLayoutEffect(() => {
     // Wait briefly to allow redirects.
     const timer = setTimeout(() => {
       analytics.page(path, specificPath);
     }, PAGEVIEW_DELAY);
+    setCurrentPage({path, specificPath});
 
     return () => {
       clearTimeout(timer);
     };
-  }, [analytics, path, specificPath]);
+  }, [analytics, path, setCurrentPage, specificPath]);
 };
 
 export const useTrackEvent = () => {
   const analytics = useAnalytics();
-  const pathValues = usePageContext();
+  const match = useRouteMatch();
+  const {pathname: specificPath} = useLocation();
+  const {path} = match;
 
   return useCallback(
     (eventName: string, properties?: Record<string, any>) => {
-      analytics.track(eventName, {...properties, ...pathValues});
+      analytics.track(eventName, {...properties, path, specificPath});
     },
-    [analytics, pathValues],
+    [analytics, path, specificPath],
   );
 };
