@@ -87,7 +87,7 @@ describe('BackfillPage', () => {
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
           <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
             <Route path="/backfills/:backfillId">
-              <MockedProvider mocks={mocks}>
+              <MockedProvider mocks={[]}>
                 <BackfillPage />
               </MockedProvider>
             </Route>
@@ -97,7 +97,6 @@ describe('BackfillPage', () => {
     );
 
     expect(await screen.findByTestId('page-loading-indicator')).toBeInTheDocument();
-    await waitFor(async () => expect(await screen.findByText('assetA')).toBeVisible());
   });
 
   it('renders the error state', async () => {

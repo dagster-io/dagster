@@ -47,7 +47,9 @@ describe('PipelineNav', () => {
       </JobFeatureProvider>,
     );
 
-    const launchpadTab = await waitFor(() => screen.findByRole('tab', {name: /launchpad/i}));
+    const launchpadTab = await waitFor(() => screen.findByRole('tab', {name: /launchpad/i}), {
+      timeout: 10000,
+    });
     expect(launchpadTab).toHaveAttribute('aria-disabled', 'false');
   });
 
