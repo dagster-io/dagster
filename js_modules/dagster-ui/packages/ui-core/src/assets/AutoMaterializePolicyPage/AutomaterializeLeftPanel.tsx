@@ -1,12 +1,12 @@
 import {
-  Body2,
+  Body,
   Box,
   Caption,
   Colors,
   CursorPaginationControls,
   Icon,
   MiddleTruncate,
-  Subtitle1,
+  SubtitleLarge,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -77,7 +77,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <Subtitle1>Evaluations</Subtitle1>
+        <SubtitleLarge>Evaluations</SubtitleLarge>
       </Box>
       <Box
         padding={{bottom: 8, horizontal: 12}}
@@ -87,7 +87,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         <Box border="bottom" padding={{top: 8, bottom: 12, left: 12, right: 8}}>
           <Box flex={{alignItems: 'center', gap: 4}}>
             <Icon name="sensors" color={Colors.accentBlue()} />
-            <Body2>
+            <Body>
               {repoAddress && sensorName ? (
                 <Link
                   to={workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)}
@@ -98,7 +98,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
               ) : (
                 <Link to="/overview/automation">{sensorName ?? 'Automation'}</Link>
               )}
-            </Body2>
+            </Body>
           </Box>
         </Box>
         <Box flex={{direction: 'column', gap: 8}}>

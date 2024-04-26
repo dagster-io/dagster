@@ -1,6 +1,6 @@
 import {gql, useMutation} from '@apollo/client';
 import {
-  Body2,
+  Body,
   Box,
   Button,
   Caption,
@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   Icon,
-  Subheading,
+  Subtitle,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -182,11 +182,11 @@ const ReportEventDialogBody = ({
         padding={{horizontal: 20, top: 16, bottom: 24}}
         border={asset.isPartitioned ? {side: 'bottom'} : undefined}
       >
-        <Body2>
+        <Body>
           Let Dagster know about a materialization that happened outside of Dagster. Typically used
           for testing or for manually fixing incorrect information in the asset catalog, not for
           normal operations.
-        </Body2>
+        </Body>
       </Box>
 
       {asset.isPartitioned ? (
@@ -194,7 +194,7 @@ const ReportEventDialogBody = ({
           isInitiallyOpen={true}
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Partition selection</Subheading>
+              <Subtitle>Partition selection</Subtitle>
               <span>{partitionCountString(keyCountInSelections(selections))}</span>
             </Box>
           }
@@ -205,7 +205,7 @@ const ReportEventDialogBody = ({
               border="bottom"
               padding={{vertical: 12, horizontal: 20}}
             >
-              <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
+              <Box as={Subtitle} flex={{alignItems: 'center', gap: 8}}>
                 <Icon name="partition" />
                 {range.dimension.name}
               </Box>

@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  CaptionMono,
   Colors,
   Dialog,
   DialogBody,
@@ -9,6 +8,7 @@ import {
   FontFamily,
   Group,
   Icon,
+  MonoSmall,
   Table,
   Tooltip,
   tryPrettyPrintJSON,
@@ -374,9 +374,7 @@ export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}
                     content={<div style={{maxWidth: '400px'}}>{record}</div>}
                     placement="top"
                   >
-                    <CaptionMono>
-                      {record.length > 20 ? `${record.slice(0, 20)}…` : record}
-                    </CaptionMono>
+                    <MonoSmall>{record.length > 20 ? `${record.slice(0, 20)}…` : record}</MonoSmall>
                   </Tooltip>
                 </div>
               </td>

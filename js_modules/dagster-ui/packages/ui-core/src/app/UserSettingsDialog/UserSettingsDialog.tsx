@@ -5,7 +5,7 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Subheading,
+  Subtitle,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -79,7 +79,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
         </Box>
         <Box padding={{top: 16}} border="top">
           <Box padding={{bottom: 8}}>
-            <Subheading>Experimental features</Subheading>
+            <Subtitle>Experimental features</Subtitle>
           </Box>
           {visibleFlags.map(({key, label, flagType}) => (
             <Box

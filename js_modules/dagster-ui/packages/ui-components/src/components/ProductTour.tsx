@@ -7,7 +7,7 @@ import {Box} from './Box';
 import {Button} from './Button';
 import {Colors} from './Color';
 import {Popover} from './Popover';
-import {Subheading} from './Text';
+import {Subtitle} from './Text';
 
 export enum ProductTourPosition {
   TOP_LEFT = 'top-start',
@@ -89,7 +89,7 @@ export const ProductTour = ({
           <ProductTourContainer flex={{direction: 'column', gap: 4}} padding={16} style={{width}}>
             <Box flex={{direction: 'column', gap: 8}}>
               {media}
-              <Subheading style={{fontSize: '16px'}}>{title}</Subheading>
+              <Subtitle style={{fontSize: '16px'}}>{title}</Subtitle>
             </Box>
             <div>{description}</div>
             {actionsJsx}

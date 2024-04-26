@@ -1,4 +1,4 @@
-import {Box, Subheading} from '@dagster-io/ui-components';
+import {Box, Subtitle} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 
 import {AssetPlots} from './AssetPlots';
@@ -18,7 +18,7 @@ export const AssetPlotsPage = (props: React.ComponentProps<typeof AssetPlots>) =
         padding={{vertical: 16, left: 24, right: 12}}
         style={{marginBottom: -1}}
       >
-        <Subheading>Asset plots</Subheading>
+        <Subtitle>Asset plots</Subtitle>
       </Box>
       <AssetPlots {...props} />
     </div>

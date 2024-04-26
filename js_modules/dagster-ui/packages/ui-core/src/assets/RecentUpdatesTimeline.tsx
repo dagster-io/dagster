@@ -5,7 +5,7 @@ import {
   Icon,
   Popover,
   Spinner,
-  Subtitle2,
+  Subtitle,
   Tag,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -121,7 +121,7 @@ export const RecentUpdatesTimeline = ({
   if (loading) {
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        <Subtitle2>Recent updates</Subtitle2>
+        <Subtitle>Recent updates</Subtitle>
         <Spinner purpose="body-text" />
       </Box>
     );
@@ -130,7 +130,7 @@ export const RecentUpdatesTimeline = ({
   if (!materializations?.length) {
     return (
       <Box flex={{direction: 'column', gap: 8}}>
-        <Subtitle2>Recent updates</Subtitle2>
+        <Subtitle>Recent updates</Subtitle>
         <Caption color={Colors.textLight()}>No materialization events found</Caption>
       </Box>
     );
@@ -139,7 +139,7 @@ export const RecentUpdatesTimeline = ({
   return (
     <Box flex={{direction: 'column', gap: 4}}>
       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-        <Subtitle2>Recent updates</Subtitle2>
+        <Subtitle>Recent updates</Subtitle>
         <Caption color={Colors.textLighter()}>
           {materializations.length === 100
             ? 'Last 100 updates'
@@ -181,7 +181,7 @@ export const RecentUpdatesTimeline = ({
                     content={
                       <Box flex={{direction: 'column', gap: 8}}>
                         <Box padding={8} border="bottom">
-                          <Subtitle2>Updates</Subtitle2>
+                          <Subtitle>Updates</Subtitle>
                         </Box>
                         <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
                           {bucket.materializations

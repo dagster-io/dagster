@@ -4,7 +4,7 @@ import {
   Colors,
   ExternalAnchorButton,
   NonIdealState,
-  Subheading,
+  Subtitle,
 } from '@dagster-io/ui-components';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
@@ -60,7 +60,7 @@ export const AssetMaterializationGraphs = (props: {
                   border="bottom"
                   flex={{justifyContent: 'space-between'}}
                 >
-                  <Subheading>{label}</Subheading>
+                  <Subtitle>{label}</Subtitle>
                 </Box>
               )}
               <Box padding={{horizontal: 24, vertical: 16}}>

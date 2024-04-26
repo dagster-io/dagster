@@ -1,4 +1,4 @@
-import {Box, Colors, Group, Heading, Icon, Mono, Subheading} from '@dagster-io/ui-components';
+import {Box, Colors, Group, Heading, Icon, Mono, Subtitle} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
@@ -53,7 +53,7 @@ export const AssetEventDetail = ({
         padding={{vertical: 16}}
       >
         <Box flex={{gap: 4, direction: 'column'}}>
-          <Subheading>Event</Subheading>
+          <Subtitle>Event</Subtitle>
           {event.__typename === 'MaterializationEvent' ? (
             <Box flex={{gap: 4}}>
               <Icon name="materialization" />
@@ -68,7 +68,7 @@ export const AssetEventDetail = ({
         </Box>
         {event.partition && (
           <Box flex={{gap: 4, direction: 'column'}}>
-            <Subheading>Partition</Subheading>
+            <Subtitle>Partition</Subtitle>
             {hidePartitionLinks ? (
               event.partition
             ) : (
@@ -95,7 +95,7 @@ export const AssetEventDetail = ({
           </Box>
         )}
         <Box flex={{gap: 4, direction: 'column'}} style={{minHeight: 64}}>
-          <Subheading>Run</Subheading>
+          <Subtitle>Run</Subtitle>
           {run ? (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <RunStatusWithStats runId={run.id} status={run.status} />
@@ -108,7 +108,7 @@ export const AssetEventDetail = ({
           )}
         </Box>
         <Box flex={{gap: 4, direction: 'column'}}>
-          <Subheading>Job</Subheading>
+          <Subtitle>Job</Subtitle>
           {run && !isHiddenAssetGroupJob(run.pipelineName) ? (
             <Box>
               <Box>
@@ -133,13 +133,13 @@ export const AssetEventDetail = ({
 
       {event.description && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Description</Subheading>
+          <Subtitle>Description</Subtitle>
           <Description description={event.description} />
         </Box>
       )}
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>Metadata</Subheading>
+        <Subtitle>Metadata</Subtitle>
         <AssetEventMetadataEntriesTable
           repoAddress={repoAddress}
           assetKey={assetKey}
@@ -150,19 +150,19 @@ export const AssetEventDetail = ({
 
       {event.__typename === 'MaterializationEvent' && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Source data</Subheading>
+          <Subtitle>Source data</Subtitle>
           <AssetMaterializationUpstreamData timestamp={event.timestamp} assetKey={assetKey} />
         </Box>
       )}
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>System tags</Subheading>
+        <Subtitle>System tags</Subtitle>
         <AssetEventSystemTags event={event} collapsible />
       </Box>
 
       {assetLineage.length > 0 && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Parent materializations</Subheading>
+          <Subtitle>Parent materializations</Subtitle>
           <AssetLineageElements elements={assetLineage} timestamp={event.timestamp} />
         </Box>
       )}
@@ -185,18 +185,18 @@ export const AssetEventDetailEmpty = () => (
       padding={{vertical: 16}}
     >
       <Box flex={{gap: 4, direction: 'column'}}>
-        <Subheading>Event</Subheading>
+        <Subtitle>Event</Subtitle>
       </Box>
       <Box flex={{gap: 4, direction: 'column'}} style={{minHeight: 64}}>
-        <Subheading>Run</Subheading>—
+        <Subtitle>Run</Subtitle>—
       </Box>
       <Box flex={{gap: 4, direction: 'column'}}>
-        <Subheading>Job</Subheading>—
+        <Subtitle>Job</Subtitle>—
       </Box>
     </Box>
 
     <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-      <Subheading>Metadata</Subheading>
+      <Subtitle>Metadata</Subtitle>
       <AssetEventMetadataEntriesTable event={null} repoAddress={null} showDescriptions />
     </Box>
   </Box>

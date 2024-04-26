@@ -1,7 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {
   Body,
-  Body2,
   Box,
   Button,
   ButtonLink,
@@ -12,7 +11,7 @@ import {
   MiddleTruncate,
   NonIdealState,
   Skeleton,
-  Subtitle2,
+  Subtitle,
   Tag,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
@@ -121,7 +120,7 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 16}}>
       <Box flex={{direction: 'row'}}>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
+          <Subtitle>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
               <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
@@ -135,7 +134,7 @@ export const AssetNodeOverview = ({
         </Box>
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-            <Subtitle2>Check results</Subtitle2>
+            <Subtitle>Check results</Subtitle>
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"
@@ -176,7 +175,7 @@ export const AssetNodeOverview = ({
 
       <Box flex={{direction: 'row'}}>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Upstream assets</Subtitle2>
+          <Subtitle>Upstream assets</Subtitle>
           {upstream?.length ? (
             <AssetLinksWithStatus assets={upstream} />
           ) : (
@@ -186,7 +185,7 @@ export const AssetNodeOverview = ({
           )}
         </Box>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Downstream assets</Subtitle2>
+          <Subtitle>Downstream assets</Subtitle>
           {downstream?.length ? (
             <AssetLinksWithStatus assets={downstream} />
           ) : (
@@ -505,15 +504,15 @@ const AttributeAndValue = ({
 
   return (
     <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
-      <Subtitle2>{label}</Subtitle2>
-      <Body2 style={{maxWidth: '100%'}}>
+      <Subtitle>{label}</Subtitle>
+      <Body style={{maxWidth: '100%'}}>
         <Box flex={{gap: 4, wrap: 'wrap'}}>{children}</Box>
-      </Body2>
+      </Body>
     </Box>
   );
 };
 
-const NoValue = () => <Body2 color={Colors.textLighter()}>–</Body2>;
+const NoValue = () => <Body color={Colors.textLighter()}>–</Body>;
 
 export const AssetNodeOverviewNonSDA = ({
   assetKey,
@@ -619,8 +618,8 @@ const SectionEmptyState = ({
     style={{background: Colors.backgroundLight(), borderRadius: 8}}
     flex={{direction: 'column', gap: 8}}
   >
-    <Subtitle2>{title}</Subtitle2>
-    <Body2>{description}</Body2>
+    <Subtitle>{title}</Subtitle>
+    <Body>{description}</Body>
     {learnMoreLink ? (
       <a href={learnMoreLink} target="_blank" rel="noreferrer">
         Learn more

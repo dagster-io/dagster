@@ -5,7 +5,7 @@ import {
   DAGSTER_THEME_KEY,
   DagsterTheme,
   Icon,
-  Subheading,
+  Subtitle,
 } from '@dagster-io/ui-components';
 import React from 'react';
 
@@ -64,7 +64,7 @@ export const UserPreferences = ({
   return (
     <>
       <Box padding={{bottom: 4}}>
-        <Subheading>Preferences</Subheading>
+        <Subtitle>Preferences</Subtitle>
       </Box>
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>Timezone</div>

@@ -1,4 +1,4 @@
-import {Box, Heading, PageHeader, Subheading, TextInput} from '@dagster-io/ui-components';
+import {Box, Heading, PageHeader, Subtitle, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {InstancePageContext} from './InstancePageContext';
@@ -32,7 +32,7 @@ export const CodeLocationsPageContent = () => {
   const entryCount = flattened.length;
   const showSearch = entryCount > SEARCH_THRESHOLD;
 
-  const subheadingText = () => {
+  const SubtitleText = () => {
     if (loading || !entryCount) {
       return 'Code locations';
     }
@@ -56,7 +56,7 @@ export const CodeLocationsPageContent = () => {
             style={{width: '400px'}}
           />
         ) : (
-          <Subheading id="repository-locations">{subheadingText()}</Subheading>
+          <Subtitle id="repository-locations">{SubtitleText()}</Subtitle>
         )}
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
           {showSearch ? <div>{`${entryCount} code locations`}</div> : null}
