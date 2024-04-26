@@ -20,10 +20,7 @@ describe('wrapPromise', () => {
       expect(e).toBeInstanceOf(Promise);
     }
 
-    // Flush microtask queue so that wrapPromise's `.then` on the testPromise fires first.
-    await new Promise((res) => {
-      setTimeout(res, 1);
-    });
+    await Promise.resolve();
 
     expect(() => {
       wrapped.read();
