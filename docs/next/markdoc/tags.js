@@ -1,4 +1,6 @@
-import {Button} from '../components/markdoc/Button';
+import {Tag} from '@markdoc/markdoc';
+
+import {Button, ButtonContainer} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
 import {Check, Cross} from '../components/markdoc/CheckCross';
 
@@ -8,6 +10,10 @@ export const note = {
 
 export const warning = {
   render: Warning,
+};
+
+export const buttonContainer = {
+  render: ButtonContainer,
 };
 
 export const button = {
@@ -22,6 +28,15 @@ export const button = {
       default: 'primary',
       matches: ['primary', 'secondary', 'blurple'],
     },
+  },
+  transform(node, config) {
+    console.log(node);
+    console.log(config);
+    const attributes = node.transformAttributes(config);
+    const children = node.transformChildren(config);
+    console.log(attributes);
+    console.log(children);
+    return new Tag('Button', attributes, children);
   },
 };
 

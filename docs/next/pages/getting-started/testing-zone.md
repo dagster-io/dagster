@@ -69,12 +69,14 @@ Code fences
 
 `{% /button %}`
 
-Or else they look like this.
-
-{% button link="https://dog.ceo/" %} 
-Click Me! 
-{% /button %}
+{% button link="https://dog.ceo/" %} Click Me!  {% /button %}
+Or else they thrown a hydration error.
 {% /warning %}
+
+### Button Container
+The main use case I've seen for buttons in the docs is basically setting up multiple styling links in a row. Doing this requires putting buttons into a `ButtonContainer`
+
+{% buttonContainer %} {% button link="https://dog.ceo/" style="primary" %} Click Me! {% /button %} {% button link="https://dog.ceo/" style="secondary" %} Click Me! {% /button %} {% button link="https://dog.ceo/" style="blurple" %} Click Me! {% /button %} {% /buttonContainer %}
 
 ## Crosses and Checks 
 A cross looks like this {% cross /%} and a check looks like this {% check /%}.
@@ -90,4 +92,4 @@ You can also put crosses and checks into headers
 Which is pretty neat.
 
 ### This is a header with a cross {% cross /%}
-Which is also pretty neat
+Which is also pretty neat.
