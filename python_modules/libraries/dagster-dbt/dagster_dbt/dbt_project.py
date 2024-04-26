@@ -16,10 +16,6 @@ from .errors import (
 
 logger = logging.getLogger("dagster-dbt.artifacts")
 
-DBT_MANIFEST_PREPARATION_IN_PROGRESS = "DBT_MANIFEST_PREPARATION_IN_PROGRESS"
-
-DBT_MANIFEST_PREPARATION_LOCK = "dbt_manifest_preparation.lock"
-
 
 def using_dagster_dev() -> bool:
     return bool(os.getenv("DAGSTER_IS_DEV_CLI"))
