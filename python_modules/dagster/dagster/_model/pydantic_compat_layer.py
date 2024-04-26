@@ -41,8 +41,19 @@ class ModelFieldCompat:
         return getattr(self.field, "metadata", [])
 
     @property
-    def alias(self) -> str:
-        return self.field.alias
+    def alias(self) -> Optional[str]:
+        if USING_PYDANTIC_2:
+            return self.field.alias
+        else:
+            return self.field.alias if self.field.alias != self.field.name else None
+
+    @property
+    def serialization_alias(self) -> Optional[str]:
+        return getattr(self.field, "serialization_alias", None)
+
+    @property
+    def validation_alias(self) -> Optional[str]:
+        return getattr(self.field, "serialization_alias", None)
 
     @property
     def default(self) -> Any:

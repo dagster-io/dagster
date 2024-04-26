@@ -47,6 +47,7 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
@@ -675,10 +676,9 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
         value_dict = value.__dict__
 
         result = {}
-        for key, field in self.klass.__fields__.items():
+        for key, field in model_fields(self.klass).items():
             if field.alias is None and (
-                getattr(field, "serialization_alias", None) is not None
-                or getattr(field, "validation_alias", None) is not None
+                field.serialization_alias is not None or field.validation_alias is not None
             ):
                 raise SerializationError(
                     "Can't serialize pydantic models with serialization or validation aliases. Use "
@@ -691,7 +691,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
 
     @property
     def constructor_param_names(self) -> Sequence[str]:
-        return [field.alias or key for key, field in self.klass.__fields__.items()]
+        return [field.alias or key for key, field in model_fields(self.klass).items()]
 
 
 class FieldSerializer(Serializer):

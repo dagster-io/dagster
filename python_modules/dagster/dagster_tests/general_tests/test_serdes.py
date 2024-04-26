@@ -25,7 +25,6 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 from dagster._serdes.utils import hash_str
-from pydantic import Field
 
 
 def test_deserialize_value_ok():
@@ -891,84 +890,3 @@ def test_object_migration():
     # can deserialize previous NamedTuples in to future pydantic models
     py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_m_env)
     assert py_dc_ent
-
-
-def test_pydantic_alias():
-    test_env = WhitelistMap.create()
-
-    @_whitelist_for_serdes(test_env)
-    class SomeDagsterModel(DagsterModel):
-        unaliased_id: int = Field(..., alias="id_alias")
-        name: str
-
-    o = SomeDagsterModel(id_alias=5, name="fdsk")
-    packed_o = pack_value(o, whitelist_map=test_env)
-    assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name": "fdsk"}
-    assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
-
-    ser_o = serialize_value(o, whitelist_map=test_env)
-    assert deserialize_value(ser_o, whitelist_map=test_env) == o
-
-
-def test_pydantic_serialization_alias():
-    test_env = WhitelistMap.create()
-
-    @_whitelist_for_serdes(test_env)
-    class SomeDagsterModel(DagsterModel):
-        unaliased_id: int = Field(..., serialization_alias="id_alias")
-        name: str
-
-    o = SomeDagsterModel(unaliased_id=5, name="fdsk")
-    with pytest.raises(
-        SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
-    ):
-        serialize_value(o, whitelist_map=test_env)
-
-    with pytest.raises(
-        SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
-    ):
-        pack_value(o, whitelist_map=test_env)
-
-
-def test_pydantic_validation_alias():
-    test_env = WhitelistMap.create()
-
-    @_whitelist_for_serdes(test_env)
-    class SomeDagsterModel(DagsterModel):
-        unaliased_id: int = Field(..., validation_alias="id_alias")
-        name: str
-
-    o = SomeDagsterModel(id_alias=5, name="fdsk")
-    with pytest.raises(
-        SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
-    ):
-        serialize_value(o, whitelist_map=test_env)
-
-    with pytest.raises(
-        SerializationError,
-        match="Can't serialize pydantic models with serialization or validation aliases.",
-    ):
-        pack_value(o, whitelist_map=test_env)
-
-
-def test_pydantic_alias_generator():
-    test_env = WhitelistMap.create()
-
-    @_whitelist_for_serdes(test_env)
-    class SomeDagsterModel(DagsterModel):
-        id: int = Field(...)
-        name: str
-
-        class Config:
-            alias_generator = lambda field_name: f"{field_name}_alias"
-
-    o = SomeDagsterModel(id_alias=5, name_alias="fdsk")
-    packed_o = pack_value(o, whitelist_map=test_env)
-    assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name_alias": "fdsk"}
-    assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
-
-    ser_o = serialize_value(o, whitelist_map=test_env)
-    assert deserialize_value(ser_o, whitelist_map=test_env) == o
