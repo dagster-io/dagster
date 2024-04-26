@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {ApolloError, gql} from '@apollo/client';
 import * as React from 'react';
 
 import {
@@ -6,6 +6,8 @@ import {
   PermissionsQuery,
   PermissionsQueryVariables,
 } from './types/Permissions.types';
+import {useWrappedQuery} from '../hooks/useWrappedQuery';
+import {wrapPromise} from '../utils/wrapPromise';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -111,53 +113,62 @@ type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
 export type PermissionsState = {
   permissions: PermissionBooleans;
   disabledReasons: PermissionDisabledReasons;
-  loading: boolean;
 };
 
-type PermissionsContextType = {
+type PermissionsResult = {
+  error?: ApolloError;
   unscopedPermissions: PermissionsMap;
   locationPermissions: Record<string, PermissionsMap>;
-  loading: boolean;
-  // Raw unscoped permission data, for Cloud extraction
   rawUnscopedData: PermissionFragment[];
 };
 
+type PermissionsContextType = ReturnType<typeof wrapPromise<PermissionsResult>>;
+
 export const PermissionsContext = React.createContext<PermissionsContextType>({
-  unscopedPermissions: extractPermissions([]),
-  locationPermissions: {},
-  loading: true,
-  rawUnscopedData: [],
+  read() {
+    throw new Error('Expected a permissions provider to override the default context');
+  },
 });
 
 export const PermissionsProvider = (props: {children: React.ReactNode}) => {
-  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
-    fetchPolicy: 'cache-first', // Not expected to change after initial load.
-  });
+  const wrappedQuery = useWrappedQuery<
+    PermissionsQuery,
+    PermissionsQueryVariables,
+    PermissionsResult
+  >(
+    {
+      query: PERMISSIONS_QUERY,
+      fetchPolicy: 'cache-first', // Not expected to change after initial load.
+    },
+    async (result) => {
+      const {data, error} = result;
 
-  const value = React.useMemo(() => {
-    const unscopedPermissionsRaw = data?.unscopedPermissions || [];
-    const unscopedPermissions = extractPermissions(unscopedPermissionsRaw);
+      const unscopedPermissionsRaw = data?.unscopedPermissions || [];
+      const unscopedPermissions = extractPermissions(unscopedPermissionsRaw);
 
-    const locationEntries =
-      data?.workspaceOrError.__typename === 'Workspace'
-        ? data.workspaceOrError.locationEntries
-        : [];
+      const locationEntries =
+        data?.workspaceOrError.__typename === 'Workspace'
+          ? data.workspaceOrError.locationEntries
+          : [];
 
-    const locationPermissions: Record<string, PermissionsMap> = {};
-    locationEntries.forEach((locationEntry) => {
-      const {name, permissions} = locationEntry;
-      locationPermissions[name] = extractPermissions(permissions, unscopedPermissionsRaw);
-    });
+      const locationPermissions: Record<string, PermissionsMap> = {};
+      locationEntries.forEach((locationEntry) => {
+        const {name, permissions} = locationEntry;
+        locationPermissions[name] = extractPermissions(permissions, unscopedPermissionsRaw);
+      });
 
-    return {
-      unscopedPermissions,
-      locationPermissions,
-      loading,
-      rawUnscopedData: unscopedPermissionsRaw,
-    };
-  }, [data, loading]);
+      return {
+        error,
+        unscopedPermissions,
+        locationPermissions,
+        rawUnscopedData: unscopedPermissionsRaw,
+      };
+    },
+  );
 
-  return <PermissionsContext.Provider value={value}>{props.children}</PermissionsContext.Provider>;
+  return (
+    <PermissionsContext.Provider value={wrappedQuery}>{props.children}</PermissionsContext.Provider>
+  );
 };
 
 export const permissionResultForKey = (
@@ -191,7 +202,8 @@ const unpackPermissions = (
  * Retrieve a permission that is intentionally unscoped.
  */
 export const useUnscopedPermissions = (): PermissionsState => {
-  const {unscopedPermissions, loading} = React.useContext(PermissionsContext);
+  const {read} = React.useContext(PermissionsContext);
+  const {unscopedPermissions} = read();
   const unpacked = React.useMemo(
     () => unpackPermissions(unscopedPermissions),
     [unscopedPermissions],
@@ -201,9 +213,8 @@ export const useUnscopedPermissions = (): PermissionsState => {
     return {
       permissions: unpacked.booleans,
       disabledReasons: unpacked.disabledReasons,
-      loading,
     };
-  }, [unpacked, loading]);
+  }, [unpacked]);
 };
 
 /**
@@ -214,7 +225,8 @@ export const useUnscopedPermissions = (): PermissionsState => {
 export const usePermissionsForLocation = (
   locationName: string | null | undefined,
 ): PermissionsState => {
-  const {unscopedPermissions, locationPermissions, loading} = React.useContext(PermissionsContext);
+  const {read} = React.useContext(PermissionsContext);
+  const {unscopedPermissions, locationPermissions} = read();
   let permissionsForLocation = unscopedPermissions;
   if (locationName && locationPermissions.hasOwnProperty(locationName)) {
     permissionsForLocation = locationPermissions[locationName]!;
@@ -225,9 +237,8 @@ export const usePermissionsForLocation = (
     return {
       permissions: unpacked.booleans,
       disabledReasons: unpacked.disabledReasons,
-      loading,
     };
-  }, [unpacked, loading]);
+  }, [unpacked]);
 };
 
 export const PERMISSIONS_QUERY = gql`

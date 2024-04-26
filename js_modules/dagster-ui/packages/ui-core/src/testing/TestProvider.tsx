@@ -4,8 +4,9 @@ import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
+import {TestPermissionsProvider} from './TestPermissions';
 import {AppContext, AppContextValue} from '../app/AppContext';
-import {PermissionsContext, PermissionsFromJSON, extractPermissions} from '../app/Permissions';
+import {PermissionsFromJSON} from '../app/Permissions';
 import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
 import {AnalyticsContext} from '../app/analytics';
 import {PermissionFragment} from '../app/types/Permissions.types';
@@ -77,14 +78,7 @@ export const TestProvider = (props: Props) => {
     <RecoilRoot>
       <AppContext.Provider value={{...testValue, ...appContextProps}}>
         <WebSocketContext.Provider value={websocketValue}>
-          <PermissionsContext.Provider
-            value={{
-              unscopedPermissions: extractPermissions(permissions),
-              locationPermissions: {}, // Allow all permissions to fall back
-              loading: false,
-              rawUnscopedData: [],
-            }}
-          >
+          <TestPermissionsProvider>
             <AnalyticsContext.Provider value={analytics}>
               <MemoryRouter {...routerProps}>
                 <ApolloTestProvider {...apolloProps} typeDefs={typeDefs as any}>
@@ -92,7 +86,7 @@ export const TestProvider = (props: Props) => {
                 </ApolloTestProvider>
               </MemoryRouter>
             </AnalyticsContext.Provider>
-          </PermissionsContext.Provider>
+          </TestPermissionsProvider>
         </WebSocketContext.Provider>
       </AppContext.Provider>
     </RecoilRoot>

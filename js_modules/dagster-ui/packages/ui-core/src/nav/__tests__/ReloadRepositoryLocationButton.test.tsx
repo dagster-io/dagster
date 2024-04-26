@@ -2,16 +2,23 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 
 import {PermissionsProvider, usePermissionsForLocation} from '../../app/Permissions';
+import {TrackedSuspense} from '../../app/TrackedSuspense';
 import {ChildProps, ReloadRepositoryLocationButton} from '../ReloadRepositoryLocationButton';
 import {buildPermissionsQuery} from '../__fixtures__/ReloadRepositoryLocationButton.fixtures';
 
 describe('ReloadRepositoryLocationButton', () => {
   const Test = (props: ChildProps) => {
     const {tryReload, hasReloadPermission} = props;
-    const {loading} = usePermissionsForLocation(props.codeLocation);
+
+    function Component() {
+      usePermissionsForLocation(props.codeLocation);
+      return <div>Loading permissions? No</div>;
+    }
     return (
       <div>
-        <div>Loading permissions? {loading ? 'Yes' : 'No'}</div>
+        <TrackedSuspense id="test" fallback={<div>Loading permissions? Yes</div>}>
+          <Component />
+        </TrackedSuspense>
         <button onClick={tryReload} disabled={!hasReloadPermission}>
           Reload
         </button>

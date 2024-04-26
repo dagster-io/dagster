@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import {PermissionsContext, PermissionsMap, extractPermissions} from '../app/Permissions';
+import {wrapPromise} from '../utils/wrapPromise';
 
 type PermissionOverrides = Partial<PermissionsMap>;
 
@@ -29,5 +30,10 @@ export const TestPermissionsProvider = (props: Props) => {
     };
   }, [locationOverrides, unscopedOverrides]);
 
-  return <PermissionsContext.Provider value={value}>{children}</PermissionsContext.Provider>;
+  const promise = React.useMemo(() => {
+    const p = Promise.resolve(value);
+    return wrapPromise(p);
+  }, [value]);
+
+  return <PermissionsContext.Provider value={promise}>{children}</PermissionsContext.Provider>;
 };
