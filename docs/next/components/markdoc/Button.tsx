@@ -1,5 +1,13 @@
 import cx from 'classnames';
 
+export const ButtonContainer = ({children}: {children: any}) => {
+  return (
+    <div className="w-full inline-flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
+      {children}
+    </div>
+  );
+};
+
 export const Button = ({
   link,
   style = 'primary',
