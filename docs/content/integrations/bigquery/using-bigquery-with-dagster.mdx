@@ -129,15 +129,15 @@ Now you can run `dagster dev` and materialize the `iris_data` asset from the Dag
 
 #### Making Dagster aware of existing tables
 
-If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
+If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [non-materializable assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
 
 ```python file=/integrations/bigquery/tutorial/resource/source_asset.py
-from dagster import SourceAsset
+from dagster import AssetsDefinition
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 ```
 
-In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-existing table called `iris_harvest_data`.
+In this example, you're creating an asset definition for a pre-existing table called `iris_harvest_data`.
 
 </TabItem>
 
@@ -176,9 +176,9 @@ import pandas as pd
 from dagster_gcp import BigQueryResource
 from google.cloud import bigquery as bq
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import AssetsDefinition, Definitions, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 
 
 @asset
@@ -311,17 +311,17 @@ When Dagster materializes the `iris_data` asset using the configuration from [St
 
 #### Making Dagster aware of existing tables
 
-If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can create [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. When using an I/O manager, creating a source asset for an existing table also allows you to tell Dagster how to find the table so it can be fetched for downstream assets.
+If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can create [non-materializable asset definitions](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. When using an I/O manager, creating a non-materializable asset for an existing table also allows you to tell Dagster how to find the table so it can be fetched for downstream assets.
 
 ```python file=/integrations/bigquery/tutorial/io_manager/source_asset.py
-from dagster import SourceAsset
+from dagster import AssetsDefinition
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 ```
 
-In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, you need to tell the BigQuery I/O manager how to find the data, so that the I/O manager can load the data into memory.
+In this example, you're creating an asset definition for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, you need to tell the BigQuery I/O manager how to find the data, so that the I/O manager can load the data into memory.
 
-Because you already supplied the project and dataset in the I/O manager configuration in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), you only need to provide the table name. This is done with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
+Because you already supplied the project and dataset in the I/O manager configuration in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), you only need to provide the table name. This is done with the `key` parameter in `AssetsDefinition.single`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
 </TabGroup>
@@ -355,9 +355,9 @@ When finished, your code should look like the following:
 import pandas as pd
 from dagster_gcp_pandas import BigQueryPandasIOManager
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import AssetsDefinition, Definitions, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 
 
 @asset

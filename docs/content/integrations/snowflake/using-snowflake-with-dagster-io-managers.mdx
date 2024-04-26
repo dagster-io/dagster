@@ -132,17 +132,17 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 ### Make an existing table available in Dagster
 
-You may already have tables in Snowflake that you want to make available to other Dagster assets. You can create [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
+You may already have tables in Snowflake that you want to make available to other Dagster assets. You can create [non-materializable asset definitions](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. By creating a non-materializable asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
 ```python file=/integrations/snowflake/source_asset.py
-from dagster import SourceAsset
+from dagster import AssetsDefinition
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 ```
 
-In this example, we create a <PyObject object="SourceAsset" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, we need to tell the Snowflake I/O manager how to find the data.
+In this example, we create an asset for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, we need to tell the Snowflake I/O manager how to find the data.
 
-Since we supply the database and the schema in the I/O manager configuration in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
+Since we supply the database and the schema in the I/O manager configuration in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), we only need to provide the table name. We do this with the `key`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
 </TabGroup>
@@ -151,7 +151,7 @@ Since we supply the database and the schema in the I/O manager configuration in 
 
 ## Step 3: Load Snowflake tables in downstream assets
 
-Once you have created an asset or source asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets.
+Once you have created an asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets.
 
 ```python file=/integrations/snowflake/io_manager_tutorial/downstream.py startafter=start_example endbefore=end_example
 import pandas as pd
@@ -180,9 +180,9 @@ When finished, your code should look like the following:
 import pandas as pd
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions, EnvVar, SourceAsset, asset
+from dagster import AssetsDefinition, Definitions, EnvVar, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 
 
 @asset
