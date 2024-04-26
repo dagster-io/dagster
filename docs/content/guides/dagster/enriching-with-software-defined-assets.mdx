@@ -219,11 +219,11 @@ Here's what an equivalent job looks like using asset definitions:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_io_manager.py
 from pandas import DataFrame
 
-from dagster import Definitions, SourceAsset, asset, define_asset_job
+from dagster import AssetsDefinition, Definitions, asset, define_asset_job
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
-raw_users = SourceAsset(key="raw_users", io_manager_key="warehouse")
+raw_users = AssetsDefinition.single(key="raw_users", io_manager_key="warehouse")
 
 
 @asset(io_manager_key="warehouse")
@@ -301,14 +301,12 @@ Here's an example of an equivalent job that uses asset definitions:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
 from pandas import read_sql
 
-from dagster import Definitions, SourceAsset, asset, define_asset_job
+from dagster import Definitions, asset, define_asset_job
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
-raw_users = SourceAsset(key="raw_users")
 
-
-@asset(deps=[raw_users])
+@asset
 def users() -> None:
     raw_users_df = read_sql("select * from raw_users", con=create_db_connection())
     users_df = raw_users_df.dropna()
