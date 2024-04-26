@@ -98,17 +98,17 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 ### Make an existing table available in Dagster
 
-If you already have tables in your Delta Lake, you may want to make them available to other Dagster assets. You can accomplish this by using [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
+If you already have tables in your Delta Lake, you may want to make them available to other Dagster assets. You can accomplish this by using [non-materializable asset definitions](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. By creating a non-materializable asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
 ```python file=/integrations/deltalake/source_asset.py
-from dagster import SourceAsset
+from dagster import AssetsDefinition
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 ```
 
-In this example, we create a <PyObject object="SourceAsset" /> for an existing table containing iris harvest data. To make the data available to other Dagster assets, we need to tell the Delta Lake I/O manager how to find the data.
+In this example, we create an asset definition for an existing table containing iris harvest data. To make the data available to other Dagster assets, we need to tell the Delta Lake I/O manager how to find the data.
 
-Because we already supplied the database and schema in the I/O manager configuration in [Step 1](#step-1-configure-the-delta-lake-io-manager), we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `iris/iris_harvest_data` folder as a Pandas DataFrame and provide it to the downstream asset.
+Because we already supplied the database and schema in the I/O manager configuration in [Step 1](#step-1-configure-the-delta-lake-io-manager), we only need to provide the table name. We do this with the `key` parameter. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `iris/iris_harvest_data` folder as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
 </TabGroup>
@@ -117,7 +117,7 @@ Because we already supplied the database and schema in the I/O manager configura
 
 ## Step 3: Load Delta Lake tables in downstream assets
 
-Once you've created an asset or source asset that represents a table in your Delta Lake, you will likely want to create additional assets that work with the data. Dagster and the Delta Lake I/O manager allow you to load the data stored in Delta tables into downstream assets.
+Once you've created an asset that represents a table in your Delta Lake, you will likely want to create additional assets that work with the data. Dagster and the Delta Lake I/O manager allow you to load the data stored in Delta tables into downstream assets.
 
 ```python file=/integrations/deltalake/load_downstream.py startafter=start_example endbefore=end_example
 import pandas as pd
@@ -149,9 +149,9 @@ import pandas as pd
 from dagster_deltalake import LocalConfig
 from dagster_deltalake_pandas import DeltaLakePandasIOManager
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import AssetsDefinition, Definitions, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 
 
 @asset

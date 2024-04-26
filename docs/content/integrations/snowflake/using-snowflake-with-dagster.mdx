@@ -139,17 +139,17 @@ In this example, we've defined an asset that fetches the Iris dataset as a Panda
 
 If you have existing tables in Snowflake and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies.
 
-Making Dagster aware of these tables allows you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. For example:
+Making Dagster aware of these tables allows you to track the full data lineage in Dagster. You can accomplish this by creating [non-materializable asset definitions](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. For example:
 
 ```python file=/integrations/snowflake/source_asset.py
-from dagster import SourceAsset
+from dagster import AssetsDefinition
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 ```
 
-In this example, we created a <PyObject object="SourceAsset" /> for a pre-existing table called `iris_harvest_data`.
+In this example, we created an asset for a pre-existing table called `iris_harvest_data`.
 
-Since we supplied the database and the schema in the resource configuration in [Step 1](#step-1-configure-the-snowflake-resource), we only need to provide the table name. We did this by using the `key` parameter in our <PyObject object="SourceAsset" />. When the `iris_harvest_data` asset needs to be loaded in a downstream asset, the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table will be selected and provided to the asset.
+Since we supplied the database and the schema in the resource configuration in [Step 1](#step-1-configure-the-snowflake-resource), we only need to provide the table name. We did this by using the `key`. When the `iris_harvest_data` asset needs to be loaded in a downstream asset, the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table will be selected and provided to the asset.
 
 </TabItem>
 </TabGroup>
