@@ -317,6 +317,10 @@ class K8sStepHandler(StepHandler):
             namespace=container_context.namespace,
             job_name=job_name,
         )
+        if not status:
+            return CheckStepHealthResult.unhealthy(
+                reason=f"Kubernetes job {job_name} for step {step_key} could not be found."
+            )
         if status.failed:
             return CheckStepHealthResult.unhealthy(
                 reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",
