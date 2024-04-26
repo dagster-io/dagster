@@ -9,6 +9,7 @@ from dagster import (
     load_assets_from_modules,
     sensor,
 )
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 from dagster_openai import OpenAIResource
 
 from . import assets
@@ -48,11 +49,16 @@ all_assets = load_assets_from_modules([assets])
 all_jobs = [question_job, search_index_job]
 all_sensors = [question_sensor]
 
+
 defs = Definitions(
     assets=all_assets,
     jobs=all_jobs,
     resources={
         "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
+        "s3_io_manager": S3PickleIOManager(
+            s3_resource=S3Resource(),
+            s3_bucket="with_openai",
+        ),
     },
     sensors=all_sensors,
 )
