@@ -178,8 +178,7 @@ def is_valid_definition_tag_value(key: str) -> bool:
     return bool(VALID_DEFINITION_TAG_VALUE_REGEX.match(key))
 
 
-def validate_definition_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
-    """More restrictive than validate_tags."""
+def validate_tags_strict(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
     if tags is None:
         return tags
 
