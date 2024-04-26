@@ -69,7 +69,9 @@ Code fences
 
 `{% /button %}`
 
-{% button link="https://dog.ceo/" %} Click Me!  {% /button %}
+{% button link="https://dog.ceo/" %} 
+Click Me!
+{% /button %}
 Or else they thrown a hydration error.
 {% /warning %}
 
