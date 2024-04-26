@@ -28,13 +28,13 @@ import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {TimeProvider} from './time/TimeContext';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
+import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {PerformancePageNavigationListener} from '../performance';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 import './blueprint.css';
-import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
