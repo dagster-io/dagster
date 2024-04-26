@@ -7,6 +7,7 @@ import pytest
 from dagster import (
     AssetMaterialization,
     DagsterInstance,
+    MaterializeResult,
     RunConfig,
     SourceAsset,
     asset,
@@ -1138,3 +1139,39 @@ def test_most_recent_materialization_used(capsys):
             get_upstream_version_from_mat_provenance(mat.asset_materialization, AssetKey("foo"))
             == "beta"
         )
+
+
+def test_materialize_result_overwrite_provenance_tag():
+    @asset
+    def asset0(): ...
+
+    @asset(deps=["asset0"])
+    def asset1():
+        return MaterializeResult(tags={"dagster/input_event_pointer/asset0": 500})
+
+    with instance_for_test() as instance:
+        materialize([asset0], instance=instance)
+        materialize([asset1], instance=instance)
+
+        record = instance.get_latest_data_version_record(asset1.key)
+        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {
+            AssetKey(["asset0"]): 500
+        }
+
+
+def test_output_overwrite_provenance_tag():
+    @asset
+    def asset0(): ...
+
+    @asset(deps=["asset0"])
+    def asset1():
+        return Output(value=None, tags={"dagster/input_event_pointer/asset0": 500})
+
+    with instance_for_test() as instance:
+        materialize([asset0], instance=instance)
+        materialize([asset1], instance=instance)
+
+        record = instance.get_latest_data_version_record(asset1.key)
+        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {
+            AssetKey(["asset0"]): 500
+        }
