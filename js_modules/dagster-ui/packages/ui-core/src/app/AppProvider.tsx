@@ -34,6 +34,7 @@ import {PerformancePageNavigationListener} from '../performance';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 import './blueprint.css';
+import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -139,25 +140,27 @@ export const AppProvider = (props: AppProviderProps) => {
                 <CompatRouter>
                   <PerformancePageNavigationListener />
                   <TimeProvider>
-                    <WorkspaceProvider>
-                      <DeploymentStatusProvider include={statusPolling}>
-                        <CustomConfirmationProvider>
-                          <AnalyticsContext.Provider value={analytics}>
-                            <InstancePageContext.Provider value={instancePageValue}>
-                              <JobFeatureProvider>
-                                <LayoutProvider>
-                                  <DagsterPlusLaunchPromotion />
-                                  {props.children}
-                                </LayoutProvider>
-                              </JobFeatureProvider>
-                            </InstancePageContext.Provider>
-                          </AnalyticsContext.Provider>
-                        </CustomConfirmationProvider>
-                        <CustomTooltipProvider />
-                        <CustomAlertProvider />
-                        <AssetRunLogObserver />
-                      </DeploymentStatusProvider>
-                    </WorkspaceProvider>
+                    <CodeLinkProtocolProvider>
+                      <WorkspaceProvider>
+                        <DeploymentStatusProvider include={statusPolling}>
+                          <CustomConfirmationProvider>
+                            <AnalyticsContext.Provider value={analytics}>
+                              <InstancePageContext.Provider value={instancePageValue}>
+                                <JobFeatureProvider>
+                                  <LayoutProvider>
+                                    <DagsterPlusLaunchPromotion />
+                                    {props.children}
+                                  </LayoutProvider>
+                                </JobFeatureProvider>
+                              </InstancePageContext.Provider>
+                            </AnalyticsContext.Provider>
+                          </CustomConfirmationProvider>
+                          <CustomTooltipProvider />
+                          <CustomAlertProvider />
+                          <AssetRunLogObserver />
+                        </DeploymentStatusProvider>
+                      </WorkspaceProvider>
+                    </CodeLinkProtocolProvider>
                   </TimeProvider>
                 </CompatRouter>
               </BrowserRouter>
