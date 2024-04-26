@@ -53,7 +53,7 @@ class ModelFieldCompat:
 
     @property
     def validation_alias(self) -> Optional[str]:
-        return getattr(self.field, "serialization_alias", None)
+        return getattr(self.field, "validation_alias", None)
 
     @property
     def default(self) -> Any:
