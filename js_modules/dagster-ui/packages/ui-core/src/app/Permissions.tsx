@@ -115,7 +115,7 @@ export type PermissionsState = {
   disabledReasons: PermissionDisabledReasons;
 };
 
-type PermissionsResult = {
+export type PermissionsResult = {
   error?: ApolloError;
   unscopedPermissions: PermissionsMap;
   locationPermissions: Record<string, PermissionsMap>;
@@ -126,7 +126,12 @@ type PermissionsContextType = ReturnType<typeof wrapPromise<PermissionsResult>>;
 
 export const PermissionsContext = React.createContext<PermissionsContextType>({
   read() {
-    throw new Error('Expected a permissions provider to override the default context');
+    return {
+      error: undefined,
+      unscopedPermissions: extractPermissions([]),
+      rawUnscopedData: [],
+      locationPermissions: {},
+    };
   },
 });
 
