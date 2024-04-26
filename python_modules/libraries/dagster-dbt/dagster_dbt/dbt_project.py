@@ -67,9 +67,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
     def prepare(self, project: "DbtProject") -> None:
         # guard against multiple Dagster processes trying to update this at the same time
-        if (
-            project.dependencies_path.exists() or project.packages_path.exists()
-        ) and not project.packages_install_path.exists():
+        if project.has_uninstalled_deps:
             run_with_concurrent_update_guard(
                 project.project_dir.joinpath("package-lock.yml"),
                 self._prepare_packages,
@@ -180,9 +178,7 @@ class DbtProject(DagsterModel):
     manifest_path: Path
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
-    dependencies_path: Path
-    packages_path: Path
-    packages_install_path: Path
+    has_uninstalled_deps: bool
     manifest_preparer: DbtManifestPreparer
 
     def __init__(
@@ -220,6 +216,10 @@ class DbtProject(DagsterModel):
             dbt_project_yml.get("packages-install-path", "dbt_packages")
         )
 
+        has_uninstalled_deps = (
+            dependencies_path.exists() or packages_path.exists()
+        ) and not packages_install_path.exists()
+
         super().__init__(
             project_dir=project_dir,
             target_path=target_path,
@@ -227,9 +227,7 @@ class DbtProject(DagsterModel):
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
-            dependencies_path=dependencies_path,
-            packages_path=packages_path,
-            packages_install_path=packages_install_path,
+            has_uninstalled_deps=has_uninstalled_deps,
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
