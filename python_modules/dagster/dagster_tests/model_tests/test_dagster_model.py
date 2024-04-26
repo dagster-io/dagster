@@ -1,5 +1,6 @@
 import pytest
 from dagster._model import DagsterModel
+from dagster._utils.cached_method import cached_method
 from pydantic import ValidationError
 
 
@@ -63,3 +64,20 @@ def test_non_model_param():
 
     with pytest.raises(ValidationError):
         MyModel(some_class=SomeClass)  # forgot ()
+
+
+def test_cached_method() -> None:
+    class CoolModel(DagsterModel):
+        name: str
+
+        @cached_method
+        def calculate(self, n: int):
+            return {self.name: n}
+
+        @cached_method
+        def reticulate(self, n: int):
+            return {self.name: n}
+
+    m = CoolModel(name="bob")
+    assert m.calculate(4) is m.calculate(4)
+    assert m.calculate(4) is not m.reticulate(4)

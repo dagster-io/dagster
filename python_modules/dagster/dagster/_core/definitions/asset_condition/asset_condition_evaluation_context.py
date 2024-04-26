@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import functools
+import os
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import (
@@ -242,6 +243,7 @@ class AssetConditionEvaluationContext:
         """Returns the set of asset partitions whose parents have updated since the last time this
         condition was evaluated.
         """
+        max_child_partitions_str = os.getenv("DAGSTER_MAX_AMP_CHILD_PARTITIONS", None)
         (
             asset_partitions,
             cursor,
@@ -249,6 +251,9 @@ class AssetConditionEvaluationContext:
             latest_storage_id=self.previous_max_storage_id,
             child_asset_key=self.root_context.asset_key,
             map_old_time_partitions=False,
+            max_child_partitions=int(max_child_partitions_str)
+            if max_child_partitions_str
+            else None,
         )
         return AssetSubset.from_asset_partitions_set(
             self.asset_key, self.partitions_def, asset_partitions

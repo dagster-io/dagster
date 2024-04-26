@@ -1,4 +1,4 @@
-import {ErrorResponse, onError} from '@apollo/client/link/error';
+import {onError} from '@apollo/client/link/error';
 import {Colors, FontFamily, Toaster} from '@dagster-io/ui-components';
 import {GraphQLError} from 'graphql';
 import memoize from 'lodash/memoize';
@@ -46,7 +46,7 @@ const showNetworkError = async (statusCode: number) => {
   }
 };
 
-export const errorLink = onError((response: ErrorResponse) => {
+export const errorLink = onError((response) => {
   if (response.graphQLErrors) {
     const {graphQLErrors, operation} = response;
     const {operationName} = operation;

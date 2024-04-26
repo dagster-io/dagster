@@ -655,6 +655,11 @@
     "statusCode": 302
   },
   {
+    "source": "/dagster-cloud/managing-deployments/code-locations",
+    "destination": "/dagster-plus/managing-deployments/code-locations",
+    "statusCode": 302
+  },
+  {
     "source": "/dagster-cloud/developing-testing/code-locations",
     "destination": "/dagster-plus/managing-deployments/code-locations",
     "statusCode": 302
@@ -1046,11 +1051,11 @@
   },
   {
       "source": "/dagster-cloud/managing-deployments/dagster-cloud-yaml",
-      "destination": "/dagster-plus/managing-deployments/dagster-plus-yaml",
+      "destination": "/dagster-plus/managing-deployments/dagster-cloud-yaml",
       "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/managing-deployments/dagster-plus-cli",
+      "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
       "destination": "/dagster-plus/managing-deployments/dagster-plus-cli",
       "statusCode": 302
   },

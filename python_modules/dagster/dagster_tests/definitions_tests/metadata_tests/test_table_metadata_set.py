@@ -3,6 +3,12 @@ from dagster import AssetKey, AssetMaterialization, TableColumn, TableSchema
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
+from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
+
+
+@pytest.fixture(autouse=True)
+def error_on_warning():
+    raise_exception_on_warnings()
 
 
 def test_table_metadata_set():
@@ -23,6 +29,7 @@ def test_table_metadata_set():
     assert TableMetadataSet.extract(dict(TableMetadataSet())) == TableMetadataSet()
 
 
+@ignore_warning("Class `TableColumnLineage` is experimental")
 def test_invalid_column_lineage() -> None:
     with pytest.raises(CheckError):
         TableColumnLineage(
@@ -41,6 +48,7 @@ def test_invalid_column_lineage() -> None:
         )
 
 
+@ignore_warning("Class `TableColumnLineage` is experimental")
 def test_column_lineage() -> None:
     expected_deps = [
         TableColumnDep(

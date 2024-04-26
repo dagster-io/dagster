@@ -28,6 +28,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
+    PartitionsDefinition,
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
@@ -536,6 +537,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_storage_id: Optional[int],
         child_asset_key: AssetKey,
         map_old_time_partitions: bool = True,
+        max_child_partitions: Optional[int] = None,
     ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
         """Finds asset partitions of the given child whose parents have been materialized since
         latest_storage_id.
@@ -574,7 +576,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 )
             )
 
-            parent_partitions_def = self.asset_graph.get(parent_asset_key).partitions_def
+            parent_partitions_def: PartitionsDefinition = self.asset_graph.get(
+                parent_asset_key
+            ).partitions_def
             if parent_partitions_def is None:
                 latest_parent_record = check.not_none(
                     self.get_latest_materialization_or_observation_record(
@@ -615,10 +619,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         AssetKeyPartitionKey(child_asset_key)
                     }
                     break
+
                 # the set of asset partitions which have been updated since the latest storage id
                 parent_partitions_subset = self.get_asset_subset_updated_after_cursor(
                     asset_key=parent_asset_key, after_cursor=latest_storage_id
                 ).subset_value
+
                 # we are mapping from the partitions of the parent asset to the partitions of
                 # the child asset
                 partition_mapping = self.asset_graph.get_partition_mapping(
@@ -640,7 +646,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         f"Could not map partitions between parent {parent_asset_key.to_string()} "
                         f"and child {child_asset_key.to_string()}."
                     ) from e
-                for child_partition in child_partitions_subset.get_partition_keys():
+
+                child_partitions = reversed(list(child_partitions_subset.get_partition_keys()))
+                if max_child_partitions is not None:
+                    child_partitions = list(child_partitions)[:max_child_partitions]
+
+                for child_partition in child_partitions:
                     # we need to see if the child is planned for the same run, but this is
                     # expensive, so we try to avoid doing so in as many situations as possible
                     child_asset_partition = AssetKeyPartitionKey(child_asset_key, child_partition)

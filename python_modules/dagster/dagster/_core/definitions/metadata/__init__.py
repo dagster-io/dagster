@@ -25,6 +25,7 @@ from dagster._annotations import PublicAttr, deprecated, deprecated_param, exper
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._model import DagsterModel
+from dagster._model.pydantic_compat_layer import model_fields
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -1252,7 +1253,7 @@ class NamespacedMetadataSet(ABC, DagsterModel):
     def keys(self) -> AbstractSet[str]:
         return {
             self._namespaced_key(key)
-            for key in self.__fields__.keys()
+            for key in model_fields(self).keys()
             # getattr returns the pydantic property on the subclass
             if getattr(self, key) is not None
         }
@@ -1288,7 +1289,7 @@ class NamespacedMetadataSet(ABC, DagsterModel):
             splits = namespaced_key.split("/")
             if len(splits) == 2:
                 namespace, key = splits
-                if namespace == cls.namespace() and key in cls.__fields__:
+                if namespace == cls.namespace() and key in model_fields(cls):
                     kwargs[key] = value.value if isinstance(value, MetadataValue) else value
 
         return cls(**kwargs)

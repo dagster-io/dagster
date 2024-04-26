@@ -1,8 +1,13 @@
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
+from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule,
+    AutoMaterializeRuleSnapshot,
+)
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -10,20 +15,11 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
-    from dagster._core.definitions.auto_materialize_rule import (
-        AutoMaterializeRule,
-        AutoMaterializeRuleSnapshot,
-    )
-
 
 class AutoMaterializePolicySerializer(NamedTupleSerializer):
     def before_unpack(
         self, context: UnpackContext, unpacked_dict: Dict[str, UnpackedValue]
     ) -> Dict[str, UnpackedValue]:
-        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-
         backcompat_map = {
             "on_missing": AutoMaterializeRule.materialize_on_missing(),
             "on_new_parent_data": AutoMaterializeRule.materialize_on_parent_updated(),
@@ -61,9 +57,9 @@ class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
         [
-            ("rules", FrozenSet["AutoMaterializeRule"]),
+            ("rules", FrozenSet[AutoMaterializeRule]),
             ("max_materializations_per_minute", Optional[int]),
-            ("asset_condition", Optional["AssetCondition"]),
+            ("asset_condition", Optional[AssetCondition]),
         ],
     )
 ):
@@ -126,7 +122,7 @@ class AutoMaterializePolicy(
         cls,
         rules: AbstractSet["AutoMaterializeRule"],
         max_materializations_per_minute: Optional[int] = 1,
-        asset_condition: Optional["AssetCondition"] = None,
+        asset_condition: Optional[AssetCondition] = None,
     ):
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
@@ -173,7 +169,7 @@ class AutoMaterializePolicy(
         }
 
     @staticmethod
-    def from_asset_condition(asset_condition: "AssetCondition") -> "AutoMaterializePolicy":
+    def from_asset_condition(asset_condition: AssetCondition) -> "AutoMaterializePolicy":
         """Constructs an AutoMaterializePolicy which will materialize an asset partition whenever
         the provided asset_condition evaluates to True.
 
@@ -285,14 +281,14 @@ class AutoMaterializePolicy(
     def rule_snapshots(self) -> Sequence["AutoMaterializeRuleSnapshot"]:
         return [rule.to_snapshot() for rule in self.rules]
 
-    def to_asset_condition(self) -> "AssetCondition":
+    def to_asset_condition(self) -> AssetCondition:
         """Converts a set of materialize / skip rules into a single binary expression."""
         from .asset_condition.asset_condition import (
             AndAssetCondition,
             NotAssetCondition,
             OrAssetCondition,
         )
-        from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
+        from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
 
         if self.asset_condition is not None:
             return self.asset_condition

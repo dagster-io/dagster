@@ -81,7 +81,6 @@ export type AssetViewDefinitionQuery = {
           >;
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
-            policyType: Types.AutoMaterializePolicyType;
             rules: Array<{
               __typename: 'AutoMaterializeRule';
               className: string;
@@ -16171,7 +16170,6 @@ export type AssetViewDefinitionNodeFragment = {
   >;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
-    policyType: Types.AutoMaterializePolicyType;
     rules: Array<{
       __typename: 'AutoMaterializeRule';
       className: string;

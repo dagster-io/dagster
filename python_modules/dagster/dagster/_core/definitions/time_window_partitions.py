@@ -728,8 +728,9 @@ class TimeWindowPartitionsDefinition(
     @functools.lru_cache(maxsize=5)
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
         result: List[str] = []
+        time_window_end_timestamp = time_window.end.timestamp()
         for partition_time_window in self._iterate_time_windows(time_window.start):
-            if partition_time_window.start.timestamp() < time_window.end.timestamp():
+            if partition_time_window.start.timestamp() < time_window_end_timestamp:
                 result.append(
                     dst_safe_strftime(
                         partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
