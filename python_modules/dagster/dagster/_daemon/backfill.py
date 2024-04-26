@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Iterable, Mapping, Optional, Sequence, cast
+from typing import Any, Iterable, Mapping, Optional, Sequence, cast
 
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -8,6 +8,20 @@ from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.error import SerializableErrorInfo
+
+
+class BackfillLogAdapter(logging.LoggerAdapter):
+    """Logger that will always prepend the backfill id to the log message.
+
+    Usage:
+
+    :code-block: python
+
+        adapted_backfill_logger = BackfillLogAdapter(logger, {"backfill_id": backfill_id})
+    """
+
+    def process(self, msg, kwargs) -> Any:  # -> Any:
+        return f"Backfill {self.extra['backfill_id']}: {msg}", kwargs
 
 
 def execute_backfill_iteration(
@@ -45,19 +59,24 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+        backfill_logger = BackfillLogAdapter(logger, {"backfill_id": backfill.backfill_id})
         try:
             if backfill.is_asset_backfill:
                 yield from execute_asset_backfill_iteration(
-                    backfill, logger, workspace_process_context, instance
+                    backfill, backfill_logger, workspace_process_context, instance
                 )
             else:
                 yield from execute_job_backfill_iteration(
-                    backfill, logger, workspace_process_context, debug_crash_flags, instance
+                    backfill,
+                    backfill_logger,
+                    workspace_process_context,
+                    debug_crash_flags,
+                    instance,
                 )
         except Exception:
             error_info = DaemonErrorCapture.on_exception(
                 sys.exc_info(),
-                logger=logger,
+                logger=backfill_logger,
                 log_message=f"Backfill failed for {backfill.backfill_id}",
             )
             instance.update_backfill(
