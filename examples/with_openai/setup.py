@@ -7,6 +7,7 @@ setup(
         "dagster",
         "dagster-aws",
         "dagster-openai",
+        # "dagster-cloud", # Uncomment when using Dagster+
         "faiss-cpu==1.8.0",
         "filelock",
         "langchain==0.1.11",

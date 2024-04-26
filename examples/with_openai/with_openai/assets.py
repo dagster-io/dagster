@@ -81,7 +81,7 @@ def completion(
     config: OpenAIConfig,
     search_index: Dict[str, Any],
 ):
-    merged_index = None
+    merged_index: Any = None
     for index in search_index.values():
         curr = FAISS.deserialize_from_bytes(index, OpenAIEmbeddings())
         if not merged_index:
