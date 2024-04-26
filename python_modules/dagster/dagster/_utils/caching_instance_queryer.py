@@ -1,5 +1,4 @@
 import logging
-import os
 from collections import defaultdict
 from datetime import datetime
 from typing import (
@@ -538,7 +537,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_storage_id: Optional[int],
         child_asset_key: AssetKey,
         map_old_time_partitions: bool = True,
-        limit_max_child_partitions: bool = False,
+        max_child_partitions: Optional[int] = None,
     ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
         """Finds asset partitions of the given child whose parents have been materialized since
         latest_storage_id.
@@ -649,9 +648,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     ) from e
 
                 child_partitions = reversed(list(child_partitions_subset.get_partition_keys()))
-                max_child_partitions = os.getenv("DAGSTER_MAX_AMP_CHILD_PARTITIONS", None)
-                if max_child_partitions and limit_max_child_partitions:
-                    child_partitions = list(child_partitions)[: int(max_child_partitions)]
+                if max_child_partitions is not None:
+                    child_partitions = list(child_partitions)[:max_child_partitions]
 
                 for child_partition in child_partitions:
                     # we need to see if the child is planned for the same run, but this is
