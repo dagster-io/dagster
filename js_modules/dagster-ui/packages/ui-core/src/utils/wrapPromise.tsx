@@ -12,7 +12,6 @@ export function wrapPromise<T extends {data?: any}>(promise: Promise<T>) {
     (e) => {
       status = 'error';
       result = e;
-      console.log('set error', e);
     },
   );
   return {
