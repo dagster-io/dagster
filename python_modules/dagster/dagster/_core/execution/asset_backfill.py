@@ -1188,18 +1188,28 @@ def execute_asset_backfill_iteration_inner(
     expensive operations.
     """
     initial_candidates: Set[AssetKeyPartitionKey] = set()
-    request_roots = not asset_backfill_data.requested_runs_for_target_roots
-    if request_roots:
-        initial_candidates.update(
-            asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
-        )
+    # tracks whether this backfill has successfully requested all roots
+    all_roots_requested = asset_backfill_data.requested_runs_for_target_roots
+
+    if not all_roots_requested:
+        backfill_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
+        # if the previous tick of the backfill did not successfully submit runs (ex code serer unavailable)
+        # we need to re-request the roots
+        not_yet_requested = [
+            root for root in backfill_roots if root not in asset_backfill_data.requested_subset
+        ]
+        if not_yet_requested:
+            initial_candidates.update(not_yet_requested)
+            all_roots_requested = False
+        else:
+            all_roots_requested = True
 
         yield None
 
         updated_materialized_subset = AssetGraphSubset()
         failed_and_downstream_subset = AssetGraphSubset()
         next_latest_storage_id = _get_next_latest_storage_id(instance_queryer)
-    else:
+    if all_roots_requested:
         next_latest_storage_id = _get_next_latest_storage_id(instance_queryer)
 
         cursor_delay_time = int(os.getenv("ASSET_BACKFILL_CURSOR_DELAY_TIME", "0"))
@@ -1289,7 +1299,9 @@ def execute_asset_backfill_iteration_inner(
             run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
         )
 
-    if request_roots:
+    if not all_roots_requested:
+        # if we have not submitted runs for all the roots yet, there should be at least one run request
+        # to run the roots
         check.invariant(
             len(run_requests) > 0,
             "At least one run should be requested on first backfill iteration",
@@ -1298,8 +1310,7 @@ def execute_asset_backfill_iteration_inner(
     updated_asset_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
         latest_storage_id=next_latest_storage_id or asset_backfill_data.latest_storage_id,
-        requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots
-        or request_roots,
+        requested_runs_for_target_roots=all_roots_requested,
         materialized_subset=updated_materialized_subset,
         failed_and_downstream_subset=failed_and_downstream_subset,
         requested_subset=asset_backfill_data.requested_subset
