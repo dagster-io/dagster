@@ -1,7 +1,8 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
-import {Suspense, lazy, memo, useEffect, useRef} from 'react';
+import {lazy, memo, useEffect, useRef} from 'react';
 import {Route, Switch, useLocation} from 'react-router-dom';
 
+import {TrackedSuspense} from './TrackedSuspense';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {AssetsOverview} from '../assets/AssetsOverview';
 
@@ -35,97 +36,101 @@ export const ContentRoot = memo(() => {
       <ErrorBoundary region="page" resetErrorOnChange={[pathname]}>
         <Switch>
           <Route path="/asset-groups(/?.*)">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('asset-groups')}>
               <AssetsGroupsGlobalGraphRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/assets(/?.*)">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('assets')}>
               <AssetFeatureProvider>
                 <AssetsOverview
                   headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
                   documentTitlePrefix="Assets"
                 />
               </AssetFeatureProvider>
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/runs" exact>
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('runs')}>
               <RunsRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/runs/scheduled" exact>
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('runs/scheduled')}>
               <ScheduledRunListRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/runs/:runId" exact>
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('runs/:runId')}>
               <RunRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/snapshots/:pipelinePath/:tab?">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('snapshots')}>
               <SnapshotRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/health">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('health')}>
               <InstanceHealthPage />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/concurrency">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('concurrency')}>
               <InstanceConcurrencyPage />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/config">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('config')}>
               <InstanceConfig />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/locations" exact>
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('"locations"')}>
               <CodeLocationsPage />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/locations">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('locations')}>
               <WorkspaceRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/guess/:jobPath">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('guess/:jobPath')}>
               <GuessJobLocationRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/overview">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense id={id('Overview')} fallback={<div />}>
               <OverviewRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/jobs">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense id={id('JobsRoot')} fallback={<div />}>
               <JobsRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/automation">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('automation')}>
               <AutomationRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="/settings">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('settings')}>
               <SettingsRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
           <Route path="*">
-            <Suspense fallback={<div />}>
+            <TrackedSuspense fallback={<div />} id={id('*')}>
               <FallthroughRoot />
-            </Suspense>
+            </TrackedSuspense>
           </Route>
         </Switch>
       </ErrorBoundary>
     </MainContent>
   );
 });
+
+function id(str: string) {
+  return `ContentRoot:${str}`;
+}
