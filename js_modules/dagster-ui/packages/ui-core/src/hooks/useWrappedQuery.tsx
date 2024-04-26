@@ -3,7 +3,6 @@ import {useMemo} from 'react';
 
 import {wrapPromise} from '../utils/wrapPromise';
 
-// Default post-process function assumes TResult can be derived directly from TQuery's data
 const defaultPostProcess = async <TQuery, TResult = any>(
   result: ApolloQueryResult<TQuery>,
 ): Promise<TResult> => {
