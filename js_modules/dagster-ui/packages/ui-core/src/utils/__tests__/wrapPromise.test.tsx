@@ -35,7 +35,7 @@ describe('wrapPromise', () => {
     // Wait for promise to resolve
     await Promise.resolve();
 
-    expect(wrapped.read()).toBe(testData.data);
+    expect(wrapped.read()).toBe(testData);
   });
 
   it('should handle multiple reads after the promise resolves', async () => {
@@ -46,7 +46,7 @@ describe('wrapPromise', () => {
     // Wait for promise to resolve
     await Promise.resolve();
 
-    expect(wrapped.read()).toBe(testData.data);
-    expect(wrapped.read()).toBe(testData.data); // Confirm it can be read multiple times without issue
+    expect(wrapped.read()).toBe(testData);
+    expect(wrapped.read()).toBe(testData); // Confirm it can be read multiple times without issue
   });
 });

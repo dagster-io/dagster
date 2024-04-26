@@ -1,7 +1,7 @@
 import {assertUnreachable} from '../app/Util';
 
 // Wrap a promise to make it Suspense compatible
-export function wrapPromise<T extends {data?: any}>(promise: Promise<T>) {
+export function wrapPromise<T>(promise: Promise<T>) {
   let status: 'success' | 'pending' | 'error' = 'pending';
   let result: T | Error;
   const suspender = promise.then(
@@ -21,7 +21,7 @@ export function wrapPromise<T extends {data?: any}>(promise: Promise<T>) {
       } else if (status === 'error') {
         throw result;
       } else if (status === 'success') {
-        return (result as T).data;
+        return result as T;
       } else {
         assertUnreachable(status);
       }
