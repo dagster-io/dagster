@@ -3,7 +3,7 @@ import time
 import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
@@ -215,25 +215,91 @@ def test_error_daemon(monkeypatch):
         gen_daemons = lambda instance: [SensorDaemon(instance.get_sensor_settings())]
 
         init_time = pendulum.now("UTC")
-        with daemon_controller_from_instance(
-            instance,
-            workspace_load_target=EmptyWorkspaceTarget(),
-            heartbeat_interval_seconds=heartbeat_interval_seconds,
-            gen_daemons=gen_daemons,
-            error_interval_seconds=10,
-        ) as controller:
-            while True:
-                now = pendulum.now("UTC")
+        with environ({"DAGSTER_DAEMON_CORE_LOOP_EXCEPTION_SLEEP_INTERVAL": "1"}):
+            with daemon_controller_from_instance(
+                instance,
+                workspace_load_target=EmptyWorkspaceTarget(),
+                heartbeat_interval_seconds=heartbeat_interval_seconds,
+                gen_daemons=gen_daemons,
+                error_interval_seconds=10,
+            ) as controller:
+                while True:
+                    now = pendulum.now("UTC")
 
-                if get_daemon_statuses(
-                    instance,
-                    [SensorDaemon.daemon_type()],
-                    heartbeat_interval_seconds=heartbeat_interval_seconds,
-                    ignore_errors=True,
-                )[SensorDaemon.daemon_type()].healthy:
-                    # Despite error, daemon should still be running
-                    controller.check_daemon_threads()
-                    controller.check_daemon_heartbeats()
+                    if get_daemon_statuses(
+                        instance,
+                        [SensorDaemon.daemon_type()],
+                        heartbeat_interval_seconds=heartbeat_interval_seconds,
+                        ignore_errors=True,
+                    )[SensorDaemon.daemon_type()].healthy:
+                        # Despite error, daemon should still be running
+                        controller.check_daemon_threads()
+                        controller.check_daemon_heartbeats()
+
+                        status = get_daemon_statuses(
+                            instance,
+                            [SensorDaemon.daemon_type()],
+                            now.float_timestamp,
+                            heartbeat_interval_seconds=heartbeat_interval_seconds,
+                        )[SensorDaemon.daemon_type()]
+
+                        # Errors build up until there are > 5, then pull off the last
+                        if status.healthy is False and len(status.last_heartbeat.errors) >= 5:
+                            first_error_number = _get_error_number(status.last_heartbeat.errors[0])
+
+                            if first_error_number > 5:
+                                # Verify error numbers decrease consecutively
+                                assert [
+                                    _get_error_number(error)
+                                    for error in status.last_heartbeat.errors
+                                ] == list(range(first_error_number, first_error_number - 5, -1))
+
+                                assert not get_daemon_statuses(
+                                    instance,
+                                    [SensorDaemon.daemon_type()],
+                                    curr_time_seconds=now.float_timestamp,
+                                    heartbeat_interval_seconds=heartbeat_interval_seconds,
+                                )[SensorDaemon.daemon_type()].healthy
+                                assert get_daemon_statuses(
+                                    instance,
+                                    [SensorDaemon.daemon_type()],
+                                    curr_time_seconds=now.float_timestamp,
+                                    heartbeat_interval_seconds=heartbeat_interval_seconds,
+                                    ignore_errors=True,
+                                )[SensorDaemon.daemon_type()].healthy
+
+                                time.sleep(3)
+
+                                status = get_daemon_statuses(
+                                    instance,
+                                    [SensorDaemon.daemon_type()],
+                                    now.float_timestamp,
+                                    heartbeat_interval_seconds=heartbeat_interval_seconds,
+                                )[SensorDaemon.daemon_type()]
+
+                                # Error count does not rise above 5, continues to increase
+                                assert len(status.last_heartbeat.errors) == 5
+
+                                new_first_error_number = _get_error_number(
+                                    status.last_heartbeat.errors[0]
+                                )
+
+                                assert new_first_error_number > first_error_number
+
+                                break
+
+                    if (now - init_time).total_seconds() > 15:
+                        raise Exception("timed out waiting for heartbeat error")
+
+                    time.sleep(0.5)
+
+                # Once the sensor no longer raises errors, they should return to 0 once
+                # enough time passes
+                should_raise_errors = False
+                init_time = pendulum.now("UTC")
+
+                while True:
+                    now = pendulum.now("UTC")
 
                     status = get_daemon_statuses(
                         instance,
@@ -242,78 +308,14 @@ def test_error_daemon(monkeypatch):
                         heartbeat_interval_seconds=heartbeat_interval_seconds,
                     )[SensorDaemon.daemon_type()]
 
-                    # Errors build up until there are > 5, then pull off the last
-                    if status.healthy is False and len(status.last_heartbeat.errors) >= 5:
-                        first_error_number = _get_error_number(status.last_heartbeat.errors[0])
+                    # Error count does not rise above 5
+                    if len(status.last_heartbeat.errors) == 0:
+                        break
 
-                        if first_error_number > 5:
-                            # Verify error numbers decrease consecutively
-                            assert [
-                                _get_error_number(error) for error in status.last_heartbeat.errors
-                            ] == list(range(first_error_number, first_error_number - 5, -1))
+                    if (now - init_time).total_seconds() > 15:
+                        raise Exception("timed out waiting for hearrteat errors to return to 0")
 
-                            assert not get_daemon_statuses(
-                                instance,
-                                [SensorDaemon.daemon_type()],
-                                curr_time_seconds=now.float_timestamp,
-                                heartbeat_interval_seconds=heartbeat_interval_seconds,
-                            )[SensorDaemon.daemon_type()].healthy
-                            assert get_daemon_statuses(
-                                instance,
-                                [SensorDaemon.daemon_type()],
-                                curr_time_seconds=now.float_timestamp,
-                                heartbeat_interval_seconds=heartbeat_interval_seconds,
-                                ignore_errors=True,
-                            )[SensorDaemon.daemon_type()].healthy
-
-                            time.sleep(3)
-
-                            status = get_daemon_statuses(
-                                instance,
-                                [SensorDaemon.daemon_type()],
-                                now.float_timestamp,
-                                heartbeat_interval_seconds=heartbeat_interval_seconds,
-                            )[SensorDaemon.daemon_type()]
-
-                            # Error count does not rise above 5, continues to increase
-                            assert len(status.last_heartbeat.errors) == 5
-
-                            new_first_error_number = _get_error_number(
-                                status.last_heartbeat.errors[0]
-                            )
-
-                            assert new_first_error_number > first_error_number
-
-                            break
-
-                if (now - init_time).total_seconds() > 15:
-                    raise Exception("timed out waiting for heartbeat error")
-
-                time.sleep(0.5)
-
-            # Once the sensor no longer raises errors, they should return to 0 once
-            # enough time passes
-            should_raise_errors = False
-            init_time = pendulum.now("UTC")
-
-            while True:
-                now = pendulum.now("UTC")
-
-                status = get_daemon_statuses(
-                    instance,
-                    [SensorDaemon.daemon_type()],
-                    now.float_timestamp,
-                    heartbeat_interval_seconds=heartbeat_interval_seconds,
-                )[SensorDaemon.daemon_type()]
-
-                # Error count does not rise above 5
-                if len(status.last_heartbeat.errors) == 0:
-                    break
-
-                if (now - init_time).total_seconds() > 15:
-                    raise Exception("timed out waiting for hearrteat errors to return to 0")
-
-                time.sleep(0.5)
+                    time.sleep(0.5)
 
 
 def test_multiple_error_daemon(monkeypatch):
