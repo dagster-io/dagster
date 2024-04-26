@@ -22,6 +22,7 @@
     "react-router": "^5.2.1",
     "react-router-dom": "^5.3.0",
     "react-router-dom-v5-compat": "^6.3.0",
+    "recoil": "^0.7.7",
     "styled-components": "^5.3.3",
     "uuid": "^9.0.0",
     "validator": "^13.7.0",
