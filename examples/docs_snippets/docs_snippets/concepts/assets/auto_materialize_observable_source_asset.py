@@ -1,9 +1,9 @@
 import os
 
-from dagster import AutoMaterializePolicy, DataVersion, asset, observable_source_asset
+from dagster import AutoMaterializePolicy, DataVersion, asset, observable_asset
 
 
-@observable_source_asset(auto_observe_interval_minutes=1)
+@observable_asset(auto_observe_interval_minutes=1)
 def source_file():
     return DataVersion(str(os.path.getmtime("source_file.csv")))
 
