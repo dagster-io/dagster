@@ -1,5 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
+import {Suspense} from 'react';
 
 import {PermissionsProvider, usePermissionsForLocation} from '../../app/Permissions';
 import {TrackedSuspense} from '../../app/TrackedSuspense';
@@ -30,12 +31,14 @@ describe('ReloadRepositoryLocationButton', () => {
     render(
       <MockedProvider mocks={[buildPermissionsQuery(false)]}>
         <PermissionsProvider>
-          <ReloadRepositoryLocationButton location="foobar" ChildComponent={Test} />
+          <Suspense>
+            <ReloadRepositoryLocationButton location="foobar" ChildComponent={Test} />
+          </Suspense>
         </PermissionsProvider>
       </MockedProvider>,
     );
 
-    const button = screen.getByRole('button', {name: /reload/i});
+    const button = await waitFor(() => screen.getByRole('button', {name: /reload/i}));
 
     await waitFor(() => {
       expect(screen.queryByText(/loading permissions\? no/i)).not.toBeNull();
@@ -48,12 +51,14 @@ describe('ReloadRepositoryLocationButton', () => {
     render(
       <MockedProvider mocks={[buildPermissionsQuery(true)]}>
         <PermissionsProvider>
-          <ReloadRepositoryLocationButton location="foobar" ChildComponent={Test} />
+          <Suspense>
+            <ReloadRepositoryLocationButton location="foobar" ChildComponent={Test} />
+          </Suspense>
         </PermissionsProvider>
       </MockedProvider>,
     );
 
-    const button = screen.getByRole('button', {name: /reload/i});
+    const button = await waitFor(() => screen.getByRole('button', {name: /reload/i}));
 
     await waitFor(() => {
       expect(screen.queryByText(/loading permissions\? no/i)).not.toBeNull();
