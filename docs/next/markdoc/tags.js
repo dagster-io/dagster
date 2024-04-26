@@ -29,15 +29,6 @@ export const button = {
       matches: ['primary', 'secondary', 'blurple'],
     },
   },
-  transform(node, config) {
-    console.log(node);
-    console.log(config);
-    const attributes = node.transformAttributes(config);
-    const children = node.transformChildren(config);
-    console.log(attributes);
-    console.log(children);
-    return new Tag('Button', attributes, children);
-  },
 };
 
 export const check = {
