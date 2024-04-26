@@ -5,7 +5,7 @@ from dagster import (
     Output,
     asset,
     file_relative_path,
-    observable_source_asset,
+    observable_asset,
 )
 
 
@@ -18,7 +18,7 @@ def sha256_digest_from_str(string: str) -> str:
 FILE_PATH = file_relative_path(__file__, "input_number.txt")
 
 
-@observable_source_asset
+@observable_asset
 def input_number():
     with open(FILE_PATH) as ff:
         return DataVersion(sha256_digest_from_str(ff.read()))

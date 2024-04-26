@@ -1,9 +1,9 @@
 # start_marker
 import pandas as pd
-from dagster import AssetKey, SourceAsset, asset
+from dagster import AssetKey, AssetsDefinition, asset
 from pandas import DataFrame
 
-sfo_q2_weather_sample = SourceAsset(
+sfo_q2_weather_sample = AssetsDefinition.single(
     key=AssetKey("sfo_q2_weather_sample"),
     description="Weather samples, taken every five minutes at SFO",
     metadata={"format": "csv"},
