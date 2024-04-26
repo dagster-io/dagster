@@ -12,7 +12,7 @@ from dagster import (
     ScheduleDefinition,
     build_last_update_freshness_checks,
     define_asset_job,
-    multi_observable_source_asset,
+    multi_observable_asset,
 )
 
 TABLE_SCHEMA = "PUBLIC"
@@ -20,7 +20,7 @@ table_names = ["charges", "customers"]
 asset_specs = [AssetSpec(table_name) for table_name in table_names]
 
 
-@multi_observable_source_asset(specs=asset_specs)
+@multi_observable_asset(specs=asset_specs)
 def source_tables(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
         freshness_results = fetch_last_updated_timestamps(

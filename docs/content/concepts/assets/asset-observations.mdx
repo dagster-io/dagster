@@ -109,38 +109,34 @@ def partitioned_dataset_op(context: OpExecutionContext, config: MyOpConfig):
     return df
 ```
 
-### Observable source assets
+### Observable assets
 
-<PyObject object="SourceAsset" /> objects may have a user-defined observation function
-that returns a <PyObject object="DataVersion" />. Whenever the observation
-function is run, an <PyObject object="AssetObservation" /> will be generated for
-the source asset and tagged with the returned data version. When an asset is
-observed to have a newer data version than the data version it had when a
-downstream asset was materialized, then the downstream asset will be given a
-label in the Dagster UI that indicates that upstream data has changed.
+Assets may have a user-defined observation function that returns metadata collected about the asset. Whenever the observation function is run, an <PyObject object="AssetObservation" /> event will be generated for the asset.
+
+One use of observable assets is to track changes to the content of an asset. When an asset is observed to have a newer data version than the data version it had when a downstream asset was materialized, then the downstream asset will be given an "Unsynced" label in the Dagster UI that indicates that upstream data has changed.
 
 <PyObject object="AutoMaterializePolicy" pluralize /> can be used to automatically
 materialize downstream assets when this occurs.
 
-The <PyObject object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the data version. Every time you run the observation function, a new observation will be generated with this hash set as its data version.
+The <PyObject object="observable_asset" /> decorator provides a convenient way to define assets with observation functions. The below observable asset takes a file hash and returns it as the data version. Every time you run the observation function, a new observation will be generated with this hash set as its data version.
 
 ```python file=/concepts/assets/observable_source_assets.py startafter=start_plain endbefore=end_plain
 from hashlib import sha256
 
-from dagster import DataVersion, observable_source_asset
+from dagster import DataVersion, observable_asset
 
 
-@observable_source_asset
-def foo_source_asset():
+@observable_asset
+def foo_asset():
     content = read_some_file()
     hash_sig = sha256()
     hash_sig.update(bytearray(content, "utf8"))
     return DataVersion(hash_sig.hexdigest())
 ```
 
-When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different data version) of this source asset might need to be updated.
+When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different data version) of this asset might need to be updated.
 
-Source asset observations can be triggered via the "Observe sources" button in the UI graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
+Asset observations can be triggered via the "Observe" button in the UI graph explorer view. Note that this button will only be visible if at least one asset in the current graph defines an observation function.
 
 <Image
 alt="observable-source-asset"
@@ -149,28 +145,28 @@ width={1768}
 height={1282}
 />
 
-Source asset observations can also be run as part of an asset job. This allows you to run source asset observations on a schedule:
+Asset observations can also be run as part of an asset job. This allows you to run asset observations on a schedule:
 
 ```python file=/concepts/assets/observable_source_assets.py startafter=start_schedule endbefore=end_schedule
 from dagster import (
     DataVersion,
     ScheduleDefinition,
     define_asset_job,
-    observable_source_asset,
+    observable_asset,
 )
 
 
-@observable_source_asset
-def foo_source_asset():
+@observable_asset
+def foo_asset():
     content = read_some_file()
     hash_sig = sha256()
     hash_sig.update(bytearray(content, "utf8"))
     return DataVersion(hash_sig.hexdigest())
 
 
-observation_job = define_asset_job("observation_job", [foo_source_asset])
+observation_job = define_asset_job("observation_job", [foo_asset])
 
-# schedule that will run the observation on foo_source_asset every day
+# schedule that will run the observation on foo_asset every day
 observation_schedule = ScheduleDefinition(
     name="observation_schedule",
     cron_schedule="@daily",
@@ -178,4 +174,4 @@ observation_schedule = ScheduleDefinition(
 )
 ```
 
-**NOTE**: Currently, source asset observations cannot be run as part of a standard asset job that materializes assets. The `selection` argument to <PyObject object="define_asset_job" /> must target only observable source assets-- an error will be thrown if a mix of regular assets and observable source assets is selected.
+**NOTE**: Currently, asset observations cannot be run as part of a standard asset job that materializes assets. The `selection` argument to <PyObject object="define_asset_job" /> must target only observable assets-- an error will be thrown if a mix of materializable assets and observable assets is selected.

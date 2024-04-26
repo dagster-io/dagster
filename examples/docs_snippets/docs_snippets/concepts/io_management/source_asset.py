@@ -1,6 +1,6 @@
-from dagster import AssetKey, SourceAsset, asset
+from dagster import AssetKey, AssetsDefinition, asset
 
-my_source_asset = SourceAsset(
+my_source_asset = AssetsDefinition.single(
     key=AssetKey("my_source_asset"), io_manager_key="s3_io_manager"
 )
 

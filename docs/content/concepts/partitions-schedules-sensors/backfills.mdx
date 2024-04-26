@@ -99,12 +99,12 @@ def events(context: AssetExecutionContext):
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_io_manager.py startafter=start_marker endbefore=end_marker
 from dagster import (
     AssetExecutionContext,
+    AssetsDefinition,
     BackfillPolicy,
     DailyPartitionsDefinition,
     InputContext,
     IOManager,
     OutputContext,
-    SourceAsset,
     asset,
 )
 
@@ -121,7 +121,7 @@ class MyIOManager(IOManager):
 
 daily_partition = DailyPartitionsDefinition(start_date="2020-01-01")
 
-raw_events = SourceAsset("raw_events", partitions_def=daily_partition)
+raw_events = AssetsDefinition.single("raw_events", partitions_def=daily_partition)
 
 
 @asset(
