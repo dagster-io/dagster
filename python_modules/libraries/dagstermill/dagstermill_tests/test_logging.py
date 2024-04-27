@@ -31,13 +31,7 @@ class LogTestFileHandler(logging.Handler):
     def emit(self, record):
         with open(self.file_path, "a", encoding="utf8") as fd:
             fd.write(
-                seven.json.dumps(
-                    {
-                        "dagster_meta": {
-                            "orig_message": record.__dict__["dagster_meta"]["orig_message"]
-                        }
-                    }
-                )
+                seven.json.dumps({"the_message": record.__dict__["dagster_meta"]["orig_message"]})
                 + "\n"
             )
 
@@ -132,10 +126,10 @@ def test_logging(hello_logging_job_type) -> None:
                         if line
                     ]
 
-    messages = [x["dagster_meta"]["orig_message"] for x in records]
+    messages = [x["the_message"] for x in records]
 
     assert "Hello, there!" in messages
 
-    critical_messages = [x["dagster_meta"]["orig_message"] for x in critical_records]
+    critical_messages = [x["the_message"] for x in critical_records]
 
     assert "Hello, there!" not in critical_messages
