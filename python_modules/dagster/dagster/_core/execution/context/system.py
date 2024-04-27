@@ -548,6 +548,12 @@ class CachingStepVersioningInfo:
     # Should take lower-level objects (like DagsterInstance) instead
     _step_context: "StepExecutionContext"
 
+    def __init__(self, step_context: "StepExecutionContext") -> None:
+        self._step_context = step_context
+        self.input_asset_version_info = {}
+        self.is_external_input_asset_version_info_loaded = False
+        self.data_version_cache = {}
+
     @property
     def instance(self) -> "DagsterInstance":
         return self._step_context.instance
@@ -559,9 +565,6 @@ class CachingStepVersioningInfo:
     @property
     def node_handle(self) -> "NodeHandle":
         return self._step_context.node_handle
-
-    def __init__(self, step_context: "StepExecutionContext") -> None:
-        self._step_context = step_context
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
         self.data_version_cache[asset_key] = data_version
