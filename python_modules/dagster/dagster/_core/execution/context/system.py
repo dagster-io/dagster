@@ -338,6 +338,10 @@ class PlanExecutionContext(IPlanContext):
         step: ExecutionStep,
         known_state: Optional["KnownExecutionState"] = None,
     ) -> IStepContext:
+        # TODO: refactoring to build up reasonable layer of prefetching -- 2024-04-27 schrockn
+        # if is_step_in_asset_graph_layer(step, self.job_def):
+        # ... prefetch input asset version info
+
         return StepExecutionContext(
             plan_data=self.plan_data,
             execution_data=self._execution_data,
@@ -523,6 +527,15 @@ class InputAssetVersionInfo:
 
     # This is the timestamp on the event that the storage_id references
     timestamp: float
+
+
+def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) -> bool:
+    """Whether this step is aware of the asset graph definition layer inferred by presence of asset info on outputs."""
+    for output in step.step_outputs:
+        asset_info = job_def.asset_layer.asset_info_for_output(step.node_handle, output.name)
+        if asset_info is not None:
+            return True
+    return False
 
 
 class StepExecutionContext(PlanExecutionContext, IStepContext):
@@ -944,13 +957,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         note: ops can materialize assets as well.
         """
-        for output in self.step.step_outputs:
-            asset_info = self.job_def.asset_layer.asset_info_for_output(
-                self.node_handle, output.name
-            )
-            if asset_info is not None:
-                return True
-        return False
+        return is_step_in_asset_graph_layer(self.step, self.job_def)
 
     @property
     def is_in_graph_asset(self) -> bool:
