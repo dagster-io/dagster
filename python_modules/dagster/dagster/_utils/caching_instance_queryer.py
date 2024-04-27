@@ -299,6 +299,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor or 0
         )
 
+    # for internal compat. Will remove in followup -- schrockn 2024-04-27
+    def get_latest_materialization_or_observation_record(
+        self,
+        asset_partition: AssetKeyPartitionKey,
+        after_cursor: Optional[int] = None,
+        before_cursor: Optional[int] = None,
+    ) -> Optional["EventLogRecord"]:
+        return self.get_latest_asset_partition_record(
+            asset_partition=asset_partition, after_cursor=after_cursor, before_cursor=before_cursor
+        )
+
     def get_latest_asset_partition_record(
         self,
         asset_partition: AssetKeyPartitionKey,
