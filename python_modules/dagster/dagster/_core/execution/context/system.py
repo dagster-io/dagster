@@ -1151,6 +1151,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     ) -> Optional["InputAssetVersionInfo"]:
         return self._caching_step_versioning_info.maybe_fetch_and_get_input_asset_version_info(key)
 
+    def fetch_external_input_asset_version_info(self) -> None:
+        return self._caching_step_versioning_info.fetch_external_input_asset_version_info()
+
     def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         asset_layer = self.job_def.asset_layer
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
