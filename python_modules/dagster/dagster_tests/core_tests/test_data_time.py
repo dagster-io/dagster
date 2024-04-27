@@ -139,8 +139,10 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
 
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
-                    latest_asset_record = data_time_queryer.instance_queryer.get_latest_materialization_or_observation_record(
-                        AssetKeyPartitionKey(AssetKey(ak))
+                    latest_asset_record = (
+                        data_time_queryer.instance_queryer.get_latest_asset_partition_record(
+                            AssetKeyPartitionKey(AssetKey(ak))
+                        )
                     )
                     if ignore_asset_tags:
                         # simulate an environment where materialization tags were not populated

@@ -690,9 +690,7 @@ class CachingStaleStatusResolver:
         ):
             ancestors = self.asset_graph.get_ancestor_asset_keys(key.asset_key, include_self=True)
             self.instance_queryer.prefetch_asset_records(ancestors)
-        return self.instance_queryer.get_latest_materialization_or_observation_record(
-            asset_partition=key
-        )
+        return self.instance_queryer.get_latest_asset_partition_record(asset_partition=key)
 
     # If a partition has greater than or equal to SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD
     # of dependencies, or is downstream of a time window partition with an AllPartitionsMapping,
