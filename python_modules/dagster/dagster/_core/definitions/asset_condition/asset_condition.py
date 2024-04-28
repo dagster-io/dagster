@@ -31,6 +31,7 @@ from ..auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .scheduling_condition_evaluation_context import SchedulingConditionEvaluationContext
 
 
 T = TypeVar("T")
@@ -211,7 +212,7 @@ class AssetConditionEvaluationState:
 
     @staticmethod
     def create(
-        context: "AssetConditionEvaluationContext", root_result: "AssetConditionResult"
+        context: "SchedulingConditionEvaluationContext", root_result: "AssetConditionResult"
     ) -> "AssetConditionEvaluationState":
         """Convenience constructor to generate an AssetConditionEvaluationState from the root result
         and the context in which it was evaluated.
@@ -230,7 +231,7 @@ class AssetConditionEvaluationState:
 
         return AssetConditionEvaluationState(
             previous_evaluation=AssetConditionEvaluation.from_result(root_result),
-            previous_tick_evaluation_timestamp=context.evaluation_time.timestamp(),
+            previous_tick_evaluation_timestamp=context.asset_graph_view.effective_dt.timestamp(),
             max_storage_id=context.new_max_storage_id,
             extra_state_by_unique_id=_flatten_extra_state(root_result),
         )
@@ -288,7 +289,7 @@ class AssetCondition(ABC, DagsterModel):
         return non_secure_md5_hash_str("".join(parts).encode())
 
     @abstractmethod
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
         raise NotImplementedError()
 
     @property
@@ -415,12 +416,12 @@ class RuleCondition(AssetCondition):
     def description(self) -> str:
         return self.rule.description
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
-        context.root_context.daemon_context.logger.debug(
+    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
+        context.legacy_context.root_context.daemon_context.logger.debug(
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
-        evaluation_result = self.rule.evaluate_for_asset(context)
-        context.root_context.daemon_context.logger.debug(
+        evaluation_result = self.rule.evaluate_for_asset(context.legacy_context)
+        context.legacy_context.root_context.daemon_context.logger.debug(
             f"Rule returned {evaluation_result.true_subset.size} partitions "
             f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
         )
@@ -442,11 +443,13 @@ class AndAssetCondition(AssetCondition):
     def description(self) -> str:
         return "All of"
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
         child_results: List[AssetConditionResult] = []
         true_subset = context.candidate_subset
         for child in self.children:
-            child_context = context.for_child(condition=child, candidate_subset=true_subset)
+            child_context = context.for_child_condition(
+                child_condition=child, candidate_subset=true_subset
+            )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
             true_subset &= child_result.true_subset
@@ -468,12 +471,14 @@ class OrAssetCondition(AssetCondition):
     def description(self) -> str:
         return "Any of"
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
         child_results: List[AssetConditionResult] = []
-        true_subset = context.empty_subset()
+        true_subset = context.asset_graph_view.create_empty_slice(
+            context.asset_key
+        ).convert_to_valid_asset_subset()
         for child in self.children:
-            child_context = context.for_child(
-                condition=child, candidate_subset=context.candidate_subset
+            child_context = context.for_child_condition(
+                child_condition=child, candidate_subset=context.candidate_subset
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
@@ -496,9 +501,9 @@ class NotAssetCondition(AssetCondition):
     def children(self) -> Sequence[AssetCondition]:
         return [self.operand]
 
-    def evaluate(self, context: "AssetConditionEvaluationContext") -> "AssetConditionResult":
-        child_context = context.for_child(
-            condition=self.operand, candidate_subset=context.candidate_subset
+    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
+        child_context = context.for_child_condition(
+            child_condition=self.operand, candidate_subset=context.candidate_subset
         )
         child_result = self.operand.evaluate(child_context)
         true_subset = context.candidate_subset - child_result.true_subset
@@ -521,7 +526,7 @@ class AssetConditionResult:
 
     @staticmethod
     def create_from_children(
-        context: "AssetConditionEvaluationContext",
+        context: "SchedulingConditionEvaluationContext",
         true_subset: AssetSubset,
         child_results: Sequence["AssetConditionResult"],
     ) -> "AssetConditionResult":
@@ -539,7 +544,7 @@ class AssetConditionResult:
 
     @staticmethod
     def create(
-        context: "AssetConditionEvaluationContext",
+        context: Union["SchedulingConditionEvaluationContext", "AssetConditionEvaluationContext"],
         true_subset: AssetSubset,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: PackableValue = None,

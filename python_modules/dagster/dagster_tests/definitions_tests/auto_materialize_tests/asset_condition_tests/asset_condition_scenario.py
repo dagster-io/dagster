@@ -13,6 +13,9 @@ from dagster._core.definitions.asset_condition.asset_condition import (
 from dagster._core.definitions.asset_condition.asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
+from dagster._core.definitions.asset_condition.scheduling_condition_evaluation_context import (
+    SchedulingConditionEvaluationContext,
+)
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -30,8 +33,13 @@ class FalseAssetCondition(AssetCondition):
     def description(self) -> str:
         return ""
 
-    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionResult:
-        return AssetConditionResult.create(context, true_subset=context.empty_subset())
+    def evaluate(self, context: SchedulingConditionEvaluationContext) -> AssetConditionResult:
+        return AssetConditionResult.create(
+            context,
+            true_subset=context.asset_graph_view.create_empty_slice(
+                context.asset_key
+            ).convert_to_valid_asset_subset(),
+        )
 
 
 @dataclass(frozen=True)
@@ -53,7 +61,20 @@ class AssetConditionScenarioState(ScenarioState):
             instance_queryer = CachingInstanceQueryer(
                 instance=self.instance, asset_graph=self.asset_graph
             )
-            context = AssetConditionEvaluationContext.create(
+            daemon_context = AssetDaemonContext(
+                evaluation_id=1,
+                instance=self.instance,
+                asset_graph=self.asset_graph,
+                cursor=AssetDaemonCursor.empty(),
+                materialize_run_tags={},
+                observe_run_tags={},
+                auto_observe_asset_keys=None,
+                auto_materialize_asset_keys=None,
+                respect_materialization_data_versions=False,
+                logger=self.logger,
+                evaluation_time=self.current_time,
+            )
+            legacy_context = AssetConditionEvaluationContext.create(
                 asset_key=asset_key,
                 condition=asset_condition,
                 previous_evaluation_state=self.previous_evaluation_state,
@@ -61,19 +82,24 @@ class AssetConditionScenarioState(ScenarioState):
                 data_time_resolver=CachingDataTimeResolver(instance_queryer),
                 evaluation_state_by_key={},
                 expected_data_time_mapping={},
-                daemon_context=AssetDaemonContext(
-                    evaluation_id=1,
-                    instance=self.instance,
-                    asset_graph=self.asset_graph,
-                    cursor=AssetDaemonCursor.empty(),
-                    materialize_run_tags={},
-                    observe_run_tags={},
-                    auto_observe_asset_keys=None,
-                    auto_materialize_asset_keys=None,
-                    respect_materialization_data_versions=False,
-                    logger=self.logger,
-                    evaluation_time=self.current_time,
-                ),
+                daemon_context=daemon_context,
+            )
+            context = SchedulingConditionEvaluationContext(
+                asset_key=asset_key,
+                condition=asset_condition,
+                candidate_subset=daemon_context.asset_graph_view.get_asset_slice(
+                    asset_key
+                ).convert_to_valid_asset_subset(),
+                asset_graph_view=daemon_context.asset_graph_view,
+                previous_evaluation=self.previous_evaluation_state.previous_evaluation
+                if self.previous_evaluation_state
+                else None,
+                previous_evaluation_state_by_key={asset_key: self.previous_evaluation_state}
+                if self.previous_evaluation_state
+                else {},
+                current_evaluation_state_by_key={},
+                create_time=self.current_time,
+                _legacy_context=legacy_context,
             )
 
             full_result = asset_condition.evaluate(context)
