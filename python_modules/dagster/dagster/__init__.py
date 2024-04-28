@@ -117,7 +117,6 @@ from dagster._core.definitions.asset_check_spec import (
     AssetCheckSpec as AssetCheckSpec,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition as AssetChecksDefinition
-from dagster._core.definitions.asset_condition import AssetCondition as AssetCondition
 from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
@@ -147,6 +146,10 @@ from dagster._core.definitions.data_version import (
     DataProvenance as DataProvenance,
     DataVersion as DataVersion,
     DataVersionsByPartition as DataVersionsByPartition,
+)
+from dagster._core.definitions.declarative_scheduling import (
+    AssetCondition as AssetCondition,
+    SchedulingCondition as SchedulingCondition,
 )
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check as asset_check,

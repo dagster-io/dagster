@@ -12,10 +12,6 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._utils.schedules import is_valid_cron_string
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition.asset_condition import (
-        AssetCondition,
-        AssetConditionResult,
-    )
     from dagster._core.definitions.auto_materialize_rule_impls import (
         AutoMaterializeAssetPartitionsFilter,
         MaterializeOnCronRule,
@@ -30,8 +26,15 @@ if TYPE_CHECKING:
         SkipOnRequiredButNonexistentParentsRule,
         SkipOnRunInProgressRule,
     )
-
-    from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
+        AssetCondition,
+    )
+    from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+        SchedulingResult,
+    )
+    from dagster._core.definitions.declarative_scheduling.scheduling_context import (
+        SchedulingContext,
+    )
 
 
 class AutoMaterializeRule(ABC):
@@ -60,14 +63,12 @@ class AutoMaterializeRule(ABC):
 
     def to_asset_condition(self) -> "AssetCondition":
         """Converts this AutoMaterializeRule into an AssetCondition."""
-        from .asset_condition.asset_condition import RuleCondition
+        from .declarative_scheduling.legacy.rule_condition import RuleCondition
 
         return RuleCondition(rule=self)
 
     @abstractmethod
-    def evaluate_for_asset(
-        self, context: "AssetConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
         """The core evaluation function for the rule. This function takes in a context object and
         returns a mapping from evaluated rules to the set of asset partitions that the rule applies
         to.

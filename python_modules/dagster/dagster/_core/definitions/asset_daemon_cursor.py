@@ -26,11 +26,13 @@ from dagster._serdes.serdes import (
 )
 
 from .base_asset_graph import BaseAssetGraph
+from .declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationState,
+)
 
 if TYPE_CHECKING:
-    from .asset_condition.asset_condition import (
-        AssetConditionEvaluation,
-        AssetConditionEvaluationState,
+    from .declarative_scheduling.serialized_objects import (
         AssetConditionSnapshot,
     )
 
@@ -148,11 +150,13 @@ def get_backcompat_asset_condition_evaluation_state(
     handled_root_subset: Optional[AssetSubset],
 ) -> "AssetConditionEvaluationState":
     """Generates an AssetDaemonCursor from information available on the old cursor format."""
-    from dagster._core.definitions.asset_condition.asset_condition import (
-        AssetConditionEvaluationState,
+    from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnMissingRule
+    from dagster._core.definitions.declarative_scheduling.legacy.rule_condition import (
         RuleCondition,
     )
-    from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnMissingRule
+    from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+        AssetConditionEvaluationState,
+    )
 
     return AssetConditionEvaluationState(
         previous_evaluation=latest_evaluation,
@@ -160,7 +164,7 @@ def get_backcompat_asset_condition_evaluation_state(
         max_storage_id=latest_storage_id,
         # the only information we need to preserve from the previous cursor is the handled subset
         extra_state_by_unique_id={
-            RuleCondition(rule=MaterializeOnMissingRule()).unique_id: handled_root_subset,
+            RuleCondition(rule=MaterializeOnMissingRule()).get_unique_id(None): handled_root_subset,
         }
         if handled_root_subset and handled_root_subset.size > 0
         else {},
@@ -173,9 +177,11 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
     """
-    from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
     from .auto_materialize_rule_evaluation import (
         deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+    )
+    from .declarative_scheduling.serialized_objects import (
+        AssetConditionSnapshot,
     )
 
     data = json.loads(cursor_str)

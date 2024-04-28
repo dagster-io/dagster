@@ -11,7 +11,7 @@
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import (
@@ -20,9 +20,11 @@ from dagster._seven.compat.pendulum import (
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .asset_condition.asset_condition import AssetSubsetWithMetadata
-    from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
+    from .declarative_scheduling.legacy.legacy_context import (
+        LegacyRuleEvaluationContext,
+    )
+    from .declarative_scheduling.serialized_objects import AssetSubsetWithMetadata
 
 
 def get_execution_period_for_policy(
@@ -113,7 +115,7 @@ def get_execution_period_and_evaluation_data_for_policies(
 
 
 def get_expected_data_time_for_asset_key(
-    context: "AssetConditionEvaluationContext", will_materialize: bool
+    context: "LegacyRuleEvaluationContext", will_materialize: bool
 ) -> Optional[datetime.datetime]:
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
@@ -156,14 +158,14 @@ def get_expected_data_time_for_asset_key(
 
 
 def freshness_evaluation_results_for_asset_key(
-    context: "AssetConditionEvaluationContext",
-) -> Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+    context: "LegacyRuleEvaluationContext",
+) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
     Attempts to minimize the total number of asset executions.
     """
-    from .asset_condition.asset_condition import AssetSubsetWithMetadata
+    from .declarative_scheduling.serialized_objects import AssetSubsetWithMetadata
 
     asset_key = context.asset_key
     current_time = context.evaluation_time
