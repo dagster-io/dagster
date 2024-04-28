@@ -22,8 +22,13 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.definitions.asset_condition.scheduling_condition_evaluation_context import (
+    SchedulingConditionEvaluationContext,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -101,6 +106,19 @@ class AssetDaemonContext:
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
+
+        stale_resolver = CachingStaleStatusResolver(
+            instance=instance, asset_graph=asset_graph, instance_queryer=self.instance_queryer
+        )
+        self._asset_graph_view = AssetGraphView(
+            temporal_context=TemporalContext(
+                effective_dt=self.instance_queryer.evaluation_time,
+                # TODO: we should eventually pass in an explicit last_event_id
+                last_event_id=None,
+            ),
+            stale_resolver=stale_resolver,
+        )
+        self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._auto_materialize_asset_keys = auto_materialize_asset_keys or set()
         self._materialize_run_tags = materialize_run_tags
@@ -123,6 +141,10 @@ class AssetDaemonContext:
     @property
     def data_time_resolver(self) -> CachingDataTimeResolver:
         return self._data_time_resolver
+
+    @property
+    def asset_graph_view(self) -> AssetGraphView:
+        return self._asset_graph_view
 
     @property
     def cursor(self) -> AssetDaemonCursor:
@@ -195,7 +217,7 @@ class AssetDaemonContext:
 
         asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
 
-        context = AssetConditionEvaluationContext.create(
+        legacy_context = AssetConditionEvaluationContext.create(
             asset_key=asset_key,
             previous_evaluation_state=asset_cursor,
             condition=asset_condition,
@@ -205,11 +227,25 @@ class AssetDaemonContext:
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
         )
+        context = SchedulingConditionEvaluationContext(
+            asset_key=asset_key,
+            condition=asset_condition,
+            candidate_subset=self.asset_graph_view.get_asset_slice(
+                asset_key
+            ).convert_to_valid_asset_subset(),
+            asset_graph_view=self.asset_graph_view,
+            previous_evaluation=asset_cursor.previous_evaluation if asset_cursor else None,
+            previous_evaluation_state_by_key=evaluation_state_by_key,
+            current_evaluation_state_by_key=evaluation_state_by_key,
+            create_time=pendulum.now("UTC"),
+            logger=self.logger,
+            _legacy_context=legacy_context,
+        )
 
         result = asset_condition.evaluate(context)
 
         expected_data_time = get_expected_data_time_for_asset_key(
-            context, will_materialize=result.true_subset.size > 0
+            legacy_context, will_materialize=result.true_subset.size > 0
         )
         return AssetConditionEvaluationState.create(context, result), expected_data_time
 
