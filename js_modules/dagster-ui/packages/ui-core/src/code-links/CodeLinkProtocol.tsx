@@ -95,7 +95,7 @@ export const CodeLinkProtocolSelect = ({}) => {
             })
           }
           placeholder="protocol://{FILE}:{LINE}"
-        ></TextInput>
+        />
       ) : (
         <Box padding={{left: 8, top: 2}}>
           <CaptionMono>{codeLinkProtocol.protocol}</CaptionMono>
