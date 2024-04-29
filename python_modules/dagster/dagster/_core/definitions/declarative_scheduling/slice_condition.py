@@ -29,3 +29,12 @@ class MaterializedSchedulingCondition(SliceSchedulingCondition):
 
     def compute_slice(self, context: SchedulingConditionEvaluationContext) -> AssetSlice:
         return context.asset_graph_view.compute_materialized_asset_slice(context.asset_key)
+
+
+class InLatestTimeWindowCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Within latest time window"
+
+    def compute_slice(self, context: SchedulingConditionEvaluationContext) -> AssetSlice:
+        return context.asset_graph_view.create_latest_time_window_slice(context.asset_key)
