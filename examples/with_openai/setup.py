@@ -7,7 +7,8 @@ setup(
         "dagster",
         "dagster-aws",
         "dagster-openai",
-        # "dagster-cloud", # Uncomment when using Dagster+
+        # Commented to avoid version conflicts with Pyright in the Dagster repo, uncomment when using Dagster+
+        # "dagster-cloud",
         "faiss-cpu==1.8.0",
         "filelock",
         "langchain==0.1.11",
