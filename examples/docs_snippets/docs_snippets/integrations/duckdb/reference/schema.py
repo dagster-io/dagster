@@ -1,11 +1,11 @@
 import pandas as pd
 
-from dagster import SourceAsset, asset
+from dagster import AssetsDefinition, asset
 
 
 def scope_asset_key():
     # start_asset_key
-    daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
+    daffodil_dataset = AssetsDefinition.single(key=["daffodil", "daffodil_dataset"])
 
     @asset(key_prefix=["iris"])
     def iris_dataset() -> pd.DataFrame:
@@ -26,7 +26,7 @@ def scope_asset_key():
 def scope_metadata():
     # start_metadata
 
-    daffodil_dataset = SourceAsset(
+    daffodil_dataset = AssetsDefinition.single(
         key=["daffodil_dataset"], metadata={"schema": "daffodil"}
     )
 

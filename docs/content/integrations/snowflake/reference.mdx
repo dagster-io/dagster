@@ -386,7 +386,7 @@ You can specify the default schema where data will be stored as configuration to
 To store assets in different schemas, specify the schema as metadata:
 
 ```python file=/integrations/snowflake/schema.py startafter=start_metadata endbefore=end_metadata dedent=4
-daffodil_dataset = SourceAsset(
+daffodil_dataset = AssetsDefinition.single(
     key=["daffodil_dataset"], metadata={"schema": "daffodil"}
 )
 
@@ -407,7 +407,7 @@ def iris_dataset() -> pd.DataFrame:
 You can also specify the schema as part of the asset's asset key:
 
 ```python file=/integrations/snowflake/schema.py startafter=start_asset_key endbefore=end_asset_key dedent=4
-daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
+daffodil_dataset = AssetsDefinition.single(key=["daffodil", "daffodil_dataset"])
 
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:

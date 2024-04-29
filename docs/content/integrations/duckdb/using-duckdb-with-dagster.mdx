@@ -111,15 +111,15 @@ In this example, you're defining an asset that fetches the Iris dataset as a Pan
 
 #### Making Dagster aware of existing tables
 
-If you already have existing tables in DuckDB and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
+If you already have existing tables in DuckDB and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [non-materializable asset definitions](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
 
 ```python file=/integrations/duckdb/tutorial/io_manager/source_asset.py
-from dagster import SourceAsset
+from dagster import AssetsDefinition
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 ```
 
-In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-existing table called `iris_harvest_data`.
+In this example, you're creating an asset for a pre-existing table called `iris_harvest_data`.
 
 </TabItem>
 
@@ -156,9 +156,9 @@ When finished, your code should look like the following:
 import pandas as pd
 from dagster_duckdb import DuckDBResource
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import AssetsDefinition, Definitions, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 
 
 @asset
@@ -272,17 +272,17 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 #### Make an existing table available in Dagster
 
-If you already have existing tables in DuckDB and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
+If you already have existing tables in DuckDB and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [non-materializable asset definitions](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables.
 
 ```python file=/integrations/duckdb/tutorial/io_manager/source_asset.py
-from dagster import SourceAsset
+from dagster import AssetsDefinition
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 ```
 
-In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-existing table containing iris harvests data. To make the data available to other Dagster assets, you need to tell the DuckDB I/O manager how to find the data.
+In this example, you're creating an asset for a pre-existing table containing iris harvests data. To make the data available to other Dagster assets, you need to tell the DuckDB I/O manager how to find the data.
 
-Because you already supplied the database and schema in the I/O manager configuration in [Step 1: Configure the DuckDB I/O manager](#step-1-configure-the-duckdb-io-manager), you only need to provide the table name. This is done with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
+Because you already supplied the database and schema in the I/O manager configuration in [Step 1: Configure the DuckDB I/O manager](#step-1-configure-the-duckdb-io-manager), you only need to provide the table name. This is done with the `key` parameter. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
 </TabGroup>
@@ -314,9 +314,9 @@ When finished, your code should look like the following:
 import pandas as pd
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import AssetsDefinition, Definitions, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 
 
 @asset

@@ -2,9 +2,9 @@
 
 import pandas as pd
 
-from dagster import SourceAsset, asset
+from dagster import AssetsDefinition, asset
 
-daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
+daffodil_dataset = AssetsDefinition.single(key=["daffodil", "daffodil_dataset"])
 
 
 @asset(key_prefix=["iris"])

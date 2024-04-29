@@ -2,9 +2,9 @@ import pandas as pd
 from dagster_deltalake import LocalConfig
 from dagster_deltalake_pandas import DeltaLakePandasIOManager
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import AssetsDefinition, Definitions, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetsDefinition.single(key="iris_harvest_data")
 
 
 @asset
