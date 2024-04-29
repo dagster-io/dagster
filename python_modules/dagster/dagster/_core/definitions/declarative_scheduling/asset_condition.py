@@ -418,6 +418,15 @@ class AssetCondition(ABC, DagsterModel):
 
         return MissingSchedulingCondition()
 
+    @staticmethod
+    def in_latest_time_window() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when it is within the latest
+        time window.
+        """
+        from .slice_condition import InLatestTimeWindowCondition
+
+        return InLatestTimeWindowCondition()
+
 
 @experimental
 @whitelist_for_serdes
