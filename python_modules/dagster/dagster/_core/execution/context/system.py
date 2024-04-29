@@ -527,8 +527,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     ):
         from dagster._core.execution.resources_init import get_required_resource_keys_for_step
 
-        print("Making a StepExecutionContext")
-
         super(StepExecutionContext, self).__init__(
             plan_data=plan_data,
             execution_data=execution_data,
