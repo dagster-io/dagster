@@ -6,6 +6,7 @@ type TraceContextType = {
   addDependency: (_dep: Dependency | null) => void;
   cancelDependency: (_dep: Dependency | null) => void;
   completeDependency: (_dep: Dependency | null) => void;
+  completeDependencyWithError: (_dep: Dependency | null) => void;
 };
 
 export const TraceContext = createContext<TraceContextType>({
@@ -13,6 +14,7 @@ export const TraceContext = createContext<TraceContextType>({
   addDependency: (_dep) => {},
   cancelDependency: (_dep) => {},
   completeDependency: (_dep) => {},
+  completeDependencyWithError: () => {},
 });
 
 /**
@@ -30,6 +32,7 @@ export const OrphanedTraceContext = ({children}: {children: ReactNode}) => {
           addDependency: () => {},
           cancelDependency: () => {},
           completeDependency: () => {},
+          completeDependencyWithError: () => {},
         }),
         [],
       )}
@@ -51,17 +54,29 @@ export class Dependency {
 export function useQueryResultDependency(queryResult: QueryResult<any>, name: string) {
   const dep = useDependency(name);
   const hasData = !!queryResult.data;
+  const hasError = !!queryResult.error;
 
   useLayoutEffect(() => {
     if (hasData) {
       dep.completeDependency();
     }
   }, [dep, hasData]);
+
+  useLayoutEffect(() => {
+    if (!hasData && hasError) {
+      dep.completeDependencyWithError();
+    }
+  }, [dep, hasData, hasError]);
 }
 
 export function useDependency(name: string) {
-  const {addDependency, cancelDependency, completeDependency, createDependency} =
-    useContext(TraceContext);
+  const {
+    addDependency,
+    cancelDependency,
+    completeDependency,
+    completeDependencyWithError,
+    createDependency,
+  } = useContext(TraceContext);
 
   const dependency = useMemo(() => createDependency(name), [createDependency, name]);
 
@@ -83,7 +98,10 @@ export function useDependency(name: string) {
       cancelDependency: () => {
         cancelDependency(dependency);
       },
+      completeDependencyWithError: () => {
+        completeDependencyWithError(dependency);
+      },
     }),
-    [cancelDependency, completeDependency, dependency],
+    [cancelDependency, completeDependency, completeDependencyWithError, dependency],
   );
 }
