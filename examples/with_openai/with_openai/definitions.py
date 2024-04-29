@@ -49,16 +49,25 @@ all_assets = load_assets_from_modules([assets])
 all_jobs = [question_job, search_index_job]
 all_sensors = [question_sensor]
 
+# for handling passing data between assets in cloud env
+io_manager_resource_dict = (
+    {
+        "io_manager": S3PickleIOManager(
+            s3_resource=S3Resource(),
+            s3_bucket="with_openai",
+        )
+    }
+    if os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME")
+    else {}
+)
+
 
 defs = Definitions(
     assets=all_assets,
     jobs=all_jobs,
     resources={
         "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
-        "s3_io_manager": S3PickleIOManager(
-            s3_resource=S3Resource(),
-            s3_bucket="with_openai",
-        ),
+        **io_manager_resource_dict,
     },
     sensors=all_sensors,
 )
