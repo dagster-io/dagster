@@ -66,6 +66,7 @@ from dagster._core.storage.tags import (
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
+from .data_version_cache import DataVersionCache, InputAssetVersionInfo
 from .input import InputContext
 from .output import OutputContext, get_output_context
 
@@ -505,9 +506,6 @@ def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) ->
         if asset_info is not None:
             return True
     return False
-
-
-from .data_version_cache import DataVersionCache, InputAssetVersionInfo
 
 
 class StepExecutionContext(PlanExecutionContext, IStepContext):
