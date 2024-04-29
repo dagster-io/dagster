@@ -1,18 +1,15 @@
 import {QueryResult} from '@apollo/client';
 import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 'react';
 
-export type DependencyProps = {
-  name: string;
-};
 type TraceContextType = {
-  createDependency: (_props: DependencyProps) => Dependency | null;
+  createDependency: (_name: string) => Dependency | null;
   addDependency: (_dep: Dependency | null) => void;
   cancelDependency: (_dep: Dependency | null) => void;
   completeDependency: (_dep: Dependency | null) => void;
 };
 
 export const TraceContext = createContext<TraceContextType>({
-  createDependency: (_props) => null,
+  createDependency: (_name: string) => null,
   addDependency: (_dep) => {},
   cancelDependency: (_dep) => {},
   completeDependency: (_dep) => {},
@@ -45,14 +42,14 @@ export const OrphanedTraceContext = ({children}: {children: ReactNode}) => {
 export class Dependency {
   public readonly name: string;
 
-  constructor(props: DependencyProps) {
-    this.name = props.name;
+  constructor(name: string) {
+    this.name = name;
   }
 }
 
 /** Use this to declare a dependency on an apollo query result */
 export function useQueryResultDependency(queryResult: QueryResult<any>, name: string) {
-  const dep = useDependency(useMemo(() => ({name}), [name]));
+  const dep = useDependency(name);
   const hasData = !!queryResult.data;
 
   useLayoutEffect(() => {
@@ -62,11 +59,11 @@ export function useQueryResultDependency(queryResult: QueryResult<any>, name: st
   }, [dep, hasData]);
 }
 
-export function useDependency(props: DependencyProps) {
+export function useDependency(name: string) {
   const {addDependency, cancelDependency, completeDependency, createDependency} =
     useContext(TraceContext);
 
-  const dependency = useMemo(() => createDependency(props), [createDependency, props]);
+  const dependency = useMemo(() => createDependency(name), [createDependency, name]);
 
   useLayoutEffect(() => {
     addDependency(dependency);
