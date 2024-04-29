@@ -273,8 +273,6 @@ class UPathIOManager(MemoizableIOManager):
         if asyncio.iscoroutine(obj):
             obj = asyncio.run(obj)
 
-        context.add_input_metadata({"path": MetadataValue.path(str(path))})
-
         return obj
 
     def _load_partition_from_path(
