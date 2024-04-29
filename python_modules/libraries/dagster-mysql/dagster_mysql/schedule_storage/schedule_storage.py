@@ -6,7 +6,7 @@ import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_condition.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.storage.config import MySqlStorageConfig, mysql_config

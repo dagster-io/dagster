@@ -28,7 +28,7 @@ from dagster._serdes.serdes import (
 from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
-    from .asset_condition.asset_condition import (
+    from .declarative_scheduling.asset_condition import (
         AssetConditionEvaluation,
         AssetConditionEvaluationState,
         AssetConditionSnapshot,
@@ -148,11 +148,11 @@ def get_backcompat_asset_condition_evaluation_state(
     handled_root_subset: Optional[AssetSubset],
 ) -> "AssetConditionEvaluationState":
     """Generates an AssetDaemonCursor from information available on the old cursor format."""
-    from dagster._core.definitions.asset_condition.asset_condition import (
+    from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnMissingRule
+    from dagster._core.definitions.declarative_scheduling.asset_condition import (
         AssetConditionEvaluationState,
         RuleCondition,
     )
-    from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnMissingRule
 
     return AssetConditionEvaluationState(
         previous_evaluation=latest_evaluation,
@@ -173,9 +173,12 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
     """
-    from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
     from .auto_materialize_rule_evaluation import (
         deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+    )
+    from .declarative_scheduling.asset_condition import (
+        AssetConditionEvaluation,
+        AssetConditionSnapshot,
     )
 
     data = json.loads(cursor_str)

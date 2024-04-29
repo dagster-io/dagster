@@ -23,12 +23,12 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_condition.scheduling_condition_evaluation_context import (
-    SchedulingConditionEvaluationContext,
-)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluation_context import (
+    SchedulingConditionEvaluationContext,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -38,14 +38,17 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
-from .asset_condition.asset_condition_evaluation_context import (
-    AssetConditionEvaluationContext,
-)
 from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
+from .declarative_scheduling.asset_condition import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationState,
+)
+from .declarative_scheduling.asset_condition_evaluation_context import (
+    AssetConditionEvaluationContext,
+)
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import PartitionsDefinition, ScheduleType
 

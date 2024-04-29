@@ -20,7 +20,7 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
-from dagster._core.definitions.asset_condition.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey

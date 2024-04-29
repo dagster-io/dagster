@@ -4,21 +4,21 @@ from typing import Optional, Tuple
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._core.definitions.asset_condition.asset_condition import (
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AndAssetCondition,
     AssetCondition,
     AssetConditionEvaluationState,
     AssetConditionResult,
 )
-from dagster._core.definitions.asset_condition.asset_condition_evaluation_context import (
+from dagster._core.definitions.declarative_scheduling.asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
-from dagster._core.definitions.asset_condition.scheduling_condition_evaluation_context import (
+from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluation_context import (
     SchedulingConditionEvaluationContext,
 )
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
