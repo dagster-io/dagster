@@ -7,7 +7,7 @@ lesson: '7'
 # Preparing for a successful run
 
 {% callout %}
->💡 **Heads up! This section is optional.** The goal of this lesson was to teach you how to successfully **deploy** to Dagster Cloud, which you completed in the last section. Preparing for a successful run in Dagster Cloud requires using some external services, which may not translate to the external services you prefer to use. As such, we’ve opted to make this section optional.
+>💡 **Heads up! This section is optional.** The goal of this lesson was to teach you how to successfully **deploy** to Dagster+, which you completed in the last section. Preparing for a successful run in Dagster+ requires using some external services, which may not translate to the external services you prefer to use. As such, we’ve opted to make this section optional.
 {% /callout %}
 
 In previous lessons, you followed along by adding our example code to your local project. You successfully materialized the assets in the project and stored the resulting data in a local DuckDB database.
@@ -25,13 +25,13 @@ Since you'll be deploying your project in production, you'll need production sys
 
 The code you cloned in the starter project already has some logic to dynamically switch between local and cloud storage, along with the paths to reference. To trigger the switch, you can set an environment variable called `DAGSTER_ENVIRONMENT` and set it to `prod`. This will tell the pipeline to use the production paths and storage.
 
-In summary, before you can run this pipeline in Dagster Cloud, you’ll need to:
+In summary, before you can run this pipeline in Dagster+, you’ll need to:
 
 1. Set up an S3 bucket to store the files/assets that we download and generate
 2. Sign up for a free Motherduck account to replace our local DuckDB instance
 3. Connect an S3 user with access to the S3 bucket to the Motherduck account
 4. Add a new production target to the dbt project
-5. Add the environment variables for the S3 user and Motherduck token to Dagster Cloud
+5. Add the environment variables for the S3 user and Motherduck token to Dagster+
 
 We’ll show you how to do 4 and 5 so you can do this with your credentials when you’re ready.
 
@@ -63,7 +63,7 @@ Because we’re still using a DuckDB-backed database, our `type` will also be `d
 
 ## Adding a prod target to deploy.yml
 
-Next, we need to update the dbt commands in the `.github/workflows/deploy.yml` file to target the new `prod` profile. This will ensure that dbt uses the correct connection details when the GitHub Action runs as part of our Dagster Cloud deployment.
+Next, we need to update the dbt commands in the `.github/workflows/deploy.yml` file to target the new `prod` profile. This will ensure that dbt uses the correct connection details when the GitHub Action runs as part of our Dagster+ deployment.
 
 Open the file, scroll to the dbt step you added, and add `-- target prod` after the `dbt parse` command. This command should be on or around line 52:
 
@@ -83,13 +83,13 @@ Save and commit the file to git. Don’t forget to push to remote!
 
 ---
 
-## Adding environment variables to Dagster Cloud
+## Adding environment variables to Dagster+
 
-The last step in preparing for a successful run is to move environment variables to Dagster Cloud. These variables were available to us via the `.env` file while we were working locally, but now that we’ve moved to a different environment, we’ll need to make them accessible again.
+The last step in preparing for a successful run is to move environment variables to Dagster+. These variables were available to us via the `.env` file while we were working locally, but now that we’ve moved to a different environment, we’ll need to make them accessible again.
 
 ### Environment variables
 
-The following table contains the environment variables we need to create in Dagster Cloud:
+The following table contains the environment variables we need to create in Dagster+:
 
 {% table %}
 
@@ -130,7 +130,7 @@ The following table contains the environment variables we need to create in Dags
 
 ### Creating environment variables
 
-1. In the Dagster Cloud UI, click **Deployment > Environment variables**.
+1. In the Dagster+ UI, click **Deployment > Environment variables**.
 2. Click the **Add environment variable** button on the right side of the screen.
 3. In the **Create environment variable** window, fill in the following:
     1. **Name** - The name of the environment variable. For example: `DUCKDB_DATABASE`
@@ -144,5 +144,4 @@ Repeat these steps until all the environment variables have been added.
 
 ## Running the pipeline
 
-At this point, you're ready to run the pipeline in production! Navigate to the asset graph, click **Materialize all**, and watch as it all comes together:
-
+At this point, you're ready to run the pipeline in production! Navigate to the asset graph, click **Materialize all**, and watch as it all comes together.
