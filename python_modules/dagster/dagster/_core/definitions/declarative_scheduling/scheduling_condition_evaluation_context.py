@@ -11,13 +11,13 @@ from dagster._core.asset_graph_view.asset_graph_view import (
     AssetGraphView,
     AssetSlice,
 )
-from dagster._core.definitions.asset_condition.asset_condition import (
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AssetCondition,
     AssetConditionEvaluation,
     AssetConditionEvaluationState,
 )
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from .asset_condition_evaluation_context import AssetConditionEvaluationContext

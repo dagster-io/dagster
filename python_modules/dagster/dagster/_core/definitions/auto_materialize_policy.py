@@ -3,11 +3,11 @@ from typing import AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
     AutoMaterializeRuleSnapshot,
 )
+from dagster._core.definitions.declarative_scheduling.asset_condition import AssetCondition
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -283,12 +283,12 @@ class AutoMaterializePolicy(
 
     def to_asset_condition(self) -> AssetCondition:
         """Converts a set of materialize / skip rules into a single binary expression."""
-        from .asset_condition.asset_condition import (
+        from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
+        from .declarative_scheduling.asset_condition import (
             AndAssetCondition,
             NotAssetCondition,
             OrAssetCondition,
         )
-        from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
 
         if self.asset_condition is not None:
             return self.asset_condition

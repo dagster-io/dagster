@@ -6,11 +6,11 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
-from dagster._core.definitions.asset_condition.asset_condition import (
-    AssetConditionEvaluationWithRunIds,
-)
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+)
+from dagster._core.definitions.declarative_scheduling.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
