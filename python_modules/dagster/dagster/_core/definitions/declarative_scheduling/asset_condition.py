@@ -18,6 +18,7 @@ from typing import (
 import pendulum
 
 from dagster._annotations import experimental
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -506,17 +507,21 @@ class AssetConditionResult:
     start_timestamp: float
     end_timestamp: float
 
-    true_subset: AssetSubset
+    true_slice: AssetSlice
     candidate_subset: AssetSubset
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     extra_state: PackableValue
     child_results: Sequence["AssetConditionResult"]
 
+    @property
+    def true_subset(self) -> AssetSubset:
+        return self.true_slice.convert_to_valid_asset_subset()
+
     @staticmethod
     def create_from_children(
         context: "SchedulingConditionEvaluationContext",
-        true_subset: AssetSubset,
+        true_subset: ValidAssetSubset,
         child_results: Sequence["AssetConditionResult"],
     ) -> "AssetConditionResult":
         """Returns a new AssetConditionEvaluation from the given child results."""
@@ -525,7 +530,7 @@ class AssetConditionResult:
             condition_unique_id=context.condition_unique_id,
             start_timestamp=context.start_timestamp,
             end_timestamp=pendulum.now("UTC").timestamp(),
-            true_subset=true_subset,
+            true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
             candidate_subset=context.candidate_subset,
             subsets_with_metadata=[],
             child_results=child_results,
@@ -535,7 +540,7 @@ class AssetConditionResult:
     @staticmethod
     def create(
         context: "SchedulingConditionEvaluationContext",
-        true_subset: AssetSubset,
+        true_subset: ValidAssetSubset,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: PackableValue = None,
     ) -> "AssetConditionResult":
@@ -545,7 +550,7 @@ class AssetConditionResult:
             condition_unique_id=context.condition_unique_id,
             start_timestamp=context.start_timestamp,
             end_timestamp=pendulum.now("UTC").timestamp(),
-            true_subset=true_subset,
+            true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
             candidate_subset=context.candidate_subset,
             subsets_with_metadata=subsets_with_metadata,
             child_results=[],

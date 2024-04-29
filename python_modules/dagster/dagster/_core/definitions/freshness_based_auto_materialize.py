@@ -11,7 +11,7 @@
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import (
@@ -159,7 +159,7 @@ def get_expected_data_time_for_asset_key(
 
 def freshness_evaluation_results_for_asset_key(
     context: "AssetConditionEvaluationContext",
-) -> Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
