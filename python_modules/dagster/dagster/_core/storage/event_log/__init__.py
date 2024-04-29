@@ -1,7 +1,7 @@
 from .base import (
-    AssetRecord as AssetRecord,
     EventLogRecord as EventLogRecord,
     EventLogStorage as EventLogStorage,
+    LatestAssetInfo as LatestAssetInfo,
 )
 from .in_memory import InMemoryEventLogStorage as InMemoryEventLogStorage
 from .polling_event_watcher import SqlPollingEventWatcher as SqlPollingEventWatcher

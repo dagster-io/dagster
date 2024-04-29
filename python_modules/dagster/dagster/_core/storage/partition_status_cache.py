@@ -31,7 +31,7 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 
 if TYPE_CHECKING:
-    from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.storage.event_log.base import LatestAssetInfo
 
 
 CACHEABLE_PARTITION_TYPES = (
@@ -399,7 +399,7 @@ def get_and_update_asset_status_cache_value(
     asset_key: AssetKey,
     partitions_def: Optional[PartitionsDefinition] = None,
     dynamic_partitions_loader: Optional[DynamicPartitionsStore] = None,
-    asset_record: Optional["AssetRecord"] = None,
+    asset_record: Optional["LatestAssetInfo"] = None,
 ) -> Optional[AssetStatusCacheValue]:
     asset_record = asset_record or next(
         iter(instance.get_asset_records(asset_keys=[asset_key])), None

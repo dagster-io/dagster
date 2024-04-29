@@ -109,10 +109,9 @@ class AssetEntry(
         return self.last_materialization_record.storage_id
 
 
-class AssetRecord(NamedTuple):
-    """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
-
-    Users should not invoke this class directly.
+class LatestAssetInfo(NamedTuple):
+    """Representation of latest information about an asset key, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
+    Backed by the asset_keys table.
     """
 
     storage_id: int
@@ -290,7 +289,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Sequence[AssetRecord]:
+    ) -> Sequence[LatestAssetInfo]:
         pass
 
     @abstractmethod

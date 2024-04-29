@@ -6,7 +6,7 @@ from dagster import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.storage.event_log.base import LatestAssetInfo
 
 
 class BatchAssetRecordLoader:
@@ -17,13 +17,13 @@ class BatchAssetRecordLoader:
     def __init__(self, instance: DagsterInstance, asset_keys: Iterable[AssetKey]):
         self._instance = instance
         self._unfetched_asset_keys: Set[AssetKey] = set(asset_keys)
-        self._asset_records: Mapping[AssetKey, Optional[AssetRecord]] = {}
+        self._asset_records: Mapping[AssetKey, Optional[LatestAssetInfo]] = {}
 
     def add_asset_keys(self, asset_keys: Iterable[AssetKey]):
         unfetched_asset_keys = set(asset_keys).difference(self._asset_records.keys())
         self._unfetched_asset_keys = self._unfetched_asset_keys.union(unfetched_asset_keys)
 
-    def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
+    def get_asset_record(self, asset_key: AssetKey) -> Optional[LatestAssetInfo]:
         if asset_key not in self._asset_records and asset_key not in self._unfetched_asset_keys:
             check.failed(
                 f"Asset key {asset_key} not recognized for this loader. Expected one of:"
@@ -40,7 +40,7 @@ class BatchAssetRecordLoader:
         self._unfetched_asset_keys = self._unfetched_asset_keys.union(self._asset_records.keys())
         self._asset_records = {}
 
-    def get_asset_records(self, asset_keys: Sequence[AssetKey]) -> Sequence[AssetRecord]:
+    def get_asset_records(self, asset_keys: Sequence[AssetKey]) -> Sequence[LatestAssetInfo]:
         records = [self.get_asset_record(asset_key) for asset_key in asset_keys]
         return [record for record in records if record]
 

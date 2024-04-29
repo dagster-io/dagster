@@ -27,12 +27,12 @@ from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInf
 
 from .base_storage import DagsterStorage
 from .event_log.base import (
-    AssetRecord,
     EventLogConnection,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
     EventRecordsResult,
+    LatestAssetInfo,
     PlannedMaterializationInfo,
 )
 from .runs.base import RunStorage
@@ -502,7 +502,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_asset_records(
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
-    ) -> Iterable[AssetRecord]:
+    ) -> Iterable[LatestAssetInfo]:
         return self._storage.event_log_storage.get_asset_records(asset_keys)
 
     def has_asset_key(self, asset_key: "AssetKey") -> bool:

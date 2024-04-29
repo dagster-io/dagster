@@ -164,11 +164,11 @@ if TYPE_CHECKING:
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
-        AssetRecord,
         EventLogConnection,
         EventLogRecord,
         EventRecordsFilter,
         EventRecordsResult,
+        LatestAssetInfo,
         PlannedMaterializationInfo,
     )
     from dagster._core.storage.partition_status_cache import (
@@ -2215,7 +2215,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Sequence["AssetRecord"]:
+    ) -> Sequence["LatestAssetInfo"]:
         """Return an `AssetRecord` for each of the given asset keys.
 
         Args:

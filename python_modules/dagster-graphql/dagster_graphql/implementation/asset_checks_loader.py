@@ -16,7 +16,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionResolvedStatus,
     AssetCheckInstanceSupport,
 )
-from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.storage.event_log.base import LatestAssetInfo
 from dagster._core.workspace.context import WorkspaceRequestContext
 from packaging import version
 
@@ -178,7 +178,7 @@ class AssetChecksLoader:
 
 def _execution_targets_latest_materialization(
     instance: DagsterInstance,
-    asset_record: Optional[AssetRecord],
+    asset_record: Optional[LatestAssetInfo],
     execution: AssetCheckExecutionRecord,
     resolved_status: AssetCheckExecutionResolvedStatus,
 ) -> bool:

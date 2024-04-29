@@ -52,7 +52,7 @@ from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.storage.event_log import EventLogRecord
-    from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.storage.event_log.base import LatestAssetInfo
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -76,7 +76,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._asset_graph = asset_graph
         self._logger = logger or logging.getLogger("dagster")
 
-        self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
+        self._asset_record_cache: Dict[AssetKey, Optional[LatestAssetInfo]] = {}
         self._asset_partitions_cache: Dict[Optional[int], Dict[AssetKey, Set[str]]] = defaultdict(
             dict
         )
@@ -178,7 +178,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def has_cached_asset_record(self, asset_key: AssetKey) -> bool:
         return asset_key in self._asset_record_cache
 
-    def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
+    def get_asset_record(self, asset_key: AssetKey) -> Optional["LatestAssetInfo"]:
         if asset_key not in self._asset_record_cache:
             self._asset_record_cache[asset_key] = next(
                 iter(self.instance.get_asset_records([asset_key])), None
