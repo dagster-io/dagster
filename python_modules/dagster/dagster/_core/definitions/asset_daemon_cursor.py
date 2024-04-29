@@ -160,7 +160,7 @@ def get_backcompat_asset_condition_evaluation_state(
         max_storage_id=latest_storage_id,
         # the only information we need to preserve from the previous cursor is the handled subset
         extra_state_by_unique_id={
-            RuleCondition(rule=MaterializeOnMissingRule()).unique_id: handled_root_subset,
+            RuleCondition(rule=MaterializeOnMissingRule()).get_unique_id(None): handled_root_subset,
         }
         if handled_root_subset and handled_root_subset.size > 0
         else {},

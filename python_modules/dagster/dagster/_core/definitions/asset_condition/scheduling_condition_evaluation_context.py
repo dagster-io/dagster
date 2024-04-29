@@ -30,6 +30,9 @@ class SchedulingConditionEvaluationContext:
 
     # the condition that is being evaluated
     condition: AssetCondition
+    # the unique identifier for this condition within the broader condition tree
+    condition_unique_id: str
+
     # the subset of AssetPartitions for this Asset which must be evaluated. at the root of the
     # condition evaluation tree, this is the AllPartitionsSubset, but this may shrink as conditions
     # are applied and we can be certain that certain partitions will not be true for the overall
@@ -102,13 +105,17 @@ class SchedulingConditionEvaluationContext:
     def for_child_condition(
         self, child_condition: AssetCondition, candidate_subset: ValidAssetSubset
     ):
+        child_unique_id = child_condition.get_unique_id(parent_unique_id=self.condition_unique_id)
         return dataclasses.replace(
             self,
             condition=child_condition,
+            condition_unique_id=child_unique_id,
             candidate_subset=candidate_subset,
-            previous_evaluation=self.previous_evaluation.for_child(child_condition)
+            previous_evaluation=self.previous_evaluation.for_child(child_unique_id)
             if self.previous_evaluation
             else None,
             create_time=pendulum.now("UTC"),
-            _legacy_context=self._legacy_context.for_child(child_condition, candidate_subset),
+            _legacy_context=self._legacy_context.for_child(
+                child_condition, child_unique_id, candidate_subset
+            ),
         )
