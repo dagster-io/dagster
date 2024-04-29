@@ -85,6 +85,13 @@ class AssetSubset(DagsterModel):
         else:
             return len(self.subset_value)
 
+    @property
+    def is_empty(self) -> bool:
+        # avoid calculating the full size of the subset if it's an AllPartitionsSubset
+        if isinstance(self.value, AllPartitionsSubset):
+            return False
+        return self.size == 0
+
     def _is_compatible_with_partitions_def(
         self, partitions_def: Optional[PartitionsDefinition]
     ) -> bool:

@@ -161,6 +161,11 @@ class AssetSlice:
     def compute_child_slices(self) -> Mapping[AssetKey, "AssetSlice"]:
         return {ak: self.compute_child_slice(ak) for ak in self.child_keys}
 
+    def compute_difference(self, other: "AssetSlice") -> "AssetSlice":
+        return _slice_from_subset(
+            self._asset_graph_view, self._compatible_subset - other.convert_to_valid_asset_subset()
+        )
+
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str]
     ) -> "AssetSlice":
@@ -223,7 +228,7 @@ class AssetSlice:
 
     @property
     def is_empty(self) -> bool:
-        return self._compatible_subset.size == 0
+        return self._compatible_subset.is_empty
 
 
 class AssetGraphView:
@@ -330,6 +335,33 @@ class AssetGraphView:
 
     def get_asset_slice_from_subset(self, subset: ValidAssetSubset) -> "AssetSlice":
         return _slice_from_subset(self, subset)
+
+    def compute_missing_subslice(
+        self, asset_key: "AssetKey", from_slice: "AssetSlice"
+    ) -> "AssetSlice":
+        """Returns a slice which is the subset of the input slice that has never been materialized
+        (if it is a materializable asset) or observered (if it is an observable asset).
+        """
+        # TODO: this logic should be simplified once we have a unified way of detecting both
+        # materializations and observations through the parittion status cache. at that point, the
+        # definition will slightly change to search for materializations and observations regardless
+        # of the materializability of the asset
+        if self.asset_graph.get(asset_key).is_materializable:
+            # cheap call which takes advantage of the partition status cache
+            materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
+            materialized_slice = self.get_asset_slice_from_subset(materialized_subset)
+            return from_slice.compute_difference(materialized_slice)
+        else:
+            # more expensive call
+            missing_asset_partitions = {
+                ap
+                for ap in from_slice.convert_to_valid_asset_subset().asset_partitions
+                if not self._queryer.asset_partition_has_materialization_or_observation(ap)
+            }
+            missing_subset = ValidAssetSubset.from_asset_partitions_set(
+                asset_key, self._get_partitions_def(asset_key), missing_asset_partitions
+            )
+            return self.get_asset_slice_from_subset(missing_subset)
 
     def compute_parent_asset_slice(
         self, parent_asset_key: AssetKey, asset_slice: AssetSlice
