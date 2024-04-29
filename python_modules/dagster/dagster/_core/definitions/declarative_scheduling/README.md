@@ -23,11 +23,9 @@ These conditions may be combined in a variety of ways. All conditions support th
 - `a & b`: Both `a` and `b`
 - `~a`: Not `a`
 
-[to be implemented]
-
 Conditions can also be applied to dependencies:
 
-- `SchedulingCondition.any_dep_matches(a)`: Any asset partition of any dep matches condition `a`
+- `SchedulingCondition.any_deps_match(a)`: Any asset partition of any deps match condition `a`
 - `SchedulingCondition.all_deps_match(a)`: Any asset partition of all deps match condition `a`
 
 ## Examples

@@ -393,6 +393,24 @@ class AssetCondition(ABC, DagsterModel):
             )
         )
 
+    @staticmethod
+    def any_deps_match(condition: "AssetCondition") -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition if at least one partition
+        of any of its dependencies evaluate to True for the given condition.
+        """
+        from .dep_condition import AnyDepsCondition
+
+        return AnyDepsCondition(operand=condition)
+
+    @staticmethod
+    def all_deps_match(condition: "AssetCondition") -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition if at least one partition
+        of all of its dependencies evaluate to True for the given condition.
+        """
+        from .dep_condition import AllDepsCondition
+
+        return AllDepsCondition(operand=condition)
+
 
 @experimental
 @whitelist_for_serdes
