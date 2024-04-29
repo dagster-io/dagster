@@ -69,10 +69,11 @@ Code fences
 
 `{% /button %}`
 
+It causes an odd formatting issue.
+
 {% button link="https://dog.ceo/" %} 
 Click Me!
 {% /button %}
-Or else they thrown a hydration error.
 {% /warning %}
 
 ### Button Container
@@ -95,3 +96,17 @@ Which is pretty neat.
 
 ### This is a header with a cross {% cross /%}
 Which is also pretty neat.
+
+## Images
+We've got a tag that handles making sure images are pretty, optimized, and accessible.
+
+`{% image src="/images/some-image.png" width=300 height=200 alt="Text for screenreaders. Usually you want to describe things here." /%}`
+
+<!-- {% image src="/images/concepts/assets/asset-activity-observation.png" width=300 height=200 alt="Text for screenreaders. Usually you want to describe things here." /%} -->
+
+{% image src="/images/concepts/assets/asset-activity-observation.png" width=1758 height=1146 alt="Text go here" /%}
+
+
+## Badges
+
+{% badge text="Badgey the Badger" /%}
