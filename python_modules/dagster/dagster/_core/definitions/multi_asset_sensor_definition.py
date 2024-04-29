@@ -411,19 +411,19 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         else:
             asset_keys = check.opt_sequence_param(asset_keys, "asset_keys", of_type=AssetKey)
 
-        asset_records = self.instance.get_asset_records(asset_keys)
+        latest_asset_infos = self.instance.get_latest_asset_infos(asset_keys)
 
         asset_event_records: Dict[AssetKey, Optional[EventLogRecord]] = {
             asset_key: None for asset_key in asset_keys
         }
-        for record in asset_records:
+        for latest_asset_info in latest_asset_infos:
             if (
-                record.asset_entry.last_materialization_record
-                and record.asset_entry.last_materialization_record.storage_id
-                > (self._get_cursor(record.asset_entry.asset_key).latest_consumed_event_id or 0)
+                latest_asset_info.last_materialization_record
+                and latest_asset_info.last_materialization_record.storage_id
+                > (self._get_cursor(latest_asset_info.asset_key).latest_consumed_event_id or 0)
             ):
-                asset_event_records[record.asset_entry.asset_key] = (
-                    record.asset_entry.last_materialization_record
+                asset_event_records[latest_asset_info.asset_key] = (
+                    latest_asset_info.last_materialization_record
                 )
 
         return asset_event_records
