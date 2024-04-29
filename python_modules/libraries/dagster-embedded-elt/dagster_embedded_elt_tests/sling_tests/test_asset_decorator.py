@@ -198,10 +198,11 @@ def test_base_with_meta_config_translator():
         },
     }
 
+    # top level group is set in `defaults` and overridden in sub meta sections
     assert my_sling_assets.group_names_by_key == {
-        AssetKey(["target", "public", "all_users"]): "default",
-        AssetKey(["target", "public", "accounts"]): "default",
-        AssetKey(["target", "public", "transactions"]): "default",
+        AssetKey(["target", "public", "all_users"]): "my_group",
+        AssetKey(["target", "public", "accounts"]): "my_group",
+        AssetKey(["target", "public", "transactions"]): "my_group",
         AssetKey(["target", "departments"]): "group_2",
     }
 

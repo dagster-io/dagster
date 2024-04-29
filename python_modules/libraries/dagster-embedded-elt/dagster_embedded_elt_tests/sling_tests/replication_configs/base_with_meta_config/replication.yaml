@@ -4,6 +4,9 @@ target: MY_TARGET
 defaults:
   mode: full-refresh
   object: "{stream_schema}_{stream_table}"
+  meta:
+    dagster:
+      group: my_group
 
 streams:
   public.accounts:
