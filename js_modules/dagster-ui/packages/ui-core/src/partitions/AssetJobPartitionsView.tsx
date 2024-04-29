@@ -1,4 +1,4 @@
-import {Box, Button, Subheading, useViewport} from '@dagster-io/ui-components';
+import {Box, Button, Subtitle, useViewport} from '@dagster-io/ui-components';
 import {useEffect, useMemo, useState} from 'react';
 
 import {JobBackfillsTable} from './JobBackfillsTable';
@@ -96,7 +96,7 @@ export const AssetJobPartitionsView = ({
         border="bottom"
         padding={{vertical: 16, horizontal: 24}}
       >
-        <Subheading>Status</Subheading>
+        <Subtitle>Status</Subtitle>
         <Box flex={{gap: 8}}>
           <Button onClick={() => setShowAssets(!showAssets)}>
             {showAssets ? 'Hide per-asset status' : 'Show per-asset status'}
@@ -164,7 +164,7 @@ export const AssetJobPartitionsView = ({
         border="top-and-bottom"
         style={{marginBottom: -1}}
       >
-        <Subheading>Backfill history</Subheading>
+        <Subtitle>Backfill history</Subtitle>
       </Box>
       <Box margin={{bottom: 20}}>
         <JobBackfillsTable
@@ -218,7 +218,7 @@ const AssetJobPartitionGraphs = ({
   return (
     <>
       <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
-        <Subheading>Run duration</Subheading>
+        <Subtitle>Run duration</Subtitle>
       </Box>
 
       <Box margin={24}>
@@ -231,7 +231,7 @@ const AssetJobPartitionGraphs = ({
         />
       </Box>
       <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
-        <Subheading>Step durations</Subheading>
+        <Subtitle>Step durations</Subtitle>
       </Box>
       <Box margin={24}>
         <PartitionGraph

@@ -9,7 +9,7 @@ import {
   Icon,
   NonIdealState,
   Spinner,
-  Subheading,
+  Subtitle,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -478,7 +478,7 @@ const Section = ({
   children: React.ReactNode;
 }) => (
   <Box flex={{direction: 'column', gap: 4}}>
-    <Subheading>{title}</Subheading>
+    <Subtitle>{title}</Subtitle>
     <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} border="top">
       {children}
     </Box>

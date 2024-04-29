@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {Body, Subheading} from './Text';
+import {Body, Subtitle} from './Text';
 import {FontFamily} from './styles';
 
 export type ErrorCollectionContextValue = {
@@ -71,7 +71,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           flex={{direction: 'column', gap: 8}}
           padding={16}
         >
-          <Subheading>Sorry, {this.props.region} can&apos;t be displayed.</Subheading>
+          <Subtitle>Sorry, {this.props.region} can&apos;t be displayed.</Subtitle>
           <Body color={Colors.textLight()}>{errorCollectionMessage}</Body>
           {errorStackIncluded && <Trace>{`${error.message}\n\n${error.stack}`}</Trace>}
         </Box>

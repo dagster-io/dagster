@@ -13,7 +13,7 @@ import {
   DialogHeader,
   Icon,
   RadioContainer,
-  Subheading,
+  Subtitle,
   Tooltip,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
@@ -461,7 +461,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             isInitiallyOpen={true}
             title={
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Subheading>Partition selection</Subheading>
+                <Subtitle>Partition selection</Subtitle>
                 <span>All partitions</span>
               </Box>
             }
@@ -482,7 +482,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             isInitiallyOpen={true}
             title={
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Subheading>Partition selection</Subheading>
+                <Subtitle>Partition selection</Subtitle>
                 {target.type === 'pureWithAnchorAsset' ? (
                   <span /> // we won't know until runtime
                 ) : (
@@ -498,7 +498,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 data-testid={testId('anchor-asset-label')}
               >
                 <Icon name="asset" />
-                <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
+                <Subtitle>{displayNameForAssetKey(target.anchorAssetKey)}</Subtitle>
               </Box>
             )}
             {selections.map((range, idx) => (
@@ -507,7 +507,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 border={idx < selections.length - 1 ? 'bottom' : undefined}
                 padding={{vertical: 12, horizontal: 20}}
               >
-                <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
+                <Box as={Subtitle} flex={{alignItems: 'center', gap: 8}}>
                   <Icon name="partition" />
                   {range.dimension.name}
                 </Box>
@@ -550,7 +550,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         <ToggleableSection
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Tags</Subheading>
+              <Subtitle>Tags</Subtitle>
               <span>{tags.length} tags</span>
             </Box>
           }
@@ -588,7 +588,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         {target.type === 'job' && (
           <ToggleableSection
             isInitiallyOpen={true}
-            title={<Subheading data-testid={testId('backfill-options')}>Options</Subheading>}
+            title={<Subtitle data-testid={testId('backfill-options')}>Options</Subtitle>}
           >
             <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
               <Checkbox
@@ -600,7 +600,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               />
               {showSingleRunBackfillToggle ? (
                 <RadioContainer>
-                  <Subheading>Launch as...</Subheading>
+                  <Subtitle>Launch as...</Subtitle>
                   <Radio
                     data-testid={testId('ranges-as-tags-true-radio')}
                     checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
@@ -826,7 +826,7 @@ const Warnings = ({
         >
           <Box flex={{alignItems: 'center', gap: 12}}>
             <Icon name="warning" color={Colors.textYellow()} />
-            <Subheading>Warnings</Subheading>
+            <Subtitle>Warnings</Subtitle>
           </Box>
           <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>
         </Box>

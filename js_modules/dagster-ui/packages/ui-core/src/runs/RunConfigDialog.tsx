@@ -4,7 +4,7 @@ import {
   Dialog,
   DialogFooter,
   StyledRawCodeMirror,
-  Subheading,
+  Subtitle,
 } from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
@@ -47,7 +47,7 @@ export const RunConfigDialog = (props: Props) => {
         <Box flex={{direction: 'column', gap: 20}} style={{flex: 1, overflow: 'hidden'}}>
           {hasTags ? (
             <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-              <Subheading>Tags</Subheading>
+              <Subtitle>Tags</Subtitle>
               <div>
                 <RunTags tags={tags} mode={isJob ? null : mode} />
               </div>
@@ -56,7 +56,7 @@ export const RunConfigDialog = (props: Props) => {
           <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
             {hasTags ? (
               <Box border="bottom" padding={{left: 24, bottom: 16}}>
-                <Subheading>Config</Subheading>
+                <Subtitle>Config</Subtitle>
               </Box>
             ) : null}
             <CodeMirrorContainer>

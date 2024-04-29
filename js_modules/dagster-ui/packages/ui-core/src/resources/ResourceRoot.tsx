@@ -3,18 +3,18 @@ import {
   Alert,
   Box,
   ButtonLink,
-  CaptionMono,
   Colors,
   Group,
   Heading,
   Icon,
   MiddleTruncate,
   Mono,
+  MonoSmall,
   NonIdealState,
   Page,
   PageHeader,
   SplitPanelContainer,
-  Subheading,
+  Subtitle,
   Table,
   Tag,
   Tooltip,
@@ -246,7 +246,7 @@ const ResourceConfig = (props: {
       {nestedResources.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Resource dependencies</Subheading>
+            <Subtitle>Resource dependencies</Subtitle>
           </SectionHeader>
           <Table>
             <thead>
@@ -284,7 +284,7 @@ const ResourceConfig = (props: {
       )}
       <Box>
         <SectionHeader>
-          <Subheading>Configuration</Subheading>
+          <Subtitle>Configuration</Subtitle>
         </SectionHeader>
         <Table>
           <thead>
@@ -377,7 +377,7 @@ const ResourceUses = (props: {
       {parentResources.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Parent resources</Subheading>
+            <Subtitle>Parent resources</Subtitle>
           </SectionHeader>
           <Table>
             <thead>
@@ -408,7 +408,7 @@ const ResourceUses = (props: {
       {resourceDetails.assetKeysUsing.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Assets</Subheading>
+            <Subtitle>Assets</Subtitle>
           </SectionHeader>
           <Table>
             <thead>
@@ -433,7 +433,7 @@ const ResourceUses = (props: {
       {resourceDetails.jobsOpsUsing.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Jobs</Subheading>
+            <Subtitle>Jobs</Subtitle>
           </SectionHeader>
           <Table>
             <thead>
@@ -523,7 +523,7 @@ const ResourceUses = (props: {
         .map(({name, objects, icon}) => (
           <div key={name}>
             <SectionHeader>
-              <Subheading>{name}</Subheading>
+              <Subtitle>{name}</Subtitle>
             </SectionHeader>
             <Table>
               <thead>
@@ -585,7 +585,7 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
           )}
         </div>
       </Box>
-      <CaptionMono>{description}</CaptionMono>
+      <MonoSmall>{description}</MonoSmall>
     </Box>
   );
 };

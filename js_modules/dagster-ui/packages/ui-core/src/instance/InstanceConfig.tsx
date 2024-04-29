@@ -9,7 +9,7 @@ import {
   PageHeader,
   Spinner,
   StyledRawCodeMirror,
-  Subheading,
+  Subtitle,
 } from '@dagster-io/ui-components';
 import CodeMirror from 'codemirror';
 import {memo, useContext, useMemo} from 'react';
@@ -87,9 +87,9 @@ export const InstanceConfigContent = memo(() => {
         border="bottom"
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       >
-        <Subheading>
+        <Subtitle>
           Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
-        </Subheading>
+        </Subtitle>
         <QueryRefreshCountdown refreshState={refreshState} />
       </Box>
       {/* Div wrapper on CodeMirror to allow entire page to scroll */}

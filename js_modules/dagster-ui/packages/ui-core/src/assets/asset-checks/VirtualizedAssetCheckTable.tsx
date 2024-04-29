@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Body2, Box, Caption, Colors} from '@dagster-io/ui-components';
+import {Body, Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -79,7 +79,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
             <Link
               to={assetDetailsPathForAssetCheck({assetKey: assetNode.assetKey, name: row.name})}
             >
-              <Body2>{row.name}</Body2>
+              <Body>{row.name}</Body>
             </Link>
             <CaptionEllipsed>{row.description}</CaptionEllipsed>
           </Box>

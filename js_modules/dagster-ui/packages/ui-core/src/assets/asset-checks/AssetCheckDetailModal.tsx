@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {
-  Body2,
+  Body,
   Box,
   Button,
   Colors,
@@ -100,10 +100,10 @@ export function MigrationRequired() {
         title="Migration required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Body color={Colors.textLight()} style={{padding: '6px 0'}}>
               A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
-            </Body2>
+            </Body>
           </Box>
         }
       />
@@ -119,10 +119,10 @@ export function AgentUpgradeRequired() {
         title="Agent upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Body color={Colors.textLight()} style={{padding: '6px 0'}}>
               Checks require Dagster Cloud Agent version 1.5 or higher. Upgrade your agent(s) to use
               checks.
-            </Body2>
+            </Body>
           </Box>
         }
       />
@@ -138,10 +138,10 @@ export function NeedsUserCodeUpgrade() {
         title="Upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Body color={Colors.textLight()} style={{padding: '6px 0'}}>
               Checks aren&apos;t supported with dagster versions before 1.5. Upgrade the dagster
               library in this code location to use them.
-            </Body2>
+            </Body>
           </Box>
         }
       />
@@ -157,10 +157,10 @@ export function NoChecks() {
         title="No checks found for this asset"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Body color={Colors.textLight()} style={{padding: '6px 0'}}>
               Asset Checks run after a materialization and can verify a particular property of a
               data asset. Checks can help ensure that the contents of each data asset is correct.
-            </Body2>
+            </Body>
             {/* <Box
               as="a"
               href="https://docs.dagster.io/concepts/assets/asset-checks"
