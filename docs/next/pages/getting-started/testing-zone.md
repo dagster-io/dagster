@@ -13,7 +13,7 @@ _Italic_
 
 [Links](/docs/nodes)
 
-![Images](/logo.svg)
+![Images](/images/concepts/assets/asset-activity-observation.png)
 
 Lists
 - Item 1
@@ -110,3 +110,7 @@ We've got a tag that handles making sure images are pretty, optimized, and acces
 ## Badges
 
 {% badge text="Badgey the Badger" /%}
+
+## Code Reference Links
+
+{% codeReferenceLink filePath="examples/deploy_ecs" %}{% /codeReferenceLink %}

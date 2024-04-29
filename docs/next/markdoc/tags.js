@@ -2,6 +2,7 @@ import {Badge} from '../components/markdoc/Badge';
 import {Button, ButtonContainer} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
 import {Check, Cross} from '../components/markdoc/CheckCross';
+import {CodeReferenceLink} from '../components/markdoc/CodeReferenceLink';
 import {Image} from '../components/markdoc/Image';
 
 export const note = {
@@ -67,6 +68,20 @@ export const badge = {
   attributes: {
     text: {
       type: String,
+    },
+  },
+};
+
+export const codeReferenceLink = {
+  render: CodeReferenceLink,
+  children: ['text'],
+  attributes: {
+    filePath: {
+      type: String,
+    },
+    isInline: {
+      type: Boolean,
+      default: false,
     },
   },
 };
