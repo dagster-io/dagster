@@ -52,15 +52,13 @@ export class Dependency {
 
 /** Use this to declare a dependency on an apollo query result */
 export function useQueryResultDependency(queryResult: QueryResult<any>, name: string) {
-  const dep = useDependency({name});
+  const dep = useDependency(useMemo(() => ({name}), [name]));
   const hasData = !!queryResult.data;
+
   useLayoutEffect(() => {
     if (hasData) {
       dep.completeDependency();
     }
-    return () => {
-      dep.cancelDependency();
-    };
   }, [dep, hasData]);
 }
 
@@ -68,11 +66,14 @@ export function useDependency(props: DependencyProps) {
   const {addDependency, cancelDependency, completeDependency, createDependency} =
     useContext(TraceContext);
 
-  const dependency = useMemo(() => createDependency(props), [props]);
+  const dependency = useMemo(() => createDependency(props), [createDependency, props]);
 
   useLayoutEffect(() => {
     addDependency(dependency);
     return () => {
+      // By default cancel a dependency when the component unmounts.
+      // Rely on the user of TraceContext to track if the dependency
+      // was already completed prior to this.
       cancelDependency(dependency);
     };
   }, [addDependency, cancelDependency, dependency]);
