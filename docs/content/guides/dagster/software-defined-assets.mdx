@@ -1,17 +1,17 @@
 ---
-title: Software-Defined Assets with Pandas and PySpark | Dagster
-description: The "software-defined asset" APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
+title: Asset definitions with Pandas and PySpark | Dagster
+description: The asset definition APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
 ---
 
-# Software-Defined Assets with Pandas and PySpark
+# Asset definitions with Pandas and PySpark
 
 <CodeReferenceLink filePath="examples/assets_pandas_pyspark" />
 
-The software-defined asset APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
+The asset definition APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
 
 In Dagster, an "asset" is a data product, an object produced by a data pipeline. Some examples are tables, machine learning models, or reports.
 
-Conceptually, software-defined assets invert the typical relationship between assets and computation. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets. Each asset knows how to compute its contents from upstream assets.
+Conceptually, asset definitions invert the typical relationship between assets and computation. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets. Each asset knows how to compute its contents from upstream assets.
 
 Taking a software-defined asset approach has a few main benefits:
 

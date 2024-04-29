@@ -1,6 +1,6 @@
 ---
-title: Introduction to Dagster and Software-defined Assets Tutorial | Dagster Docs
-description: Software-defined assets are the building blocks of Dagster
+title: Introduction to Dagster and Asset Definitions Tutorial | Dagster Docs
+description: Asset definitions are the building blocks of Dagster
 ---
 
 # Tutorial, part one: Intro to Dagster
@@ -11,9 +11,9 @@ In this tutorial, you'll analyze activity on the popular news aggregation websit
 
 ---
 
-## Introduction to Software-defined assets
+## Introduction to asset definitions
 
-Before building a Dagster project, you'll first learn about Dagster's core concept: the Software-defined asset (SDA).
+Before building a Dagster project, you'll first learn about Dagster's core concept: the asset definition.
 
 An asset is an object in persistent storage that captures some understanding of the world. Assets can be any type of object, such as:
 
@@ -23,7 +23,7 @@ An asset is an object in persistent storage that captures some understanding of 
 
 If you have an existing data pipeline, you likely already have assets.
 
-_Software-defined assets_ are a Dagster concept that allows you to write data pipelines in terms of the assets that they produce. How they work: you write code that describes an asset that you want to exist, along with any other assets that the asset is derived from, and a function that can be run to compute the contents of the asset.
+_Asset definitions_ are a Dagster concept that allows you to write data pipelines in terms of the assets that they produce. How they work: you write code that describes an asset that you want to exist, along with any other assets that the asset is derived from, and a function that can be run to compute the contents of the asset.
 
 Here's an example. The asset is a dataset called `topstories`, and it depends on another asset called `topstory_ids`. `topstories` gets the IDs computed in `topstory_ids`, then fetches data for each of those IDs.
 
@@ -70,7 +70,7 @@ height={405}
   and Graphs, refer to{" "}
   <a href="/guides/dagster/intro-to-ops-jobs">their tutorial</a> and a guide on{" "}
   <a href="/guides/dagster/how-assets-relate-to-ops-and-graphs">
-    how SDAs relate to ops and graphs
+    how asset definitions relate to ops and graphs
   </a>
   .
 </Note>
@@ -79,10 +79,10 @@ height={405}
 
 ## Next steps
 
-In this section, you learned how Software-defined assets are the building blocks of Dagster and also about the benefits of asset-based pipelines.
+In this section, you learned how asset definitions are the building blocks of Dagster and also about the benefits of asset-based pipelines.
 
 Within your current data pipelines, you likely have many assets. Or if you are earlier in your data journey, you might have an understanding of what data your stakeholders need.
 
-When going through this tutorial, think about what benefits you'll be receiving by treating your data as Software-defined assets in Dagster.
+When going through this tutorial, think about what benefits you'll be receiving by defining your data assets in Dagster.
 
 In [the next section](/tutorial/setup), you'll install Dagster on your computer and start a new project.

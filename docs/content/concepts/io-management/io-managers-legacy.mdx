@@ -40,7 +40,7 @@ IO Managers are user-provided objects that store asset and op outputs and load t
 
 Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="multi_asset" decorator/>, and <PyObject object="op" decorator/> can have parameters and return values that are loaded from and written to persistent storage. <PyObject module="dagster" object="IOManager" pluralize /> let the user control how this data is stored and how it's loaded in downstream ops and assets. For `@asset` and `@multi_asset`, the IO manager effectively determines where the physical asset lives.
 
-The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Software-defined assets and ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
+The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Asset definitions and ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 For non-asset jobs with inputs that aren't connected to upstream outputs, see the [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview.
 
@@ -51,7 +51,7 @@ that are responsible for storing the output of an asset or op and loading it as 
 to downstream assets or ops. For example, an IO manager might store and load objects
 from files on a filesystem.
 
-Each software-defined asset can have its own IO manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different IO manager:
+Each asset definition can have its own IO manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different IO manager:
 
 <center>
   <Image
@@ -83,7 +83,7 @@ IO managers are [resources](/concepts/resources), which means users can supply d
 
 ---
 
-## Using IO managers with software-defined assets
+## Using IO managers with asset definitions
 
 ### Applying IO managers to assets
 
@@ -821,7 +821,7 @@ class DataframeTableIOManagerWithMetadata(IOManager):
 
 Any entries yielded this way will be attached to the `Handled Output` event for this output.
 
-Additionally, if the handled output is part of a software-defined asset, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
+Additionally, if the handled output is part of an asset definition, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
 
 ## See it in action
 
