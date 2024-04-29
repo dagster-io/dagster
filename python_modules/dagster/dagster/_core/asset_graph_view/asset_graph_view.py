@@ -223,7 +223,7 @@ class AssetSlice:
 
     @property
     def is_empty(self) -> bool:
-        return self._compatible_subset.size == 0
+        return self._compatible_subset.is_empty
 
 
 class AssetGraphView:
@@ -355,6 +355,11 @@ class AssetGraphView:
                 current_time=self.effective_dt,
                 parent_asset_subset=asset_slice.convert_to_valid_asset_subset(),
             ),
+        )
+
+    def compute_materialized_asset_slice(self, asset_key: "AssetKey") -> "AssetSlice":
+        return _slice_from_subset(
+            self, self._queryer.get_materialized_asset_subset(asset_key=asset_key)
         )
 
     def compute_intersection_with_partition_keys(

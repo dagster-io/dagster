@@ -411,6 +411,13 @@ class AssetCondition(ABC, DagsterModel):
 
         return AllDepsCondition(operand=condition)
 
+    @staticmethod
+    def materialized() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when it has been materialized."""
+        from .slice_condition import MaterializedSchedulingCondition
+
+        return MaterializedSchedulingCondition()
+
 
 @experimental
 @whitelist_for_serdes
