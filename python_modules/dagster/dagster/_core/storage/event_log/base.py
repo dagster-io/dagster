@@ -117,6 +117,30 @@ class LatestAssetInfo(NamedTuple):
     storage_id: int
     asset_entry: AssetEntry
 
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.asset_entry.asset_key
+
+    @property
+    def last_materialization_record(self) -> Optional["EventLogRecord"]:
+        return self.asset_entry.last_materialization_record
+
+    @property
+    def last_observation_record(self) -> Optional["EventLogRecord"]:
+        return self.asset_entry.last_observation_record
+
+    @property
+    def last_run_id(self) -> Optional[str]:
+        return self.asset_entry.last_run_id
+
+    @property
+    def asset_details(self) -> Optional[AssetDetails]:
+        return self.asset_entry.asset_details
+
+    @property
+    def cached_status(self) -> Optional["AssetStatusCacheValue"]:
+        return self.asset_entry.cached_status
+
 
 class PlannedMaterializationInfo(NamedTuple):
     """Internal representation of an planned materialization event, containing storage_id / run_id.
