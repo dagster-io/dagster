@@ -3,11 +3,16 @@ import os
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
+import yaml
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
 
-from .errors import DagsterDbtManifestNotFoundError, DagsterDbtProjectNotFoundError
+from .errors import (
+    DagsterDbtManifestNotFoundError,
+    DagsterDbtProjectNotFoundError,
+    DagsterDbtProjectYmlFileNotFoundError,
+)
 
 logger = logging.getLogger("dagster-dbt.artifacts")
 
@@ -52,13 +57,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
     def on_load(self, project: "DbtProject"):
         if self.using_dagster_dev() or self.parse_on_load_opt_in():
-            # guard against multiple Dagster processes trying to update this at the same time
-            run_with_concurrent_update_guard(
-                project.manifest_path,
-                self.prepare,
-                project=project,
-            )
-
+            self.prepare(project)
             if not project.manifest_path.exists():
                 raise DagsterDbtManifestNotFoundError(
                     f"Did not find manifest.json at expected path {project.manifest_path} "
@@ -67,6 +66,30 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
                 )
 
     def prepare(self, project: "DbtProject") -> None:
+        # guard against multiple Dagster processes trying to update this at the same time
+        if project.has_uninstalled_deps:
+            run_with_concurrent_update_guard(
+                project.project_dir.joinpath("package-lock.yml"),
+                self._prepare_packages,
+                project=project,
+            )
+
+        run_with_concurrent_update_guard(
+            project.manifest_path,
+            self._prepare_manifest,
+            project=project,
+        )
+
+    def _prepare_packages(self, project: "DbtProject") -> None:
+        from .core.resources_v2 import DbtCliResource
+
+        (
+            DbtCliResource(project_dir=project)
+            .cli(["deps", "--quiet"], target_path=project.target_path)
+            .wait()
+        )
+
+    def _prepare_manifest(self, project: "DbtProject") -> None:
         from .core.resources_v2 import DbtCliResource
 
         (
@@ -155,6 +178,7 @@ class DbtProject(DagsterModel):
     manifest_path: Path
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
+    has_uninstalled_deps: bool
     manifest_preparer: DbtManifestPreparer
 
     def __init__(
@@ -177,6 +201,25 @@ class DbtProject(DagsterModel):
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
+        dependencies_path = project_dir.joinpath("dependencies.yml")
+        packages_path = project_dir.joinpath("packages.yml")
+
+        dbt_project_yml_path = project_dir.joinpath("dbt_project.yml")
+        if not dbt_project_yml_path.exists():
+            raise DagsterDbtProjectYmlFileNotFoundError(
+                f"Did not find dbt_project.yml at expected path {dbt_project_yml_path}. "
+                f"Ensure the specified project directory respects all dbt project requirements."
+            )
+        with open(project_dir.joinpath("dbt_project.yml")) as file:
+            dbt_project_yml = yaml.safe_load(file)
+        packages_install_path = project_dir.joinpath(
+            dbt_project_yml.get("packages-install-path", "dbt_packages")
+        )
+
+        has_uninstalled_deps = (
+            dependencies_path.exists() or packages_path.exists()
+        ) and not packages_install_path.exists()
+
         super().__init__(
             project_dir=project_dir,
             target_path=target_path,
@@ -184,6 +227,7 @@ class DbtProject(DagsterModel):
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
+            has_uninstalled_deps=has_uninstalled_deps,
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
