@@ -292,6 +292,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Sequence[LatestAssetInfo]:
         pass
 
+    def get_latest_asset_infos(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Sequence[LatestAssetInfo]:
+        return self.get_asset_records(asset_keys)
+
     @abstractmethod
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         pass

@@ -2212,6 +2212,20 @@ class DagsterInstance(DynamicPartitionsStore):
             return status_by_partition
 
     @public
+    def get_latest_asset_infos(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Sequence["LatestAssetInfo"]:
+        """Return the latest materialization status for the given asset keys.
+
+        Args:
+            asset_keys (Optional[Sequence[AssetKey]]): List of asset keys to retrieve status for.
+
+        Returns:
+            Sequence[LatestAssetInfo]: List of asset status.
+        """
+        return self._event_storage.get_latest_asset_infos(asset_keys)
+
+    @public
     @traced
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
