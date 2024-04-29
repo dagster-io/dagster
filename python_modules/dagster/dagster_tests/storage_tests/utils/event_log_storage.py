@@ -3098,17 +3098,6 @@ class TestEventLogStorage:
                 )
             )
 
-            records = storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=a,
-                )
-            )
-            assert len(records) == 1
-            record = records[0]
-            assert record.partition_key is None
-            assert record.event_log_entry.dagster_event.partitions_subset == partitions_subset
-
             info = storage.get_latest_planned_materialization_info(asset_key=a)
             assert info
             assert info.run_id == run_id_1
@@ -3288,6 +3277,11 @@ class TestEventLogStorage:
                         ),
                     )
                 )
+
+                single_partition_event_id = storage.get_latest_planned_materialization_info(
+                    asset_key=a
+                ).storage_id
+
                 storage.store_event(
                     EventLogEntry(
                         error_info=None,
@@ -3305,26 +3299,9 @@ class TestEventLogStorage:
                     )
                 )
 
-                records = storage.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                        asset_key=a,
-                    ),
-                    ascending=True,
-                )
-                assert len(records) == 2
-                single_partition_event = records[0]
-                assert (
-                    single_partition_event.event_log_entry.dagster_event.partition == "2023-01-05"
-                )
-
-                partitions_subset_event = records[1]
-                event_id = partitions_subset_event.storage_id
-                assert partitions_subset_event.partition_key is None
-                assert (
-                    partitions_subset_event.event_log_entry.dagster_event.partitions_subset
-                    == partitions_subset
-                )
+                partition_subset_event_id = storage.get_latest_planned_materialization_info(
+                    asset_key=a
+                ).storage_id
 
                 assert storage.get_materialized_partitions(a) == {"2023-01-05"}
                 planned_but_no_materialization_partitions = storage.get_latest_asset_partition_materialization_attempts_without_materializations(
@@ -3340,11 +3317,11 @@ class TestEventLogStorage:
                     }
                     assert planned_but_no_materialization_partitions["2023-01-05"] == (
                         subset_event_run_id,
-                        event_id,
+                        partition_subset_event_id,
                     )
                     assert planned_but_no_materialization_partitions["2023-01-06"] == (
                         subset_event_run_id,
-                        event_id,
+                        partition_subset_event_id,
                     )
 
                 else:
@@ -3353,7 +3330,7 @@ class TestEventLogStorage:
                     assert planned_but_no_materialization_partitions.keys() == {"2023-01-05"}
                     assert planned_but_no_materialization_partitions["2023-01-05"] == (
                         subset_event_run_id,
-                        single_partition_event.storage_id,
+                        single_partition_event_id,
                     )
 
                     # When asset partitions table is not present get_latest_storage_id_by_partition
@@ -3362,7 +3339,7 @@ class TestEventLogStorage:
                         a, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
                     )
                     assert latest_storage_id_by_partition == {
-                        "2023-01-05": single_partition_event.storage_id
+                        "2023-01-05": single_partition_event_id
                     }
 
     def test_get_latest_asset_partition_materialization_attempts_without_materializations_event_ids(
@@ -3387,6 +3364,7 @@ class TestEventLogStorage:
                     ),
                 )
             )
+            foo_event_id = storage.get_latest_planned_materialization_info(asset_key=a).storage_id
             storage.store_event(
                 EventLogEntry(
                     error_info=None,
@@ -3401,30 +3379,22 @@ class TestEventLogStorage:
                     ),
                 )
             )
-            records = storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=a,
-                )
-            )
-            assert len(records) == 2
-            assert records[0].event_log_entry.dagster_event.event_specific_data.partition == "bar"
-            assert records[1].event_log_entry.dagster_event.event_specific_data.partition == "foo"
+            bar_event_id = storage.get_latest_planned_materialization_info(asset_key=a).storage_id
             assert (
                 storage.get_latest_asset_partition_materialization_attempts_without_materializations(
                     a
                 )
                 == {
-                    "foo": (run_id_1, records[1].storage_id),
-                    "bar": (run_id_2, records[0].storage_id),
+                    "foo": (run_id_1, foo_event_id),
+                    "bar": (run_id_2, bar_event_id),
                 }
             )
             assert (
                 storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                    a, records[1].storage_id
+                    a, foo_event_id
                 )
                 == {
-                    "bar": (run_id_2, records[0].storage_id),
+                    "bar": (run_id_2, bar_event_id),
                 }
             )
 
@@ -3448,8 +3418,8 @@ class TestEventLogStorage:
                     a
                 )
                 == {
-                    "foo": (run_id_1, records[1].storage_id),
-                    "bar": (run_id_3, records[0].storage_id + 1),
+                    "foo": (run_id_1, foo_event_id),
+                    "bar": (run_id_3, bar_event_id + 1),
                 }
             )
 
@@ -3508,28 +3478,17 @@ class TestEventLogStorage:
             )
         )
 
-        # legacy API
-        records = storage.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                asset_key=a,
-            )
-        )
-        assert len(records) == 1
-        assert records[0].partition_key == "foo"
-        foo_record = records[0]
-
         # unpartitioned query
         unpartitioned_info = storage.get_latest_planned_materialization_info(asset_key=a)
         assert unpartitioned_info
         assert unpartitioned_info.run_id == test_run_id
-        assert unpartitioned_info.storage_id == foo_record.storage_id
+        foo_storage_id = unpartitioned_info.storage_id
 
         # matching partitioned query
         foo_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="foo")
         assert foo_info
         assert foo_info.run_id == test_run_id
-        assert foo_info.storage_id == unpartitioned_info.storage_id
+        assert foo_info.storage_id == foo_storage_id
 
         # unmatched partitioned query
         bar_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="bar")
@@ -3551,34 +3510,24 @@ class TestEventLogStorage:
             )
         )
 
-        # legacy API
-        records = storage.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                asset_key=a,
-            )
-        )
-        assert len(records) == 2
-        assert records[0].partition_key == "bar"
-        bar_record = records[0]
-
         # unpartitioned query
         unpartitioned_info = storage.get_latest_planned_materialization_info(asset_key=a)
         assert unpartitioned_info
         assert unpartitioned_info.run_id == test_run_id
-        assert unpartitioned_info.storage_id == bar_record.storage_id
+        assert unpartitioned_info.storage_id != foo_storage_id
+        bar_storage_id = unpartitioned_info.storage_id
 
         # foo partitioned query
         foo_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="foo")
         assert foo_info
         assert foo_info.run_id == test_run_id
-        assert foo_info.storage_id == foo_record.storage_id
+        assert foo_info.storage_id == foo_storage_id
 
         # bar partitioned query
         bar_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="bar")
         assert bar_info
         assert bar_info.run_id == test_run_id
-        assert bar_info.storage_id == bar_record.storage_id
+        assert bar_info.storage_id == bar_storage_id
 
     def test_asset_key_exists_on_observation(
         self,
