@@ -30,7 +30,6 @@ from ..asset_subset import AssetSubset, ValidAssetSubset
 from ..auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
     from .scheduling_condition_evaluation_context import SchedulingConditionEvaluationContext
 
 
@@ -420,7 +419,7 @@ class RuleCondition(AssetCondition):
         context.legacy_context.root_context.daemon_context.logger.debug(
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
-        evaluation_result = self.rule.evaluate_for_asset(context.legacy_context)
+        evaluation_result = self.rule.evaluate_for_asset(context)
         context.legacy_context.root_context.daemon_context.logger.debug(
             f"Rule returned {evaluation_result.true_subset.size} partitions "
             f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
@@ -544,7 +543,7 @@ class AssetConditionResult:
 
     @staticmethod
     def create(
-        context: Union["SchedulingConditionEvaluationContext", "AssetConditionEvaluationContext"],
+        context: "SchedulingConditionEvaluationContext",
         true_subset: AssetSubset,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: PackableValue = None,

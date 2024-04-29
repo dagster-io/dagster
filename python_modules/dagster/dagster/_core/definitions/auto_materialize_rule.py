@@ -31,7 +31,9 @@ if TYPE_CHECKING:
         SkipOnRunInProgressRule,
     )
 
-    from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .asset_condition.scheduling_condition_evaluation_context import (
+        SchedulingConditionEvaluationContext,
+    )
 
 
 class AutoMaterializeRule(ABC):
@@ -66,7 +68,7 @@ class AutoMaterializeRule(ABC):
 
     @abstractmethod
     def evaluate_for_asset(
-        self, context: "AssetConditionEvaluationContext"
+        self, context: "SchedulingConditionEvaluationContext"
     ) -> "AssetConditionResult":
         """The core evaluation function for the rule. This function takes in a context object and
         returns a mapping from evaluated rules to the set of asset partitions that the rule applies
