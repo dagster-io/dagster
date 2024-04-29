@@ -77,11 +77,15 @@ class SchedulingConditionEvaluationContext:
         )
 
     def for_child_condition(
-        self, child_condition: AssetCondition, candidate_subset: ValidAssetSubset
+        self,
+        child_condition: AssetCondition,
+        candidate_subset: ValidAssetSubset,
+        asset_key: Optional[AssetKey] = None,
     ):
         child_unique_id = child_condition.get_unique_id(parent_unique_id=self.condition_unique_id)
         return dataclasses.replace(
             self,
+            asset_key=asset_key or self.asset_key,
             condition=child_condition,
             condition_unique_id=child_unique_id,
             candidate_subset=candidate_subset,
