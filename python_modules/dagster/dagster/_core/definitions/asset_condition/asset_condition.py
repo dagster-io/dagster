@@ -1,4 +1,3 @@
-import functools
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import (
@@ -96,7 +95,7 @@ class AssetConditionEvaluation(DagsterModel):
     @staticmethod
     def from_result(result: "AssetConditionResult") -> "AssetConditionEvaluation":
         return AssetConditionEvaluation(
-            condition_snapshot=result.condition.snapshot,
+            condition_snapshot=result.condition.get_snapshot(result.condition_unique_id),
             start_timestamp=result.start_timestamp,
             end_timestamp=result.end_timestamp,
             true_subset=result.true_subset,
@@ -152,11 +151,10 @@ class AssetConditionEvaluation(DagsterModel):
                 | discarded_subset
             )
 
-    def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
+    def for_child(self, child_unique_id: str) -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
         has an identical hash to the given condition.
         """
-        child_unique_id = child_condition.snapshot.unique_id
         for child_evaluation in self.child_evaluations:
             if child_evaluation.condition_snapshot.unique_id == child_unique_id:
                 return child_evaluation
@@ -222,7 +220,7 @@ class AssetConditionEvaluationState:
             r: AssetConditionResult,
         ) -> Mapping[str, PackableValue]:
             extra_state: Dict[str, PackableValue] = (
-                {r.condition.unique_id: r.extra_state} if r.extra_state else {}
+                {r.condition_unique_id: r.extra_state} if r.extra_state else {}
             )
             for child in r.child_results:
                 extra_state.update(_flatten_extra_state(child))
@@ -235,11 +233,11 @@ class AssetConditionEvaluationState:
             extra_state_by_unique_id=_flatten_extra_state(root_result),
         )
 
-    def get_extra_state(self, condition: "AssetCondition", as_type: Type[T]) -> Optional[T]:
+    def get_extra_state(self, unique_id: str, as_type: Type[T]) -> Optional[T]:
         """Returns the value from the extras dict for the given condition, if it exists and is of
         the expected type. Otherwise, returns None.
         """
-        extra_state = self.extra_state_by_unique_id.get(condition.unique_id)
+        extra_state = self.extra_state_by_unique_id.get(unique_id)
         if isinstance(extra_state, as_type):
             return extra_state
         return None
@@ -279,12 +277,9 @@ class AssetCondition(ABC, DagsterModel):
             )
     """
 
-    @property
-    def unique_id(self) -> str:
-        parts = [
-            self.__class__.__name__,
-            *[child.unique_id for child in self.children],
-        ]
+    def get_unique_id(self, parent_unique_id: Optional[str]) -> str:
+        """Returns a unique identifier for this condition within the broader condition tree."""
+        parts = [str(parent_unique_id), self.__class__.__name__, self.description]
         return non_secure_md5_hash_str("".join(parts).encode())
 
     @abstractmethod
@@ -341,13 +336,12 @@ class AssetCondition(ABC, DagsterModel):
             return None
         return self.children[-1]
 
-    @functools.cached_property
-    def snapshot(self) -> AssetConditionSnapshot:
+    def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
         return AssetConditionSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
-            unique_id=self.unique_id,
+            unique_id=unique_id,
         )
 
     @staticmethod
@@ -405,11 +399,6 @@ class RuleCondition(AssetCondition):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 
     rule: AutoMaterializeRule
-
-    @property
-    def unique_id(self) -> str:
-        parts = [self.rule.__class__.__name__, self.description]
-        return non_secure_md5_hash_str("".join(parts).encode())
 
     @property
     def description(self) -> str:
@@ -513,6 +502,7 @@ class NotAssetCondition(AssetCondition):
 @dataclass(frozen=True)
 class AssetConditionResult:
     condition: AssetCondition
+    condition_unique_id: str
     start_timestamp: float
     end_timestamp: float
 
@@ -532,6 +522,7 @@ class AssetConditionResult:
         """Returns a new AssetConditionEvaluation from the given child results."""
         return AssetConditionResult(
             condition=context.condition,
+            condition_unique_id=context.condition_unique_id,
             start_timestamp=context.start_timestamp,
             end_timestamp=pendulum.now("UTC").timestamp(),
             true_subset=true_subset,
@@ -551,6 +542,7 @@ class AssetConditionResult:
         """Returns a new AssetConditionEvaluation from the given parameters."""
         return AssetConditionResult(
             condition=context.condition,
+            condition_unique_id=context.condition_unique_id,
             start_timestamp=context.start_timestamp,
             end_timestamp=pendulum.now("UTC").timestamp(),
             true_subset=true_subset,

@@ -22,19 +22,20 @@ import pendulum
 from dagster._core.definitions.asset_condition.asset_condition import (
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..asset_subset import AssetSubset, ValidAssetSubset
-from ..base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.data_time import CachingDataTimeResolver
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
     from ..asset_daemon_context import AssetDaemonContext
+    from ..base_asset_graph import BaseAssetGraph
     from .asset_condition import (
         AssetCondition,
         AssetConditionEvaluation,
@@ -68,8 +69,8 @@ class AssetConditionEvaluationContext:
     previous_evaluation: Optional["AssetConditionEvaluation"]
     candidate_subset: ValidAssetSubset
 
-    instance_queryer: CachingInstanceQueryer
-    data_time_resolver: CachingDataTimeResolver
+    instance_queryer: "CachingInstanceQueryer"
+    data_time_resolver: "CachingDataTimeResolver"
     daemon_context: "AssetDaemonContext"
 
     evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"]
@@ -83,8 +84,8 @@ class AssetConditionEvaluationContext:
         asset_key: AssetKey,
         condition: "AssetCondition",
         previous_evaluation_state: Optional["AssetConditionEvaluationState"],
-        instance_queryer: CachingInstanceQueryer,
-        data_time_resolver: CachingDataTimeResolver,
+        instance_queryer: "CachingInstanceQueryer",
+        data_time_resolver: "CachingDataTimeResolver",
         daemon_context: "AssetDaemonContext",
         evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
@@ -113,12 +114,12 @@ class AssetConditionEvaluationContext:
         )
 
     def for_child(
-        self, condition: "AssetCondition", candidate_subset: AssetSubset
+        self, child_condition: "AssetCondition", child_unique_id: str, candidate_subset: AssetSubset
     ) -> "AssetConditionEvaluationContext":
         return dataclasses.replace(
             self,
-            condition=condition,
-            previous_evaluation=self.previous_evaluation.for_child(condition)
+            condition=child_condition,
+            previous_evaluation=self.previous_evaluation.for_child(child_unique_id)
             if self.previous_evaluation
             else None,
             candidate_subset=candidate_subset,
@@ -132,7 +133,7 @@ class AssetConditionEvaluationContext:
         return self.root_ref or self
 
     @property
-    def asset_graph(self) -> BaseAssetGraph:
+    def asset_graph(self) -> "BaseAssetGraph":
         return self.instance_queryer.asset_graph
 
     @property
@@ -361,7 +362,7 @@ class AssetConditionEvaluationContext:
             FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
         ],
         ignore_subset: AssetSubset,
-    ) -> Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+    ) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
         """Combines information calculated on this tick with information from the previous tick,
         returning a tuple of the combined true subset and the combined subsets with metadata.
 
