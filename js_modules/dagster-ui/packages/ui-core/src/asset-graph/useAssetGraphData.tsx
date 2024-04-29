@@ -14,7 +14,7 @@ import {
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
-import {useQueryResultDependency} from '../performance/TraceContext';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
@@ -45,7 +45,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       groupSelector: options.groupSelector,
     },
   });
-  useQueryResultDependency(fetchResult, 'ASSET_GRAPH_QUERY');
+  useBlockTraceOnQueryResult(fetchResult, 'ASSET_GRAPH_QUERY');
 
   const nodes = fetchResult.data?.assetNodes;
 

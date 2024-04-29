@@ -1,20 +1,22 @@
 import {QueryResult} from '@apollo/client';
 import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 'react';
 
+export enum CompletionType {
+  SUCCESS = 1,
+  ERROR = 2,
+  CANCELLED = 3,
+}
+
 type TraceContextType = {
   createDependency: (_name: string) => Dependency | null;
   addDependency: (_dep: Dependency | null) => void;
-  cancelDependency: (_dep: Dependency | null) => void;
-  completeDependency: (_dep: Dependency | null) => void;
-  completeDependencyWithError: (_dep: Dependency | null) => void;
+  completeDependency: (_dep: Dependency | null, type: CompletionType) => void;
 };
 
 export const TraceContext = createContext<TraceContextType>({
   createDependency: (_name: string) => null,
   addDependency: (_dep) => {},
-  cancelDependency: (_dep) => {},
-  completeDependency: (_dep) => {},
-  completeDependencyWithError: () => {},
+  completeDependency: (_dep, _type) => {},
 });
 
 /**
@@ -23,16 +25,14 @@ export const TraceContext = createContext<TraceContextType>({
  * adds dependencies but you don't want that component or its dependencies
  * as your own dependency
  */
-export const OrphanedTraceContext = ({children}: {children: ReactNode}) => {
+export const OrphanDependenciesTraceContext = ({children}: {children: ReactNode}) => {
   return (
     <TraceContext.Provider
       value={useMemo(
         () => ({
           createDependency: () => null,
           addDependency: () => {},
-          cancelDependency: () => {},
           completeDependency: () => {},
-          completeDependencyWithError: () => {},
         }),
         [],
       )}
@@ -51,32 +51,26 @@ export class Dependency {
 }
 
 /** Use this to declare a dependency on an apollo query result */
-export function useQueryResultDependency(queryResult: QueryResult<any>, name: string) {
+export function useBlockTraceOnQueryResult(queryResult: QueryResult<any>, name: string) {
   const dep = useDependency(name);
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;
 
   useLayoutEffect(() => {
     if (hasData) {
-      dep.completeDependency();
+      dep.completeDependency(CompletionType.SUCCESS);
     }
   }, [dep, hasData]);
 
   useLayoutEffect(() => {
     if (!hasData && hasError) {
-      dep.completeDependencyWithError();
+      dep.completeDependency(CompletionType.ERROR);
     }
   }, [dep, hasData, hasError]);
 }
 
 export function useDependency(name: string) {
-  const {
-    addDependency,
-    cancelDependency,
-    completeDependency,
-    completeDependencyWithError,
-    createDependency,
-  } = useContext(TraceContext);
+  const {addDependency, completeDependency, createDependency} = useContext(TraceContext);
 
   const dependency = useMemo(() => createDependency(name), [createDependency, name]);
 
@@ -86,22 +80,16 @@ export function useDependency(name: string) {
       // By default cancel a dependency when the component unmounts.
       // Rely on the user of TraceContext to track if the dependency
       // was already completed prior to this.
-      cancelDependency(dependency);
+      completeDependency(dependency, CompletionType.CANCELLED);
     };
-  }, [addDependency, cancelDependency, dependency]);
+  }, [addDependency, completeDependency, dependency]);
 
   return useMemo(
     () => ({
-      completeDependency: () => {
-        completeDependency(dependency);
-      },
-      cancelDependency: () => {
-        cancelDependency(dependency);
-      },
-      completeDependencyWithError: () => {
-        completeDependencyWithError(dependency);
+      completeDependency: (type: CompletionType) => {
+        completeDependency(dependency, type);
       },
     }),
-    [cancelDependency, completeDependency, completeDependencyWithError, dependency],
+    [completeDependency, dependency],
   );
 }
