@@ -1,15 +1,21 @@
 import datetime
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Sequence
 
+import pendulum
+
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionSnapshot,
+    AssetSubsetWithMetadata,
 )
 from dagster._model import DagsterModel
+from dagster._serdes.serdes import PackableValue
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
-    from .legacy.asset_condition import AssetConditionResult
     from .operands import (
         InLatestTimeWindowCondition,
         InProgressSchedulingCondition,
@@ -49,7 +55,7 @@ class SchedulingCondition(ABC, DagsterModel):
         return non_secure_md5_hash_str("".join(parts).encode())
 
     @abstractmethod
-    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingContext") -> "SchedulingResult":
         raise NotImplementedError()
 
     def __and__(self, other: "SchedulingCondition") -> "AndAssetCondition":
@@ -124,4 +130,62 @@ class SchedulingCondition(ABC, DagsterModel):
 
         return InLatestTimeWindowCondition(
             lookback_seconds=lookback_delta.total_seconds() if lookback_delta else None
+        )
+
+
+@dataclass(frozen=True)
+class SchedulingResult:
+    condition: SchedulingCondition
+    condition_unique_id: str
+    start_timestamp: float
+    end_timestamp: float
+
+    true_slice: AssetSlice
+    candidate_subset: AssetSubset
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
+
+    extra_state: PackableValue
+    child_results: Sequence["SchedulingResult"]
+
+    @property
+    def true_subset(self) -> AssetSubset:
+        return self.true_slice.convert_to_valid_asset_subset()
+
+    @staticmethod
+    def create_from_children(
+        context: "SchedulingContext",
+        true_subset: ValidAssetSubset,
+        child_results: Sequence["SchedulingResult"],
+    ) -> "SchedulingResult":
+        """Returns a new AssetConditionEvaluation from the given child results."""
+        return SchedulingResult(
+            condition=context.condition,
+            condition_unique_id=context.condition_unique_id,
+            start_timestamp=context.start_timestamp,
+            end_timestamp=pendulum.now("UTC").timestamp(),
+            true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
+            candidate_subset=context.candidate_subset,
+            subsets_with_metadata=[],
+            child_results=child_results,
+            extra_state=None,
+        )
+
+    @staticmethod
+    def create(
+        context: "SchedulingContext",
+        true_subset: ValidAssetSubset,
+        subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
+        extra_state: PackableValue = None,
+    ) -> "SchedulingResult":
+        """Returns a new AssetConditionEvaluation from the given parameters."""
+        return SchedulingResult(
+            condition=context.condition,
+            condition_unique_id=context.condition_unique_id,
+            start_timestamp=context.start_timestamp,
+            end_timestamp=pendulum.now("UTC").timestamp(),
+            true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
+            candidate_subset=context.candidate_subset,
+            subsets_with_metadata=subsets_with_metadata,
+            child_results=[],
+            extra_state=extra_state,
         )

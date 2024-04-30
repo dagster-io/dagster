@@ -1,8 +1,8 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..legacy.asset_condition import AssetCondition, AssetConditionResult
-from ..scheduling_condition import SchedulingCondition
+from ..legacy.asset_condition import AssetCondition
+from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
 
 
@@ -19,7 +19,7 @@ class DepConditionWrapperCondition(SchedulingCondition):
     def description(self) -> str:
         return f"{self.dep_key.to_user_string()}"
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         # only evaluate parents of the current candidate subset
         dep_candidate_subset = context.candidate_slice.compute_parent_slice(
             self.dep_key
@@ -37,7 +37,7 @@ class DepConditionWrapperCondition(SchedulingCondition):
         true_subset = dep_result.true_slice.compute_child_slice(
             context.asset_key
         ).convert_to_valid_asset_subset()
-        return AssetConditionResult.create_from_children(
+        return SchedulingResult.create_from_children(
             context=context,
             true_subset=true_subset,
             child_results=[dep_result],
@@ -52,7 +52,7 @@ class AnyDepsCondition(AssetCondition):
     def description(self) -> str:
         return "Any deps"
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
         true_subset = context.asset_graph_view.create_empty_slice(
             context.asset_key
@@ -69,7 +69,7 @@ class AnyDepsCondition(AssetCondition):
             dep_results.append(dep_result)
             true_subset |= dep_result.true_subset
 
-        return AssetConditionResult.create_from_children(
+        return SchedulingResult.create_from_children(
             context, true_subset=context.candidate_subset & true_subset, child_results=dep_results
         )
 
@@ -82,7 +82,7 @@ class AllDepsCondition(SchedulingCondition):
     def description(self) -> str:
         return "All deps"
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
         true_subset = context.candidate_subset
 
@@ -97,6 +97,6 @@ class AllDepsCondition(SchedulingCondition):
             dep_results.append(dep_result)
             true_subset &= dep_result.true_subset
 
-        return AssetConditionResult.create_from_children(
+        return SchedulingResult.create_from_children(
             context, true_subset=true_subset, child_results=dep_results
         )

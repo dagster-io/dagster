@@ -2,7 +2,8 @@ import datetime
 
 from dagster._utils.schedules import reverse_cron_string_iterator
 
-from ..legacy.asset_condition import AssetCondition, AssetConditionResult
+from ..legacy.asset_condition import AssetCondition
+from ..scheduling_condition import SchedulingResult
 from ..scheduling_context import SchedulingContext
 
 
@@ -22,7 +23,7 @@ class UpdatedSinceCronCondition(AssetCondition):
         )
         return next(previous_ticks)
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         previous_cron_tick = self._get_previous_cron_tick(context)
 
         if (
@@ -50,4 +51,4 @@ class UpdatedSinceCronCondition(AssetCondition):
         else:
             true_subset = context.previous_evaluation.true_subset.as_valid(context.partitions_def)
 
-        return AssetConditionResult.create(context, true_subset)
+        return SchedulingResult.create(context, true_subset)

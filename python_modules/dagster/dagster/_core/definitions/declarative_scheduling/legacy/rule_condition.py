@@ -5,8 +5,9 @@ from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
+from ..scheduling_condition import SchedulingResult
 from ..scheduling_context import SchedulingContext
-from .asset_condition import AssetCondition, AssetConditionResult
+from .asset_condition import AssetCondition
 
 
 @experimental
@@ -26,7 +27,7 @@ class RuleCondition(AssetCondition):
     def description(self) -> str:
         return self.rule.description
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         context.legacy_context.root_context.daemon_context.logger.debug(
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )

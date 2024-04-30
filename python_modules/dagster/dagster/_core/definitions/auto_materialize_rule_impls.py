@@ -47,8 +47,8 @@ from dagster._utils.schedules import (
 from .base_asset_graph import sort_key_for_asset_partition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-        AssetConditionResult,
+    from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+        SchedulingResult,
     )
 
     from .declarative_scheduling.scheduling_context import (
@@ -74,13 +74,13 @@ class MaterializeOnRequiredForFreshnessRule(
     def description(self) -> str:
         return "required to meet this or downstream asset's freshness policy"
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
             context.legacy_context.root_context
         )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return SchedulingResult.create(context, true_subset, subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -188,8 +188,8 @@ class MaterializeOnCronRule(
                 for time_partition_key in missed_time_partition_keys
             }
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         missed_ticks = self.missed_cron_ticks(context)
         new_asset_partitions = self.get_new_candidate_asset_partitions(context, missed_ticks)
@@ -216,7 +216,7 @@ class MaterializeOnCronRule(
             - context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
-        return AssetConditionResult.create(context, true_subset=asset_subset_to_request)
+        return SchedulingResult.create(context, true_subset=asset_subset_to_request)
 
 
 @whitelist_for_serdes
@@ -341,11 +341,11 @@ class MaterializeOnParentUpdatedRule(
         else:
             return base
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         asset_partitions_by_updated_parents: Mapping[
             AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
@@ -433,7 +433,7 @@ class MaterializeOnParentUpdatedRule(
                 ignore_subset=context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset,
             )
         )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return SchedulingResult.create(context, true_subset, subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -466,11 +466,11 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             | previous_handled_subset
         )
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
         """Evaluates the set of asset partitions for this asset which are missing and were not
         previously discarded.
         """
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         if (
             context.legacy_context.asset_key
@@ -529,7 +529,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 | context.legacy_context.previous_true_subset
             ) - context.legacy_context.previous_tick_requested_subset
 
-        return AssetConditionResult.create(
+        return SchedulingResult.create(
             context,
             true_subset=unhandled_candidates,
             # we keep track of the handled subset instead of the unhandled subset because new
@@ -548,8 +548,8 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     def description(self) -> str:
         return "waiting on upstream data to be up to date"
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -585,7 +585,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return SchedulingResult.create(context, true_subset, subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -601,8 +601,8 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
     def evaluate_for_asset(
         self,
         context: "SchedulingContext",
-    ) -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    ) -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -641,7 +641,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return SchedulingResult.create(context, true_subset, subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -677,8 +677,8 @@ class SkipOnNotAllParentsUpdatedRule(
     def evaluate_for_asset(
         self,
         context: "SchedulingContext",
-    ) -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    ) -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -734,7 +734,7 @@ class SkipOnNotAllParentsUpdatedRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return SchedulingResult.create(context, true_subset, subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -902,8 +902,8 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 for p in non_updated_parent_asset_partitions
             )
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         passed_time_window = self.passed_time_window(context)
         has_new_passed_time_window = passed_time_window.end.timestamp() > (
@@ -957,7 +957,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 - context.legacy_context.previous_true_subset
             ) | all_parents_updated_subset
 
-        return AssetConditionResult.create(
+        return SchedulingResult.create(
             context,
             true_subset=context.legacy_context.candidate_subset - all_parents_updated_subset,
             extra_state=list(updated_subsets_by_key.values()),
@@ -976,8 +976,8 @@ class SkipOnRequiredButNonexistentParentsRule(
     def description(self) -> str:
         return "required parent partitions do not exist"
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -1008,7 +1008,7 @@ class SkipOnRequiredButNonexistentParentsRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return SchedulingResult.create(context, true_subset, subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -1027,8 +1027,8 @@ class SkipOnBackfillInProgressRule(
         else:
             return "targeted by an in-progress backfill"
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         backfilling_subset = (
             # this backfilling subset is aware of the current partitions definitions, and so will
@@ -1047,7 +1047,7 @@ class SkipOnBackfillInProgressRule(
         else:
             true_subset = context.legacy_context.candidate_subset & backfilling_subset
 
-        return AssetConditionResult.create(context, true_subset)
+        return SchedulingResult.create(context, true_subset)
 
 
 @whitelist_for_serdes
@@ -1062,8 +1062,8 @@ class DiscardOnMaxMaterializationsExceededRule(
     def description(self) -> str:
         return f"exceeds {self.limit} materialization(s) per minute"
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
@@ -1073,7 +1073,7 @@ class DiscardOnMaxMaterializationsExceededRule(
             )[self.limit :]
         )
 
-        return AssetConditionResult.create(
+        return SchedulingResult.create(
             context,
             AssetSubset.from_asset_partitions_set(
                 context.legacy_context.asset_key,
@@ -1093,8 +1093,8 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
     def description(self) -> str:
         return "in-progress run for asset"
 
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
-        from .declarative_scheduling.legacy.asset_condition import AssetConditionResult
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+        from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         if context.legacy_context.partitions_def is not None:
             raise DagsterInvariantViolationError(
@@ -1109,5 +1109,5 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
         if planned_materialization_info:
             dagster_run = instance.get_run_by_id(planned_materialization_info.run_id)
             if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
-                return AssetConditionResult.create(context, context.legacy_context.candidate_subset)
-        return AssetConditionResult.create(context, context.legacy_context.empty_subset())
+                return SchedulingResult.create(context, context.legacy_context.candidate_subset)
+        return SchedulingResult.create(context, context.legacy_context.empty_subset())
