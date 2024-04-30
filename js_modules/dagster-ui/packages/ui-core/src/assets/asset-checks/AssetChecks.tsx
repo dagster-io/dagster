@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Body,
+  Body2,
   Box,
   Caption,
   CollapsibleSection,
@@ -9,8 +9,8 @@ import {
   Icon,
   NonIdealState,
   Spinner,
-  Subtitle,
-  SubtitleLarge,
+  Subtitle1,
+  Subtitle2,
   Table,
   TextInput,
   useViewport,
@@ -140,10 +140,10 @@ export const AssetChecks = ({
           icon="asset_check"
           description={
             <Box flex={{direction: 'column', gap: 6}}>
-              <Body>
+              <Body2>
                 Asset checks can verify properties of a data asset, e.g. that there are no null
                 values in a particular column.
-              </Body>
+              </Body2>
               <a href="https://docs.dagster.io/concepts/assets/asset-checks">
                 Learn more about asset checks
               </a>
@@ -167,9 +167,9 @@ export const AssetChecks = ({
             flex={{justifyContent: 'space-between', alignItems: 'center'}}
             padding={{left: 24, vertical: 12, right: 12}}
           >
-            <SubtitleLarge>
+            <Subtitle1>
               Checks {checks.length ? <>({numberFormatter.format(checks.length)})</> : null}
-            </SubtitleLarge>
+            </Subtitle1>
             <ExecuteChecksButton assetNode={assetNode} checks={checks} />
           </Box>
           <Box
@@ -208,7 +208,7 @@ export const AssetChecks = ({
                             >
                               {getCheckIcon(check)}
                             </Box>
-                            <Body>{check.name}</Body>
+                            <Body2>{check.name}</Body2>
                           </Box>
                           <Box padding={{horizontal: 24}}>
                             <Caption
@@ -236,7 +236,7 @@ export const AssetChecks = ({
           >
             <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
               <Icon name="asset_check" />
-              <SubtitleLarge>{selectedCheck.name}</SubtitleLarge>
+              <Subtitle1>{selectedCheck.name}</Subtitle1>
             </Box>
             <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
           </Box>
@@ -245,16 +245,16 @@ export const AssetChecks = ({
             padding={{horizontal: 24, vertical: 12}}
           >
             <CollapsibleSection
-              header={<Subtitle>About</Subtitle>}
+              header={<Subtitle2>About</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
               arrowSide="right"
             >
               <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
-                <Body>
+                <Body2>
                   {selectedCheck.description ?? (
                     <Caption color={Colors.textLight()}>No description provided</Caption>
                   )}
-                </Body>
+                </Body2>
                 {/* {selectedCheck.dependencies?.length ? (
                   <Box flex={{direction: 'row', gap: 6}}>
                     {assetNode.dependencies.map((dep) => {
@@ -272,7 +272,7 @@ export const AssetChecks = ({
               </Box>
             </CollapsibleSection>
             <CollapsibleSection
-              header={<Subtitle>Latest execution</Subtitle>}
+              header={<Subtitle2>Latest execution</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
               arrowSide="right"
             >
@@ -284,7 +284,7 @@ export const AssetChecks = ({
               <Box padding={{top: 12}} flex={{direction: 'column', gap: 12}}>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 24}}>
                   <Box flex={{direction: 'column', gap: 6}}>
-                    <Subtitle>Evaluation result</Subtitle>
+                    <Subtitle2>Evaluation result</Subtitle2>
                     <div>
                       <AssetCheckStatusTag
                         execution={selectedCheck.executionForLatestMaterialization}
@@ -293,7 +293,7 @@ export const AssetChecks = ({
                   </Box>
                   {lastExecution ? (
                     <Box flex={{direction: 'column', gap: 6}}>
-                      <Subtitle>Timestamp</Subtitle>
+                      <Subtitle2>Timestamp</Subtitle2>
                       <Link
                         to={linkToRunEvent(
                           {id: lastExecution.runId},
@@ -306,7 +306,7 @@ export const AssetChecks = ({
                   ) : null}
                   {targetMaterialization ? (
                     <Box flex={{direction: 'column', gap: 6}}>
-                      <Subtitle>Target materialization</Subtitle>
+                      <Subtitle2>Target materialization</Subtitle2>
                       <Link to={`/runs/${targetMaterialization.runId}`}>
                         <Timestamp timestamp={{unix: targetMaterialization.timestamp}} />
                       </Link>
@@ -315,14 +315,14 @@ export const AssetChecks = ({
                 </div>
                 {lastExecution?.evaluation?.metadataEntries.length ? (
                   <Box flex={{direction: 'column', gap: 6}}>
-                    <Subtitle>Metadata</Subtitle>
+                    <Subtitle2>Metadata</Subtitle2>
                     <MetadataEntries entries={lastExecution.evaluation.metadataEntries} />
                   </Box>
                 ) : null}
               </Box>
             </CollapsibleSection>
             <CollapsibleSection
-              header={<Subtitle>Execution history</Subtitle>}
+              header={<Subtitle2>Execution history</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
               arrowSide="right"
             >

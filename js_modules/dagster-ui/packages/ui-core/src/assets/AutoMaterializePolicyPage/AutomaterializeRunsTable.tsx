@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Body, Box, Colors, Mono, Table} from '@dagster-io/ui-components';
+import {Body2, Box, Colors, Mono, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {
@@ -26,14 +26,14 @@ export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
 
   if (!runIds.length) {
     return (
-      <Body color={Colors.textLighter()} style={{paddingBottom: 32}}>
+      <Body2 color={Colors.textLighter()} style={{paddingBottom: 32}}>
         None
-      </Body>
+      </Body2>
     );
   }
 
   if (error) {
-    return <Body>An error occurred fetching runs. Check your network status</Body>;
+    return <Body2>An error occurred fetching runs. Check your network status</Body2>;
   }
 
   if (loading || !data) {
@@ -45,7 +45,7 @@ export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
   }
 
   if (data.runsOrError.__typename === 'InvalidPipelineRunsFilterError') {
-    return <Body>{data.runsOrError.message}</Body>;
+    return <Body2>{data.runsOrError.message}</Body2>;
   }
 
   return (

@@ -9,7 +9,7 @@ import {
   DialogHeader,
   MiddleTruncate,
   Spinner,
-  Subtitle,
+  Subtitle2,
   Tab,
   Table,
   Tabs,
@@ -124,7 +124,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
           {tick.runIds.length || tick.originRunIds.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle>Requested</Subtitle>
+                <Subtitle2>Requested</Subtitle2>
               </Box>
               {tick.runIds.length ? (
                 <RunList runIds={tick.runIds} />
@@ -136,7 +136,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
           {addedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle>Added partitions</Subtitle>
+                <Subtitle2>Added partitions</Subtitle2>
               </Box>
               <PartitionsTable partitions={addedPartitionRequests} />
             </>
@@ -144,7 +144,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
           {deletedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle>Deleted partitions</Subtitle>
+                <Subtitle2>Deleted partitions</Subtitle2>
               </Box>
               <PartitionsTable partitions={deletedPartitionRequests} />
             </>
@@ -187,7 +187,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
     <>
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12}}>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Subtitle>Status</Subtitle>
+          <Subtitle2>Status</Subtitle2>
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Tag intent={intent}>
               {tick.status === InstigationTickStatus.STARTED ? (
@@ -216,7 +216,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
           </Box>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Subtitle>Timestamp</Subtitle>
+          <Subtitle2>Timestamp</Subtitle2>
           <div>
             {tick ? (
               <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
@@ -226,7 +226,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
           </div>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Subtitle>Duration</Subtitle>
+          <Subtitle2>Duration</Subtitle2>
           <div>
             {tick?.endTimestamp
               ? formatElapsedTimeWithoutMsec(tick.endTimestamp * 1000 - tick.timestamp * 1000)

@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Collapse} from '@blueprintjs/core';
-import {Box, Icon, IconName, SubtitleLarge, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Icon, IconName, Subtitle1, UnstyledButton} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -39,12 +39,10 @@ export const LargeCollapsibleSection = ({
           border="bottom"
         >
           {icon && <Icon size={20} name={icon} />}
-          <SubtitleLarge
-            style={{flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}
-          >
+          <Subtitle1 style={{flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
             {header}
             {count !== undefined ? ` (${count.toLocaleString()})` : ''}
-          </SubtitleLarge>
+          </Subtitle1>
           {right}
           <Icon
             name="arrow_drop_down"

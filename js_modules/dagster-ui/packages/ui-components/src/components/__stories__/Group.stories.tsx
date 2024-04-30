@@ -5,7 +5,7 @@ import {Box} from '../Box';
 import {ButtonLink} from '../ButtonLink';
 import {Colors} from '../Color';
 import {Group} from '../Group';
-import {Body, Code, Heading, Subtitle} from '../Text';
+import {Body, Code, Heading, Subheading} from '../Text';
 import {AlignItems, FlexWrap, Spacing} from '../types';
 
 // eslint-disable-next-line import/no-default-export
@@ -119,7 +119,7 @@ export const PointerEventsTest = () => {
             relevant margins.
           </div>
         </Group>
-        <Subtitle>Subtitle</Subtitle>
+        <Subheading>Subheading</Subheading>
       </Group>
     </div>
   );

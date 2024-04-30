@@ -1,5 +1,5 @@
 import {
-  Body,
+  Body2,
   Box,
   ButtonGroup,
   ButtonLink,
@@ -122,9 +122,9 @@ export const AutomaterializationEvaluationHistoryTable = ({
                         setSelectedTick(tick);
                       }}
                     >
-                      <Body>
+                      <Body2>
                         {tick.requestedAssetMaterializationCount} materializations requested
-                      </Body>
+                      </Body2>
                     </ButtonLink>
                   ) : (
                     ' - '

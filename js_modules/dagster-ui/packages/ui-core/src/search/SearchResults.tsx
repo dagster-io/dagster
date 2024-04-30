@@ -1,11 +1,11 @@
 import {
   Box,
   Caption,
+  CaptionBolded,
   Colors,
   Icon,
   IconName,
   StyledTag,
-  SubtitleSmall,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -106,7 +106,7 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] 
     parsedString += stringBeforeMatch;
 
     const match = result.item.label.slice(longestMatch[0], longestMatch[1] + 1);
-    labelComponents.push(<SubtitleSmall>{match}</SubtitleSmall>);
+    labelComponents.push(<CaptionBolded>{match}</CaptionBolded>);
     parsedString += match;
   }
 

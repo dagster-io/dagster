@@ -1,11 +1,4 @@
-import {
-  BodyLarge,
-  Box,
-  Button,
-  Dialog,
-  ExternalAnchorButton,
-  Icon,
-} from '@dagster-io/ui-components';
+import {Body1, Box, Button, Dialog, ExternalAnchorButton, Icon} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import dagster_plus from './dagster_plus.png';
@@ -37,10 +30,10 @@ export const DagsterPlusLaunchPromotion = () => {
       </ImageWrapper>
       <Box flex={{direction: 'column', alignItems: 'center'}} padding={24}>
         <Header>Introducing Dagster+</Header>
-        <BodyLarge>
+        <Body1>
           Join us on <span style={{fontWeight: 600}}>April 17 at 12 ET</span> for the unveiling of
           the next generation of Dagster Cloud.
-        </BodyLarge>
+        </Body1>
         <Box
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 8}}
           padding={{top: 12}}

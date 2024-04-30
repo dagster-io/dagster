@@ -6,7 +6,7 @@ import {
   MenuItem,
   Popover,
   Spinner,
-  Subtitle,
+  Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
@@ -240,7 +240,7 @@ export const AssetPartitions = ({
                   {selection.dimension.name !== 'default' && (
                     <Box flex={{gap: 8, alignItems: 'center'}}>
                       <Icon name="partition" />
-                      <Subtitle>{selection.dimension.name}</Subtitle>
+                      <Subheading>{selection.dimension.name}</Subheading>
                     </Box>
                   )}
                 </div>

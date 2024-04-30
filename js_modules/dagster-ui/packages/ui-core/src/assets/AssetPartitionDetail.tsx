@@ -9,7 +9,7 @@ import {
   MiddleTruncate,
   Mono,
   Spinner,
-  Subtitle,
+  Subheading,
   Tag,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -294,7 +294,7 @@ export const AssetPartitionDetail = ({
       >
         {!latest ? (
           <Box flex={{gap: 4, direction: 'column'}}>
-            <Subtitle>Latest materialization</Subtitle>
+            <Subheading>Latest materialization</Subheading>
             <Box flex={{gap: 4}}>
               <Icon name="materialization" />
               None
@@ -302,11 +302,11 @@ export const AssetPartitionDetail = ({
           </Box>
         ) : (
           <Box flex={{gap: 4, direction: 'column'}}>
-            <Subtitle>
+            <Subheading>
               {latest.__typename === 'MaterializationEvent'
                 ? 'Latest materialization'
                 : 'Latest observation'}
-            </Subtitle>
+            </Subheading>
             <Box flex={{gap: 4}} style={{whiteSpace: 'nowrap'}}>
               {latest.__typename === 'MaterializationEvent' ? (
                 <Icon name="materialization" />
@@ -318,7 +318,7 @@ export const AssetPartitionDetail = ({
           </Box>
         )}
         <Box flex={{gap: 4, direction: 'column'}}>
-          <Subtitle>Run</Subtitle>
+          <Subheading>Run</Subheading>
           {latestEventRun && latest ? (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <RunStatusWithStats runId={latestEventRun.id} status={latestEventRun.status} />
@@ -331,7 +331,7 @@ export const AssetPartitionDetail = ({
           )}
         </Box>
         <Box flex={{gap: 4, direction: 'column'}}>
-          <Subtitle>Job</Subtitle>
+          <Subheading>Job</Subheading>
           {latest && latestEventRun && !isHiddenAssetGroupJob(latestEventRun.pipelineName) ? (
             <Box>
               <Box>
@@ -364,7 +364,7 @@ export const AssetPartitionDetail = ({
         </Box>
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subtitle>Metadata</Subtitle>
+        <Subheading>Metadata</Subheading>
         <AssetEventMetadataEntriesTable
           event={latest}
           observations={observationsAboutLatest}
@@ -373,11 +373,11 @@ export const AssetPartitionDetail = ({
         />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subtitle>Source data</Subtitle>
+        <Subheading>Source data</Subheading>
         <AssetMaterializationUpstreamData timestamp={latest?.timestamp} assetKey={assetKey} />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subtitle>System tags</Subtitle>
+        <Subheading>System tags</Subheading>
         <AssetEventSystemTags event={latest} collapsible />
       </Box>
     </Box>

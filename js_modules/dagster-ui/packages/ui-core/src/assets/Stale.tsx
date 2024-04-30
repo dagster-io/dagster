@@ -4,11 +4,11 @@ import {
   Box,
   ButtonLink,
   Caption,
+  CaptionSubtitle,
   Colors,
   Icon,
   Popover,
-  Subtitle,
-  SubtitleSmall,
+  Subtitle2,
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
@@ -203,10 +203,10 @@ const StaleCausesPopoverSummary = ({
   return (
     <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
       <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-        <Subtitle>
+        <Subtitle2>
           {numberFormatter.format(totalCauses)} {ifPlural(totalCauses, 'change', 'changes')} since
           last materialization
-        </Subtitle>
+        </Subtitle2>
       </Box>
       {Object.entries(grouped).map(([label, causes], idx) => {
         const isSelf = isEqual(assetKey.path, causes[0]!.key.path);
@@ -216,9 +216,9 @@ const StaleCausesPopoverSummary = ({
               padding={{horizontal: 12, vertical: 8}}
               border={idx === 0 ? 'bottom' : 'top-and-bottom'}
             >
-              <SubtitleSmall>
+              <CaptionSubtitle>
                 {getCollapsedHeaderLabel(isSelf, causes[0]!.category, causes.length)}
-              </SubtitleSmall>
+              </CaptionSubtitle>
             </Box>
             {causes.map((cause, idx) => (
               <Box

@@ -11,7 +11,7 @@ import {
   Icon,
   NonIdealState,
   Spinner,
-  Subtitle,
+  Subheading,
   Tag,
   TextInput,
 } from '@dagster-io/ui-components';
@@ -219,7 +219,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           <Box>
             <Grid>
               <div>
-                <Subtitle>Result</Subtitle>
+                <Subheading>Result</Subheading>
                 <Box flex={{grow: 1, alignItems: 'center'}}>
                   <div>
                     {error ? (
@@ -233,11 +233,11 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                 </Box>
               </div>
               <div>
-                <Subtitle>Used cursor value</Subtitle>
+                <Subheading>Used cursor value</Subheading>
                 <pre>{cursor?.length ? cursor : 'None'}</pre>
               </div>
               <div>
-                <Subtitle>Computed cursor value</Subtitle>
+                <Subheading>Computed cursor value</Subheading>
                 <pre>
                   {sensorExecutionData?.evaluationResult?.cursor?.length
                     ? sensorExecutionData?.evaluationResult.cursor
@@ -276,7 +276,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
             ) : null}
             {didSkip ? (
               <div>
-                <Subtitle>Skip reason</Subtitle>
+                <Subheading>Skip reason</Subheading>
                 <div>
                   {sensorExecutionData?.evaluationResult?.skipReason || 'No skip reason was output'}
                 </div>
@@ -398,7 +398,7 @@ const Grid = styled.div`
   padding-bottom: 12px;
   border-bottom: 1px solid ${Colors.keylineDefault()};
   margin-bottom: 12px;
-  ${Subtitle} {
+  ${Subheading} {
     padding-bottom: 4px;
     display: block;
   }
