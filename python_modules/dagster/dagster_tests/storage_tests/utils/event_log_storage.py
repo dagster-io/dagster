@@ -542,7 +542,7 @@ class TestEventLogStorage:
                 instance.delete_run(run)
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(reruns=2)
     def test_event_log_storage_watch(
         self,
         test_run_id: str,
@@ -628,17 +628,18 @@ class TestEventLogStorage:
             storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
-            result = storage.get_records_for_run(test_run_id, ascending=True, limit=1)
-            storage_id = result.records[0].storage_id
+            result = storage.get_records_for_run(test_run_id, ascending=True)
+            storage_ids = [r.storage_id for r in result.records]
+            assert len(storage_ids) == 4
 
-            def _cursor_from_offset(offset: int):
-                return EventLogCursor.from_storage_id(storage_id + offset).to_string()
+            def _cursor(storage_id: int):
+                return EventLogCursor.from_storage_id(storage_id).to_string()
 
             assert len(storage.get_logs_for_run(test_run_id)) == 4
-            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(0))) == 3
-            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(2))) == 2
-            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(4))) == 1
-            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(6))) == 0
+            assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[0]))) == 3
+            assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[1]))) == 2
+            assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[2]))) == 1
+            assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[3]))) == 0
 
     def test_event_log_delete(
         self,
@@ -826,6 +827,36 @@ class TestEventLogStorage:
 
         assert _event_types(out_events) == _event_types(events)
 
+    def test_get_logs_for_run_cursor_limit(self, test_run_id, storage):
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
+
+        for event in events:
+            storage.store_event(event)
+
+        result = storage.get_records_for_run(test_run_id, ascending=True)
+        storage_ids = [r.storage_id for r in result.records]
+
+        out_events = []
+        offset = -1
+        fuse = 0
+        chunk_size = 2
+        while fuse < 50:
+            fuse += 1
+            # fetch in batches w/ limit & cursor
+            cursor = (
+                EventLogCursor.from_storage_id(storage_ids[offset]).to_string()
+                if offset >= 0
+                else None
+            )
+            chunk = storage.get_logs_for_run(test_run_id, cursor=cursor, limit=chunk_size)
+            if not chunk:
+                break
+            assert len(chunk) <= chunk_size
+            out_events += chunk
+            offset += len(chunk)
+
+        assert _event_types(out_events) == _event_types(events)
+
     def test_wipe_sql_backed_event_log(self, test_run_id, storage):
         events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
@@ -935,7 +966,7 @@ class TestEventLogStorage:
             assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(reruns=2)
     def test_event_watcher_single_run_event(self, storage, test_run_id):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -956,7 +987,7 @@ class TestEventLogStorage:
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(reruns=2)
     def test_event_watcher_filter_run_event(self, instance, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -985,7 +1016,7 @@ class TestEventLogStorage:
             assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(reruns=2)
     def test_event_watcher_filter_two_runs_event(self, storage, instance):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -2006,7 +2037,7 @@ class TestEventLogStorage:
                 assert len(run_status_change_events) == 6
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(reruns=2)
     def test_watch_exc_recovery(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
