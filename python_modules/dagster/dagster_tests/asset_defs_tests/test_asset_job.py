@@ -2886,6 +2886,78 @@ def test_subset_cycle_resolution_basic():
     }
 
 
+def test_subset_cycle_resolution_with_asset_check():
+    """Ops:
+        foo produces: a, b
+        foo_prime produces: a', b'
+    Assets:
+        s -> a -> a' -> b -> b'.
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "a,b,a_prime,b_prime".split(","):
+        io_manager_obj.db[AssetKey(item)] = None
+    # some value for the source
+    io_manager_obj.db[AssetKey("s")] = 0
+
+    s = SourceAsset("s")
+
+    @multi_asset(
+        outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)},
+        internal_asset_deps={
+            "a": {AssetKey("s")},
+            "b": {AssetKey("a_prime")},
+        },
+        can_subset=True,
+    )
+    def foo(context, s, a_prime):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a") in context.selected_asset_keys:
+            yield Output(s + 1, "a")
+        if AssetKey("b") in context.selected_asset_keys:
+            yield Output(a_prime + 1, "b")
+
+    @multi_asset(
+        outs={"a_prime": AssetOut(is_required=False), "b_prime": AssetOut(is_required=False)},
+        internal_asset_deps={
+            "a_prime": {AssetKey("a")},
+            "b_prime": {AssetKey("b")},
+        },
+        can_subset=True,
+    )
+    def foo_prime(context, a, b):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a_prime") in context.selected_asset_keys:
+            yield Output(a + 1, "a_prime")
+        if AssetKey("b_prime") in context.selected_asset_keys:
+            yield Output(b + 1, "b_prime")
+
+    @asset_check(asset="a_prime")
+    def check_a_prime(a_prime):
+        return AssetCheckResult(passed=True)
+
+    job = Definitions(
+        assets=[foo, foo_prime, s],
+        asset_checks=[check_a_prime],
+        resources={"io_manager": io_manager_def},
+    ).get_implicit_global_asset_job_def()
+
+    # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
+    assert len(list(job.graph.iterate_op_defs())) == 5
+
+    result = job.execute_in_process()
+    assert result.output_for_node("foo", "a") == 1
+    assert result.output_for_node("foo_prime", "a_prime") == 2
+    assert result.output_for_node("foo_2", "b") == 3
+    assert result.output_for_node("foo_prime_2", "b_prime") == 4
+
+    assert _all_asset_keys(result) == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("a_prime"),
+        AssetKey("b_prime"),
+    }
+
+
 def test_subset_cycle_dependencies():
     """Ops:
         foo produces: top, a, b

@@ -1879,7 +1879,7 @@ def asset_job_schedule():
     return {}
 
 
-@asset_check(asset=asset_1, description="asset_1 check", blocking=True, additional_deps=[asset_2])
+@asset_check(asset=asset_1, description="asset_1 check", blocking=True, additional_deps=[asset_two])
 def my_check(asset_1):
     return AssetCheckResult(
         passed=True,
