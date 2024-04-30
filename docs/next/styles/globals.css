@@ -589,10 +589,6 @@ pre[class="noop"] {
     border-radius: 0 !important;
 }
 
-td {
-  word-break:break-word
-}
-
 .n {
   font-weight: 700;
 }
@@ -607,4 +603,8 @@ td {
 
 dl, dl * {
   overflow-wrap: break-word;
+}
+
+td {
+  word-break:break-word
 }
