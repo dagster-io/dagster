@@ -100,12 +100,6 @@ wordcloud  # (quickstart-*)
 apache-airflow>2.7
 pendulum<3
 
-# This is a temporary pin due to version conflicts between dbt 1.6 and some higher-order
-# dependencies of other integration libs. It is not important that the pyright typechecking env support
-# dbt 1.6, so we can pin. The pin can be removed at any time in the future so long as the env builds
-# successfully.
-dbt-core<1.6
-
 ### EXAMPLES
 
 # -e examples/assets_dbt_python # it includes dagster-cloud
