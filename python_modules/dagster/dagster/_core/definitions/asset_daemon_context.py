@@ -243,7 +243,7 @@ class AssetDaemonContext:
             current_evaluation_state_by_key=evaluation_state_by_key,
             create_time=pendulum.now("UTC"),
             logger=self.logger,
-            _legacy_context=legacy_context,
+            inner_legacy_context=legacy_context,
         )
 
         result = asset_condition.evaluate(context)

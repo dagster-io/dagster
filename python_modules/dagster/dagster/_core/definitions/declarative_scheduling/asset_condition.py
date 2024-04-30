@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Dict,
     FrozenSet,
     List,
@@ -199,7 +200,7 @@ class AssetConditionEvaluationState:
     previous_tick_evaluation_timestamp: Optional[float]
 
     max_storage_id: Optional[int]
-    extra_state_by_unique_id: Mapping[str, PackableValue]
+    extra_state_by_unique_id: Mapping[str, Any]
 
     @property
     def asset_key(self) -> AssetKey:

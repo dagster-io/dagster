@@ -101,7 +101,7 @@ class AssetConditionScenarioState(ScenarioState):
                 current_evaluation_state_by_key={},
                 create_time=self.current_time,
                 logger=self.logger,
-                _legacy_context=legacy_context,
+                inner_legacy_context=legacy_context,
             )
 
             full_result = asset_condition.evaluate(context)
