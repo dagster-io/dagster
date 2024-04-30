@@ -2195,6 +2195,8 @@ type DagsterLibraryVersion {
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
+union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
+
 input AssetKeyInput {
   path: [String!]!
 }
@@ -3155,6 +3157,7 @@ type Query {
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   workspaceOrError: WorkspaceOrError!
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
+  workspaceLocationEntryOrError(name: String!): WorkspaceLocationEntryOrError
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(
     snapshotId: String

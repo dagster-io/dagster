@@ -18,65 +18,74 @@ from dagster_graphql.version import __version__ as dagster_graphql_version
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
-WORKSPACE_QUERY = """
-query {
-   workspaceOrError {
-      __typename
-      ... on Workspace {
-        locationEntries {
-          __typename
-          id
-          name
-          locationOrLoadError {
-            __typename
-            ... on RepositoryLocation {
-                id
-                name
-                repositories {
-                    name
-                }
-                isReloadSupported
-                dagsterLibraryVersions {
-                  name
-                  version
-                }
-            }
-            ... on PythonError {
-              message
-              stack
-              errorChain {
-                error {
-                  message
-                  stack
-                }
-              }
-            }
-          }
-          loadStatus
-          displayMetadata {
-            key
-            value
-          }
-          updatedTimestamp
-          featureFlags {
-            name
-            enabled
-          }
-        }
+LOCATION_ENTRY_FRAGMENT = """
+fragment locationEntryFragment on WorkspaceLocationEntry {
+  __typename
+  id
+  name
+  locationOrLoadError {
+    __typename
+    ... on RepositoryLocation {
+      id
+      name
+      repositories {
+        name
       }
-      ... on PythonError {
-          message
-          stack
-          errorChain {
-            error {
-                message
-                stack
-            }
-          }
+      isReloadSupported
+      dagsterLibraryVersions {
+        name
+        version
       }
     }
+    ... on PythonError {
+      message
+      stack
+      errorChain {
+        error {
+          message
+          stack
+        }
+      }
+    }
+  }
+  loadStatus
+  displayMetadata {
+    key
+    value
+  }
+  updatedTimestamp
+  featureFlags {
+    name
+    enabled
+  }
 }
 """
+
+WORKSPACE_QUERY = (
+    """
+query {
+  workspaceOrError {
+    __typename
+    ... on Workspace {
+      locationEntries {
+        ...locationEntryFragment
+      }
+    }
+    ... on PythonError {
+      message
+      stack
+      errorChain {
+        error {
+          message
+          stack
+        }
+      }
+    }
+  }
+}
+"""
+    + LOCATION_ENTRY_FRAGMENT
+)
 
 LOCATION_STATUS_QUERY = """
 query {
@@ -97,6 +106,22 @@ query {
     }
 }
 """
+
+LOCATION_ENTRY_QUERY = (
+    """
+query ($name: String!) {
+  workspaceLocationEntryOrError(name: $name) {
+    __typename
+    ...locationEntryFragment
+    ... on PythonError {
+        message
+        stack
+    }
+  }
+}
+"""
+    + LOCATION_ENTRY_FRAGMENT
+)
 
 
 @pytest.fixture(scope="function")
@@ -301,3 +326,34 @@ class TestLoadWorkspace(BaseTestSuite):
                 "Search in logs for this error ID for more details"
                 in failure_node["locationOrLoadError"]["message"]
             )
+
+    def test_workspace_entry_by_name(self, graphql_context) -> None:
+        result = execute_dagster_graphql(graphql_context, LOCATION_ENTRY_QUERY, {"name": "test"})
+        assert result
+        assert result.data["workspaceLocationEntryOrError"]
+        assert (
+            result.data["workspaceLocationEntryOrError"]["__typename"] == "WorkspaceLocationEntry"
+        )
+        assert (
+            result.data["workspaceLocationEntryOrError"]["locationOrLoadError"]["__typename"]
+            == "RepositoryLocation"
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context, LOCATION_ENTRY_QUERY, {"name": "does_not_exist"}
+        )
+        assert result
+        assert result.data["workspaceLocationEntryOrError"] is None
+
+        with mock.patch(
+            "dagster_graphql.schema.roots.query.fetch_location_entry",
+        ) as mock_fetch:
+            mock_fetch.side_effect = Exception("boom")
+
+            result = execute_dagster_graphql(
+                graphql_context, LOCATION_ENTRY_QUERY, {"name": "test"}
+            )
+            assert result
+            assert result.data["workspaceLocationEntryOrError"]
+            assert result.data["workspaceLocationEntryOrError"]["__typename"] == "PythonError"
+            assert "boom" in result.data["workspaceLocationEntryOrError"]["message"]

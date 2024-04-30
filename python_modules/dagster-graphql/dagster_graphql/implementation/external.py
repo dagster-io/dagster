@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         GrapheneRepository,
         GrapheneRepositoryConnection,
         GrapheneWorkspace,
+        GrapheneWorkspaceLocationEntry,
         GrapheneWorkspaceLocationStatusEntries,
     )
     from dagster_graphql.schema.util import ResolveInfo
@@ -188,3 +189,15 @@ def fetch_location_statuses(
             for status_entry in workspace_request_context.get_code_location_statuses()
         ]
     )
+
+
+def fetch_location_entry(
+    request_context: WorkspaceRequestContext, name: str
+) -> Optional["GrapheneWorkspaceLocationEntry"]:
+    from ..schema.external import GrapheneWorkspaceLocationEntry
+
+    location_entry = request_context.get_location_entry(name)
+    if location_entry is None:
+        return None
+
+    return GrapheneWorkspaceLocationEntry(location_entry)
