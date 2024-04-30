@@ -5,8 +5,6 @@ in the user_context module.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from hashlib import sha256
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -17,7 +15,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Union,
     cast,
@@ -25,11 +22,6 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.data_version import (
-    DATA_VERSION_TAG,
-    SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
-    extract_data_version_from_entry,
-)
 from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
@@ -74,6 +66,7 @@ from dagster._core.storage.tags import (
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
+from .data_version_cache import DataVersionCache, InputAssetVersionInfo
 from .input import InputContext
 from .output import OutputContext, get_output_context
 
@@ -83,8 +76,6 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.resource_definition import Resources
-    from dagster._core.event_api import EventLogRecord
-    from dagster._core.events import DagsterEventType
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
     from dagster._core.instance import DagsterInstance
@@ -508,27 +499,6 @@ class PlanExecutionContext(IPlanContext):
         )
 
 
-@dataclass
-class InputAssetVersionInfo:
-    # This is the storage id of the last materialization/observation of any partition of an asset.
-    # Thus it is computed the same way for both partitioned and non-partitioned assets.
-    storage_id: int
-
-    # This is the event type of the event referenced by storage_id
-    event_type: "DagsterEventType"
-
-    # If the input asset is partitioned, this is a hash of the sorted data versions of each dependency
-    # partition. If the input asset is not partitioned, this is the data version of the asset. It
-    # can be none if we are sourcing a materialization from before data versions.
-    data_version: Optional["DataVersion"]
-
-    # This is the run_id on the event that the storage_id references
-    run_id: str
-
-    # This is the timestamp on the event that the storage_id references
-    timestamp: float
-
-
 def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) -> bool:
     """Whether this step is aware of the asset graph definition layer inferred by presence of asset info on outputs."""
     for output in step.step_outputs:
@@ -602,9 +572,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self._input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
-        self._is_external_input_asset_version_info_loaded = False
-        self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
+        self._data_version_cache = DataVersionCache(self)
 
         self._requires_typed_event_stream = False
         self._typed_event_stream_error_message = None
@@ -979,89 +947,30 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
-        self._data_version_cache[asset_key] = data_version
+        return self._data_version_cache.set_data_version(asset_key, data_version)
 
     def has_data_version(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._data_version_cache
+        return self._data_version_cache.has_data_version(asset_key)
 
     def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
-        return self._data_version_cache[asset_key]
+        return self._data_version_cache.get_data_version(asset_key)
 
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["InputAssetVersionInfo"]]]:
-        return self._input_asset_version_info
+        return self._data_version_cache.input_asset_version_info
 
     @property
     def is_external_input_asset_version_info_loaded(self) -> bool:
-        return self._is_external_input_asset_version_info_loaded
+        return self._data_version_cache.is_external_input_asset_version_info_loaded
 
     def maybe_fetch_and_get_input_asset_version_info(
         self, key: AssetKey
     ) -> Optional["InputAssetVersionInfo"]:
-        if key not in self._input_asset_version_info:
-            self._fetch_input_asset_version_info(key)
-        return self._input_asset_version_info[key]
+        return self._data_version_cache.maybe_fetch_and_get_input_asset_version_info(key)
 
     # "external" refers to records for inputs generated outside of this step
     def fetch_external_input_asset_version_info(self) -> None:
-        output_keys = self.get_output_asset_keys()
-
-        all_dep_keys: List[AssetKey] = []
-        for output_key in output_keys:
-            if output_key not in self.job_def.asset_layer.asset_deps:
-                continue
-            dep_keys = self.job_def.asset_layer.get(output_key).parent_keys
-            for key in dep_keys:
-                if key not in all_dep_keys and key not in output_keys:
-                    all_dep_keys.append(key)
-
-        self._input_asset_version_info = {}
-        for key in all_dep_keys:
-            self._fetch_input_asset_version_info(key)
-        self._is_external_input_asset_version_info_loaded = True
-
-    def _fetch_input_asset_version_info(self, key: AssetKey) -> None:
-        from dagster._core.definitions.data_version import (
-            extract_data_version_from_entry,
-        )
-
-        event = self._get_input_asset_event(key)
-        if event is None:
-            self._input_asset_version_info[key] = None
-        else:
-            storage_id = event.storage_id
-            # Input name will be none if this is an internal dep
-            input_name = self.job_def.asset_layer.input_for_asset_key(self.node_handle, key)
-            # Exclude AllPartitionMapping for now to avoid huge queries
-            if input_name and self.has_asset_partitions_for_input(input_name):
-                subset = self.asset_partitions_subset_for_input(
-                    input_name, require_valid_partitions=False
-                )
-                input_keys = list(subset.get_partition_keys())
-
-                # This check represents a temporary constraint that prevents huge query results for upstream
-                # partition data versions from timing out runs. If a partitioned dependency (a) uses an
-                # AllPartitionMapping; and (b) has greater than or equal to
-                # SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD dependency partitions, then we
-                # process it as a non-partitioned dependency (note that this was the behavior for
-                # all partition dependencies prior to 2023-08).  This means that stale status
-                # results cannot be accurately computed for the dependency, and there is thus
-                # corresponding logic in the CachingStaleStatusResolver to account for this. This
-                # constraint should be removed when we have thoroughly examined the performance of
-                # the data version retrieval query and can guarantee decent performance.
-                if len(input_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
-                    data_version = self._get_partitions_data_version_from_keys(key, input_keys)
-                else:
-                    data_version = extract_data_version_from_entry(event.event_log_entry)
-            else:
-                data_version = extract_data_version_from_entry(event.event_log_entry)
-            self._input_asset_version_info[key] = InputAssetVersionInfo(
-                storage_id,
-                check.not_none(event.event_log_entry.dagster_event).event_type,
-                data_version,
-                event.run_id,
-                event.timestamp,
-            )
+        return self._data_version_cache.fetch_external_input_asset_version_info()
 
     def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         asset_layer = self.job_def.asset_layer
@@ -1081,51 +990,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             return None
 
-    def _get_input_asset_event(self, key: AssetKey) -> Optional["EventLogRecord"]:
-        event = self.instance.get_latest_data_version_record(key)
-        if event:
-            self._check_input_asset_event(key, event)
-        return event
-
-    def _check_input_asset_event(self, key: AssetKey, event: "EventLogRecord") -> None:
-        assert event.event_log_entry
-        event_data_version = extract_data_version_from_entry(event.event_log_entry)
-        if key in self._data_version_cache and self._data_version_cache[key] != event_data_version:
-            self.log.warning(
-                f"Data version mismatch for asset {key}. Data version from materialization within"
-                f" current step is `{self._data_version_cache[key]}`. Data version from most recent"
-                f" materialization is `{event_data_version}`. Most recent materialization will be"
-                " used for provenance tracking."
-            )
-
-    def _get_partitions_data_version_from_keys(
-        self, key: AssetKey, partition_keys: Sequence[str]
-    ) -> "DataVersion":
-        from dagster._core.definitions.data_version import (
-            DataVersion,
-        )
-        from dagster._core.events import DagsterEventType
-
-        # TODO: this needs to account for observations also
-        event_type = DagsterEventType.ASSET_MATERIALIZATION
-        tags_by_partition = self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
-            key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
-        )
-        partition_data_versions = [
-            pair[1][DATA_VERSION_TAG]
-            for pair in sorted(tags_by_partition.items(), key=lambda x: x[0])
-        ]
-        hash_sig = sha256()
-        hash_sig.update(bytearray("".join(partition_data_versions), "utf8"))
-        return DataVersion(hash_sig.hexdigest())
-
     # Call this to clear the cache for an input asset record. This is necessary when an old
     # materialization for an asset was loaded during `fetch_external_input_asset_records` because an
     # intrastep asset is not required, but then that asset is materialized during the step. If we
     # don't clear the cache for this asset, then we won't use the most up-to-date asset record.
     def wipe_input_asset_version_info(self, key: AssetKey) -> None:
-        if key in self._input_asset_version_info:
-            del self._input_asset_version_info[key]
+        return self._data_version_cache.wipe_input_asset_version_info(key)
 
     def get_output_asset_keys(self) -> AbstractSet[AssetKey]:
         output_keys: Set[AssetKey] = set()
