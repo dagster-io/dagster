@@ -46,6 +46,7 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 
 from ...implementation.external import (
+    fetch_location_entry,
     fetch_location_statuses,
     fetch_repositories,
     fetch_repository,
@@ -119,6 +120,7 @@ from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceLocationEntryOrError,
     GrapheneWorkspaceLocationStatusEntriesOrError,
     GrapheneWorkspaceOrError,
 )
@@ -207,7 +209,13 @@ class GrapheneQuery(graphene.ObjectType):
 
     locationStatusesOrError = graphene.Field(
         graphene.NonNull(GrapheneWorkspaceLocationStatusEntriesOrError),
-        description="Retrieve location status for workspace locations",
+        description="Retrieve location status for workspace locations.",
+    )
+
+    workspaceLocationEntryOrError = graphene.Field(
+        GrapheneWorkspaceLocationEntryOrError,
+        name=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="Retrieve a workspace entry by name.",
     )
 
     pipelineOrError = graphene.Field(
@@ -590,6 +598,10 @@ class GrapheneQuery(graphene.ObjectType):
     @capture_error
     def resolve_workspaceOrError(self, graphene_info: ResolveInfo):
         return fetch_workspace(graphene_info.context)
+
+    @capture_error
+    def resolve_workspaceLocationEntryOrError(self, graphene_info: ResolveInfo, name: str):
+        return fetch_location_entry(graphene_info.context, name)
 
     @capture_error
     def resolve_locationStatusesOrError(self, graphene_info: ResolveInfo):

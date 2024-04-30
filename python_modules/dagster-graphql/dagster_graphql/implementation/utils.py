@@ -133,7 +133,7 @@ class ErrorCapture:
     ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
-        # Transform exception in to PythonErron to present to user
+        # Transform exception in to PythonError to present to user
         return GraphenePythonError(serializable_error_info_from_exc_info(exc_info))
 
     # global behavior for how to handle unexpected exceptions
