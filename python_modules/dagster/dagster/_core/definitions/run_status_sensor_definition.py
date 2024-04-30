@@ -1,5 +1,6 @@
 import functools
 import logging
+import os
 from contextlib import ExitStack
 from datetime import datetime
 from typing import (
@@ -91,6 +92,20 @@ RunFailureSensorEvaluationFn: TypeAlias = Union[
     Callable[..., RawSensorEvaluationFunctionReturn],
     Callable[..., RawSensorEvaluationFunctionReturn],
 ]
+
+
+def _get_run_status_sensor_fetch_limit(monitor_all_code_locations: bool) -> int:
+    if monitor_all_code_locations:
+        # No need to overfetch if we are going to process everything
+        return _get_run_status_sensor_process_limit()
+
+    # Otherwise, fetch more than we are planning to process, under the assumption
+    # that some will be filtered out
+    return int(os.getenv("DAGSTER_RUN_STATUS_SENSOR_FETCH_LIMIT", "25"))
+
+
+def _get_run_status_sensor_process_limit() -> int:
+    return int(os.getenv("DAGSTER_RUN_STATUS_SENSOR_PROCESS_LIMIT", "5"))
 
 
 @whitelist_for_serdes(old_storage_names={"PipelineSensorCursor"})
@@ -709,10 +724,16 @@ class RunStatusSensorDefinition(SensorDefinition):
 
             sensor_cursor = RunStatusSensorCursor.from_json(context.cursor)
 
+            process_limit = _get_run_status_sensor_process_limit()
+
+            fetch_limit = _get_run_status_sensor_fetch_limit(
+                monitor_all_code_locations=cast(bool, monitor_all_code_locations)
+            )
+
             # Fetch events after the cursor id
             # * we move the cursor forward to the latest visited event's id to avoid revisits
             # * when the daemon is down, bc we persist the cursor info, we can go back to where we
-            #   left and backfill alerts for the qualified events (up to 5 at a time) during the downtime
+            #   left and backfill alerts for the qualified events during the downtime
             if sensor_cursor.update_timestamp and context.instance.event_log_storage.is_run_sharded:
                 # The run status sensor cursor has the timestamp set... and the event log storage
                 # is run sharded.  We need to query the index shard by timestamp instead of by
@@ -727,7 +748,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         ).timestamp(),
                     ),
                     ascending=True,
-                    limit=5,
+                    limit=fetch_limit,
                 ).records
             else:
                 # the cursor storage id is globally unique, either because the event log storage is
@@ -740,21 +761,32 @@ class RunStatusSensorDefinition(SensorDefinition):
                         after_storage_id=sensor_cursor.record_id,
                     ),
                     ascending=True,
-                    limit=5,
+                    limit=fetch_limit,
                 ).records
 
+            run_ids_to_fetch = list(
+                set(event_record.event_log_entry.run_id for event_record in event_records)
+            )
+
+            run_records = (
+                {
+                    record.dagster_run.run_id: record
+                    for record in context.instance.get_run_records(
+                        filters=RunsFilter(run_ids=run_ids_to_fetch)
+                    )
+                }
+                if run_ids_to_fetch
+                else {}
+            )
+
+            num_processed_runs = 0
             for event_record in event_records:
                 event_log_entry = event_record.event_log_entry
                 storage_id = event_record.storage_id
                 record_timestamp = utc_datetime_from_timestamp(event_record.timestamp).isoformat()
 
-                # get run info
-                run_records = context.instance.get_run_records(
-                    filters=RunsFilter(run_ids=[event_log_entry.run_id])
-                )
-
                 # skip if we couldn't find the right run
-                if len(run_records) != 1:
+                if event_log_entry.run_id not in run_records:
                     context.update_cursor(
                         RunStatusSensorCursor(
                             record_id=storage_id, record_timestamp=record_timestamp
@@ -762,10 +794,10 @@ class RunStatusSensorDefinition(SensorDefinition):
                     )
                     continue
 
-                dagster_run = run_records[0].dagster_run
+                dagster_run = run_records[event_log_entry.run_id].dagster_run
                 job_match = False
 
-                # if monitor_all_repositories is provided, then we want to run the sensor for all jobs in all repositories
+                # if monitor_all_code_locations is provided, then we want to run the sensor for all jobs in all code locations
                 if monitor_all_code_locations:
                     job_match = True
 
@@ -826,6 +858,13 @@ class RunStatusSensorDefinition(SensorDefinition):
                         ).to_json()
                     )
                     continue
+
+                # Stop processing runs once you reach a matching job but have exceeded the limit
+                # (It's fine to keep advancing the cursor for runs that do not match)
+                if num_processed_runs >= process_limit:
+                    break
+
+                num_processed_runs = num_processed_runs + 1
 
                 serializable_error = None
 
