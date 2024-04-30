@@ -588,3 +588,7 @@ pre[class="noop"] {
     margin: 0 !important;
     border-radius: 0 !important;
 }
+
+td {
+  word-break:break-word
+}
