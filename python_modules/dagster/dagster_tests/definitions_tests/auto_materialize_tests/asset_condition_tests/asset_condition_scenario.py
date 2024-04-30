@@ -12,8 +12,8 @@ from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AssetConditionEvaluationState,
     AssetConditionResult,
 )
-from dagster._core.definitions.declarative_scheduling.asset_condition_evaluation_context import (
-    AssetConditionEvaluationContext,
+from dagster._core.definitions.declarative_scheduling.legacy_context import (
+    LegacyRuleEvaluationContext,
 )
 from dagster._core.definitions.declarative_scheduling.operators.boolean_operators import (
     AndAssetCondition,
@@ -76,7 +76,7 @@ class AssetConditionScenarioState(ScenarioState):
                 logger=self.logger,
                 evaluation_time=self.current_time,
             )
-            legacy_context = AssetConditionEvaluationContext.create(
+            legacy_context = LegacyRuleEvaluationContext.create(
                 asset_key=asset_key,
                 condition=asset_condition,
                 previous_evaluation_state=self.previous_evaluation_state,

@@ -22,8 +22,8 @@ from dagster._utils.schedules import cron_string_iterator
 if TYPE_CHECKING:
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
     from .declarative_scheduling.asset_condition import AssetSubsetWithMetadata
-    from .declarative_scheduling.asset_condition_evaluation_context import (
-        AssetConditionEvaluationContext,
+    from .declarative_scheduling.legacy_context import (
+        LegacyRuleEvaluationContext,
     )
 
 
@@ -115,7 +115,7 @@ def get_execution_period_and_evaluation_data_for_policies(
 
 
 def get_expected_data_time_for_asset_key(
-    context: "AssetConditionEvaluationContext", will_materialize: bool
+    context: "LegacyRuleEvaluationContext", will_materialize: bool
 ) -> Optional[datetime.datetime]:
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
@@ -158,7 +158,7 @@ def get_expected_data_time_for_asset_key(
 
 
 def freshness_evaluation_results_for_asset_key(
-    context: "AssetConditionEvaluationContext",
+    context: "LegacyRuleEvaluationContext",
 ) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.

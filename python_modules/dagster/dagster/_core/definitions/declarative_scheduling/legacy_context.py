@@ -58,7 +58,7 @@ def root_property(fn: Callable[[Any], T]) -> Callable[[Any], T]:
 
 
 @dataclass(frozen=True)
-class AssetConditionEvaluationContext:
+class LegacyRuleEvaluationContext:
     """Context object containing methods and properties used for evaluating the entire state of an
     asset's automation rules.
     """
@@ -77,7 +77,7 @@ class AssetConditionEvaluationContext:
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
-    root_ref: Optional["AssetConditionEvaluationContext"] = None
+    root_ref: Optional["LegacyRuleEvaluationContext"] = None
 
     @staticmethod
     def create(
@@ -89,10 +89,10 @@ class AssetConditionEvaluationContext:
         daemon_context: "AssetDaemonContext",
         evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> "AssetConditionEvaluationContext":
+    ) -> "LegacyRuleEvaluationContext":
         partitions_def = instance_queryer.asset_graph.get(asset_key).partitions_def
 
-        return AssetConditionEvaluationContext(
+        return LegacyRuleEvaluationContext(
             asset_key=asset_key,
             condition=condition,
             previous_evaluation_state=previous_evaluation_state,
@@ -115,7 +115,7 @@ class AssetConditionEvaluationContext:
 
     def for_child(
         self, child_condition: "AssetCondition", child_unique_id: str, candidate_subset: AssetSubset
-    ) -> "AssetConditionEvaluationContext":
+    ) -> "LegacyRuleEvaluationContext":
         return dataclasses.replace(
             self,
             condition=child_condition,
@@ -128,7 +128,7 @@ class AssetConditionEvaluationContext:
         )
 
     @property
-    def root_context(self) -> "AssetConditionEvaluationContext":
+    def root_context(self) -> "LegacyRuleEvaluationContext":
         """A reference to the context of the root condition for this evaluation."""
         return self.root_ref or self
 

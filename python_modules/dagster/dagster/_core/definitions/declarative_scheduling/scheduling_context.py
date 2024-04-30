@@ -21,7 +21,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._model import DagsterModel
 
-from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+from .legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -106,7 +106,7 @@ class SchedulingContext(DagsterModel):
         return self._get_updated_parents_and_storage_id()[1]
 
     @property
-    def legacy_context(self) -> AssetConditionEvaluationContext:
+    def legacy_context(self) -> LegacyRuleEvaluationContext:
         return self.inner_legacy_context
 
     @property
