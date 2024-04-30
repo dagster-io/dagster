@@ -1,3 +1,4 @@
+import datetime
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import (
@@ -419,13 +420,23 @@ class AssetCondition(ABC, DagsterModel):
         return MissingSchedulingCondition()
 
     @staticmethod
-    def in_latest_time_window() -> "AssetCondition":
+    def in_latest_time_window(
+        lookback_delta: Optional[datetime.timedelta] = None,
+    ) -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition when it is within the latest
         time window.
+
+        Args:
+            lookback_delta (Optional, datetime.timedelta): If provided, the condition will
+                return all partitions within the provided delta of the end of the latest time window.
+                For example, if you provide a delta of 48 hours for a daily-partitioned asset, this
+                will return the last two partitions.
         """
         from .slice_condition import InLatestTimeWindowCondition
 
-        return InLatestTimeWindowCondition()
+        return InLatestTimeWindowCondition(
+            lookback_seconds=lookback_delta.total_seconds() if lookback_delta else None
+        )
 
 
 @experimental

@@ -84,6 +84,10 @@ class SchedulingConditionEvaluationContext:
         return self.create_time.timestamp()
 
     @property
+    def effective_dt(self) -> datetime.datetime:
+        return self.asset_graph_view.effective_dt
+
+    @property
     def previous_evaluation_state(self) -> Optional[AssetConditionEvaluationState]:
         return self.previous_evaluation_state_by_key.get(self.asset_key)
 
