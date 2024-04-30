@@ -5,11 +5,11 @@ from dagster import PartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
 )
-from dagster._core.definitions.declarative_scheduling.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )
-from dagster._core.definitions.declarative_scheduling.operators.rule_operator import RuleCondition
+from dagster._core.definitions.declarative_scheduling.legacy.rule_condition import RuleCondition
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 

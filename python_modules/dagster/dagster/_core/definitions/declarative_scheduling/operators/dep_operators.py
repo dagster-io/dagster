@@ -1,7 +1,7 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..asset_condition import AssetCondition, AssetConditionResult
+from ..legacy.asset_condition import AssetCondition, AssetConditionResult
 from ..scheduling_context import SchedulingContext
 
 

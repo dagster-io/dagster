@@ -19,7 +19,7 @@ from typing import (
 
 import pendulum
 
-from dagster._core.definitions.declarative_scheduling.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -28,14 +28,14 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
-from ..asset_subset import AssetSubset, ValidAssetSubset
+from ...asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.data_time import CachingDataTimeResolver
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-    from ..asset_daemon_context import AssetDaemonContext
-    from ..base_asset_graph import BaseAssetGraph
+    from ...asset_daemon_context import AssetDaemonContext
+    from ...base_asset_graph import BaseAssetGraph
     from .asset_condition import (
         AssetCondition,
         AssetConditionEvaluation,

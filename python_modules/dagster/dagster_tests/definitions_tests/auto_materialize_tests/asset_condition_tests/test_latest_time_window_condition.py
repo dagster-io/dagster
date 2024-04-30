@@ -1,7 +1,7 @@
 import datetime
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.declarative_scheduling.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetCondition,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey

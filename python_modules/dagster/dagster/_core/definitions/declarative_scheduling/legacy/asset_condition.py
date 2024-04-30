@@ -26,11 +26,11 @@ from dagster._model import DagsterModel
 from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
-from ..asset_subset import AssetSubset, ValidAssetSubset
-from ..auto_materialize_rule import AutoMaterializeRule
+from ...asset_subset import AssetSubset, ValidAssetSubset
+from ...auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
-    from .scheduling_context import SchedulingContext
+    from ..scheduling_context import SchedulingContext
 
 
 T = TypeVar("T")
@@ -293,7 +293,7 @@ class AssetCondition(ABC, DagsterModel):
         raise NotImplementedError()
 
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
-        from .operators.boolean_operators import AndAssetCondition
+        from ..operators.boolean_operators import AndAssetCondition
 
         # group AndAssetConditions together
         if isinstance(self, AndAssetCondition):
@@ -301,7 +301,7 @@ class AssetCondition(ABC, DagsterModel):
         return AndAssetCondition(operands=[self, other])
 
     def __or__(self, other: "AssetCondition") -> "AssetCondition":
-        from .operators.boolean_operators import OrAssetCondition
+        from ..operators.boolean_operators import OrAssetCondition
 
         # group OrAssetConditions together
         if isinstance(self, OrAssetCondition):
@@ -309,7 +309,7 @@ class AssetCondition(ABC, DagsterModel):
         return OrAssetCondition(operands=[self, other])
 
     def __invert__(self) -> "AssetCondition":
-        from .operators.boolean_operators import NotAssetCondition
+        from ..operators.boolean_operators import NotAssetCondition
 
         return NotAssetCondition(operand=self)
 
@@ -330,7 +330,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition is newer than it.
         """
-        from .operators.rule_operator import RuleCondition
+        from .rule_condition import RuleCondition
 
         return RuleCondition(rule=AutoMaterializeRule.materialize_on_parent_updated())
 
@@ -339,7 +339,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when it has never been
         materialized.
         """
-        from .operators.rule_operator import RuleCondition
+        from .rule_condition import RuleCondition
 
         return RuleCondition(rule=AutoMaterializeRule.materialize_on_missing())
 
@@ -348,7 +348,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition has never been materialized or observed.
         """
-        from .operators.rule_operator import RuleCondition
+        from .rule_condition import RuleCondition
 
         return RuleCondition(rule=AutoMaterializeRule.skip_on_parent_missing())
 
@@ -358,7 +358,7 @@ class AssetCondition(ABC, DagsterModel):
         since the latest tick of the given cron schedule. For partitioned assets with a time
         component, this can only be true for the most recent partition.
         """
-        from .operators.rule_operator import RuleCondition
+        from .rule_condition import RuleCondition
 
         return ~RuleCondition(rule=AutoMaterializeRule.materialize_on_cron(cron_schedule, timezone))
 
@@ -367,7 +367,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when all parent asset
         partitions have been updated more recently than the latest tick of the given cron schedule.
         """
-        from .operators.rule_operator import RuleCondition
+        from .rule_condition import RuleCondition
 
         return ~RuleCondition(
             rule=AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(
@@ -380,7 +380,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition if at least one partition
         of any of its dependencies evaluate to True for the given condition.
         """
-        from .operators.dep_operators import AnyDepsCondition
+        from ..operators.dep_operators import AnyDepsCondition
 
         return AnyDepsCondition(operand=condition)
 
@@ -389,21 +389,21 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition if at least one partition
         of all of its dependencies evaluate to True for the given condition.
         """
-        from .operators.dep_operators import AllDepsCondition
+        from ..operators.dep_operators import AllDepsCondition
 
         return AllDepsCondition(operand=condition)
 
     @staticmethod
     def missing_() -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition when it has been materialized."""
-        from .operands.slice_conditions import MissingSchedulingCondition
+        from ..operands.slice_conditions import MissingSchedulingCondition
 
         return MissingSchedulingCondition()
 
     @staticmethod
     def in_progress() -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition if it is part of an in-progress run."""
-        from .operands.slice_conditions import InProgressSchedulingCondition
+        from ..operands.slice_conditions import InProgressSchedulingCondition
 
         return InProgressSchedulingCondition()
 
@@ -420,7 +420,7 @@ class AssetCondition(ABC, DagsterModel):
                 For example, if you provide a delta of 48 hours for a daily-partitioned asset, this
                 will return the last two partitions.
         """
-        from .operands.slice_conditions import InLatestTimeWindowCondition
+        from ..operands.slice_conditions import InLatestTimeWindowCondition
 
         return InLatestTimeWindowCondition(
             lookback_seconds=lookback_delta.total_seconds() if lookback_delta else None

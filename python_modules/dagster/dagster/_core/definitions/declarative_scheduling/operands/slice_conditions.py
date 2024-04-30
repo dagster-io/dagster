@@ -4,7 +4,7 @@ from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 
-from ..asset_condition import AssetCondition, AssetConditionResult
+from ..legacy.asset_condition import AssetCondition, AssetConditionResult
 from ..scheduling_context import SchedulingContext
 
 
