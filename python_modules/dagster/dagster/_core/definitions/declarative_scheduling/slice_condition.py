@@ -33,6 +33,15 @@ class MaterializedSchedulingCondition(SliceSchedulingCondition):
         return context.asset_graph_view.compute_materialized_asset_slice(context.asset_key)
 
 
+class InProgressSchedulingCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Part of an in-progress run"
+
+    def compute_slice(self, context: SchedulingConditionEvaluationContext) -> AssetSlice:
+        return context.asset_graph_view.compute_in_progress_asset_slice(context.asset_key)
+
+
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
     lookback_seconds: Optional[float] = None
 

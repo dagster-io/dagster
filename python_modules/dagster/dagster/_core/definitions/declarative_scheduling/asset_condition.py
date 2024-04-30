@@ -414,10 +414,17 @@ class AssetCondition(ABC, DagsterModel):
 
     @staticmethod
     def materialized() -> "AssetCondition":
-        """Returns an AssetCondition that is true for an asset partition when it has been materialized."""
+        """Returns an AssetCondition that is true for an asset partition if it has been materialized."""
         from .slice_condition import MaterializedSchedulingCondition
 
         return MaterializedSchedulingCondition()
+
+    @staticmethod
+    def in_progress() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition if it is part of an in-progress run."""
+        from .slice_condition import InProgressSchedulingCondition
+
+        return InProgressSchedulingCondition()
 
     @staticmethod
     def in_latest_time_window(
