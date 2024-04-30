@@ -185,6 +185,7 @@ export const AssetNodeMinimal = ({
 }) => {
   const {isSource, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
+
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 

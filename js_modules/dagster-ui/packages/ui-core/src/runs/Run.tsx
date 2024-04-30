@@ -38,6 +38,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
+import {CompletionType, useDependency} from '../performance/TraceContext';
 
 interface RunProps {
   runId: string;
@@ -98,12 +99,14 @@ export const Run = (props: RunProps) => {
     });
   };
 
+  const logsDependency = useDependency('RunLogs');
+
   return (
     <RunContext.Provider value={run}>
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <>
-            <OnLogsLoaded trace={trace} />
+            <OnLogsLoaded trace={trace} dependency={logsDependency} />
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
                 <RunWithData
@@ -126,10 +129,17 @@ export const Run = (props: RunProps) => {
   );
 };
 
-const OnLogsLoaded = ({trace}: {trace: RunRootTrace}) => {
+const OnLogsLoaded = ({
+  trace,
+  dependency,
+}: {
+  trace: RunRootTrace;
+  dependency: ReturnType<typeof useDependency>;
+}) => {
   React.useLayoutEffect(() => {
     trace.onLogsLoaded();
-  }, [trace]);
+    dependency.completeDependency(CompletionType.SUCCESS);
+  }, [dependency, trace]);
   return null;
 };
 

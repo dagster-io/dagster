@@ -1,11 +1,14 @@
+import {shallowCompareKeys} from '@blueprintjs/core/lib/esm/common/utils';
 import memoize from 'lodash/memoize';
-import {useEffect, useMemo, useReducer} from 'react';
+import {useEffect, useMemo, useReducer, useRef} from 'react';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
+import {usePrevious} from '../hooks/usePrevious';
+import {useDependencyWithIsSuccessful} from '../performance/TraceContext';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -212,8 +215,19 @@ export function useAssetLayout(
     }
   }, [cacheKey, graphData, runAsync, flags, opts]);
 
+  const uid = useRef(0);
+  const layoutInputs = {cacheKey, graphData, runAsync, flags, opts};
+  if (!shallowCompareKeys(usePrevious(layoutInputs), layoutInputs)) {
+    uid.current++;
+  }
+
+  const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
+
+  // Add a UID to create a new dependency whenever the layout inputs change
+  useDependencyWithIsSuccessful('AssetGraphLayout', !loading && !!state.layout, uid.current);
+
   return {
-    loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
+    loading,
     async: runAsync,
     layout: state.layout as AssetGraphLayout | null,
   };

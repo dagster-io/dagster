@@ -8,6 +8,7 @@ import {
   globalAssetGraphPathToString,
 } from './globalAssetGraphPathToString';
 import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
+import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
@@ -21,6 +22,7 @@ interface AssetGroupRootParams {
 }
 
 export const AssetsGroupsGlobalGraphRoot = () => {
+  useTrackPageView();
   const {0: path} = useParams<AssetGroupRootParams>();
   const history = useHistory();
 

@@ -51,7 +51,7 @@ export class Dependency {
 }
 
 /** Use this to declare a dependency on an apollo query result */
-export function useBlockTraceOnQueryResult(queryResult: QueryResult<any>, name: string) {
+export function useBlockTraceOnQueryResult(queryResult: QueryResult<any, any>, name: string) {
   const dep = useDependency(name);
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;
@@ -69,10 +69,11 @@ export function useBlockTraceOnQueryResult(queryResult: QueryResult<any>, name: 
   }, [dep, hasData, hasError]);
 }
 
-export function useDependency(name: string) {
+export function useDependency(name: string, uid: any = '') {
   const {addDependency, completeDependency, createDependency} = useContext(TraceContext);
 
-  const dependency = useMemo(() => createDependency(name), [createDependency, name]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const dependency = useMemo(() => createDependency(name), [createDependency, name, uid]);
 
   useLayoutEffect(() => {
     addDependency(dependency);
@@ -92,4 +93,17 @@ export function useDependency(name: string) {
     }),
     [completeDependency, dependency],
   );
+}
+
+export function useDependencyWithIsSuccessful(name: string, isSuccessful: boolean, uid: any = '') {
+  const dep = useDependency(name, uid);
+  console.log({isSuccessful});
+  useLayoutEffect(() => {
+    console.log('effect');
+    if (isSuccessful) {
+      console.log('completing');
+      dep.completeDependency(CompletionType.SUCCESS);
+    }
+  }, [dep, isSuccessful, name]);
+  return dep;
 }

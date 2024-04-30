@@ -9,6 +9,7 @@ import {
   TraceContext,
   useBlockTraceOnQueryResult,
   useDependency,
+  useDependencyWithIsSuccessful,
 } from '../TraceContext';
 
 describe('TraceContext', () => {
@@ -88,7 +89,7 @@ describe('OrphanDependenciesTraceContext', () => {
     const mockAddDependency = jest.fn();
     const mockCompleteDependency = jest.fn();
     const context = {
-      createDependency: () => new Dependency('test'),
+      createDependency: (name: string) => new Dependency(name),
       addDependency: mockAddDependency,
       completeDependency: mockCompleteDependency,
     };
@@ -102,5 +103,44 @@ describe('OrphanDependenciesTraceContext', () => {
     unmount();
     expect(mockAddDependency).not.toHaveBeenCalled();
     expect(mockCompleteDependency).not.toHaveBeenCalled();
+  });
+});
+
+describe('useDependencyWithIsSuccessful', () => {
+  it('calls completeDependency with SUCCESS when isSuccessful is true', async () => {
+    const mockCompleteDependency = jest.fn();
+    const context = {
+      createDependency: (name: string) => new Dependency(name),
+      addDependency: jest.fn(),
+      completeDependency: mockCompleteDependency,
+    };
+    const wrapper = ({children}: any) => (
+      <TraceContext.Provider value={context}>{children}</TraceContext.Provider>
+    );
+
+    const {rerender, unmount} = renderHook(
+      ({name, isSuccessful}: any) => useDependencyWithIsSuccessful(name, isSuccessful, 'uid123'),
+      {
+        initialProps: {name: 'testDep', isSuccessful: false},
+        wrapper,
+      },
+    );
+
+    // Initially, isSuccessful is false, so completeDependency should not be called.
+    expect(mockCompleteDependency).not.toHaveBeenCalled();
+
+    // Update isSuccessful to true and rerender.
+    rerender({name: 'testDep', isSuccessful: true});
+
+    // Now completeDependency should be called with SUCCESS.
+    expect(mockCompleteDependency).toHaveBeenCalledTimes(1);
+    expect(mockCompleteDependency).toHaveBeenCalledWith({name: 'testDep'}, CompletionType.SUCCESS);
+
+    unmount();
+    expect(mockCompleteDependency).toHaveBeenCalledTimes(2);
+    expect(mockCompleteDependency).toHaveBeenCalledWith(
+      {name: 'testDep'},
+      CompletionType.CANCELLED,
+    );
   });
 });
