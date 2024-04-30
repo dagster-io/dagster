@@ -1,8 +1,7 @@
-import io
 import os
 import pathlib
+import subprocess
 import tempfile
-import zipfile
 
 import requests
 from langchain.docstore.document import Document
@@ -19,17 +18,22 @@ def get_wiki_data(title, first_paragraph_only):
     )
 
 
-def get_github_docs(repo_owner, repo_name, category, archive_name="master"):
+def get_github_docs(repo_owner, repo_name, category):
     with tempfile.TemporaryDirectory() as d:
-        # The archive name can be a branch, tag or commit.
-        r = requests.get(f"https://github.com/{repo_owner}/{repo_name}/archive/{archive_name}.zip")
-        z = zipfile.ZipFile(io.BytesIO(r.content))
-        z.extractall(d)
-        root_path = pathlib.Path(os.path.join(d, f"{repo_name}-{archive_name}"))
-        docs_path = root_path.joinpath("docs/content", category)
-        markdown_files = list(docs_path.glob("*.md*")) + list(docs_path.glob("*/*.md*"))
-        for markdown_file in markdown_files:
+        subprocess.check_call(
+            f"git clone --depth 1 https://github.com/{repo_owner}/{repo_name}.git .",
+            cwd=d,
+            shell=True,
+        )
+        git_sha = (
+            subprocess.check_output("git rev-parse HEAD", shell=True, cwd=d).decode("utf-8").strip()
+        )
+        docs_path = pathlib.Path(os.path.join(d, "docs/content", category))
+        markdown_files = list(docs_path.glob("*/*.md")) + list(docs_path.glob("*/*.mdx"))
+        for index, markdown_file in enumerate(markdown_files):
             with open(markdown_file, "r") as f:
-                relative_path = markdown_file.relative_to(root_path)
-                github_url = f"https://github.com/{repo_owner}/{repo_name}/blob/{archive_name}/{relative_path}"
+                relative_path = markdown_file.relative_to(docs_path)
+                github_url = (
+                    f"https://github.com/{repo_owner}/{repo_name}/blob/{git_sha}/{relative_path}"
+                )
                 yield Document(page_content=f.read(), metadata={"source": github_url})

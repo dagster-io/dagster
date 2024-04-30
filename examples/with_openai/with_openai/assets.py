@@ -22,17 +22,7 @@ from .constants import SEARCH_INDEX_FILE, SUMMARY_TEMPLATE
 from .utils import get_github_docs
 
 docs_partitions_def = StaticPartitionsDefinition(
-    [
-        "about",
-        "community",
-        "concepts",
-        "dagster-plus",
-        "deployment",
-        "getting-started",
-        "guides",
-        "integrations",
-        "tutorial",
-    ]
+    ["concepts", "dagster-cloud", "deployment", "guides", "integrations"]
 )
 
 
@@ -73,24 +63,18 @@ class OpenAIConfig(Config):
     question: str
 
 
-@asset(compute_kind="OpenAI", deps=[search_index])
-def completion(
-    context: AssetExecutionContext,
-    openai: OpenAIResource,
-    config: OpenAIConfig,
-):
+@asset(compute_kind="OpenAI")
+def completion(context: AssetExecutionContext, openai: OpenAIResource, config: OpenAIConfig):
     with open(SEARCH_INDEX_FILE, "rb") as f:
         serialized_search_index = pickle.load(f)
     search_index = FAISS.deserialize_from_bytes(serialized_search_index, OpenAIEmbeddings())
     with openai.get_client(context) as client:
         prompt = stuff_prompt.PROMPT
         model = ChatOpenAI(client=client.chat.completions, model=config.model, temperature=0)
-        summaries = " ".join(
-            [
-                SUMMARY_TEMPLATE.format(content=doc.page_content, source=doc.metadata["source"])
-                for doc in search_index.similarity_search(config.question, k=4)
-            ]
-        )
+        summaries = [
+            SUMMARY_TEMPLATE.format(content=doc.page_content, source=doc.metadata["source"])
+            for doc in search_index.similarity_search(config.question, k=4)
+        ]
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
         context.log.info(chain.invoke({"summaries": summaries, "question": config.question}))
