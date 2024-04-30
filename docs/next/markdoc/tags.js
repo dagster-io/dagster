@@ -4,6 +4,7 @@ import {Note, Warning} from '../components/markdoc/Callouts';
 import {Check, Cross} from '../components/markdoc/CheckCross';
 import {CodeReferenceLink} from '../components/markdoc/CodeReferenceLink';
 import {Image} from '../components/markdoc/Image';
+import {ReferenceTable, ReferenceTableItem} from '../components/markdoc/ReferenceTable';
 
 export const note = {
   render: Note,
@@ -82,6 +83,19 @@ export const codeReferenceLink = {
     isInline: {
       type: Boolean,
       default: false,
+    },
+  },
+};
+
+export const referenceTable = {
+  render: ReferenceTable,
+};
+
+export const referenceTableItem = {
+  render: ReferenceTableItem,
+  attributes: {
+    propertyName: {
+      type: String,
     },
   },
 };
