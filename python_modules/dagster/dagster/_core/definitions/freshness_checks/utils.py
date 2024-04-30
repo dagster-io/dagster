@@ -2,8 +2,13 @@ import datetime
 from typing import Iterator, Optional, Sequence, Union, cast
 
 from dagster import _check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.decorators.asset_check_decorator import (
+    MultiAssetCheckFunction,
+    multi_asset_check,
+)
+from dagster._core.definitions.metadata import JsonMetadataValue
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
@@ -20,14 +25,15 @@ DEFAULT_FRESHNESS_TIMEZONE = "UTC"
 # Top-level metadata keys
 LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
 FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
-# When an asset is overdue, this represents the timestamp by which the asset was expected to arrive.
-EXPECTED_BY_TIMESTAMP_METADATA_KEY = "dagster/expected_by_timestamp"
+# The latest asset record should be no earlier than this timestamp.
+LOWER_BOUND_TIMESTAMP_METADATA_KEY = "dagster/freshness_lower_bound_timestamp"
 # When an asset is fresh, this represents the timestamp when the asset can become stale again.
 FRESH_UNTIL_METADATA_KEY = "dagster/fresh_until_timestamp"
-OVERDUE_SECONDS_METADATA_KEY = "dagster/overdue_seconds"
+# If this is cron-based freshness, this is the latest tick of the cron.
+LATEST_CRON_TICK_METADATA_KEY = "dagster/latest_cron_tick_timestamp"
 
 # dagster/freshness_params inner keys
-LOWER_BOUND_DELTA_PARAM_KEY = "lower_bound_delta"
+LOWER_BOUND_DELTA_PARAM_KEY = "lower_bound_delta_seconds"
 DEADLINE_CRON_PARAM_KEY = "deadline_cron"
 TIMEZONE_PARAM_KEY = "timezone"
 
@@ -43,9 +49,7 @@ def ensure_no_duplicate_assets(
     Returns:
         Sequence[AssetKey]: A list of the duplicate assets.
     """
-    asset_keys = [
-        asset_key for asset in assets for asset_key in list(asset_to_keys_iterable(asset))
-    ]
+    asset_keys = assets_to_keys(assets)
     duplicate_assets = [asset_key for asset_key in asset_keys if asset_keys.count(asset_key) > 1]
     check.invariant(
         len(duplicate_assets) == 0,
@@ -53,23 +57,22 @@ def ensure_no_duplicate_assets(
     )
 
 
-def asset_to_keys_iterable(
+def _asset_to_keys_iterable(
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
 ) -> Iterator[AssetKey]:
-    """Converts the provided asset construct to a sequence of AssetKeys.
-
-    Args:
-        asset (Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]): The asset to convert to a sequence of AssetKeys.
-
-    Returns:
-        Sequence[AssetKey]: A sequence of AssetKeys.
-    """
     if isinstance(asset, AssetsDefinition):
         yield from asset.keys
     elif isinstance(asset, SourceAsset):
         yield asset.key
     else:
         yield AssetKey.from_coercible_or_definition(asset)
+
+
+def assets_to_keys(
+    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+) -> Sequence[AssetKey]:
+    """Converts the provided assets to a sequence of their contained AssetKeys."""
+    return [asset_key for asset in assets for asset_key in _asset_to_keys_iterable(asset)]
 
 
 def ensure_no_duplicate_asset_checks(
@@ -240,3 +243,22 @@ def unique_id_from_asset_keys(asset_keys: Sequence[AssetKey]) -> str:
     return non_secure_md5_hash_str(
         ",".join([str(asset_key) for asset_key in sorted_asset_keys]).encode()
     )[:8]
+
+
+def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: Sequence[AssetKey]):
+    def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
+        return multi_asset_check(
+            specs=[
+                AssetCheckSpec(
+                    "freshness_check",
+                    asset=asset_key,
+                    metadata={FRESHNESS_PARAMS_METADATA_KEY: params_metadata},
+                    description="Evaluates freshness for targeted asset.",
+                )
+                for asset_key in asset_keys
+            ],
+            can_subset=True,
+            name=f"freshness_check_{unique_id_from_asset_keys(asset_keys)}",
+        )(fn)
+
+    return inner
