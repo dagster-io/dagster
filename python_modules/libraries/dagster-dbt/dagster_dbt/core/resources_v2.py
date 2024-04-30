@@ -377,11 +377,8 @@ class DbtCliEventMessage:
             Dict[str, Any]: The lineage metadata.
         """
         if (
-            # The dbt project name is only available from the manifest in `dbt-core>=1.6`.
-            version.parse(dbt_version) < version.parse("1.6.0")
             # Column lineage can only be built if initial metadata is provided.
-            or not self.has_column_lineage_metadata
-            or not target_path
+            not self.has_column_lineage_metadata or not target_path
         ):
             return {}
 
@@ -1075,9 +1072,9 @@ class DbtCliResource(ConfigurableResource):
     @compat_model_validator(mode="before")
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the dbt version is supported."""
-        if version.parse(dbt_version) < version.parse("1.5.0"):
+        if version.parse(dbt_version) < version.parse("1.6.0"):
             raise ValueError(
-                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.5.0`. Currently,"
+                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.6.0`. Currently,"
                 f" you are using `dbt-core=={dbt_version}`. Please install a compatible dbt-core"
                 " version."
             )
@@ -1137,11 +1134,7 @@ class DbtCliResource(ConfigurableResource):
         if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
             return []
 
-        state_flag = "--defer-state"
-        if version.parse(dbt_version) < version.parse("1.6.0"):
-            state_flag = "--state"
-
-        return ["--defer", state_flag, self.state_path]
+        return ["--defer", "--defer-state", self.state_path]
 
     def get_state_args(self) -> Sequence[str]:
         """Build the state arguments for the dbt CLI command, using the supplied state directory.

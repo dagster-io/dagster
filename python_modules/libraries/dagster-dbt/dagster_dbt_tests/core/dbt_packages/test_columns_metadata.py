@@ -17,8 +17,6 @@ from dagster import (
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
-from dbt.version import __version__ as dbt_version
-from packaging import version
 from pytest_mock import MockFixture
 from sqlglot import Dialect
 
@@ -102,10 +100,6 @@ def test_exception_column_schema(
     )
 
 
-@pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.6.0"),
-    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
-)
 def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -130,10 +124,6 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
     )
 
 
-@pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.6.0"),
-    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
-)
 def test_exception_column_lineage(
     mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
 ) -> None:
@@ -158,10 +148,6 @@ def test_exception_column_lineage(
     )
 
 
-@pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.6.0"),
-    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
-)
 @pytest.mark.parametrize(
     "asset_key_selection",
     [
