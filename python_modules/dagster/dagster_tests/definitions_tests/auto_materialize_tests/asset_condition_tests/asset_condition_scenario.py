@@ -85,6 +85,7 @@ class AssetConditionScenarioState(ScenarioState):
                 daemon_context=daemon_context,
             )
             context = SchedulingConditionEvaluationContext(
+                root_asset_key=asset_key,
                 asset_key=asset_key,
                 condition=asset_condition,
                 condition_unique_id=asset_condition.get_unique_id(parent_unique_id=None),

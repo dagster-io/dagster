@@ -29,6 +29,9 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class SchedulingConditionEvaluationContext:
+    # the target key of the root condition evaluation
+    root_asset_key: AssetKey
+    # the key being evaluated by this condition
     asset_key: AssetKey
 
     condition: AssetCondition
