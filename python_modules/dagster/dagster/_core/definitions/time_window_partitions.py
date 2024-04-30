@@ -486,8 +486,10 @@ class TimeWindowPartitionsDefinition(
     def __repr__(self):
         # Between python 3.8 and 3.9 the repr of a datetime object changed.
         # Replaces start time with timestamp as a workaround to make sure the repr is consistent across versions.
+        # Make sure to update this __repr__ if any new fields are added to TimeWindowPartitionsDefinition.
         return (
             f"TimeWindowPartitionsDefinition(start={self.start.timestamp()},"
+            f" end={self.end.timestamp() if self.end else None},"
             f" timezone='{self.timezone}', fmt='{self.fmt}', end_offset={self.end_offset},"
             f" cron_schedule='{self.cron_schedule}')"
         )
