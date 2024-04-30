@@ -1,5 +1,5 @@
 import {useLazyQuery} from '@apollo/client';
-import {Alert, Box, Colors, Spinner, Subtitle} from '@dagster-io/ui-components';
+import {Alert, Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
@@ -172,7 +172,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
       </Box>
       <SensorInfo assetDaemonHealth={daemonStatus} padding={{vertical: 16, horizontal: 24}} />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <Subtitle>Evaluation timeline</Subtitle>
+        <Subtitle2>Evaluation timeline</Subtitle2>
       </Box>
       {!sensor && loading ? (
         <Box

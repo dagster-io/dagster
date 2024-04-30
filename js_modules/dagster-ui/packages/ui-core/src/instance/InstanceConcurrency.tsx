@@ -19,7 +19,7 @@ import {
   Popover,
   Spinner,
   StyledRawCodeMirror,
-  Subtitle,
+  Subheading,
   Table,
   Tag,
   TextInput,
@@ -165,7 +165,7 @@ export const RunConcurrencyContent = ({
           border="bottom"
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
         >
-          <Subtitle>Run concurrency</Subtitle>
+          <Subheading>Run concurrency</Subheading>
           {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
         </Box>
         <div>
@@ -244,7 +244,7 @@ const RunConcurrencyLimitHeader = ({
     padding={{vertical: 16, horizontal: 24}}
     border="bottom"
   >
-    <Subtitle>Run concurrency</Subtitle>
+    <Subheading>Run concurrency</Subheading>
     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
       {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
       {onEdit ? (
@@ -396,7 +396,7 @@ const ConcurrencyLimitHeader = ({onAdd}: {onAdd?: () => void}) => (
     border="top-and-bottom"
   >
     <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
-      <Subtitle>Global op/asset concurrency</Subtitle>
+      <Subheading>Global op/asset concurrency</Subheading>
       <Tag>Experimental</Tag>
     </Box>
     {onAdd ? (

@@ -6,7 +6,7 @@ import {
   Icon,
   NonIdealState,
   Spinner,
-  Subtitle,
+  Subheading,
   Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -255,7 +255,7 @@ export const OpJobPartitionsViewContent = ({
         border="bottom"
         padding={{vertical: 16, horizontal: 24}}
       >
-        <Subtitle>Status</Subtitle>
+        <Subheading>Status</Subheading>
         <Box flex={{gap: 8}}>
           <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
             {showSteps ? 'Hide per-step status' : 'Show per-step status'}
@@ -329,7 +329,7 @@ export const OpJobPartitionsViewContent = ({
         ) : null}
       </Box>
       <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
-        <Subtitle>Run duration</Subtitle>
+        <Subheading>Run duration</Subheading>
       </Box>
       <Box margin={24}>
         <PartitionGraph
@@ -343,7 +343,7 @@ export const OpJobPartitionsViewContent = ({
       {showSteps ? (
         <>
           <Box padding={{horizontal: 24, vertical: 16}}>
-            <Subtitle>Step duration</Subtitle>
+            <Subheading>Step duration</Subheading>
           </Box>
           <Box margin={24}>
             <PartitionGraph
@@ -361,7 +361,7 @@ export const OpJobPartitionsViewContent = ({
         border="top-and-bottom"
         style={{marginBottom: -1}}
       >
-        <Subtitle>Backfill history</Subtitle>
+        <Subheading>Backfill history</Subheading>
       </Box>
       <Box margin={{bottom: 20}}>
         <JobBackfillsTable

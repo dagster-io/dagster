@@ -10,7 +10,7 @@ import {
   MenuItem,
   Popover,
   Spinner,
-  Subtitle,
+  Subheading,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -124,7 +124,7 @@ export const AssetEvents = ({
           padding={{vertical: 16, horizontal: 24}}
           style={{marginBottom: -1}}
         >
-          <Subtitle>Asset Events</Subtitle>
+          <Subheading>Asset Events</Subheading>
           <div style={{margin: '-6px 0 '}}>
             <ButtonGroup
               activeItems={new Set([xAxis])}

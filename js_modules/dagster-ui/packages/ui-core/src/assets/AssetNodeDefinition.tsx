@@ -7,7 +7,7 @@ import {
   ConfigTypeSchema,
   Icon,
   Mono,
-  Subtitle,
+  Subheading,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
@@ -72,7 +72,7 @@ export const AssetNodeDefinition = ({
             border="bottom"
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subtitle>Description</Subtitle>
+            <Subheading>Description</Subheading>
             <DescriptionAnnotations assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
           <Box
@@ -88,7 +88,7 @@ export const AssetNodeDefinition = ({
           {assetNode.opVersion && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-                <Subtitle>Code version</Subtitle>
+                <Subheading>Code version</Subheading>
               </Box>
               <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
                 <Version>{assetNode.opVersion}</Version>
@@ -99,7 +99,7 @@ export const AssetNodeDefinition = ({
           {assetNode.freshnessPolicy && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-                <Subtitle>Freshness policy</Subtitle>
+                <Subheading>Freshness policy</Subheading>
               </Box>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
@@ -116,7 +116,7 @@ export const AssetNodeDefinition = ({
           {assetNode.backfillPolicy && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-                <Subtitle>Backfill policy</Subtitle>
+                <Subheading>Backfill policy</Subheading>
               </Box>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
@@ -132,7 +132,9 @@ export const AssetNodeDefinition = ({
             border="top-and-bottom"
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subtitle>Upstream assets{upstream?.length ? ` (${upstream.length})` : ''}</Subtitle>
+            <Subheading>
+              Upstream assets{upstream?.length ? ` (${upstream.length})` : ''}
+            </Subheading>
             <Link to="?view=lineage&lineageScope=upstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
                 View upstream graph
@@ -151,9 +153,9 @@ export const AssetNodeDefinition = ({
             border="top-and-bottom"
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subtitle>
+            <Subheading>
               Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
-            </Subtitle>
+            </Subheading>
           </Box>
           <AssetNodeList items={downstream} />
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
@@ -163,7 +165,7 @@ export const AssetNodeDefinition = ({
         <Box border="left-and-right" style={{flex: 0.5, minWidth: 0}} flex={{direction: 'column'}}>
           <>
             <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
-              <Subtitle>Required resources</Subtitle>
+              <Subheading>Required resources</Subheading>
             </Box>
             <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
               {[...assetNode.requiredResources]
@@ -200,7 +202,7 @@ export const AssetNodeDefinition = ({
 
           <>
             <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
-              <Subtitle>Config</Subtitle>
+              <Subheading>Config</Subheading>
             </Box>
             <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
               {assetConfigSchema ? (
@@ -223,7 +225,7 @@ export const AssetNodeDefinition = ({
 
           <>
             <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
-              <Subtitle>Type</Subtitle>
+              <Subheading>Type</Subheading>
             </Box>
             {assetType && assetType.displayName !== 'Any' ? (
               <DagsterTypeSummary type={assetType} />
@@ -245,7 +247,7 @@ export const AssetNodeDefinition = ({
               border="top-and-bottom"
               flex={{justifyContent: 'space-between', gap: 8}}
             >
-              <Subtitle>Metadata</Subtitle>
+              <Subheading>Metadata</Subheading>
             </Box>
             <Box style={{flex: 1}}>
               {assetMetadata.length > 0 ? (

@@ -4,7 +4,7 @@ import {
   Icon,
   Popover,
   Spinner,
-  Subtitle,
+  Subtitle2,
   Tag,
   TagIntent,
 } from '@dagster-io/ui-components';
@@ -94,7 +94,7 @@ const ChecksSummaryPopover = ({
   return (
     <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
       <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-        <Subtitle>{`${titlePerCheckType(type)} checks`}</Subtitle>
+        <Subtitle2>{`${titlePerCheckType(type)} checks`}</Subtitle2>
       </Box>
       {assetChecks.map((check) => (
         <CheckStatusRow key={check.name} assetCheck={check} assetKey={assetKey} />

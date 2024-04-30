@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DisclosureTriangleButton,
   MiddleTruncate,
-  Subtitle,
+  Subtitle2,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -197,9 +197,9 @@ const Section = ({
             }}
           >
             <DisclosureTriangleButton onToggle={() => {}} isOpen={isOpen} />
-            <Subtitle>
+            <Subtitle2>
               {title} ({numberFormatter.format(assets.length)})
-            </Subtitle>
+            </Subtitle2>
           </Box>
         </Box>
       ) : null}

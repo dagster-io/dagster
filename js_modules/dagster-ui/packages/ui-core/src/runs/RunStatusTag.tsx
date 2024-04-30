@@ -1,4 +1,4 @@
-import {Box, Colors, MonoSmall, Popover, Tag} from '@dagster-io/ui-components';
+import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
 
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
@@ -105,7 +105,7 @@ export const RunStatusTagWithID = ({runId, status}: {runId: string; status: RunS
     <Tag intent={statusToIntent(status)}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={status} size={10} />
-        <MonoSmall>{runId.slice(0, 8)}</MonoSmall>
+        <CaptionMono>{runId.slice(0, 8)}</CaptionMono>
       </Box>
     </Tag>
   );

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Caption, Colors, Icon, Spinner, Subtitle} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {memo, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -167,7 +167,7 @@ export const AutomaterializationTickDetailDialog = memo(
                   padding={{vertical: 12, horizontal: 24}}
                   border={filteredAssetKeys.length > 0 ? undefined : 'bottom'}
                 >
-                  <Subtitle>Materializations requested</Subtitle>
+                  <Subtitle2>Materializations requested</Subtitle2>
                 </Box>
                 {content}
               </>

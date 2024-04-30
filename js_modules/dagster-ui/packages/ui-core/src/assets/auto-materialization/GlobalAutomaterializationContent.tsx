@@ -1,5 +1,5 @@
 import {useLazyQuery} from '@apollo/client';
-import {Alert, Box, Checkbox, Colors, Spinner, Subtitle, Table} from '@dagster-io/ui-components';
+import {Alert, Box, Checkbox, Colors, Spinner, Subtitle2, Table} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
@@ -174,7 +174,7 @@ export const GlobalAutomaterializationContent = () => {
         </tbody>
       </Table>
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <Subtitle>Evaluation timeline</Subtitle>
+        <Subtitle2>Evaluation timeline</Subtitle2>
       </Box>
       {!data ? (
         <Box

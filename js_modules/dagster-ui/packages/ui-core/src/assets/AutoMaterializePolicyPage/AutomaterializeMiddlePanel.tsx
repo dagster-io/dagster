@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   BaseTag,
-  Body,
+  Body2,
   Box,
   Colors,
   Icon,
@@ -9,7 +9,8 @@ import {
   MiddleTruncate,
   NonIdealState,
   Popover,
-  Subtitle,
+  Subheading,
+  Subtitle2,
   Tag,
   TagSelectorContainer,
   TagSelectorDefaultTagTooltipStyle,
@@ -117,7 +118,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
           padding={{horizontal: 16}}
           flex={{alignItems: 'center', justifyContent: 'space-between'}}
         >
-          <Subtitle>Result</Subtitle>
+          <Subheading>Result</Subheading>
         </Box>
       </Box>
     );
@@ -167,12 +168,12 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
             icon="sensors"
             title="No evaluations"
             description={
-              <Body>
+              <Body2>
                 <Box flex={{direction: 'column', gap: 8}}>
-                  <Body>
+                  <Body2>
                     This asset’s automation policy has not been evaluated yet. Make sure your
                     automation sensor is running.
-                  </Body>
+                  </Body2>
                   <div>
                     <AnchorButton
                       to={
@@ -188,7 +189,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
                     Learn more about automation policies
                   </a>
                 </Box>
-              </Body>
+              </Body2>
             }
           />
         </Box>
@@ -325,24 +326,24 @@ export const AutomaterializeMiddlePanelWithData = ({
         border="bottom"
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
-        <Subtitle>Result</Subtitle>
+        <Subheading>Result</Subheading>
       </Box>
       {selectedEvaluation ? (
         <Box padding={{horizontal: 24, vertical: 12}}>
           <Box border="bottom" padding={{vertical: 12}} margin={{bottom: 12}}>
             <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24}}>
               <Box flex={{direction: 'column', gap: 5}}>
-                <Subtitle>Evaluation result</Subtitle>
+                <Subtitle2>Evaluation result</Subtitle2>
                 <div>{statusTag}</div>
               </Box>
               {selectedEvaluation?.timestamp ? (
                 <Box flex={{direction: 'column', gap: 5}}>
-                  <Subtitle>Timestamp</Subtitle>
+                  <Subtitle2>Timestamp</Subtitle2>
                   <Timestamp timestamp={{unix: selectedEvaluation?.timestamp}} />
                 </Box>
               ) : null}
               <Box flex={{direction: 'column', gap: 5}}>
-                <Subtitle>Duration</Subtitle>
+                <Subtitle2>Duration</Subtitle2>
                 <div>
                   {selectedEvaluation?.startTimestamp && selectedEvaluation?.endTimestamp
                     ? formatElapsedTimeWithMsec(
@@ -355,11 +356,11 @@ export const AutomaterializeMiddlePanelWithData = ({
             </div>
           </Box>
           <Box border="bottom" padding={{vertical: 12}} margin={{vertical: 12}}>
-            <Subtitle>Runs launched ({selectedEvaluation.runIds.length})</Subtitle>
+            <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
           </Box>
           <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
           <Box border="bottom" padding={{vertical: 12}}>
-            <Subtitle>Policy evaluation</Subtitle>
+            <Subtitle2>Policy evaluation</Subtitle2>
           </Box>
           {definition?.partitionDefinition ? (
             <Box padding={{vertical: 12}} flex={{justifyContent: 'flex-end'}}>

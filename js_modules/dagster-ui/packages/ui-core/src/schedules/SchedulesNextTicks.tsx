@@ -16,7 +16,7 @@ import {
   Popover,
   Spinner,
   StyledRawCodeMirror,
-  Subtitle,
+  Subheading,
   Table,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
@@ -367,14 +367,14 @@ const NextTickDialog = ({
     body = (
       <Box flex={{direction: 'column', gap: 20}}>
         <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-          <Subtitle>Tags</Subtitle>
+          <Subheading>Tags</Subheading>
           {selectedRunRequest.tags.length ? (
             <RunTags tags={selectedRunRequest.tags} mode={isJob ? null : schedule.mode} />
           ) : null}
         </Box>
         <div>
           <Box border="bottom" padding={{left: 24, bottom: 16}}>
-            <Subtitle>Config</Subtitle>
+            <Subheading>Config</Subheading>
           </Box>
           <StyledRawCodeMirror
             value={selectedRunRequest.runConfigYaml}

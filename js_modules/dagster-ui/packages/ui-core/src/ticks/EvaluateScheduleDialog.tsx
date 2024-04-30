@@ -13,7 +13,7 @@ import {
   NonIdealState,
   Popover,
   Spinner,
-  Subtitle,
+  Subheading,
   Tag,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -299,7 +299,7 @@ const EvaluateScheduleContent = ({
     if (!evaluationResult.runRequests?.length) {
       return (
         <div>
-          <Subtitle>Skip Reason</Subtitle>
+          <Subheading>Skip Reason</Subheading>
           <div>{evaluationResult?.skipReason || 'No skip reason was output'}</div>
         </div>
       );
@@ -324,7 +324,7 @@ const EvaluateScheduleContent = ({
       <Box>
         <Grid>
           <div>
-            <Subtitle>Result</Subtitle>
+            <Subheading>Result</Subheading>
             <Box flex={{grow: 1, alignItems: 'center'}}>
               <div>
                 {error ? (
@@ -338,7 +338,7 @@ const EvaluateScheduleContent = ({
             </Box>
           </div>
           <div>
-            <Subtitle>Tick</Subtitle>
+            <Subheading>Tick</Subheading>
             <Box flex={{grow: 1, alignItems: 'center'}}>
               <Mono>
                 {timestampToString({
@@ -397,7 +397,7 @@ const Grid = styled.div`
   padding-bottom: 12px;
   border-bottom: 1px solid ${Colors.keylineDefault()};
   margin-bottom: 12px;
-  ${Subtitle} {
+  ${Subheading} {
     padding-bottom: 4px;
     display: block;
   }

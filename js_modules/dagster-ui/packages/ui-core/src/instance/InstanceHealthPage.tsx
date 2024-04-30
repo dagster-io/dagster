@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Heading, PageHeader, Subtitle} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {DaemonList} from './DaemonList';
@@ -47,7 +47,7 @@ export const InstanceHealthPageContent = () => {
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       >
-        <Subtitle>Daemon statuses</Subtitle>
+        <Subheading>Daemon statuses</Subheading>
         <div>
           <QueryRefreshCountdown refreshState={refreshState} />
         </div>

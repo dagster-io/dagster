@@ -12,78 +12,80 @@ const Text = styled.span<TextProps>`
 `;
 
 export const Title = styled(Text)`
-  font-size: 32px;
-  line-height: 36px;
+  font-size: 24px;
   font-weight: 600;
+  line-height: 30px;
   -webkit-font-smoothing: antialiased;
 `;
 
 export const Heading = styled(Text)`
-  font-size: 20px;
+  font-size: 18px;
+  font-weight: 500;
   line-height: 24px;
-  font-weight: 500;
   -webkit-font-smoothing: antialiased;
 `;
 
-export const SubtitleLarge = styled(Text)`
-  font-size: 16px;
-  line-height: 20px;
+export const Headline = styled(Text)`
+  font-size: 18px;
   font-weight: 500;
+  line-height: 24px;
   -webkit-font-smoothing: antialiased;
 `;
 
-export const Subtitle = styled(Text)`
+export const Subheading = styled(Text)`
   font-size: 14px;
+  font-weight: 600;
   line-height: 20px;
-  font-weight: 500;
   -webkit-font-smoothing: antialiased;
 `;
 
-export const SubtitleSmall = styled(Text)`
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
+export const Subtitle1 = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
 `;
 
-export const BodyLarge = styled(Text)`
-  font-size: 16px;
+export const Subtitle2 = styled(Text)`
+  font-size: 14px;
+  font-weight: 600;
   line-height: 20px;
-  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
 `;
 
 export const Body = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 14px;
+`;
+
+export const Body1 = styled(Text)`
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+`;
+
+export const Body2 = styled(Text)`
+  font-family: ${FontFamily.default};
   line-height: 20px;
+  font-size: 14px;
   font-weight: 400;
 `;
 
-export const BodySmall = styled(Text)`
+export const Caption = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 12px;
-  line-height: 16px;
-  font-weight: 400;
 `;
 
-export const MonoLarge = styled(Text)`
-  font-family: ${FontFamily.monospace};
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 400;
-`;
-
-export const Mono = styled(Text)`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 400;
-`;
-
-export const MonoSmall = styled(Text)`
-  font-family: ${FontFamily.monospace};
+export const CaptionSubtitle = styled(Text)`
   font-size: 12px;
+  font-weight: 600;
   line-height: 16px;
-  font-weight: 400;
+`;
+
+export const CaptionBolded = styled(Text)`
+  font-family: ${FontFamily.default};
+  font-size: 12px;
+  font-weight: 900;
 `;
 
 export const Code = styled(Text)`
@@ -94,8 +96,12 @@ export const Code = styled(Text)`
   padding: 2px 4px;
 `;
 
-//Depricated – Use BodySmall moving forward
-export const Caption = styled(Text)`
-  font-family: ${FontFamily.default};
+export const Mono = styled(Text)`
+  font-family: ${FontFamily.monospace};
+  font-size: 14px;
+`;
+
+export const CaptionMono = styled(Text)`
+  font-family: ${FontFamily.monospace};
   font-size: 12px;
 `;

@@ -4,7 +4,7 @@ import {Box} from './Box';
 import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
-import {Subtitle} from './Text';
+import {Subheading} from './Text';
 
 export type NonIdealStateProps = React.DetailedHTMLProps<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -54,7 +54,7 @@ export const NonIdealState = ({
           grow: 1,
         }}
       >
-        {title && <Subtitle style={{color: Colors.textDefault()}}>{title}</Subtitle>}
+        {title && <Subheading style={{color: Colors.textDefault()}}>{title}</Subheading>}
         {description && <div style={{color: Colors.textDefault()}}>{description}</div>}
         {action}
       </Box>
