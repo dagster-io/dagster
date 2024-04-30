@@ -3646,6 +3646,7 @@ export type Query = {
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String']['output'];
+  workspaceLocationEntryOrError: Maybe<WorkspaceLocationEntryOrError>;
   workspaceOrError: WorkspaceOrError;
 };
 
@@ -3871,6 +3872,10 @@ export type QueryTopLevelResourceDetailsOrErrorArgs = {
 
 export type QueryUtilizedEnvVarsOrErrorArgs = {
   repositorySelector: RepositorySelector;
+};
+
+export type QueryWorkspaceLocationEntryOrErrorArgs = {
+  name: Scalars['String']['input'];
 };
 
 export type ReexecutionParams = {
@@ -5431,6 +5436,8 @@ export type WorkspaceLocationEntry = {
   permissions: Array<Permission>;
   updatedTimestamp: Scalars['Float']['output'];
 };
+
+export type WorkspaceLocationEntryOrError = PythonError | WorkspaceLocationEntry;
 
 export type WorkspaceLocationStatusEntries = {
   __typename: 'WorkspaceLocationStatusEntries';
@@ -11860,6 +11867,12 @@ export const buildQuery = (
         ? ({} as EnvVarWithConsumersList)
         : buildEnvVarWithConsumersList({}, relationshipsToOmit),
     version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'et',
+    workspaceLocationEntryOrError:
+      overrides && overrides.hasOwnProperty('workspaceLocationEntryOrError')
+        ? overrides.workspaceLocationEntryOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     workspaceOrError:
       overrides && overrides.hasOwnProperty('workspaceOrError')
         ? overrides.workspaceOrError!
