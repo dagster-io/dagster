@@ -16,8 +16,8 @@ from dagster._core.definitions.declarative_scheduling.asset_condition import (
 from dagster._core.definitions.declarative_scheduling.asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
-from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluation_context import (
-    SchedulingConditionEvaluationContext,
+from dagster._core.definitions.declarative_scheduling.scheduling_context import (
+    SchedulingContext,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time
@@ -33,7 +33,7 @@ class FalseAssetCondition(AssetCondition):
     def description(self) -> str:
         return ""
 
-    def evaluate(self, context: SchedulingConditionEvaluationContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
         return AssetConditionResult.create(
             context,
             true_subset=context.asset_graph_view.create_empty_slice(
@@ -84,7 +84,7 @@ class AssetConditionScenarioState(ScenarioState):
                 expected_data_time_mapping={},
                 daemon_context=daemon_context,
             )
-            context = SchedulingConditionEvaluationContext(
+            context = SchedulingContext(
                 asset_key=asset_key,
                 condition=asset_condition,
                 condition_unique_id=asset_condition.get_unique_id(parent_unique_id=None),

@@ -3,7 +3,7 @@ import datetime
 from dagster._utils.schedules import reverse_cron_string_iterator
 
 from .asset_condition import AssetCondition, AssetConditionResult
-from .scheduling_condition_evaluation_context import SchedulingConditionEvaluationContext
+from .scheduling_context import SchedulingContext
 
 
 class UpdatedSinceCronCondition(AssetCondition):
@@ -14,9 +14,7 @@ class UpdatedSinceCronCondition(AssetCondition):
     def condition_description(self) -> str:
         return f"Updated since latest tick of {self.cron_schedule} ({self.cron_timezone})"
 
-    def _get_previous_cron_tick(
-        self, context: SchedulingConditionEvaluationContext
-    ) -> datetime.datetime:
+    def _get_previous_cron_tick(self, context: SchedulingContext) -> datetime.datetime:
         previous_ticks = reverse_cron_string_iterator(
             end_timestamp=context.effective_dt.timestamp(),
             cron_string=self.cron_schedule,
@@ -24,7 +22,7 @@ class UpdatedSinceCronCondition(AssetCondition):
         )
         return next(previous_ticks)
 
-    def evaluate(self, context: SchedulingConditionEvaluationContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
         previous_cron_tick = self._get_previous_cron_tick(context)
 
         if (

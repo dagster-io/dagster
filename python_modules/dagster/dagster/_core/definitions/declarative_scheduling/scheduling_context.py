@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class SchedulingConditionEvaluationContext:
+class SchedulingContext:
     # the AssetKey of the currently-evaluated asset
     asset_key: AssetKey
 

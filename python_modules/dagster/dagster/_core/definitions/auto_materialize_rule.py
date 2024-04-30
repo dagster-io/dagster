@@ -31,8 +31,8 @@ if TYPE_CHECKING:
         AssetConditionResult,
     )
 
-    from .declarative_scheduling.scheduling_condition_evaluation_context import (
-        SchedulingConditionEvaluationContext,
+    from .declarative_scheduling.scheduling_context import (
+        SchedulingContext,
     )
 
 
@@ -67,9 +67,7 @@ class AutoMaterializeRule(ABC):
         return RuleCondition(rule=self)
 
     @abstractmethod
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         """The core evaluation function for the rule. This function takes in a context object and
         returns a mapping from evaluated rules to the set of asset partitions that the rule applies
         to.

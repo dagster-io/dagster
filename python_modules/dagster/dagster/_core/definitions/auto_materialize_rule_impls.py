@@ -51,8 +51,8 @@ if TYPE_CHECKING:
         AssetConditionResult,
     )
 
-    from .declarative_scheduling.scheduling_condition_evaluation_context import (
-        SchedulingConditionEvaluationContext,
+    from .declarative_scheduling.scheduling_context import (
+        SchedulingContext,
     )
 
 
@@ -74,9 +74,7 @@ class MaterializeOnRequiredForFreshnessRule(
     def description(self) -> str:
         return "required to meet this or downstream asset's freshness policy"
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
@@ -101,9 +99,7 @@ class MaterializeOnCronRule(
     def description(self) -> str:
         return f"not materialized since last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
 
-    def missed_cron_ticks(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> Sequence[datetime.datetime]:
+    def missed_cron_ticks(self, context: "SchedulingContext") -> Sequence[datetime.datetime]:
         """Returns the cron ticks which have been missed since the previous cursor was generated."""
         # if it's the first time evaluating this rule, then just count the latest tick as missed
         if (
@@ -131,7 +127,7 @@ class MaterializeOnCronRule(
 
     def get_new_candidate_asset_partitions(
         self,
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
         missed_ticks: Sequence[datetime.datetime],
     ) -> AbstractSet[AssetKeyPartitionKey]:
         if not missed_ticks:
@@ -192,9 +188,7 @@ class MaterializeOnCronRule(
                 for time_partition_key in missed_time_partition_keys
             }
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         missed_ticks = self.missed_cron_ticks(context)
@@ -248,7 +242,7 @@ class AutoMaterializeAssetPartitionsFilter(
 
     def passes(
         self,
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
         asset_partitions: Iterable[AssetKeyPartitionKey],
     ) -> Iterable[AssetKeyPartitionKey]:
         if self.latest_run_required_tags is None:
@@ -347,9 +341,7 @@ class MaterializeOnParentUpdatedRule(
         else:
             return base
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
@@ -454,7 +446,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def description(self) -> str:
         return "materialization is missing"
 
-    def get_handled_subset(self, context: "SchedulingConditionEvaluationContext") -> AssetSubset:
+    def get_handled_subset(self, context: "SchedulingContext") -> AssetSubset:
         """Returns the AssetSubset which has been handled (materialized, requested, or discarded).
         Accounts for cases in which the partitions definition may have changed between ticks.
         """
@@ -474,9 +466,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             | previous_handled_subset
         )
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         """Evaluates the set of asset partitions for this asset which are missing and were not
         previously discarded.
         """
@@ -558,9 +548,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     def description(self) -> str:
         return "waiting on upstream data to be up to date"
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
@@ -612,7 +600,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
 
     def evaluate_for_asset(
         self,
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
     ) -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
@@ -688,7 +676,7 @@ class SkipOnNotAllParentsUpdatedRule(
 
     def evaluate_for_asset(
         self,
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
     ) -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
@@ -765,7 +753,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
     def description(self) -> str:
         return f"waiting until all upstream assets have updated since the last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
 
-    def passed_time_window(self, context: "SchedulingConditionEvaluationContext") -> TimeWindow:
+    def passed_time_window(self, context: "SchedulingContext") -> TimeWindow:
         """Returns the window of time that has passed between the previous two cron ticks. All
         parent assets must contain all data from this time window in order for this asset to be
         materialized.
@@ -782,7 +770,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
 
     def get_parent_subset_updated_since_cron(
         self,
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
         parent_asset_key: AssetKey,
         passed_time_window: TimeWindow,
     ) -> ValidAssetSubset:
@@ -834,7 +822,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             return new_parent_subset | previous_parent_subset
 
     def get_parent_subsets_updated_since_cron_by_key(
-        self, context: "SchedulingConditionEvaluationContext", passed_time_window: TimeWindow
+        self, context: "SchedulingContext", passed_time_window: TimeWindow
     ) -> Mapping[AssetKey, ValidAssetSubset]:
         """Returns a mapping of parent asset keys to the AssetSubset of each parent that has been
         updated since the end of the previous cron tick. Does not compute this value for time-window
@@ -858,7 +846,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
 
     def parent_updated_since_cron(
         self,
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
         passed_time_window: TimeWindow,
         parent_asset_key: AssetKey,
         child_asset_partition: AssetKeyPartitionKey,
@@ -914,9 +902,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 for p in non_updated_parent_asset_partitions
             )
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         passed_time_window = self.passed_time_window(context)
@@ -990,9 +976,7 @@ class SkipOnRequiredButNonexistentParentsRule(
     def description(self) -> str:
         return "required parent partitions do not exist"
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
@@ -1043,9 +1027,7 @@ class SkipOnBackfillInProgressRule(
         else:
             return "targeted by an in-progress backfill"
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         backfilling_subset = (
@@ -1080,9 +1062,7 @@ class DiscardOnMaxMaterializationsExceededRule(
     def description(self) -> str:
         return f"exceeds {self.limit} materialization(s) per minute"
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         # the set of asset partitions which exceed the limit
@@ -1113,9 +1093,7 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
     def description(self) -> str:
         return "in-progress run for asset"
 
-    def evaluate_for_asset(
-        self, context: "SchedulingConditionEvaluationContext"
-    ) -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
         from .declarative_scheduling.asset_condition import AssetConditionResult
 
         if context.legacy_context.partitions_def is not None:

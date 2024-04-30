@@ -26,8 +26,8 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
-from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluation_context import (
-    SchedulingConditionEvaluationContext,
+from dagster._core.definitions.declarative_scheduling.scheduling_context import (
+    SchedulingContext,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
@@ -230,7 +230,7 @@ class AssetDaemonContext:
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
         )
-        context = SchedulingConditionEvaluationContext(
+        context = SchedulingContext(
             asset_key=asset_key,
             condition=asset_condition,
             condition_unique_id=asset_condition.get_unique_id(parent_unique_id=None),
