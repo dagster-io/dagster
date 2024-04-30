@@ -25,9 +25,9 @@ This guide focuses on how to work with Airbyte connections using Dagster's [soft
 
 ---
 
-## Airbyte connections and Dagster software-defined assets
+## Airbyte connections and Dagster assets
 
-An [Airbyte connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as a software-defined asset. This enables you to easily:
+An [Airbyte connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as an asset. This enables you to easily:
 
 - Visualize the streams involved in an Airbyte connection and execute a sync from Dagster
 - Define downstream computations which depend on replicas produced by Airbyte
@@ -95,7 +95,7 @@ from dagster_airbyte import load_assets_from_airbyte_instance
 airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
 ```
 
-The `load_assets_from_airbyte_instance` function retrieves all of the connections you have defined in the Airbyte interface, creating software-defined assets for each data stream. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
+The `load_assets_from_airbyte_instance` function retrieves all of the connections you have defined in the Airbyte interface, creating asset definitions for each data stream. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
 
 </TabItem>
 
@@ -113,7 +113,7 @@ airbyte_assets = load_assets_from_airbyte_project(
 )
 ```
 
-The `load_assets_from_airbyte_project` function parses the YAML metadata, generating a set of software-defined assets which reflect each of the data streams synced by your connections. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
+The `load_assets_from_airbyte_project` function parses the YAML metadata, generating a set of asset definitions which reflect each of the data streams synced by your connections. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
 
 #### Adding a resource
 
@@ -379,7 +379,7 @@ If you have questions on using Airbyte with Dagster, we'd love to hear from you:
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/assets/software-defined-assets"
-    title="Software-defined assets"
+    title="Asset definitions"
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/resources"

@@ -8,17 +8,17 @@ Learn about Dagster's core concepts and how to use them in your data platform.
 
 ---
 
-## Software-defined Assets
+## Asset definition
 
-An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A Software-defined Asset is a Dagster object that couples an asset to the function and upstream assets used to produce its contents.
+An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. An asset definition is a Dagster object that couples an asset to the function and upstream assets used to produce its contents.
 
 <ArticleList>
   <ArticleListItem
-    title="Software-defined Assets"
+    title="Asset definitions"
     href="/concepts/assets/software-defined-assets"
   ></ArticleListItem>
   <ArticleListItem
-    title="Graph-backed Assets"
+    title="Graph-backed asset definitions"
     href="/concepts/assets/graph-backed-assets"
   ></ArticleListItem>
   <ArticleListItem
@@ -80,7 +80,7 @@ Dagster offers several ways to run data pipelines without manual intervention, i
 
 ## Partitions and backfills
 
-A software-defined asset or job can represent a collection of _partitions_ that can be tracked and executed independently.
+An asset defininition or job can represent a collection of _partitions_ that can be tracked and executed independently.
 
 <ArticleList>
   <ArticleListItem

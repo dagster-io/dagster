@@ -18,7 +18,7 @@ description: Job run configuration allows providing parameters to jobs at the ti
 
 Run configuration allows providing parameters to jobs at the time they're executed.
 
-It's often useful to provide user-chosen values to Dagster jobs or Software-defined Assets at runtime. For example, you might want to provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
+It's often useful to provide user-chosen values to Dagster jobs or asset definitions at runtime. For example, you might want to provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
 Various Dagster entities (assets, ops, resources) can be individually configured. When launching a job that materializes (assets), executes (ops), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration through the `config` parameter. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the asset/op/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
@@ -35,7 +35,7 @@ During execution, the specified config is accessed within the body of the op or 
 <TabGroup persistentKey="assetsorops">
 <TabItem name="Using software-defined-assets">
 
-#### Using Software-defined Assets
+#### Using asset definitions
 
 Here, we define a subclass of <PyObject object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body.
 

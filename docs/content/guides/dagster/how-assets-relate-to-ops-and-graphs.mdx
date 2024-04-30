@@ -1,11 +1,11 @@
 ---
-title: Understanding how software-defined assets relate to ops and graphs | Dagster Docs
-description: Dagster’s main abstraction for building data pipelines is the software-defined asset. However, Dagster also has ops and graphs. How do these relate? When should you use one over the other?
+title: Understanding how asset definitions relate to ops and graphs | Dagster Docs
+description: Dagster’s main abstraction for building data pipelines is the asset definition. However, Dagster also has ops and graphs. How do these relate? When should you use one over the other?
 ---
 
-# Understanding how software-defined assets relate to ops and graphs
+# Understanding how asset definitions relate to ops and graphs
 
-Dagster’s main abstraction for building data pipelines is the _software-defined asset_. However, Dagster also has abstractions called _ops_ and _graphs_.
+Dagster’s main abstraction for building data pipelines is the _asset definition_. However, Dagster also has abstractions called _ops_ and _graphs_.
 
 If you're not sure which one to use, this guide is for you. In this guide, we'll cover:
 
@@ -16,7 +16,7 @@ If you're not sure which one to use, this guide is for you. In this guide, we'll
 
 ## When should I use assets or ops and graphs?
 
-Dagster is mainly used to build data pipelines, and most data pipelines can be expressed in Dagster as sets of [software-defined assets](/concepts/assets/software-defined-assets). If you’re a new Dagster user **and** your goal is to build a data pipeline, we recommend starting with software-defined assets and not worrying about ops or graphs. This is because most of the code you’ll be writing will directly relate to producing data assets.
+Dagster is mainly used to build data pipelines, and most data pipelines can be expressed in Dagster as sets of [asset definitions](/concepts/assets/software-defined-assets). If you’re a new Dagster user **and** your goal is to build a data pipeline, we recommend starting with asset definitions and not worrying about ops or graphs. This is because most of the code you’ll be writing will directly relate to producing data assets.
 
 However, there are some situations where you want to run code without thinking about data assets that the code is producing. In these cases, it’s appropriate to use [ops](/concepts/ops-jobs-graphs/ops) and [graphs](/concepts/ops-jobs-graphs/graphs). For example:
 
@@ -32,9 +32,9 @@ You want to schedule a workflow where the goal is **not** to keep a set of data 
 - Scan a data warehouse for tables that haven't been used in months and delete them
 - Record metadata about a set of data assets
 
-In these cases, you should define your workflow in terms ops and graphs, not software-defined assets. The [Intro to ops and jobs guide](/guides/dagster/intro-to-ops-jobs) is a good place to start learning how to do this.
+In these cases, you should define your workflow in terms ops and graphs, not asset definitions. The [Intro to ops and jobs guide](/guides/dagster/intro-to-ops-jobs) is a good place to start learning how to do this.
 
-Additionally, note that a single Dagster deployment can contain software-defined assets and op/graph-based jobs side-by-side, which means that you’re not bound to one particular choice. If your workflow reads from software-defined assets, you can model that explicitly in Dagster, which is discussed in a [a later section](#op-graphs-that-read-from-an-asset).
+Additionally, note that a single Dagster deployment can contain asset definitions and op/graph-based jobs side-by-side, which means that you’re not bound to one particular choice. If your workflow reads from asset definitions, you can model that explicitly in Dagster, which is discussed in a [a later section](#op-graphs-that-read-from-an-asset).
 
 ### Situation 2: You want to break an asset into multiple steps
 
@@ -44,60 +44,60 @@ If you're in a situation like the following:
 - Some of the steps don't produce assets of their own
 - You need to be able to re-execute individual steps
 
-In this case, you might want to use a [graph-backed asset](/concepts/assets/graph-backed-assets). This is discussed more [later in this guide](#graph-backed-assets).
+In this case, you might want to use a [graph-backed asset](/concepts/assets/graph-backed-assets). This is discussed more [later in this guide](#graph-backed-asset-definitions).
 
 ### Situation 3: You’re anchored in task-based workflows
 
-Task-based workflows have been a popular way of defining data pipelines for a long time. While we believe that software-defined assets provide a superior way of writing and operating data pipelines, we acknowledge that teams often have existing codebases or mindsets that are heavily anchored in task-based workflows.
+Task-based workflows have been a popular way of defining data pipelines for a long time. While we believe that asset definitions provide a superior way of writing and operating data pipelines, we acknowledge that teams often have existing codebases or mindsets that are heavily anchored in task-based workflows.
 
-Op-based graphs resemble task-based workflows very closely, so they’re a natural choice for data pipelines that want to stick to that paradigm, either permanently or temporarily, while migrating to software-defined assets.
+Op-based graphs resemble task-based workflows very closely, so they’re a natural choice for data pipelines that want to stick to that paradigm, either permanently or temporarily, while migrating to asset definitions.
 
 ---
 
 ## How do assets relate to ops and graphs?
 
-Next, we'll discuss how assets relate to ops and graphs. By the end of this section, you should understand how each type of software-defined asset relates to ops and graphs.
+Next, we'll discuss how assets relate to ops and graphs. By the end of this section, you should understand how each type of asset definition relates to ops and graphs.
 
-- [Software-defined assets](#software-defined-assets)
-- [Multi-assets](#multi-assets)
-- [Graph-backed assets](#graph-backed-assets)
+- [Basic asset definitions](#basic-asset-definitions)
+- [Multi-asset definitions](#multi-asset-definitions)
+- [Graph-backed asset definitions](#graph-backed-asset-definitions)
 - [Op graphs that read from an asset](#op-graphs-that-read-from-an-asset)
 
-### Software-defined assets
+### Basic asset definitions
 
-A software-defined asset is a description of how to compute the contents of a particular data asset.
+An asset definitions is a description of how to compute the contents of a particular data asset.
 
-Under the hood, every software-defined asset contains an op (or graph of ops), which is the function that’s invoked to compute its contents. In most cases, the underlying op is invisible to the user.
+Under the hood, every asset definition contains an op (or graph of ops), which is the function that’s invoked to compute its contents. In most cases, the underlying op is invisible to the user.
 
-<!-- ![Op and software-defined asset](/images/guides/assets-relate-to-ops/op-software-defined-asset.png) -->
+<!-- ![Op and basic asset definition](/images/guides/assets-relate-to-ops/op-software-defined-asset.png) -->
 
 <center>
   <Image
-    alt="Op and software-defined asset"
+    alt="Op and basic asset definition"
     src="/images/guides/assets-relate-to-ops/op-software-defined-asset.png"
     width={714}
     height={516}
   />
 </center>
 
-### Multi-assets
+### Multi-asset definitions
 
 When you use the <PyObject object="multi_asset" decorator /> decorator, you’re defining a single op that produces multiple assets:
 
-<!-- ![Multi- software-defined asset](/images/guides/assets-relate-to-ops/multi-software-defined-asset.png) -->
+<!-- ![Multi- asset definition](/images/guides/assets-relate-to-ops/multi-software-defined-asset.png) -->
 
 <center>
   <Image
-    alt="Multi- software-defined asset"
+    alt="Multi- asset definition"
     src="/images/guides/assets-relate-to-ops/multi-software-defined-asset.png"
     width={715}
     height={286}
   />
 </center>
 
-### Graph-backed assets
+### Graph-backed asset definitions
 
-Dagster supports composing a set of ops into an op graph, usually by using the <PyObject object="graph" decorator /> decorator. A software-defined asset can be backed by an **op graph**, instead of an op.
+Dagster supports composing a set of ops into an op graph, usually by using the <PyObject object="graph" decorator /> decorator. An asset definition can be backed by an **op graph**, instead of an op.
 
 <!-- ![Op graph and graph-backed asset](/images/guides/assets-relate-to-ops/op-graph-graph-backed-asset.png) -->
 

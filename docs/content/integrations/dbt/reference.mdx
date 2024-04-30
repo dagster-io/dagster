@@ -12,7 +12,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/concepts/assets/software-defined-assets) framework using the [`dagster-dbt` integration library](/\_apidocs/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster software-defined assets tutorial](/integrations/dbt/using-dbt-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/dbt/using-dbt-with-dagster).
 
 ---
 
@@ -37,7 +37,7 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 ---
 
-## dbt models and Dagster software-defined assets
+## dbt models and Dagster asset definitions
 
 <DbtModelAssetExplanation />
 
@@ -217,7 +217,7 @@ Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/sch
 
 ## Understanding asset definition attributes
 
-In Dagster, each asset definition has attributes. Dagster automatically generates these attributes for each software-defined asset loaded from the dbt project. These attributes can optionally be overridden by the user.
+In Dagster, each asset definition has attributes. Dagster automatically generates these attributes for each asset definition loaded from the dbt project. These attributes can optionally be overridden by the user.
 
 - [Customizing asset keys](#customizing-asset-keys)
 - [Customizing group names](#customizing-group-names)
@@ -536,7 +536,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ## dbt models, code versions, and "Unsynced"
 
-Note that Dagster allows the optional specification of a [`code_version`](/concepts/assets/software-defined-assets#asset-code-versions) for each software-defined asset, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
+Note that Dagster allows the optional specification of a [`code_version`](/concepts/assets/software-defined-assets#asset-code-versions) for each asset definition, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
 
 ---
 
@@ -861,7 +861,7 @@ where order_date >= '{{ var('min_date') }}' and order_date <= '{{ var('max_date'
 
 <ArticleList>
   <ArticleListItem
-    title="Using dbt with Dagster software-defined assets"
+    title="Using dbt with Dagster asset definitions"
     href="/integrations/dbt/using-dbt-with-dagster"
   ></ArticleListItem>
   <ArticleListItem

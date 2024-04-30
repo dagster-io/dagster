@@ -1,9 +1,9 @@
 ---
-title: Software-defined assets | Dagster
-description: A software-defined asset is a description of how to compute the contents of a particular data asset.
+title: Asset definitions | Dagster
+description: An asset definition is a description of how to compute the contents of a particular data asset.
 ---
 
-# Software-defined assets
+# Asset definitions
 
 <Note>
   Prefer videos? Check out our{" "}
@@ -14,20 +14,20 @@ description: A software-defined asset is a description of how to compute the con
   <a href="https://www.youtube.com/watch?v=lRwpcyd6w8k" target="new">
     demo
   </a>{" "}
-  videos to get a quick look at Software-defined assets.
+  videos to get a quick look at asset definitions.
 </Note>
 
-An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a description, in code, of an asset that should exist and how to produce and update that asset.
+An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **asset definition** is a description, in code, of an asset that should exist and how to produce and update that asset.
 
-Software-defined assets enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
+Asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
 
-A software-defined asset includes the following:
+An asset definition includes the following:
 
 - An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
-- A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
+- A set of upstream asset keys, which refer to assets that the contents of the asset definition are derived from.
 - A Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
 
-  **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between Software-defined Assets and ops is that Software-defined Assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
+  **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between asset definitions and ops is that asset definitions know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
 **Materializing** an asset is the act of running its function and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs.
 
@@ -44,15 +44,15 @@ A software-defined asset includes the following:
 
 ## Defining assets
 
-- [Basic software-defined assets](#a-basic-software-defined-asset)
+- [Basic asset definitions](#basic-asset-definitions)
 - [Assets with dependencies](#assets-with-dependencies)
 - [Graph-backed assets and multi-assets](#graph-backed-assets-and-multi-assets)
 - [Accessing asset context](#asset-context)
 - [Configuring assets](#asset-configuration)
 
-### A basic software-defined asset
+### Basic asset definitions
 
-The easiest way to create a software-defined asset is with the <PyObject object="asset" decorator /> decorator.
+The easiest way to create an asset definitions is with the <PyObject object="asset" decorator /> decorator.
 
 ```python file=/concepts/assets/basic_asset_definition.py
 import json
@@ -72,7 +72,7 @@ By default, the name of the decorated function, `my_asset`, is used as the asset
 
 ### Assets with dependencies
 
-Software-defined assets can depend on other software-defined assets. In this section, we'll show you how to define:
+Asset definitions can depend on other asset definitions. In this section, we'll show you how to define:
 
 - [Basic asset dependencies](#defining-basic-dependencies)
 - [Asset dependencies across code locations](#defining-asset-dependencies-across-code-locations)
@@ -142,9 +142,9 @@ defs = Definitions(assets=[code_location_2_asset])
 
 ### Graph-backed assets and multi-assets
 
-If you'd like to define more complex assets, Dagster offers augmented software-defined asset abstractions:
+If you'd like to define more complex assets, Dagster offers augmented asset definition abstractions:
 
-- [Multi-assets](/concepts/assets/multi-assets): A set of software-defined assets that are all updated by the same [op](/concepts/ops-jobs-graphs/ops) or [graph](/concepts/ops-jobs-graphs/graphs).
+- [Multi-assets](/concepts/assets/multi-assets): A set of asset definitions that are all updated by the same [op](/concepts/ops-jobs-graphs/ops) or [graph](/concepts/ops-jobs-graphs/graphs).
 - [Graph-backed assets](/concepts/assets/graph-backed-assets): An asset whose computations are separated into multiple [ops](/concepts/ops-jobs-graphs/ops) that are combined to build a [graph](/concepts/ops-jobs-graphs/graphs). If the graph outputs multiple assets, the graph-backed asset is a [multi-asset](/concepts/assets/multi-assets).
 
 ### Asset configuration
@@ -510,7 +510,7 @@ def downstream_asset(upstream_asset):
 
 ## See it in action
 
-For more examples of software-defined assets, check out these examples:
+For more examples of asset definitions, check out these examples:
 
 - In the [Fully Featured Project example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 

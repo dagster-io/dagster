@@ -50,7 +50,7 @@ databricks_client_instance = databricks_client.configured(
 
 ## Step 2: Create an op/asset that connects to Databricks
 
-In this step, we'll demonstrate several ways to model a Databricks API call as either a Dagster [op](/concepts/ops-jobs-graphs/ops) or the computation backing a [Software-defined asset](/concepts/assets/software-defined-assets). You can either:
+In this step, we'll demonstrate several ways to model a Databricks API call as either a Dagster [op](/concepts/ops-jobs-graphs/ops) or the computation backing an [asset definition](/concepts/assets/software-defined-assets). You can either:
 
 - Use the `dagster-databricks` op factories, which create ops that invoke the Databricks Jobs' [Run Now](https://docs.databricks.com/api-explorer/workspace/jobs/runnow) ([`create_databricks_run_now_op`](/\_apidocs/libraries/dagster-databricks)) or [Submit Run](https://docs.databricks.com/api-explorer/workspace/jobs/submit) ([`create_databricks_submit_run_op`](/\_apidocs/libraries/dagster-databricks)) APIs, or
 - Manually create a Dagster op or asset that connects to Databricks using the configured Databricks resource.
@@ -171,5 +171,5 @@ By now, you should have a working Databricks and Dagster integration!
 
 What's next? From here, you can:
 
-- Learn more about [software-defined assets](/concepts/assets/software-defined-assets)
+- Learn more about [asset definitions](/concepts/assets/software-defined-assets)
 - Check out the [`dagster-databricks` API docs](/\_apidocs/libraries/dagster-databricks)
