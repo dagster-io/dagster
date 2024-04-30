@@ -109,7 +109,16 @@ We've got a tag that handles making sure images are pretty, optimized, and acces
 
 ## Badges
 
-{% badge text="Badgey the Badger" /%}
+`{% badge text="Badgey the Badger" /%}` lets you put a custom badge onto the page like this. {% badge text="Badgey the Badger" /%}
+
+### API Status Badges
+We've also got a bunch of badges that you can use to indicate the level of support an API or feature has.
+
+There are three types of badges:
+
+- `{% experimental /%}` {% experimental /%}
+- `{% deprecated /%}` {% deprecated /%}
+- `{% legacy /%}` {% legacy /%}
 
 ## Code Reference Links
 
