@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -20,14 +20,13 @@ from dagster._core.definitions.multi_dimensional_partitions import (
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
-    DynamicPartitionsDefinition,
-    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
+    get_time_partitions_def,
 )
 from dagster._utils.cached_method import cached_method
 
@@ -387,60 +386,46 @@ class AssetGraphView:
             ),
         )
 
-    def create_from_time_window(self, asset_key: AssetKey, time_window: TimeWindow) -> AssetSlice:
-        return _slice_from_subset(
-            self,
-            AssetSubset(
-                asset_key=asset_key,
-                value=TimeWindowPartitionsSubset(
-                    partitions_def=_required_tw_partitions_def(self._get_partitions_def(asset_key)),
-                    num_partitions=None,
-                    included_time_windows=[time_window],
-                ),
-            ),
-        )
-
-    def create_latest_time_window_slice(self, asset_key: AssetKey) -> AssetSlice:
-        """If the underlying asset is time-window partitioned, this will return the latest complete
-        time window relative to the effective date. For example if it is daily partitioned starting
-        at midnight every day.  If the effective date is before the start of the partition definition, this will
-        return the empty time window (where both start and end are datetime.max).
-
-        If the underlying asset is unpartitioned or static partitioned and it is not empty,
-        this will return a time window from the beginning of time to the effective date. If
-        it is empty it will return the empty time window.
-
-        TODO: add language for multi-dimensional partitioning when we support it
-        TODO: add language for dynamic partitioning when we support it
+    def compute_latest_time_window_slice(
+        self, asset_key: AssetKey, lookback_timedelta: Optional[timedelta] = None
+    ) -> AssetSlice:
+        """Compute the slice of the asset which exists within the latest time partition window. If
+        the asset has no time dimension, this will always return the full slice. If
+        lookback_timedelta is provided, all partitions that are up to that timedelta before the
+        end of the latest time partition window will be included.
         """
         partitions_def = self._get_partitions_def(asset_key)
-        if partitions_def is None or isinstance(
-            partitions_def, (DynamicPartitionsDefinition, StaticPartitionsDefinition)
-        ):
+        time_partitions_def = get_time_partitions_def(partitions_def)
+        if time_partitions_def is None:
+            # if the asset has no time dimension, then return a full slice
             return self.get_asset_slice(asset_key)
 
+        latest_time_window = time_partitions_def.get_last_partition_window(self.effective_dt)
+        if latest_time_window is None:
+            return self.create_empty_slice(asset_key)
+
+        # the time window in which to look for partitions
+        time_window = (
+            TimeWindow(
+                start=max(
+                    # do not look before the start of the definition
+                    time_partitions_def.start,
+                    latest_time_window.end - lookback_timedelta,
+                ),
+                end=latest_time_window.end,
+            )
+            if lookback_timedelta
+            else latest_time_window
+        )
+
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            time_window = partitions_def.get_last_partition_window(self.effective_dt)
-            return (
-                self.create_from_time_window(asset_key, time_window)
-                if time_window
-                else self.create_empty_slice(asset_key)
+            return self._build_time_partition_slice(asset_key, partitions_def, time_window)
+        elif isinstance(partitions_def, MultiPartitionsDefinition):
+            return self._build_multi_partition_slice(
+                asset_key, self._get_multi_dim_info(asset_key), time_window
             )
-
-        if isinstance(partitions_def, MultiPartitionsDefinition):
-            if not partitions_def.has_time_window_dimension:
-                return self.get_asset_slice(asset_key)
-
-            multi_dim_info = self._get_multi_dim_info(asset_key)
-            last_tw = multi_dim_info.tw_partition_def.get_last_partition_window(self.effective_dt)
-            return (
-                self._build_multi_partition_slice(asset_key, multi_dim_info, last_tw)
-                if last_tw
-                else self.create_empty_slice(asset_key)
-            )
-
-        # Need to handle dynamic partitioning
-        check.failed(f"Unsupported partitions_def: {partitions_def}")
+        else:
+            check.failed(f"Unsupported partitions_def: {partitions_def}")
 
     def create_empty_slice(self, asset_key: AssetKey) -> AssetSlice:
         return _slice_from_subset(
@@ -473,8 +458,18 @@ class AssetGraphView:
             secondary_dim=partitions_def.secondary_dimension,
         )
 
+    def _build_time_partition_slice(
+        self,
+        asset_key: AssetKey,
+        partitions_def: TimeWindowPartitionsDefinition,
+        time_window: TimeWindow,
+    ) -> "AssetSlice":
+        return self.get_asset_slice(asset_key).compute_intersection_with_partition_keys(
+            set(partitions_def.get_partition_keys_in_time_window(time_window))
+        )
+
     def _build_multi_partition_slice(
-        self, asset_key: AssetKey, multi_dim_info: MultiDimInfo, last_tw: TimeWindow
+        self, asset_key: AssetKey, multi_dim_info: MultiDimInfo, time_window: TimeWindow
     ) -> "AssetSlice":
         # Note: Potential perf improvement here. There is no way to encode a cartesian product
         # in the underlying PartitionsSet. We could add a specialized PartitionsSubset
@@ -489,7 +484,7 @@ class AssetGraphView:
                     }
                 )
                 for tw_pk in multi_dim_info.tw_partition_def.get_partition_keys_in_time_window(
-                    last_tw
+                    time_window
                 )
                 for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys(
                     current_time=self.effective_dt,

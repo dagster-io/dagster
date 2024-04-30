@@ -1,4 +1,6 @@
+import datetime
 from abc import abstractmethod
+from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 
@@ -32,9 +34,21 @@ class MaterializedSchedulingCondition(SliceSchedulingCondition):
 
 
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
+    lookback_seconds: Optional[float] = None
+
+    @property
+    def timedelta(self) -> Optional[datetime.timedelta]:
+        return datetime.timedelta(seconds=self.lookback_seconds) if self.lookback_seconds else None
+
     @property
     def description(self) -> str:
-        return "Within latest time window"
+        return (
+            f"Within {self.timedelta} of the end of the latest time window"
+            if self.timedelta
+            else "Within latest time window"
+        )
 
     def compute_slice(self, context: SchedulingConditionEvaluationContext) -> AssetSlice:
-        return context.asset_graph_view.create_latest_time_window_slice(context.asset_key)
+        return context.asset_graph_view.compute_latest_time_window_slice(
+            context.asset_key, lookback_timedelta=self.timedelta
+        )
