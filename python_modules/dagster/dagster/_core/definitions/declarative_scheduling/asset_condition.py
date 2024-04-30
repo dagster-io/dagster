@@ -310,34 +310,8 @@ class AssetCondition(ABC, DagsterModel):
         return NotAssetCondition(operand=self)
 
     @property
-    def is_legacy(self) -> bool:
-        """Returns if this condition is in the legacy format. This is used to determine if we can
-        do certain types of backwards-compatible operations on it.
-        """
-        return (
-            isinstance(self, AndAssetCondition)
-            and len(self.children) in {2, 3}
-            and isinstance(self.children[0], OrAssetCondition)
-            and isinstance(self.children[1], NotAssetCondition)
-            # the third child is the discard condition, which is optional
-            and (len(self.children) == 2 or isinstance(self.children[2], NotAssetCondition))
-        )
-
-    @property
     def children(self) -> Sequence["AssetCondition"]:
         return []
-
-    @property
-    def not_skip_condition(self) -> Optional["AssetCondition"]:
-        if not self.is_legacy:
-            return None
-        return self.children[1]
-
-    @property
-    def not_discard_condition(self) -> Optional["AssetCondition"]:
-        if not self.is_legacy or not len(self.children) == 3:
-            return None
-        return self.children[-1]
 
     def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
