@@ -1,4 +1,4 @@
-import {Badge} from '../components/markdoc/Badge';
+import {Badge, Experimental, Deprecated, Legacy} from '../components/markdoc/Badges';
 import {Button, ButtonContainer} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
 import {Check, Cross} from '../components/markdoc/CheckCross';
@@ -71,6 +71,21 @@ export const badge = {
       type: String,
     },
   },
+};
+
+export const experimental = {
+  render: Experimental,
+  selfClosing: true,
+};
+
+export const deprecated = {
+  render: Deprecated,
+  selfClosing: true,
+};
+
+export const legacy = {
+  render: Legacy,
+  selfClosing: true,
 };
 
 export const codeReferenceLink = {
