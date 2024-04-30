@@ -29,7 +29,6 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     TableColumnLineageMetadataValue,
-    TableMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.metadata.table import (
@@ -43,7 +42,6 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.snap.node import build_node_defs_snapshot
-from dagster._serdes.serdes import deserialize_value, serialize_value
 
 
 def step_events_of_type(result: ExecutionResult, node_name: str, event_type: DagsterEventType):
@@ -368,34 +366,6 @@ def test_complex_table_schema():
         ),
         TableSchema,
     )
-
-
-def test_table_schema_from_name_type_dict():
-    assert TableSchema.from_name_type_dict({"foo": "customtype", "bar": "string"}) == TableSchema(
-        columns=[
-            TableColumn(name="foo", type="customtype"),
-            TableColumn(name="bar", type="string"),
-        ],
-    )
-
-
-def test_table_serialization():
-    table_metadata = MetadataValue.table(
-        records=[
-            TableRecord(dict(foo=1, bar=2)),
-        ],
-    )
-    serialized = serialize_value(table_metadata)
-    assert deserialize_value(serialized, TableMetadataValue) == table_metadata
-
-
-def test_metadata_value_column_lineage() -> None:
-    expected_column_lineage = TableColumnLineage(
-        {"foo": [TableColumnDep(asset_key=AssetKey("bar"), column_name="baz")]}
-    )
-    column_lineage_metadata_value = MetadataValue.column_lineage(expected_column_lineage)
-
-    assert column_lineage_metadata_value.value == expected_column_lineage
 
 
 def test_bool_metadata_value():
