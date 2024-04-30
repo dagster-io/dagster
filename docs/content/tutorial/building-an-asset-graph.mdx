@@ -148,11 +148,6 @@ Software-defined Assets can be enriched with different types of metadata. Anythi
 The following code adds a row count and a preview of the `topstories` asset. Update your code for the `topstories` asset to match the changes below. The `None` type annotation is replaced with <PyObject object="MaterializeResult" /> from the `dagster` module, which allows you to add metadata to the materialization of your asset.
 
 ```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py startafter=start_topstories_asset_with_metadata endbefore=end_topstories_asset_with_metadata
-import base64
-from io import BytesIO
-
-import matplotlib.pyplot as plt
-
 from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult
 
 # Add the imports above to the top of `assets.py`
@@ -209,9 +204,16 @@ Reload the definitions and re-materialize your assets. The metadata can then be 
 
 The DataFrame was embedded into the asset's metadata with Markdown. Any valid Markdown snippet can be stored and rendered in the Dagster UI, including images. By embedding a bar chart of the most frequently used words as metadata, you and your team can visualize and analyze the `most_frequent_words` asset without leaving the Dagster UI.
 
-Below is code that changes shows how to add an an image of a bar chart in asset metadata. Replace your `most_frequent_words` asset with the following:
+Below is code that shows how to include an image of a bar chart in asset metadata. Replace your `most_frequent_words` asset with the following:
 
 ```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py startafter=start_most_frequent_words_asset_with_metadata endbefore=end_most_frequent_words_asset_with_metadata
+import base64
+from io import BytesIO
+
+import matplotlib.pyplot as plt
+
+# Add the imports above to the top of `assets.py`
+
 @asset(deps=[topstories])
 def most_frequent_words() -> MaterializeResult:
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
