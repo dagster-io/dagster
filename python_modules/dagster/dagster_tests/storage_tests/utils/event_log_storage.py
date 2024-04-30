@@ -628,12 +628,17 @@ class TestEventLogStorage:
             storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
+            result = storage.get_records_for_run(test_run_id, ascending=True, limit=1)
+            storage_id = result.records[0].storage_id
+
+            def _cursor_from_offset(offset: int):
+                return EventLogCursor.from_storage_id(storage_id + offset).to_string()
+
             assert len(storage.get_logs_for_run(test_run_id)) == 4
-            assert len(storage.get_logs_for_run(test_run_id, -1)) == 4
-            assert len(storage.get_logs_for_run(test_run_id, 0)) == 3
-            assert len(storage.get_logs_for_run(test_run_id, 1)) == 2
-            assert len(storage.get_logs_for_run(test_run_id, 2)) == 1
-            assert len(storage.get_logs_for_run(test_run_id, 3)) == 0
+            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(0))) == 3
+            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(2))) == 2
+            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(4))) == 1
+            assert len(storage.get_logs_for_run(test_run_id, _cursor_from_offset(6))) == 0
 
     def test_event_log_delete(
         self,
@@ -821,28 +826,6 @@ class TestEventLogStorage:
 
         assert _event_types(out_events) == _event_types(events)
 
-    def test_get_logs_for_run_cursor_limit(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
-
-        for event in events:
-            storage.store_event(event)
-
-        out_events = []
-        cursor = -1
-        fuse = 0
-        chunk_size = 2
-        while fuse < 50:
-            fuse += 1
-            # fetch in batches w/ limit & cursor
-            chunk = storage.get_logs_for_run(result.run_id, cursor=cursor, limit=chunk_size)
-            if not chunk:
-                break
-            assert len(chunk) <= chunk_size
-            out_events += chunk
-            cursor += len(chunk)
-
-        assert _event_types(out_events) == _event_types(events)
-
     def test_wipe_sql_backed_event_log(self, test_run_id, storage):
         events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
@@ -873,7 +856,7 @@ class TestEventLogStorage:
         assert storage.get_logs_for_run(result.run_id) == []
 
     def test_get_logs_for_run_of_type(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
+        events, result = _synthesize_events(one_asset_op, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -883,18 +866,8 @@ class TestEventLogStorage:
         ) == [DagsterEventType.RUN_SUCCESS]
 
         assert _event_types(
-            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
-        ) == [DagsterEventType.STEP_SUCCESS]
-
-        assert _event_types(
-            storage.get_logs_for_run(
-                result.run_id,
-                of_type={
-                    DagsterEventType.STEP_SUCCESS,
-                    DagsterEventType.RUN_SUCCESS,
-                },
-            )
-        ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.RUN_SUCCESS]
+            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION)
+        ) == [DagsterEventType.ASSET_MATERIALIZATION]
 
     def test_basic_get_logs_for_run_cursor(self, test_run_id, storage):
         events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
@@ -3860,7 +3833,8 @@ class TestEventLogStorage:
 
         @op
         def return_one(_):
-            return 1
+            yield AssetMaterialization(AssetKey("a"))
+            yield Output(1)
 
         def _ops():
             return_one()
@@ -3878,23 +3852,9 @@ class TestEventLogStorage:
 
         assert _event_types(
             storage.get_logs_for_all_runs_by_log_id(
-                dagster_event_type=DagsterEventType.STEP_SUCCESS,
+                dagster_event_type=DagsterEventType.ASSET_MATERIALIZATION,
             ).values()
-        ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.STEP_SUCCESS]
-
-        assert _event_types(
-            storage.get_logs_for_all_runs_by_log_id(
-                dagster_event_type={
-                    DagsterEventType.STEP_SUCCESS,
-                    DagsterEventType.RUN_SUCCESS,
-                },
-            ).values()
-        ) == [
-            DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.RUN_SUCCESS,
-            DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.RUN_SUCCESS,
-        ]
+        ) == [DagsterEventType.ASSET_MATERIALIZATION, DagsterEventType.ASSET_MATERIALIZATION]
 
     def test_get_logs_for_all_runs_by_log_id_cursor(self, storage: EventLogStorage):
         if not storage.supports_event_consumer_queries():
@@ -3907,36 +3867,31 @@ class TestEventLogStorage:
         def _ops():
             return_one()
 
-        for _ in range(2):
-            events, _ = _synthesize_events(_ops)
+        run_id_1, run_id_2 = [make_new_run_id() for _ in range(2)]
+        for run_id in [run_id_1, run_id_2]:
+            events, _ = _synthesize_events(_ops, run_id=run_id)
             for event in events:
                 storage.store_event(event)
 
         events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
-            dagster_event_type={
-                DagsterEventType.STEP_SUCCESS,
-                DagsterEventType.RUN_SUCCESS,
-            },
+            dagster_event_type=DagsterEventType.RUN_SUCCESS,
         )
 
+        assert [event.run_id for event in events_by_log_id.values()] == [run_id_1, run_id_2]
         assert _event_types(events_by_log_id.values()) == [
-            DagsterEventType.STEP_SUCCESS,
             DagsterEventType.RUN_SUCCESS,
-            DagsterEventType.STEP_SUCCESS,
             DagsterEventType.RUN_SUCCESS,
         ]
 
         after_cursor_events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
             after_cursor=min(events_by_log_id.keys()),
-            dagster_event_type={
-                DagsterEventType.STEP_SUCCESS,
-                DagsterEventType.RUN_SUCCESS,
-            },
+            dagster_event_type=DagsterEventType.RUN_SUCCESS,
         )
 
+        assert [event.run_id for event in after_cursor_events_by_log_id.values()] == [
+            run_id_2,
+        ]
         assert _event_types(after_cursor_events_by_log_id.values()) == [
-            DagsterEventType.RUN_SUCCESS,
-            DagsterEventType.STEP_SUCCESS,
             DagsterEventType.RUN_SUCCESS,
         ]
 
@@ -3951,23 +3906,26 @@ class TestEventLogStorage:
         def _ops():
             return_one()
 
-        for _ in range(2):
-            events, _ = _synthesize_events(_ops)
+        run_id_1, run_id_2, run_id_3, run_id_4 = [make_new_run_id() for _ in range(4)]
+        for run_id in [run_id_1, run_id_2, run_id_3, run_id_4]:
+            events, _ = _synthesize_events(_ops, run_id=run_id)
             for event in events:
                 storage.store_event(event)
 
         events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
-            dagster_event_type={
-                DagsterEventType.STEP_SUCCESS,
-                DagsterEventType.RUN_SUCCESS,
-            },
+            dagster_event_type=DagsterEventType.RUN_SUCCESS,
             limit=3,
         )
 
+        assert [event.run_id for event in events_by_log_id.values()] == [
+            run_id_1,
+            run_id_2,
+            run_id_3,
+        ]
         assert _event_types(events_by_log_id.values()) == [
-            DagsterEventType.STEP_SUCCESS,
             DagsterEventType.RUN_SUCCESS,
-            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
         ]
 
     def test_get_maximum_record_id(self, storage: EventLogStorage):
