@@ -308,13 +308,14 @@ def test_json_console_logger(capsys):
     for line in captured.err.split("\n"):
         if line:
             parsed = json.loads(line)
+            assert "dagster_event" not in parsed
             if parsed[LOG_RECORD_METADATA_ATTR]["orig_message"] == "Hello, world!":
                 found_msg = True
 
     assert found_msg
 
 
-def test_json_console_run_failure(capsys):
+def test_json_console_logger_run_failure(capsys):
     @op
     def failing_op(context):
         context.log.info("Hello, world!")
@@ -333,6 +334,7 @@ def test_json_console_run_failure(capsys):
     for line in captured.err.split("\n"):
         if line:
             parsed = json.loads(line)
+            assert "dagster_event" not in parsed
             if parsed[LOG_RECORD_METADATA_ATTR]["orig_message"] == "Hello, world!":
                 found_msg = True
 
