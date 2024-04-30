@@ -11,8 +11,8 @@ from dagster._core.asset_graph_view.asset_graph_view import (
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-    AssetCondition,
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+    SchedulingCondition,
 )
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
@@ -34,7 +34,7 @@ class SchedulingContext(DagsterModel):
     asset_key: AssetKey
 
     # the condition that is being evaluated
-    condition: AssetCondition
+    condition: SchedulingCondition
     # the unique identifier for this condition within the broader condition tree
     condition_unique_id: str
 
@@ -147,7 +147,7 @@ class SchedulingContext(DagsterModel):
 
     def for_child_condition(
         self,
-        child_condition: AssetCondition,
+        child_condition: SchedulingCondition,
         candidate_subset: ValidAssetSubset,
         asset_key: Optional[AssetKey] = None,
     ):

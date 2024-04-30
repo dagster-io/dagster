@@ -216,7 +216,7 @@ class AssetDaemonContext:
         # convert the legacy AutoMaterializePolicy to an Evaluator
         asset_condition = check.not_none(
             self.asset_graph.get(asset_key).auto_materialize_policy
-        ).to_asset_condition()
+        ).to_scheduling_condition()
 
         asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
 

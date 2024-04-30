@@ -2,17 +2,18 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..legacy.asset_condition import AssetCondition, AssetConditionResult
+from ..scheduling_condition import SchedulingCondition
 from ..scheduling_context import SchedulingContext
 
 
-class DepConditionWrapperCondition(AssetCondition):
+class DepConditionWrapperCondition(SchedulingCondition):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
     True.
     """
 
     dep_key: AssetKey
-    operand: AssetCondition
+    operand: SchedulingCondition
 
     @property
     def description(self) -> str:
@@ -45,7 +46,7 @@ class DepConditionWrapperCondition(AssetCondition):
 
 @whitelist_for_serdes
 class AnyDepsCondition(AssetCondition):
-    operand: AssetCondition
+    operand: SchedulingCondition
 
     @property
     def description(self) -> str:
@@ -74,8 +75,8 @@ class AnyDepsCondition(AssetCondition):
 
 
 @whitelist_for_serdes
-class AllDepsCondition(AssetCondition):
-    operand: AssetCondition
+class AllDepsCondition(SchedulingCondition):
+    operand: SchedulingCondition
 
     @property
     def description(self) -> str:

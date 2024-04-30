@@ -3,19 +3,20 @@ from typing import List, Sequence
 from dagster._annotations import experimental
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..legacy.asset_condition import AssetCondition, AssetConditionResult
+from ..legacy.asset_condition import AssetConditionResult
+from ..scheduling_condition import SchedulingCondition
 from ..scheduling_context import SchedulingContext
 
 
 @experimental
 @whitelist_for_serdes
-class AndAssetCondition(AssetCondition):
+class AndAssetCondition(SchedulingCondition):
     """This class represents the condition that all of its children evaluate to true."""
 
-    operands: Sequence[AssetCondition]
+    operands: Sequence[SchedulingCondition]
 
     @property
-    def children(self) -> Sequence[AssetCondition]:
+    def children(self) -> Sequence[SchedulingCondition]:
         return self.operands
 
     @property
@@ -37,13 +38,13 @@ class AndAssetCondition(AssetCondition):
 
 @experimental
 @whitelist_for_serdes
-class OrAssetCondition(AssetCondition):
+class OrAssetCondition(SchedulingCondition):
     """This class represents the condition that any of its children evaluate to true."""
 
-    operands: Sequence[AssetCondition]
+    operands: Sequence[SchedulingCondition]
 
     @property
-    def children(self) -> Sequence[AssetCondition]:
+    def children(self) -> Sequence[SchedulingCondition]:
         return self.operands
 
     @property
@@ -67,17 +68,17 @@ class OrAssetCondition(AssetCondition):
 
 @experimental
 @whitelist_for_serdes
-class NotAssetCondition(AssetCondition):
+class NotAssetCondition(SchedulingCondition):
     """This class represents the condition that none of its children evaluate to true."""
 
-    operand: AssetCondition
+    operand: SchedulingCondition
 
     @property
     def description(self) -> str:
         return "Not"
 
     @property
-    def children(self) -> Sequence[AssetCondition]:
+    def children(self) -> Sequence[SchedulingCondition]:
         return [self.operand]
 
     def evaluate(self, context: SchedulingContext) -> AssetConditionResult:

@@ -159,7 +159,10 @@ from dagster._core.definitions.data_version import (
     DataVersion as DataVersion,
     DataVersionsByPartition as DataVersionsByPartition,
 )
-from dagster._core.definitions.declarative_scheduling import AssetCondition as AssetCondition
+from dagster._core.definitions.declarative_scheduling import (
+    AssetCondition as AssetCondition,
+    SchedulingCondition as SchedulingCondition,
+)
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check as asset_check,
     multi_asset_check as multi_asset_check,
