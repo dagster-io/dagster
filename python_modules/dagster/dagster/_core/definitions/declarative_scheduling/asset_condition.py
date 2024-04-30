@@ -420,6 +420,13 @@ class AssetCondition(ABC, DagsterModel):
         return MissingSchedulingCondition()
 
     @staticmethod
+    def in_progress() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition if it is part of an in-progress run."""
+        from .slice_condition import InProgressSchedulingCondition
+
+        return InProgressSchedulingCondition()
+
+    @staticmethod
     def in_latest_time_window(
         lookback_delta: Optional[datetime.timedelta] = None,
     ) -> "AssetCondition":

@@ -259,7 +259,9 @@ class ScenarioState:
             self, scenario_spec=self.scenario_spec.with_asset_properties(keys, **kwargs)
         )
 
-    def with_in_progress_run_for_asset(self, asset_key: CoercibleToAssetKey) -> Self:
+    def with_in_progress_run_for_asset(
+        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+    ) -> Self:
         in_progress_run_id = make_new_run_id()
         with pendulum_freeze_time(self.current_time):
             asset_key = AssetKey.from_coercible(asset_key)
@@ -274,6 +276,7 @@ class ScenarioState:
                 status=DagsterRunStatus.STARTED,
                 asset_selection=frozenset({AssetKey.from_coercible(asset_key)}),
                 execution_plan=execution_plan,
+                tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
             )
             assert self.instance.get_run_by_id(in_progress_run_id)
         return self
@@ -304,15 +307,14 @@ class ScenarioState:
             ),
         )
 
-    def with_not_started_runs(self) -> Self:
-        """Execute all runs in the NOT_STARTED state and delete them from the instance. The scenario
-        adds in the run requests from previous ticks as runs in the NOT_STARTED state, so this method
-        executes requested runs from previous ticks.
+    def _with_runs_with_status(self, status: DagsterRunStatus) -> Self:
+        """Create new runs that will run to completion for all existing runs with the given status,
+        and delete the runs with that status from the instance.
+        This allows us to "freeze" runs in a particular state to help observe how conditions react
+        to certain statuses, then have them complete at a time of our choosing.
         """
-        not_started_runs = self.instance.get_runs(
-            filters=RunsFilter(statuses=[DagsterRunStatus.NOT_STARTED])
-        )
-        for run in not_started_runs:
+        runs = self.instance.get_runs(filters=RunsFilter(statuses=[status]))
+        for run in runs:
             self.instance.delete_run(run_id=run.run_id)
         return self.with_runs(
             *[
@@ -320,9 +322,15 @@ class ScenarioState:
                     asset_keys=list(run.asset_selection or set()),
                     partition_key=run.tags.get(PARTITION_NAME_TAG),
                 )
-                for run in not_started_runs
+                for run in runs
             ]
         )
+
+    def with_not_started_runs(self) -> Self:
+        return self._with_runs_with_status(DagsterRunStatus.NOT_STARTED)
+
+    def with_in_progress_runs_completed(self) -> Self:
+        return self._with_runs_with_status(DagsterRunStatus.STARTED)
 
     def with_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
