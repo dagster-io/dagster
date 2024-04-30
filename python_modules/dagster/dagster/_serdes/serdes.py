@@ -285,7 +285,7 @@ def whitelist_for_serdes(
           deserialization will be handled by the `Foo` serializer.
       old_storage_names (Optional[AbstractSet[str]]):
           A set of strings that act as aliases for the target class when deserializing. For example,
-          if `OldFoo` is is passed as an old storage name for `Foo`, then dicts encountered with
+          if `OldFoo` is passed as an old storage name for `Foo`, then dicts encountered with
           `"__class__": "OldFoo"` during deserialization will be handled by the `Foo` serializer.
       storage_field_names (Optional[Mapping[str, str]]):
           A mapping of field names to the names used during serializing and deserializing. For
