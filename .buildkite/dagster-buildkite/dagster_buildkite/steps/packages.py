@@ -452,7 +452,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
-            for deps_factor in ["dbt15", "dbt16", "dbt17", "pydantic1"]
+            for deps_factor in ["dbt16", "dbt17", "pydantic1"]
             for command_factor in ["cloud", "core", "legacy"]
         ],
         unsupported_python_versions=[
