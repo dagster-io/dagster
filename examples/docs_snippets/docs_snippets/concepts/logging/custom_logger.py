@@ -25,7 +25,14 @@ def json_console_logger(init_context):
 
     class JsonFormatter(logging.Formatter):
         def format(self, record):
-            return json.dumps(record.__dict__)
+            return json.dumps(
+                {
+                    k: v
+                    for k, v in record.__dict__.items()
+                    # values for these keys are not directly JSON-serializable
+                    if k not in ["dagster_event", "dagster_meta"]
+                }
+            )
 
     handler.setFormatter(JsonFormatter())
     logger_.addHandler(handler)
