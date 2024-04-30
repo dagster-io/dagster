@@ -36,6 +36,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
+from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
@@ -159,6 +160,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             limit (Optional[int]): Max number of records to return.
         """
         if isinstance(cursor, int):
+            deprecation_warning("Integer cursor values in `get_logs_for_run`", "1.8.0")
             cursor = EventLogCursor.from_offset(cursor + 1).to_string()
         records = self.get_records_for_run(
             run_id, cursor, of_type, limit, ascending=ascending
