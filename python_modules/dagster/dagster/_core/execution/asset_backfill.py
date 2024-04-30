@@ -164,6 +164,9 @@ class AssetBackfillData(NamedTuple):
             latest_storage_id=latest_storage_id,
         )
 
+    def with_requested_runs_for_target_roots(self, requested_runs_for_target_roots: bool):
+        return self._replace(requested_runs_for_target_roots=requested_runs_for_target_roots)
+
     def is_complete(self) -> bool:
         """The asset backfill is complete when all runs to be requested have finished (success,
         failure, or cancellation). Since the AssetBackfillData object stores materialization states
@@ -727,10 +730,13 @@ def _submit_runs_and_update_backfill_in_chunks(
         if retryable_error_raised:
             # Code server became unavailable mid-backfill. Rewind the cursor back to the cursor
             # from the previous iteration, to allow next iteration to reevaluate the same
-            # events.
+            # events. If the previous iteration had not requested the target roots, this will also
+            # ensure the next iteration requests the target roots
             backfill_data_with_submitted_runs = (
                 backfill_data_with_submitted_runs.with_latest_storage_id(
                     previous_asset_backfill_data.latest_storage_id
+                ).with_requested_runs_for_target_roots(
+                    previous_asset_backfill_data.requested_runs_for_target_roots
                 )
             )
 
@@ -1188,28 +1194,22 @@ def execute_asset_backfill_iteration_inner(
     expensive operations.
     """
     initial_candidates: Set[AssetKeyPartitionKey] = set()
-    # tracks whether this backfill has successfully requested all roots
-    all_roots_requested = asset_backfill_data.requested_runs_for_target_roots
-
-    if not all_roots_requested:
-        backfill_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
-        # if the previous tick of the backfill did not successfully submit runs (ex code serer unavailable)
-        # we need to re-request the roots
+    request_roots = not asset_backfill_data.requested_runs_for_target_roots
+    if request_roots:
+        target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
+        # check if any roots have already been requested, this make the bfs search more efficent
+        # later in the iteration
         not_yet_requested = [
-            root for root in backfill_roots if root not in asset_backfill_data.requested_subset
+            root for root in target_roots if root not in asset_backfill_data.requested_subset
         ]
-        if not_yet_requested:
-            initial_candidates.update(not_yet_requested)
-            all_roots_requested = False
-        else:
-            all_roots_requested = True
+        initial_candidates.update(not_yet_requested)
 
         yield None
 
         updated_materialized_subset = AssetGraphSubset()
         failed_and_downstream_subset = AssetGraphSubset()
         next_latest_storage_id = _get_next_latest_storage_id(instance_queryer)
-    if all_roots_requested:
+    else:
         next_latest_storage_id = _get_next_latest_storage_id(instance_queryer)
 
         cursor_delay_time = int(os.getenv("ASSET_BACKFILL_CURSOR_DELAY_TIME", "0"))
@@ -1299,9 +1299,7 @@ def execute_asset_backfill_iteration_inner(
             run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
         )
 
-    if not all_roots_requested:
-        # if we have not submitted runs for all the roots yet, there should be at least one run request
-        # to run the roots
+    if request_roots:
         check.invariant(
             len(run_requests) > 0,
             "At least one run should be requested on first backfill iteration",
@@ -1310,7 +1308,8 @@ def execute_asset_backfill_iteration_inner(
     updated_asset_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
         latest_storage_id=next_latest_storage_id or asset_backfill_data.latest_storage_id,
-        requested_runs_for_target_roots=all_roots_requested,
+        requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots
+        or request_roots,
         materialized_subset=updated_materialized_subset,
         failed_and_downstream_subset=failed_and_downstream_subset,
         requested_subset=asset_backfill_data.requested_subset
