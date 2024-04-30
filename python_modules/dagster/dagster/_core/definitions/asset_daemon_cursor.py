@@ -151,6 +151,8 @@ def get_backcompat_asset_condition_evaluation_state(
     from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnMissingRule
     from dagster._core.definitions.declarative_scheduling.asset_condition import (
         AssetConditionEvaluationState,
+    )
+    from dagster._core.definitions.declarative_scheduling.operators.rule_operator import (
         RuleCondition,
     )
 

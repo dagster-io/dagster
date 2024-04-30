@@ -62,7 +62,7 @@ class AutoMaterializeRule(ABC):
 
     def to_asset_condition(self) -> "AssetCondition":
         """Converts this AutoMaterializeRule into an AssetCondition."""
-        from .declarative_scheduling.asset_condition import RuleCondition
+        from .declarative_scheduling.operators.rule_operator import RuleCondition
 
         return RuleCondition(rule=self)
 

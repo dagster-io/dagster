@@ -2,8 +2,8 @@ import datetime
 
 from dagster._utils.schedules import reverse_cron_string_iterator
 
-from .asset_condition import AssetCondition, AssetConditionResult
-from .scheduling_context import SchedulingContext
+from ..asset_condition import AssetCondition, AssetConditionResult
+from ..scheduling_context import SchedulingContext
 
 
 class UpdatedSinceCronCondition(AssetCondition):

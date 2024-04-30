@@ -7,7 +7,6 @@ from typing import (
     Any,
     Dict,
     FrozenSet,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -19,7 +18,6 @@ from typing import (
 
 import pendulum
 
-from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
@@ -295,18 +293,24 @@ class AssetCondition(ABC, DagsterModel):
         raise NotImplementedError()
 
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
+        from .operators.boolean_operators import AndAssetCondition
+
         # group AndAssetConditions together
         if isinstance(self, AndAssetCondition):
             return AndAssetCondition(operands=[*self.operands, other])
         return AndAssetCondition(operands=[self, other])
 
     def __or__(self, other: "AssetCondition") -> "AssetCondition":
+        from .operators.boolean_operators import OrAssetCondition
+
         # group OrAssetConditions together
         if isinstance(self, OrAssetCondition):
             return OrAssetCondition(operands=[*self.operands, other])
         return OrAssetCondition(operands=[self, other])
 
     def __invert__(self) -> "AssetCondition":
+        from .operators.boolean_operators import NotAssetCondition
+
         return NotAssetCondition(operand=self)
 
     @property
@@ -326,6 +330,8 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition is newer than it.
         """
+        from .operators.rule_operator import RuleCondition
+
         return RuleCondition(rule=AutoMaterializeRule.materialize_on_parent_updated())
 
     @staticmethod
@@ -333,7 +339,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when it has never been
         materialized.
         """
-        from ..auto_materialize_rule import AutoMaterializeRule
+        from .operators.rule_operator import RuleCondition
 
         return RuleCondition(rule=AutoMaterializeRule.materialize_on_missing())
 
@@ -342,7 +348,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when at least one parent
         asset partition has never been materialized or observed.
         """
-        from ..auto_materialize_rule import AutoMaterializeRule
+        from .operators.rule_operator import RuleCondition
 
         return RuleCondition(rule=AutoMaterializeRule.skip_on_parent_missing())
 
@@ -352,7 +358,7 @@ class AssetCondition(ABC, DagsterModel):
         since the latest tick of the given cron schedule. For partitioned assets with a time
         component, this can only be true for the most recent partition.
         """
-        from ..auto_materialize_rule import AutoMaterializeRule
+        from .operators.rule_operator import RuleCondition
 
         return ~RuleCondition(rule=AutoMaterializeRule.materialize_on_cron(cron_schedule, timezone))
 
@@ -361,7 +367,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition when all parent asset
         partitions have been updated more recently than the latest tick of the given cron schedule.
         """
-        from ..auto_materialize_rule import AutoMaterializeRule
+        from .operators.rule_operator import RuleCondition
 
         return ~RuleCondition(
             rule=AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(
@@ -374,7 +380,7 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition if at least one partition
         of any of its dependencies evaluate to True for the given condition.
         """
-        from .dep_condition import AnyDepsCondition
+        from .operators.dep_operators import AnyDepsCondition
 
         return AnyDepsCondition(operand=condition)
 
@@ -383,21 +389,21 @@ class AssetCondition(ABC, DagsterModel):
         """Returns an AssetCondition that is true for an asset partition if at least one partition
         of all of its dependencies evaluate to True for the given condition.
         """
-        from .dep_condition import AllDepsCondition
+        from .operators.dep_operators import AllDepsCondition
 
         return AllDepsCondition(operand=condition)
 
     @staticmethod
     def missing_() -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition when it has been materialized."""
-        from .slice_condition import MissingSchedulingCondition
+        from .operands.slice_conditions import MissingSchedulingCondition
 
         return MissingSchedulingCondition()
 
     @staticmethod
     def in_progress() -> "AssetCondition":
         """Returns an AssetCondition that is true for an asset partition if it is part of an in-progress run."""
-        from .slice_condition import InProgressSchedulingCondition
+        from .operands.slice_conditions import InProgressSchedulingCondition
 
         return InProgressSchedulingCondition()
 
@@ -414,123 +420,11 @@ class AssetCondition(ABC, DagsterModel):
                 For example, if you provide a delta of 48 hours for a daily-partitioned asset, this
                 will return the last two partitions.
         """
-        from .slice_condition import InLatestTimeWindowCondition
+        from .operands.slice_conditions import InLatestTimeWindowCondition
 
         return InLatestTimeWindowCondition(
             lookback_seconds=lookback_delta.total_seconds() if lookback_delta else None
         )
-
-
-@experimental
-@whitelist_for_serdes
-class RuleCondition(AssetCondition):
-    """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
-
-    rule: AutoMaterializeRule
-
-    def get_unique_id(self, parent_unique_id: Optional[str]) -> str:
-        # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating
-        # old serialized information
-        parts = [self.rule.__class__.__name__, self.description]
-        return non_secure_md5_hash_str("".join(parts).encode())
-
-    @property
-    def description(self) -> str:
-        return self.rule.description
-
-    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
-        context.legacy_context.root_context.daemon_context.logger.debug(
-            f"Evaluating rule: {self.rule.to_snapshot()}"
-        )
-        evaluation_result = self.rule.evaluate_for_asset(context)
-        context.legacy_context.root_context.daemon_context.logger.debug(
-            f"Rule returned {evaluation_result.true_subset.size} partitions "
-            f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
-        )
-        return evaluation_result
-
-
-@experimental
-@whitelist_for_serdes
-class AndAssetCondition(AssetCondition):
-    """This class represents the condition that all of its children evaluate to true."""
-
-    operands: Sequence[AssetCondition]
-
-    @property
-    def children(self) -> Sequence[AssetCondition]:
-        return self.operands
-
-    @property
-    def description(self) -> str:
-        return "All of"
-
-    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
-        child_results: List[AssetConditionResult] = []
-        true_subset = context.candidate_subset
-        for child in self.children:
-            child_context = context.for_child_condition(
-                child_condition=child, candidate_subset=true_subset
-            )
-            child_result = child.evaluate(child_context)
-            child_results.append(child_result)
-            true_subset &= child_result.true_subset
-        return AssetConditionResult.create_from_children(context, true_subset, child_results)
-
-
-@experimental
-@whitelist_for_serdes
-class OrAssetCondition(AssetCondition):
-    """This class represents the condition that any of its children evaluate to true."""
-
-    operands: Sequence[AssetCondition]
-
-    @property
-    def children(self) -> Sequence[AssetCondition]:
-        return self.operands
-
-    @property
-    def description(self) -> str:
-        return "Any of"
-
-    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
-        child_results: List[AssetConditionResult] = []
-        true_subset = context.asset_graph_view.create_empty_slice(
-            context.asset_key
-        ).convert_to_valid_asset_subset()
-        for child in self.children:
-            child_context = context.for_child_condition(
-                child_condition=child, candidate_subset=context.candidate_subset
-            )
-            child_result = child.evaluate(child_context)
-            child_results.append(child_result)
-            true_subset |= child_result.true_subset
-        return AssetConditionResult.create_from_children(context, true_subset, child_results)
-
-
-@experimental
-@whitelist_for_serdes
-class NotAssetCondition(AssetCondition):
-    """This class represents the condition that none of its children evaluate to true."""
-
-    operand: AssetCondition
-
-    @property
-    def description(self) -> str:
-        return "Not"
-
-    @property
-    def children(self) -> Sequence[AssetCondition]:
-        return [self.operand]
-
-    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
-        child_context = context.for_child_condition(
-            child_condition=self.operand, candidate_subset=context.candidate_subset
-        )
-        child_result = self.operand.evaluate(child_context)
-        true_subset = context.candidate_subset - child_result.true_subset
-
-        return AssetConditionResult.create_from_children(context, true_subset, [child_result])
 
 
 @dataclass(frozen=True)
