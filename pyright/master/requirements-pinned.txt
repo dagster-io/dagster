@@ -59,8 +59,8 @@ bitmath==1.3.3.1
 bleach==6.1.0
 blinker==1.8.1
 bokeh==3.4.1
-boto3==1.34.94
-botocore==1.34.94
+boto3==1.34.95
+botocore==1.34.95
 buildkite-test-collector==0.1.7
 cachecontrol==0.14.0
 cached-property==1.5.2
@@ -72,7 +72,7 @@ cattrs==23.2.3
 celery==5.4.0
 certifi==2024.2.2
 cffi==1.16.0
-cfn-lint==0.86.4
+cfn-lint==0.87.0
 chardet==5.2.0
 charset-normalizer==3.3.2
 click==8.1.7
@@ -206,6 +206,7 @@ exceptiongroup==1.2.1
 execnet==2.1.1
 executing==2.0.1
 expandvars==0.12.0
+faiss-cpu==1.8.0
 fastavro==1.9.4
 fastjsonschema==2.19.1
 -e examples/feature_graph_backed_assets
@@ -312,6 +313,7 @@ kubernetes-asyncio==29.0.0
 langchain==0.1.11
 langchain-community==0.0.34
 langchain-core==0.1.47
+langchain-openai==0.1.3
 langchain-text-splitters==0.0.1
 langsmith==0.1.52
 lazy-object-proxy==1.10.0
@@ -360,7 +362,7 @@ nest-asyncio==1.6.0
 networkx==3.3
 nh3==0.2.17
 nodeenv==1.8.0
-noteable-origami==0.0.35
+noteable-origami==1.1.5
 notebook==7.1.3
 notebook-shim==0.2.4
 numpy==1.26.4
@@ -370,7 +372,7 @@ objgraph==3.6.1
 onnx==1.16.0
 onnxconverter-common==1.13.0
 onnxruntime==1.17.3
-openai==1.24.0
+openai==1.24.1
 openapi-schema-validator==0.6.2
 openapi-spec-validator==0.7.1
 opentelemetry-api==1.24.0
@@ -392,7 +394,7 @@ pandas-stubs==2.2.1.240316
 pandera==0.18.3
 pandocfilters==1.5.1
 papermill==2.6.0
-papermill-origami==0.0.30
+papermill-origami==0.0.29
 paramiko==3.4.0
 parsedatetime==2.6
 parso==0.8.4
@@ -534,7 +536,7 @@ sshpubkeys==3.3.1
 sshtunnel==0.4.0
 stack-data==0.6.3
 starlette==0.37.2
-structlog==22.3.0
+structlog==24.1.0
 sympy==1.12
 syrupy==4.6.1
 tabledata==1.3.3
@@ -545,6 +547,7 @@ termcolor==2.4.0
 terminado==0.18.1
 text-unidecode==1.3
 threadpoolctl==3.5.0
+tiktoken==0.6.0
 tinycss2==1.3.0
 toml==0.10.2
 tomli==2.0.1
