@@ -114,3 +114,30 @@ We've got a tag that handles making sure images are pretty, optimized, and acces
 ## Code Reference Links
 
 {% codeReferenceLink filePath="examples/deploy_ecs" %}{% /codeReferenceLink %}
+
+## Reference Tables
+
+{% referenceTable %}
+{% referenceTableItem propertyName="isolated_agents.enabled" %}
+When enabled, agents are isolated and will not be able to access each
+others' resources. See the
+<a href="/dagster-plus/deployment/agents/running-multiple-agents#running-multiple-agents-in-different-environments">
+Running multiple agents guide
+</a>
+for more information.
+{% /referenceTableItem %}
+
+{% referenceTableItem propertyName="Item 2" %}
+If the markdown works, we should be able to see it render here.
+
+- Lists
+- **Should**
+- *Work*
+- Now
+
+Do They?
+
+Maybe.
+{% /referenceTableItem %}
+
+{% /referenceTable %}
