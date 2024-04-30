@@ -1,3 +1,4 @@
+import {ArticleList, ArticleListItem} from '../components/markdoc/ArticleList';
 import {Badge, Experimental, Deprecated, Legacy} from '../components/markdoc/Badges';
 import {Button, ButtonContainer} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
@@ -110,6 +111,23 @@ export const referenceTableItem = {
   render: ReferenceTableItem,
   attributes: {
     propertyName: {
+      type: String,
+    },
+  },
+};
+
+export const articleList = {
+  render: ArticleList,
+};
+
+export const articleListItem = {
+  render: ArticleListItem,
+  selfClosing: true,
+  attributes: {
+    title: {
+      type: String,
+    },
+    href: {
       type: String,
     },
   },

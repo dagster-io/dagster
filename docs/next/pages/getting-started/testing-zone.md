@@ -150,3 +150,16 @@ Maybe.
 {% /referenceTableItem %}
 
 {% /referenceTable %}
+
+## Article Lists
+
+{% articleList %}
+  {% articleListItem title="Software-defined Assets" href="/concepts/assets/software-defined-assets" /%}
+  {% articleListItem title="Graph-backed Assets" href="/concepts/assets/graph-backed-assets" /%}
+  {% articleListItem title="Multi-assets" href="/concepts/assets/multi-assets" /%}
+  {% articleListItem title="Asset jobs" href="/concepts/assets/asset-jobs" /%}
+  {% articleListItem title="Asset observations" href="/concepts/assets/asset-observations" /%}
+  {% articleListItem title="Asset selection syntax" href="/concepts/assets/asset-selection-syntax" /%}
+  {% articleListItem title="Asset checks" href="/concepts/assets/asset-checks" /%}
+  {% articleListItem title="External assets (Experimental)" href="/concepts/assets/external-assets" /%}
+{% /articleList %}
