@@ -605,3 +605,6 @@ pre[class="noop"] {
 dl, dl * {
   overflow-wrap: break-word;
 }
+td {
+  word-break:break-word
+}
