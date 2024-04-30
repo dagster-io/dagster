@@ -19,7 +19,7 @@ from typing import (
 
 import pendulum
 
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -29,6 +29,11 @@ from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
 from ...asset_subset import AssetSubset, ValidAssetSubset
+from ..serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationState,
+    AssetSubsetWithMetadata,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -38,9 +43,6 @@ if TYPE_CHECKING:
     from ...base_asset_graph import BaseAssetGraph
     from .asset_condition import (
         AssetCondition,
-        AssetConditionEvaluation,
-        AssetConditionEvaluationState,
-        AssetSubsetWithMetadata,
     )
 
 T = TypeVar("T")
@@ -65,15 +67,15 @@ class LegacyRuleEvaluationContext:
 
     asset_key: AssetKey
     condition: "AssetCondition"
-    previous_evaluation_state: Optional["AssetConditionEvaluationState"]
-    previous_evaluation: Optional["AssetConditionEvaluation"]
+    previous_evaluation_state: Optional[AssetConditionEvaluationState]
+    previous_evaluation: Optional[AssetConditionEvaluation]
     candidate_subset: ValidAssetSubset
 
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
     daemon_context: "AssetDaemonContext"
 
-    evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"]
+    evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
@@ -83,11 +85,11 @@ class LegacyRuleEvaluationContext:
     def create(
         asset_key: AssetKey,
         condition: "AssetCondition",
-        previous_evaluation_state: Optional["AssetConditionEvaluationState"],
+        previous_evaluation_state: Optional[AssetConditionEvaluationState],
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
         daemon_context: "AssetDaemonContext",
-        evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
+        evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> "LegacyRuleEvaluationContext":
         partitions_def = instance_queryer.asset_graph.get(asset_key).partitions_def
@@ -180,7 +182,7 @@ class LegacyRuleEvaluationContext:
             return candidate_subset
 
     @property
-    def previous_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
+    def previous_subsets_with_metadata(self) -> Sequence[AssetSubsetWithMetadata]:
         if self.previous_evaluation is None:
             return []
         return self.previous_evaluation.subsets_with_metadata
@@ -291,7 +293,7 @@ class LegacyRuleEvaluationContext:
         """Returns the set of candidates for this tick which were not candidates on the previous
         tick.
         """
-        from .asset_condition import HistoricalAllPartitionsSubsetSentinel
+        from ..serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         if not self.previous_evaluation:
             return self.candidate_subset
@@ -362,7 +364,7 @@ class LegacyRuleEvaluationContext:
             FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
         ],
         ignore_subset: AssetSubset,
-    ) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+    ) -> Tuple[ValidAssetSubset, Sequence[AssetSubsetWithMetadata]]:
         """Combines information calculated on this tick with information from the previous tick,
         returning a tuple of the combined true subset and the combined subsets with metadata.
 
@@ -372,7 +374,7 @@ class LegacyRuleEvaluationContext:
             ignore_subset: An AssetSubset which represents information that we should *not* carry
                 forward from the previous tick.
         """
-        from .asset_condition import AssetSubsetWithMetadata
+        from ..serialized_objects import AssetSubsetWithMetadata
 
         mapping = defaultdict(lambda: self.empty_subset())
         has_new_metadata_subset = self.empty_subset()

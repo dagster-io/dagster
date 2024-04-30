@@ -13,6 +13,8 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetCondition,
+)
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
     AssetConditionEvaluationState,
     get_serializable_candidate_subset,

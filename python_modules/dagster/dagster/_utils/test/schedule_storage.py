@@ -6,7 +6,7 @@ import pytest
 
 from dagster import StaticPartitionsDefinition
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
