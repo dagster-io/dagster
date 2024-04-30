@@ -995,7 +995,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def is_external_input_asset_version_info_loaded(self) -> bool:
         return self._is_external_input_asset_version_info_loaded
 
-    def get_input_asset_version_info(self, key: AssetKey) -> Optional["InputAssetVersionInfo"]:
+    def maybe_fetch_and_get_input_asset_version_info(
+        self, key: AssetKey
+    ) -> Optional["InputAssetVersionInfo"]:
         if key not in self._input_asset_version_info:
             self._fetch_input_asset_version_info(key)
         return self._input_asset_version_info[key]

@@ -713,7 +713,7 @@ def _get_input_provenance_data(
         # the most recent materialization record (it will retrieve a cached record if it's already
         # been asked for). For this to be correct, the output materializations for the step must be
         # generated in topological order -- we assume this.
-        version_info = step_context.get_input_asset_version_info(key)
+        version_info = step_context.maybe_fetch_and_get_input_asset_version_info(key)
 
         # This can only happen for source assets that have never been observed.
         if version_info is None:
