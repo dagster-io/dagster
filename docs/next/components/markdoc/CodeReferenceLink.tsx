@@ -1,3 +1,4 @@
+import {unpackText} from 'util/unpackText';
 import {LATEST_VERSION} from 'util/version';
 
 import React from 'react';
@@ -6,7 +7,7 @@ export const CodeReferenceLink = ({filePath, isInline, children}) => {
   const url = `https://github.com/dagster-io/dagster/tree/${LATEST_VERSION}/${filePath}`;
 
   if (isInline) {
-    return <a href={url}>{React.Children.toArray(children)}</a>;
+    return <a href={url}>{unpackText(children)}</a>;
   } else {
     return (
       <div className="bg-primary-100 rounded flex item-center p-4">

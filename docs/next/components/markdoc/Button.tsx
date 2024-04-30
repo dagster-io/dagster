@@ -1,3 +1,5 @@
+import {unpackText} from 'util/unpackText';
+
 import cx from 'classnames';
 import * as React from 'react';
 
@@ -31,7 +33,7 @@ export const Button = ({
           style === 'blurple' && 'bg-blurple text-white hover:bg-blurple-darker',
         )}
       >
-        <span>{React.Children.toArray(children)}</span>
+        <span>{unpackText(children)}</span>
       </a>
     </div>
   );
