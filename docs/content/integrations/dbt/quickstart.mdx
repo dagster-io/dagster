@@ -9,7 +9,12 @@ description: Get started swiftly with this simple dbt + Dagster example.
 
 ## Step 1: Setup your environment
 
-{% note %} **Note**: We strongly recommend installing Dagster inside a Python virtualenv. Visit the [Dagster](/getting-started/install) installation docs for more info. {% /note %}
+<Note>
+  <strong>Note</strong>: We strongly recommend installing Dagster inside a
+  Python virtualenv. Visit the{" "}
+  <a href="/getting-started/install">Dagster installation docs</a> for more
+  info.
+</Note>
 
 Install dbt, Dagster, and the Dagster webserver/UI\*\*. Run the following to install everything using pip:
 
@@ -33,7 +38,7 @@ Running your dbt project with Dagster can be easily done after creating a single
 
 2. In this file, with your text editor of choice, add the following code. Make sure to update the `RELATIVE_PATH_TO_YOUR_DBT_PROJECT` constant so that it points to your dbt project.
 
-   ```python startafter=start_example endbefore=end_example file=/integrations/dbt/quickstart.py
+   ```python file=/integrations/dbt/quickstart.py startafter=start_example endbefore=end_example
    from pathlib import Path
 
    from dagster import AssetExecutionContext, Definitions
@@ -45,7 +50,6 @@ Running your dbt project with Dagster can be easily done after creating a single
    )
 
    RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "relative/path/to/your/dbt-project"
-
 
    my_project = DbtProject(
        project_dir=Path(__file__)
@@ -65,7 +69,6 @@ Running your dbt project with Dagster can be easily done after creating a single
        cron_schedule="0 0 * * *",
        dbt_select="fqn:*",
    )
-
 
    defs = Definitions(
        assets=[my_dbt_assets],
