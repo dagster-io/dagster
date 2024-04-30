@@ -13,7 +13,6 @@ from dagster_dbt import (
 
 RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "relative/path/to/your/dbt-project"
 
-
 my_project = DbtProject(
     project_dir=Path(__file__)
     .joinpath("..", RELATIVE_PATH_TO_YOUR_DBT_PROJECT)
@@ -32,7 +31,6 @@ my_schedule = build_schedule_from_dbt_selection(
     cron_schedule="0 0 * * *",
     dbt_select="fqn:*",
 )
-
 
 defs = Definitions(
     assets=[my_dbt_assets],
