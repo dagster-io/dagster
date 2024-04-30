@@ -3,7 +3,7 @@ from typing import Mapping, Optional, Sequence, Type
 import numpy as np
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
@@ -129,7 +129,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         )
 
         return {
-            "row_count": obj.shape[0],
+            **TableMetadataSet(row_count=obj.shape[0]),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(
                     columns=[
