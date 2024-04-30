@@ -33,7 +33,6 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
-    PartitionMapping,
     infer_partition_mapping,
 )
 from dagster._core.definitions.policy import RetryPolicy
@@ -971,24 +970,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     # "external" refers to records for inputs generated outside of this step
     def fetch_external_input_asset_version_info(self) -> None:
         return self._data_version_cache.fetch_external_input_asset_version_info()
-
-    def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
-        asset_layer = self.job_def.asset_layer
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
-        if upstream_asset_key:
-            upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
-            assets_def = asset_layer.assets_def_for_node(self.node_handle)
-            partitions_def = assets_def.partitions_def if assets_def else None
-            explicit_partition_mapping = self.job_def.asset_layer.partition_mapping_for_node_input(
-                self.node_handle, upstream_asset_key
-            )
-            return infer_partition_mapping(
-                explicit_partition_mapping,
-                partitions_def,
-                upstream_asset_partitions_def,
-            )
-        else:
-            return None
 
     # Call this to clear the cache for an input asset record. This is necessary when an old
     # materialization for an asset was loaded during `fetch_external_input_asset_records` because an
