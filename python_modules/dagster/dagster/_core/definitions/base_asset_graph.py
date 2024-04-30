@@ -172,7 +172,6 @@ T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
 
 class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     _asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
-    _asset_nodes_by_check_key: Mapping[AssetCheckKey, T_AssetNode]
 
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:
