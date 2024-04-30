@@ -92,7 +92,7 @@ class AssetSubset(DagsterModel):
             return False
         return self.size == 0
 
-    def _is_compatible_with_partitions_def(
+    def is_compatible_with_partitions_def(
         self, partitions_def: Optional[PartitionsDefinition]
     ) -> bool:
         if self.is_partitioned:
@@ -107,7 +107,7 @@ class AssetSubset(DagsterModel):
 
     def _is_compatible_with_subset(self, other: "AssetSubset") -> bool:
         if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
-            return self._is_compatible_with_partitions_def(other.value.partitions_def)
+            return self.is_compatible_with_partitions_def(other.value.partitions_def)
         else:
             return self.is_partitioned == other.is_partitioned
 
@@ -115,7 +115,7 @@ class AssetSubset(DagsterModel):
         """Converts this AssetSubset to a ValidAssetSubset by returning a copy of this AssetSubset
         if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
         """
-        if self._is_compatible_with_partitions_def(partitions_def):
+        if self.is_compatible_with_partitions_def(partitions_def):
             return ValidAssetSubset(asset_key=self.asset_key, value=self.value)
         else:
             return ValidAssetSubset.empty(self.asset_key, partitions_def)
