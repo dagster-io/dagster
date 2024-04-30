@@ -1,3 +1,4 @@
+import {unpackText} from 'util/unpackText';
 // import * as React from 'react';
 
 import Icons from '../Icons';
@@ -41,9 +42,9 @@ const Admonition = ({style, children}) => {
 };
 
 export const Note = ({children}) => {
-  return <Admonition style="note">{children}</Admonition>;
+  return <Admonition style="note">{unpackText(children)}</Admonition>;
 };
 
 export const Warning = ({children}) => {
-  return <Admonition style="warning">{children}</Admonition>;
+  return <Admonition style="warning">{unpackText(children)}</Admonition>;
 };
