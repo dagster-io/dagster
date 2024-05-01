@@ -32,6 +32,13 @@ Running your dbt project with Dagster can be easily done after creating a single
 
 With your text editor of choice, create a Python file and add the following code. Make sure to update the `RELATIVE_PATH_TO_YOUR_DBT_PROJECT` constant so that it points to your dbt project. Note that since this file contains [all Dagster definitions required for your code location](/concepts/code-locations), it is recommended to name it `definitions.py`.
 
+<Note>
+  <strong>Note</strong>: This code uses the <code>DbtProject</code> class,
+  which is an experimental feature. Visit the{" "}
+  <a href="/\_apidocs/libraries/dagster-dbt">dagster-dbt library API reference</a> for more
+  info.
+</Note>
+
 ```python file=/integrations/dbt/quickstart.py startafter=start_example endbefore=end_example
 from pathlib import Path
 
