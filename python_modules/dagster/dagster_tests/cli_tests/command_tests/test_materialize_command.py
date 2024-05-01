@@ -94,6 +94,14 @@ def test_partition_option_with_non_partitioned_asset():
         )
 
 
+def test_no_partition_option_with_partitioned_asset():
+    with instance_for_test():
+        result = invoke_materialize("partitioned_asset")
+        assert "Asset has partitions, but no '--partition' option was provided" in str(
+            result.exception
+        )
+
+
 def test_asset_key_missing():
     with instance_for_test():
         result = invoke_materialize("nonexistent_asset")
