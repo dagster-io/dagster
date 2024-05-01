@@ -532,7 +532,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
-\--
+---
 
 ## dbt models, code versions, and "Unsynced"
 
