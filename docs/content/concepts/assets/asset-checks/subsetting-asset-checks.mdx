@@ -1,0 +1,115 @@
+---
+title: "Executing subsets of asset checks | Dagster Docs"
+description: "Learn how to execute subsets of asset checks."
+---
+
+# Executing subsets of asset checks
+
+In some cases, you may only want to execute some of the [asset checks](/concepts/assets/asset-checks) associated with an asset. For example, let's say you have some data that's updated frequently. There are a number of checks that target this data, but one of the checks is expensive to run. Instead of running the expensive check every time the data updates, you can opt to execute a subset of the checks.
+
+In this guide, we'll show you a few approaches to subsetting your asset checks.
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Asset checks](/concepts/assets/asset-checks)
+- [Multi-assets](/concepts/assets/multi-assets)
+
+---
+
+## Executing subsets of checks using @multi_asset_check
+
+Using the <PyObject object="multi_asset_check" decorator /> decorator's `specs` and `can_subset` arguments, you can execute a subset of checks in a single op.
+
+Inside the body of the function, we can use <PyObject object="AssetCheckExecutionContext" display="AssetCheckExecutionContext.selected_asset_check_keys" /> to identify which computations to run. We can also set the decorator's `can_subset` parameter to `True` to allow the computation to compute an arbitrary subset of the asset checks it contains.
+
+Setting `can_subset` to `True` means that not all asset checks may be computed when the function runs. As we don't know in advance which checks will be executed, we explicitly `yield` each asset check result that we're expected to create:
+
+```python file=/concepts/assets/asset_checks/subset_multi_asset_check.py
+import random
+from typing import Iterable
+
+from dagster import (
+    AssetCheckExecutionContext,
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetCheckSpec,
+    multi_asset_check,
+)
+
+
+@multi_asset_check(
+    specs=[
+        AssetCheckSpec(name="asset_check_one", asset="my_asset_one"),
+        AssetCheckSpec(name="asset_check_two", asset="my_asset_two"),
+    ],
+    can_subset=True,
+)
+def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
+    for check_key in context.selected_asset_check_keys:
+        asset_key = check_key.asset_key
+
+        # TODO: populate metadata
+        metadata = {}
+        if random.random() > 0.5:
+            yield AssetCheckResult(
+                passed=False,
+                severity=AssetCheckSeverity.WARN,
+                description="The asset is over 0.5",
+                asset_key=asset_key,
+            )
+        else:
+            yield AssetCheckResult(
+                passed=True,
+                metadata=metadata,
+                description="The asset is fresh.",
+                asset_key=asset_key,
+            )
+```
+
+---
+
+## TODO: With multi_asset
+
+When using [multi-assets](/concepts/assets/multi-assets), Dagster assumes that all checks specified on the asset should be executed after it is materialized. This means that attempting to execute some, but not all, of the checks defined by a multi-asset will result in an error.
+
+```python
+TODO - EXAMPLE
+```
+
+---
+
+## APIs in this guide
+
+| Name                                              | Description                                                                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="multi_asset_check" decorator /> | A decorator used to define a set of asset checks that execute together in the same [op](/concepts/ops-jobs-graphs/ops).               |
+| <PyObject object="AssetCheckResult" />            | The class returned by asset checks.                                                                                                   |
+| <PyObject object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                                                   |
+| <PyObject object="AssetCheckSpec" />              | A class that's passed to asset decorators to define checks that execute in the same [op](/concepts/ops-jobs-graphs/ops) as the asset. |
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Asset checks"
+    href="/concepts/assets/asset-checks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Software-defined Assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Defining and executing asset checks"
+    href="/concepts/assets/asset-checks/define-execute-asset-checks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Using asset checks to check data freshness"
+    href="/concepts/assets/asset-checks/checking-for-data-freshness"
+  ></ArticleListItem>
+</ArticleList>
