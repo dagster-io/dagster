@@ -66,7 +66,7 @@ RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/ja
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
 # deb.nodesource script adds node source to apt
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
+RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
     gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
