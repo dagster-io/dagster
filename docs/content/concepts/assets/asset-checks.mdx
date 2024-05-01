@@ -33,12 +33,13 @@ With asset checks, you can also:
 - Block downstream execution based on check results
 - Use severity levels and metadata [to communicate actionable details about check results in the UI](/concepts/assets/asset-checks/define-execute-asset-checks#using-asset-check-results)
 - Use freshness checks [to identify stale assets that are due for a refresh](/concepts/assets/asset-checks/checking-for-data-freshness)
+- [Execute subsets of checks](/concepts/assets/asset-checks/subsetting-asset-checks) to mitigate performance issues, such as those caused by an expensive check
 - **Dagster+ only**: [Create alerts based on asset check results](/dagster-plus/managing-deployments/alerts)
 
 ---
 
 ## Limitations
 
-- **Dagster's UI is tested with a maximum of 1000 checks per asset.** It's designed with the expectation that most assets will have fewer than 50 checks. If you have a use case that doesn't fit these limits, reach out to Dagster support to discuss.
+- **Dagster's UI is tested with a maximum of 1,000 checks per asset.** It's designed with the expectation that most assets will have fewer than 50 checks. If you have a use case that doesn't fit these limits, reach out to Dagster support to discuss.
 
 - **Checks are currently only supported per-asset, not per-partition.** See [this issue](https://github.com/dagster-io/dagster/issues/17005) for updates.

@@ -104,6 +104,10 @@
                 "path": "/concepts/assets/asset-checks/define-execute-asset-checks"
               },
               {
+                "title": "Subsetting asset checks",
+                "path": "/concepts/assets/asset-checks/subsetting-asset-checks"
+              },
+              {
                 "title": "Checking data freshness",
                 "path": "/concepts/assets/asset-checks/checking-for-data-freshness"
               }
