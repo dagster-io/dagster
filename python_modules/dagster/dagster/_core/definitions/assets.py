@@ -642,7 +642,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @staticmethod
     def _from_node(
-        node_def: Union[OpDefinition, "GraphDefinition"],
+        node_def: NodeDefinition,
         *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
@@ -1587,7 +1587,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
 
 def _infer_keys_by_input_names(
-    node_def: Union["GraphDefinition", OpDefinition], keys_by_input_name: Mapping[str, AssetKey]
+    node_def: NodeDefinition, keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     all_input_names = [input_def.name for input_def in node_def.input_defs]
     if keys_by_input_name:
@@ -1610,7 +1610,7 @@ def _infer_keys_by_input_names(
 
 
 def _infer_keys_by_output_names(
-    node_def: Union["GraphDefinition", OpDefinition],
+    node_def: NodeDefinition,
     keys_by_output_name: Mapping[str, AssetKey],
     check_specs_by_output_name: Mapping[str, AssetCheckSpec],
 ) -> Mapping[str, AssetKey]:
