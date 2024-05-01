@@ -1,11 +1,12 @@
-from typing import Dict, Mapping, Sequence, Union, cast
+from typing import Dict, Mapping, Sequence, Tuple, Union, cast
 
 from pydantic import BaseModel
 
 from dagster._annotations import experimental
+from dagster._core.instance import DagsterInstance
 
 from .asset_check_result import AssetCheckResult
-from .asset_check_spec import AssetCheckSeverity, AssetCheckSpec
+from .asset_check_spec import AssetCheckKey, AssetCheckSeverity, AssetCheckSpec
 from .asset_checks import AssetChecksDefinition
 from .asset_key import AssetKey, CoercibleToAssetKey
 from .assets import AssetsDefinition, SourceAsset
@@ -40,6 +41,50 @@ def build_column_schema_change_checks(
         else:
             asset_keys.add(AssetKey.from_coercible(el))
 
+    def _result_for_check_key(
+        instance: DagsterInstance, asset_check_key: AssetCheckKey
+    ) -> Tuple[bool, str]:
+        materialization_records = instance.fetch_materializations(
+            limit=2, records_filter=asset_check_key.asset_key
+        ).records
+        if len(materialization_records) < 2:
+            return True, "The asset has been materialized fewer than 2 times"
+
+        record, prev_record = materialization_records
+        metadata = cast(AssetMaterialization, record.asset_materialization).metadata
+        prev_metadata = cast(AssetMaterialization, prev_record.asset_materialization).metadata
+
+        column_schema = TableMetadataSet.extract(metadata).column_schema
+        prev_column_schema = TableMetadataSet.extract(prev_metadata).column_schema
+        if column_schema is None:
+            return False, "Latest materialization has no column schema metadata"
+        if prev_column_schema is None:
+            return False, "Previous materialization has no column schema metadata"
+
+        diff = TableSchemaDiff.from_table_schemas(prev_column_schema, column_schema)
+        if diff.added_columns or diff.removed_columns or diff.column_type_changes:
+            description = "Column schema changed between previous and latest materialization."
+            if diff.added_columns:
+                description += (
+                    f"\n\nAdded columns: {', '.join(col.name for col in diff.added_columns)}"
+                )
+
+            if diff.removed_columns:
+                description += (
+                    f"\n\nRemoved columns: {', '.join(col.name for col in diff.removed_columns)}"
+                )
+
+            if diff.column_type_changes:
+                description += "\n\nColumn type changes:"
+                for col_name, type_change in diff.column_type_changes.items():
+                    description += (
+                        f"\n- {col_name}: {type_change.old_type} -> {type_change.new_type}"
+                    )
+
+            return False, description
+
+        return True, "No changes to column schema between previous and latest materialization"
+
     @multi_asset_check(
         specs=[
             AssetCheckSpec(
@@ -53,59 +98,15 @@ def build_column_schema_change_checks(
         can_subset=True,
     )
     def _checks(context):
-        instance = context.instance
         for asset_check_key in context.selected_asset_check_keys:
-            materialization_records = instance.fetch_materializations(
-                limit=2, records_filter=asset_check_key.asset_key
-            ).records
-            if len(materialization_records) < 2:
-                yield AssetCheckResult(
-                    passed=True, description="The asset has been materialized fewer than 2 times"
-                )
-            else:
-                record, prev_record = materialization_records
-                metadata = cast(AssetMaterialization, record.asset_materialization).metadata
-                prev_metadata = cast(
-                    AssetMaterialization, prev_record.asset_materialization
-                ).metadata
-
-                column_schema = TableMetadataSet.extract(metadata).column_schema
-                prev_column_schema = TableMetadataSet.extract(prev_metadata).column_schema
-                if column_schema is None:
-                    yield AssetCheckResult(
-                        passed=False,
-                        description="Latest materialization has no column schema metadata",
-                    )
-                if prev_column_schema is None:
-                    yield AssetCheckResult(
-                        passed=False,
-                        description="Previous materialization has no column schema metadata",
-                    )
-
-                diff = TableSchemaDiff.from_table_schemas(prev_column_schema, column_schema)
-                if diff.added_columns or diff.removed_columns or diff.column_type_changes:
-                    description = (
-                        "Column schema changed between previous and latest materialization."
-                    )
-                    if diff.added_columns:
-                        description += f"\n\nAdded columns: {', '.join(col.name for col in diff.added_columns)}"
-
-                    if diff.removed_columns:
-                        description += f"\n\nRemoved columns: {', '.join(col.name for col in diff.removed_columns)}"
-
-                    if diff.column_type_changes:
-                        description += "\n\nColumn type changes:"
-                        for col_name, type_change in diff.column_type_changes.items():
-                            description += (
-                                f"\n- {col_name}: {type_change.old_type} -> {type_change.new_type}"
-                            )
-
-                    yield AssetCheckResult(passed=False, severity=severity, description=description)
-                else:
-                    yield AssetCheckResult(
-                        passed=True,
-                        description="No changes to column schema between previous and latest materialization",
-                    )
+            passed, description = _result_for_check_key(context.instance, asset_check_key)
+            yield AssetCheckResult(
+                passed=passed,
+                description=description,
+                severity=severity,
+                check_name=asset_check_key.name,
+                asset_key=asset_check_key.asset_key,
+            )
 
     return [_checks]
 
