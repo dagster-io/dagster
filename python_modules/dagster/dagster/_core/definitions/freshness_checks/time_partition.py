@@ -1,17 +1,45 @@
-from typing import Sequence, Union
+from typing import Any, Dict, Iterable, Sequence, Union
+
+import pendulum
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.metadata import (
+    JsonMetadataValue,
+    MetadataValue,
+    TimestampMetadataValue,
+)
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.execution.context.compute import (
+    AssetCheckExecutionContext,
+)
+from dagster._utils.schedules import (
+    get_latest_completed_cron_tick,
+    get_next_cron_tick,
+    is_valid_cron_string,
+)
 
-from ..asset_checks import AssetChecksDefinition
-from ..assets import AssetsDefinition, SourceAsset
-from ..events import CoercibleToAssetKey
-from .shared_builder import build_freshness_checks_for_assets
 from .utils import (
+    DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
+    FRESH_UNTIL_METADATA_KEY,
+    FRESHNESS_PARAMS_METADATA_KEY,
+    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
+    LATEST_CRON_TICK_METADATA_KEY,
+    TIMEZONE_PARAM_KEY,
+    assets_to_keys,
+    ensure_no_duplicate_assets,
+    freshness_multi_asset_check,
+    get_last_updated_timestamp,
+    retrieve_latest_record,
 )
 
 
@@ -84,13 +112,111 @@ def build_time_partition_freshness_checks(
         AssetChecksDefinition: An `AssetChecksDefinition` object, which can execute a freshness
             check for each provided asset.
     """
-    return build_freshness_checks_for_assets(
-        assets=assets,
+    check.str_param(timezone, "timezone")
+    check.opt_str_param(deadline_cron, "deadline_cron")
+    check.invariant(
+        deadline_cron is None or is_valid_cron_string(deadline_cron), "Invalid cron string."
+    )
+    check.inst_param(severity, "severity", AssetCheckSeverity)
+    check.sequence_param(assets, "assets")
+    ensure_no_duplicate_assets(assets)
+    return _build_freshness_multi_check(
+        asset_keys=assets_to_keys(assets),
         deadline_cron=deadline_cron,
         timezone=timezone,
         severity=severity,
-        asset_property_enforcement_lambda=lambda assets_def: check.invariant(
-            isinstance(assets_def.partitions_def, TimeWindowPartitionsDefinition),
-            "Asset is not time-window partitioned.",
-        ),
+    )
+
+
+def _build_freshness_multi_check(
+    asset_keys: Sequence[AssetKey],
+    deadline_cron: str,
+    timezone: str,
+    severity: AssetCheckSeverity,
+) -> AssetChecksDefinition:
+    params_metadata: dict[str, Any] = {
+        TIMEZONE_PARAM_KEY: timezone,
+        DEADLINE_CRON_PARAM_KEY: deadline_cron,
+    }
+
+    @freshness_multi_asset_check(
+        params_metadata=JsonMetadataValue(params_metadata), asset_keys=asset_keys
+    )
+    def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
+        for check_key in context.selected_asset_check_keys:
+            asset_key = check_key.asset_key
+            current_timestamp = pendulum.now("UTC").timestamp()
+
+            partitions_def = check.inst(
+                context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def,
+                TimeWindowPartitionsDefinition,
+            )
+            current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+            deadline = get_latest_completed_cron_tick(
+                deadline_cron, current_time_in_freshness_tz, timezone
+            )
+            deadline_in_partitions_def_tz = pendulum.from_timestamp(
+                deadline.timestamp(), tz=partitions_def.timezone
+            )
+            last_completed_time_window = check.not_none(
+                partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)
+            )
+            expected_partition_key = partitions_def.get_partition_key_range_for_time_window(
+                last_completed_time_window
+            ).start
+            latest_record = retrieve_latest_record(
+                instance=context.instance, asset_key=asset_key, partition_key=expected_partition_key
+            )
+            passed = latest_record is not None
+
+            metadata: Dict[str, MetadataValue] = {
+                FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
+                LATEST_CRON_TICK_METADATA_KEY: TimestampMetadataValue(deadline.timestamp()),
+            }
+
+            # Allows us to distinguish between the case where the asset has never been
+            # observed/materialized, and the case where this partition in particular is missing
+            latest_record_any_partition = retrieve_latest_record(
+                instance=context.instance, asset_key=asset_key, partition_key=None
+            )
+
+            if not passed and latest_record_any_partition is not None:
+                # If this asset has been updated at all before, provide the time at which that
+                # happened as additional metadata.
+                metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY] = TimestampMetadataValue(
+                    check.not_none(get_last_updated_timestamp(latest_record_any_partition, context))
+                )
+            elif passed:
+                metadata[FRESH_UNTIL_METADATA_KEY] = TimestampMetadataValue(
+                    get_next_cron_tick(
+                        deadline_cron, current_time_in_freshness_tz, timezone
+                    ).timestamp()
+                )
+
+            yield AssetCheckResult(
+                passed=passed,
+                description=_construct_description(
+                    partition_key=expected_partition_key,
+                    passed=passed,
+                    any_records_exist_for_asset=latest_record_any_partition is not None,
+                ),
+                severity=severity,
+                asset_key=asset_key,
+                metadata=metadata,
+            )
+
+    return the_check
+
+
+def _construct_description(
+    partition_key: str,
+    passed: bool,
+    any_records_exist_for_asset: bool,
+) -> str:
+    if passed:
+        return f"Asset is currently fresh, since partition {partition_key} has been observed/materialized."
+    elif not any_records_exist_for_asset:
+        return f"The asset has never been observed/materialized. We currently expect partition {partition_key} to have arrived."
+    return (
+        f"Asset is overdue. We expected partition {partition_key} to have arrived, and it has not."
     )

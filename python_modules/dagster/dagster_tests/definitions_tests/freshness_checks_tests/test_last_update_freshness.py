@@ -8,6 +8,7 @@ import pytest
 from dagster import (
     asset,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
@@ -17,7 +18,6 @@ from dagster._core.definitions.freshness_checks.last_update import (
 )
 from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.metadata import (
-    FloatMetadataValue,
     JsonMetadataValue,
     TimestampMetadataValue,
 )
@@ -47,10 +47,12 @@ def test_params() -> None:
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
     assert next(iter(check_specs)).metadata == {
-        "dagster/freshness_params": {
-            "lower_bound_delta": 600,
-            "timezone": "UTC",
-        }
+        "dagster/freshness_params": JsonMetadataValue(
+            {
+                "lower_bound_delta_seconds": 600,
+                "timezone": "UTC",
+            }
+        )
     }
 
     @asset
@@ -70,11 +72,13 @@ def test_params() -> None:
     )
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_specs)).metadata == {
-        "dagster/freshness_params": {
-            "lower_bound_delta": 600,
-            "deadline_cron": "0 0 * * *",
-            "timezone": "UTC",
-        }
+        "dagster/freshness_params": JsonMetadataValue(
+            {
+                "lower_bound_delta_seconds": 600,
+                "deadline_cron": "0 0 * * *",
+                "timezone": "UTC",
+            }
+        )
     }
 
     check = build_last_update_freshness_checks(
@@ -99,6 +103,13 @@ def test_params() -> None:
     with pytest.raises(Exception, match="Found duplicate assets"):
         build_last_update_freshness_checks(
             assets=[my_asset, my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
+        )
+
+    with pytest.raises(CheckError, match="Invalid cron string."):
+        build_last_update_freshness_checks(
+            assets=[my_asset],
+            deadline_cron="very invalid",
+            lower_bound_delta=datetime.timedelta(minutes=10),
         )
 
     check = build_last_update_freshness_checks(
@@ -179,7 +190,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is in an unknown state. Expected an update within the last 10 minutes, but we have not received an observation in that time, so we can't determine the state of the asset.",
+            description_match="Asset is overdue for an update.",
         )
 
         # Create an observation event within the allotted time window, but with an out of date last update time. Description should change.
@@ -197,7 +208,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is overdue. Expected an update within the last 10 minutes.",
+            description_match="Asset is overdue for an update.",
         )
 
         # Create an observation event within the allotted time window, with an up to date last update time. Description should change.
@@ -213,7 +224,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Asset is fresh. Expected an update within the last 10 minutes, and found an update 9 minutes ago.",
+            description_match="Asset is currently fresh.",
         )
 
 
@@ -248,19 +259,23 @@ def test_check_result_cron(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is overdue. Expected an update within the last 1 hour, 10 minutes.",
+            description_match="Asset has never been observed/materialized.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
                         "deadline_cron": deadline_cron,
                         "timezone": timezone,
-                        "lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "lower_bound_delta_seconds": lower_bound_delta.total_seconds(),
                     }
                 ),
-                "dagster/expected_by_timestamp": TimestampMetadataValue(
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC")
+                    .subtract(minutes=10)
+                    .timestamp()
+                ),
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
                     value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
                 ),
-                "dagster/overdue_seconds": FloatMetadataValue(3600.0),
             },
         )
 
@@ -282,17 +297,23 @@ def test_check_result_cron(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Asset is fresh. Expected an update within the last 1 hour, 10 minutes, and found an update 1 hour, 9 minutes ago.",
+            description_match="Asset is currently fresh.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
                         "deadline_cron": deadline_cron,
                         "timezone": timezone,
-                        "lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "lower_bound_delta_seconds": lower_bound_delta.total_seconds(),
                     }
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
                     value=lower_bound.add(minutes=1).timestamp()
+                ),
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
+                ),
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    value=lower_bound.timestamp()
                 ),
                 "dagster/fresh_until_timestamp": TimestampMetadataValue(
                     value=pendulum.datetime(2021, 1, 2, 0, 0, 0, tz="UTC").timestamp()
@@ -345,16 +366,17 @@ def test_check_result_bound_only(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is overdue. Expected an update within the last 10 minutes.",
+            description_match="Asset has never been observed/materialized.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "lower_bound_delta": 600,
+                        "lower_bound_delta_seconds": 600,
                         "timezone": "UTC",
                     }
                 ),
-                # Indicates that no records exist. There is no expected_by_timestamp because we can't derive from no records.
-                "dagster/overdue_seconds": FloatMetadataValue(0.0),
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    start_time.subtract(minutes=10).timestamp()
+                ),
             },
         )
 
@@ -377,11 +399,11 @@ def test_check_result_bound_only(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Asset is fresh. Expected an update within the last 10 minutes, and found an update 9 minutes ago.",
+            description_match="Asset is currently fresh.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "lower_bound_delta": 600,
+                        "lower_bound_delta_seconds": 600,
                         "timezone": "UTC",
                     }
                 ),
@@ -390,6 +412,9 @@ def test_check_result_bound_only(
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
                     value=update_time.timestamp()
+                ),
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    value=lower_bound.timestamp()
                 ),
             },
         )

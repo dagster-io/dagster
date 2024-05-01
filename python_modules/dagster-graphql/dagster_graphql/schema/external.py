@@ -497,6 +497,12 @@ class GrapheneRepositoryOrError(graphene.Union):
         name = "RepositoryOrError"
 
 
+class GrapheneWorkspaceLocationEntryOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneWorkspaceLocationEntry, GraphenePythonError)
+        name = "WorkspaceLocationEntryOrError"
+
+
 types = [
     GrapheneLocationStateChangeEvent,
     GrapheneLocationStateChangeEventType,
@@ -506,4 +512,5 @@ types = [
     GrapheneRepositoryConnection,
     GrapheneRepositoryLocation,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceLocationEntryOrError,
 ]

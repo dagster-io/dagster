@@ -6,15 +6,15 @@ description: Partitioned assets and jobs enable launching backfills, where each 
 # Partitioning assets
 
 <Note>
-  This page is specific to <strong>Software-defined Assets (SDAs)</strong>.
-  Looking for ops? Refer to the{" "}
+  This page is specific to <strong>asset definitions</strong>. Looking for ops?
+  Refer to the{" "}
   <a href="/concepts/partitions-schedules-sensors/partitioning-ops">
     Partitioned ops
   </a>{" "}
   documentation.
 </Note>
 
-A [Software-defined Asset](/concepts/assets/software-defined-assets) (SDA) can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file or a slice of a table in a database.
+A [asset definition](/concepts/assets/software-defined-assets) can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file or a slice of a table in a database.
 
 A common use is for each partition to represent all the records in a data set that fall within a particular time window, e.g. hourly, daily or monthly. Alternatively, each partition can represent a region, a customer, an experiment - any dimension along which you want to be able to materialize and monitor independently. An asset can also be partitioned along multiple dimensions, e.g. by region and by hour.
 
@@ -28,14 +28,14 @@ Once an asset has a set of partitions, you can launch materializations of indivi
 
 Before continuing, you should be familiar with:
 
-- [Software-defined Assets](/concepts/assets/software-defined-assets)
+- [Asset definitions](/concepts/assets/software-defined-assets)
 - [Jobs](/concepts/ops-jobs-graphs/jobs)
 
 ---
 
 ## Defining partitioned assets
 
-A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
+An asset definitions can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
 The following example demonstrates creating an asset that has a partition for each day since October 1st, 2023. Materializing partition `2023-11-13` of this asset would result in fetching data from the URL `https://api.nasa.gov/planetary/apod?date=2023-11-13` and storing it at the path `nasa/2023-11-13.csv`. Note that `api_key=DEMO_KEY` is used but has a limited number of calls:
 
@@ -428,6 +428,6 @@ If using the default I/O manager, materializing partition `2022-07-23` of this a
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/assets/software-defined-assets"
-    title="Software-defined Assets"
+    title="Asset definitions"
   ></ArticleListItem>
 </ArticleList>
