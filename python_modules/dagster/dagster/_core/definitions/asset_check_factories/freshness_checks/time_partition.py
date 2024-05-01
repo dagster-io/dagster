@@ -26,7 +26,7 @@ from dagster._utils.schedules import (
     is_valid_cron_string,
 )
 
-from .utils import (
+from ..utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,

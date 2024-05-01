@@ -11,7 +11,7 @@ from ..asset_selection import AssetSelection
 from ..decorators import sensor
 from ..run_request import RunRequest
 from ..sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
-from .utils import (
+from ..utils import (
     FRESH_UNTIL_METADATA_KEY,
     ensure_no_duplicate_asset_checks,
     seconds_in_words,

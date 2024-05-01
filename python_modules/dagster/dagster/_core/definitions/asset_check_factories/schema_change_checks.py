@@ -5,14 +5,14 @@ from pydantic import BaseModel
 from dagster._annotations import experimental
 from dagster._core.instance import DagsterInstance
 
-from .asset_check_result import AssetCheckResult
-from .asset_check_spec import AssetCheckKey, AssetCheckSeverity, AssetCheckSpec
-from .asset_checks import AssetChecksDefinition
-from .asset_key import AssetKey, CoercibleToAssetKey
-from .assets import AssetsDefinition, SourceAsset
-from .decorators.asset_check_decorator import multi_asset_check
-from .events import AssetMaterialization
-from .metadata import TableColumn, TableMetadataSet, TableSchema
+from ..asset_check_result import AssetCheckResult
+from ..asset_check_spec import AssetCheckKey, AssetCheckSeverity, AssetCheckSpec
+from ..asset_checks import AssetChecksDefinition
+from ..asset_key import AssetKey, CoercibleToAssetKey
+from ..assets import AssetsDefinition, SourceAsset
+from ..decorators.asset_check_decorator import multi_asset_check
+from ..events import AssetMaterialization
+from ..metadata import TableColumn, TableMetadataSet, TableSchema
 
 
 @experimental

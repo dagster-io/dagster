@@ -111,6 +111,9 @@ from dagster._config.source import (
     StringSource as StringSource,
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
+from dagster._core.definitions.asset_check_factories.schema_change_checks import (
+    build_column_schema_change_checks as build_column_schema_change_checks,
+)
 from dagster._core.definitions.asset_check_spec import (
     AssetCheckKey as AssetCheckKey,
     AssetCheckSeverity as AssetCheckSeverity,
@@ -376,9 +379,6 @@ from dagster._core.definitions.schedule_definition import (
     ScheduleDefinition as ScheduleDefinition,
     ScheduleEvaluationContext as ScheduleEvaluationContext,
     build_schedule_context as build_schedule_context,
-)
-from dagster._core.definitions.schema_change_checks import (
-    build_column_schema_change_checks as build_column_schema_change_checks,
 )
 from dagster._core.definitions.selector import (
     CodeLocationSelector as CodeLocationSelector,
