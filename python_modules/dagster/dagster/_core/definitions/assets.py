@@ -19,7 +19,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._annotations import experimental, experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.asset_spec import (
@@ -60,7 +60,7 @@ from dagster._utils.warnings import (
 )
 
 from .dependency import NodeHandle
-from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from .events import AssetKey, CoercibleToAssetDep, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -437,6 +437,91 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         # invoke against self to allow assets def information to be used
         return direct_invocation_result(self, *args, **kwargs)
+
+    @public
+    @experimental
+    @staticmethod
+    def single(
+        key: CoercibleToAssetKey,
+        *,
+        deps: Optional[Iterable[CoercibleToAssetDep]] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        description: Optional[str] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        io_manager_def: Optional[object] = None,
+        io_manager_key: Optional[str] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
+        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        owners: Optional[Sequence[str]] = None,
+        node_def: Optional[NodeDefinition] = None,
+        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        can_subset: bool = False,
+    ) -> "AssetsDefinition":
+        """Creates an AssetsDefinition with a single asset definition."""
+        if node_def is None:
+            from .decorators.asset_decorator import asset
+
+            check.invariant(check_specs is None)
+            check.invariant(backfill_policy is None)
+            check.invariant(auto_materialize_policy is None)
+            check.invariant(keys_by_input_name is None)
+            check.invariant(can_subset is None)
+
+            execution_type = AssetExecutionType.UNEXECUTABLE.value
+            metadata = {
+                **(metadata or {}),
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: execution_type,
+            }
+
+            with disable_dagster_warnings():
+
+                @asset(
+                    key=key,
+                    metadata=metadata,
+                    group_name=group_name,
+                    description=description,
+                    partitions_def=partitions_def,
+                    io_manager_key=io_manager_key,
+                    io_manager_def=io_manager_def,
+                    resource_defs=resource_defs,
+                    required_resource_keys=required_resource_keys,
+                    tags=tags,
+                    owners=owners,
+                )
+                def _shim_assets_def():
+                    raise NotImplementedError(f"Asset {key} is not executable")
+
+            return _shim_assets_def
+
+        else:
+            output_name = ""
+            key = AssetKey.from_coercible(key)
+            return AssetsDefinition._from_node(
+                node_def=node_def,
+                keys_by_input_name=keys_by_input_name,
+                keys_by_output_name={output_name: key},
+                internal_asset_deps=internal_asset_deps,
+                partitions_def=partitions_def,
+                partition_mappings=partition_mappings,
+                resource_defs=resource_defs,
+                group_name=group_name,
+                group_names_by_output_name={output_name: group_name},
+                descriptions_by_output_name={output_name: description}
+                if description is not None
+                else None,
+                metadata_by_output_name={output_name: metadata},
+                tags_by_output_name={output_name: tags},
+                auto_materialize_policies_by_output_name={output_name: auto_materialize_policy},
+                backfill_policy=backfill_policy,
+                can_subset=can_subset,
+                check_specs=check_specs,
+                owners_by_key={key: owners} if owners is not None else None,
+            )
 
     @public
     @experimental_param(param="resource_defs")
