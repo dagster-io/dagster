@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import sys
 import time
 import uuid
@@ -229,8 +230,9 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
 
 
 class IntervalDaemon(DagsterDaemon[TContext], ABC):
-    def __init__(self, interval_seconds):
+    def __init__(self, interval_seconds, jitter_seconds: float = 0):
         self.interval_seconds = check.numeric_param(interval_seconds, "interval_seconds")
+        self.jitter_seconds = jitter_seconds
         super().__init__()
 
     def core_loop(
@@ -239,6 +241,7 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
         shutdown_event: Event,
     ) -> DaemonIterator:
         while True:
+            interval = self.interval_seconds + random.uniform(0, self.jitter_seconds)
             start_time = time.time()
             yield SpanMarker.START_SPAN
             try:
@@ -248,7 +251,7 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
                 self._logger.error("Caught error:\n%s", error_info)
                 yield error_info
             yield SpanMarker.END_SPAN
-            while time.time() - start_time < self.interval_seconds:
+            while time.time() - start_time < interval:
                 shutdown_event.wait(0.5)
                 yield None
             yield None
