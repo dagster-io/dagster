@@ -1332,22 +1332,18 @@ class DbtCliResource(ConfigurableResource):
                 [assets_def]
             )
 
-            selection_args, indirect_selection = get_subset_selection_for_context(
+            selection_args, indirect_selection = _get_subset_selection_for_context(
                 context=context,
                 manifest=manifest,
                 select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
                 exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
                 dagster_dbt_translator=dagster_dbt_translator,
+                env=env,
             )
 
             # set dbt indirect selection if needed to execute specific dbt tests due to asset check
             # selection
             if indirect_selection:
-                logger.info(
-                    "A subsetted execution for asset checks is being performed. Overriding default "
-                    f"`DBT_INDIRECT_SELECTION` {env.get('DBT_INDIRECT_SELECTION', 'eager')} with "
-                    f"`{indirect_selection}`."
-                )
                 env["DBT_INDIRECT_SELECTION"] = indirect_selection
         else:
             manifest = validate_manifest(manifest) if manifest else {}
@@ -1392,12 +1388,13 @@ class DbtCliResource(ConfigurableResource):
         )
 
 
-def get_subset_selection_for_context(
+def _get_subset_selection_for_context(
     context: OpExecutionContext,
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
+    env: Dict[str, str],
 ) -> Tuple[List[str], Optional[str]]:
     """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
     resources in a subsetted execution context.
@@ -1473,34 +1470,46 @@ def get_subset_selection_for_context(
     # 1. all the selected checks are for selected assets
     # 2. no checks for selected assets are excluded
     # This also means we'll run any singular tests.
-    selected_checks_target_selected_assets = all(
-        check_key.asset_key in context.selected_asset_keys
+    checks_on_non_selected_assets = [
+        check_key
         for check_key in context.selected_asset_check_keys
-    )
+        if check_key.asset_key not in context.selected_asset_keys
+    ]
     all_check_keys = {
         check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
     }
-    all_checks_included_for_selected_assets = all(
-        check_key.asset_key not in context.selected_asset_keys
-        for check_key in (all_check_keys - context.selected_asset_check_keys)
-    )
+    excluded_checks = all_check_keys - context.selected_asset_check_keys
+    excluded_checks_on_selected_assets = [
+        check_key
+        for check_key in excluded_checks
+        if check_key.asset_key in context.selected_asset_keys
+    ]
 
-    # note that this will always be true if checks are disabled
-    if selected_checks_target_selected_assets and all_checks_included_for_selected_assets:
-        selected_dbt_resources = selected_dbt_non_test_resources
-        indirect_selection = None
-        logger.info(
-            "A dbt subsetted execution is being performed. Overriding default dbt selection"
-            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`. "
-        )
-    # otherwise we select all assets and tests explicitly, and turn off indirect selection. This risks
-    # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
-    # (all checks disabled, only one check and no assets) it's not a concern.
-    # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
-    else:
+    # note that this will always be false if checks are disabled (which means the assets_def has no
+    # check specs)
+    if checks_on_non_selected_assets or excluded_checks_on_selected_assets:
+        # select all assets and tests explicitly, and turn off indirect selection. This risks
+        # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
+        # (all checks disabled, only one check and no assets) it's not a concern.
+        # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
         check.invariant(dagster_dbt_translator.settings.enable_asset_checks)
         selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
         indirect_selection = DBT_EMPTY_INDIRECT_SELECTION
+        logger.info(
+            "A dbt subsetted execution is being performed. Overriding default dbt selection"
+            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
+        )
+        logger.info(
+            "A subsetted execution for asset checks is being performed. Overriding default "
+            f"`DBT_INDIRECT_SELECTION` {env.get('DBT_INDIRECT_SELECTION', 'eager')} with "
+            f"`{indirect_selection}` due to additional checks "
+            f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
+            f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
+        )
+
+    else:
+        selected_dbt_resources = selected_dbt_non_test_resources
+        indirect_selection = None
         logger.info(
             "A dbt subsetted execution is being performed. Overriding default dbt selection"
             f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
