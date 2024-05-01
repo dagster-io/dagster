@@ -13,12 +13,15 @@ In this guide, we'll show you a few approaches to defining asset checks, how to 
 
 ## Defining asset checks
 
-There are a few ways you can define an asset check:
+Depending on your needs, there are a few ways you can define asset checks:
 
-- **Separately from the assets the checks target** - In this approach, asset materialization and asset checks are executed in their own separate ops. If using the <PyObject object="multiprocess_executor" />, this allows you to launch runs that will use separate processes to materialize the asset and execute its check.
-- **Together with assets** - In this approach, checks execute in the same op that materializes the asset.
-- **Using an asset check factory** - This approach allows you to define multiple, similar asset checks at once
-- **Loading dbt tests into Dagster** - This approach allows you to model your dbt tests as asset checks
+| I want to...                                              | Which will...                                              | You should use...                                                   |
+| --------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------- |
+| Define checks separately from targeted assets             | Execute asset materializations and checks in their own ops | [`@asset_check` decorator](#defining-checks-separately-from-assets) |
+| Define checks together with targeted assets               | Execute asset materializations and checks in the same op   | [`AssetCheckSpec`](#defining-checks-and-assets-together)            |
+| Define multiple, similar checks                           | Execute checks in their own ops                            | [A factory pattern](#using-a-factory)                               |
+| Mitigate performance issues or execute a subset of checks | Execute multiple checks in an op without an asset          | [`@multi_asset_check` decorator](#TODO)                             |
+| Load my dbt tests as checks                               | TODO                                                       | [`DagsterDbtTranslator`](#loading-dbt-tests-as-asset-checks)        |
 
 ### Defining checks separately from assets
 
