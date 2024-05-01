@@ -40,7 +40,7 @@ def _process_is_containerized() -> bool:
     return False
 
 
-def _metric_tags(instance: DagsterInstance, dagster_run: DagsterRun) -> Dict[str, str]:
+def _metric_tags(dagster_run: DagsterRun) -> Dict[str, str]:
     location_name = os.getenv("DAGSTER_CLOUD_LOCATION_NAME", None)
 
     # organization and deployment name are added by the graphql mutation
@@ -144,14 +144,14 @@ def _capture_metrics(
     check.opt_inst_param(logger, "logger", logging.Logger)
 
     if not (container_metrics_enabled or python_metrics_enabled):
-        raise ValueError("No metrics enabled")
+        raise Exception("No metrics enabled")
 
     run_tags = _metric_tags(instance, dagster_run)
 
     if logger:
-        logging.debug(f"Starting metrics capture thread with tags: {run_tags}")
-        logging.debug(f"  [container_metrics_enabled={container_metrics_enabled}]")
-        logging.debug(f"  [python_metrics_enabled={python_metrics_enabled}]")
+        logger.debug(f"Starting metrics capture thread with tags: {run_tags}")
+        logger.debug(f"  [container_metrics_enabled={container_metrics_enabled}]")
+        logger.debug(f"  [python_metrics_enabled={python_metrics_enabled}]")
 
     while not shutdown_event.is_set():
         try:
@@ -174,14 +174,13 @@ def _capture_metrics(
                 )
 
         except:
-            logging.error(
-                "Exception during capture of metrics, will cease capturing", exc_info=True
-            )
+            if logger:
+                logger.error("Exception during capture of metrics, will cease capturing")
             return False  # terminate the thread safely without interrupting the main thread
 
-        sleep(polling_interval)
+        shutdown_event.wait(polling_interval)
     if logger:
-        logging.debug("Shutting down metrics capture thread")
+        logger.debug("Shutting down metrics capture thread")
     return True
 
 
@@ -228,6 +227,7 @@ def start_run_metrics_thread(
             logger,
         ),
         name="run-metrics",
+        daemon=True,
     )
     thread.start()
     return thread, shutdown_event
