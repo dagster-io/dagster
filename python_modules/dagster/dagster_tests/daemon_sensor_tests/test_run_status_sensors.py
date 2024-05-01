@@ -12,6 +12,7 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
+from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
@@ -22,9 +23,14 @@ from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation import CodeLocation, ExternalRepository
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
-from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
+from dagster._core.test_utils import (
+    create_test_daemon_workspace_context,
+    environ,
+    instance_for_test,
+)
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
+from dagster._serdes.serdes import deserialize_value
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from .conftest import create_workspace_load_target
@@ -463,6 +469,146 @@ def test_run_failure_sensor_filtered(
             freeze_datetime,
             TickStatus.SUCCESS,
         )
+
+
+def test_run_failure_sensor_overfetch(
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    external_repo: ExternalRepository,
+):
+    with environ(
+        {
+            "DAGSTER_RUN_STATUS_SENSOR_FETCH_LIMIT": "6",
+            "DAGSTER_RUN_STATUS_SENSOR_PROCESS_LIMIT": "2",
+        },
+    ):
+        with create_test_daemon_workspace_context(
+            workspace_load_target=create_workspace_load_target(), instance=instance
+        ) as workspace_context:
+            freeze_datetime = pendulum.now()
+            with pendulum_freeze_time(freeze_datetime):
+                failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
+                instance.start_sensor(failure_sensor)
+
+                evaluate_sensors(workspace_context, executor)
+
+                ticks = instance.get_ticks(
+                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                )
+                assert len(ticks) == 1
+                validate_tick(
+                    ticks[0],
+                    failure_sensor,
+                    freeze_datetime,
+                    TickStatus.SKIPPED,
+                )
+
+                freeze_datetime = freeze_datetime.add(seconds=60)
+                time.sleep(1)
+
+            with pendulum_freeze_time(freeze_datetime):
+                matching_runs = []
+                non_matching_runs = []
+
+                # interleave matching jobs and jobs that do not match
+                for _i in range(4):
+                    external_job = external_repo.get_full_external_job("failure_job")
+                    external_job_2 = external_repo.get_full_external_job("failure_job_2")
+
+                    run = instance.create_run_for_job(
+                        failure_job_2,
+                        external_job_origin=external_job_2.get_external_origin(),
+                        job_code_origin=external_job_2.get_python_origin(),
+                    )
+                    instance.report_run_failed(run)
+
+                    non_matching_runs.append(run)
+
+                    run = instance.create_run_for_job(
+                        failure_job,
+                        external_job_origin=external_job.get_external_origin(),
+                        job_code_origin=external_job.get_python_origin(),
+                    )
+                    instance.report_run_failed(run)
+
+                    matching_runs.append(run)
+
+                freeze_datetime = freeze_datetime.add(seconds=60)
+
+            with pendulum_freeze_time(freeze_datetime):
+                # should fire the failure sensor (filtered to failure job)
+                evaluate_sensors(workspace_context, executor)
+
+                ticks = instance.get_ticks(
+                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                )
+                assert len(ticks) == 2
+                validate_tick(
+                    ticks[0],
+                    failure_sensor,
+                    freeze_datetime,
+                    TickStatus.SUCCESS,
+                )
+
+                assert set(ticks[0].origin_run_ids or []) == {
+                    matching_runs[0].run_id,
+                    matching_runs[1].run_id,
+                }
+
+                # Additional non-matching run was incorporated into the cursor
+
+                run_status_changes = instance.event_log_storage.fetch_run_status_changes(
+                    records_filter=DagsterEventType.RUN_FAILURE, ascending=True, limit=1000
+                )
+                assert len(run_status_changes.records) == 8
+
+                last_non_matching_run_storage_records = [
+                    record
+                    for record in run_status_changes.records
+                    if record.run_id == non_matching_runs[2].run_id
+                ]
+                assert len(last_non_matching_run_storage_records) == 1
+
+                assert (
+                    deserialize_value(
+                        check.not_none(ticks[0].cursor), RunStatusSensorCursor
+                    ).record_id
+                    == last_non_matching_run_storage_records[0].storage_id
+                )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            with pendulum_freeze_time(freeze_datetime):
+                evaluate_sensors(workspace_context, executor)
+
+                ticks = instance.get_ticks(
+                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                )
+                assert len(ticks) == 3
+                validate_tick(
+                    ticks[0],
+                    failure_sensor,
+                    freeze_datetime,
+                    TickStatus.SUCCESS,
+                )
+
+                assert set(ticks[0].origin_run_ids or []) == {
+                    matching_runs[2].run_id,
+                    matching_runs[3].run_id,
+                }
+
+                last_matching_run_storage_records = [
+                    record
+                    for record in run_status_changes.records
+                    if record.run_id == matching_runs[3].run_id
+                ]
+                assert len(last_matching_run_storage_records) == 1
+
+                assert (
+                    deserialize_value(
+                        check.not_none(ticks[0].cursor), RunStatusSensorCursor
+                    ).record_id
+                    == last_matching_run_storage_records[0].storage_id
+                )
 
 
 def sqlite_storage_config_fn(temp_dir: str) -> Dict[str, Any]:
