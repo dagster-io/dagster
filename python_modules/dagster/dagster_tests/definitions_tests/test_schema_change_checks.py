@@ -234,8 +234,7 @@ def test_multiple_calls():
     assert result.success
 
     check_evals = result.get_asset_check_evaluations()
-    assert len(check_evals) == 1
-    check_eval = check_evals[0]
-
-    assert check_eval.passed
-    assert check_eval.description == "The asset has been materialized fewer than 2 times"
+    assert len(check_evals) == 2
+    for check_eval in check_evals:
+        assert check_eval.passed
+        assert check_eval.description == "The asset has been materialized fewer than 2 times"

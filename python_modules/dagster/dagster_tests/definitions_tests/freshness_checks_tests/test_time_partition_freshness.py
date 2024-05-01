@@ -10,6 +10,12 @@ from dagster import (
     asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
+    build_time_partition_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.utils import (
+    unique_id_from_asset_keys,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_out import AssetOut
@@ -17,10 +23,6 @@ from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSel
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_checks.time_partition import (
-    build_time_partition_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.metadata import (
     JsonMetadataValue,
     TimestampMetadataValue,
