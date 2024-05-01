@@ -17,7 +17,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
-import {FailedRunList, RunList} from './InstigationTick';
+import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
@@ -121,17 +121,15 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       </Box>
       {activeTab === 'result' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
-          {tick.runIds.length || tick.originRunIds.length ? (
+          {tick.runIds.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle2>Requested</Subtitle2>
+                <Subtitle2>Requested Runs</Subtitle2>
               </Box>
-              {tick.runIds.length ? (
-                <RunList runIds={tick.runIds} />
-              ) : (
-                <FailedRunList originRunIds={tick.originRunIds} />
-              )}
+              <RunList runIds={tick.runIds} />
             </>
+          ) : tick.originRunIds.length ? (
+            <TargetedRunList originRunIds={tick.originRunIds} />
           ) : null}
           {addedPartitionRequests?.length ? (
             <>
