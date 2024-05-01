@@ -1,4 +1,3 @@
-import {shallowCompareKeys} from '@blueprintjs/core/lib/esm/common/utils';
 import memoize from 'lodash/memoize';
 import {useEffect, useMemo, useReducer, useRef} from 'react';
 
@@ -7,7 +6,7 @@ import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
-import {usePrevious} from '../hooks/usePrevious';
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {useDependencyWithIsSuccessful} from '../performance/TraceContext';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
@@ -216,10 +215,9 @@ export function useAssetLayout(
   }, [cacheKey, graphData, runAsync, flags, opts]);
 
   const uid = useRef(0);
-  const layoutInputs = {cacheKey, graphData, runAsync, flags, opts};
-  if (!shallowCompareKeys(usePrevious(layoutInputs), layoutInputs)) {
+  useDangerousRenderEffect(() => {
     uid.current++;
-  }
+  }, [cacheKey, graphData, runAsync, flags, opts]);
 
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
