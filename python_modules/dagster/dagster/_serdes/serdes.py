@@ -847,8 +847,8 @@ def _pack_value(
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
-        or (is_dataclass(val) and not isinstance(val, type))
         or isinstance(val, pydantic.BaseModel)
+        or (is_dataclass(val) and not isinstance(val, type))
     ):
         klass_name = val.__class__.__name__
         if not whitelist_map.has_object_serializer(klass_name):
