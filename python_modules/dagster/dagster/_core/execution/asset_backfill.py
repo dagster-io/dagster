@@ -913,6 +913,8 @@ def execute_asset_backfill_iteration(
         f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
     )
 
+    logger.info(f"AssetBackfillData from previous iteration: {previous_asset_backfill_data}")
+
     if backfill.status == BulkActionStatus.REQUESTED:
         result = None
         for result in execute_asset_backfill_iteration_inner(
@@ -922,6 +924,7 @@ def execute_asset_backfill_iteration(
             asset_graph=asset_graph,
             run_tags=backfill.tags,
             backfill_start_time=backfill_start_time,
+            logger=logger,
         ):
             yield None
 
@@ -1184,6 +1187,7 @@ def execute_asset_backfill_iteration_inner(
     instance_queryer: CachingInstanceQueryer,
     run_tags: Mapping[str, str],
     backfill_start_time: datetime,
+    logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -1230,6 +1234,10 @@ def execute_asset_backfill_iteration_inner(
                 " AssetGraphSubset"
             )
 
+        logger.info(
+            f"Assets materialized since last tick {updated_materialized_subset - asset_backfill_data.materialized_subset}"
+        )
+
         parent_materialized_asset_partitions = set().union(
             *(
                 instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
@@ -1264,6 +1272,13 @@ def execute_asset_backfill_iteration_inner(
         ),
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
+    )
+
+    logger.info(
+        f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
+    )
+    logger.info(
+        f"Assets in initial subset but not in subset to request: {initial_candidates - asset_partitions_to_request}"
     )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
