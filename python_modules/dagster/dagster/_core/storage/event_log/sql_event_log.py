@@ -52,7 +52,6 @@ from dagster._core.events import (
     ASSET_EVENTS,
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
     MARKER_EVENTS,
-    PIPELINE_EVENTS,
     DagsterEventType,
 )
 from dagster._core.events.log import EventLogEntry
@@ -954,8 +953,6 @@ class SqlEventLogStorage(EventLogStorage):
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
-        if event_records_filter.event_type not in ASSET_EVENTS.union(PIPELINE_EVENTS):
-            deprecation_warning(f"Querying by {event_records_filter.event_type.value}", "1.8.0")
         return self._get_event_records(
             event_records_filter=event_records_filter, limit=limit, ascending=ascending
         )
@@ -1131,7 +1128,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         if isinstance(dagster_event_type, set) and len(dagster_event_type) > 1:
             deprecation_warning(
-                "Support for multiple event types to get_logs_for_all_runs_by_log_id", "1.8.0"
+                "Support for multiple event types to get_logs_for_all_runs_by_log_id",
+                "1.8.0",
+                "You should break up your query into multiple calls, one for each event type.",
             )
 
         dagster_event_types = (

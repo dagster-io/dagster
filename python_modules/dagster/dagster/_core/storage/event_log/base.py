@@ -160,7 +160,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             limit (Optional[int]): Max number of records to return.
         """
         if isinstance(cursor, int):
-            deprecation_warning("Integer cursor values in `get_logs_for_run`", "1.8.0")
+            deprecation_warning(
+                "Integer cursor values in `get_logs_for_run`",
+                "1.8.0",
+                "You can instead construct a storage_id-based string cursor e.g. `cursor = EventLogCursor.from_storage_id(storage_id).to_string()`",
+            )
             cursor = EventLogCursor.from_offset(cursor + 1).to_string()
         records = self.get_records_for_run(
             run_id, cursor, of_type, limit, ascending=ascending

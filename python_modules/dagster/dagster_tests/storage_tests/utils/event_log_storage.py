@@ -476,6 +476,12 @@ class TestEventLogStorage:
     def can_set_concurrency_defaults(self):
         return False
 
+    def supports_offset_cursor_queries(self):
+        return True
+
+    def supports_multiple_event_type_queries(self):
+        return True
+
     def set_default_op_concurrency(self, instance, storage, limit):
         pass
 
@@ -542,7 +548,7 @@ class TestEventLogStorage:
                 instance.delete_run(run)
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_log_storage_watch(
         self,
         test_run_id: str,
@@ -611,7 +617,7 @@ class TestEventLogStorage:
 
         assert [int(evt.user_message) for evt in watched] == [2, 3, 4]
 
-    def test_event_log_storage_pagination(
+    def test_event_log_storage_storage_id_pagination(
         self,
         test_run_id: str,
         instance: DagsterInstance,
@@ -640,6 +646,33 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[1]))) == 2
             assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[2]))) == 1
             assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[3]))) == 0
+
+    def test_event_log_storage_offset_pagination(
+        self,
+        test_run_id: str,
+        instance: DagsterInstance,
+        storage: EventLogStorage,
+    ):
+        if not self.supports_offset_cursor_queries():
+            pytest.skip("storage does not support deprecated offset cursor queries")
+
+        other_run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [other_run_id]):
+            # two runs events to ensure pagination is not affected by other runs
+            storage.store_event(create_test_event_log_record("A", run_id=test_run_id))
+            storage.store_event(create_test_event_log_record(str(0), run_id=other_run_id))
+            storage.store_event(create_test_event_log_record("B", run_id=test_run_id))
+            storage.store_event(create_test_event_log_record(str(1), run_id=other_run_id))
+            storage.store_event(create_test_event_log_record("C", run_id=test_run_id))
+            storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
+            storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
+
+            assert len(storage.get_logs_for_run(test_run_id)) == 4
+            assert len(storage.get_logs_for_run(test_run_id, -1)) == 4
+            assert len(storage.get_logs_for_run(test_run_id, 0)) == 3
+            assert len(storage.get_logs_for_run(test_run_id, 1)) == 2
+            assert len(storage.get_logs_for_run(test_run_id, 2)) == 1
+            assert len(storage.get_logs_for_run(test_run_id, 3)) == 0
 
     def test_event_log_delete(
         self,
@@ -833,8 +866,8 @@ class TestEventLogStorage:
         for event in events:
             storage.store_event(event)
 
-        result = storage.get_records_for_run(test_run_id, ascending=True)
-        storage_ids = [r.storage_id for r in result.records]
+        event_records = storage.get_records_for_run(result.run_id, ascending=True).records
+        storage_ids = [r.storage_id for r in event_records]
 
         out_events = []
         offset = -1
@@ -848,12 +881,37 @@ class TestEventLogStorage:
                 if offset >= 0
                 else None
             )
-            chunk = storage.get_logs_for_run(test_run_id, cursor=cursor, limit=chunk_size)
+            chunk = storage.get_logs_for_run(result.run_id, cursor=cursor, limit=chunk_size)
             if not chunk:
                 break
             assert len(chunk) <= chunk_size
             out_events += chunk
             offset += len(chunk)
+
+        assert _event_types(out_events) == _event_types(events)
+
+    def test_get_logs_for_run_cursor_offset_limit(self, test_run_id, storage):
+        if not self.supports_offset_cursor_queries():
+            pytest.skip("storage does not support deprecated offset cursor queries")
+
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
+
+        for event in events:
+            storage.store_event(event)
+
+        out_events = []
+        cursor = -1
+        fuse = 0
+        chunk_size = 2
+        while fuse < 50:
+            fuse += 1
+            # fetch in batches w/ limit & cursor
+            chunk = storage.get_logs_for_run(result.run_id, cursor=cursor, limit=chunk_size)
+            if not chunk:
+                break
+            assert len(chunk) <= chunk_size
+            out_events += chunk
+            cursor += len(chunk)
 
         assert _event_types(out_events) == _event_types(events)
 
@@ -887,7 +945,7 @@ class TestEventLogStorage:
         assert storage.get_logs_for_run(result.run_id) == []
 
     def test_get_logs_for_run_of_type(self, test_run_id, storage):
-        events, result = _synthesize_events(one_asset_op, run_id=test_run_id)
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -897,8 +955,18 @@ class TestEventLogStorage:
         ) == [DagsterEventType.RUN_SUCCESS]
 
         assert _event_types(
-            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION)
-        ) == [DagsterEventType.ASSET_MATERIALIZATION]
+            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
+        ) == [DagsterEventType.STEP_SUCCESS]
+
+        assert _event_types(
+            storage.get_logs_for_run(
+                result.run_id,
+                of_type={
+                    DagsterEventType.STEP_SUCCESS,
+                    DagsterEventType.RUN_SUCCESS,
+                },
+            )
+        ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.RUN_SUCCESS]
 
     def test_basic_get_logs_for_run_cursor(self, test_run_id, storage):
         events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
@@ -966,7 +1034,7 @@ class TestEventLogStorage:
             assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_single_run_event(self, storage, test_run_id):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -987,7 +1055,7 @@ class TestEventLogStorage:
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_filter_run_event(self, instance, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1016,7 +1084,7 @@ class TestEventLogStorage:
             assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_filter_two_runs_event(self, storage, instance):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -2037,7 +2105,7 @@ class TestEventLogStorage:
                 assert len(run_status_change_events) == 6
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=2)
+    @pytest.mark.flaky(reruns=1)
     def test_watch_exc_recovery(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -3864,8 +3932,7 @@ class TestEventLogStorage:
 
         @op
         def return_one(_):
-            yield AssetMaterialization(AssetKey("a"))
-            yield Output(1)
+            return 1
 
         def _ops():
             return_one()
@@ -3881,11 +3948,38 @@ class TestEventLogStorage:
             ).values()
         ) == [DagsterEventType.RUN_SUCCESS, DagsterEventType.RUN_SUCCESS]
 
+    def test_get_logs_for_all_runs_by_log_id_by_multi_type(self, storage: EventLogStorage):
+        if not storage.supports_event_consumer_queries():
+            pytest.skip("storage does not support event consumer queries")
+
+        if not self.supports_multiple_event_type_queries():
+            pytest.skip("storage does not support deprecated multi-event-type queries")
+
+        @op
+        def return_one(_):
+            return 1
+
+        def _ops():
+            return_one()
+
+        for _ in range(2):
+            events, _ = _synthesize_events(_ops)
+            for event in events:
+                storage.store_event(event)
+
         assert _event_types(
             storage.get_logs_for_all_runs_by_log_id(
-                dagster_event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                dagster_event_type={
+                    DagsterEventType.STEP_SUCCESS,
+                    DagsterEventType.RUN_SUCCESS,
+                },
             ).values()
-        ) == [DagsterEventType.ASSET_MATERIALIZATION, DagsterEventType.ASSET_MATERIALIZATION]
+        ) == [
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+        ]
 
     def test_get_logs_for_all_runs_by_log_id_cursor(self, storage: EventLogStorage):
         if not storage.supports_event_consumer_queries():
@@ -3919,10 +4013,55 @@ class TestEventLogStorage:
             dagster_event_type=DagsterEventType.RUN_SUCCESS,
         )
 
-        assert [event.run_id for event in after_cursor_events_by_log_id.values()] == [
-            run_id_2,
-        ]
+        assert [event.run_id for event in after_cursor_events_by_log_id.values()] == [run_id_2]
         assert _event_types(after_cursor_events_by_log_id.values()) == [
+            DagsterEventType.RUN_SUCCESS,
+        ]
+
+    def test_get_logs_for_all_runs_by_log_id_cursor_multi_type(self, storage: EventLogStorage):
+        if not storage.supports_event_consumer_queries():
+            pytest.skip("storage does not support event consumer queries")
+
+        if not self.supports_multiple_event_type_queries():
+            pytest.skip("storage does not support deprecated multi-event-type queries")
+
+        @op
+        def return_one(_):
+            return 1
+
+        def _ops():
+            return_one()
+
+        for _ in range(2):
+            events, _ = _synthesize_events(_ops)
+            for event in events:
+                storage.store_event(event)
+
+        events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
+            dagster_event_type={
+                DagsterEventType.STEP_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
+            },
+        )
+
+        assert _event_types(events_by_log_id.values()) == [
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+        ]
+
+        after_cursor_events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
+            after_cursor=min(events_by_log_id.keys()),
+            dagster_event_type={
+                DagsterEventType.STEP_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
+            },
+        )
+
+        assert _event_types(after_cursor_events_by_log_id.values()) == [
+            DagsterEventType.RUN_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
             DagsterEventType.RUN_SUCCESS,
         ]
 
@@ -3957,6 +4096,39 @@ class TestEventLogStorage:
             DagsterEventType.RUN_SUCCESS,
             DagsterEventType.RUN_SUCCESS,
             DagsterEventType.RUN_SUCCESS,
+        ]
+
+    def test_get_logs_for_all_runs_by_log_id_limit_multi_type(self, storage: EventLogStorage):
+        if not storage.supports_event_consumer_queries():
+            pytest.skip("storage does not support event consumer queries")
+
+        if not self.supports_multiple_event_type_queries():
+            pytest.skip("storage does not support deprecated multi-event-type queries")
+
+        @op
+        def return_one(_):
+            return 1
+
+        def _ops():
+            return_one()
+
+        for _ in range(2):
+            events, _ = _synthesize_events(_ops)
+            for event in events:
+                storage.store_event(event)
+
+        events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
+            dagster_event_type={
+                DagsterEventType.STEP_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
+            },
+            limit=3,
+        )
+
+        assert _event_types(events_by_log_id.values()) == [
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
         ]
 
     def test_get_maximum_record_id(self, storage: EventLogStorage):
