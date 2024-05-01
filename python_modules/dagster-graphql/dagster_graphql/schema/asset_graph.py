@@ -34,8 +34,8 @@ from dagster._core.remote_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.utils import is_valid_email
-from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -1140,11 +1140,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
-            (
-                self._asset_record_loader.get_asset_record(asset_key)
-                if self._asset_record_loader
-                else None
-            ),
+            self._asset_record_loader,
             partitions_def,
         )
 
@@ -1174,11 +1170,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 graphene_info.context.instance,
                 asset_key,
                 self._dynamic_partitions_loader,
-                (
-                    self._asset_record_loader.get_asset_record(self._external_asset_node.asset_key)
-                    if self._asset_record_loader
-                    else None
-                ),
+                self._asset_record_loader,
                 (
                     self._external_asset_node.partitions_def_data.get_partitions_definition()
                     if self._external_asset_node.partitions_def_data

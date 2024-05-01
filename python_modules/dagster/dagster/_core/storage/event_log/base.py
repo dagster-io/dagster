@@ -60,6 +60,8 @@ class AssetEntry(
             # This is an optional field which can be used for more performant last observation
             # queries if the underlying storage supports it
             ("last_observation_record", Optional[EventLogRecord]),
+            ("last_planned_materialization_storage_id", Optional[int]),
+            ("last_planned_materialization_run_id", Optional[str]),
         ],
     )
 ):
@@ -71,6 +73,8 @@ class AssetEntry(
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
         last_observation_record: Optional[EventLogRecord] = None,
+        last_planned_materialization_storage_id: Optional[int] = None,
+        last_planned_materialization_run_id: Optional[str] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -87,6 +91,14 @@ class AssetEntry(
             ),
             last_observation_record=check.opt_inst_param(
                 last_observation_record, "last_observation_record", EventLogRecord
+            ),
+            last_planned_materialization_storage_id=check.opt_int_param(
+                last_planned_materialization_storage_id,
+                "last_planned_materialization_storage_id",
+            ),
+            last_planned_materialization_run_id=check.opt_str_param(
+                last_planned_materialization_run_id,
+                "last_planned_materialization_run_id",
             ),
         )
 
@@ -292,6 +304,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Sequence[AssetRecord]:
         pass
+
+    @property
+    def asset_records_have_last_planned_materialization_storage_id(self) -> bool:
+        return False
 
     @abstractmethod
     def has_asset_key(self, asset_key: AssetKey) -> bool:

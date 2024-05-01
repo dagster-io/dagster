@@ -43,6 +43,7 @@ from dagster._core.errors import (
 from dagster._core.event_api import AssetRecordsFilter, EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.storage.dagster_run import (
     DagsterRun,
     RunRecord,
@@ -76,7 +77,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._asset_graph = asset_graph
         self._logger = logger or logging.getLogger("dagster")
 
-        self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
+        self._batch_asset_record_loader = BatchAssetRecordLoader(self._instance, set())
+
         self._asset_partitions_cache: Dict[Optional[int], Dict[AssetKey, Set[str]]] = defaultdict(
             dict
         )
@@ -110,16 +112,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     def prefetch_asset_records(self, asset_keys: Iterable[AssetKey]):
         """For performance, batches together queries for selected assets."""
-        keys_to_fetch = set(asset_keys) - set(self._asset_record_cache.keys())
-        if len(keys_to_fetch) == 0:
-            return
-        # get all asset records for selected assets that aren't already cached
-        asset_records = self.instance.get_asset_records(list(keys_to_fetch))
-        for asset_record in asset_records:
-            self._asset_record_cache[asset_record.asset_entry.asset_key] = asset_record
-        for key in asset_keys:
-            if key not in self._asset_record_cache:
-                self._asset_record_cache[key] = None
+        self._batch_asset_record_loader.add_asset_keys(asset_keys)
+        self._batch_asset_record_loader.fetch()
 
     ####################
     # ASSET STATUS CACHE
@@ -132,13 +126,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
 
         partitions_def = check.not_none(self.asset_graph.get(asset_key).partitions_def)
-        asset_record = self.get_asset_record(asset_key)
+        self._batch_asset_record_loader.add_asset_keys([asset_key])
         return get_and_update_asset_status_cache_value(
             instance=self.instance,
             asset_key=asset_key,
             partitions_def=partitions_def,
             dynamic_partitions_loader=self,
-            asset_record=asset_record,
+            batch_asset_record_loader=self._batch_asset_record_loader,
         )
 
     @cached_method
@@ -176,14 +170,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ####################
 
     def has_cached_asset_record(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._asset_record_cache
+        return self._batch_asset_record_loader.has_cached_asset_record(asset_key)
 
     def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
-        if asset_key not in self._asset_record_cache:
-            self._asset_record_cache[asset_key] = next(
-                iter(self.instance.get_asset_records([asset_key])), None
-            )
-        return self._asset_record_cache[asset_key]
+        self._batch_asset_record_loader.add_asset_keys({asset_key})
+        return self._batch_asset_record_loader.get_asset_record(asset_key)
 
     def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
         if self.asset_graph.get(asset_key).is_observable:

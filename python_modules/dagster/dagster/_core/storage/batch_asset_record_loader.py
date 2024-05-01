@@ -1,12 +1,12 @@
-from typing import Iterable, Mapping, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set
 
-from dagster import (
-    DagsterInstance,
-    _check as check,
-)
+import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.instance import DagsterInstance
+
+if TYPE_CHECKING:
+    from dagster._core.storage.event_log.base import AssetRecord
 
 
 class BatchAssetRecordLoader:
@@ -17,13 +17,13 @@ class BatchAssetRecordLoader:
     def __init__(self, instance: DagsterInstance, asset_keys: Iterable[AssetKey]):
         self._instance = instance
         self._unfetched_asset_keys: Set[AssetKey] = set(asset_keys)
-        self._asset_records: Mapping[AssetKey, Optional[AssetRecord]] = {}
+        self._asset_records: Mapping[AssetKey, Optional["AssetRecord"]] = {}
 
     def add_asset_keys(self, asset_keys: Iterable[AssetKey]):
         unfetched_asset_keys = set(asset_keys).difference(self._asset_records.keys())
         self._unfetched_asset_keys = self._unfetched_asset_keys.union(unfetched_asset_keys)
 
-    def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
+    def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
         if asset_key not in self._asset_records and asset_key not in self._unfetched_asset_keys:
             check.failed(
                 f"Asset key {asset_key} not recognized for this loader. Expected one of:"
@@ -31,7 +31,7 @@ class BatchAssetRecordLoader:
             )
 
         if asset_key in self._unfetched_asset_keys:
-            self._fetch()
+            self.fetch()
 
         return self._asset_records.get(asset_key)
 
@@ -40,7 +40,10 @@ class BatchAssetRecordLoader:
         self._unfetched_asset_keys = self._unfetched_asset_keys.union(self._asset_records.keys())
         self._asset_records = {}
 
-    def get_asset_records(self, asset_keys: Sequence[AssetKey]) -> Sequence[AssetRecord]:
+    def has_cached_asset_record(self, asset_key: AssetKey):
+        return asset_key in self._asset_records
+
+    def get_asset_records(self, asset_keys: Sequence[AssetKey]) -> Sequence["AssetRecord"]:
         records = [self.get_asset_record(asset_key) for asset_key in asset_keys]
         return [record for record in records if record]
 
@@ -65,7 +68,7 @@ class BatchAssetRecordLoader:
 
         return asset_record.asset_entry.last_observation
 
-    def _fetch(self) -> None:
+    def fetch(self) -> None:
         if not self._unfetched_asset_keys:
             return
 

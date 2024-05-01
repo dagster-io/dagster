@@ -3668,6 +3668,7 @@ class TestEventLogStorage:
                 materialize_event = next(
                     event for event in result.all_events if event.is_step_materialization
                 )
+
                 assert asset_entry.last_materialization
                 assert asset_entry.last_materialization.dagster_event == materialize_event
                 assert asset_entry.last_run_id == result.run_id
@@ -3679,7 +3680,23 @@ class TestEventLogStorage:
                         asset_key=my_asset_key,
                     )
                 )[0]
+
                 assert asset_entry.last_materialization_record == event_log_record
+
+                materialization_planned_record = storage.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                        asset_key=my_asset_key,
+                    )
+                )[0]
+
+                if storage.asset_records_have_last_planned_materialization_storage_id:
+                    assert (
+                        asset_entry.last_planned_materialization_storage_id
+                        == materialization_planned_record.storage_id
+                    )
+                else:
+                    assert not asset_entry.last_planned_materialization_storage_id
 
                 if self.can_wipe():
                     storage.wipe_asset(my_asset_key)

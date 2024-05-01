@@ -15,10 +15,10 @@ from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.test_utils import instance_for_test
-from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 
 
 def n_asset_keys(path, n):
@@ -197,12 +197,18 @@ def test_batch_asset_records_loader():
         fake_key = AssetKey(path=["fake_key"])
 
         assert asset_records_loader._unfetched_asset_keys == {return_two.key}  # noqa
+        assert not asset_records_loader.has_cached_asset_record(return_two.key)
+        assert not asset_records_loader.has_cached_asset_record(fake_key)
+
         assert asset_records_loader._asset_records == {}  # noqa
 
         assert (
             asset_records_loader.get_asset_record(return_two.key).asset_entry.asset_key
             == return_two.key
         )
+
+        assert asset_records_loader.has_cached_asset_record(return_two.key)
+        assert not asset_records_loader.has_cached_asset_record(fake_key)
 
         assert asset_records_loader._unfetched_asset_keys == set()  # noqa
         assert len(asset_records_loader._asset_records) == 1  # noqa
@@ -215,6 +221,8 @@ def test_batch_asset_records_loader():
 
         asset_records_loader.add_asset_keys({return_one.key, return_two.key, fake_key})
 
+        assert not asset_records_loader.has_cached_asset_record(return_one.key)
+
         assert asset_records_loader._unfetched_asset_keys == {return_one.key, fake_key}  # noqa
 
         assert (
@@ -225,6 +233,10 @@ def test_batch_asset_records_loader():
             asset_records_loader.get_asset_record(return_one.key).asset_entry.asset_key
             == return_one.key
         )
+
+        assert asset_records_loader.has_cached_asset_record(return_two.key)
+        assert asset_records_loader.has_cached_asset_record(return_one.key)
+        assert asset_records_loader.has_cached_asset_record(fake_key)
 
         assert asset_records_loader.get_asset_record(fake_key) is None
 
