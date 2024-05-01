@@ -40,6 +40,7 @@ def mock_containerized_utilization_metrics():
         "cpu_cfs_period_us": 10000,
         "memory_usage": 16384,
         "memory_limit": 65536,
+        "measurement_timestamp": 1010,
     }
 
 
@@ -48,17 +49,26 @@ def test_get_container_metrics(mock_containerized_utilization_metrics):
         "dagster._core.execution.run_metrics_thread.retrieve_containerized_utilization_metrics",
         return_value=mock_containerized_utilization_metrics,
     ):
-        metrics = run_metrics_thread._get_container_metrics()  # noqa: SLF001
+        metrics = run_metrics_thread._get_container_metrics(  # noqa: SLF001
+            previous_cpu_usage_ms=49200, previous_measurement_timestamp=1000
+        )
 
         assert metrics
         assert isinstance(metrics, dict)
-        assert metrics["container.cpu_usage_ms"] == 50
+        assert metrics["container.cpu_usage_ms"] == 50000
         assert metrics["container.cpu_limit_ms"] == 100
         assert metrics["container.cpu_cfs_period_us"] == 10000
         assert metrics["container.cpu_cfs_quota_us"] == 1000
         assert metrics["container.memory_usage"] == 16384
         assert metrics["container.memory_limit"] == 65536
         assert metrics["container.memory_percent"] == 25
+        assert metrics["measurement_timestamp"] == 1010
+
+        # Calculation of expected cpu_percent
+        # cpu_limit_ms = 100 ms per second-> derived from cpu cfs quota and period
+        # cpu_usage_rate_ms = (50000 - 49200) / (1010 - 1000) = 80 ms per second
+        # cpu_percent = 100% * 80 (used) / 100 (limit) = 80.0%
+        assert metrics["container.cpu_percent"] == 80.0
 
 
 def test_get_container_metrics_missing_limits(mock_containerized_utilization_metrics):
@@ -75,7 +85,7 @@ def test_get_container_metrics_missing_limits(mock_containerized_utilization_met
 
         assert metrics
         assert isinstance(metrics, dict)
-        assert metrics["container.cpu_usage_ms"] == 50
+        assert metrics["container.cpu_usage_ms"] == 50000
         assert metrics["container.cpu_percent"] is None
         assert metrics["container.cpu_limit_ms"] is None
         assert metrics["container.cpu_cfs_period_us"] is None
@@ -106,7 +116,7 @@ def test_process_is_containerized(
 
 
 def test_metric_tags(dagster_instance, dagster_run):
-    tags = run_metrics_thread._metric_tags(dagster_instance, dagster_run)  # noqa: SLF001
+    tags = run_metrics_thread._metric_tags(dagster_run)  # noqa: SLF001
     assert tags["job_name"] == "test"
     assert tags["run_id"] == "123"
 
@@ -141,9 +151,11 @@ def test_start_run_metrics_thread(dagster_instance, dagster_run, mock_container_
                 polling_interval=2.0,
             )
 
+            time.sleep(0.1)
+
             assert thread.is_alive()
 
-            time.sleep(1)
+            time.sleep(0.1)
             shutdown.set()
 
             thread.join()

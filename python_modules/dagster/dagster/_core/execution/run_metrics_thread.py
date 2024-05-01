@@ -4,7 +4,6 @@ import os
 import os.path
 import threading
 from sys import platform
-from time import sleep
 from typing import Dict, Optional, Tuple, Union
 
 import dagster._check as check
@@ -54,6 +53,8 @@ def _metric_tags(dagster_run: DagsterRun) -> Dict[str, str]:
 
 
 def _get_container_metrics(
+    previous_cpu_usage_ms: Optional[float] = None,
+    previous_measurement_timestamp: Optional[float] = None,
     logger: Optional[logging.Logger] = None,
 ) -> Dict[str, Union[float, None]]:
     metrics = retrieve_containerized_utilization_metrics(logger=logger)
@@ -61,7 +62,7 @@ def _get_container_metrics(
     # calculate cpu_limit
     cpu_quota_us = metrics.get("cpu_cfs_quota_us")
     cpu_period_us = metrics.get("cpu_cfs_period_us")
-    cpu_usage_ms = metrics.get("cpu_usage")
+    cpu_usage_ms = metrics.get("cpu_usage") * 1000  # convert from seconds to milliseconds
     cpu_limit_ms = None
     if cpu_quota_us and cpu_quota_us > 0 and cpu_period_us and cpu_period_us > 0:
         # Why the 1000 factor is a bit counterintuitive:
@@ -69,9 +70,21 @@ def _get_container_metrics(
         # 1000 * quota / period -> ms/sec of cpu
         cpu_limit_ms = (1000.0 * cpu_quota_us) / cpu_period_us
 
+    cpu_usage_rate_ms = None
+    measurement_timestamp = metrics.get("measurement_timestamp")
+    if (
+        previous_cpu_usage_ms
+        and cpu_usage_ms
+        and previous_measurement_timestamp
+        and measurement_timestamp
+    ):
+        cpu_usage_rate_ms = (cpu_usage_ms - previous_cpu_usage_ms) / (
+            measurement_timestamp - previous_measurement_timestamp
+        )
+
     cpu_percent = None
-    if cpu_limit_ms and cpu_limit_ms > 0 and cpu_usage_ms and cpu_usage_ms > 0:
-        cpu_percent = 100.0 * cpu_usage_ms / cpu_limit_ms
+    if cpu_limit_ms and cpu_limit_ms > 0 and cpu_usage_rate_ms and cpu_usage_rate_ms > 0:
+        cpu_percent = 100.0 * cpu_usage_rate_ms / cpu_limit_ms
 
     memory_percent = None
     memory_limit = metrics.get("memory_limit")
@@ -88,6 +101,7 @@ def _get_container_metrics(
         "container.memory_usage": memory_usage,
         "container.memory_limit": memory_limit,
         "container.memory_percent": memory_percent,
+        "measurement_timestamp": measurement_timestamp,
     }
 
 
@@ -146,19 +160,27 @@ def _capture_metrics(
     if not (container_metrics_enabled or python_metrics_enabled):
         raise Exception("No metrics enabled")
 
-    run_tags = _metric_tags(instance, dagster_run)
+    run_tags = _metric_tags(dagster_run)
 
     if logger:
         logger.debug(f"Starting metrics capture thread with tags: {run_tags}")
         logger.debug(f"  [container_metrics_enabled={container_metrics_enabled}]")
         logger.debug(f"  [python_metrics_enabled={python_metrics_enabled}]")
 
+    previous_cpu_usage = None
+    previous_measurement_timestamp = None
     while not shutdown_event.is_set():
         try:
             metrics = {}
 
             if container_metrics_enabled:
-                container_metrics = _get_container_metrics(logger=logger)
+                container_metrics = _get_container_metrics(
+                    previous_cpu_usage=previous_cpu_usage,
+                    previous_measurement_timestamp=previous_measurement_timestamp,
+                    logger=logger,
+                )
+                previous_cpu_usage = container_metrics.get("cpu_usage")
+                previous_measurement_timestamp = container_metrics.get("measurement_timestamp")
                 metrics.update(container_metrics)
 
             if python_metrics_enabled:
