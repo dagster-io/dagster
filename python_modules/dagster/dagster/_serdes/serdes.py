@@ -18,7 +18,7 @@ import dataclasses
 from abc import ABC, abstractmethod
 from dataclasses import is_dataclass
 from enum import Enum
-from functools import partial
+from functools import cached_property, partial
 from inspect import Parameter, signature
 from typing import (
     TYPE_CHECKING,
@@ -47,9 +47,8 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._model.pydantic_compat_layer import model_fields
+from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
-from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
@@ -650,8 +649,7 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
     def object_as_mapping(self, value: T_NamedTuple) -> Mapping[str, Any]:
         return value._asdict()
 
-    @property
-    @cached_method
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
         return list(signature(self.klass.__new__).parameters.keys())
 
@@ -663,7 +661,7 @@ class DataclassSerializer(ObjectSerializer[T_Dataclass]):
     def object_as_mapping(self, value: T_Dataclass) -> Mapping[str, Any]:
         return value.__dict__
 
-    @property
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
         return list(f.name for f in dataclasses.fields(self.klass))
 
@@ -676,7 +674,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
         value_dict = value.__dict__
 
         result = {}
-        for key, field in model_fields(self.klass).items():
+        for key, field in self._model_fields.items():
             if field.alias is None and (
                 field.serialization_alias is not None or field.validation_alias is not None
             ):
@@ -691,7 +689,11 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
 
     @property
     def constructor_param_names(self) -> Sequence[str]:
-        return [field.alias or key for key, field in model_fields(self.klass).items()]
+        return [field.alias or key for key, field in self._model_fields.items()]
+
+    @cached_property
+    def _model_fields(self) -> Mapping[str, ModelFieldCompat]:
+        return model_fields(self.klass)
 
 
 class FieldSerializer(Serializer):
