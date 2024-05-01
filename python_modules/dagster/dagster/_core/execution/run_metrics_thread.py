@@ -14,8 +14,8 @@ from dagster._utils.container import (
     retrieve_containerized_utilization_metrics,
 )
 
-DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 30.0
-DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 60
+DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 15.0
+DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 30
 
 
 def _get_platform_name() -> str:
@@ -167,7 +167,7 @@ def _capture_metrics(
         logger.debug(f"  [container_metrics_enabled={container_metrics_enabled}]")
         logger.debug(f"  [python_metrics_enabled={python_metrics_enabled}]")
 
-    previous_cpu_usage = None
+    previous_cpu_usage_ms = None
     previous_measurement_timestamp = None
     while not shutdown_event.is_set():
         try:
@@ -175,11 +175,11 @@ def _capture_metrics(
 
             if container_metrics_enabled:
                 container_metrics = _get_container_metrics(
-                    previous_cpu_usage=previous_cpu_usage,
+                    previous_cpu_usage_ms=previous_cpu_usage_ms,
                     previous_measurement_timestamp=previous_measurement_timestamp,
                     logger=logger,
                 )
-                previous_cpu_usage = container_metrics.get("cpu_usage")
+                previous_cpu_usage_ms = container_metrics.get("container.cpu_usage_ms")
                 previous_measurement_timestamp = container_metrics.get("measurement_timestamp")
                 metrics.update(container_metrics)
 
