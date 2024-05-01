@@ -23,6 +23,7 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
+    StaticPartitionsDefinition,
     build_asset_context,
     define_asset_job,
     fs_io_manager,
@@ -2264,3 +2265,51 @@ def test_asset_out_with_tags():
 
         @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
         def assets(): ...
+
+
+def test_asset_definition_single_no_node():
+    asset1 = AssetsDefinition.single("asset1")
+    asset1_key = asset1.key
+    assert asset1_key == AssetKey("asset1")
+    assert asset1.metadata_by_key[asset1_key] == {"dagster/asset_execution_type": "UNEXECUTABLE"}
+    assert asset1.group_names_by_key[asset1_key] == "default"
+    assert asset1.descriptions_by_key == {}
+    assert asset1.get_io_manager_key_for_asset_key(asset1_key) == "io_manager"
+    assert asset1.tags_by_key == {}
+    assert asset1.owners_by_key == {}
+    assert asset1.partitions_def is None
+
+    partitions_def = StaticPartitionsDefinition(["a", "b"])
+    asset2 = AssetsDefinition.single(
+        key="asset2",
+        metadata={"foo": "fooval", "bar": 1},
+        group_name="group1",
+        description="the description",
+        io_manager_key="some_io_manager_key",
+        tags={"foo": "bar"},
+        owners=["someone@dagsterlabs.com"],
+        partitions_def=partitions_def,
+        deps=["asset1"],
+    )
+    asset2_key = asset2.key
+    assert asset2_key == AssetKey("asset2")
+    assert asset2.metadata_by_key[asset2_key] == {
+        "foo": "fooval",
+        "bar": 1,
+        "dagster/asset_execution_type": "UNEXECUTABLE",
+    }
+    assert asset2.group_names_by_key[asset2_key] == "group1"
+    assert asset2.descriptions_by_key[asset2_key] == "the description"
+    assert asset2.get_io_manager_key_for_asset_key(asset2_key) == "some_io_manager_key"
+    assert asset2.tags_by_key[asset2_key] == {"foo": "bar"}
+    assert asset2.owners_by_key[asset2_key][0].email == "someone@dagsterlabs.com"
+    assert asset2.partitions_def == partitions_def
+    assert asset2.asset_deps == {AssetKey("asset2"): {AssetKey("asset1")}}
+
+
+def test_asset_definition_single_with_node():
+    @op
+    def op1(in1):
+        pass
+
+    asset1 = AssetsDefinition.single("asset1", node_def=op1)

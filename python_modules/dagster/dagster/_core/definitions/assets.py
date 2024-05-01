@@ -59,8 +59,9 @@ from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
 
+from .asset_dep import CoercibleToAssetDep
 from .dependency import NodeHandle
-from .events import AssetKey, CoercibleToAssetDep, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -101,7 +102,7 @@ def asset_owner_to_str(owner: AssetOwner) -> str:
 
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
-    """Defines a set of assets that are produced by the same op or graph.
+    """Defines a set of assets that are materializable or observable by at most one op or graph.
 
     AssetsDefinitions are typically not instantiated directly, but rather produced using the
     :py:func:`@asset <asset>` or :py:func:`@multi_asset <multi_asset>` decorators.
@@ -440,6 +441,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @public
     @experimental
+    @experimental_param(param="resource_defs")
+    @experimental_param(param="io_manager_def")
+    @experimental_param(param="owners")
     @staticmethod
     def single(
         key: CoercibleToAssetKey,
@@ -448,7 +452,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         metadata: Optional[ArbitraryMetadataMapping] = None,
         tags: Optional[Mapping[str, str]] = None,
         description: Optional[str] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         io_manager_def: Optional[object] = None,
         io_manager_key: Optional[str] = None,
@@ -462,7 +465,44 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
-        """Creates an AssetsDefinition with a single asset definition."""
+        """Creates an AssetsDefinition that defines a single asset.
+
+        Args:
+            key (Optional[Union[AssetKey, str, Sequence[str]]]): The key for this asset.
+            deps (Optional[Sequence[Union[AssetDep, AssetsDefinition, SourceAsset, AssetKey, str]]]):
+                The assets that are upstream dependencies, but do not correspond to a parameter of the
+                decorated function. If the AssetsDefinition for a multi_asset is provided, dependencies on
+                all assets created by the multi_asset will be created.
+            metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
+            tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+                attached to runs of the asset.
+            partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+                compose the asset.
+            group_name (Optional[str]): A string name used to organize multiple assets into groups.
+                If not provided, the name "default" is used.
+            resource_defs (Optional[Mapping[str, object]]):
+                (Experimental) A mapping of resource keys to resources. These resources
+                will be initialized during execution, and can be accessed from the
+                context within the body of the op or graph.
+            auto_materialize_policy (AutoMaterializePolicy): (Experimental) Configure Dagster to automatically materialize
+                this asset according to its FreshnessPolicy and when upstream dependencies change.
+            backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
+                BackfillPolicy.
+            code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
+                general, versions should be set only for code that deterministically produces the same
+                output when given the same inputs.
+            check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
+                execute in the decorated function after materializing the asset.
+            owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+                string can be a user's email address, or a team name prefixed with `team:`,
+                e.g. `team:finops`.
+            io_manager_key (Optional[str]): The resource key of the IOManager used
+                for storing the output of the op as an asset, and for loading it in downstream ops
+                (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
+            io_manager_def (Optional[object]): (Experimental) The IOManager used for
+                storing the output of the op as an asset,  and for loading it in
+                downstream ops. Only one of io_manager_def and io_manager_key can be provided.
+        """
         if node_def is None:
             from .decorators.asset_decorator import asset
 
@@ -470,12 +510,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check.invariant(backfill_policy is None)
             check.invariant(auto_materialize_policy is None)
             check.invariant(keys_by_input_name is None)
-            check.invariant(can_subset is None)
+            check.invariant(can_subset is False)
 
-            execution_type = AssetExecutionType.UNEXECUTABLE.value
             metadata = {
                 **(metadata or {}),
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: execution_type,
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value,
             }
 
             with disable_dagster_warnings():
@@ -489,9 +528,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     io_manager_key=io_manager_key,
                     io_manager_def=io_manager_def,
                     resource_defs=resource_defs,
-                    required_resource_keys=required_resource_keys,
                     tags=tags,
                     owners=owners,
+                    deps=deps,
                 )
                 def _shim_assets_def():
                     raise NotImplementedError(f"Asset {key} is not executable")
@@ -499,15 +538,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             return _shim_assets_def
 
         else:
-            output_name = ""
+            check.invariant(len(node_def.output_defs) == 1)
+            output_name = node_def.output_defs[0].name
+
             key = AssetKey.from_coercible(key)
             return AssetsDefinition._from_node(
                 node_def=node_def,
                 keys_by_input_name=keys_by_input_name,
                 keys_by_output_name={output_name: key},
-                internal_asset_deps=internal_asset_deps,
                 partitions_def=partitions_def,
-                partition_mappings=partition_mappings,
                 resource_defs=resource_defs,
                 group_name=group_name,
                 group_names_by_output_name={output_name: group_name},

@@ -212,7 +212,8 @@ def asset(
             execute in the decorated function after materializing the asset.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
-        key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
+        key ((Optional[Union[AssetKey, str, Sequence[str]]])): The key for this asset. If provided,
+            cannot specify key_prefix or name.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
