@@ -24,6 +24,6 @@
   },
   "packageManager": "yarn@4.1.1",
   "engines": {
-    "node": "20.x"
+    "node": "21.x"
   }
 }
