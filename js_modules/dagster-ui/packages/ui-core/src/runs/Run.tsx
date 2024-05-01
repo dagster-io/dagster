@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
@@ -61,7 +62,7 @@ const runStatusFavicon = (status: RunStatus) => {
   }
 };
 
-export const Run = (props: RunProps) => {
+export const Run = memo((props: RunProps) => {
   const {run, runId, trace} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
@@ -127,7 +128,7 @@ export const Run = (props: RunProps) => {
       </LogsProvider>
     </RunContext.Provider>
   );
-};
+});
 
 const OnLogsLoaded = ({
   trace,

@@ -1,6 +1,8 @@
 import {QueryResult} from '@apollo/client';
 import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 'react';
 
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+
 export enum CompletionType {
   SUCCESS = 1,
   ERROR = 2,
@@ -56,13 +58,13 @@ export function useBlockTraceOnQueryResult(queryResult: QueryResult<any, any>, n
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;
 
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     if (hasData) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
   }, [dep, hasData]);
 
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     if (!hasData && hasError) {
       dep.completeDependency(CompletionType.ERROR);
     }
@@ -75,8 +77,11 @@ export function useDependency(name: string, uid: any = '') {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const dependency = useMemo(() => createDependency(name), [createDependency, name, uid]);
 
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     addDependency(dependency);
+  }, [dependency]);
+
+  useLayoutEffect(() => {
     return () => {
       // By default cancel a dependency when the component unmounts.
       // Rely on the user of TraceContext to track if the dependency
@@ -97,11 +102,8 @@ export function useDependency(name: string, uid: any = '') {
 
 export function useDependencyWithIsSuccessful(name: string, isSuccessful: boolean, uid: any = '') {
   const dep = useDependency(name, uid);
-  console.log({isSuccessful});
   useLayoutEffect(() => {
-    console.log('effect');
     if (isSuccessful) {
-      console.log('completing');
       dep.completeDependency(CompletionType.SUCCESS);
     }
   }, [dep, isSuccessful, name]);
