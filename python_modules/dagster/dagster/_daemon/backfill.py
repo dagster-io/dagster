@@ -11,7 +11,9 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 class BackfillLogAdapter(logging.LoggerAdapter):
-    """Logger that will always prepend the backfill id to the log message.
+    """Logger that will always prepend the backfill id to the log message. Additionally it
+    adds the backfill_id to the `extra` dictionary of the log record so that it is included
+    as a key-value pair in JSON log formatting.
 
     Usage:
 
@@ -20,8 +22,18 @@ class BackfillLogAdapter(logging.LoggerAdapter):
         adapted_backfill_logger = BackfillLogAdapter(logger, {"backfill_id": backfill_id})
     """
 
-    def process(self, msg, kwargs) -> Any:  # -> Any:
-        return f"Backfill {self.extra['backfill_id']}: {msg}", kwargs
+    def process(self, msg, kwargs) -> Any:
+        backfill_id = self.extra["backfill_id"]
+
+        # the extra passed in the log call logger.info("message", extra={"foo": "bar"}), not
+        # to be confused with the extra passed to the BackfillLogAdapter constructor
+        # add the backfill_id to the extra too so that JSON log formatting includes it as
+        # a key-value pait
+        log_call_extra = kwargs.get("extra", {})
+        log_call_extra["backfill_id"] = backfill_id
+        kwargs["extra"] = log_call_extra
+
+        return f"Backfill {backfill_id}: {msg}", kwargs
 
 
 def execute_backfill_iteration(
@@ -59,7 +71,8 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        backfill_logger = BackfillLogAdapter(logger, {"backfill_id": backfill.backfill_id})
+        # create a logger that will always include the backfill_id in the log message
+        backfill_logger = BackfillLogAdapter(logger, extra={"backfill_id": backfill.backfill_id})
         try:
             if backfill.is_asset_backfill:
                 yield from execute_asset_backfill_iteration(
