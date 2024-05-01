@@ -25,7 +25,6 @@ from typing import (
     cast,
 )
 
-import dagster._check as check
 import dateutil.parser
 import orjson
 from dagster import (
@@ -104,6 +103,7 @@ DBT_PROFILES_YML_NAME = "profiles.yml"
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = 2
 
+DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
 DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 
 
@@ -1338,13 +1338,13 @@ class DbtCliResource(ConfigurableResource):
                 select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
                 exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
                 dagster_dbt_translator=dagster_dbt_translator,
-                env=env,
+                current_dbt_indirect_selection_env=env.get(DBT_INDIRECT_SELECTION_ENV, None),
             )
 
             # set dbt indirect selection if needed to execute specific dbt tests due to asset check
             # selection
             if indirect_selection:
-                env["DBT_INDIRECT_SELECTION"] = indirect_selection
+                env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
         else:
             manifest = validate_manifest(manifest) if manifest else {}
 
@@ -1394,7 +1394,7 @@ def _get_subset_selection_for_context(
     select: Optional[str],
     exclude: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
-    env: Dict[str, str],
+    current_dbt_indirect_selection_env: Optional[str],
 ) -> Tuple[List[str], Optional[str]]:
     """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
     resources in a subsetted execution context.
@@ -1403,8 +1403,14 @@ def _get_subset_selection_for_context(
 
     Args:
         context (OpExecutionContext): The execution context for the current execution step.
+        manifest (Mapping[str, Any]): The dbt manifest blob.
         select (Optional[str]): A dbt selection string to select resources to materialize.
         exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
+        dagster_dbt_translator (DagsterDbtTranslator): The translator to link dbt nodes to Dagster
+            assets.
+        current_dbt_indirect_selection_env (Optional[str]): The user's value for the DBT_INDIRECT_SELECTION
+            environment variable.
+
 
     Returns:
         List[str]: dbt CLI arguments to materialize the selected resources in a
@@ -1478,7 +1484,7 @@ def _get_subset_selection_for_context(
     all_check_keys = {
         check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
     }
-    excluded_checks = all_check_keys - context.selected_asset_check_keys
+    excluded_checks = all_check_keys.difference(context.selected_asset_check_keys)
     excluded_checks_on_selected_assets = [
         check_key
         for check_key in excluded_checks
@@ -1492,34 +1498,29 @@ def _get_subset_selection_for_context(
         # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
         # (all checks disabled, only one check and no assets) it's not a concern.
         # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
-        check.invariant(dagster_dbt_translator.settings.enable_asset_checks)
-        selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
-        indirect_selection = DBT_EMPTY_INDIRECT_SELECTION
+        selected_dbt_resources = [*selected_dbt_non_test_resources, *selected_dbt_tests]
+        indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
         logger.info(
-            "A dbt subsetted execution is being performed. Overriding default dbt selection"
-            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
-        )
-        logger.info(
-            "A subsetted execution for asset checks is being performed. Overriding default "
-            f"`DBT_INDIRECT_SELECTION` {env.get('DBT_INDIRECT_SELECTION', 'eager')} with "
-            f"`{indirect_selection}` due to additional checks "
+            "Overriding default `DBT_INDIRECT_SELECTION` "
+            f"{current_dbt_indirect_selection_env or 'eager'} with "
+            f"`{indirect_selection_override}` due to additional checks "
             f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
             f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
         )
-
     else:
         selected_dbt_resources = selected_dbt_non_test_resources
-        indirect_selection = None
-        logger.info(
-            "A dbt subsetted execution is being performed. Overriding default dbt selection"
-            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
-        )
+        indirect_selection_override = None
+
+    logger.info(
+        "A dbt subsetted execution is being performed. Overriding default dbt selection"
+        f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
+    )
 
     # Take the union of all the selected resources.
     # https://docs.getdbt.com/reference/node-selection/set-operators#unions
     union_selected_dbt_resources = ["--select"] + [" ".join(selected_dbt_resources)]
 
-    return union_selected_dbt_resources, indirect_selection
+    return union_selected_dbt_resources, indirect_selection_override
 
 
 def get_dbt_resource_props_by_output_name(
