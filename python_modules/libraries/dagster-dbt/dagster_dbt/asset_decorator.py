@@ -67,6 +67,7 @@ def dbt_assets(
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -98,6 +99,8 @@ def dbt_assets(
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of required resource handles.
+        resource_defs (Optional[Mapping[str, object]]): A mapping of resources to
+            pass them to returning multi_assets.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -388,6 +391,7 @@ def dbt_assets(
         op_tags=resolved_op_tags,
         check_specs=check_specs,
         backfill_policy=backfill_policy,
+        resource_defs=resource_defs,
     )
 
 
