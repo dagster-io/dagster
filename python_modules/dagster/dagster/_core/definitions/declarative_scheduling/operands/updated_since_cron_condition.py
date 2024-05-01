@@ -28,17 +28,18 @@ class UpdatedSinceCronCondition(AssetCondition):
 
         if (
             # never evaluated
-            context.previous_evaluation is None
+            context.previous_evaluation_info is None
+            or context.previous_evaluation_node is None
             # partitions def has changed
-            or not context.previous_evaluation.true_subset.is_compatible_with_partitions_def(
+            or not context.previous_evaluation_node.true_subset.is_compatible_with_partitions_def(
                 context.partitions_def
             )
             # not evaluated since latest schedule tick
-            or (context.previous_evaluation_timestamp or 0) < previous_cron_tick.timestamp()
+            or context.previous_evaluation_info.temporal_context.effective_dt < previous_cron_tick
             # has new set of candidates
             or context.has_new_candidate_subset()
             # asset updated since latest evaluation
-            or context.target_asset_updated_since_previous_evaluation()
+            or context.asset_updated_since_previous_tick()
         ):
             # do a full recomputation
             true_subset = (
@@ -49,6 +50,8 @@ class UpdatedSinceCronCondition(AssetCondition):
                 )
             )
         else:
-            true_subset = context.previous_evaluation.true_subset.as_valid(context.partitions_def)
+            true_subset = context.previous_evaluation_node.true_subset.as_valid(
+                context.partitions_def
+            )
 
         return SchedulingResult.create(context, true_subset)

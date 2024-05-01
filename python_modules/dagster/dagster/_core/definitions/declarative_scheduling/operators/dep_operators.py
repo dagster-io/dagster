@@ -25,7 +25,6 @@ class DepConditionWrapperCondition(SchedulingCondition):
             self.dep_key
         ).convert_to_valid_asset_subset()
         dep_context = context.for_child_condition(
-            asset_key=self.dep_key,
             child_condition=self.operand,
             candidate_subset=dep_candidate_subset,
         )

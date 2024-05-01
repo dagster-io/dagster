@@ -29,6 +29,9 @@ from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
 )
+from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info import (
+    SchedulingEvaluationInfo,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -200,6 +203,7 @@ class AssetDaemonContext:
         asset_key: AssetKey,
         evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        current_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo],
     ) -> Tuple[AssetConditionEvaluationState, Optional[datetime.datetime]]:
         """Evaluates the auto materialize policy of a given asset key.
 
@@ -218,11 +222,11 @@ class AssetDaemonContext:
             self.asset_graph.get(asset_key).auto_materialize_policy
         ).to_scheduling_condition()
 
-        asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
+        previous_evaluation_state = self.cursor.get_previous_evaluation_state(asset_key)
 
         legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
-            previous_evaluation_state=asset_cursor,
+            previous_evaluation_state=previous_evaluation_state,
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
@@ -230,20 +234,18 @@ class AssetDaemonContext:
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
         )
-        context = SchedulingContext(
+
+        context = SchedulingContext.create(
             asset_key=asset_key,
-            condition=asset_condition,
-            condition_unique_id=asset_condition.get_unique_id(parent_unique_id=None),
-            candidate_subset=self.asset_graph_view.get_asset_slice(
-                asset_key
-            ).convert_to_valid_asset_subset(),
             asset_graph_view=self.asset_graph_view,
-            previous_evaluation=asset_cursor.previous_evaluation if asset_cursor else None,
-            previous_evaluation_state_by_key=evaluation_state_by_key,
-            current_evaluation_state_by_key=evaluation_state_by_key,
-            create_time=pendulum.now("UTC"),
             logger=self.logger,
-            inner_legacy_context=legacy_context,
+            current_tick_evaluation_info_by_key=current_evaluation_info_by_key,
+            previous_evaluation_info=SchedulingEvaluationInfo.from_asset_condition_evaluation_state(
+                self.asset_graph_view, previous_evaluation_state
+            )
+            if previous_evaluation_state
+            else None,
+            legacy_context=legacy_context,
         )
 
         result = asset_condition.evaluate(context)
@@ -261,6 +263,7 @@ class AssetDaemonContext:
         materialized or discarded this tick.
         """
         evaluation_state_by_key: Dict[AssetKey, AssetConditionEvaluationState] = {}
+        current_evaluation_info_by_key: Dict[AssetKey, SchedulingEvaluationInfo] = {}
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         to_request: Set[AssetKeyPartitionKey] = set()
 
@@ -281,7 +284,10 @@ class AssetDaemonContext:
 
             try:
                 (evaluation_state, expected_data_time) = self.evaluate_asset(
-                    asset_key, evaluation_state_by_key, expected_data_time_mapping
+                    asset_key,
+                    evaluation_state_by_key,
+                    expected_data_time_mapping,
+                    current_evaluation_info_by_key,
                 )
             except Exception as e:
                 raise Exception(
@@ -303,6 +309,11 @@ class AssetDaemonContext:
             )
 
             evaluation_state_by_key[asset_key] = evaluation_state
+            current_evaluation_info_by_key[asset_key] = (
+                SchedulingEvaluationInfo.from_asset_condition_evaluation_state(
+                    self.asset_graph_view, evaluation_state
+                )
+            )
             expected_data_time_mapping[asset_key] = expected_data_time
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
