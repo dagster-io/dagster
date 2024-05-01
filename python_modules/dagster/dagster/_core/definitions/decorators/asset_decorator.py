@@ -94,7 +94,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
-    owners: Optional[List[str]] = ...,
+    owners: Optional[Sequence[str]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -136,7 +136,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    owners: Optional[List[str]] = None,
+    owners: Optional[Sequence[str]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
