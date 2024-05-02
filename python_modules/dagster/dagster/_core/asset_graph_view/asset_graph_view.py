@@ -164,6 +164,16 @@ class AssetSlice:
             self._asset_graph_view, self._compatible_subset - other.convert_to_valid_asset_subset()
         )
 
+    def compute_union(self, other: "AssetSlice") -> "AssetSlice":
+        return _slice_from_subset(
+            self._asset_graph_view, self._compatible_subset | other.convert_to_valid_asset_subset()
+        )
+
+    def compute_intersection(self, other: "AssetSlice") -> "AssetSlice":
+        return _slice_from_subset(
+            self._asset_graph_view, self._compatible_subset & other.convert_to_valid_asset_subset()
+        )
+
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str]
     ) -> "AssetSlice":
@@ -327,7 +337,7 @@ class AssetGraphView:
             ),
         )
 
-    def get_asset_slice_from_subset(self, subset: ValidAssetSubset) -> "AssetSlice":
+    def get_asset_slice_from_subset(self, subset: AssetSubset) -> "AssetSlice":
         return _slice_from_subset(self, subset)
 
     def compute_missing_subslice(

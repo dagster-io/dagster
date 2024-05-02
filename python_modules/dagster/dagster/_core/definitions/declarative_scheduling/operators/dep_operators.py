@@ -20,26 +20,19 @@ class DepConditionWrapperCondition(SchedulingCondition):
         return f"{self.dep_key.to_user_string()}"
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
-        # only evaluate parents of the current candidate subset
-        dep_candidate_subset = context.candidate_slice.compute_parent_slice(
-            self.dep_key
-        ).convert_to_valid_asset_subset()
+        # only evaluate parents of the current candidates
+        dep_candidate_slice = context.candidate_slice.compute_parent_slice(self.dep_key)
         dep_context = context.for_child_condition(
-            child_condition=self.operand,
-            candidate_subset=dep_candidate_subset,
+            child_condition=self.operand, candidate_slice=dep_candidate_slice
         )
 
         # evaluate condition against the dependency
         dep_result = self.operand.evaluate(dep_context)
 
         # find all children of the true dep slice
-        true_subset = dep_result.true_slice.compute_child_slice(
-            context.asset_key
-        ).convert_to_valid_asset_subset()
+        true_slice = dep_result.true_slice.compute_child_slice(context.asset_key)
         return SchedulingResult.create_from_children(
-            context=context,
-            true_subset=true_subset,
-            child_results=[dep_result],
+            context=context, true_slice=true_slice, child_results=[dep_result]
         )
 
 
@@ -53,23 +46,22 @@ class AnyDepsCondition(AssetCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
-        true_subset = context.asset_graph_view.create_empty_slice(
-            context.asset_key
-        ).convert_to_valid_asset_subset()
+        true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
 
         dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
         for dep_key in dep_keys:
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
-                    child_condition=dep_condition, candidate_subset=context.candidate_subset
+                    child_condition=dep_condition, candidate_slice=context.candidate_slice
                 )
             )
             dep_results.append(dep_result)
-            true_subset |= dep_result.true_subset
+            true_slice = true_slice.compute_union(dep_result.true_slice)
 
+        true_slice = context.candidate_slice.compute_intersection(true_slice)
         return SchedulingResult.create_from_children(
-            context, true_subset=context.candidate_subset & true_subset, child_results=dep_results
+            context, true_slice=true_slice, child_results=dep_results
         )
 
 
@@ -83,19 +75,19 @@ class AllDepsCondition(SchedulingCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
-        true_subset = context.candidate_subset
+        true_slice = context.candidate_slice
 
         dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
         for dep_key in dep_keys:
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
-                    child_condition=dep_condition, candidate_subset=context.candidate_subset
+                    child_condition=dep_condition, candidate_slice=context.candidate_slice
                 )
             )
             dep_results.append(dep_result)
-            true_subset &= dep_result.true_subset
+            true_slice = true_slice.compute_intersection(dep_result.true_slice)
 
         return SchedulingResult.create_from_children(
-            context, true_subset=true_subset, child_results=dep_results
+            context, true_slice=true_slice, child_results=dep_results
         )

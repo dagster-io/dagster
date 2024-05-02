@@ -24,15 +24,15 @@ class AndAssetCondition(SchedulingCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         child_results: List[SchedulingResult] = []
-        true_subset = context.candidate_subset
+        true_slice = context.candidate_slice
         for child in self.children:
             child_context = context.for_child_condition(
-                child_condition=child, candidate_subset=true_subset
+                child_condition=child, candidate_slice=true_slice
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_subset &= child_result.true_subset
-        return SchedulingResult.create_from_children(context, true_subset, child_results)
+            true_slice = true_slice.compute_intersection(child_result.true_slice)
+        return SchedulingResult.create_from_children(context, true_slice, child_results)
 
 
 @experimental
@@ -52,17 +52,16 @@ class OrAssetCondition(SchedulingCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         child_results: List[SchedulingResult] = []
-        true_subset = context.asset_graph_view.create_empty_slice(
-            context.asset_key
-        ).convert_to_valid_asset_subset()
+        true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
         for child in self.children:
             child_context = context.for_child_condition(
-                child_condition=child, candidate_subset=context.candidate_subset
+                child_condition=child, candidate_slice=context.candidate_slice
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_subset |= child_result.true_subset
-        return SchedulingResult.create_from_children(context, true_subset, child_results)
+            true_slice = true_slice.compute_union(child_result.true_slice)
+
+        return SchedulingResult.create_from_children(context, true_slice, child_results)
 
 
 @experimental
@@ -82,9 +81,9 @@ class NotAssetCondition(SchedulingCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         child_context = context.for_child_condition(
-            child_condition=self.operand, candidate_subset=context.candidate_subset
+            child_condition=self.operand, candidate_slice=context.candidate_slice
         )
         child_result = self.operand.evaluate(child_context)
-        true_subset = context.candidate_subset - child_result.true_subset
+        true_slice = context.candidate_slice.compute_difference(child_result.true_slice)
 
-        return SchedulingResult.create_from_children(context, true_subset, [child_result])
+        return SchedulingResult.create_from_children(context, true_slice, [child_result])
