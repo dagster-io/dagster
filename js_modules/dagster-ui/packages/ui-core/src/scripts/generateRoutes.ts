@@ -35,7 +35,10 @@ function getAllTsFiles(dirPath: string, arrayOfFiles: string[] = []) {
     } else if (
       file.endsWith('.tsx') &&
       !file.endsWith('.test.tsx') &&
-      !file.endsWith('.stories.tsx')
+      !file.endsWith('.stories.tsx') &&
+      !dirPath.includes('__fixtures__') &&
+      !dirPath.includes('__stories__') &&
+      !dirPath.includes('__tests__')
     ) {
       arrayOfFiles.push(path.join(dirPath, '/', file));
     }
@@ -50,24 +53,19 @@ function extractRoutes(filePath: string): any[] {
   const sourceFile = ts.createSourceFile(filePath, fileContent, ts.ScriptTarget.Latest, true);
 
   const routes: any[] = [];
+  const routeStack: any[] = [];
 
   function visit(node: ts.Node) {
     if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
       const openingElement = ts.isJsxElement(node) ? node.openingElement : node;
       if (ts.isJsxOpeningElement(openingElement) || ts.isJsxSelfClosingElement(openingElement)) {
         const tagName = openingElement.tagName;
-        if (ts.isIdentifier(tagName) && tagName.escapedText === 'Route') {
+        if (ts.isIdentifier(tagName) && tagName.escapedText?.endsWith('Route')) {
           const pathAttribute = openingElement.attributes.properties.find(
             (prop: ts.JsxAttributeLike): prop is ts.JsxAttribute =>
               ts.isJsxAttribute(prop) &&
               ts.isIdentifier(prop.name) &&
               prop.name.escapedText === 'path',
-          );
-          const exactAttribute = openingElement.attributes.properties.find(
-            (prop: ts.JsxAttributeLike): prop is ts.JsxAttribute =>
-              ts.isJsxAttribute(prop) &&
-              ts.isIdentifier(prop.name) &&
-              prop.name.escapedText === 'exact',
           );
 
           if (
@@ -75,28 +73,34 @@ function extractRoutes(filePath: string): any[] {
             pathAttribute.initializer &&
             ts.isStringLiteral(pathAttribute.initializer)
           ) {
-            const route: any = {path: pathAttribute.initializer.text};
-            if (
-              exactAttribute &&
-              exactAttribute.initializer &&
-              ts.isJsxExpression(exactAttribute.initializer) &&
-              exactAttribute.initializer.expression
-            ) {
-              // Check if the expression is a TrueKeyword
-              if (
-                exactAttribute &&
-                (exactAttribute.initializer === undefined ||
-                  exactAttribute.initializer?.expression?.kind === ts.SyntaxKind.TrueKeyword)
-              ) {
-                route.props = {exact: true};
-              }
+            const route: any = {
+              path: pathAttribute.initializer.text,
+              nested: [],
+            };
+
+            if (routeStack.length > 0) {
+              routeStack[routeStack.length - 1].nested.push(route);
+            } else {
+              routes.push(route);
             }
-            routes.push(route);
+
+            routeStack.push(route);
           }
         }
       }
     }
+
     ts.forEachChild(node, visit);
+
+    if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const openingElement = ts.isJsxElement(node) ? node.openingElement : node;
+      if (ts.isJsxOpeningElement(openingElement) || ts.isJsxSelfClosingElement(openingElement)) {
+        const tagName = openingElement.tagName;
+        if (ts.isIdentifier(tagName) && tagName.escapedText?.endsWith('Route')) {
+          routeStack.pop();
+        }
+      }
+    }
   }
 
   visit(sourceFile);
