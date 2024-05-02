@@ -1,7 +1,10 @@
 import hashlib
 from typing import NamedTuple, Optional
 
-from .serdes import WhitelistMap, serialize_value
+from .serdes import (
+    WhitelistMap,
+    serialize_value,
+)
 
 
 def create_snapshot_id(snapshot: NamedTuple, whitelist_map: Optional[WhitelistMap] = None) -> str:

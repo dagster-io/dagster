@@ -42,7 +42,7 @@ from typing import (
     overload,
 )
 
-import pydantic
+from pydantic import BaseModel
 from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -82,7 +82,7 @@ PackableValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
+    BaseModel,
     "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
@@ -98,7 +98,7 @@ UnpackedValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
+    BaseModel,
     "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
@@ -396,7 +396,7 @@ def _whitelist_for_serdes(
                 field_serializers=field_serializers,
             )
             return klass  # type: ignore
-        elif issubclass(klass, pydantic.BaseModel) and (
+        elif issubclass(klass, BaseModel) and (
             serializer is None or issubclass(serializer, PydanticModelSerializer)
         ):
             whitelist_map.register_object(
@@ -424,7 +424,7 @@ def is_whitelisted_for_serdes_object(
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))  # NamedTuple
         or (is_dataclass(val) and not isinstance(val, type))  # dataclass instance
-        or isinstance(val, pydantic.BaseModel)
+        or isinstance(val, BaseModel)
     ):
         klass_name = val.__class__.__name__
         return whitelist_map.has_object_serializer(klass_name)
@@ -625,6 +625,33 @@ class ObjectSerializer(Serializer, Generic[T]):
         packed = self.after_pack(**packed)
         return packed
 
+    def wrap_iter(self, value, whitelist_map):
+        yield "__class__", self.get_storage_name()
+        for key, inner_value in self.object_as_mapping(self.before_pack(value)).items():
+            if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
+                continue
+            storage_key = self.storage_field_names.get(key, key)
+            custom = self.field_serializers.get(key)
+            if custom:
+                yield (
+                    storage_key,
+                    custom.pack(
+                        inner_value,
+                        whitelist_map=whitelist_map,
+                        descent_path="",
+                    ),
+                )
+            else:
+                yield (
+                    storage_key,
+                    _wrap_value(
+                        inner_value,
+                        whitelist_map=whitelist_map,
+                    ),
+                )
+        for key, default in self.old_fields.items():
+            yield key, default
+
     # Hook: Modify the contents of the object before packing
     def before_pack(self, value: T) -> T:
         return value
@@ -666,7 +693,7 @@ class DataclassSerializer(ObjectSerializer[T_Dataclass]):
         return list(f.name for f in dataclasses.fields(self.klass))
 
 
-T_PydanticModel = TypeVar("T_PydanticModel", bound=pydantic.BaseModel, default=pydantic.BaseModel)
+T_PydanticModel = TypeVar("T_PydanticModel", bound=BaseModel, default=BaseModel)
 
 
 class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
@@ -687,7 +714,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
 
         return result
 
-    @property
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
         return [field.alias or key for key, field in self._model_fields.items()]
 
@@ -759,6 +786,10 @@ def serialize_value(
     return seven.json.dumps(packed_value, **json_kwargs)
 
 
+def experimental_serialize_value(val):
+    return seven.json.dumps(_wrap_value(val, _WHITELIST_MAP))
+
+
 @overload
 def pack_value(
     val: T_Scalar,
@@ -775,7 +806,7 @@ def pack_value(
         FrozenSet[PackableValue],
         NamedTuple,
         "DataclassInstance",
-        pydantic.BaseModel,
+        BaseModel,
         Enum,
     ],
     whitelist_map: WhitelistMap = ...,
@@ -849,7 +880,7 @@ def _pack_value(
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
-        or isinstance(val, pydantic.BaseModel)
+        or isinstance(val, BaseModel)
         or (is_dataclass(val) and not isinstance(val, type))
     ):
         klass_name = val.__class__.__name__
@@ -891,6 +922,86 @@ def _pack_value(
             _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(val)
         ]
+
+    raise SerializationError(f"Unhandled value type {tval}")
+
+
+class _SerdesObjectWrapper(dict):
+    def __init__(self, obj, whitelist_map):
+        self._obj = obj
+        self._whitelist_map = whitelist_map
+        # populate backing native dict to work around c optimizations in json serializer
+        super().__init__({"__serdes": "object_wrapper"})
+
+    def items(self):
+        klass_name = self._obj.__class__.__name__
+        serializer = self._whitelist_map.get_object_serializer(klass_name)
+        yield from serializer.wrap_iter(self._obj, self._whitelist_map)
+
+
+def _wrap_value(
+    val: PackableValue,
+    whitelist_map: WhitelistMap,
+):
+    # this is a hot code path so we handle the common base cases without isinstance
+    tval = type(val)
+    if tval in (int, float, str, bool) or val is None:
+        return cast(JsonSerializableValue, val)
+    if tval is list:
+        return [_wrap_value(item, whitelist_map) for idx, item in enumerate(cast(list, val))]
+    if tval is dict:
+        return {key: _wrap_value(value, whitelist_map) for key, value in cast(dict, val).items()}
+    if tval is SerializableNonScalarKeyMapping:
+        return {
+            "__mapping_items__": [
+                [
+                    _pack_value(k, whitelist_map, ""),
+                    _wrap_value(v, whitelist_map),
+                ]
+                for k, v in cast(dict, val).items()
+            ]
+        }
+
+    if isinstance(val, Enum):
+        klass_name = val.__class__.__name__
+        if not whitelist_map.has_enum_entry(klass_name):
+            raise SerializationError(
+                "Can only serialize whitelisted Enums, received" f" {klass_name}.",
+            )
+        enum_serializer = whitelist_map.get_enum_entry(klass_name)
+        return {"__enum__": enum_serializer.pack(val, whitelist_map, "")}
+    if (
+        (isinstance(val, tuple) and hasattr(val, "_fields"))
+        or isinstance(val, BaseModel)
+        or (is_dataclass(val) and not isinstance(val, type))
+    ):
+        klass_name = val.__class__.__name__
+        if not whitelist_map.has_object_serializer(klass_name):
+            raise SerializationError(
+                "Can only serialize whitelisted objects, received" f" {val}.",
+            )
+
+        return _SerdesObjectWrapper(val, whitelist_map)
+    if isinstance(val, set):
+        return {
+            "__set__": [_wrap_value(item, whitelist_map) for item in sorted(list(val), key=str)]
+        }
+    if isinstance(val, frozenset):
+        return {
+            "__frozenset__": [
+                _wrap_value(item, whitelist_map) for item in sorted(list(val), key=str)
+            ]
+        }
+
+    # custom string subclasses
+    if isinstance(val, str):
+        return val
+
+    # handle more expensive and uncommon abc instance checks last
+    if isinstance(val, collections.abc.Mapping):
+        return {key: _wrap_value(value, whitelist_map) for key, value in val.items()}
+    if isinstance(val, collections.abc.Sequence):
+        return [_wrap_value(item, whitelist_map) for idx, item in enumerate(val)]
 
     raise SerializationError(f"Unhandled value type {tval}")
 
