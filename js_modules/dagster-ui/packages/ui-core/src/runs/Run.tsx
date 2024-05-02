@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
@@ -38,6 +39,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
+import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
 interface RunProps {
   runId: string;
@@ -60,7 +62,7 @@ const runStatusFavicon = (status: RunStatus) => {
   }
 };
 
-export const Run = (props: RunProps) => {
+export const Run = memo((props: RunProps) => {
   const {run, runId, trace} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
@@ -98,12 +100,14 @@ export const Run = (props: RunProps) => {
     });
   };
 
+  const logsDependency = useTraceDependency('RunLogs');
+
   return (
     <RunContext.Provider value={run}>
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <>
-            <OnLogsLoaded trace={trace} />
+            <OnLogsLoaded trace={trace} dependency={logsDependency} />
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
                 <RunWithData
@@ -124,12 +128,19 @@ export const Run = (props: RunProps) => {
       </LogsProvider>
     </RunContext.Provider>
   );
-};
+});
 
-const OnLogsLoaded = ({trace}: {trace: RunRootTrace}) => {
+const OnLogsLoaded = ({
+  trace,
+  dependency,
+}: {
+  trace: RunRootTrace;
+  dependency: ReturnType<typeof useTraceDependency>;
+}) => {
   React.useLayoutEffect(() => {
     trace.onLogsLoaded();
-  }, [trace]);
+    dependency.completeDependency(CompletionType.SUCCESS);
+  }, [dependency, trace]);
   return null;
 };
 

@@ -1,11 +1,13 @@
 import memoize from 'lodash/memoize';
-import {useEffect, useMemo, useReducer} from 'react';
+import {useEffect, useMemo, useReducer, useRef} from 'react';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -212,8 +214,18 @@ export function useAssetLayout(
     }
   }, [cacheKey, graphData, runAsync, flags, opts]);
 
+  const uid = useRef(0);
+  useDangerousRenderEffect(() => {
+    uid.current++;
+  }, [cacheKey, graphData, runAsync, flags, opts]);
+
+  const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
+
+  // Add a UID to create a new dependency whenever the layout inputs change
+  useBlockTraceUntilTrue('AssetGraphLayout', !loading && !!state.layout, uid.current);
+
   return {
-    loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
+    loading,
     async: runAsync,
     layout: state.layout as AssetGraphLayout | null,
   };

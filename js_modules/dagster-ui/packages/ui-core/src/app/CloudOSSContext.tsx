@@ -11,6 +11,7 @@ type FeatureContext = {
 export const CloudOSSContext = React.createContext<{
   isBranchDeployment: boolean;
   featureContext: FeatureContext;
+  onViewChange: (view: {path: string}) => void;
 }>({
   isBranchDeployment: false,
   featureContext: {
@@ -20,4 +21,5 @@ export const CloudOSSContext = React.createContext<{
     canSeeWipeMaterializationAction: true,
     canSeeExecuteChecksAction: true,
   },
+  onViewChange: () => {},
 });

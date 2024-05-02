@@ -1,6 +1,8 @@
 import {QueryResult} from '@apollo/client';
 import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 'react';
 
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+
 export enum CompletionType {
   SUCCESS = 1,
   ERROR = 2,
@@ -51,31 +53,35 @@ export class Dependency {
 }
 
 /** Use this to declare a dependency on an apollo query result */
-export function useBlockTraceOnQueryResult(queryResult: QueryResult<any>, name: string) {
-  const dep = useDependency(name);
+export function useBlockTraceOnQueryResult(queryResult: QueryResult<any, any>, name: string) {
+  const dep = useTraceDependency(name);
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;
 
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     if (hasData) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
   }, [dep, hasData]);
 
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     if (!hasData && hasError) {
       dep.completeDependency(CompletionType.ERROR);
     }
   }, [dep, hasData, hasError]);
 }
 
-export function useDependency(name: string) {
+export function useTraceDependency(name: string, uid: any = '') {
   const {addDependency, completeDependency, createDependency} = useContext(TraceContext);
 
-  const dependency = useMemo(() => createDependency(name), [createDependency, name]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const dependency = useMemo(() => createDependency(name), [createDependency, name, uid]);
+
+  useDangerousRenderEffect(() => {
+    addDependency(dependency);
+  }, [dependency]);
 
   useLayoutEffect(() => {
-    addDependency(dependency);
     return () => {
       // By default cancel a dependency when the component unmounts.
       // Rely on the user of TraceContext to track if the dependency
@@ -92,4 +98,14 @@ export function useDependency(name: string) {
     }),
     [completeDependency, dependency],
   );
+}
+
+export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, uid: any = '') {
+  const dep = useTraceDependency(name, uid);
+  useLayoutEffect(() => {
+    if (isSuccessful) {
+      dep.completeDependency(CompletionType.SUCCESS);
+    }
+  }, [dep, isSuccessful, name]);
+  return dep;
 }
