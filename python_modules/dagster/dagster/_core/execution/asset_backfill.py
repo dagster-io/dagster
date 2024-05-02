@@ -1338,6 +1338,7 @@ def can_run_with_parent(
     asset_graph: RemoteAssetGraph,
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
+    logger: logging.Logger,
 ) -> bool:
     """Returns if a given candidate can be materialized in the same run as a given parent on
     this tick.
@@ -1365,40 +1366,57 @@ def can_run_with_parent(
             and partition_mapping.end_offset == 0
         )
     )
-    return (
-        parent_node.backfill_policy == candidate_node.backfill_policy
-        and parent_node.priority_repository_handle is candidate_node.priority_repository_handle
-        and parent_node.partitions_def == candidate_node.partitions_def
-        and (
-            parent.partition_key in asset_partitions_to_request_map[parent.asset_key]
-            or parent in candidates_unit
+    if parent_node.backfill_policy != candidate_node.backfill_policy:
+        logger.info(
+            "Removing {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} have different backfill policies"
         )
-        and (
-            # if there is a simple mapping between the parent and the child, then
-            # with the parent
-            has_identity_partition_mapping
-            # if there is not a simple mapping, we can only materialize this asset with its
-            # parent if...
-            or (
-                # there is a backfill policy for the parent
-                parent_node.backfill_policy is not None
-                # the same subset of parents is targeted as the child
-                and parent_target_subset.value == candidate_target_subset.value
-                and (
-                    # there is no limit on the size of a single run or...
-                    parent_node.backfill_policy.max_partitions_per_run is None
-                    # a single run can materialize all requested parent partitions
-                    or parent_node.backfill_policy.max_partitions_per_run
-                    > len(asset_partitions_to_request_map[parent.asset_key])
-                )
-                # all targeted parents are being requested this tick
-                and len(asset_partitions_to_request_map[parent.asset_key])
-                == parent_target_subset.size
+        return False
+    if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
+        logger.info(
+            "Removing {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} are in different code locations"
+        )
+        return False
+    if (
+        parent.partition_key not in asset_partitions_to_request_map[parent.asset_key]
+        and parent not in candidates_unit
+    ):
+        logger.info(
+            f"Removing {candidate_node.asset_key} from request list. Reason: parent asset {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration"
+        )
+        return False
+    if (
+        # if there is a simple mapping between the parent and the child, then
+        # with the parent
+        has_identity_partition_mapping
+        # if there is not a simple mapping, we can only materialize this asset with its
+        # parent if...
+        or (
+            # there is a backfill policy for the parent
+            parent_node.backfill_policy is not None
+            # the same subset of parents is targeted as the child
+            and parent_target_subset.value == candidate_target_subset.value
+            and (
+                # there is no limit on the size of a single run or...
+                parent_node.backfill_policy.max_partitions_per_run is None
+                # a single run can materialize all requested parent partitions
+                or parent_node.backfill_policy.max_partitions_per_run
+                > len(asset_partitions_to_request_map[parent.asset_key])
             )
-            # if all the above are true, then a single run can be launched this tick which
-            # will materialize all requested partitions
+            # all targeted parents are being requested this tick
+            and len(asset_partitions_to_request_map[parent.asset_key]) == parent_target_subset.size
         )
-    )
+    ):
+        return True
+    else:
+        logger.log(
+            f"Removing {candidate_node.asset_key} from request list. Reason: partition "
+            f"mapping between {parent_node.asset_key} and {candidate_node.asset_key} is not simple and "
+            f"{parent_node.asset_key} does not meet requirements of: targeting the same partitions as "
+            f"{candidate_node.asset_key}, have all of its partitions requested in this iteration, having "
+            "a backfill policy, and that backfill policy size limit is not exceeded by adding "
+            f"{candidate_node.asset_key} to the run"
+        )
+        return False
 
 
 def should_backfill_atomic_asset_partitions_unit(
@@ -1452,6 +1470,7 @@ def should_backfill_atomic_asset_partitions_unit(
                     asset_graph,
                     target_subset,
                     asset_partitions_to_request_map,
+                    logger,
                 )
             ):
                 return False
