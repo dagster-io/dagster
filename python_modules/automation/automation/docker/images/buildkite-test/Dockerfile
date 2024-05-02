@@ -161,6 +161,7 @@ RUN git clone --depth 1 https://github.com/dagster-io/dagster.git
 
 WORKDIR dagster
 
+ENV VIRTUAL_ENV=/usr/local
 RUN python scripts/install_dev_python_modules.py awscli \
     && pip freeze --exclude-editable > /snapshot-reqs.txt
 
