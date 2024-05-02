@@ -89,6 +89,17 @@ export type MetadataEntryFragment_PythonArtifactMetadataEntry = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_SouceCodeLocationsMetadataEntry = {
+  __typename: 'SouceCodeLocationsMetadataEntry';
+  label: string;
+  description: string | null;
+  sources: Array<{
+    __typename: 'SourceEntry';
+    key: string;
+    source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+  }>;
+};
+
 export type MetadataEntryFragment_TableColumnLineageMetadataEntry = {
   __typename: 'TableColumnLineageMetadataEntry';
   label: string;
@@ -186,6 +197,7 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_PathMetadataEntry
   | MetadataEntryFragment_PipelineRunMetadataEntry
   | MetadataEntryFragment_PythonArtifactMetadataEntry
+  | MetadataEntryFragment_SouceCodeLocationsMetadataEntry
   | MetadataEntryFragment_TableColumnLineageMetadataEntry
   | MetadataEntryFragment_TableMetadataEntry
   | MetadataEntryFragment_TableSchemaMetadataEntry

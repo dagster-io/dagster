@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluatio
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
     MetadataValue,
+    SouceCodeLocationsMetadataValue,
     TableColumnLineageMetadataValue,
 )
 from dagster._core.events import (
@@ -36,6 +37,12 @@ from dagster._core.events import (
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.outputs import StepOutputData
+
+from dagster_graphql.schema.metadata import (
+    GrapheneLocalFileSource,
+    GrapheneSouceCodeLocationsMetadataEntry,
+    GrapheneSourceEntry,
+)
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -151,6 +158,20 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                 jobName=value.job_name,
                 repositoryName=value.repository_name,
                 locationName=value.location_name,
+            )
+        elif isinstance(value, SouceCodeLocationsMetadataValue):
+            yield GrapheneSouceCodeLocationsMetadataEntry(
+                label=key,
+                sources=[
+                    GrapheneSourceEntry(
+                        key=source_key,
+                        source=GrapheneLocalFileSource(
+                            filePath=source.file_path,
+                            lineNumber=source.line_number,
+                        ),
+                    )
+                    for source_key, source in value.sources.items()
+                ],
             )
         elif isinstance(value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(

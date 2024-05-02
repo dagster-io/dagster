@@ -138,6 +138,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -324,6 +338,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -507,6 +531,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -677,6 +715,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -844,6 +896,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -998,6 +1060,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
                     }
                   | {
                       __typename: 'TableColumnLineageMetadataEntry';
@@ -1223,6 +1299,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1426,6 +1512,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1612,6 +1708,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -1774,6 +1880,20 @@ export type PipelineRunLogsSubscription = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
                     }
                   | {
                       __typename: 'TableColumnLineageMetadataEntry';
@@ -1942,6 +2062,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -2105,6 +2235,16 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
                   }
                 | {
                     __typename: 'TableColumnLineageMetadataEntry';
@@ -2281,6 +2421,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -2443,6 +2593,16 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
                   }
                 | {
                     __typename: 'TableColumnLineageMetadataEntry';
@@ -2692,6 +2852,20 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -2860,6 +3034,16 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -3022,6 +3206,16 @@ export type PipelineRunLogsSubscription = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
                   }
                 | {
                     __typename: 'TableColumnLineageMetadataEntry';
@@ -3230,6 +3424,16 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
+              }
+            | {
                 __typename: 'TableColumnLineageMetadataEntry';
                 label: string;
                 description: string | null;
@@ -3413,6 +3617,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -3591,6 +3805,16 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
+              }
+            | {
                 __typename: 'TableColumnLineageMetadataEntry';
                 label: string;
                 description: string | null;
@@ -3758,6 +3982,16 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
+              }
+            | {
                 __typename: 'TableColumnLineageMetadataEntry';
                 label: string;
                 description: string | null;
@@ -3922,6 +4156,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -4071,6 +4315,16 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';
@@ -4293,6 +4547,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -4491,6 +4755,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -4672,6 +4946,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -4829,6 +5113,16 @@ export type RunLogsSubscriptionSuccessFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';
@@ -4994,6 +5288,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -5152,6 +5456,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
             }
           | {
               __typename: 'TableColumnLineageMetadataEntry';
@@ -5323,6 +5637,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -5480,6 +5804,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
             }
           | {
               __typename: 'TableColumnLineageMetadataEntry';
@@ -5724,6 +6058,16 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
+              }
+            | {
                 __typename: 'TableColumnLineageMetadataEntry';
                 label: string;
                 description: string | null;
@@ -5889,6 +6233,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;
@@ -6046,6 +6400,16 @@ export type RunLogsSubscriptionSuccessFragment = {
               name: string;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
             }
           | {
               __typename: 'TableColumnLineageMetadataEntry';
@@ -6267,6 +6631,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -6453,6 +6831,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -6636,6 +7024,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -6806,6 +7208,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -6973,6 +7389,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7127,6 +7553,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
                     }
                   | {
                       __typename: 'TableColumnLineageMetadataEntry';
@@ -7352,6 +7792,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7555,6 +8005,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7741,6 +8201,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -7903,6 +8373,20 @@ export type RunLogsQuery = {
                       name: string;
                       label: string;
                       description: string | null;
+                    }
+                  | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
                     }
                   | {
                       __typename: 'TableColumnLineageMetadataEntry';
@@ -8071,6 +8555,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -8234,6 +8728,16 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
                   }
                 | {
                     __typename: 'TableColumnLineageMetadataEntry';
@@ -8410,6 +8914,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -8572,6 +9086,16 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
                   }
                 | {
                     __typename: 'TableColumnLineageMetadataEntry';
@@ -8821,6 +9345,20 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'SouceCodeLocationsMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      sources: Array<{
+                        __typename: 'SourceEntry';
+                        key: string;
+                        source: {
+                          __typename: 'LocalFileSource';
+                          filePath: string;
+                          lineNumber: number;
+                        };
+                      }>;
+                    }
+                  | {
                       __typename: 'TableColumnLineageMetadataEntry';
                       label: string;
                       description: string | null;
@@ -8989,6 +9527,16 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
+                  }
+                | {
                     __typename: 'TableColumnLineageMetadataEntry';
                     label: string;
                     description: string | null;
@@ -9151,6 +9699,16 @@ export type RunLogsQuery = {
                     name: string;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'SouceCodeLocationsMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    sources: Array<{
+                      __typename: 'SourceEntry';
+                      key: string;
+                      source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                    }>;
                   }
                 | {
                     __typename: 'TableColumnLineageMetadataEntry';

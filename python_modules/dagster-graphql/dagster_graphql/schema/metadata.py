@@ -162,6 +162,36 @@ class GrapheneJobMetadataEntry(graphene.ObjectType):
         name = "JobMetadataEntry"
 
 
+class GrapheneLocalFileSource(graphene.ObjectType):
+    filePath = graphene.NonNull(graphene.String)
+    lineNumber = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "LocalFileSource"
+
+
+class GrapheneSourceLocation(graphene.Union):
+    class Meta:
+        types = (GrapheneLocalFileSource,)
+        name = "SourceLocation"
+
+
+class GrapheneSourceEntry(graphene.ObjectType):
+    key = graphene.NonNull(graphene.String)
+    source = graphene.NonNull(GrapheneSourceLocation)
+
+    class Meta:
+        name = "SourceEntry"
+
+
+class GrapheneSouceCodeLocationsMetadataEntry(graphene.ObjectType):
+    sources = non_null_list(GrapheneSourceEntry)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "SouceCodeLocationsMetadataEntry"
+
+
 class GrapheneNullMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
@@ -196,6 +226,7 @@ def types():
         GraphenePipelineRunMetadataEntry,
         GrapheneAssetMetadataEntry,
         GrapheneJobMetadataEntry,
+        GrapheneSouceCodeLocationsMetadataEntry,
         GrapheneNullMetadataEntry,
         GrapheneTimestampMetadataEntry,
     ]

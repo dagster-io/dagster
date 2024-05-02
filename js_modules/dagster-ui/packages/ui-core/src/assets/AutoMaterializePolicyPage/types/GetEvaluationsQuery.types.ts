@@ -81,6 +81,16 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'SouceCodeLocationsMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'TableColumnLineageMetadataEntry';
         label: string;
         description: string | null;
@@ -220,6 +230,16 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'SouceCodeLocationsMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -460,6 +480,16 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
+              }
+            | {
                 __typename: 'TableColumnLineageMetadataEntry';
                 label: string;
                 description: string | null;
@@ -618,6 +648,16 @@ export type AssetConditionEvaluationRecordFragment = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';
@@ -860,6 +900,20 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'SouceCodeLocationsMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        sources: Array<{
+                          __typename: 'SourceEntry';
+                          key: string;
+                          source: {
+                            __typename: 'LocalFileSource';
+                            filePath: string;
+                            lineNumber: number;
+                          };
+                        }>;
+                      }
+                    | {
                         __typename: 'TableColumnLineageMetadataEntry';
                         label: string;
                         description: string | null;
@@ -1024,6 +1078,20 @@ export type GetEvaluationsQuery = {
                         name: string;
                         label: string;
                         description: string | null;
+                      }
+                    | {
+                        __typename: 'SouceCodeLocationsMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        sources: Array<{
+                          __typename: 'SourceEntry';
+                          key: string;
+                          source: {
+                            __typename: 'LocalFileSource';
+                            filePath: string;
+                            lineNumber: number;
+                          };
+                        }>;
                       }
                     | {
                         __typename: 'TableColumnLineageMetadataEntry';
@@ -1247,6 +1315,16 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
+              }
+            | {
                 __typename: 'TableColumnLineageMetadataEntry';
                 label: string;
                 description: string | null;
@@ -1405,6 +1483,16 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 name: string;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'SouceCodeLocationsMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';

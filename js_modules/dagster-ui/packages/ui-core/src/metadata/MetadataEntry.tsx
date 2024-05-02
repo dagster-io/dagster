@@ -257,6 +257,8 @@ export const MetadataEntry = ({
           </IconButton>
         </Group>
       );
+    case 'SouceCodeLocationsMetadataEntry':
+      return <>{entry.label}</>;
     default:
       return assertUnreachable(entry);
   }

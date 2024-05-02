@@ -90,6 +90,16 @@ export type AssetGraphSidebarQuery = {
               description: string | null;
             }
           | {
+              __typename: 'SouceCodeLocationsMetadataEntry';
+              label: string;
+              description: string | null;
+              sources: Array<{
+                __typename: 'SourceEntry';
+                key: string;
+                source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
+              }>;
+            }
+          | {
               __typename: 'TableColumnLineageMetadataEntry';
               label: string;
               description: string | null;

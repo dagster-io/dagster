@@ -25,6 +25,7 @@ export type AssetColumnLineageQuery = {
       | {__typename: 'PathMetadataEntry'; label: string}
       | {__typename: 'PipelineRunMetadataEntry'; label: string}
       | {__typename: 'PythonArtifactMetadataEntry'; label: string}
+      | {__typename: 'SouceCodeLocationsMetadataEntry'; label: string}
       | {__typename: 'TableColumnLineageMetadataEntry'; label: string}
       | {__typename: 'TableMetadataEntry'; label: string}
       | {
@@ -60,6 +61,7 @@ export type AssetColumnLineageQuery = {
         | {__typename: 'PathMetadataEntry'; label: string}
         | {__typename: 'PipelineRunMetadataEntry'; label: string}
         | {__typename: 'PythonArtifactMetadataEntry'; label: string}
+        | {__typename: 'SouceCodeLocationsMetadataEntry'; label: string}
         | {
             __typename: 'TableColumnLineageMetadataEntry';
             label: string;
