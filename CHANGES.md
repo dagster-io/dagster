@@ -12,7 +12,7 @@
 - Fixed a bug with asset checks in complex asset graphs that include cycles in the underlying nodes.
 - Fixed an issue that would cause unnecessary failures on FIPS-enabled systems due to the use of md5 hashes in non-security-related contexts (thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!)
 - Removed `path` metadata from `UPathIOManager` inputs. This eliminates the creation of `ASSET_OBSERVATION` events for every input on every step for the default I/O manager.
-- Added support for defining `owners` on `@graph_asset`
+- Added support for defining `owners` on `@graph_asset`.
 - Fixed an issue where having multiple partitions definitions in a location with the same start date but differing end dates could lead to “`DagsterInvalidSubsetError` when trying to launch runs.
 
 ### Documentation
