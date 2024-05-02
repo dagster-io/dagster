@@ -16,6 +16,17 @@ export type MetadataEntryFragment_BoolMetadataEntry = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_CodeReferencesMetadataEntry = {
+  __typename: 'CodeReferencesMetadataEntry';
+  label: string;
+  description: string | null;
+  sources: Array<{
+    __typename: 'SourceEntry';
+    key: string;
+    source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+  }>;
+};
+
 export type MetadataEntryFragment_FloatMetadataEntry = {
   __typename: 'FloatMetadataEntry';
   floatValue: number | null;
@@ -87,17 +98,6 @@ export type MetadataEntryFragment_PythonArtifactMetadataEntry = {
   name: string;
   label: string;
   description: string | null;
-};
-
-export type MetadataEntryFragment_SouceCodeLocationsMetadataEntry = {
-  __typename: 'SouceCodeLocationsMetadataEntry';
-  label: string;
-  description: string | null;
-  sources: Array<{
-    __typename: 'SourceEntry';
-    key: string;
-    source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-  }>;
 };
 
 export type MetadataEntryFragment_TableColumnLineageMetadataEntry = {
@@ -187,6 +187,7 @@ export type MetadataEntryFragment_UrlMetadataEntry = {
 export type MetadataEntryFragment =
   | MetadataEntryFragment_AssetMetadataEntry
   | MetadataEntryFragment_BoolMetadataEntry
+  | MetadataEntryFragment_CodeReferencesMetadataEntry
   | MetadataEntryFragment_FloatMetadataEntry
   | MetadataEntryFragment_IntMetadataEntry
   | MetadataEntryFragment_JobMetadataEntry
@@ -197,7 +198,6 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_PathMetadataEntry
   | MetadataEntryFragment_PipelineRunMetadataEntry
   | MetadataEntryFragment_PythonArtifactMetadataEntry
-  | MetadataEntryFragment_SouceCodeLocationsMetadataEntry
   | MetadataEntryFragment_TableColumnLineageMetadataEntry
   | MetadataEntryFragment_TableMetadataEntry
   | MetadataEntryFragment_TableSchemaMetadataEntry

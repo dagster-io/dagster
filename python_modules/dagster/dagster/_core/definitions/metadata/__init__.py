@@ -59,9 +59,9 @@ from .metadata_value import (
 )
 from .source_code import (
     DEFAULT_SOURCE_FILE_KEY as DEFAULT_SOURCE_FILE_KEY,
-    LocalFileSource as LocalFileSource,
-    SouceCodeLocationsMetadataValue as SouceCodeLocationsMetadataValue,
-    SourceCodeLocationsMetadataSet as SourceCodeLocationsMetadataSet,
+    CodeReferencesMetadataSet as CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue as CodeReferencesMetadataValue,
+    LocalFileCodeReference as LocalFileCodeReference,
     with_source_code_links as with_source_code_links,
 )
 from .table import (  # re-exported  # re-exported  # re-exported

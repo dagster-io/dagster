@@ -15,6 +15,7 @@ export type AssetColumnLineageQuery = {
     metadataEntries: Array<
       | {__typename: 'AssetMetadataEntry'; label: string}
       | {__typename: 'BoolMetadataEntry'; label: string}
+      | {__typename: 'CodeReferencesMetadataEntry'; label: string}
       | {__typename: 'FloatMetadataEntry'; label: string}
       | {__typename: 'IntMetadataEntry'; label: string}
       | {__typename: 'JobMetadataEntry'; label: string}
@@ -25,7 +26,6 @@ export type AssetColumnLineageQuery = {
       | {__typename: 'PathMetadataEntry'; label: string}
       | {__typename: 'PipelineRunMetadataEntry'; label: string}
       | {__typename: 'PythonArtifactMetadataEntry'; label: string}
-      | {__typename: 'SouceCodeLocationsMetadataEntry'; label: string}
       | {__typename: 'TableColumnLineageMetadataEntry'; label: string}
       | {__typename: 'TableMetadataEntry'; label: string}
       | {
@@ -51,6 +51,7 @@ export type AssetColumnLineageQuery = {
       metadataEntries: Array<
         | {__typename: 'AssetMetadataEntry'; label: string}
         | {__typename: 'BoolMetadataEntry'; label: string}
+        | {__typename: 'CodeReferencesMetadataEntry'; label: string}
         | {__typename: 'FloatMetadataEntry'; label: string}
         | {__typename: 'IntMetadataEntry'; label: string}
         | {__typename: 'JobMetadataEntry'; label: string}
@@ -61,7 +62,6 @@ export type AssetColumnLineageQuery = {
         | {__typename: 'PathMetadataEntry'; label: string}
         | {__typename: 'PipelineRunMetadataEntry'; label: string}
         | {__typename: 'PythonArtifactMetadataEntry'; label: string}
-        | {__typename: 'SouceCodeLocationsMetadataEntry'; label: string}
         | {
             __typename: 'TableColumnLineageMetadataEntry';
             label: string;

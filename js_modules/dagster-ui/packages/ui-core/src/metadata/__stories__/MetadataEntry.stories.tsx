@@ -258,9 +258,9 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         label: 'my_timestamp',
         timestamp: 1710187280.5,
       };
-    case 'SouceCodeLocationsMetadataEntry':
+    case 'CodeReferencesMetadataEntry':
       return {
-        __typename: 'SouceCodeLocationsMetadataEntry',
+        __typename: 'CodeReferencesMetadataEntry',
         description: 'This is the description',
         label: 'my_source',
         sources: [
@@ -268,7 +268,7 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
             __typename: 'SourceEntry',
             key: 'asset_definition',
             source: {
-              __typename: 'LocalFileSource',
+              __typename: 'LocalFileCodeReference',
               filePath: '/path/to/file.py',
               lineNumber: 12,
             },

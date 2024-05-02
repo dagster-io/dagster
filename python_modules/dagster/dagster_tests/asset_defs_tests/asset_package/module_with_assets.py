@@ -1,8 +1,8 @@
 from dagster import AssetKey, SourceAsset, asset
 from dagster._core.definitions.metadata import (
-    LocalFileSource,
-    SouceCodeLocationsMetadataValue,
-    SourceCodeLocationsMetadataSet,
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
 )
 
 # importing this makes it show up twice when we collect everything
@@ -15,9 +15,11 @@ elvis_presley = SourceAsset(key=AssetKey("elvis_presley"))
 
 @asset(
     metadata={
-        **SourceCodeLocationsMetadataSet(
-            source_code_locations=SouceCodeLocationsMetadataValue(
-                sources={"my_test_source": LocalFileSource(file_path=__file__, line_number=1)}
+        **CodeReferencesMetadataSet(
+            code_references=CodeReferencesMetadataValue(
+                sources={
+                    "my_test_source": LocalFileCodeReference(file_path=__file__, line_number=1)
+                }
             )
         ),
     }

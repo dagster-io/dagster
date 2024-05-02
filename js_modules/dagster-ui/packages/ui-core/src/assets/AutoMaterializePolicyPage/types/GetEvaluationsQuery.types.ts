@@ -32,6 +32,16 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -79,16 +89,6 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -183,6 +183,16 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -230,16 +240,6 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -421,6 +421,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number;
+                  };
+                }>;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -478,16 +492,6 @@ export type AssetConditionEvaluationRecordFragment = {
                 name: string;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'SouceCodeLocationsMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';
@@ -591,6 +595,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number;
+                  };
+                }>;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -648,16 +666,6 @@ export type AssetConditionEvaluationRecordFragment = {
                 name: string;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'SouceCodeLocationsMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';
@@ -841,6 +849,20 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'CodeReferencesMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        sources: Array<{
+                          __typename: 'SourceEntry';
+                          key: string;
+                          source: {
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                          };
+                        }>;
+                      }
+                    | {
                         __typename: 'FloatMetadataEntry';
                         floatValue: number | null;
                         label: string;
@@ -898,20 +920,6 @@ export type GetEvaluationsQuery = {
                         name: string;
                         label: string;
                         description: string | null;
-                      }
-                    | {
-                        __typename: 'SouceCodeLocationsMetadataEntry';
-                        label: string;
-                        description: string | null;
-                        sources: Array<{
-                          __typename: 'SourceEntry';
-                          key: string;
-                          source: {
-                            __typename: 'LocalFileSource';
-                            filePath: string;
-                            lineNumber: number;
-                          };
-                        }>;
                       }
                     | {
                         __typename: 'TableColumnLineageMetadataEntry';
@@ -1021,6 +1029,20 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'CodeReferencesMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        sources: Array<{
+                          __typename: 'SourceEntry';
+                          key: string;
+                          source: {
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                          };
+                        }>;
+                      }
+                    | {
                         __typename: 'FloatMetadataEntry';
                         floatValue: number | null;
                         label: string;
@@ -1078,20 +1100,6 @@ export type GetEvaluationsQuery = {
                         name: string;
                         label: string;
                         description: string | null;
-                      }
-                    | {
-                        __typename: 'SouceCodeLocationsMetadataEntry';
-                        label: string;
-                        description: string | null;
-                        sources: Array<{
-                          __typename: 'SourceEntry';
-                          key: string;
-                          source: {
-                            __typename: 'LocalFileSource';
-                            filePath: string;
-                            lineNumber: number;
-                          };
-                        }>;
                       }
                     | {
                         __typename: 'TableColumnLineageMetadataEntry';
@@ -1256,6 +1264,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number;
+                  };
+                }>;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -1313,16 +1335,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 name: string;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'SouceCodeLocationsMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';
@@ -1426,6 +1438,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number;
+                  };
+                }>;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -1483,16 +1509,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 name: string;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'SouceCodeLocationsMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';

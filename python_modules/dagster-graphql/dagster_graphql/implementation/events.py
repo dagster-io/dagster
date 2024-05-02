@@ -23,9 +23,9 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.metadata import (
+    CodeReferencesMetadataValue,
     DagsterRunMetadataValue,
     MetadataValue,
-    SouceCodeLocationsMetadataValue,
     TableColumnLineageMetadataValue,
 )
 from dagster._core.events import (
@@ -39,8 +39,8 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.outputs import StepOutputData
 
 from dagster_graphql.schema.metadata import (
-    GrapheneLocalFileSource,
-    GrapheneSouceCodeLocationsMetadataEntry,
+    GrapheneCodeReferencesMetadataEntry,
+    GrapheneLocalFileCodeReference,
     GrapheneSourceEntry,
 )
 
@@ -159,13 +159,13 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                 repositoryName=value.repository_name,
                 locationName=value.location_name,
             )
-        elif isinstance(value, SouceCodeLocationsMetadataValue):
-            yield GrapheneSouceCodeLocationsMetadataEntry(
+        elif isinstance(value, CodeReferencesMetadataValue):
+            yield GrapheneCodeReferencesMetadataEntry(
                 label=key,
                 sources=[
                     GrapheneSourceEntry(
                         key=source_key,
-                        source=GrapheneLocalFileSource(
+                        source=GrapheneLocalFileCodeReference(
                             filePath=source.file_path,
                             lineNumber=source.line_number,
                         ),

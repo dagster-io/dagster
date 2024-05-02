@@ -60,6 +60,16 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          sources: Array<{
+            __typename: 'SourceEntry';
+            key: string;
+            source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -112,16 +122,6 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent = {
           name: string;
           label: string;
           description: string | null;
-        }
-      | {
-          __typename: 'SouceCodeLocationsMetadataEntry';
-          label: string;
-          description: string | null;
-          sources: Array<{
-            __typename: 'SourceEntry';
-            key: string;
-            source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-          }>;
         }
       | {
           __typename: 'TableColumnLineageMetadataEntry';
@@ -238,6 +238,16 @@ export type LogsRowStructuredFragment_EngineEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -285,16 +295,6 @@ export type LogsRowStructuredFragment_EngineEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -411,6 +411,16 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          sources: Array<{
+            __typename: 'SourceEntry';
+            key: string;
+            source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -463,16 +473,6 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent = {
           name: string;
           label: string;
           description: string | null;
-        }
-      | {
-          __typename: 'SouceCodeLocationsMetadataEntry';
-          label: string;
-          description: string | null;
-          sources: Array<{
-            __typename: 'SourceEntry';
-            key: string;
-            source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-          }>;
         }
       | {
           __typename: 'TableColumnLineageMetadataEntry';
@@ -573,6 +573,16 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          sources: Array<{
+            __typename: 'SourceEntry';
+            key: string;
+            source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -625,16 +635,6 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent = {
           name: string;
           label: string;
           description: string | null;
-        }
-      | {
-          __typename: 'SouceCodeLocationsMetadataEntry';
-          label: string;
-          description: string | null;
-          sources: Array<{
-            __typename: 'SourceEntry';
-            key: string;
-            source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-          }>;
         }
       | {
           __typename: 'TableColumnLineageMetadataEntry';
@@ -732,6 +732,16 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -779,16 +789,6 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -878,6 +878,16 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          sources: Array<{
+            __typename: 'SourceEntry';
+            key: string;
+            source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -930,16 +940,6 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
           name: string;
           label: string;
           description: string | null;
-        }
-      | {
-          __typename: 'SouceCodeLocationsMetadataEntry';
-          label: string;
-          description: string | null;
-          sources: Array<{
-            __typename: 'SourceEntry';
-            key: string;
-            source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-          }>;
         }
       | {
           __typename: 'TableColumnLineageMetadataEntry';
@@ -1093,6 +1093,16 @@ export type LogsRowStructuredFragment_HandledOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1140,16 +1150,6 @@ export type LogsRowStructuredFragment_HandledOutputEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -1286,6 +1286,16 @@ export type LogsRowStructuredFragment_LoadedInputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1333,16 +1343,6 @@ export type LogsRowStructuredFragment_LoadedInputEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -1461,6 +1461,16 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1508,16 +1518,6 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -1615,6 +1615,16 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          sources: Array<{
+            __typename: 'SourceEntry';
+            key: string;
+            source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -1667,16 +1677,6 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent = {
           name: string;
           label: string;
           description: string | null;
-        }
-      | {
-          __typename: 'SouceCodeLocationsMetadataEntry';
-          label: string;
-          description: string | null;
-          sources: Array<{
-            __typename: 'SourceEntry';
-            key: string;
-            source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-          }>;
         }
       | {
           __typename: 'TableColumnLineageMetadataEntry';
@@ -1773,6 +1773,16 @@ export type LogsRowStructuredFragment_ObservationEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1820,16 +1830,6 @@ export type LogsRowStructuredFragment_ObservationEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -1928,6 +1928,16 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1975,16 +1985,6 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -2092,6 +2092,16 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2139,16 +2149,6 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -2246,6 +2246,16 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2293,16 +2303,6 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -2483,6 +2483,16 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          sources: Array<{
+            __typename: 'SourceEntry';
+            key: string;
+            source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -2535,16 +2545,6 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent = {
           name: string;
           label: string;
           description: string | null;
-        }
-      | {
-          __typename: 'SouceCodeLocationsMetadataEntry';
-          label: string;
-          description: string | null;
-          sources: Array<{
-            __typename: 'SourceEntry';
-            key: string;
-            source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-          }>;
         }
       | {
           __typename: 'TableColumnLineageMetadataEntry';
@@ -2643,6 +2643,16 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2690,16 +2700,6 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -2797,6 +2797,16 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2844,16 +2854,6 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';

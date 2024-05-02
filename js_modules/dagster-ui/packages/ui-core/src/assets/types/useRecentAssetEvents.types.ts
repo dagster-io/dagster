@@ -42,6 +42,16 @@ export type AssetMaterializationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -89,16 +99,6 @@ export type AssetMaterializationFragment = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -216,6 +216,16 @@ export type AssetObservationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        sources: Array<{
+          __typename: 'SourceEntry';
+          key: string;
+          source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -263,16 +273,6 @@ export type AssetObservationFragment = {
         name: string;
         label: string;
         description: string | null;
-      }
-    | {
-        __typename: 'SouceCodeLocationsMetadataEntry';
-        label: string;
-        description: string | null;
-        sources: Array<{
-          __typename: 'SourceEntry';
-          key: string;
-          source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-        }>;
       }
     | {
         __typename: 'TableColumnLineageMetadataEntry';
@@ -399,6 +399,20 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number;
+                  };
+                }>;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -456,16 +470,6 @@ export type AssetEventsQuery = {
                 name: string;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'SouceCodeLocationsMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';
@@ -587,6 +591,20 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                sources: Array<{
+                  __typename: 'SourceEntry';
+                  key: string;
+                  source: {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number;
+                  };
+                }>;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -644,16 +662,6 @@ export type AssetEventsQuery = {
                 name: string;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'SouceCodeLocationsMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {__typename: 'LocalFileSource'; filePath: string; lineNumber: number};
-                }>;
               }
             | {
                 __typename: 'TableColumnLineageMetadataEntry';

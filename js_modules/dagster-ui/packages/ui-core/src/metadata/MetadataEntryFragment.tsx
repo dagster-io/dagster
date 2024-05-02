@@ -76,12 +76,12 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     ... on TableSchemaMetadataEntry {
       ...TableSchemaForMetadataEntry
     }
-    ... on SouceCodeLocationsMetadataEntry {
+    ... on CodeReferencesMetadataEntry {
       sources {
         key
         source {
           __typename
-          ... on LocalFileSource {
+          ... on LocalFileCodeReference {
             filePath
             lineNumber
           }

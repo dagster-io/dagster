@@ -32,7 +32,7 @@ DEFAULT_SOURCE_FILE_KEY = "asset_definition"
 
 @experimental
 @whitelist_for_serdes
-class LocalFileSource(DagsterModel):
+class LocalFileCodeReference(DagsterModel):
     """Represents a local file source location."""
 
     file_path: str
@@ -41,27 +41,25 @@ class LocalFileSource(DagsterModel):
 
 @experimental
 @whitelist_for_serdes
-class SouceCodeLocationsMetadataValue(
-    DagsterModel, MetadataValue["SouceCodeLocationsMetadataValue"]
-):
+class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):
     """Metadata value type which represents source locations (locally or otherwise)
     of the asset in question. For example, the file path and line number where the
     asset is defined.
 
     Attributes:
-        sources (Dict[str, LocalFileSource]):
+        sources (Dict[str, LocalFileCodeReference]):
             A labeled dictionary of sources. The main source file should be keyed with
             the `DEFAULT_SOURCE_FILE_KEY` constant.
     """
 
-    sources: Mapping[str, LocalFileSource] = {}
+    sources: Mapping[str, LocalFileCodeReference] = {}
 
     @property
-    def value(self) -> "SouceCodeLocationsMetadataValue":
+    def value(self) -> "CodeReferencesMetadataValue":
         return self
 
 
-def source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileSource]:
+def source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileCodeReference]:
     cwd = os.getcwd()
     origin_file: Optional[str] = None
     origin_line = None
@@ -72,18 +70,18 @@ def source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileSource]:
     except TypeError:
         return None
 
-    return LocalFileSource(
+    return LocalFileCodeReference(
         file_path=origin_file,
         line_number=origin_line,
     )
 
 
-class SourceCodeLocationsMetadataSet(NamespacedMetadataSet):
+class CodeReferencesMetadataSet(NamespacedMetadataSet):
     """Metadata entries that apply to asset definitions and which specify the source code location
     for the asset.
     """
 
-    source_code_locations: SouceCodeLocationsMetadataValue
+    code_references: CodeReferencesMetadataValue
 
     @classmethod
     def namespace(cls) -> str:
@@ -118,20 +116,20 @@ def _with_code_source_single_definition(
             # defer to any existing metadata
             sources_for_asset = {**sources}
             try:
-                existing_source_code_metadata = SourceCodeLocationsMetadataSet.extract(
+                existing_source_code_metadata = CodeReferencesMetadataSet.extract(
                     metadata_by_key.get(key, {})
                 )
                 sources_for_asset = {
                     **sources,
-                    **existing_source_code_metadata.source_code_locations.sources,
+                    **existing_source_code_metadata.code_references.sources,
                 }
             except pydantic.ValidationError:
                 pass
 
             metadata_by_key[key] = {
                 **metadata_by_key.get(key, {}),
-                **SourceCodeLocationsMetadataSet(
-                    source_code_locations=SouceCodeLocationsMetadataValue(sources=sources_for_asset)
+                **CodeReferencesMetadataSet(
+                    code_references=CodeReferencesMetadataValue(sources=sources_for_asset)
                 ),
             }
 

@@ -4,7 +4,7 @@ from typing import cast
 from dagster import AssetsDefinition, load_assets_from_modules
 from dagster._core.definitions.metadata import (
     DEFAULT_SOURCE_FILE_KEY,
-    LocalFileSource,
+    LocalFileCodeReference,
     with_source_code_links,
 )
 from dagster._utils import file_relative_path
@@ -23,9 +23,9 @@ def test_asset_code_origins() -> None:
                 # `chuck_berry` is the only asset with source code metadata manually
                 # attached to it
                 if asset.op.name == "chuck_berry":
-                    assert "dagster/source_code_locations" in asset.metadata_by_key[key]
+                    assert "dagster/code_references" in asset.metadata_by_key[key]
                 else:
-                    assert "dagster/source_code_locations" not in asset.metadata_by_key[key]
+                    assert "dagster/code_references" not in asset.metadata_by_key[key]
 
     collection_with_source_metadata = with_source_code_links(collection)
 
@@ -58,30 +58,24 @@ def test_asset_code_origins() -> None:
             expected_file_path, expected_line_number = expected_origins[op_name].split(":")
 
             for key in asset.keys:
-                assert "dagster/source_code_locations" in asset.metadata_by_key[key]
+                assert "dagster/code_references" in asset.metadata_by_key[key]
 
                 # `chuck_berry` is the only asset with source code metadata manually
                 # attached to it, which coexists with the automatically attached metadata
                 if op_name == "chuck_berry":
-                    assert (
-                        len(asset.metadata_by_key[key]["dagster/source_code_locations"].sources)
-                        == 2
-                    )
+                    assert len(asset.metadata_by_key[key]["dagster/code_references"].sources) == 2
                 else:
-                    assert (
-                        len(asset.metadata_by_key[key]["dagster/source_code_locations"].sources)
-                        == 1
-                    )
+                    assert len(asset.metadata_by_key[key]["dagster/code_references"].sources) == 1
 
                 assert isinstance(
-                    asset.metadata_by_key[key]["dagster/source_code_locations"].sources[
+                    asset.metadata_by_key[key]["dagster/code_references"].sources[
                         DEFAULT_SOURCE_FILE_KEY
                     ],
-                    LocalFileSource,
+                    LocalFileCodeReference,
                 )
                 meta = cast(
-                    LocalFileSource,
-                    asset.metadata_by_key[key]["dagster/source_code_locations"].sources[
+                    LocalFileCodeReference,
+                    asset.metadata_by_key[key]["dagster/code_references"].sources[
                         DEFAULT_SOURCE_FILE_KEY
                     ],
                 )
