@@ -1,5 +1,32 @@
 # Changelog
 
+# 1.7.4 (core) / 0.23.4 (libraries)
+
+### New
+
+- `TimeWindowPartitionMapping` now supports the `start_offset` and `end_offset` parameters even when the upstream `PartitionsDefinition` is different than the downstream `PartitionsDefinition`. The offset is expressed in units of downstream partitions, so `TimeWindowPartitionMapping(start_offset=-1)` between an hourly upstream and a daily downstream would map each downstream partition to 48 upstream partitions – those for the same and preceding day.
+
+### Bugfixes
+
+- Fixed an issue where certain exceptions in the Dagster daemon would immediately retry instead of waiting for a fixed interval before retrying.
+- Fixed a bug with asset checks in complex asset graphs that include cycles in the underlying nodes.
+- Fixed an issue that would cause unnecessary failures on FIPS-enabled systems due to the use of md5 hashes in non-security-related contexts (thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!)
+- Removed `path` metadata from `UPathIOManager` inputs. This eliminates the creation of `ASSET_OBSERVATION` events for every input on every step for the default I/O manager.
+- Added support for defining `owners` on `@graph_asset`.
+- Fixed an issue where having multiple partitions definitions in a location with the same start date but differing end dates could lead to “`DagsterInvalidSubsetError` when trying to launch runs.
+
+### Documentation
+
+- Fixed a few issues with broken pages as a result of the Dagster+ rename.
+- Renamed a few instances of Dagster Cloud to Dagster+.
+- Added a note about external asset + alert incompatibility to the Dagster+ alerting docs.
+- Fixed references to outdated apis in freshness checks docs.
+
+### Dagster Plus
+
+- When creating a Branch Deployment via GraphQL or the `dagster-cloud branch-deployment` CLI, you can now specify the base deployment. The base deployment will be used for comparing assets for Change Tracking. For example, to set the base deployment to a deployment named `staging`: `dagster-cloud branch-deployment create-or-update --base-deployment-name staging ...`. Note that once a Branch Deployment is created, the base deployment cannot be changed.
+- Fixed an issue where agents serving many branch deployments simultaneously would sometimes raise a `413: Request Entity Too Large` error when uploading a heartbeat to the Dagster Plus servers.
+
 # 1.7.3 (core) / 0.23.3 (libraries)
 
 ### New
