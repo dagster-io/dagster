@@ -1,10 +1,10 @@
 import {
   Box,
   Button,
+  CaptionMono,
   Icon,
   Menu,
   MenuItem,
-  MonoSmall,
   Select,
   TextInput,
 } from '@dagster-io/ui-components';
@@ -98,7 +98,7 @@ export const CodeLinkProtocolSelect = ({}) => {
         />
       ) : (
         <Box padding={{left: 8, top: 2}}>
-          <MonoSmall>{codeLinkProtocol.protocol}</MonoSmall>
+          <CaptionMono>{codeLinkProtocol.protocol}</CaptionMono>
         </Box>
       )}
     </Box>
