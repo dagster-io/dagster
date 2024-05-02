@@ -9,7 +9,6 @@ from dagster import (
     ResourceDependency,
     _check as check,
 )
-from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster_pyspark.resources import PySparkResource
 from pyspark.sql import DataFrame as PySparkDataFrame
@@ -46,7 +45,7 @@ class PartitionedParquetIOManager(ConfigurableIOManager):
         else:
             raise Exception(f"Outputs of type {type(obj)} not supported.")
 
-        context.add_output_metadata({**TableMetadataSet(row_count=row_count), "path": path})
+        context.add_output_metadata({"row_count": row_count, "path": path})
 
     def load_input(self, context) -> Union[PySparkDataFrame, str]:
         path = self._get_path(context)
