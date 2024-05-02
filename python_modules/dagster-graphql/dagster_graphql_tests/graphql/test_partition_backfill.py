@@ -220,6 +220,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
             asset_graph=asset_graph,
             run_tags=backfill.tags,
             backfill_start_time=asset_backfill_data.backfill_start_time,
+            logger=logging.getLogger("fake_logger"),
         ):
             pass
 
