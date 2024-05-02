@@ -86,6 +86,7 @@ from dagster._utils.concurrency import (
     PendingStepInfo,
     get_max_concurrency_limit_value,
 )
+from dagster._utils.warnings import deprecation_warning
 
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
@@ -1124,6 +1125,14 @@ class SqlEventLogStorage(EventLogStorage):
             after_cursor >= -1,
             f"Don't know what to do with negative cursor {after_cursor}",
         )
+
+        if isinstance(dagster_event_type, set) and len(dagster_event_type) > 1:
+            deprecation_warning(
+                "Support for multiple event types to get_logs_for_all_runs_by_log_id",
+                "1.8.0",
+                "You should break up your query into multiple calls, one for each event type.",
+            )
+
         dagster_event_types = (
             {dagster_event_type}
             if isinstance(dagster_event_type, DagsterEventType)
