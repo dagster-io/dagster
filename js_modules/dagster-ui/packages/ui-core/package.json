@@ -14,6 +14,7 @@
     "ts": "tsc -p .",
     "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
+    "generate-routes": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateRoutes.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
