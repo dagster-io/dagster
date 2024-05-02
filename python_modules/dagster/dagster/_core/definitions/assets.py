@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    TypeVar,
     Union,
     cast,
 )
@@ -718,6 +719,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )
             keys_by_output_name_with_prefix[output_name] = key_with_key_prefix
 
+        T = TypeVar("T")
+
+        def _output_dict_to_asset_dict(
+            attr_by_output_name: Optional[Mapping[str, Optional[T]]],
+        ) -> Optional[Mapping[AssetKey, T]]:
+            if not attr_by_output_name:
+                return None
+            return {
+                keys_by_output_name_with_prefix[output_name]: attr
+                for output_name, attr in attr_by_output_name.items()
+                if attr is not None
+            }
+
         check.param_invariant(
             group_name is None or group_names_by_output_name is None,
             "group_name",
@@ -729,11 +743,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()
             }
         elif group_names_by_output_name:
-            group_names_by_key = {
-                keys_by_output_name_with_prefix[output_name]: group_name
-                for output_name, group_name in group_names_by_output_name.items()
-                if group_name is not None
-            }
+            group_names_by_key = _output_dict_to_asset_dict(group_names_by_output_name)
         else:
             group_names_by_key = None
 
@@ -757,54 +767,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 if partition_mappings
                 else None
             ),
-            metadata_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: metadata
-                    for output_name, metadata in metadata_by_output_name.items()
-                    if metadata is not None
-                }
-                if metadata_by_output_name
-                else None
-            ),
-            tags_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: tags
-                    for output_name, tags in tags_by_output_name.items()
-                    if tags is not None
-                }
-                if tags_by_output_name
-                else None
-            ),
-            freshness_policies_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: freshness_policy
-                    for output_name, freshness_policy in freshness_policies_by_output_name.items()
-                    if freshness_policy is not None
-                }
-                if freshness_policies_by_output_name
-                else None
-            ),
-            auto_materialize_policies_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: auto_materialize_policy
-                    for output_name, auto_materialize_policy in auto_materialize_policies_by_output_name.items()
-                    if auto_materialize_policy is not None
-                }
-                if auto_materialize_policies_by_output_name
-                else None
+            metadata_by_key=_output_dict_to_asset_dict(metadata_by_output_name),
+            tags_by_key=_output_dict_to_asset_dict(tags_by_output_name),
+            freshness_policies_by_key=_output_dict_to_asset_dict(freshness_policies_by_output_name),
+            auto_materialize_policies_by_key=_output_dict_to_asset_dict(
+                auto_materialize_policies_by_output_name
             ),
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
-            descriptions_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: description
-                    for output_name, description in descriptions_by_output_name.items()
-                    if description is not None
-                }
-                if descriptions_by_output_name
-                else None
-            ),
+            descriptions_by_key=_output_dict_to_asset_dict(descriptions_by_output_name),
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
