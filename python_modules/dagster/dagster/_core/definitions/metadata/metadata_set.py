@@ -186,18 +186,21 @@ class FreshnessCheckMetadataSet(NamespacedMetadataSet):
     Args:
         freshness_params (Optional[JsonMetadataValue]): The parameters of the rule used for the
             freshness check.
-        overdue_deadline_timestamp (Optional[TimestampMetadataValue]): The time by which an update
-            was expected to occur.
-        overdue_seconds (Optional[float]): If an update did not occur by the deadline, the number
-            of seconds that elapsed between the deadline and the time the check was evaluated.
+        freshness_lower_bound_timestamp (Optional[TimestampMetadataValue]): The latest asset update
+            should be no earlier than this timestamp.
+        latest_cron_tick_timestamp (Optional[TimestampMetadataValue]): If this is cron-based
+            freshness, this is the latest tick of the cron.
         last_updated_timestamp (Optional[TimestampMetadataValue]): The timestamp of the last known
             update to the asset, at the time of the check evaluation.
+        fresh_until_timestamp (Optional[TimestampMetadataValue]): When an asset is fresh, this
+            represents the timestamp when the asset can become stale again.
     """
 
     freshness_params: Optional[JsonMetadataValue] = None
-    overdue_deadline_timestamp: Optional[TimestampMetadataValue] = None
-    overdue_seconds: Optional[float] = None
+    freshness_lower_bound_timestamp: Optional[TimestampMetadataValue] = None
+    latest_cron_tick_timestamp: Optional[TimestampMetadataValue] = None
     last_updated_timestamp: Optional[TimestampMetadataValue] = None
+    fresh_until_timestamp: Optional[TimestampMetadataValue] = None
 
     @classmethod
     def namespace(cls) -> str:

@@ -1,9 +1,10 @@
-from typing import Iterator, Optional, Sequence, cast
+from typing import Iterator, Optional, Sequence
 
 import pendulum
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.metadata.metadata_set import FreshnessCheckMetadataSet
 
 from ...asset_check_spec import AssetCheckKey
 from ...asset_checks import AssetChecksDefinition
@@ -11,11 +12,7 @@ from ...asset_selection import AssetSelection
 from ...decorators import sensor
 from ...run_request import RunRequest
 from ...sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
-from ..utils import (
-    FRESH_UNTIL_METADATA_KEY,
-    ensure_no_duplicate_asset_checks,
-    seconds_in_words,
-)
+from ..utils import ensure_no_duplicate_asset_checks, seconds_in_words
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
 MAXIMUM_RUNTIME_SECONDS = 35  # Due to GRPC communications, only allow this sensor to run for 40 seconds before pausing iteration and resuming in the next run. Leave a bit of time for run requests to be processed.
@@ -103,7 +100,9 @@ def build_sensor_for_freshness_checks(
                     "Expected the dagster event to be an asset check evaluation.",
                 )
                 if evaluation.passed:
-                    next_deadline = cast(float, evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value)
+                    next_deadline = check.not_none(
+                        FreshnessCheckMetadataSet.extract(evaluation.metadata).fresh_until_timestamp
+                    ).value
                     if next_deadline < start_time.timestamp():
                         context.log.info(
                             f"Freshness check {check_key.to_user_string()} previously passed, but "

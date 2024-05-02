@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Sequence, Union
+from typing import Any, Iterable, Sequence, Union
 
 import pendulum
 
@@ -9,11 +9,8 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import (
-    JsonMetadataValue,
-    MetadataValue,
-    TimestampMetadataValue,
-)
+from dagster._core.definitions.metadata import JsonMetadataValue, TimestampMetadataValue
+from dagster._core.definitions.metadata.metadata_set import FreshnessCheckMetadataSet
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
@@ -30,10 +27,6 @@ from ..utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
-    FRESH_UNTIL_METADATA_KEY,
-    FRESHNESS_PARAMS_METADATA_KEY,
-    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
-    LATEST_CRON_TICK_METADATA_KEY,
     TIMEZONE_PARAM_KEY,
     assets_to_keys,
     ensure_no_duplicate_assets,
@@ -169,29 +162,30 @@ def _build_freshness_multi_check(
             )
             passed = latest_record is not None
 
-            metadata: Dict[str, MetadataValue] = {
-                FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
-                LATEST_CRON_TICK_METADATA_KEY: TimestampMetadataValue(deadline.timestamp()),
-            }
-
             # Allows us to distinguish between the case where the asset has never been
             # observed/materialized, and the case where this partition in particular is missing
             latest_record_any_partition = retrieve_latest_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None
             )
 
-            if not passed and latest_record_any_partition is not None:
-                # If this asset has been updated at all before, provide the time at which that
-                # happened as additional metadata.
-                metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY] = TimestampMetadataValue(
-                    check.not_none(get_last_updated_timestamp(latest_record_any_partition, context))
-                )
-            elif passed:
-                metadata[FRESH_UNTIL_METADATA_KEY] = TimestampMetadataValue(
+            metadata = FreshnessCheckMetadataSet(
+                freshness_params=JsonMetadataValue(params_metadata),
+                latest_cron_tick_timestamp=TimestampMetadataValue(deadline.timestamp()),
+                fresh_until_timestamp=TimestampMetadataValue(
                     get_next_cron_tick(
                         deadline_cron, current_time_in_freshness_tz, timezone
                     ).timestamp()
                 )
+                if passed
+                else None,
+                # If this asset has been updated at all before, provide the time at which that
+                # happened as additional metadata.
+                last_updated_timestamp=TimestampMetadataValue(
+                    check.not_none(get_last_updated_timestamp(latest_record_any_partition, context))
+                )
+                if (not passed and latest_record_any_partition is not None)
+                else None,
+            )
 
             yield AssetCheckResult(
                 passed=passed,
@@ -202,7 +196,7 @@ def _build_freshness_multi_check(
                 ),
                 severity=severity,
                 asset_key=asset_key,
-                metadata=metadata,
+                metadata={**metadata},
             )
 
     return the_check

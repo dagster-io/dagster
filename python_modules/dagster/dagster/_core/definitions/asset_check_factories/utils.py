@@ -8,7 +8,8 @@ from dagster._core.definitions.decorators.asset_check_decorator import (
     MultiAssetCheckFunction,
     multi_asset_check,
 )
-from dagster._core.definitions.metadata import FreshnessMetadataSet, JsonMetadataValue
+from dagster._core.definitions.metadata.metadata_set import FreshnessCheckMetadataSet
+from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
@@ -21,16 +22,6 @@ from ..events import AssetKey, CoercibleToAssetKey
 # Constants
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN
 DEFAULT_FRESHNESS_TIMEZONE = "UTC"
-
-# Top-level metadata keys
-LAST_UPDATED_TIMESTAMP_METADATA_KEY = "dagster/last_updated_timestamp"
-FRESHNESS_PARAMS_METADATA_KEY = "dagster/freshness_params"
-# The latest asset record should be no earlier than this timestamp.
-LOWER_BOUND_TIMESTAMP_METADATA_KEY = "dagster/freshness_lower_bound_timestamp"
-# When an asset is fresh, this represents the timestamp when the asset can become stale again.
-FRESH_UNTIL_METADATA_KEY = "dagster/fresh_until_timestamp"
-# If this is cron-based freshness, this is the latest tick of the cron.
-LATEST_CRON_TICK_METADATA_KEY = "dagster/latest_cron_tick_timestamp"
 
 # dagster/freshness_params inner keys
 LOWER_BOUND_DELTA_PARAM_KEY = "lower_bound_delta_seconds"
@@ -138,7 +129,9 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
         return asset_record.timestamp
     else:
         metadata = check.not_none(asset_record.asset_observation).metadata
-        return check.not_none(FreshnessMetadataSet.extract(metadata).last_updated_timestamp).value
+        return check.not_none(
+            FreshnessCheckMetadataSet.extract(metadata).last_updated_timestamp
+        ).value
 
 
 def get_last_updated_timestamp(
@@ -149,7 +142,7 @@ def get_last_updated_timestamp(
     if record.asset_materialization is not None:
         return record.timestamp
     elif record.asset_observation is not None:
-        metadata_value = FreshnessMetadataSet.extract(
+        metadata_value = FreshnessCheckMetadataSet.extract(
             record.asset_observation.metadata
         ).last_updated_timestamp
         if metadata_value is not None:
@@ -248,7 +241,7 @@ def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: 
                 AssetCheckSpec(
                     "freshness_check",
                     asset=asset_key,
-                    metadata={FRESHNESS_PARAMS_METADATA_KEY: params_metadata},
+                    metadata={**FreshnessCheckMetadataSet(freshness_params=params_metadata)},
                     description="Evaluates freshness for targeted asset.",
                 )
                 for asset_key in asset_keys
