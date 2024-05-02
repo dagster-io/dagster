@@ -17,8 +17,6 @@ from dagster import (
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterBackfillFailedError
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
@@ -1060,12 +1058,7 @@ def test_single_run_backfill_full_execution(
                 [],
                 instance,
             )
-            events = instance.get_event_records(
-                EventRecordsFilter(
-                    asset_key=partitioned_asset.key,
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                )
-            )
+            events = instance.fetch_materializations(partitioned_asset.key, limit=5000).records
             assert len(events) == 4
 
             if batch_size > 0 and throw_store_event_batch_error:

@@ -17,7 +17,6 @@ from dagster import (
     DagsterEventType,
     DagsterInstance,
     DailyPartitionsDefinition,
-    EventRecordsFilter,
     Field,
     In,
     Nothing,
@@ -1819,14 +1818,12 @@ def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
     assert "Execution plan is out of sync with the workspace" in logs
 
     assert instance.get_runs_count() == 1
-    assert (
-        len(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=AssetKey(["hourly_asset"]),
-                )
-            )
-        )
-        == 1
-    )
+    run_id = instance.get_run_ids(limit=1)[0]
+    records = instance.get_records_for_run(
+        run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+    ).records
+    planned_events = [record.event_log_entry.dagster_event for record in records]
+    assert len(planned_events) == 1
+    planned_event = planned_events[0]
+    assert planned_event and planned_event.is_asset_materialization_planned
+    assert planned_event.asset_key == AssetKey(["hourly_asset"])

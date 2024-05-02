@@ -31,8 +31,6 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
@@ -757,13 +755,7 @@ def test_report_runless_asset_event():
         assert mats[my_asset_key]
 
         instance.report_runless_asset_event(AssetObservation(my_asset_key))
-        records = instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_OBSERVATION,
-                asset_key=my_asset_key,
-            ),
-            limit=1,
-        )
+        records = instance.fetch_observations(my_asset_key, limit=1).records
         assert len(records) == 1
 
         my_check = "my_check"
