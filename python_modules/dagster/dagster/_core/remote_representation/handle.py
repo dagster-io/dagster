@@ -59,7 +59,7 @@ class JobHandle(
             check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
         )
 
-    def to_string(self):
+    def to_string(self) -> str:
         return f"{self.location_name}.{self.repository_name}.{self.job_name}"
 
     @property

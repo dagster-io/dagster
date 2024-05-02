@@ -892,7 +892,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_job.get_external_origin_id()
+        return self._external_job.handle.to_string()
 
     def get_represented_job(self) -> RepresentedJob:
         return self._external_job

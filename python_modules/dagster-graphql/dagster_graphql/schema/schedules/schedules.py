@@ -91,7 +91,8 @@ class GrapheneSchedule(graphene.ObjectType):
         )
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_schedule.get_external_origin_id()
+        # use semantic selector string for identifier
+        return self._external_schedule.selector.string
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
         default_schedule_status = self._external_schedule.default_status

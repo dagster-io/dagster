@@ -272,6 +272,10 @@ class InstigatorSelector(
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
+    @property
+    def string(self) -> str:
+        return f"{self.location_name}.{self.repository_name}.{self.name}"
+
 
 class GraphSelector(
     NamedTuple(

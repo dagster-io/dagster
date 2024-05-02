@@ -127,8 +127,9 @@ class GrapheneSensor(graphene.ObjectType):
             else None,
         )
 
-    def resolve_id(self, _):
-        return self._external_sensor.get_external_origin_id()
+    def resolve_id(self, _) -> str:
+        # use semantic selector string for identifier
+        return self._external_sensor.selector.string
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
         default_sensor_status = self._external_sensor.default_status
