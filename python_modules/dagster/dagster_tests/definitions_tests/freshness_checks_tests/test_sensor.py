@@ -12,18 +12,18 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.freshness_checks.sensor import (
+    build_sensor_for_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.utils import (
+    FRESH_UNTIL_METADATA_KEY,
+)
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.freshness_checks.last_update import (
-    build_last_update_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.sensor import (
-    build_sensor_for_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.utils import (
-    FRESH_UNTIL_METADATA_KEY,
-)
 from dagster._core.definitions.metadata import FloatMetadataValue
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.sensor_definition import build_sensor_context

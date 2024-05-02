@@ -111,6 +111,18 @@ from dagster._config.source import (
     StringSource as StringSource,
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
+from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+    build_last_update_freshness_checks as build_last_update_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.freshness_checks.sensor import (
+    build_sensor_for_freshness_checks as build_sensor_for_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
+    build_time_partition_freshness_checks as build_time_partition_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.schema_change_checks import (
+    build_column_schema_change_checks as build_column_schema_change_checks,
+)
 from dagster._core.definitions.asset_check_spec import (
     AssetCheckKey as AssetCheckKey,
     AssetCheckSeverity as AssetCheckSeverity,
@@ -212,15 +224,6 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.external_asset import (
     external_asset_from_spec as external_asset_from_spec,
     external_assets_from_specs as external_assets_from_specs,
-)
-from dagster._core.definitions.freshness_checks.last_update import (
-    build_last_update_freshness_checks as build_last_update_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.sensor import (
-    build_sensor_for_freshness_checks as build_sensor_for_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.time_partition import (
-    build_time_partition_freshness_checks as build_time_partition_freshness_checks,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy_sensor_definition import (
@@ -376,9 +379,6 @@ from dagster._core.definitions.schedule_definition import (
     ScheduleDefinition as ScheduleDefinition,
     ScheduleEvaluationContext as ScheduleEvaluationContext,
     build_schedule_context as build_schedule_context,
-)
-from dagster._core.definitions.schema_change_checks import (
-    build_column_schema_change_checks as build_column_schema_change_checks,
 )
 from dagster._core.definitions.selector import (
     CodeLocationSelector as CodeLocationSelector,

@@ -15,9 +15,9 @@ from typing import (
 from typing_extensions import TypedDict
 
 import dagster._check as check
-from dagster import AssetCheckSeverity
 from dagster._core.definitions import (
     AssetCheckEvaluation,
+    AssetCheckSeverity,
     AssetKey,
     AssetMaterialization,
     AssetObservation,

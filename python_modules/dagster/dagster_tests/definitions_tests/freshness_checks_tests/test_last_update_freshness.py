@@ -9,14 +9,16 @@ from dagster import (
     asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.utils import (
+    unique_id_from_asset_keys,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.freshness_checks.last_update import (
-    build_last_update_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.metadata import (
     JsonMetadataValue,
     TimestampMetadataValue,

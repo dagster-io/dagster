@@ -12,6 +12,7 @@ from dagster import (
     define_asset_job,
     materialize,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.execution.context.compute import AssetExecutionContext
 
@@ -216,3 +217,24 @@ def test_multiple_assets():
         ["Column schema changed", "Column type changes:", "bar: str -> int", "baz: int -> float"],
         False,
     )
+
+
+def test_multiple_calls():
+    @asset
+    def asset_1():
+        pass
+
+    @asset
+    def asset_2():
+        pass
+
+    checks_1 = build_column_schema_change_checks(assets=[asset_1])
+    checks_2 = build_column_schema_change_checks(assets=[asset_2], severity=AssetCheckSeverity.WARN)
+    result = execute_checks([*checks_1, *checks_2])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    for check_eval in check_evals:
+        assert check_eval.passed
+        assert check_eval.description == "The asset has been materialized fewer than 2 times"
