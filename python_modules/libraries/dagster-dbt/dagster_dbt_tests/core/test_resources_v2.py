@@ -315,14 +315,17 @@ def test_dbt_cli_debug_execution(
     reason="`dbt retry` with `--target-path` support is only available in `dbt-core>=1.7.9`",
 )
 def test_dbt_retry_execution(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    monkeypatch: pytest.MonkeyPatch,
+    test_jaffle_shop_manifest: Dict[str, Any],
+    dbt: DbtCliResource,
+    testrun_uid: str,
 ) -> None:
+    monkeypatch.setenv(
+        "DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH", f"target/{testrun_uid}.duckdb"
+    )
+
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        test_jaffle_shop_path.joinpath(
-            os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH"]
-        ).unlink()
-
         dbt_invocation = dbt.cli(["run"], context=context, raise_on_error=False)
 
         assert not dbt_invocation.is_successful()
