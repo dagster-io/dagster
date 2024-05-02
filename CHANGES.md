@@ -17,9 +17,9 @@
 
 ### Documentation
 
-- Fixed a few issues with broken pages as a result of the Dagster+ rename
-- Renamed a few instances of Dagster Cloud to Dagster+
-- Added a note about external asset + alert incompatibility to the Dagster+ alerting docs
+- Fixed a few issues with broken pages as a result of the Dagster+ rename.
+- Renamed a few instances of Dagster Cloud to Dagster+.
+- Added a note about external asset + alert incompatibility to the Dagster+ alerting docs.
 - Fixed references to outdated apis in freshness checks docs.
 
 ### Dagster Plus
