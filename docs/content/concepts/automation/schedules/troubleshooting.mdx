@@ -40,7 +40,15 @@ Refer to the [Code locations documentation](/concepts/code-locations) for more i
 
 ---
 
-## Step 3: Verify the schedule's interval configuration
+## Step 3: Check for execution failures
+
+Next, check that the schedule executed successfully. You can do this by looking at the **Last tick** column in the **Schedules tab**.
+
+If the scheduled failed to execute, this column will contain a **Failed** badge. Click the badge to display the error and stack trace describing the failure.
+
+---
+
+## Step 4: Verify the schedule's interval configuration
 
 Next, verify that the schedule is using the time interval you expect. In the **Schedules** tab, locate the schedule and look at the **Schedule** column:
 
@@ -57,9 +65,9 @@ Verify that the time is what you expect, including the timezone.
 
 ---
 
-## Step 4: Verify that the UI is using the latest version of the schedule
+## Step 5: Verify that the UI is using your latest Dagster code
 
-The next step is to verify that the UI is using the latest version of the schedule code. Use the tabs to view instructions for the version of Dagster you're using.
+The next step is to verify that the UI is using the latest version of your Dagster code. Use the tabs to view instructions for the version of Dagster you're using.
 
 <TabGroup>
 <TabItem name="Local webserver or Dagster OSS">
@@ -83,7 +91,7 @@ The next step is to verify that the UI is using the latest version of the schedu
 
 ---
 
-## Step 4: Verify dagster-daemon setup
+## Step 6: Verify your dagster-daemon setup
 
 <Note>This section is applicable to Open Source (OSS) deployments.</Note>
 
@@ -109,9 +117,7 @@ If the logs don't indicate the cause of the issue, move on to the next step.
 
 ### Check for execution failures
 
-1. In the Dagster UI, click **Overview > Schedules tab**.
-2. Locate the schedule.
-3. In the **Last tick** column, check for a **Failure** badge. If the schedule failed to execute, you can click the badge to display the error and stack trace describing the failure.
+The last step is to check that the schedule executed successfully. If you didn't do this already, refer to [Step 3](#step-3-check-for-execution-failures) for more information.
 
 ---
 
