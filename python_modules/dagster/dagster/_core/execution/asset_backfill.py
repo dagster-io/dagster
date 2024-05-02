@@ -1197,8 +1197,8 @@ def execute_asset_backfill_iteration_inner(
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
         target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
-        # check if any roots have already been requested, this make the bfs search more efficent
-        # later in the iteration
+        # Because the code server may have failed while requesting roots, some roots may have
+        # already been requested. Checking here will reduce the amount of BFS work later in the iteration.
         not_yet_requested = [
             root for root in target_roots if root not in asset_backfill_data.requested_subset
         ]
