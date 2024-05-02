@@ -1,4 +1,4 @@
-import {DependencyList, EffectCallback, useRef} from 'react';
+import {DependencyList, EffectCallback, useMemo} from 'react';
 /**
  * DO NOT CALL `setState` from within this effect or from any function called by this effect.
  * THIS IS NOT INTENDED TO TRIGGER REACT UPDATES.
@@ -8,15 +8,8 @@ import {DependencyList, EffectCallback, useRef} from 'react';
  */
 
 export function useDangerousRenderEffect(effect: EffectCallback, deps: DependencyList) {
-  const initialRender = useRef(true);
-  const depsRef = useRef(deps);
-
-  const dependenciesChanged = deps.some((dep, index) => dep !== depsRef.current[index]);
-
-  // Run effect if it's the first render or if dependencies have changed
-  if (initialRender.current || dependenciesChanged) {
-    depsRef.current = deps;
-    initialRender.current = false;
+  useMemo(() => {
     effect();
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
 }
