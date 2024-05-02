@@ -2268,7 +2268,7 @@ def test_asset_out_with_tags():
 
 
 def test_asset_definition_single_no_node():
-    asset1 = AssetsDefinition.single("asset1")
+    asset1 = AssetsDefinition.from_spec(AssetSpec("asset1"))
     asset1_key = asset1.key
     assert asset1_key == AssetKey("asset1")
     assert asset1.metadata_by_key[asset1_key] == {"dagster/asset_execution_type": "UNEXECUTABLE"}
@@ -2280,16 +2280,18 @@ def test_asset_definition_single_no_node():
     assert asset1.partitions_def is None
 
     partitions_def = StaticPartitionsDefinition(["a", "b"])
-    asset2 = AssetsDefinition.single(
-        key="asset2",
-        metadata={"foo": "fooval", "bar": 1},
-        group_name="group1",
-        description="the description",
-        io_manager_key="some_io_manager_key",
-        tags={"foo": "bar"},
-        owners=["someone@dagsterlabs.com"],
+    asset2 = AssetsDefinition.from_spec(
+        AssetSpec(
+            key="asset2",
+            metadata={"foo": "fooval", "bar": 1},
+            group_name="group1",
+            description="the description",
+            tags={"foo": "bar"},
+            owners=["someone@dagsterlabs.com"],
+            deps=["asset1"],
+        ),
         partitions_def=partitions_def,
-        deps=["asset1"],
+        io_manager_key="some_io_manager_key",
     )
     asset2_key = asset2.key
     assert asset2_key == AssetKey("asset2")
@@ -2312,4 +2314,4 @@ def test_asset_definition_single_with_node():
     def op1(in1):
         pass
 
-    asset1 = AssetsDefinition.single("asset1", node_def=op1)
+    asset1 = AssetsDefinition.from_spec(AssetSpec("asset1"), node_def=op1)

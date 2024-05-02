@@ -59,7 +59,7 @@ from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
 
-from .asset_dep import CoercibleToAssetDep
+from .asset_spec import AssetSpec
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
@@ -443,24 +443,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @experimental
     @experimental_param(param="resource_defs")
     @experimental_param(param="io_manager_def")
-    @experimental_param(param="owners")
     @staticmethod
-    def single(
-        key: CoercibleToAssetKey,
+    def from_spec(
+        spec: AssetSpec,
         *,
-        deps: Optional[Iterable[CoercibleToAssetDep]] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         io_manager_def: Optional[object] = None,
         io_manager_key: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        group_name: Optional[str] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners: Optional[Sequence[str]] = None,
         node_def: Optional[NodeDefinition] = None,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         can_subset: bool = False,
@@ -468,24 +460,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """Creates an AssetsDefinition that defines a single asset.
 
         Args:
-            key (Optional[Union[AssetKey, str, Sequence[str]]]): The key for this asset.
-            deps (Optional[Sequence[Union[AssetDep, AssetsDefinition, SourceAsset, AssetKey, str]]]):
-                The assets that are upstream dependencies, but do not correspond to a parameter of the
-                decorated function. If the AssetsDefinition for a multi_asset is provided, dependencies on
-                all assets created by the multi_asset will be created.
-            metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
-            tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
-                attached to runs of the asset.
+            spec: Optional[AssetSpec]: The spec for the asset.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the asset.
-            group_name (Optional[str]): A string name used to organize multiple assets into groups.
-                If not provided, the name "default" is used.
             resource_defs (Optional[Mapping[str, object]]):
                 (Experimental) A mapping of resource keys to resources. These resources
                 will be initialized during execution, and can be accessed from the
                 context within the body of the op or graph.
-            auto_materialize_policy (AutoMaterializePolicy): (Experimental) Configure Dagster to automatically materialize
-                this asset according to its FreshnessPolicy and when upstream dependencies change.
             backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
                 BackfillPolicy.
             code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
@@ -493,9 +474,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 output when given the same inputs.
             check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
                 execute in the decorated function after materializing the asset.
-            owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
-                string can be a user's email address, or a team name prefixed with `team:`,
-                e.g. `team:finops`.
             io_manager_key (Optional[str]): The resource key of the IOManager used
                 for storing the output of the op as an asset, and for loading it in downstream ops
                 (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
@@ -508,32 +486,32 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
             check.invariant(check_specs is None)
             check.invariant(backfill_policy is None)
-            check.invariant(auto_materialize_policy is None)
+            check.invariant(spec.auto_materialize_policy is None)
             check.invariant(keys_by_input_name is None)
             check.invariant(can_subset is False)
 
             metadata = {
-                **(metadata or {}),
+                **(spec.metadata or {}),
                 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value,
             }
 
             with disable_dagster_warnings():
 
                 @asset(
-                    key=key,
+                    key=spec.key,
                     metadata=metadata,
-                    group_name=group_name,
-                    description=description,
+                    group_name=spec.group_name,
+                    description=spec.description,
                     partitions_def=partitions_def,
                     io_manager_key=io_manager_key,
                     io_manager_def=io_manager_def,
                     resource_defs=resource_defs,
-                    tags=tags,
-                    owners=owners,
-                    deps=deps,
+                    tags=spec.tags,
+                    owners=spec.owners,
+                    deps=spec.deps,
                 )
                 def _shim_assets_def():
-                    raise NotImplementedError(f"Asset {key} is not executable")
+                    raise NotImplementedError(f"Asset {spec.key} is not executable")
 
             return _shim_assets_def
 
@@ -541,25 +519,25 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check.invariant(len(node_def.output_defs) == 1)
             output_name = node_def.output_defs[0].name
 
-            key = AssetKey.from_coercible(key)
             return AssetsDefinition._from_node(
                 node_def=node_def,
                 keys_by_input_name=keys_by_input_name,
-                keys_by_output_name={output_name: key},
+                keys_by_output_name={output_name: spec.key},
                 partitions_def=partitions_def,
                 resource_defs=resource_defs,
-                group_name=group_name,
-                group_names_by_output_name={output_name: group_name},
-                descriptions_by_output_name={output_name: description}
-                if description is not None
+                group_name=spec.group_name,
+                descriptions_by_output_name={output_name: spec.description}
+                if spec.description is not None
                 else None,
-                metadata_by_output_name={output_name: metadata},
-                tags_by_output_name={output_name: tags},
-                auto_materialize_policies_by_output_name={output_name: auto_materialize_policy},
+                metadata_by_output_name={output_name: spec.metadata},
+                tags_by_output_name={output_name: spec.tags},
+                auto_materialize_policies_by_output_name={
+                    output_name: spec.auto_materialize_policy
+                },
                 backfill_policy=backfill_policy,
                 can_subset=can_subset,
                 check_specs=check_specs,
-                owners_by_key={key: owners} if owners is not None else None,
+                owners_by_key={spec.key: spec.owners} if spec.owners is not None else None,
             )
 
     @public
