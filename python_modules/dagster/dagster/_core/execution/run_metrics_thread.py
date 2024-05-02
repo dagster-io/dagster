@@ -62,7 +62,11 @@ def _get_container_metrics(
     # calculate cpu_limit
     cpu_quota_us = metrics.get("cpu_cfs_quota_us")
     cpu_period_us = metrics.get("cpu_cfs_period_us")
-    cpu_usage_ms = metrics.get("cpu_usage") * 1000  # convert from seconds to milliseconds
+    cpu_usage = metrics.get("cpu_usage")
+    cpu_usage_ms = None
+    if cpu_usage is not None:
+        cpu_usage_ms = cpu_usage * 1000  # convert from seconds to milliseconds
+
     cpu_limit_ms = None
     if cpu_quota_us and cpu_quota_us > 0 and cpu_period_us and cpu_period_us > 0:
         # Why the 1000 factor is a bit counterintuitive:
