@@ -3753,7 +3753,18 @@ class TestEventLogStorage:
                     limit=1,
                     ascending=False,
                 ).records[0]
-                assert asset_entry.last_materialization_record == event_log_record
+
+                if self.is_sqlite(storage):
+                    # sqlite storages are run sharded, so the storage ids in the run-shard will be
+                    # different from the storage ids in the index shard.  We therefore cannot
+                    # compare records directly for sqlite. But we can compare event log entries.
+                    assert (
+                        asset_entry.last_materialization_record
+                        and asset_entry.last_materialization_record.event_log_entry
+                        == event_log_record.event_log_entry
+                    )
+                else:
+                    assert asset_entry.last_materialization_record == event_log_record
 
                 # get the planned materialization from the one asset_job run
                 materialization_planned_record = storage.get_records_for_run(
