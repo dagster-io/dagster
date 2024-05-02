@@ -36,16 +36,7 @@ from .metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,
     TableMetadataSet as TableMetadataSet,
 )
-from .table import (  # re-exported
-    TableColumn as TableColumn,
-    TableColumnConstraints as TableColumnConstraints,
-    TableColumnDep as TableColumnDep,
-    TableColumnLineage as TableColumnLineage,
-    TableConstraints as TableConstraints,
-    TableRecord as TableRecord,
-    TableSchema as TableSchema,
-)
-from .types import (
+from .metadata_value import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
     DagsterJobMetadataValue as DagsterJobMetadataValue,
@@ -65,6 +56,15 @@ from .types import (
     TextMetadataValue as TextMetadataValue,
     TimestampMetadataValue as TimestampMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
+)
+from .table import (  # re-exported
+    TableColumn as TableColumn,
+    TableColumnConstraints as TableColumnConstraints,
+    TableColumnDep as TableColumnDep,
+    TableColumnLineage as TableColumnLineage,
+    TableConstraints as TableConstraints,
+    TableRecord as TableRecord,
+    TableSchema as TableSchema,
 )
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]

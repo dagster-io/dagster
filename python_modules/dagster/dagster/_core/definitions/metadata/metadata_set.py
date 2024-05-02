@@ -12,7 +12,7 @@ from typing_extensions import TypeVar
 from dagster._model import DagsterModel
 from dagster._model.pydantic_compat_layer import model_fields
 
-from .types import MetadataValue, TableColumnLineage, TableSchema
+from .metadata_value import MetadataValue, TableColumnLineage, TableSchema
 
 T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
 
