@@ -156,7 +156,7 @@ export const AssetEventDetail = ({
       )}
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>System tags</Subheading>
+        <Subheading>Tags</Subheading>
         <AssetEventSystemTags event={event} collapsible />
       </Box>
 
