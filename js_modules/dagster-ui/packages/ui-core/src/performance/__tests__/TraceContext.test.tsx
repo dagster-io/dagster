@@ -8,8 +8,8 @@ import {
   OrphanDependenciesTraceContext,
   TraceContext,
   useBlockTraceOnQueryResult,
-  useDependency,
-  useDependencyWithIsSuccessful,
+  useTraceDependency,
+  useBlockTraceUntilTrue,
 } from '../TraceContext';
 
 describe('TraceContext', () => {
@@ -56,7 +56,7 @@ describe('useBlockTraceOnQueryResult', () => {
   });
 });
 
-describe('useDependency', () => {
+describe('useTraceDependency', () => {
   it('adds, completes, and cancels dependencies correctly', () => {
     const mockAddDependency = jest.fn();
     const mockCompleteDependency = jest.fn();
@@ -72,7 +72,7 @@ describe('useDependency', () => {
       </TraceContext.Provider>
     );
 
-    const {unmount} = renderHook(() => useDependency('testDep'), {wrapper});
+    const {unmount} = renderHook(() => useTraceDependency('testDep'), {wrapper});
 
     expect(mockAddDependency).toHaveBeenCalledTimes(1);
     unmount();
@@ -99,14 +99,14 @@ describe('OrphanDependenciesTraceContext', () => {
       </TraceContext.Provider>
     );
 
-    const {unmount} = renderHook(() => useDependency('testDep'), {wrapper});
+    const {unmount} = renderHook(() => useTraceDependency('testDep'), {wrapper});
     unmount();
     expect(mockAddDependency).not.toHaveBeenCalled();
     expect(mockCompleteDependency).not.toHaveBeenCalled();
   });
 });
 
-describe('useDependencyWithIsSuccessful', () => {
+describe('useBlockTraceUntilTrue', () => {
   it('calls completeDependency with SUCCESS when isSuccessful is true', async () => {
     const mockCompleteDependency = jest.fn();
     const context = {
@@ -119,7 +119,7 @@ describe('useDependencyWithIsSuccessful', () => {
     );
 
     const {rerender, unmount} = renderHook(
-      ({name, isSuccessful}: any) => useDependencyWithIsSuccessful(name, isSuccessful, 'uid123'),
+      ({name, isSuccessful}: any) => useBlockTraceUntilTrue(name, isSuccessful, 'uid123'),
       {
         initialProps: {name: 'testDep', isSuccessful: false},
         wrapper,

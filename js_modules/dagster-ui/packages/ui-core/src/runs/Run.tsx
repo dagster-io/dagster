@@ -39,7 +39,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
-import {CompletionType, useDependency} from '../performance/TraceContext';
+import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
 interface RunProps {
   runId: string;
@@ -100,7 +100,7 @@ export const Run = memo((props: RunProps) => {
     });
   };
 
-  const logsDependency = useDependency('RunLogs');
+  const logsDependency = useTraceDependency('RunLogs');
 
   return (
     <RunContext.Provider value={run}>
@@ -135,7 +135,7 @@ const OnLogsLoaded = ({
   dependency,
 }: {
   trace: RunRootTrace;
-  dependency: ReturnType<typeof useDependency>;
+  dependency: ReturnType<typeof useTraceDependency>;
 }) => {
   React.useLayoutEffect(() => {
     trace.onLogsLoaded();

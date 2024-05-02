@@ -7,7 +7,7 @@ import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
-import {useDependencyWithIsSuccessful} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -222,7 +222,7 @@ export function useAssetLayout(
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
   // Add a UID to create a new dependency whenever the layout inputs change
-  useDependencyWithIsSuccessful('AssetGraphLayout', !loading && !!state.layout, uid.current);
+  useBlockTraceUntilTrue('AssetGraphLayout', !loading && !!state.layout, uid.current);
 
   return {
     loading,
