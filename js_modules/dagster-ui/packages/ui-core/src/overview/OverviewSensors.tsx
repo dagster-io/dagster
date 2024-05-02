@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
-import {useContext, useMemo, useState} from 'react';
+import {useContext, useMemo} from 'react';
 
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewSensorTable} from './OverviewSensorsTable';
@@ -61,11 +61,13 @@ export const OverviewSensors = () => {
     defaults: {search: ''},
   });
 
+  const [sensorTypes, setSensorTypes] = useQueryPersistedState<Set<SensorType>>({
+    encode: (vals) => ({sensorType: vals.size ? Array.from(vals).join(',') : undefined}),
+    decode: (qs) => new Set((qs.sensorType?.split(',') as SensorType[]) || []),
+  });
+
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
-
-  const [sensorTypes, setSensorTypes] = useState<Set<SensorType>>(() => new Set());
-
   const sensorTypeFilter = useStaticSetFilter({
     name: 'Sensor type',
     allValues: ALL_SENSOR_TYPE_FILTERS,
