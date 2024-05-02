@@ -1269,6 +1269,7 @@ def execute_asset_backfill_iteration_inner(
             failed_and_downstream_subset=failed_and_downstream_subset,
             dynamic_partitions_store=instance_queryer,
             current_time=backfill_start_time,
+            logger=logger,
         ),
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
@@ -1414,6 +1415,7 @@ def should_backfill_atomic_asset_partitions_unit(
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
     current_time: datetime,
+    logger: logging.Logger,
 ) -> bool:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
@@ -1426,6 +1428,15 @@ def should_backfill_atomic_asset_partitions_unit(
             or candidate in materialized_subset
             or candidate in requested_subset
         ):
+            if candidate not in target_subset:
+                reason = "not targeted by backfill"
+            elif candidate in failed_and_downstream_subset:
+                reason = "in failed and downstream subset"
+            elif candidate in materialized_subset:
+                reason = "already materialized by backfill"
+            else:  # candidate in requested_subset
+                reason = "already requested by backfill"
+            logger.info(f"Removing {candidate} from request list. Reason: {reason}")
             return False
 
         parent_partitions_result = asset_graph.get_parents_partitions(
@@ -1457,6 +1468,11 @@ def should_backfill_atomic_asset_partitions_unit(
                     asset_partitions_to_request_map,
                 )
             ):
+                logger.info(
+                    f"Removing {candidate} from request list. Reason: Parent asset {parent} is in "
+                    f"the target subset, has not been materialized, and {candidate} cannot be "
+                    f"materialized in the same run as {parent}"
+                )
                 return False
 
     return True
