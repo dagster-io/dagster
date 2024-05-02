@@ -16,17 +16,6 @@ export type MetadataEntryFragment_BoolMetadataEntry = {
   description: string | null;
 };
 
-export type MetadataEntryFragment_CodeReferencesMetadataEntry = {
-  __typename: 'CodeReferencesMetadataEntry';
-  label: string;
-  description: string | null;
-  sources: Array<{
-    __typename: 'SourceEntry';
-    key: string;
-    source: {__typename: 'LocalFileCodeReference'; filePath: string; lineNumber: number};
-  }>;
-};
-
 export type MetadataEntryFragment_FloatMetadataEntry = {
   __typename: 'FloatMetadataEntry';
   floatValue: number | null;
@@ -187,7 +176,6 @@ export type MetadataEntryFragment_UrlMetadataEntry = {
 export type MetadataEntryFragment =
   | MetadataEntryFragment_AssetMetadataEntry
   | MetadataEntryFragment_BoolMetadataEntry
-  | MetadataEntryFragment_CodeReferencesMetadataEntry
   | MetadataEntryFragment_FloatMetadataEntry
   | MetadataEntryFragment_IntMetadataEntry
   | MetadataEntryFragment_JobMetadataEntry

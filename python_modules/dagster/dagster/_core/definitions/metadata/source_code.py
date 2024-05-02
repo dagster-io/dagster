@@ -52,7 +52,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
             the `DEFAULT_SOURCE_FILE_KEY` constant.
     """
 
-    sources: Mapping[str, LocalFileCodeReference] = {}
+    code_references: Mapping[str, LocalFileCodeReference]
 
     @property
     def value(self) -> "CodeReferencesMetadataValue":
@@ -61,24 +61,17 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
 
 def source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileCodeReference]:
     cwd = os.getcwd()
-    origin_file: Optional[str] = None
-    origin_line = None
-    try:
-        origin_file = os.path.abspath(os.path.join(cwd, inspect.getsourcefile(fn)))  # type: ignore
-        origin_file = check.not_none(origin_file)
-        origin_line = inspect.getsourcelines(fn)[1]
-    except TypeError:
-        return None
 
-    return LocalFileCodeReference(
-        file_path=origin_file,
-        line_number=origin_line,
-    )
+    origin_file = os.path.abspath(os.path.join(cwd, inspect.getsourcefile(fn)))  # type: ignore
+    origin_file = check.not_none(origin_file)
+    origin_line = inspect.getsourcelines(fn)[1]
+
+    return LocalFileCodeReference(file_path=origin_file, line_number=origin_line)
 
 
 class CodeReferencesMetadataSet(NamespacedMetadataSet):
-    """Metadata entries that apply to asset definitions and which specify the source code location
-    for the asset.
+    """Metadata entries that apply to asset definitions and which specify the location where
+    source code for the asset can be found.
     """
 
     code_references: CodeReferencesMetadataValue
@@ -93,7 +86,7 @@ def _with_code_source_single_definition(
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
 
-    # SourceAsset doesn't have an op definition to point to - cachable assets
+    # SourceAsset doesn't have an op definition to point to - cacheable assets
     # will be supported eventually but are a bit trickier
     if not isinstance(assets_def, AssetsDefinition):
         return assets_def
@@ -121,7 +114,7 @@ def _with_code_source_single_definition(
                 )
                 sources_for_asset = {
                     **sources,
-                    **existing_source_code_metadata.code_references.sources,
+                    **existing_source_code_metadata.code_references.code_references,
                 }
             except pydantic.ValidationError:
                 pass
@@ -129,7 +122,7 @@ def _with_code_source_single_definition(
             metadata_by_key[key] = {
                 **metadata_by_key.get(key, {}),
                 **CodeReferencesMetadataSet(
-                    code_references=CodeReferencesMetadataValue(sources=sources_for_asset)
+                    code_references=CodeReferencesMetadataValue(code_references=sources_for_asset)
                 ),
             }
 
@@ -137,7 +130,7 @@ def _with_code_source_single_definition(
 
 
 @experimental
-def with_source_code_links(
+def with_source_code_references(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
     """Wrapper function which attaches source code metadata to the provided asset definitions.

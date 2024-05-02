@@ -170,7 +170,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                             lineNumber=source.line_number,
                         ),
                     )
-                    for source_key, source in value.sources.items()
+                    for source_key, source in value.code_references.items()
                 ],
             )
         elif isinstance(value, TableMetadataValue):

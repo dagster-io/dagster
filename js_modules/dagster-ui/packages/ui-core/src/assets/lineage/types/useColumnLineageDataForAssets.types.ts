@@ -15,7 +15,6 @@ export type AssetColumnLineageQuery = {
     metadataEntries: Array<
       | {__typename: 'AssetMetadataEntry'; label: string}
       | {__typename: 'BoolMetadataEntry'; label: string}
-      | {__typename: 'CodeReferencesMetadataEntry'; label: string}
       | {__typename: 'FloatMetadataEntry'; label: string}
       | {__typename: 'IntMetadataEntry'; label: string}
       | {__typename: 'JobMetadataEntry'; label: string}
@@ -51,7 +50,6 @@ export type AssetColumnLineageQuery = {
       metadataEntries: Array<
         | {__typename: 'AssetMetadataEntry'; label: string}
         | {__typename: 'BoolMetadataEntry'; label: string}
-        | {__typename: 'CodeReferencesMetadataEntry'; label: string}
         | {__typename: 'FloatMetadataEntry'; label: string}
         | {__typename: 'IntMetadataEntry'; label: string}
         | {__typename: 'JobMetadataEntry'; label: string}

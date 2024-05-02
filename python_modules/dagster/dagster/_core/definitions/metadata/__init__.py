@@ -62,9 +62,9 @@ from .source_code import (
     CodeReferencesMetadataSet as CodeReferencesMetadataSet,
     CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     LocalFileCodeReference as LocalFileCodeReference,
-    with_source_code_links as with_source_code_links,
+    with_source_code_references as with_source_code_references,
 )
-from .table import (  # re-exported  # re-exported  # re-exported
+from .table import (  # re-exported
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
     TableColumnDep as TableColumnDep,

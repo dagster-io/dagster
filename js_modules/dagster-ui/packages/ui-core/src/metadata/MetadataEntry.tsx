@@ -257,8 +257,6 @@ export const MetadataEntry = ({
           </IconButton>
         </Group>
       );
-    case 'CodeReferencesMetadataEntry':
-      return <>{entry.label}</>;
     default:
       return assertUnreachable(entry);
   }

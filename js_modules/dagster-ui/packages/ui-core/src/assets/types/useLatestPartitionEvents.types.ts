@@ -30,20 +30,6 @@ export type AssetOverviewMetadataEventsQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
-              }
-            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -198,20 +184,6 @@ export type AssetOverviewMetadataEventsQuery = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
               }
             | {
                 __typename: 'FloatMetadataEntry';

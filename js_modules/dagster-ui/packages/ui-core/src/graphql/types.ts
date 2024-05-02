@@ -168,7 +168,6 @@ export type AssetCheckEvaluation = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -448,7 +447,6 @@ export type AssetNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -757,13 +755,6 @@ export type ClaimedConcurrencySlot = {
   stepKey: Scalars['String']['output'];
 };
 
-export type CodeReferencesMetadataEntry = MetadataEntry & {
-  __typename: 'CodeReferencesMetadataEntry';
-  description: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  sources: Array<SourceEntry>;
-};
-
 export type CompositeConfigType = ConfigType & {
   __typename: 'CompositeConfigType';
   description: Maybe<Scalars['String']['output']>;
@@ -1048,7 +1039,6 @@ export type DagsterType = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1142,7 +1132,6 @@ export type DisplayableEvent = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1218,7 +1207,6 @@ export type EngineEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1458,7 +1446,6 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1559,7 +1546,6 @@ export type ExpectationResult = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1587,7 +1573,6 @@ export type FailureMetadata = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1694,7 +1679,6 @@ export type HandledOutputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -1765,7 +1749,6 @@ export type IPipelineSnapshot = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -1836,7 +1819,6 @@ export type InputDefinition = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -2059,7 +2041,6 @@ export type Job = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2249,7 +2230,6 @@ export type ListDagsterType = DagsterType &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2294,7 +2274,6 @@ export type LoadedInputEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2319,12 +2298,6 @@ export type LoadedInputEvent = DisplayableEvent &
     upstreamOutputName: Maybe<Scalars['String']['output']>;
     upstreamStepKey: Maybe<Scalars['String']['output']>;
   };
-
-export type LocalFileCodeReference = {
-  __typename: 'LocalFileCodeReference';
-  filePath: Scalars['String']['output'];
-  lineNumber: Scalars['Int']['output'];
-};
 
 export type LocationStateChangeEvent = {
   __typename: 'LocationStateChangeEvent';
@@ -2467,7 +2440,6 @@ export type MaterializationEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2845,7 +2817,6 @@ export type NullableDagsterType = DagsterType &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2896,7 +2867,6 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -2937,7 +2907,6 @@ export type ObservationEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -2979,7 +2948,6 @@ export type OutputDefinition = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -3300,7 +3268,6 @@ export type Pipeline = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -3527,7 +3494,6 @@ export type PipelineSnapshot = IPipelineSnapshot &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -3962,7 +3928,6 @@ export type RegularDagsterType = DagsterType & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -4182,7 +4147,6 @@ export type ResourceInitFailureEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4221,7 +4185,6 @@ export type ResourceInitStartedEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4260,7 +4223,6 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -4971,14 +4933,6 @@ export type SolidStepStatusUnavailableError = Error & {
   message: Scalars['String']['output'];
 };
 
-export type SourceEntry = {
-  __typename: 'SourceEntry';
-  key: Scalars['String']['output'];
-  source: SourceLocation;
-};
-
-export type SourceLocation = LocalFileCodeReference;
-
 export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
   childUniqueIds: Array<Scalars['String']['output']>;
@@ -4986,7 +4940,6 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -5092,7 +5045,6 @@ export type StepWorkerStartedEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -5131,7 +5083,6 @@ export type StepWorkerStartingEvent = DisplayableEvent &
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
-      | CodeReferencesMetadataEntry
       | FloatMetadataEntry
       | IntMetadataEntry
       | JobMetadataEntry
@@ -5376,7 +5327,6 @@ export type TypeCheck = DisplayableEvent & {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -5416,7 +5366,6 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
-    | CodeReferencesMetadataEntry
     | FloatMetadataEntry
     | IntMetadataEntry
     | JobMetadataEntry
@@ -6903,21 +6852,6 @@ export const buildClaimedConcurrencySlot = (
     __typename: 'ClaimedConcurrencySlot',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'ullam',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'ut',
-  };
-};
-
-export const buildCodeReferencesMetadataEntry = (
-  overrides?: Partial<CodeReferencesMetadataEntry>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'CodeReferencesMetadataEntry'} & CodeReferencesMetadataEntry => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('CodeReferencesMetadataEntry');
-  return {
-    __typename: 'CodeReferencesMetadataEntry',
-    description:
-      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'beatae',
-    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'eveniet',
-    sources: overrides && overrides.hasOwnProperty('sources') ? overrides.sources! : [],
   };
 };
 
@@ -9363,20 +9297,6 @@ export const buildLoadedInputEvent = (
       overrides && overrides.hasOwnProperty('upstreamStepKey')
         ? overrides.upstreamStepKey!
         : 'debitis',
-  };
-};
-
-export const buildLocalFileCodeReference = (
-  overrides?: Partial<LocalFileCodeReference>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'LocalFileCodeReference'} & LocalFileCodeReference => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('LocalFileCodeReference');
-  return {
-    __typename: 'LocalFileCodeReference',
-    filePath:
-      overrides && overrides.hasOwnProperty('filePath') ? overrides.filePath! : 'accusantium',
-    lineNumber: overrides && overrides.hasOwnProperty('lineNumber') ? overrides.lineNumber! : 1573,
   };
 };
 
@@ -13946,24 +13866,6 @@ export const buildSolidStepStatusUnavailableError = (
   return {
     __typename: 'SolidStepStatusUnavailableError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'accusantium',
-  };
-};
-
-export const buildSourceEntry = (
-  overrides?: Partial<SourceEntry>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'SourceEntry'} & SourceEntry => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('SourceEntry');
-  return {
-    __typename: 'SourceEntry',
-    key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'debitis',
-    source:
-      overrides && overrides.hasOwnProperty('source')
-        ? overrides.source!
-        : relationshipsToOmit.has('LocalFileCodeReference')
-        ? ({} as LocalFileCodeReference)
-        : buildLocalFileCodeReference({}, relationshipsToOmit),
   };
 };
 

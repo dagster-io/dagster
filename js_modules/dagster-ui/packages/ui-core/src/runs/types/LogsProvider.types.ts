@@ -79,20 +79,6 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -279,20 +265,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -476,20 +448,6 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -660,20 +618,6 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -841,20 +785,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -1009,20 +939,6 @@ export type PipelineRunLogsSubscription = {
                       boolValue: boolean | null;
                       label: string;
                       description: string | null;
-                    }
-                  | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
                     }
                   | {
                       __typename: 'FloatMetadataEntry';
@@ -1248,20 +1164,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -1465,20 +1367,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -1665,20 +1553,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -1841,20 +1715,6 @@ export type PipelineRunLogsSubscription = {
                       boolValue: boolean | null;
                       label: string;
                       description: string | null;
-                    }
-                  | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
                     }
                   | {
                       __typename: 'FloatMetadataEntry';
@@ -2023,20 +1883,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -2200,20 +2046,6 @@ export type PipelineRunLogsSubscription = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
-                  }
-                | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -2390,20 +2222,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -2566,20 +2384,6 @@ export type PipelineRunLogsSubscription = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
-                  }
-                | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -2829,20 +2633,6 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -3011,20 +2801,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -3187,20 +2963,6 @@ export type PipelineRunLogsSubscription = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
-                  }
-                | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -3409,20 +3171,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
-              }
-            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -3606,20 +3354,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -3798,20 +3532,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
-              }
-            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -3979,20 +3699,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
-              }
-            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -4157,20 +3863,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -4320,20 +4012,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -4556,20 +4234,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -4768,20 +4432,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -4963,20 +4613,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -5134,20 +4770,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
-              }
-            | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -5313,20 +4935,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -5485,20 +5093,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               boolValue: boolean | null;
               label: string;
               description: string | null;
-            }
-          | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
             }
           | {
               __typename: 'FloatMetadataEntry';
@@ -5670,20 +5264,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -5841,20 +5421,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               boolValue: boolean | null;
               label: string;
               description: string | null;
-            }
-          | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
             }
           | {
               __typename: 'FloatMetadataEntry';
@@ -6099,20 +5665,6 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
-                __typename: 'CodeReferencesMetadataEntry';
-                label: string;
-                description: string | null;
-                sources: Array<{
-                  __typename: 'SourceEntry';
-                  key: string;
-                  source: {
-                    __typename: 'LocalFileCodeReference';
-                    filePath: string;
-                    lineNumber: number;
-                  };
-                }>;
-              }
-            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -6278,20 +5830,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
-            }
-          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -6449,20 +5987,6 @@ export type RunLogsSubscriptionSuccessFragment = {
               boolValue: boolean | null;
               label: string;
               description: string | null;
-            }
-          | {
-              __typename: 'CodeReferencesMetadataEntry';
-              label: string;
-              description: string | null;
-              sources: Array<{
-                __typename: 'SourceEntry';
-                key: string;
-                source: {
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                };
-              }>;
             }
           | {
               __typename: 'FloatMetadataEntry';
@@ -6684,20 +6208,6 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -6884,20 +6394,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -7081,20 +6577,6 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -7265,20 +6747,6 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -7446,20 +6914,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -7614,20 +7068,6 @@ export type RunLogsQuery = {
                       boolValue: boolean | null;
                       label: string;
                       description: string | null;
-                    }
-                  | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
                     }
                   | {
                       __typename: 'FloatMetadataEntry';
@@ -7853,20 +7293,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -8070,20 +7496,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -8270,20 +7682,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -8446,20 +7844,6 @@ export type RunLogsQuery = {
                       boolValue: boolean | null;
                       label: string;
                       description: string | null;
-                    }
-                  | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
                     }
                   | {
                       __typename: 'FloatMetadataEntry';
@@ -8628,20 +8012,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -8805,20 +8175,6 @@ export type RunLogsQuery = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
-                  }
-                | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -8995,20 +8351,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -9171,20 +8513,6 @@ export type RunLogsQuery = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
-                  }
-                | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -9434,20 +8762,6 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
-                      __typename: 'CodeReferencesMetadataEntry';
-                      label: string;
-                      description: string | null;
-                      sources: Array<{
-                        __typename: 'SourceEntry';
-                        key: string;
-                        source: {
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                        };
-                      }>;
-                    }
-                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -9616,20 +8930,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
-                  }
-                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -9792,20 +9092,6 @@ export type RunLogsQuery = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
-                  }
-                | {
-                    __typename: 'CodeReferencesMetadataEntry';
-                    label: string;
-                    description: string | null;
-                    sources: Array<{
-                      __typename: 'SourceEntry';
-                      key: string;
-                      source: {
-                        __typename: 'LocalFileCodeReference';
-                        filePath: string;
-                        lineNumber: number;
-                      };
-                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
