@@ -97,19 +97,38 @@ if __name__ == "__main__":
 # Custom Markdoc Tags
 We've extended markdown with custom tags that let us make the docs richer and more interactive.
 
-## Admonitions
+{% warning %}
+There are two types of tags.
+- Inline tags can be used in the middle of a line of and look like this `{% inlineTag %} Inline tag contents {% /inline tags %}`
+- Block tags can be used to wrap around a block of content and look like this:
+
+`{% blockTag %}`
+
+`Block tag contents`
+
+`{% /blockTag %}`
+
+The docs for each tag calls out whether it can be used inline, as a block, or both.
+
+{% /warning %}
+
+## Admonitions : Block
 
 Two types of admonitions are available. Warnings and notes.
 
 `{% warning %} This is a warning {% /warning %}`
 
-{% warning %} This is a warning {% /warning %}
+{% warning %}
+This is a warning
+{% /warning %}
 
 `{% note %} This is a note {% /note %}`
 
-{% note %} This is a note {% /note %}
+{% note %}
+This is a note
+{% /note %}
 
-## Buttons
+## Button : Block
 Buttons are basically just links that are styled to look neat to the user and work for making links stand out.
 
 We have a few different styles of buttons that all do the same thing.
@@ -118,32 +137,50 @@ We have a few different styles of buttons that all do the same thing.
 
 `{% button link="https://dog.ceo/" %} Click Me! {% /button %}`
 
-{% button link="https://dog.ceo/" %} Click Me! {% /button %}
+{% button link="https://dog.ceo/" %}
+Click Me!
+{% /button %}
 
 ### Primary
 
 `{% button link="https://dog.ceo/" style="primary" %} Click Me! {% /button %}`
 
-{% button link="https://dog.ceo/" style="primary" %} Click Me! {% /button %}
+{% button link="https://dog.ceo/" style="primary" %}
+Click Me!
+{% /button %}
 
 ### Secondary
 
 `{% button link="https://dog.ceo/" style="secondary" %} Click Me! {% /button %}`
 
-{% button link="https://dog.ceo/" style="secondary" %} Click Me! {% /button %}
+{% button link="https://dog.ceo/" style="secondary" %}
+Click Me!
+{% /button %}
 
 ### Blurple
 
 ` {% button link="https://dog.ceo/" style="blurple" %} Click Me! {% /button %} `
 
-{% button link="https://dog.ceo/" style="blurple" %} Click Me! {% /button %}
+{% button link="https://dog.ceo/" style="blurple" %}
+Click Me!
+{% /button %}
 
-### Button Container
+### Button Container : Block
 The main use case I've seen for buttons in the docs is basically setting up multiple styling links in a row. Doing this requires putting buttons into a `ButtonContainer`
 
-{% buttonContainer %} {% button link="https://dog.ceo/" style="primary" %} Click Me! {% /button %} {% button link="https://dog.ceo/" style="secondary" %} Click Me! {% /button %} {% button link="https://dog.ceo/" style="blurple" %} Click Me! {% /button %} {% /buttonContainer %}
+{% buttonContainer %}
+{% button link="https://dog.ceo/" style="primary" %}
+Click Me!
+{% /button %}
+{% button link="https://dog.ceo/" style="secondary" %}
+Click Me!
+{% /button %}
+{% button link="https://dog.ceo/" style="blurple" %}
+Click Me!
+{% /button %}
+{% /buttonContainer %}
 
-## Crosses and Checks 
+## Crosses and Checks : Inline
 You can invoke a cross with this tag `{% cross /}%` and it looks like this {% cross /%}. You can invoke checks with this tag `{% check /}%` and it looks like this {% check /%}.
 
 Crosses and checks can also be used in lists:
@@ -169,7 +206,7 @@ We've got a tag that handles making sure images are pretty, optimized, and acces
 {% image src="/images/concepts/assets/asset-activity-observation.png" width=1758 height=1146 alt="Text go here" /%}
 
 
-## Badges
+## Badges : Inline
 
 `{% badge text="Badgey the Badger" /%}` lets you put a custom badge onto the page like this. {% badge text="Badgey the Badger" /%}
 
@@ -182,7 +219,7 @@ There are three types of badges:
 - `{% deprecated /%}` {% deprecated /%}
 - `{% legacy /%}` {% legacy /%}
 
-## Code Reference Links
+## Code Reference Links : Block
 
 Code reference links let you point to a specific file in the codebase. They're useful for linking to examples or reference implementations.
 
@@ -190,7 +227,7 @@ Code reference links let you point to a specific file in the codebase. They're u
 
 {% codeReferenceLink filePath="examples/deploy_ecs" /%}
 
-## Reference Tables
+## Reference Tables : Block
 
 {% referenceTable %}
 {% referenceTableItem propertyName="isolated_agents.enabled" %}
@@ -226,7 +263,7 @@ Code fences
 
 {% /referenceTable %}
 
-## Article Lists
+## Article Lists : Block
 
 Authors can use article lists. 
 
