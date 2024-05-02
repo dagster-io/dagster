@@ -31,7 +31,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {usePageLoadTrace} from '../performance';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -207,30 +207,15 @@ function groupAssets(assets: Assets) {
 
 const TEMPLATE_COLUMNS = '5fr 1fr 1fr 1fr 1fr';
 
-function VirtualHeaderRow() {
-  return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-        position: 'sticky',
-        top: 0,
-        zIndex: 1,
-        background: Colors.backgroundDefault(),
-      }}
-    >
-      <HeaderCell>Group name</HeaderCell>
-      <HeaderCell>Missing</HeaderCell>
-      <HeaderCell>Failed/Overdue</HeaderCell>
-      <HeaderCell>In progress</HeaderCell>
-      <HeaderCell>Materialized</HeaderCell>
-    </Box>
-  );
-}
+const VirtualHeaderRow = () => (
+  <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+    <HeaderCell>Group name</HeaderCell>
+    <HeaderCell>Missing</HeaderCell>
+    <HeaderCell>Failed/Overdue</HeaderCell>
+    <HeaderCell>In progress</HeaderCell>
+    <HeaderCell>Materialized</HeaderCell>
+  </HeaderRow>
+);
 
 const UNGROUPED_ASSETS = 'Ungrouped Assets';
 type RowProps = {

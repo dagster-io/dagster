@@ -67,37 +67,35 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
   }
 
   return (
-    <>
+    <Container ref={parentRef}>
       <VirtualizedCodeLocationHeader />
-      <Container ref={parentRef}>
-        <Inner $totalHeight={totalHeight}>
-          <DynamicRowContainer $start={items[0]?.start ?? 0}>
-            {items.map(({index, key}) => {
-              const row: CodeLocationRowType = codeLocations[index]!;
-              if (row.type === 'error') {
-                return (
-                  <VirtualizedCodeLocationErrorRow
-                    key={key}
-                    index={index}
-                    locationNode={row.node}
-                    ref={virtualizer.measureElement}
-                  />
-                );
-              }
-
+      <Inner $totalHeight={totalHeight}>
+        <DynamicRowContainer $start={items[0]?.start ?? 0}>
+          {items.map(({index, key}) => {
+            const row: CodeLocationRowType = codeLocations[index]!;
+            if (row.type === 'error') {
               return (
-                <VirtualizedCodeLocationRow
+                <VirtualizedCodeLocationErrorRow
                   key={key}
                   index={index}
-                  codeLocation={row.codeLocation}
-                  repository={row.repository}
+                  locationNode={row.node}
                   ref={virtualizer.measureElement}
                 />
               );
-            })}
-          </DynamicRowContainer>
-        </Inner>
-      </Container>
-    </>
+            }
+
+            return (
+              <VirtualizedCodeLocationRow
+                key={key}
+                index={index}
+                codeLocation={row.codeLocation}
+                repository={row.repository}
+                ref={virtualizer.measureElement}
+              />
+            );
+          })}
+        </DynamicRowContainer>
+      </Inner>
+    </Container>
   );
 };

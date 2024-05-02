@@ -72,46 +72,44 @@ export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <VirtualizedAssetHeader nameLabel="Asset name" />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const row: RowType = flattened[index]!;
-              const type = row!.type;
-              return type === 'group' ? (
-                <GroupNameRow
-                  repoAddress={repoAddress}
-                  groupName={row.name}
-                  assetCount={row.assetCount}
-                  expanded={expandedKeys.includes(row.name)}
-                  key={key}
-                  height={size}
-                  start={start}
-                  onToggle={onToggle}
-                />
-              ) : (
-                <VirtualizedAssetRow
-                  showCheckboxColumn={false}
-                  definition={row.definition}
-                  path={row.definition.assetKey.path}
-                  key={key}
-                  type="asset"
-                  repoAddress={repoAddress}
-                  showRepoColumn={false}
-                  height={size}
-                  start={start}
-                  checked={false}
-                  onToggleChecked={() => {}}
-                  onWipe={() => {}}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <VirtualizedAssetHeader nameLabel="Asset name" />
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const row: RowType = flattened[index]!;
+            const type = row!.type;
+            return type === 'group' ? (
+              <GroupNameRow
+                repoAddress={repoAddress}
+                groupName={row.name}
+                assetCount={row.assetCount}
+                expanded={expandedKeys.includes(row.name)}
+                key={key}
+                height={size}
+                start={start}
+                onToggle={onToggle}
+              />
+            ) : (
+              <VirtualizedAssetRow
+                showCheckboxColumn={false}
+                definition={row.definition}
+                path={row.definition.assetKey.path}
+                key={key}
+                type="asset"
+                repoAddress={repoAddress}
+                showRepoColumn={false}
+                height={size}
+                start={start}
+                checked={false}
+                onToggleChecked={() => {}}
+                onWipe={() => {}}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };
 
