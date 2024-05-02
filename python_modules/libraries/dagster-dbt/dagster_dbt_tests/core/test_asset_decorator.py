@@ -522,8 +522,8 @@ def test_with_owner_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> N
     )
     def my_dbt_assets(): ...
 
-    for owners in my_dbt_assets.owners_by_key.values():
-        assert owners == expected_owners
+    for spec in my_dbt_assets.specs:
+        assert spec.owners == expected_owners
 
 
 def test_with_group_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
@@ -655,7 +655,8 @@ def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 
-    assert my_dbt_assets.owners_by_key == {
+    owners_by_key = {spec.key: spec.owners for spec in my_dbt_assets.specs}
+    assert owners_by_key == {
         AssetKey(["customers"]): [],
         # If a model has Dagster owners specified under `meta`, use that.
         AssetKey(["customized", "staging", "customers"]): [],

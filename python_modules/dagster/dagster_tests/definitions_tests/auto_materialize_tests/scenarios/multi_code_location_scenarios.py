@@ -28,8 +28,11 @@ def with_auto_materialize_policy(
             AssetsDefinition.dagster_internal_init(
                 **{
                     **assets_def.get_attributes_dict(),
-                    "auto_materialize_policies_by_key": {
-                        key: auto_materialize_policy for key in assets_def.keys
+                    **{
+                        "specs": [
+                            spec._replace(auto_materialize_policy=auto_materialize_policy)
+                            for spec in assets_def.specs
+                        ]
                     },
                 }
             )

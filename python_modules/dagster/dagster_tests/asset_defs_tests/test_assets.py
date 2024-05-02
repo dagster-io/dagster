@@ -2025,27 +2025,23 @@ def test_asset_owners():
     def my_asset():
         pass
 
-    owners = ["team:team1", "claire@dagsterlabs.com"]
-    assert my_asset.owners_by_key == {my_asset.key: owners}
-    assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
-
-    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
-    def my_asset_2():
-        pass
-
-    assert my_asset_2.owners_by_key == {my_asset_2.key: owners}
+    assert my_asset.specs_by_key[my_asset.key].owners == ["team:team1", "claire@dagsterlabs.com"]
+    assert (
+        my_asset.with_attributes().specs_by_key[my_asset.key].owners
+        == my_asset.specs_by_key[my_asset.key].owners
+    )  # copies ok
 
     @asset(owners=[])
-    def asset_3():
+    def asset2():
         pass
 
-    assert asset_3.owners_by_key == {asset_3.key: []}
+    assert asset2.specs_by_key[asset2.key].owners == []
 
     @asset(owners=None)
-    def asset_4():
+    def asset3():
         pass
 
-    assert asset_4.owners_by_key == {asset_4.key: []}
+    assert asset3.specs_by_key[asset3.key].owners == []
 
 
 def test_invalid_asset_owners():
@@ -2078,10 +2074,11 @@ def test_multi_asset_owners():
     def my_multi_asset():
         pass
 
-    assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): ["team:team1", "user@dagsterlabs.com"],
-        AssetKey("out2"): ["user2@dagsterlabs.com"],
-    }
+    assert my_multi_asset.specs_by_key[AssetKey("out1")].owners == [
+        "team:team1",
+        "user@dagsterlabs.com",
+    ]
+    assert my_multi_asset.specs_by_key[AssetKey("out2")].owners == ["user2@dagsterlabs.com"]
 
 
 def test_replace_asset_keys_for_asset_with_owners():
@@ -2094,18 +2091,16 @@ def test_replace_asset_keys_for_asset_with_owners():
     def my_multi_asset():
         pass
 
-    assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): ["user@dagsterlabs.com"],
-        AssetKey("out2"): ["user@dagsterlabs.com"],
-    }
+    assert my_multi_asset.specs_by_key[AssetKey("out1")].owners == ["user@dagsterlabs.com"]
+    assert my_multi_asset.specs_by_key[AssetKey("out2")].owners == ["user@dagsterlabs.com"]
 
     prefixed_asset = my_multi_asset.with_attributes(
         output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
     )
-    assert prefixed_asset.owners_by_key == {
-        AssetKey(["prefix", "out1"]): ["user@dagsterlabs.com"],
-        AssetKey("out2"): ["user@dagsterlabs.com"],
-    }
+    assert prefixed_asset.specs_by_key[AssetKey(["prefix", "out1"])].owners == [
+        "user@dagsterlabs.com"
+    ]
+    assert prefixed_asset.specs_by_key[AssetKey("out2")].owners == ["user@dagsterlabs.com"]
 
 
 def test_asset_spec_with_code_versions():
