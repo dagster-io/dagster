@@ -8,8 +8,8 @@ import {
   OrphanDependenciesTraceContext,
   TraceContext,
   useBlockTraceOnQueryResult,
-  useTraceDependency,
   useBlockTraceUntilTrue,
+  useTraceDependency,
 } from '../TraceContext';
 
 describe('TraceContext', () => {
