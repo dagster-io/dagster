@@ -34,7 +34,7 @@ const Admonition = ({style, children}) => {
           </svg>
         </div>
         <div className="ml-3">
-          <span className={`text-sm text-${colors.text}`}>{children}</span>
+          <span className={`text-sm text-${colors.text}`}>{unpackText(children)}</span>
         </div>
       </div>
     </div>
@@ -42,9 +42,9 @@ const Admonition = ({style, children}) => {
 };
 
 export const Note = ({children}) => {
-  return <Admonition style="note">{unpackText(children)}</Admonition>;
+  return <Admonition style="note">{children}</Admonition>;
 };
 
 export const Warning = ({children}) => {
-  return <Admonition style="warning">{unpackText(children)}</Admonition>;
+  return <Admonition style="warning">{children}</Admonition>;
 };
