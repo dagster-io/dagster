@@ -1,6 +1,9 @@
 from dagster import AutoMaterializeRule
-from dagster._core.definitions.asset_condition.asset_condition import AssetCondition, RuleCondition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.declarative_scheduling.asset_condition import (
+    AssetCondition,
+    RuleCondition,
+)
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_assets_in_sequence

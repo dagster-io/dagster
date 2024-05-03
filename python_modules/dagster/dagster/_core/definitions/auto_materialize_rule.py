@@ -12,10 +12,6 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._utils.schedules import is_valid_cron_string
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition.asset_condition import (
-        AssetCondition,
-        AssetConditionResult,
-    )
     from dagster._core.definitions.auto_materialize_rule_impls import (
         AutoMaterializeAssetPartitionsFilter,
         MaterializeOnCronRule,
@@ -30,8 +26,12 @@ if TYPE_CHECKING:
         SkipOnRequiredButNonexistentParentsRule,
         SkipOnRunInProgressRule,
     )
+    from dagster._core.definitions.declarative_scheduling.asset_condition import (
+        AssetCondition,
+        AssetConditionResult,
+    )
 
-    from .asset_condition.scheduling_condition_evaluation_context import (
+    from .declarative_scheduling.scheduling_condition_evaluation_context import (
         SchedulingConditionEvaluationContext,
     )
 
@@ -62,7 +62,7 @@ class AutoMaterializeRule(ABC):
 
     def to_asset_condition(self) -> "AssetCondition":
         """Converts this AutoMaterializeRule into an AssetCondition."""
-        from .asset_condition.asset_condition import RuleCondition
+        from .declarative_scheduling.asset_condition import RuleCondition
 
         return RuleCondition(rule=self)
 

@@ -1,5 +1,5 @@
 from dagster import AutoMaterializePolicy, Definitions, asset
-from dagster._core.definitions.asset_condition.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AssetCondition,
     AssetConditionEvaluation,
 )
