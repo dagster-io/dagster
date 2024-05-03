@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 """This module contains the execution context objects that are internal to the system.
 Not every property on these should be exposed to random Jane or Joe dagster user
@@ -97,7 +97,7 @@ class DataVersionCache:
         for key in all_dep_keys:
             self._fetch_input_asset_version_info(key)
 
-    def prefetch_input_asset_version_infos(self, keys: Sequence[AssetKey]) -> None:
+    def prefetch_input_asset_version_infos(self, keys: Iterable[AssetKey]) -> None:
         for key in keys:
             self._fetch_input_asset_version_info(key)
 
