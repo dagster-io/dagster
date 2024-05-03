@@ -56,11 +56,6 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   }, [lru, version, cacheBreaker]);
 
   const fetch = React.useCallback(async () => {
-    if (window.__LOG) {
-      debugger;
-    }
-    window.__LOG && console.log('fetch', key, fetchState);
-
     setLoading(true);
     if (fetchState[key]) {
       console.log('subscribing');
@@ -82,9 +77,6 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       // should help avoid page stuttering due to granular updates to the data
     });
     const {data} = queryResult;
-    if (window.__LOG) {
-      console.log(data.workspaceOrError.locationEntries.length);
-    }
     setLoading(false);
     lru.set(
       'cache',
@@ -95,11 +87,8 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     );
     delete fetchState[key];
     const onFetched = fetchState[key]?.onFetched;
-    window.__LOG && console.log('setting data');
     setData(data);
-    window.__LOG && console.log('onfetched');
     onFetched?.forEach((cb) => cb(queryResult));
-    window.__LOG && console.log('returning');
     return queryResult;
   }, [client, key, lru, query, variables, version]);
 
