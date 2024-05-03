@@ -3048,16 +3048,18 @@ class TestEventLogStorage:
                     },
                 )
 
+                # simulate an external asset materialization for the partition... this should also make the planned
+                # materialization go away
                 storage.store_event(
                     EventLogEntry(
                         error_info=None,
                         level="debug",
                         user_message="",
-                        run_id=run_id_4,
+                        run_id=RUNLESS_RUN_ID,
                         timestamp=time.time(),
                         dagster_event=DagsterEvent(
                             DagsterEventType.ASSET_MATERIALIZATION.value,
-                            "nonce",
+                            RUNLESS_JOB_NAME,
                             event_specific_data=StepMaterializationData(
                                 AssetMaterialization(asset_key=a, partition="bar")
                             ),
