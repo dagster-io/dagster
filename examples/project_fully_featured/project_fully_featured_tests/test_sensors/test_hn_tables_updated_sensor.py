@@ -2,7 +2,7 @@ import json
 from typing import List, Tuple
 from unittest import mock
 
-from dagster import EventLogRecord, GraphDefinition, build_sensor_context
+from dagster import EventLogRecord, EventRecordsResult, GraphDefinition, build_sensor_context
 from dagster._core.test_utils import instance_for_test
 
 from project_fully_featured.sensors.hn_tables_updated_sensor import (
@@ -10,25 +10,33 @@ from project_fully_featured.sensors.hn_tables_updated_sensor import (
 )
 
 
-def get_mock_event_records(asset_events: List[Tuple[str, int]]):
-    def event_records(event_records_filter, **_kwargs):
-        asset_key = event_records_filter.asset_key
-        after_cursor = event_records_filter.after_cursor
+def get_mock_fetch_materializations(asset_events: List[Tuple[str, int]]):
+    def fetch_materializations(asset_records_filter, **kwargs):
+        asset_key = asset_records_filter.asset_key
+        after_storage_id = asset_records_filter.after_storage_id
         matching_events = [
             event
             for event in asset_events
-            if asset_key.path[-1] == event[0] and (after_cursor is None or event[1] > after_cursor)
+            if asset_key.path[-1] == event[0]
+            and (after_storage_id is None or event[1] > after_storage_id)
         ]
-        return [
-            EventLogRecord(storage_id=event[1], event_log_entry=None) for event in matching_events
-        ]
+        return EventRecordsResult(
+            records=[
+                EventLogRecord(storage_id=event[1], event_log_entry=None)
+                for event in matching_events
+            ],
+            cursor="fake_cursor",
+            has_more=False,
+        )
 
-    return event_records
+    return fetch_materializations
 
 
-@mock.patch("dagster._core.instance.DagsterInstance.get_event_records")
-def test_first_events(mock_event_records):
-    mock_event_records.side_effect = get_mock_event_records([("comments", 1), ("stories", 2)])
+@mock.patch("dagster._core.instance.DagsterInstance.fetch_materializations")
+def test_first_events(mock_fetch_materializations):
+    mock_fetch_materializations.side_effect = get_mock_fetch_materializations(
+        [("comments", 1), ("stories", 2)]
+    )
 
     with instance_for_test() as instance:
         context = build_sensor_context(instance=instance)
@@ -37,9 +45,11 @@ def test_first_events(mock_event_records):
         assert result.cursor == json.dumps({"comments": 1, "stories": 2})
 
 
-@mock.patch("dagster._core.instance.DagsterInstance.get_event_records")
-def test_nothing_new(mock_event_records):
-    mock_event_records.side_effect = get_mock_event_records([("comments", 1), ("stories", 2)])
+@mock.patch("dagster._core.instance.DagsterInstance.fetch_materializations")
+def test_nothing_new(mock_fetch_materializations):
+    mock_fetch_materializations.side_effect = get_mock_fetch_materializations(
+        [("comments", 1), ("stories", 2)]
+    )
 
     with instance_for_test() as instance:
         context = build_sensor_context(
@@ -50,9 +60,9 @@ def test_nothing_new(mock_event_records):
         assert result.cursor == json.dumps({"comments": 1, "stories": 2})
 
 
-@mock.patch("dagster._core.instance.DagsterInstance.get_event_records")
-def test_new_comments_old_stories(mock_event_records):
-    mock_event_records.side_effect = get_mock_event_records(
+@mock.patch("dagster._core.instance.DagsterInstance.fetch_materializations")
+def test_new_comments_old_stories(mock_fetch_materializations):
+    mock_fetch_materializations.side_effect = get_mock_fetch_materializations(
         [("comments", 1), ("comments", 2), ("stories", 2)]
     )
 
@@ -64,9 +74,9 @@ def test_new_comments_old_stories(mock_event_records):
         assert len(result.run_requests) == 0
 
 
-@mock.patch("dagster._core.instance.DagsterInstance.get_event_records")
-def test_old_comments_new_stories(mock_event_records):
-    mock_event_records.side_effect = get_mock_event_records(
+@mock.patch("dagster._core.instance.DagsterInstance.fetch_materializations")
+def test_old_comments_new_stories(mock_fetch_materializations):
+    mock_fetch_materializations.side_effect = get_mock_fetch_materializations(
         [("comments", 1), ("stories", 2), ("stories", 3)]
     )
 
@@ -78,9 +88,9 @@ def test_old_comments_new_stories(mock_event_records):
         assert len(result.run_requests) == 0
 
 
-@mock.patch("dagster._core.instance.DagsterInstance.get_event_records")
-def test_both_new(mock_event_records):
-    mock_event_records.side_effect = get_mock_event_records(
+@mock.patch("dagster._core.instance.DagsterInstance.fetch_materializations")
+def test_both_new(mock_fetch_materializations):
+    mock_fetch_materializations.side_effect = get_mock_fetch_materializations(
         [("comments", 1), ("comments", 2), ("stories", 2), ("stories", 3)]
     )
 
