@@ -337,7 +337,13 @@ class AssetGraphView:
             ),
         )
 
-    def get_asset_slice_from_subset(self, subset: AssetSubset) -> "AssetSlice":
+    def get_asset_slice_from_subset(self, subset: AssetSubset) -> Optional["AssetSlice"]:
+        if subset.is_compatible_with_partitions_def(self._get_partitions_def(subset.asset_key)):
+            return _slice_from_subset(self, subset)
+        else:
+            return None
+
+    def get_asset_slice_from_valid_subset(self, subset: ValidAssetSubset) -> "AssetSlice":
         return _slice_from_subset(self, subset)
 
     def compute_missing_subslice(
@@ -353,7 +359,7 @@ class AssetGraphView:
         if self.asset_graph.get(asset_key).is_materializable:
             # cheap call which takes advantage of the partition status cache
             materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
-            materialized_slice = self.get_asset_slice_from_subset(materialized_subset)
+            materialized_slice = self.get_asset_slice_from_valid_subset(materialized_subset)
             return from_slice.compute_difference(materialized_slice)
         else:
             # more expensive call
@@ -365,7 +371,7 @@ class AssetGraphView:
             missing_subset = ValidAssetSubset.from_asset_partitions_set(
                 asset_key, self._get_partitions_def(asset_key), missing_asset_partitions
             )
-            return self.get_asset_slice_from_subset(missing_subset)
+            return self.get_asset_slice_from_valid_subset(missing_subset)
 
     def compute_parent_asset_slice(
         self, parent_asset_key: AssetKey, asset_slice: AssetSlice
