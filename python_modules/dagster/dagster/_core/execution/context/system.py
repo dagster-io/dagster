@@ -328,11 +328,7 @@ class PlanExecutionContext(IPlanContext):
         step: ExecutionStep,
         known_state: Optional["KnownExecutionState"] = None,
     ) -> IStepContext:
-        # TODO: refactoring to build up reasonable layer of prefetching -- 2024-04-27 schrockn
-        # if is_step_in_asset_graph_layer(step, self.job_def):
-        # ... prefetch input asset version info
-
-        return StepExecutionContext(
+        context = StepExecutionContext(
             plan_data=self.plan_data,
             execution_data=self._execution_data,
             log_manager=self._log_manager.with_tags(**step.logging_tags),
@@ -340,6 +336,21 @@ class PlanExecutionContext(IPlanContext):
             output_capture=self.output_capture,
             known_state=known_state,
         )
+
+        # TODO move this before construction to that StepExecutionContext is immutable against
+        # -- schrockn 2024-05-03
+        if is_step_in_asset_graph_layer(step, self.job_def):
+            context._data_version_cache.fetch_external_input_asset_version_info()  # noqa: SLF001
+
+            check_names_by_asset_key = (
+                context.job_def.asset_layer.check_names_by_asset_key_by_node_handle.get(
+                    context.node_handle.root
+                )
+            )
+
+            context.prefetch_input_asset_version_infos((check_names_by_asset_key or {}).keys())
+
+        return context
 
     @property
     def job_def(self) -> JobDefinition:
@@ -571,7 +582,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self._data_version_cache = DataVersionCache(self)
+        self._data_version_cache = DataVersionCache(step_context=self)
 
         self._requires_typed_event_stream = False
         self._typed_event_stream_error_message = None
@@ -958,18 +969,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["InputAssetVersionInfo"]]]:
         return self._data_version_cache.input_asset_version_info
 
-    @property
-    def is_external_input_asset_version_info_loaded(self) -> bool:
-        return self._data_version_cache.is_external_input_asset_version_info_loaded
+    # throws if not prefetched
+    def get_input_asset_version_info(self, key: AssetKey) -> Optional["InputAssetVersionInfo"]:
+        return self._data_version_cache.input_asset_version_info[key]
 
-    def maybe_fetch_and_get_input_asset_version_info(
-        self, key: AssetKey
-    ) -> Optional["InputAssetVersionInfo"]:
-        return self._data_version_cache.maybe_fetch_and_get_input_asset_version_info(key)
-
-    # "external" refers to records for inputs generated outside of this step
-    def fetch_external_input_asset_version_info(self) -> None:
-        return self._data_version_cache.fetch_external_input_asset_version_info()
+    def prefetch_input_asset_version_infos(self, keys: Iterable[AssetKey]) -> None:
+        return self._data_version_cache.prefetch_input_asset_version_infos(keys)
 
     # Call this to clear the cache for an input asset record. This is necessary when an old
     # materialization for an asset was loaded during `fetch_external_input_asset_records` because an
