@@ -267,6 +267,7 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 # ###########################
 
 
+@experimental(emit_runtime_warning=False)
 @whitelist_for_serdes
 class TableColumnDep(
     NamedTuple(
