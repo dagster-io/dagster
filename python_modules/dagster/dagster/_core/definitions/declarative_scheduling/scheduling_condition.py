@@ -1,7 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import pendulum
 
@@ -133,8 +132,7 @@ class SchedulingCondition(ABC, DagsterModel):
         )
 
 
-@dataclass(frozen=True)
-class SchedulingResult:
+class SchedulingResult(DagsterModel):
     condition: SchedulingCondition
     condition_unique_id: str
     start_timestamp: float
@@ -144,7 +142,7 @@ class SchedulingResult:
     candidate_subset: AssetSubset
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
-    extra_state: PackableValue
+    extra_state: Any
     child_results: Sequence["SchedulingResult"]
 
     @property
