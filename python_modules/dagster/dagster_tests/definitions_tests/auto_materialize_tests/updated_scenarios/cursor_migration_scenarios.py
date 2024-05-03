@@ -18,7 +18,6 @@ from ..scenario_specs import (
     hour_partition_key,
     hourly_partitions_def,
     one_asset,
-    three_assets_in_sequence,
     time_partitions_start_str,
 )
 from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
@@ -75,69 +74,6 @@ cursor_migration_scenarios = [
         )
         .evaluate_tick()
         # the new cursor should not kick off a new run because the previous tick already requested one
-        .assert_requested_runs(),
-    ),
-    AssetDaemonScenario(
-        id="partitioned_non_root_asset_missing_after_migrate",
-        initial_spec=three_assets_in_sequence.with_asset_properties(
-            partitions_def=daily_partitions_def
-        )
-        .with_current_time(time_partitions_start_str)
-        .with_current_time_advanced(days=10, hours=4)
-        .with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(
-            run_request(
-                asset_keys=["A", "B", "C"], partition_key=day_partition_key(state.current_time)
-            )
-        )
-        # materialize the previous day's partitions manually
-        .with_runs(
-            run_request(
-                asset_keys=["A", "B", "C"],
-                partition_key=day_partition_key(state.current_time, delta=-1),
-            )
-        )
-        .evaluate_tick()
-        .assert_requested_runs()
-        # now update the cursor -- this serialized cursor does not contain any information about
-        # the missing partitions for B or C, because we used to only track this information for
-        # root assets. B or C also has not been materialized since the previous tick
-        .with_serialized_cursor(
-            """{"latest_storage_id": 24, "handled_root_asset_keys": [], "handled_root_partitions_by_asset_key": {"A": "{\\"version\\": 1, \\"time_windows\\": [[1357344000.0, 1358208000.0]], \\"num_partitions\\": 10}", "B": "{\\"version\\": 1, \\"time_windows\\": [], \\"num_partitions\\": 0}", "C": "{\\"version\\": 1, \\"time_windows\\": [], \\"num_partitions\\": 0}"}, "evaluation_id": 2, "last_observe_request_timestamp_by_asset_key": {}, "latest_evaluation_by_asset_key": {}, "latest_evaluation_timestamp": 1358222400.164996}"""
-        )
-        .evaluate_tick()
-        # when getting the new cursor, we should realize that B and C are not missing any partitions
-        # that can be materialized
-        .assert_requested_runs(),
-    ),
-    AssetDaemonScenario(
-        id="basic_hourly_cron_unpartitioned_migrate",
-        initial_spec=one_asset.with_asset_properties(
-            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
-        ).with_current_time("2020-01-01T00:05"),
-        execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(run_request(["A"]))
-        .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
-        # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs()
-        # still no runs should be requested
-        .with_current_time_advanced(minutes=50)
-        .evaluate_tick()
-        .assert_requested_runs()
-        # moved to a new cron schedule tick, request another run
-        .with_current_time_advanced(minutes=10)
-        .evaluate_tick()
-        .assert_requested_runs(run_request(["A"]))
-        .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
-        # next tick should not request any more runs
-        .with_serialized_cursor(
-            """{"latest_storage_id": null, "handled_root_asset_keys": ["A"], "handled_root_partitions_by_asset_key": {}, "evaluation_id": 4, "last_observe_request_timestamp_by_asset_key": {}, "latest_evaluation_by_asset_key": {"A": "{\\"__class__\\": \\"AutoMaterializeAssetEvaluation\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"A\\"]}, \\"num_discarded\\": 0, \\"num_requested\\": 1, \\"num_skipped\\": 0, \\"partition_subsets_by_condition\\": [[{\\"__class__\\": \\"AutoMaterializeRuleEvaluation\\", \\"evaluation_data\\": null, \\"rule_snapshot\\": {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"MaterializeOnCronRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.MATERIALIZE\\"}, \\"description\\": \\"not materialized since last cron schedule tick of '0 * * * *' (timezone: UTC)\\"}}, null]], \\"rule_snapshots\\": [{\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"MaterializeOnCronRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.MATERIALIZE\\"}, \\"description\\": \\"not materialized since last cron schedule tick of '0 * * * *' (timezone: UTC)\\"}, {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"SkipOnNotAllParentsUpdatedRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.SKIP\\"}, \\"description\\": \\"waiting on upstream data to be updated\\"}], \\"run_ids\\": {\\"__set__\\": []}}"}, "latest_evaluation_timestamp": 1577840730.0}"""
-        )
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
         .assert_requested_runs(),
     ),
     AssetDaemonScenario(

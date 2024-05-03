@@ -230,6 +230,7 @@ class AssetDaemonContext:
         context = SchedulingConditionEvaluationContext(
             asset_key=asset_key,
             condition=asset_condition,
+            condition_unique_id=asset_condition.get_unique_id(parent_unique_id=None),
             candidate_subset=self.asset_graph_view.get_asset_slice(
                 asset_key
             ).convert_to_valid_asset_subset(),

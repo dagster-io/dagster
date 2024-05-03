@@ -460,7 +460,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """
         previous_handled_subset = (
             context.legacy_context.previous_evaluation_state.get_extra_state(
-                context.legacy_context.condition, AssetSubset
+                context.condition_unique_id, AssetSubset
             )
             if context.legacy_context.previous_evaluation_state
             else None
@@ -815,7 +815,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             # previous state still valid
             previous_parent_subsets = (
                 context.legacy_context.previous_evaluation_state.get_extra_state(
-                    context.legacy_context.condition, list
+                    context.condition_unique_id, list
                 )
                 or []
             )
