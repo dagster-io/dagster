@@ -328,6 +328,9 @@ class AssetGraphView:
             ),
         )
 
+    def get_asset_slice_from_subset(self, subset: ValidAssetSubset) -> "AssetSlice":
+        return _slice_from_subset(self, subset)
+
     def compute_parent_asset_slice(
         self, parent_asset_key: AssetKey, asset_slice: AssetSlice
     ) -> AssetSlice:
