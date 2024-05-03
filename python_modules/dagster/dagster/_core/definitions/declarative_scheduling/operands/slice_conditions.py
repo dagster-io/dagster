@@ -49,6 +49,31 @@ class InProgressSchedulingCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
+class WillBeRequestedCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Will be requested this tick"
+
+    def _executable_with_root_context_key(self, context: SchedulingContext) -> bool:
+        # TODO: once we can launch backfills via the asset daemon, this can be removed
+        root_key = context.root_context.asset_key
+        return context.legacy_context.materializable_in_same_run(
+            child_key=root_key, parent_key=context.asset_key
+        )
+
+    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+        current_info = context.current_tick_evaluation_info_by_key.get(context.asset_key)
+        if (
+            current_info
+            and current_info.requested_slice
+            and self._executable_with_root_context_key(context)
+        ):
+            return current_info.requested_slice
+        else:
+            return context.asset_graph_view.create_empty_slice(context.asset_key)
+
+
+@whitelist_for_serdes
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
     # This is a serializable representation of the lookback timedelta object
     lookback_days_second_microseconds: Optional[Tuple[int, int, int]] = None
