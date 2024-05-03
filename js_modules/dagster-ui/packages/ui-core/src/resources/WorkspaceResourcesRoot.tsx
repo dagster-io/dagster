@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import {useMemo, useState} from 'react';
+import {useMemo} from 'react';
 
 import {VirtualizedResourceTable} from './VirtualizedResourceTable';
 import {
@@ -11,6 +11,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {WorkspaceHeader} from '../workspace/WorkspaceHeader';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -22,7 +23,10 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Resources: ${repoName}`);
 
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const selector = repoAddressToSelector(repoAddress);
 
