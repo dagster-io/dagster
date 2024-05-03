@@ -41,9 +41,7 @@ if TYPE_CHECKING:
 
     from ...asset_daemon_context import AssetDaemonContext
     from ...base_asset_graph import BaseAssetGraph
-    from .asset_condition import (
-        AssetCondition,
-    )
+    from ..scheduling_condition import SchedulingCondition
 
 T = TypeVar("T")
 
@@ -66,7 +64,7 @@ class LegacyRuleEvaluationContext:
     """
 
     asset_key: AssetKey
-    condition: "AssetCondition"
+    condition: "SchedulingCondition"
     previous_evaluation_state: Optional[AssetConditionEvaluationState]
     previous_evaluation: Optional[AssetConditionEvaluation]
     candidate_subset: ValidAssetSubset
@@ -84,7 +82,7 @@ class LegacyRuleEvaluationContext:
     @staticmethod
     def create(
         asset_key: AssetKey,
-        condition: "AssetCondition",
+        condition: "SchedulingCondition",
         previous_evaluation_state: Optional[AssetConditionEvaluationState],
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
@@ -116,7 +114,10 @@ class LegacyRuleEvaluationContext:
         )
 
     def for_child(
-        self, child_condition: "AssetCondition", child_unique_id: str, candidate_subset: AssetSubset
+        self,
+        child_condition: "SchedulingCondition",
+        child_unique_id: str,
+        candidate_subset: AssetSubset,
     ) -> "LegacyRuleEvaluationContext":
         return dataclasses.replace(
             self,

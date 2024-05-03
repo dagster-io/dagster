@@ -8,7 +8,6 @@ from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-    AssetCondition,
     AssetConditionResult,
 )
 from dagster._core.definitions.declarative_scheduling.legacy.legacy_context import (
@@ -16,6 +15,9 @@ from dagster._core.definitions.declarative_scheduling.legacy.legacy_context impo
 )
 from dagster._core.definitions.declarative_scheduling.operators.boolean_operators import (
     AndAssetCondition,
+)
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+    SchedulingCondition,
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
@@ -30,7 +32,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from ..scenario_state import ScenarioState
 
 
-class FalseAssetCondition(AssetCondition):
+class FalseAssetCondition(SchedulingCondition):
     """Always returns the empty subset."""
 
     @property
@@ -48,7 +50,7 @@ class FalseAssetCondition(AssetCondition):
 
 @dataclass(frozen=True)
 class AssetConditionScenarioState(ScenarioState):
-    asset_condition: Optional[AssetCondition] = None
+    asset_condition: Optional[SchedulingCondition] = None
     previous_evaluation_state: Optional[AssetConditionEvaluationState] = None
 
     def evaluate(
