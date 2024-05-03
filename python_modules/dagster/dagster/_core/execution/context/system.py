@@ -976,11 +976,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def prefetch_input_asset_version_infos(self, keys: Iterable[AssetKey]) -> None:
         return self._data_version_cache.prefetch_input_asset_version_infos(keys)
 
-    def maybe_fetch_and_get_input_asset_version_info(
-        self, key: AssetKey
-    ) -> Optional["InputAssetVersionInfo"]:
-        return self._data_version_cache.maybe_fetch_and_get_input_asset_version_info(key)
-
     # Call this to clear the cache for an input asset record. This is necessary when an old
     # materialization for an asset was loaded during `fetch_external_input_asset_records` because an
     # intrastep asset is not required, but then that asset is materialized during the step. If we

@@ -73,13 +73,6 @@ class DataVersionCache:
     def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
         return self.values[asset_key]
 
-    def maybe_fetch_and_get_input_asset_version_info(
-        self, key: AssetKey
-    ) -> Optional["InputAssetVersionInfo"]:
-        if key not in self.input_asset_version_info:
-            self._fetch_input_asset_version_info(key)
-        return self.input_asset_version_info[key]
-
     # "external" refers to records for inputs generated outside of this step
     def fetch_external_input_asset_version_info(self) -> None:
         output_keys = self._context.get_output_asset_keys()
