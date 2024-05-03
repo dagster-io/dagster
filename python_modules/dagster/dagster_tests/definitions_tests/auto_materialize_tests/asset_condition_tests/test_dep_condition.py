@@ -1,3 +1,4 @@
+import dagster._check as check
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -35,9 +36,11 @@ def get_hardcoded_condition():
             ).partitions_def
             return SchedulingResult.create(
                 context,
-                true_slice=context.asset_graph_view.get_asset_slice_from_subset(
-                    AssetSubset.from_asset_partitions_set(
-                        context.asset_key, partitions_def, true_candidates
+                true_slice=check.not_none(
+                    context.asset_graph_view.get_asset_slice_from_subset(
+                        AssetSubset.from_asset_partitions_set(
+                            context.asset_key, partitions_def, true_candidates
+                        )
                     )
                 ),
             )
