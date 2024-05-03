@@ -328,11 +328,7 @@ class PlanExecutionContext(IPlanContext):
         step: ExecutionStep,
         known_state: Optional["KnownExecutionState"] = None,
     ) -> IStepContext:
-        # TODO: refactoring to build up reasonable layer of prefetching -- 2024-04-27 schrockn
-        # if is_step_in_asset_graph_layer(step, self.job_def):
-        # ... prefetch input asset version info
-
-        return StepExecutionContext(
+        context = StepExecutionContext(
             plan_data=self.plan_data,
             execution_data=self._execution_data,
             log_manager=self._log_manager.with_tags(**step.logging_tags),
@@ -340,6 +336,13 @@ class PlanExecutionContext(IPlanContext):
             output_capture=self.output_capture,
             known_state=known_state,
         )
+
+        # TODO move this before construction to that StepExecutionContext is immutable against
+        # -- schrockn 2024-05-03
+        if is_step_in_asset_graph_layer(step, self.job_def):
+            context._data_version_cache.fetch_external_input_asset_version_info()  # noqa: SLF001
+
+        return context
 
     @property
     def job_def(self) -> JobDefinition:
@@ -966,10 +969,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self, key: AssetKey
     ) -> Optional["InputAssetVersionInfo"]:
         return self._data_version_cache.maybe_fetch_and_get_input_asset_version_info(key)
-
-    # "external" refers to records for inputs generated outside of this step
-    def fetch_external_input_asset_version_info(self) -> None:
-        return self._data_version_cache.fetch_external_input_asset_version_info()
 
     # Call this to clear the cache for an input asset record. This is necessary when an old
     # materialization for an asset was loaded during `fetch_external_input_asset_records` because an
