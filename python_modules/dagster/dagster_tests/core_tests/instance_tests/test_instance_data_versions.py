@@ -49,7 +49,7 @@ def create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> Even
     )
 
 
-def test_extract_data_version_and_provenance_from_materialization_entry():
+def test_extract_data_version_and_provenance_from_materialization_entry() -> None:
     materialization = AssetMaterialization(
         asset_key="foo",
         tags={
@@ -77,7 +77,7 @@ def test_extract_data_version_and_provenance_from_materialization_entry():
     )
 
 
-def test_extract_data_version_from_observation_entry():
+def test_extract_data_version_from_observation_entry() -> None:
     observation = AssetObservation(
         asset_key="foo",
         tags={
@@ -91,7 +91,7 @@ def test_extract_data_version_from_observation_entry():
     assert extract_data_version_from_entry(entry) == DataVersion("1")
 
 
-def test_compute_logical_data_version():
+def test_compute_logical_data_version() -> None:
     result = compute_logical_data_version(
         "foo", {AssetKey(["beta"]): DataVersion("1"), AssetKey(["alpha"]): DataVersion("2")}
     )
@@ -100,22 +100,22 @@ def test_compute_logical_data_version():
     assert result == DataVersion(hash_sig.hexdigest())
 
 
-def test_compute_logical_data_version_unknown_code_version():
+def test_compute_logical_data_version_unknown_code_version() -> None:
     result = compute_logical_data_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): DataVersion("1")})
     assert result == UNKNOWN_DATA_VERSION
 
 
-def test_compute_logical_data_version_unknown_dep_version():
+def test_compute_logical_data_version_unknown_dep_version() -> None:
     result = compute_logical_data_version("foo", {AssetKey(["alpha"]): UNKNOWN_DATA_VERSION})
     assert result == UNKNOWN_DATA_VERSION
 
 
-def test_get_latest_materialization_code_versions():
+def test_get_latest_materialization_code_versions() -> None:
     @asset(code_version="abc")
-    def has_code_version(): ...
+    def has_code_version() -> None: ...
 
     @asset
-    def has_no_code_version(): ...
+    def has_no_code_version() -> None: ...
 
     instance = DagsterInstance.ephemeral()
     materialize([has_code_version, has_no_code_version], instance=instance)
