@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..legacy.asset_condition import AssetCondition
 from ..scheduling_condition import SchedulingResult
@@ -25,6 +26,7 @@ class SliceSchedulingCondition(AssetCondition):
         return SchedulingResult.create(context, true_slice.convert_to_valid_asset_subset())
 
 
+@whitelist_for_serdes
 class MissingSchedulingCondition(SliceSchedulingCondition):
     @property
     def description(self) -> str:
@@ -36,6 +38,7 @@ class MissingSchedulingCondition(SliceSchedulingCondition):
         )
 
 
+@whitelist_for_serdes
 class InProgressSchedulingCondition(SliceSchedulingCondition):
     @property
     def description(self) -> str:
@@ -45,6 +48,7 @@ class InProgressSchedulingCondition(SliceSchedulingCondition):
         return context.asset_graph_view.compute_in_progress_asset_slice(context.asset_key)
 
 
+@whitelist_for_serdes
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
     lookback_seconds: Optional[float] = None
 

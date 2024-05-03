@@ -159,7 +159,7 @@ class SchedulingResult(DagsterModel):
         return SchedulingResult(
             condition=context.condition,
             condition_unique_id=context.condition_unique_id,
-            start_timestamp=context.start_timestamp,
+            start_timestamp=context.create_time.timestamp(),
             end_timestamp=pendulum.now("UTC").timestamp(),
             true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
             candidate_subset=context.candidate_subset,
@@ -179,7 +179,7 @@ class SchedulingResult(DagsterModel):
         return SchedulingResult(
             condition=context.condition,
             condition_unique_id=context.condition_unique_id,
-            start_timestamp=context.start_timestamp,
+            start_timestamp=context.create_time.timestamp(),
             end_timestamp=pendulum.now("UTC").timestamp(),
             true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
             candidate_subset=context.candidate_subset,
