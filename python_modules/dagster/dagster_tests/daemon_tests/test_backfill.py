@@ -2008,7 +2008,10 @@ def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
         )
 
     logs = caplog.text
-    assert "Execution plan is out of sync with the workspace" in logs
+    assert (
+        "Error while generating the execution plan, possibly because the code server is out of sync with the daemon"
+        in logs
+    )
 
     assert instance.get_runs_count() == 1
     assert (
