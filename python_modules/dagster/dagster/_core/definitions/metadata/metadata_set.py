@@ -7,7 +7,7 @@ from typing_extensions import TypeVar
 from dagster import _check as check
 from dagster._model import DagsterModel
 from dagster._model.pydantic_compat_layer import model_fields
-from dagster._utils.typing_api import flatten_annotation_unions
+from dagster._utils.typing_api import flatten_unions
 
 from .metadata_value import MetadataValue, TableColumnLineage, TableSchema
 
@@ -124,7 +124,7 @@ class NamespacedMetadataSet(ABC, DagsterModel):
         """
         if isinstance(value, MetadataValue):
             annotation = model_fields(cls)[field_name].annotation
-            annotation_acceptable_types = set(flatten_annotation_unions(annotation))
+            annotation_acceptable_types = flatten_unions(annotation)
             if (
                 type(value) not in annotation_acceptable_types
                 and type(value.value) in annotation_acceptable_types
@@ -135,10 +135,10 @@ class NamespacedMetadataSet(ABC, DagsterModel):
         return value
 
     @classmethod
-    @lru_cache(maxsize=128)
+    @lru_cache(maxsize=None)  # this avoids wastefully recomputing this once per instance
     def _get_accepted_types_for_field(cls, field_name: str) -> AbstractSet[Type]:
         annotation = model_fields(cls)[field_name].annotation
-        return set(flatten_annotation_unions(annotation))
+        return flatten_unions(annotation)
 
 
 class TableMetadataSet(NamespacedMetadataSet):
