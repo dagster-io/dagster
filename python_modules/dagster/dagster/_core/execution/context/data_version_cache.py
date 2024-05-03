@@ -87,57 +87,56 @@ class DataVersionCache:
                     all_dep_keys.append(key)
 
         self.input_asset_version_info = {}
-        for key in all_dep_keys:
-            self._fetch_input_asset_version_info(key)
+        self._fetch_input_asset_version_infos(all_dep_keys)
 
     def prefetch_input_asset_version_infos(self, keys: Iterable[AssetKey]) -> None:
-        for key in keys:
-            self._fetch_input_asset_version_info(key)
+        self._fetch_input_asset_version_infos(keys)
 
-    def _fetch_input_asset_version_info(self, key: AssetKey) -> None:
+    def _fetch_input_asset_version_infos(self, keys: Iterable[AssetKey]) -> None:
         from dagster._core.definitions.data_version import (
             extract_data_version_from_entry,
         )
 
-        event = self._get_input_asset_event(key)
-        if event is None:
-            self.input_asset_version_info[key] = None
-        else:
-            storage_id = event.storage_id
-            # Input name will be none if this is an internal dep
-            input_name = self._context.job_def.asset_layer.input_for_asset_key(
-                self._context.node_handle, key
-            )
-            # Exclude AllPartitionMapping for now to avoid huge queries
-            if input_name and self._context.has_asset_partitions_for_input(input_name):
-                subset = self._context.asset_partitions_subset_for_input(
-                    input_name, require_valid_partitions=False
+        for key in keys:
+            event = self._get_input_asset_event(key)
+            if event is None:
+                self.input_asset_version_info[key] = None
+            else:
+                storage_id = event.storage_id
+                # Input name will be none if this is an internal dep
+                input_name = self._context.job_def.asset_layer.input_for_asset_key(
+                    self._context.node_handle, key
                 )
-                input_keys = list(subset.get_partition_keys())
+                # Exclude AllPartitionMapping for now to avoid huge queries
+                if input_name and self._context.has_asset_partitions_for_input(input_name):
+                    subset = self._context.asset_partitions_subset_for_input(
+                        input_name, require_valid_partitions=False
+                    )
+                    input_keys = list(subset.get_partition_keys())
 
-                # This check represents a temporary constraint that prevents huge query results for upstream
-                # partition data versions from timing out runs. If a partitioned dependency (a) uses an
-                # AllPartitionMapping; and (b) has greater than or equal to
-                # SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD dependency partitions, then we
-                # process it as a non-partitioned dependency (note that this was the behavior for
-                # all partition dependencies prior to 2023-08).  This means that stale status
-                # results cannot be accurately computed for the dependency, and there is thus
-                # corresponding logic in the CachingStaleStatusResolver to account for this. This
-                # constraint should be removed when we have thoroughly examined the performance of
-                # the data version retrieval query and can guarantee decent performance.
-                if len(input_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
-                    data_version = self._get_partitions_data_version_from_keys(key, input_keys)
+                    # This check represents a temporary constraint that prevents huge query results for upstream
+                    # partition data versions from timing out runs. If a partitioned dependency (a) uses an
+                    # AllPartitionMapping; and (b) has greater than or equal to
+                    # SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD dependency partitions, then we
+                    # process it as a non-partitioned dependency (note that this was the behavior for
+                    # all partition dependencies prior to 2023-08).  This means that stale status
+                    # results cannot be accurately computed for the dependency, and there is thus
+                    # corresponding logic in the CachingStaleStatusResolver to account for this. This
+                    # constraint should be removed when we have thoroughly examined the performance of
+                    # the data version retrieval query and can guarantee decent performance.
+                    if len(input_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
+                        data_version = self._get_partitions_data_version_from_keys(key, input_keys)
+                    else:
+                        data_version = extract_data_version_from_entry(event.event_log_entry)
                 else:
                     data_version = extract_data_version_from_entry(event.event_log_entry)
-            else:
-                data_version = extract_data_version_from_entry(event.event_log_entry)
-            self.input_asset_version_info[key] = InputAssetVersionInfo(
-                storage_id,
-                check.not_none(event.event_log_entry.dagster_event).event_type,
-                data_version,
-                event.run_id,
-                event.timestamp,
-            )
+                self.input_asset_version_info[key] = InputAssetVersionInfo(
+                    storage_id,
+                    check.not_none(event.event_log_entry.dagster_event).event_type,
+                    data_version,
+                    event.run_id,
+                    event.timestamp,
+                )
 
     def _get_input_asset_event(self, key: AssetKey) -> Optional["EventLogRecord"]:
         event = self._context.instance.get_latest_data_version_record(key)
