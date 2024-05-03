@@ -162,8 +162,9 @@ RUN git clone --depth 1 https://github.com/dagster-io/dagster.git
 WORKDIR dagster
 
 ENV VIRTUAL_ENV=/usr/local
-RUN python scripts/install_dev_python_modules.py awscli \
-    && pip freeze --exclude-editable > /snapshot-reqs.txt
+ENV UV_HTTP_TIMEOUT=300
+RUN python scripts/install_dev_python_modules.py awscli || exit 1
+RUN pip freeze --exclude-editable > /snapshot-reqs.txt
 
 # Final image includes both system deps and preinstalled non-Dagster python deps
 FROM system_base
