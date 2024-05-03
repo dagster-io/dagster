@@ -30,28 +30,25 @@ class UpdatedSinceCronCondition(AssetCondition):
             # never evaluated
             context.previous_evaluation_info is None
             or context.previous_evaluation_node is None
-            # partitions def has changed
-            or not context.previous_evaluation_node.true_subset.is_compatible_with_partitions_def(
-                context.partitions_def
-            )
             # not evaluated since latest schedule tick
             or context.previous_evaluation_info.temporal_context.effective_dt < previous_cron_tick
             # has new set of candidates
-            or context.has_new_candidate_subset()
+            or context.previous_evaluation_node.candidate_slice != context.candidate_slice
             # asset updated since latest evaluation
             or context.asset_updated_since_previous_tick()
         ):
             # do a full recomputation
-            true_subset = (
-                context.candidate_subset
-                & context._queryer.get_asset_subset_updated_after_time(  # noqa
+            updated_subset = (
+                context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
                     asset_key=context.asset_key,
                     after_time=previous_cron_tick,
                 )
             )
-        else:
-            true_subset = context.previous_evaluation_node.true_subset.as_valid(
-                context.partitions_def
+            # TODO: implement this on the AssetGraphView
+            true_slice = context.candidate_slice.compute_intersection(
+                context.asset_graph_view.get_asset_slice_from_subset(updated_subset)
             )
+        else:
+            true_slice = context.previous_evaluation_node.true_slice
 
-        return SchedulingResult.create(context, true_subset)
+        return SchedulingResult.create(context, true_slice)

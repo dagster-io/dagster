@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence
 import pendulum
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
@@ -152,7 +152,7 @@ class SchedulingResult(DagsterModel):
     @staticmethod
     def create_from_children(
         context: "SchedulingContext",
-        true_subset: ValidAssetSubset,
+        true_slice: AssetSlice,
         child_results: Sequence["SchedulingResult"],
     ) -> "SchedulingResult":
         """Returns a new AssetConditionEvaluation from the given child results."""
@@ -161,8 +161,8 @@ class SchedulingResult(DagsterModel):
             condition_unique_id=context.condition_unique_id,
             start_timestamp=context.create_time.timestamp(),
             end_timestamp=pendulum.now("UTC").timestamp(),
-            true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
-            candidate_subset=context.candidate_subset,
+            true_slice=true_slice,
+            candidate_subset=context.candidate_slice.convert_to_valid_asset_subset(),
             subsets_with_metadata=[],
             child_results=child_results,
             extra_state=None,
@@ -171,7 +171,7 @@ class SchedulingResult(DagsterModel):
     @staticmethod
     def create(
         context: "SchedulingContext",
-        true_subset: ValidAssetSubset,
+        true_slice: AssetSlice,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: PackableValue = None,
     ) -> "SchedulingResult":
@@ -181,8 +181,8 @@ class SchedulingResult(DagsterModel):
             condition_unique_id=context.condition_unique_id,
             start_timestamp=context.create_time.timestamp(),
             end_timestamp=pendulum.now("UTC").timestamp(),
-            true_slice=context.asset_graph_view.get_asset_slice_from_subset(true_subset),
-            candidate_subset=context.candidate_subset,
+            true_slice=true_slice,
+            candidate_subset=context.candidate_slice.convert_to_valid_asset_subset(),
             subsets_with_metadata=subsets_with_metadata,
             child_results=[],
             extra_state=extra_state,

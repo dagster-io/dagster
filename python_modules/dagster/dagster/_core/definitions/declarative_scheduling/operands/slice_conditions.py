@@ -23,7 +23,7 @@ class SliceSchedulingCondition(AssetCondition):
         else:
             true_slice = self.compute_slice(context)
 
-        return SchedulingResult.create(context, true_slice.convert_to_valid_asset_subset())
+        return SchedulingResult.create(context, true_slice)
 
 
 @whitelist_for_serdes

@@ -27,7 +27,7 @@ def get_hardcoded_condition():
         def evaluate(self, context: SchedulingContext) -> SchedulingResult:
             true_candidates = {
                 candidate
-                for candidate in context.candidate_subset.asset_partitions
+                for candidate in context.candidate_slice.convert_to_valid_asset_subset().asset_partitions
                 if candidate in true_set
             }
             partitions_def = context.asset_graph_view.asset_graph.get(
@@ -35,8 +35,10 @@ def get_hardcoded_condition():
             ).partitions_def
             return SchedulingResult.create(
                 context,
-                true_subset=AssetSubset.from_asset_partitions_set(
-                    context.asset_key, partitions_def, true_candidates
+                true_slice=context.asset_graph_view.get_asset_slice_from_subset(
+                    AssetSubset.from_asset_partitions_set(
+                        context.asset_key, partitions_def, true_candidates
+                    )
                 ),
             )
 

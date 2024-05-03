@@ -1,5 +1,4 @@
 import datetime
-import functools
 import logging
 from typing import TYPE_CHECKING, Any, Mapping, Optional
 
@@ -11,16 +10,12 @@ from dagster._core.asset_graph_view.asset_graph_view import (
     AssetSlice,
 )
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info import (
     SchedulingEvaluationInfo,
-    SchedulingEvaluationNode,
-)
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
-    get_serializable_candidate_subset,
+    SchedulingEvaluationResultNode,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -73,7 +68,8 @@ class SchedulingContext(DagsterModel):
         auto_materialize_policy = check.not_none(asset_graph.get(asset_key).auto_materialize_policy)
         scheduling_condition = auto_materialize_policy.to_scheduling_condition()
 
-        return SchedulingContext(
+        # construct is used here for performance
+        return SchedulingContext.construct(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key),
             condition=scheduling_condition,
             condition_unique_id=scheduling_condition.get_unique_id(None),
@@ -87,10 +83,11 @@ class SchedulingContext(DagsterModel):
         )
 
     def for_child_condition(
-        self, child_condition: SchedulingCondition, candidate_subset: ValidAssetSubset
+        self, child_condition: SchedulingCondition, candidate_slice: AssetSlice
     ) -> "SchedulingContext":
-        return SchedulingContext(
-            candidate_slice=self.asset_graph_view.get_asset_slice_from_subset(candidate_subset),
+        # construct is used here for performance
+        return SchedulingContext.construct(
+            candidate_slice=candidate_slice,
             condition=child_condition,
             condition_unique_id=child_condition.get_unique_id(
                 parent_unique_id=self.condition_unique_id
@@ -104,24 +101,19 @@ class SchedulingContext(DagsterModel):
             inner_legacy_context=self.legacy_context.for_child(
                 child_condition,
                 child_condition.get_unique_id(self.condition_unique_id),
-                candidate_subset,
+                candidate_slice.convert_to_valid_asset_subset(),
             ),
         )
 
     @property
     def asset_key(self) -> AssetKey:
         """The asset key over which this condition is being evaluated."""
-        return self.candidate_subset.asset_key
+        return self.candidate_slice.asset_key
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         """The partitions definition for the asset being evaluated, if it exists."""
         return self.asset_graph_view.asset_graph.get(self.asset_key).partitions_def
-
-    @functools.cached_property
-    def candidate_subset(self) -> ValidAssetSubset:
-        """The AssetSubset over which this condition is being evaluated."""
-        return self.candidate_slice.convert_to_valid_asset_subset()
 
     @property
     def root_context(self) -> "SchedulingContext":
@@ -129,7 +121,7 @@ class SchedulingContext(DagsterModel):
         return self.parent_context.root_context if self.parent_context is not None else self
 
     @property
-    def previous_evaluation_node(self) -> Optional[SchedulingEvaluationNode]:
+    def previous_evaluation_node(self) -> Optional[SchedulingEvaluationResultNode]:
         """Returns the evaluation node for this asset from the previous evaluation, if this node
         was evaluated on the previous tick.
         """
@@ -166,13 +158,3 @@ class SchedulingContext(DagsterModel):
             asset_partition=AssetKeyPartitionKey(self.asset_key),
             after_cursor=cursor,
         )
-
-    def has_new_candidate_subset(self) -> bool:
-        """Returns if the current tick's candidate subset is different from the previous tick's."""
-        if self.previous_evaluation_node is None:
-            return True
-        # convert to seriliazable form to compare in-memory object with object that passed through
-        # a serdes round trip
-        return get_serializable_candidate_subset(
-            self.candidate_subset
-        ) != get_serializable_candidate_subset(self.previous_evaluation_node.candidate_subset)
