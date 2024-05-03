@@ -8,8 +8,8 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
-    RuleCondition,
 )
+from dagster._core.definitions.declarative_scheduling.operators.rule_operator import RuleCondition
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 

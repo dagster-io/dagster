@@ -213,7 +213,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
     ) -> "AssetConditionSnapshot":
-        from .declarative_scheduling.asset_condition import AssetConditionSnapshot, RuleCondition
+        from .declarative_scheduling.asset_condition import AssetConditionSnapshot
+        from .declarative_scheduling.operators.rule_operator import RuleCondition
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
@@ -282,6 +283,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
             AssetConditionEvaluation,
             AssetConditionSnapshot,
             HistoricalAllPartitionsSubsetSentinel,
+        )
+        from .declarative_scheduling.operators.boolean_operators import (
             NotAssetCondition,
             OrAssetCondition,
         )
@@ -372,11 +375,11 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
         from .declarative_scheduling.asset_condition import (
-            AndAssetCondition,
             AssetConditionEvaluation,
             AssetConditionSnapshot,
             HistoricalAllPartitionsSubsetSentinel,
         )
+        from .declarative_scheduling.operators.boolean_operators import AndAssetCondition
 
         asset_key = cast(AssetKey, unpacked_dict.get("asset_key"))
         partition_subsets_by_condition = cast(
