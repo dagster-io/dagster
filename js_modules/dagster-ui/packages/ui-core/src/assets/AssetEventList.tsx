@@ -62,8 +62,7 @@ export const AssetEventList = ({
           if (
             !loading &&
             e.currentTarget.scrollHeight > e.currentTarget.clientHeight &&
-            e.currentTarget.clientHeight + e.currentTarget.scrollTop ===
-              e.currentTarget.scrollHeight
+            e.currentTarget.clientHeight + e.currentTarget.scrollTop >= e.currentTarget.scrollHeight
           ) {
             onLoadMore();
           }

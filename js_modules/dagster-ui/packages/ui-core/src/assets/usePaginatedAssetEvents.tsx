@@ -53,7 +53,7 @@ export function usePaginatedAssetEvents(
         query: ASSET_EVENTS_QUERY,
         variables: {
           assetKey: {path: assetKey.path},
-          limit: 3,
+          limit: 100,
           before,
         },
       });
@@ -63,11 +63,29 @@ export function usePaginatedAssetEvents(
       const materializations = asset?.assetMaterializations || [];
       const observations = asset?.assetObservations || [];
 
+      // If we load 100 observations and get [June 2024 back to Jan 2024], and load
+      // 100 materializations and get [June 2024 back to March 2024], we want to keep
+      // only the observations back to March so the user can't scroll through
+      // [March -> Jan] with the materializations all missing.
+      const minMatTimestamp = materializations.length
+        ? min(materializations.map((e) => Number(e.timestamp))) || 0
+        : 0;
+      const minObsTimestamp = observations.length
+        ? min(observations.map((e) => Number(e.timestamp))) || 0
+        : 0;
+      const minToKeep = Math.max(minMatTimestamp, minObsTimestamp);
+
       setMaterializations((loaded) =>
-        uniqBy([...loaded, ...materializations], (e) => `${e.runId}${e.timestamp}`),
+        uniqBy(
+          [...loaded, ...materializations.filter((m) => Number(m.timestamp) >= minToKeep)],
+          (e) => `${e.runId}${e.timestamp}`,
+        ),
       );
       setObservations((loaded) =>
-        uniqBy([...loaded, ...observations], (e) => `${e.runId}${e.timestamp}`),
+        uniqBy(
+          [...loaded, ...observations.filter((m) => Number(m.timestamp) >= minToKeep)],
+          (e) => `${e.runId}${e.timestamp}`,
+        ),
       );
     },
     [assetKey, client, initialAsOf],
