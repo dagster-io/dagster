@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         InLatestTimeWindowCondition,
         InProgressSchedulingCondition,
         MissingSchedulingCondition,
+        RequestedThisTickCondition,
     )
     from .operators import (
         AllDepsCondition,
@@ -130,6 +131,13 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import InLatestTimeWindowCondition
 
         return InLatestTimeWindowCondition.from_lookback_delta(lookback_delta)
+
+    @staticmethod
+    def requested_this_tick() -> "RequestedThisTickCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if it will be requested this tick."""
+        from .operands import RequestedThisTickCondition
+
+        return RequestedThisTickCondition()
 
 
 class SchedulingResult(DagsterModel):

@@ -67,6 +67,7 @@ class SchedulingEvaluationInfo(DagsterModel):
 
     temporal_context: TemporalContext
     evaluation_nodes: Sequence[SchedulingEvaluationResultNode]
+    requested_slice: Optional[AssetSlice]
 
     def get_evaluation_node(self, unique_id: str) -> Optional[SchedulingEvaluationResultNode]:
         for node in self.evaluation_nodes:
@@ -87,4 +88,9 @@ class SchedulingEvaluationInfo(DagsterModel):
         nodes = SchedulingEvaluationResultNode.nodes_for_evaluation(
             asset_graph_view, state, state.previous_evaluation
         )
-        return SchedulingEvaluationInfo(temporal_context=temporal_context, evaluation_nodes=nodes)
+        requested_slice = asset_graph_view.get_asset_slice_from_subset(state.true_subset)
+        return SchedulingEvaluationInfo(
+            temporal_context=temporal_context,
+            evaluation_nodes=nodes,
+            requested_slice=requested_slice,
+        )

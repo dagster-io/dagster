@@ -1,11 +1,14 @@
 import dataclasses
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Mapping, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster import AssetKey
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_scheduling.legacy.legacy_context import (
@@ -27,7 +30,7 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluationState,
 )
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -52,6 +55,28 @@ class FalseAssetCondition(SchedulingCondition):
 class AssetConditionScenarioState(ScenarioState):
     asset_condition: Optional[SchedulingCondition] = None
     previous_evaluation_state: Optional[AssetConditionEvaluationState] = None
+    requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
+
+    def _get_current_evaluation_state_by_key(
+        self, asset_graph_view: AssetGraphView
+    ) -> Mapping[AssetKey, SchedulingEvaluationInfo]:
+        if self.requested_asset_partitions is None:
+            return {}
+        ap_by_key = defaultdict(set)
+        for ap in self.requested_asset_partitions:
+            ap_by_key[ap.asset_key].add(ap)
+        return {
+            asset_key: SchedulingEvaluationInfo(
+                temporal_context=TemporalContext(self.current_time, None),
+                evaluation_nodes=[],
+                requested_slice=asset_graph_view.get_asset_slice_from_subset(
+                    AssetSubset.from_asset_partitions_set(
+                        asset_key, asset_graph_view.asset_graph.get(asset_key).partitions_def, aps
+                    )
+                ),
+            )
+            for asset_key, aps in ap_by_key.items()
+        }
 
     def evaluate(
         self, asset: CoercibleToAssetKey
@@ -98,7 +123,9 @@ class AssetConditionScenarioState(ScenarioState):
                 asset_key=asset_key,
                 asset_graph_view=daemon_context.asset_graph_view,
                 logger=self.logger,
-                current_tick_evaluation_info_by_key={},
+                current_tick_evaluation_info_by_key=self._get_current_evaluation_state_by_key(
+                    daemon_context.asset_graph_view
+                ),
                 previous_evaluation_info=SchedulingEvaluationInfo.from_asset_condition_evaluation_state(
                     daemon_context.asset_graph_view, self.previous_evaluation_state
                 )
@@ -122,3 +149,8 @@ class AssetConditionScenarioState(ScenarioState):
         re-evaluating this data "from scratch" after much computation has occurred.
         """
         return dataclasses.replace(self, previous_evaluation_state=None)
+
+    def with_requested_asset_partitions(
+        self, requested_asset_partitions: Sequence[AssetKeyPartitionKey]
+    ) -> "AssetConditionScenarioState":
+        return dataclasses.replace(self, requested_asset_partitions=requested_asset_partitions)
