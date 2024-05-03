@@ -386,6 +386,9 @@ class DagsterKubernetesClient:
                 wait_time_between_attempts=wait_time_between_attempts,
             )
 
+            if not status:
+                raise DagsterK8sError(f"job {job_name} could not be found")
+
             # status.succeeded represents the number of pods which reached phase Succeeded.
             if status.succeeded == num_pods_to_wait_for:
                 break
@@ -419,9 +422,16 @@ class DagsterKubernetesClient:
         job_name: str,
         namespace: str,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
-    ) -> V1JobStatus:
+    ) -> Optional[V1JobStatus]:
         def _get_job_status():
-            job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
+            try:
+                job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
+            except kubernetes.client.rest.ApiException as e:
+                if e.reason == "Not Found":
+                    return None
+                else:
+                    raise
+
             return job.status
 
         return k8s_api_retry(_get_job_status, max_retries=3, timeout=wait_time_between_attempts)
