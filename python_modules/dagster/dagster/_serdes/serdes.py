@@ -42,7 +42,7 @@ from typing import (
     overload,
 )
 
-import pydantic
+from pydantic import BaseModel
 from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -82,7 +82,7 @@ PackableValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
+    BaseModel,
     "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
@@ -98,7 +98,7 @@ UnpackedValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
+    BaseModel,
     "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
@@ -396,7 +396,7 @@ def _whitelist_for_serdes(
                 field_serializers=field_serializers,
             )
             return klass  # type: ignore
-        elif issubclass(klass, pydantic.BaseModel) and (
+        elif issubclass(klass, BaseModel) and (
             serializer is None or issubclass(serializer, PydanticModelSerializer)
         ):
             whitelist_map.register_object(
@@ -424,7 +424,7 @@ def is_whitelisted_for_serdes_object(
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))  # NamedTuple
         or (is_dataclass(val) and not isinstance(val, type))  # dataclass instance
-        or isinstance(val, pydantic.BaseModel)
+        or isinstance(val, BaseModel)
     ):
         klass_name = val.__class__.__name__
         return whitelist_map.has_object_serializer(klass_name)
@@ -666,7 +666,7 @@ class DataclassSerializer(ObjectSerializer[T_Dataclass]):
         return list(f.name for f in dataclasses.fields(self.klass))
 
 
-T_PydanticModel = TypeVar("T_PydanticModel", bound=pydantic.BaseModel, default=pydantic.BaseModel)
+T_PydanticModel = TypeVar("T_PydanticModel", bound=BaseModel, default=BaseModel)
 
 
 class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
@@ -687,7 +687,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
 
         return result
 
-    @property
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
         return [field.alias or key for key, field in self._model_fields.items()]
 
@@ -775,7 +775,7 @@ def pack_value(
         FrozenSet[PackableValue],
         NamedTuple,
         "DataclassInstance",
-        pydantic.BaseModel,
+        BaseModel,
         Enum,
     ],
     whitelist_map: WhitelistMap = ...,
@@ -849,7 +849,7 @@ def _pack_value(
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
-        or isinstance(val, pydantic.BaseModel)
+        or isinstance(val, BaseModel)
         or (is_dataclass(val) and not isinstance(val, type))
     ):
         klass_name = val.__class__.__name__
