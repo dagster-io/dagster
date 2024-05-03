@@ -1437,21 +1437,25 @@ def should_backfill_atomic_asset_partitions_unit(
         materialized.
     """
     for candidate in candidates_unit:
-        if (
-            candidate not in target_subset
-            or candidate in failed_and_downstream_subset
-            or candidate in materialized_subset
-            or candidate in requested_subset
-        ):
-            if candidate not in target_subset:
-                reason = "not targeted by backfill"
-            elif candidate in failed_and_downstream_subset:
-                reason = "in failed and downstream subset"
-            elif candidate in materialized_subset:
-                reason = "already materialized by backfill"
-            else:  # candidate in requested_subset
-                reason = "already requested by backfill"
-            logger.info(f"Excluding {candidate} from request list. Reason: {reason}")
+        if candidate not in target_subset:
+            logger.info(
+                f"Excluding {candidate} from request list. Reason: not targeted by backfill."
+            )
+            return False
+        elif candidate in failed_and_downstream_subset:
+            logger.info(
+                f"Excluding {candidate} from request list. Reason: in failed and downstream subset."
+            )
+            return False
+        elif candidate in materialized_subset:
+            logger.info(
+                f"Excluding {candidate} from request list. Reason: already materialized by backfill."
+            )
+            return False
+        elif candidate in requested_subset:
+            logger.info(
+                f"Excluding {candidate} from request list. Reason: already requested by backfill."
+            )
             return False
 
         parent_partitions_result = asset_graph.get_parents_partitions(
