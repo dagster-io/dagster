@@ -45,15 +45,14 @@ def _external_observable_asset(**kwargs) -> Callable[..., AssetsDefinition]:
 def test_observe_result_asset():
     @_external_observable_asset()
     def ret_untyped(context: AssetExecutionContext):
-        return ObserveResult(
-            metadata={"one": 1},
-        )
+        return ObserveResult(metadata={"one": 1}, tags={"foo": "bar"})
 
     result = observe([ret_untyped])
     assert result.success
     observations = result.asset_observations_for_node(ret_untyped.node_def.name)
     assert len(observations) == 1, observations
     assert "one" in observations[0].metadata
+    assert observations[0].tags["foo"] == "bar"
 
     # key mismatch
     @_external_observable_asset()

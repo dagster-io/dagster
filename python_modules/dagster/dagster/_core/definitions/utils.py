@@ -178,30 +178,33 @@ def is_valid_definition_tag_value(key: str) -> bool:
     return bool(VALID_DEFINITION_TAG_VALUE_REGEX.match(key))
 
 
-def validate_definition_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
-    """More restrictive than validate_tags."""
+def validate_tags_strict(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
     if tags is None:
         return tags
 
     for key, value in tags.items():
-        if not isinstance(key, str):
-            raise DagsterInvalidDefinitionError("Tag keys must be strings")
-
-        if not isinstance(value, str):
-            raise DagsterInvalidDefinitionError("Tag values must be strings")
-
-        if not is_valid_definition_tag_key(key):
-            raise DagsterInvalidDefinitionError(
-                f"Invalid tag key: {key}. {VALID_DEFINITION_TAG_KEY_EXPLANATION}"
-            )
-
-        if not is_valid_definition_tag_value(value):
-            raise DagsterInvalidDefinitionError(
-                f"Invalid tag value: {value}. Allowed characters: alpha-numeric, '_', '-', '.'. "
-                "Must have <= 63 characters."
-            )
+        validate_tag_strict(key, value)
 
     return tags
+
+
+def validate_tag_strict(key: str, value: str) -> None:
+    if not isinstance(key, str):
+        raise DagsterInvalidDefinitionError("Tag keys must be strings")
+
+    if not isinstance(value, str):
+        raise DagsterInvalidDefinitionError("Tag values must be strings")
+
+    if not is_valid_definition_tag_key(key):
+        raise DagsterInvalidDefinitionError(
+            f"Invalid tag key: {key}. {VALID_DEFINITION_TAG_KEY_EXPLANATION}"
+        )
+
+    if not is_valid_definition_tag_value(value):
+        raise DagsterInvalidDefinitionError(
+            f"Invalid tag value: {value}, for key: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
+            "Must have <= 63 characters."
+        )
 
 
 def validate_group_name(group_name: Optional[str]) -> str:

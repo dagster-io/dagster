@@ -36,12 +36,14 @@ def test_materialize_result_asset():
     def ret_untyped(context: AssetExecutionContext):
         return MaterializeResult(
             metadata={"one": 1},
+            tags={"foo": "bar"},
         )
 
     mats = _exec_asset(ret_untyped)
     assert len(mats) == 1, mats
     assert "one" in mats[0].metadata
     assert mats[0].tags
+    assert mats[0].tags["foo"] == "bar"
 
     # key mismatch
     @asset
