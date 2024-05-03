@@ -35,8 +35,11 @@ export const LiveStates = () => {
     const dimensions = getAssetNodeDimensions(definitionCopy);
 
     function SetCacheEntry() {
-      const entry = {[tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!};
-      const {staleStatus, staleCauses} = scenario.liveData!;
+      if (!scenario.liveData) {
+        return null;
+      }
+      const entry = {[tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData};
+      const {staleStatus, staleCauses} = scenario.liveData;
       const staleEntry = {
         [tokenForAssetKey(definitionCopy.assetKey)]: buildAssetNode({
           assetKey: definitionCopy.assetKey,
