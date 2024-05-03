@@ -56,6 +56,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   }, [lru, version, cacheBreaker]);
 
   const fetch = React.useCallback(async () => {
+    setLoading(true);
     if (fetchState[key]) {
       return await new Promise<ApolloQueryResult<TQuery>>((res) => {
         fetchState[key]?.onFetched.push((value) => {
@@ -65,7 +66,6 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       });
     }
     fetchState[key] = {onFetched: []};
-    setLoading(true);
     // Use client.query here so that we initially use the apollo cache if any data is available in it
     // and so that we don't subscribe to any updates to that cache (useLazyQuery and useQuery would both subscribe to updates to the
     // cache which can be very slow)
