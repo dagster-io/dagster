@@ -15,6 +15,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Union,
     cast,
@@ -574,7 +575,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self._data_version_cache = DataVersionCache(self)
+        self._data_version_cache = DataVersionCache(step_context=self)
 
         self._requires_typed_event_stream = False
         self._typed_event_stream_error_message = None
@@ -961,9 +962,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["InputAssetVersionInfo"]]]:
         return self._data_version_cache.input_asset_version_info
 
-    @property
-    def is_external_input_asset_version_info_loaded(self) -> bool:
-        return self._data_version_cache.is_external_input_asset_version_info_loaded
+    # throws if not prefetched
+    def get_input_asset_version_info(self, key: AssetKey) -> Optional["InputAssetVersionInfo"]:
+        return self._data_version_cache.input_asset_version_info[key]
+
+    def prefetch_input_asset_version_infos(self, keys: Sequence[AssetKey]) -> None:
+        return self._data_version_cache.prefetch_input_asset_version_infos(keys)
 
     def maybe_fetch_and_get_input_asset_version_info(
         self, key: AssetKey

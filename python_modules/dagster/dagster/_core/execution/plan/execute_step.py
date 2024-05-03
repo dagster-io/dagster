@@ -617,10 +617,13 @@ def _get_output_asset_events(
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
+    # rewarm cache
+    step_context.prefetch_input_asset_version_infos([asset_key])
+
     tags: Dict[str, str]
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
-        and step_context.is_external_input_asset_version_info_loaded
+        and step_context.is_sda_step
         and asset_key in step_context.job_def.asset_layer.executable_asset_keys
     ):
         assert isinstance(output, Output)
@@ -714,7 +717,8 @@ def _get_input_provenance_data(
         # the most recent materialization record (it will retrieve a cached record if it's already
         # been asked for). For this to be correct, the output materializations for the step must be
         # generated in topological order -- we assume this.
-        version_info = step_context.maybe_fetch_and_get_input_asset_version_info(key)
+
+        version_info = step_context.get_input_asset_version_info(key)
 
         # This can only happen for source assets that have never been observed.
         if version_info is None:

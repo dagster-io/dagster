@@ -57,10 +57,11 @@ class InputAssetVersionInfo:
 
 
 class DataVersionCache:
-    def __init__(self, context: "StepExecutionContext"):
-        self._context = context
+    __slots__ = ["_context", "input_asset_version_info", "values"]
+
+    def __init__(self, step_context: "StepExecutionContext") -> None:
+        self._context = step_context
         self.input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
-        self.is_external_input_asset_version_info_loaded = False
         self.values: Dict[AssetKey, "DataVersion"] = {}
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
@@ -95,7 +96,10 @@ class DataVersionCache:
         self.input_asset_version_info = {}
         for key in all_dep_keys:
             self._fetch_input_asset_version_info(key)
-        self.is_external_input_asset_version_info_loaded = True
+
+    def prefetch_input_asset_version_infos(self, keys: Sequence[AssetKey]) -> None:
+        for key in keys:
+            self._fetch_input_asset_version_info(key)
 
     def _fetch_input_asset_version_info(self, key: AssetKey) -> None:
         from dagster._core.definitions.data_version import (
