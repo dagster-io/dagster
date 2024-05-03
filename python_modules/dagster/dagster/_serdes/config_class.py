@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Mapping,
     NamedTuple,
     Optional,
@@ -36,9 +35,12 @@ T_ConfigurableClass = TypeVar("T_ConfigurableClass")
 
 
 class ConfigurableClassDataSerializer(NamedTupleSerializer["ConfigurableClassData"]):
-    def after_pack(self, **packed: Any) -> Dict[str, Any]:
-        packed["module_name"] = convert_dagster_submodule_name(packed["module_name"], "public")
-        return packed
+    def pack_items(self, *args, **kwargs):
+        for k, v in super().pack_items(*args, **kwargs):
+            if k == "module_name":
+                yield k, convert_dagster_submodule_name(v, "public")
+            else:
+                yield k, v
 
 
 @whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
