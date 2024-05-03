@@ -10,7 +10,7 @@ import requests
 # Checks all packages in the current venv, sorts their most recent releases by time, and prints
 # anything that has changed in the last N days. Use to detect upstream breakages.
 
-libraries = subprocess.check_output("pip list | cut -f1 -d ' '", shell=True).decode("utf-8")
+libraries = subprocess.check_output("uv pip list | cut -f1 -d ' '", shell=True).decode("utf-8")
 
 libraries = libraries.split("\n")
 
