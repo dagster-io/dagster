@@ -24,6 +24,7 @@ from dagster._model import DagsterModel
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -106,6 +107,10 @@ class SchedulingContext(DagsterModel):
         )
 
     @property
+    def asset_graph(self) -> "BaseAssetGraph":
+        return self.asset_graph_view.asset_graph
+
+    @property
     def asset_key(self) -> AssetKey:
         """The asset key over which this condition is being evaluated."""
         return self.candidate_slice.asset_key
@@ -113,7 +118,7 @@ class SchedulingContext(DagsterModel):
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         """The partitions definition for the asset being evaluated, if it exists."""
-        return self.asset_graph_view.asset_graph.get(self.asset_key).partitions_def
+        return self.asset_graph.get(self.asset_key).partitions_def
 
     @property
     def root_context(self) -> "SchedulingContext":
@@ -141,6 +146,26 @@ class SchedulingContext(DagsterModel):
     @property
     def _queryer(self) -> "CachingInstanceQueryer":
         return self.asset_graph_view._queryer  # noqa
+
+    @property
+    def previous_candidate_slice(self) -> Optional[AssetSlice]:
+        """Returns the candidate slice for the previous evaluation. If this node has never been
+        evaluated, returns None.
+        """
+        return (
+            self.previous_evaluation_node.candidate_slice if self.previous_evaluation_node else None
+        )
+
+    @property
+    def previous_evaluation_max_storage_id(self) -> Optional[int]:
+        """Returns the maximum storage ID for the previous time this node was evaluated. If this
+        node has never been evaluated, returns None.
+        """
+        return (
+            self.previous_evaluation_info.temporal_context.last_event_id
+            if self.previous_evaluation_info and self.previous_evaluation_node
+            else None
+        )
 
     @property
     def new_max_storage_id(self) -> Optional[int]:

@@ -11,7 +11,7 @@ from typing import (
 
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -126,6 +126,9 @@ class AssetSlice:
             check.not_none(akpk.partition_key, "No None partition keys")
             for akpk in self._compatible_subset.asset_partitions
         }
+
+    def compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        return self._compatible_subset.asset_partitions
 
     @property
     def asset_key(self) -> AssetKey:
@@ -346,6 +349,21 @@ class AssetGraphView:
     def get_asset_slice_from_valid_subset(self, subset: ValidAssetSubset) -> "AssetSlice":
         return _slice_from_subset(self, subset)
 
+    def get_asset_slice_from_asset_partitions(
+        self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+    ) -> "AssetSlice":
+        asset_keys = {akpk.asset_key for akpk in asset_partitions}
+        check.invariant(len(asset_keys) == 1, "Must have only one asset key")
+        asset_key = asset_keys.pop()
+        return _slice_from_subset(
+            self,
+            ValidAssetSubset.from_asset_partitions_set(
+                asset_key=asset_key,
+                partitions_def=self._get_partitions_def(asset_key),
+                asset_partitions_set=asset_partitions,
+            ),
+        )
+
     def compute_missing_subslice(
         self, asset_key: "AssetKey", from_slice: "AssetSlice"
     ) -> "AssetSlice":
@@ -469,6 +487,26 @@ class AssetGraphView:
             )
         else:
             check.failed(f"Unsupported partitions_def: {partitions_def}")
+
+    @cached_method
+    def compute_updated_since_cursor_slice(
+        self, asset_key: AssetKey, cursor: Optional[int]
+    ) -> AssetSlice:
+        subset = self._queryer.get_asset_subset_updated_after_cursor(
+            asset_key=asset_key, after_cursor=cursor
+        )
+        return self.get_asset_slice_from_valid_subset(subset)
+
+    @cached_method
+    def compute_parent_updated_since_cursor_slice(
+        self, asset_key: AssetKey, cursor: Optional[int]
+    ) -> AssetSlice:
+        result_slice = self.create_empty_slice(asset_key)
+        for parent_key in self.asset_graph.get(asset_key).parent_keys:
+            result_slice = result_slice.compute_union(
+                self.compute_updated_since_cursor_slice(asset_key=parent_key, cursor=cursor)
+            )
+        return result_slice
 
     def create_empty_slice(self, asset_key: AssetKey) -> AssetSlice:
         return _slice_from_subset(
