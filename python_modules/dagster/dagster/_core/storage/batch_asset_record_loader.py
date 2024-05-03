@@ -20,7 +20,7 @@ class BatchAssetRecordLoader:
         self._asset_records: Mapping[AssetKey, Optional["AssetRecord"]] = {}
 
     def add_asset_keys(self, asset_keys: Iterable[AssetKey]):
-        unfetched_asset_keys = set(asset_keys).difference(self._asset_records.keys())
+        unfetched_asset_keys = set(asset_keys).difference(self._asset_records)
         self._unfetched_asset_keys = self._unfetched_asset_keys.union(unfetched_asset_keys)
 
     def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
