@@ -56,7 +56,7 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
         context.add_output_metadata(
             {
-                **TableMetadataSet(row_count=obj.shape[0]),
+                **TableMetadataSet(total_row_count=obj.shape[0]),
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(
                         columns=[

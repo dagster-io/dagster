@@ -30,14 +30,14 @@ def test_table_metadata_set() -> None:
 
 
 def test_row_count() -> None:
-    table_metadata = TableMetadataSet(row_count=67)
+    table_metadata = TableMetadataSet(total_row_count=67)
 
     dict_table_metadata = dict(table_metadata)
-    assert dict_table_metadata == {"dagster/row_count": 67}
+    assert dict_table_metadata == {"dagster/total_row_count": 67}
     AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
 
     splat_table_metadata = {**table_metadata}
-    assert splat_table_metadata == {"dagster/row_count": 67}
+    assert splat_table_metadata == {"dagster/total_row_count": 67}
     AssetMaterialization(asset_key="a", metadata=splat_table_metadata)
 
 

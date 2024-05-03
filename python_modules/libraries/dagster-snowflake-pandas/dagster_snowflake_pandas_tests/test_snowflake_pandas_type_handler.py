@@ -111,7 +111,7 @@ def test_handle_output():
         "dataframe_columns": MetadataValue.table_schema(
             TableSchema(columns=[TableColumn("col1", "object"), TableColumn("col2", "int64")])
         ),
-        "dagster/row_count": 1,
+        "dagster/total_row_count": 1,
     }
 
 
