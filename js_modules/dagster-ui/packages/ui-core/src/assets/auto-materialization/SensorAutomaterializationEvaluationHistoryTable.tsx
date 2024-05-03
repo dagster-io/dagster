@@ -5,6 +5,7 @@ import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {ASSET_SENSOR_TICKS_QUERY} from '../../sensors/AssetSensorTicksQuery';
 import {
@@ -82,6 +83,8 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
     },
     pageSize: PAGE_SIZE,
   });
+
+  useBlockTraceOnQueryResult(queryResult, 'AssetSensorTicksQuery');
 
   // Only refresh if we're on the first page
   useQueryRefreshAtInterval(queryResult, 10000, !paginationProps.hasPrevCursor);

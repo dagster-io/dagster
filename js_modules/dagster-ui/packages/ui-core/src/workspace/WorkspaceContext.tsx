@@ -1,6 +1,7 @@
-import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
+import {ApolloQueryResult, gql} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import * as React from 'react';
+import {useMemo} from 'react';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -20,6 +21,8 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {PipelineSelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 type Repository = WorkspaceRepositoryFragment;
@@ -42,6 +45,7 @@ type WorkspaceState = {
   locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
+  data: RootWorkspaceQuery | null;
 
   refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
   toggleVisible: SetVisibleOrHiddenFn;
@@ -170,6 +174,7 @@ export const ROOT_WORKSPACE_QUERY = gql`
       id
       selectorId
       status
+      ...BasicInstigationStateFragment
     }
     sensorType
     ...SensorSwitchFragment
@@ -178,6 +183,7 @@ export const ROOT_WORKSPACE_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${SENSOR_SWITCH_FRAGMENT}
+  ${BASIC_INSTIGATION_STATE_FRAGMENT}
 `;
 
 /**
@@ -186,9 +192,17 @@ export const ROOT_WORKSPACE_QUERY = gql`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>(
-    ROOT_WORKSPACE_QUERY,
-  );
+  const {
+    data,
+    loading,
+    fetch: refetch,
+  } = useIndexedDBCachedQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>({
+    query: ROOT_WORKSPACE_QUERY,
+    key: 'RootWorkspace',
+    version: 999,
+  });
+  useMemo(() => refetch(), [refetch]);
+
   const workspaceOrError = data?.workspaceOrError;
 
   const locationEntries = React.useMemo(
@@ -232,6 +246,7 @@ const useWorkspaceState = (): WorkspaceState => {
     loading: loading && !data, // Only "loading" on initial load.
     error,
     locationEntries,
+    data,
     allRepos,
     visibleRepos,
     toggleVisible,

@@ -14,6 +14,7 @@ import {Timestamp} from '../../app/time/Timestamp';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
 import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -193,7 +194,7 @@ const AssetDetailRow = ({
   evaluationId: number;
 }) => {
   const numMaterializations = partitionKeys?.length || 1;
-  const {data} = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
+  const queryResult = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
     ASSET_GROUP_QUERY,
     {
       fetchPolicy: 'cache-and-network',
@@ -202,6 +203,9 @@ const AssetDetailRow = ({
       },
     },
   );
+  const {data} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'AssetGroupAndLocationQuery');
+
   const asset = data?.assetOrError.__typename === 'Asset' ? data.assetOrError : null;
   const definition = asset?.definition;
   const repoAddress = definition
