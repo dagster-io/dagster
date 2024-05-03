@@ -1,7 +1,6 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..legacy.asset_condition import AssetCondition
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
 
@@ -36,10 +35,12 @@ class DepConditionWrapperCondition(SchedulingCondition):
         )
 
 
-@whitelist_for_serdes
-class AnyDepsCondition(AssetCondition):
+class DepCondition(SchedulingCondition):
     operand: SchedulingCondition
 
+
+@whitelist_for_serdes
+class AnyDepsCondition(DepCondition):
     @property
     def description(self) -> str:
         return "Any deps"
@@ -66,9 +67,7 @@ class AnyDepsCondition(AssetCondition):
 
 
 @whitelist_for_serdes
-class AllDepsCondition(SchedulingCondition):
-    operand: SchedulingCondition
-
+class AllDepsCondition(DepCondition):
     @property
     def description(self) -> str:
         return "All deps"
