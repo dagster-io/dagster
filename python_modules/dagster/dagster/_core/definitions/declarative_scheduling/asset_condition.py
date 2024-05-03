@@ -31,7 +31,7 @@ from ..asset_subset import AssetSubset, ValidAssetSubset
 from ..auto_materialize_rule import AutoMaterializeRule
 
 if TYPE_CHECKING:
-    from .scheduling_condition_evaluation_context import SchedulingConditionEvaluationContext
+    from .scheduling_context import SchedulingContext
 
 
 T = TypeVar("T")
@@ -211,7 +211,7 @@ class AssetConditionEvaluationState:
 
     @staticmethod
     def create(
-        context: "SchedulingConditionEvaluationContext", root_result: "AssetConditionResult"
+        context: "SchedulingContext", root_result: "AssetConditionResult"
     ) -> "AssetConditionEvaluationState":
         """Convenience constructor to generate an AssetConditionEvaluationState from the root result
         and the context in which it was evaluated.
@@ -285,7 +285,7 @@ class AssetCondition(ABC, DagsterModel):
         return non_secure_md5_hash_str("".join(parts).encode())
 
     @abstractmethod
-    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
         raise NotImplementedError()
 
     @property
@@ -463,7 +463,7 @@ class RuleCondition(AssetCondition):
     def description(self) -> str:
         return self.rule.description
 
-    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
         context.legacy_context.root_context.daemon_context.logger.debug(
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
@@ -490,7 +490,7 @@ class AndAssetCondition(AssetCondition):
     def description(self) -> str:
         return "All of"
 
-    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
         child_results: List[AssetConditionResult] = []
         true_subset = context.candidate_subset
         for child in self.children:
@@ -518,7 +518,7 @@ class OrAssetCondition(AssetCondition):
     def description(self) -> str:
         return "Any of"
 
-    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
         child_results: List[AssetConditionResult] = []
         true_subset = context.asset_graph_view.create_empty_slice(
             context.asset_key
@@ -548,7 +548,7 @@ class NotAssetCondition(AssetCondition):
     def children(self) -> Sequence[AssetCondition]:
         return [self.operand]
 
-    def evaluate(self, context: "SchedulingConditionEvaluationContext") -> "AssetConditionResult":
+    def evaluate(self, context: "SchedulingContext") -> "AssetConditionResult":
         child_context = context.for_child_condition(
             child_condition=self.operand, candidate_subset=context.candidate_subset
         )
@@ -578,7 +578,7 @@ class AssetConditionResult:
 
     @staticmethod
     def create_from_children(
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
         true_subset: ValidAssetSubset,
         child_results: Sequence["AssetConditionResult"],
     ) -> "AssetConditionResult":
@@ -597,7 +597,7 @@ class AssetConditionResult:
 
     @staticmethod
     def create(
-        context: "SchedulingConditionEvaluationContext",
+        context: "SchedulingContext",
         true_subset: ValidAssetSubset,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: PackableValue = None,

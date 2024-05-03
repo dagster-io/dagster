@@ -2,7 +2,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_condition import AssetCondition, AssetConditionResult
-from .scheduling_condition_evaluation_context import SchedulingConditionEvaluationContext
+from .scheduling_context import SchedulingContext
 
 
 class DepConditionWrapperCondition(AssetCondition):
@@ -18,7 +18,7 @@ class DepConditionWrapperCondition(AssetCondition):
     def description(self) -> str:
         return f"{self.dep_key.to_user_string()}"
 
-    def evaluate(self, context: SchedulingConditionEvaluationContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
         # only evaluate parents of the current candidate subset
         dep_candidate_subset = context.candidate_slice.compute_parent_slice(
             self.dep_key
@@ -51,7 +51,7 @@ class AnyDepsCondition(AssetCondition):
     def description(self) -> str:
         return "Any deps"
 
-    def evaluate(self, context: SchedulingConditionEvaluationContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
         dep_results = []
         true_subset = context.asset_graph_view.create_empty_slice(
             context.asset_key
@@ -81,7 +81,7 @@ class AllDepsCondition(AssetCondition):
     def description(self) -> str:
         return "All deps"
 
-    def evaluate(self, context: SchedulingConditionEvaluationContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
         dep_results = []
         true_subset = context.candidate_subset
 
