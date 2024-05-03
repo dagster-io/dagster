@@ -253,6 +253,9 @@ partitions_c = StaticPartitionsDefinition(["foo_c"])
 
 partitions_d = StaticPartitionsDefinition(["foo_d"])
 
+partitions_f = StaticPartitionsDefinition(["foo_f", "bar_f"])
+partitions_g = StaticPartitionsDefinition(["foo_g", "bar_g"])
+
 
 @asset(partitions_def=partitions_a)
 def asset_a():
@@ -288,6 +291,23 @@ def asset_d(asset_a):
     ins={"asset_a": AssetIn(partition_mapping=AllPartitionMapping())},
 )
 def asset_e(asset_a):
+    pass
+
+
+@asset(partitions_def=partitions_f)
+def asset_f():
+    pass
+
+
+@asset(
+    partitions_def=partitions_g,
+    ins={
+        "asset_f": AssetIn(
+            partition_mapping=StaticPartitionMapping({"foo_f": "foo_g", "bar_f": "bar_g"})
+        )
+    },
+)
+def asset_g(asset_f):
     pass
 
 
@@ -348,6 +368,8 @@ def the_repo():
         daily_1,
         daily_2,
         asset_e,
+        asset_f,
+        asset_g,
         asset_with_single_run_backfill_policy,
         asset_with_multi_run_backfill_policy,
     ]
@@ -1324,6 +1346,176 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
         == 4
+    )
+
+
+def test_asset_backfill_first_iteration_code_location_unreachable_error_no_runs_submitted(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+):
+    # tests that we can recover from unreachable code location error during the first tick when
+    # we are requesting the root assets
+
+    asset_selection = [AssetKey("asset_a"), AssetKey("asset_e")]
+    asset_graph = workspace_context.create_request_context().asset_graph
+
+    num_partitions = 1
+    target_partitions = partitions_a.get_partition_keys()[0:num_partitions]
+    backfill_id = "backfill_with_roots"
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=target_partitions,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    # The following backfill iteration will attempt to submit run requests for asset_a's partition.
+    # The call will raise a DagsterUserCodeUnreachableError and no runs will be submitted
+
+    def raise_code_unreachable_error(*args, **kwargs):
+        raise DagsterUserCodeUnreachableError()
+
+    with mock.patch(
+        "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
+        side_effect=raise_code_unreachable_error,
+    ):
+        assert all(
+            not error
+            for error in list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+        )
+
+    assert instance.get_runs_count() == 0
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    assert updated_backfill.asset_backfill_data
+    assert (
+        updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
+        == 0
+    )
+    assert not updated_backfill.asset_backfill_data.requested_runs_for_target_roots
+
+    # Execute backfill iteration again, confirming that the partition for asset_a is requested again
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    # Assert that one run is submitted
+    assert instance.get_runs_count() == 1
+
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    assert updated_backfill.asset_backfill_data
+    assert (
+        updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
+        == 1
+    )
+
+
+def test_asset_backfill_first_iteration_code_location_unreachable_error_some_runs_submitted(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+):
+    # tests that we can recover from unreachable code location error during the first tick when
+    # we are requesting the root assets
+    from dagster._core.execution.submit_asset_runs import _get_job_execution_data_from_run_request
+
+    asset_selection = [AssetKey("asset_f"), AssetKey("asset_g")]
+    asset_graph = workspace_context.create_request_context().asset_graph
+
+    num_partitions = 2
+    target_partitions = partitions_f.get_partition_keys()[0:num_partitions]
+    backfill_id = "backfill_with_roots_multiple_partitions"
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=target_partitions,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    # The following backfill iteration will attempt to submit run requests for asset_f's two partitions.
+    # The first call to _get_job_execution_data_from_run_request will succeed, but the second call will
+    # raise a DagsterUserCodeUnreachableError. Subsequently only the first partition will be successfully
+    # submitted.
+    counter = 0
+
+    def raise_code_unreachable_error_on_second_call(*args, **kwargs):
+        nonlocal counter
+        if counter == 0:
+            counter += 1
+            return _get_job_execution_data_from_run_request(*args, **kwargs)
+        elif counter == 1:
+            counter += 1
+            raise DagsterUserCodeUnreachableError()
+        else:
+            # Should not attempt to create a run for the third partition if the second
+            # errored with DagsterUserCodeUnreachableError
+            raise Exception("Should not reach")
+
+    with mock.patch(
+        "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
+        side_effect=raise_code_unreachable_error_on_second_call,
+    ):
+        assert all(
+            not error
+            for error in list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+        )
+
+    assert instance.get_runs_count() == 1
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    assert updated_backfill.asset_backfill_data
+    assert (
+        updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
+        == 1
+    )
+    assert not updated_backfill.asset_backfill_data.requested_runs_for_target_roots
+
+    # Execute backfill iteration again, confirming that the remaining partition for asset_f is requested again
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    # Assert that one run is submitted
+    assert instance.get_runs_count() == 2
+
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    assert updated_backfill.asset_backfill_data
+    assert (
+        updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
+        == 2
     )
 
 

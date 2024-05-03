@@ -164,6 +164,9 @@ class AssetBackfillData(NamedTuple):
             latest_storage_id=latest_storage_id,
         )
 
+    def with_requested_runs_for_target_roots(self, requested_runs_for_target_roots: bool):
+        return self._replace(requested_runs_for_target_roots=requested_runs_for_target_roots)
+
     def is_complete(self) -> bool:
         """The asset backfill is complete when all runs to be requested have finished (success,
         failure, or cancellation). Since the AssetBackfillData object stores materialization states
@@ -727,10 +730,13 @@ def _submit_runs_and_update_backfill_in_chunks(
         if retryable_error_raised:
             # Code server became unavailable mid-backfill. Rewind the cursor back to the cursor
             # from the previous iteration, to allow next iteration to reevaluate the same
-            # events.
+            # events. If the previous iteration had not requested the target roots, this will also
+            # ensure the next iteration requests the target roots
             backfill_data_with_submitted_runs = (
                 backfill_data_with_submitted_runs.with_latest_storage_id(
                     previous_asset_backfill_data.latest_storage_id
+                ).with_requested_runs_for_target_roots(
+                    previous_asset_backfill_data.requested_runs_for_target_roots
                 )
             )
 
@@ -1190,9 +1196,13 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
-        initial_candidates.update(
-            asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
-        )
+        target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
+        # Because the code server may have failed while requesting roots, some roots may have
+        # already been requested. Checking here will reduce the amount of BFS work later in the iteration.
+        not_yet_requested = [
+            root for root in target_roots if root not in asset_backfill_data.requested_subset
+        ]
+        initial_candidates.update(not_yet_requested)
 
         yield None
 
