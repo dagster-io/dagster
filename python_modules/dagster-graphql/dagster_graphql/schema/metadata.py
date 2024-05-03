@@ -176,16 +176,16 @@ class GrapheneSourceLocation(graphene.Union):
         name = "SourceLocation"
 
 
-class GrapheneSourceEntry(graphene.ObjectType):
+class GrapheneCodeReferenceEntry(graphene.ObjectType):
     key = graphene.NonNull(graphene.String)
-    source = graphene.NonNull(GrapheneSourceLocation)
+    reference = graphene.NonNull(GrapheneSourceLocation)
 
     class Meta:
-        name = "SourceEntry"
+        name = "CodeReferenceEntry"
 
 
 class GrapheneCodeReferencesMetadataEntry(graphene.ObjectType):
-    sources = non_null_list(GrapheneSourceEntry)
+    code_references = non_null_list(GrapheneCodeReferenceEntry)
 
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
