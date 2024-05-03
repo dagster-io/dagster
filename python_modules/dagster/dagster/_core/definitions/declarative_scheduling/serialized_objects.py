@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Any,
     Dict,
     FrozenSet,
     Mapping,
@@ -19,7 +18,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._model import DagsterModel
-from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
+from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
@@ -212,7 +211,7 @@ class AssetConditionEvaluationState:
     previous_tick_evaluation_timestamp: Optional[float]
 
     max_storage_id: Optional[int]
-    extra_state_by_unique_id: Mapping[str, Any]
+    extra_state_by_unique_id: Mapping[str, Optional[Union[AssetSubset, Sequence[AssetSubset]]]]
 
     @property
     def asset_key(self) -> AssetKey:
@@ -233,8 +232,8 @@ class AssetConditionEvaluationState:
         # flatten the extra state into a single dict
         def _flatten_extra_state(
             r: "SchedulingResult",
-        ) -> Mapping[str, PackableValue]:
-            extra_state: Dict[str, PackableValue] = (
+        ) -> Mapping[str, Optional[Union[AssetSubset, Sequence[AssetSubset]]]]:
+            extra_state: Dict[str, Optional[Union[AssetSubset, Sequence[AssetSubset]]]] = (
                 {r.condition_unique_id: r.extra_state} if r.extra_state else {}
             )
             for child in r.child_results:
