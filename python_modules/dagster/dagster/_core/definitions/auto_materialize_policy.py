@@ -7,7 +7,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
     AutoMaterializeRuleSnapshot,
 )
-from dagster._core.definitions.declarative_scheduling.asset_condition import AssetCondition
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import AssetCondition
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,

@@ -7,12 +7,12 @@ from dagster import AssetKey
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_scheduling.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetCondition,
     AssetConditionEvaluationState,
     AssetConditionResult,
 )
-from dagster._core.definitions.declarative_scheduling.legacy_context import (
+from dagster._core.definitions.declarative_scheduling.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
 )
 from dagster._core.definitions.declarative_scheduling.operators.boolean_operators import (

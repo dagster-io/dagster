@@ -3,7 +3,7 @@ from typing import List, Sequence
 from dagster._annotations import experimental
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..asset_condition import AssetCondition, AssetConditionResult
+from ..legacy.asset_condition import AssetCondition, AssetConditionResult
 from ..scheduling_context import SchedulingContext
 
 

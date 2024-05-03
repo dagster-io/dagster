@@ -26,7 +26,7 @@ if TYPE_CHECKING:
         SkipOnRequiredButNonexistentParentsRule,
         SkipOnRunInProgressRule,
     )
-    from dagster._core.definitions.declarative_scheduling.asset_condition import (
+    from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
         AssetCondition,
         AssetConditionResult,
     )
@@ -62,7 +62,7 @@ class AutoMaterializeRule(ABC):
 
     def to_asset_condition(self) -> "AssetCondition":
         """Converts this AutoMaterializeRule into an AssetCondition."""
-        from .declarative_scheduling.operators.rule_operator import RuleCondition
+        from .declarative_scheduling.legacy.rule_condition import RuleCondition
 
         return RuleCondition(rule=self)
 

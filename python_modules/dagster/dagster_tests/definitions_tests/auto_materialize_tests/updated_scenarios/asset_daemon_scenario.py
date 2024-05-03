@@ -33,7 +33,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_scheduling.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )

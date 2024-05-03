@@ -11,7 +11,7 @@ from dagster._core.asset_graph_view.asset_graph_view import (
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.declarative_scheduling.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetCondition,
     AssetConditionEvaluation,
     AssetConditionEvaluationState,
@@ -21,7 +21,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._model import DagsterModel
 
-from .legacy_context import LegacyRuleEvaluationContext
+from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer

@@ -42,11 +42,11 @@ from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
-from .declarative_scheduling.asset_condition import (
+from .declarative_scheduling.legacy.asset_condition import (
     AssetConditionEvaluation,
     AssetConditionEvaluationState,
 )
-from .declarative_scheduling.legacy_context import (
+from .declarative_scheduling.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
 )
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key

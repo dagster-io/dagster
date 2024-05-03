@@ -1,4 +1,4 @@
-from .asset_condition import AssetCondition as AssetCondition
+from .legacy.asset_condition import AssetCondition as AssetCondition
 
 # for whitelist_for_serdes
 from .operators.dep_operators import (
