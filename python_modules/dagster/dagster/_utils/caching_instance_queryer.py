@@ -45,6 +45,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.storage.dagster_run import (
+    IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     RunRecord,
 )
@@ -163,6 +164,33 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             value = self.asset_partition_has_materialization_or_observation(
                 AssetKeyPartitionKey(asset_key)
             )
+        return ValidAssetSubset(asset_key=asset_key, value=value)
+
+    @cached_method
+    def get_in_progress_asset_subset(self, *, asset_key: AssetKey) -> ValidAssetSubset:
+        """Returns an AssetSubset representing the subset of the asset that is currently in progress."""
+        partitions_def = self.asset_graph.get(asset_key).partitions_def
+        if partitions_def:
+            cache_value = self._get_updated_cache_value(asset_key=asset_key)
+            if cache_value is None:
+                value = partitions_def.empty_subset()
+            else:
+                value = cache_value.deserialize_in_progress_partition_subsets(partitions_def)
+        else:
+            # NOTE: this computation is not correct in all cases for unpartitioned assets. it is
+            # possible (though rare) for run A to be launched targeting an asset, then later run B
+            # be launched, and then run B completes before run A. In these cases, the computation
+            # below will consider the asset to not be in progress, as the latest planned event
+            # will be associated with a completed run.
+            planned_materialization_info = (
+                self.instance.event_log_storage.get_latest_planned_materialization_info(asset_key)
+            )
+            if not planned_materialization_info:
+                value = False
+            else:
+                dagster_run = self.instance.get_run_by_id(planned_materialization_info.run_id)
+                value = dagster_run is not None and dagster_run.status in IN_PROGRESS_RUN_STATUSES
+
         return ValidAssetSubset(asset_key=asset_key, value=value)
 
     ####################
