@@ -46,8 +46,8 @@ from .declarative_scheduling.asset_condition import (
     AssetConditionEvaluation,
     AssetConditionEvaluationState,
 )
-from .declarative_scheduling.asset_condition_evaluation_context import (
-    AssetConditionEvaluationContext,
+from .declarative_scheduling.legacy_context import (
+    LegacyRuleEvaluationContext,
 )
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import PartitionsDefinition, ScheduleType
@@ -220,7 +220,7 @@ class AssetDaemonContext:
 
         asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
 
-        legacy_context = AssetConditionEvaluationContext.create(
+        legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
             previous_evaluation_state=asset_cursor,
             condition=asset_condition,
