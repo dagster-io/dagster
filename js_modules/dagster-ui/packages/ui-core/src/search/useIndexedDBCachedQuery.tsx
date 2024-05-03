@@ -7,7 +7,7 @@ type CacheData<TQuery> = {
   version: number;
 };
 
-const fetchState: Record<
+let fetchState: Record<
   string,
   {
     onFetched: ((value: any) => void)[];
@@ -56,8 +56,14 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   }, [lru, version, cacheBreaker]);
 
   const fetch = React.useCallback(async () => {
+    if (window.__LOG) {
+      debugger;
+    }
+    window.__LOG && console.log('fetch', key, fetchState);
+
     setLoading(true);
     if (fetchState[key]) {
+      console.log('subscribing');
       return await new Promise<ApolloQueryResult<TQuery>>((res) => {
         fetchState[key]?.onFetched.push((value) => {
           setCacheBreaker((v) => v + 1);
@@ -76,6 +82,9 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       // should help avoid page stuttering due to granular updates to the data
     });
     const {data} = queryResult;
+    if (window.__LOG) {
+      console.log(data.workspaceOrError.locationEntries.length);
+    }
     setLoading(false);
     lru.set(
       'cache',
@@ -84,9 +93,13 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         expiry: new Date('3000'), // never expire,
       },
     );
-    setData(data);
-    fetchState[key]?.onFetched.forEach((cb) => cb(queryResult));
     delete fetchState[key];
+    const onFetched = fetchState[key]?.onFetched;
+    window.__LOG && console.log('setting data');
+    setData(data);
+    window.__LOG && console.log('onfetched');
+    onFetched?.forEach((cb) => cb(queryResult));
+    window.__LOG && console.log('returning');
     return queryResult;
   }, [client, key, lru, query, variables, version]);
 
@@ -96,3 +109,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     loading,
   };
 }
+
+export const __resetForJest = () => {
+  fetchState = {};
+};

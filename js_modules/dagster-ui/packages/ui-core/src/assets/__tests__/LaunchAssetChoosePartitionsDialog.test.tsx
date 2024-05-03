@@ -12,12 +12,14 @@ import {
   buildDimensionPartitionKeys,
   buildMultiPartitionStatuses,
   buildPartitionDefinition,
+  buildWorkspace,
 } from '../../graphql/types';
 import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
 import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,
 } from '../../partitions/types/CreatePartitionDialog.types';
+import {buildWorkspaceContextMockedResponse} from '../../runs/__fixtures__/RunsFilterInput.fixtures';
 import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
@@ -26,6 +28,8 @@ import {
   PartitionHealthQueryVariables,
 } from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
+
+const workspaceMock = buildWorkspaceContextMockedResponse(buildWorkspace({}));
 
 describe('launchAssetChoosePartitionsDialog', () => {
   it('Adding a dynamic partition when multiple assets selected', async () => {
@@ -88,6 +92,7 @@ describe('launchAssetChoosePartitionsDialog', () => {
             assetASecondQueryMock,
             assetBSecondQueryMock,
             addPartitionMock,
+            workspaceMock,
           ]}
         >
           <LaunchAssetChoosePartitionsDialog

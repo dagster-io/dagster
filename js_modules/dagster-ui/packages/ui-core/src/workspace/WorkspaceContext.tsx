@@ -201,6 +201,11 @@ const useWorkspaceState = (): WorkspaceState => {
     key: 'RootWorkspace',
     version: 1,
   });
+  useMemo(() => {
+    if (window.__LOG) {
+      console.log('REMOUNTING');
+    }
+  }, []);
   useMemo(() => refetch(), [refetch]);
 
   const workspaceOrError = data?.workspaceOrError;
