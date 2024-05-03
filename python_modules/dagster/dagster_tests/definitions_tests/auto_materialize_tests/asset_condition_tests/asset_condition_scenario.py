@@ -7,9 +7,6 @@ from dagster import AssetKey
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-    AssetConditionResult,
-)
 from dagster._core.definitions.declarative_scheduling.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
 )
@@ -18,6 +15,7 @@ from dagster._core.definitions.declarative_scheduling.operators.boolean_operator
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
+    SchedulingResult,
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
@@ -39,8 +37,8 @@ class FalseAssetCondition(SchedulingCondition):
     def description(self) -> str:
         return ""
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
-        return AssetConditionResult.create(
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+        return SchedulingResult.create(
             context,
             true_subset=context.asset_graph_view.create_empty_slice(
                 context.asset_key
@@ -55,7 +53,7 @@ class AssetConditionScenarioState(ScenarioState):
 
     def evaluate(
         self, asset: CoercibleToAssetKey
-    ) -> Tuple["AssetConditionScenarioState", AssetConditionResult]:
+    ) -> Tuple["AssetConditionScenarioState", SchedulingResult]:
         asset_key = AssetKey.from_coercible(asset)
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery

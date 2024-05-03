@@ -3,7 +3,9 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetCondition,
-    AssetConditionResult,
+)
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+    SchedulingResult,
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
@@ -22,7 +24,7 @@ def get_hardcoded_condition():
         def description(self) -> str:
             return "..."
 
-        def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+        def evaluate(self, context: SchedulingContext) -> SchedulingResult:
             true_candidates = {
                 candidate
                 for candidate in context.candidate_subset.asset_partitions
@@ -31,7 +33,7 @@ def get_hardcoded_condition():
             partitions_def = context.asset_graph_view.asset_graph.get(
                 context.asset_key
             ).partitions_def
-            return AssetConditionResult.create(
+            return SchedulingResult.create(
                 context,
                 true_subset=AssetSubset.from_asset_partitions_set(
                     context.asset_key, partitions_def, true_candidates

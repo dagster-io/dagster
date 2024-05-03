@@ -28,10 +28,11 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
         AssetCondition,
-        AssetConditionResult,
     )
-
-    from .declarative_scheduling.scheduling_context import (
+    from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+        SchedulingResult,
+    )
+    from dagster._core.definitions.declarative_scheduling.scheduling_context import (
         SchedulingContext,
     )
 
@@ -67,7 +68,7 @@ class AutoMaterializeRule(ABC):
         return RuleCondition(rule=self)
 
     @abstractmethod
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "AssetConditionResult":
+    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
         """The core evaluation function for the rule. This function takes in a context object and
         returns a mapping from evaluated rules to the set of asset partitions that the rule applies
         to.

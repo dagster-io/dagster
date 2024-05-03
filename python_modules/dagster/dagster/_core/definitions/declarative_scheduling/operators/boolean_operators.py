@@ -3,8 +3,7 @@ from typing import List, Sequence
 from dagster._annotations import experimental
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..legacy.asset_condition import AssetConditionResult
-from ..scheduling_condition import SchedulingCondition
+from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
 
 
@@ -23,8 +22,8 @@ class AndAssetCondition(SchedulingCondition):
     def description(self) -> str:
         return "All of"
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
-        child_results: List[AssetConditionResult] = []
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+        child_results: List[SchedulingResult] = []
         true_subset = context.candidate_subset
         for child in self.children:
             child_context = context.for_child_condition(
@@ -33,7 +32,7 @@ class AndAssetCondition(SchedulingCondition):
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
             true_subset &= child_result.true_subset
-        return AssetConditionResult.create_from_children(context, true_subset, child_results)
+        return SchedulingResult.create_from_children(context, true_subset, child_results)
 
 
 @experimental
@@ -51,8 +50,8 @@ class OrAssetCondition(SchedulingCondition):
     def description(self) -> str:
         return "Any of"
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
-        child_results: List[AssetConditionResult] = []
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+        child_results: List[SchedulingResult] = []
         true_subset = context.asset_graph_view.create_empty_slice(
             context.asset_key
         ).convert_to_valid_asset_subset()
@@ -63,7 +62,7 @@ class OrAssetCondition(SchedulingCondition):
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
             true_subset |= child_result.true_subset
-        return AssetConditionResult.create_from_children(context, true_subset, child_results)
+        return SchedulingResult.create_from_children(context, true_subset, child_results)
 
 
 @experimental
@@ -81,11 +80,11 @@ class NotAssetCondition(SchedulingCondition):
     def children(self) -> Sequence[SchedulingCondition]:
         return [self.operand]
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         child_context = context.for_child_condition(
             child_condition=self.operand, candidate_subset=context.candidate_subset
         )
         child_result = self.operand.evaluate(child_context)
         true_subset = context.candidate_subset - child_result.true_subset
 
-        return AssetConditionResult.create_from_children(context, true_subset, [child_result])
+        return SchedulingResult.create_from_children(context, true_subset, [child_result])

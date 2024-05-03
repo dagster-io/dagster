@@ -22,8 +22,8 @@ from dagster._model import DagsterModel
 from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-        AssetConditionResult,
+    from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+        SchedulingResult,
     )
     from dagster._core.definitions.declarative_scheduling.scheduling_context import (
         SchedulingContext,
@@ -90,7 +90,7 @@ class AssetConditionEvaluation(DagsterModel):
         return self.true_subset.asset_key
 
     @staticmethod
-    def from_result(result: "AssetConditionResult") -> "AssetConditionEvaluation":
+    def from_result(result: "SchedulingResult") -> "AssetConditionEvaluation":
         return AssetConditionEvaluation(
             condition_snapshot=result.condition.get_snapshot(result.condition_unique_id),
             start_timestamp=result.start_timestamp,
@@ -224,7 +224,7 @@ class AssetConditionEvaluationState:
 
     @staticmethod
     def create(
-        context: "SchedulingContext", root_result: "AssetConditionResult"
+        context: "SchedulingContext", root_result: "SchedulingResult"
     ) -> "AssetConditionEvaluationState":
         """Convenience constructor to generate an AssetConditionEvaluationState from the root result
         and the context in which it was evaluated.
@@ -232,7 +232,7 @@ class AssetConditionEvaluationState:
 
         # flatten the extra state into a single dict
         def _flatten_extra_state(
-            r: "AssetConditionResult",
+            r: "SchedulingResult",
         ) -> Mapping[str, PackableValue]:
             extra_state: Dict[str, PackableValue] = (
                 {r.condition_unique_id: r.extra_state} if r.extra_state else {}

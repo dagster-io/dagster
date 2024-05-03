@@ -4,7 +4,8 @@ from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 
-from ..legacy.asset_condition import AssetCondition, AssetConditionResult
+from ..legacy.asset_condition import AssetCondition
+from ..scheduling_condition import SchedulingResult
 from ..scheduling_context import SchedulingContext
 
 
@@ -14,14 +15,14 @@ class SliceSchedulingCondition(AssetCondition):
     @abstractmethod
     def compute_slice(self, context: SchedulingContext) -> AssetSlice: ...
 
-    def evaluate(self, context: SchedulingContext) -> AssetConditionResult:
+    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         # don't compute anything if there are no candidates
         if context.candidate_slice.is_empty:
             true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
         else:
             true_slice = self.compute_slice(context)
 
-        return AssetConditionResult.create(context, true_slice.convert_to_valid_asset_subset())
+        return SchedulingResult.create(context, true_slice.convert_to_valid_asset_subset())
 
 
 class MissingSchedulingCondition(SliceSchedulingCondition):
