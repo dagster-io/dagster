@@ -120,6 +120,9 @@ from dagster._core.definitions.asset_check_factories.freshness_checks.sensor imp
 from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
     build_time_partition_freshness_checks as build_time_partition_freshness_checks,
 )
+from dagster._core.definitions.asset_check_factories.metadata_range_checks import (
+    build_metadata_range_checks as build_metadata_range_checks,
+)
 from dagster._core.definitions.asset_check_factories.schema_change_checks import (
     build_column_schema_change_checks as build_column_schema_change_checks,
 )
