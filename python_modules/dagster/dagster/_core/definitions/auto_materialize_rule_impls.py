@@ -368,8 +368,8 @@ class MaterializeOnParentUpdatedRule(
             ).parent_partitions
 
             updated_parent_asset_partitions = context.legacy_context.instance_queryer.get_parent_asset_partitions_updated_after_child(
-                asset_partition,
-                parent_asset_partitions,
+                asset_partition=asset_partition,
+                parent_asset_partitions=parent_asset_partitions,
                 # do a precise check for updated parents, factoring in data versions, as long as
                 # we're within reasonable limits on the number of partitions to check
                 respect_materialization_data_versions=context.legacy_context.daemon_context.respect_materialization_data_versions
@@ -706,9 +706,9 @@ class SkipOnNotAllParentsUpdatedRule(
 
             updated_parent_partitions = (
                 context.legacy_context.instance_queryer.get_parent_asset_partitions_updated_after_child(
-                    candidate,
-                    parent_partitions,
-                    context.legacy_context.daemon_context.respect_materialization_data_versions,
+                    asset_partition=candidate,
+                    parent_asset_partitions=parent_partitions,
+                    respect_materialization_data_versions=context.legacy_context.daemon_context.respect_materialization_data_versions,
                     ignored_parent_keys=set(),
                 )
                 | context.legacy_context.parent_will_update_subset.asset_partitions
