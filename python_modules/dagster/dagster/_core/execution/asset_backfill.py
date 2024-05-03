@@ -1269,6 +1269,7 @@ def execute_asset_backfill_iteration_inner(
             failed_and_downstream_subset=failed_and_downstream_subset,
             dynamic_partitions_store=instance_queryer,
             current_time=backfill_start_time,
+            logger=logger,
         ),
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
@@ -1368,12 +1369,12 @@ def can_run_with_parent(
     )
     if parent_node.backfill_policy != candidate_node.backfill_policy:
         logger.info(
-            "Removing {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} have different backfill policies"
+            "Excluding {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} have different backfill policies."
         )
         return False
     if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
         logger.info(
-            "Removing {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} are in different code locations"
+            "Excluding {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} are in different code locations."
         )
         return False
     if (
@@ -1381,7 +1382,7 @@ def can_run_with_parent(
         and parent not in candidates_unit
     ):
         logger.info(
-            f"Removing {candidate_node.asset_key} from request list. Reason: parent asset {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration"
+            f"Excluding {candidate_node.asset_key} from request list. Reason: parent asset {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration."
         )
         return False
     if (
@@ -1409,12 +1410,12 @@ def can_run_with_parent(
         return True
     else:
         logger.log(
-            f"Removing {candidate_node.asset_key} from request list. Reason: partition "
+            f"Excluding {candidate_node.asset_key} from request list. Reason: partition "
             f"mapping between {parent_node.asset_key} and {candidate_node.asset_key} is not simple and "
             f"{parent_node.asset_key} does not meet requirements of: targeting the same partitions as "
             f"{candidate_node.asset_key}, have all of its partitions requested in this iteration, having "
             "a backfill policy, and that backfill policy size limit is not exceeded by adding "
-            f"{candidate_node.asset_key} to the run"
+            f"{candidate_node.asset_key} to the run."
         )
         return False
 
@@ -1429,6 +1430,7 @@ def should_backfill_atomic_asset_partitions_unit(
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
     current_time: datetime,
+    logger: logging.Logger,
 ) -> bool:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
@@ -1441,6 +1443,15 @@ def should_backfill_atomic_asset_partitions_unit(
             or candidate in materialized_subset
             or candidate in requested_subset
         ):
+            if candidate not in target_subset:
+                reason = "not targeted by backfill"
+            elif candidate in failed_and_downstream_subset:
+                reason = "in failed and downstream subset"
+            elif candidate in materialized_subset:
+                reason = "already materialized by backfill"
+            else:  # candidate in requested_subset
+                reason = "already requested by backfill"
+            logger.info(f"Excluding {candidate} from request list. Reason: {reason}")
             return False
 
         parent_partitions_result = asset_graph.get_parents_partitions(
