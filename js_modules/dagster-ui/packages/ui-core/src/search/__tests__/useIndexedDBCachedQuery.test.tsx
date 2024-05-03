@@ -103,19 +103,22 @@ describe('useIndexedDBCachedQuery', () => {
     expect(result.current.data).toBeNull();
   });
 
-  it.only('Ensures that concurrent fetch requests consolidate correctly, not triggering multiple network requests for the same key', async () => {
+  it('Ensures that concurrent fetch requests consolidate correctly, not triggering multiple network requests for the same key', async () => {
     mockCache().has.mockResolvedValue(false);
     const mock1 = mock();
     const mock2 = mock();
+    let result1;
+    let result2;
     renderHook(
       () => {
-        const {fetch} = useIndexedDBCachedQuery({
+        result1 = useIndexedDBCachedQuery({
           key: 'testKey',
           query: ASSET_CATALOG_TABLE_QUERY,
           version: 2,
         });
+        const {fetch} = result1;
         useMemo(() => fetch(), [fetch]);
-        const result2 = useIndexedDBCachedQuery({
+        result2 = useIndexedDBCachedQuery({
           key: 'testKey',
           query: ASSET_CATALOG_TABLE_QUERY,
           version: 2,
@@ -131,5 +134,7 @@ describe('useIndexedDBCachedQuery', () => {
       },
     );
     expect(useApolloClient().query).toHaveBeenCalledTimes(1);
+    expect(result1!.data).toEqual(result2!.data);
+    expect(result1!.loading).toEqual(result2!.loading);
   });
 });
