@@ -31,6 +31,7 @@ setup(
     packages=find_packages(exclude=["dagster_looker_tests*"]),
     install_requires=[
         f"dagster{pin}",
+        "lkml",
     ],
     zip_safe=False,
 )
