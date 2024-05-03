@@ -1,13 +1,18 @@
-import {DocumentNode, OperationVariables, useApolloClient} from '@apollo/client';
+import {ApolloQueryResult, DocumentNode, OperationVariables, useApolloClient} from '@apollo/client';
 import {cache} from 'idb-lru-cache';
 import React from 'react';
-
-const ONE_WEEK = 1000 * 60 * 60 * 24 * 7;
 
 type CacheData<TQuery> = {
   data: TQuery;
   version: number;
 };
+
+const fetchState: Record<
+  string,
+  {
+    onFetched: ((value: any) => void)[];
+  }
+> = {};
 
 /**
  * Returns data from the indexedDB cache initially while loading is true.
@@ -35,6 +40,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   const [data, setData] = React.useState<TQuery | null>(null);
 
   const [loading, setLoading] = React.useState(false);
+  const [cacheBreaker, setCacheBreaker] = React.useState(0);
 
   React.useEffect(() => {
     (async () => {
@@ -47,35 +53,42 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         }
       }
     })();
-  }, [lru, version]);
-
-  const didFetch = React.useRef(false);
+  }, [lru, version, cacheBreaker]);
 
   const fetch = React.useCallback(async () => {
-    if (didFetch.current) {
-      return;
+    if (fetchState[key]) {
+      return await new Promise<ApolloQueryResult<TQuery>>((res) => {
+        fetchState[key]?.onFetched.push((value) => {
+          setCacheBreaker((v) => v + 1);
+          res(value);
+        });
+      });
     }
-    didFetch.current = true;
+    fetchState[key] = {onFetched: []};
     setLoading(true);
     // Use client.query here so that we initially use the apollo cache if any data is available in it
     // and so that we don't subscribe to any updates to that cache (useLazyQuery and useQuery would both subscribe to updates to the
     // cache which can be very slow)
-    const {data} = await client.query<TQuery, TVariables>({
+    const queryResult = await client.query<TQuery, TVariables>({
       query,
       variables,
-      fetchPolicy: 'no-cache', // Don't store the result in the cache,
+      fetchPolicy: typeof jest === undefined ? 'no-cache' : undefined, // Don't store the result in the cache,
       // should help avoid page stuttering due to granular updates to the data
     });
+    const {data} = queryResult;
     setLoading(false);
     lru.set(
       'cache',
       {data, version},
       {
-        expiry: new Date(Date.now() + ONE_WEEK),
+        expiry: new Date('3000'), // never expire,
       },
     );
     setData(data);
-  }, [client, lru, query, variables, version]);
+    fetchState[key]?.onFetched.forEach((cb) => cb(queryResult));
+    delete fetchState[key];
+    return queryResult;
+  }, [client, key, lru, query, variables, version]);
 
   return {
     fetch,
