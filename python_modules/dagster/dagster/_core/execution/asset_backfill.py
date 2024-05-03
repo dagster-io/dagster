@@ -1369,12 +1369,12 @@ def can_run_with_parent(
     )
     if parent_node.backfill_policy != candidate_node.backfill_policy:
         logger.info(
-            "Excluding {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} have different backfill policies."
+            f"Excluding {candidate} from request list. Reason: parent {parent_node.key} and {candidate_node.key} have different backfill policies."
         )
         return False
     if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
         logger.info(
-            "Excluding {candidate_node.asset_key} from request list. Reason: parent {parent_node.asset_key} and {candidate_node.asset_key} are in different code locations."
+            f"Excluding {candidate} from request list. Reason: parent {parent_node.key} and {candidate_node.key} are in different code locations."
         )
         return False
     if (
@@ -1382,7 +1382,7 @@ def can_run_with_parent(
         and parent not in candidates_unit
     ):
         logger.info(
-            f"Excluding {candidate_node.asset_key} from request list. Reason: parent asset {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration."
+            f"Excluding {candidate} from request list. Reason: parent asset {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration."
         )
         return False
     if (
@@ -1410,12 +1410,12 @@ def can_run_with_parent(
         return True
     else:
         logger.log(
-            f"Excluding {candidate_node.asset_key} from request list. Reason: partition "
-            f"mapping between {parent_node.asset_key} and {candidate_node.asset_key} is not simple and "
-            f"{parent_node.asset_key} does not meet requirements of: targeting the same partitions as "
-            f"{candidate_node.asset_key}, have all of its partitions requested in this iteration, having "
+            f"Excluding {candidate} from request list. Reason: partition "
+            f"mapping between {parent_node.key} and {candidate_node.key} is not simple and "
+            f"{parent_node.key} does not meet requirements of: targeting the same partitions as "
+            f"{candidate_node.key}, have all of its partitions requested in this iteration, having "
             "a backfill policy, and that backfill policy size limit is not exceeded by adding "
-            f"{candidate_node.asset_key} to the run."
+            f"{candidate_node.key} to the run."
         )
         return False
 
