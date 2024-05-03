@@ -9,7 +9,6 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetCondition,
-    AssetConditionEvaluationState,
     AssetConditionResult,
 )
 from dagster._core.definitions.declarative_scheduling.legacy.legacy_context import (
@@ -20,6 +19,9 @@ from dagster._core.definitions.declarative_scheduling.operators.boolean_operator
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
+)
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluationState,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time

@@ -21,10 +21,10 @@ from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
-    from .declarative_scheduling.legacy.asset_condition import AssetSubsetWithMetadata
     from .declarative_scheduling.legacy.legacy_context import (
         LegacyRuleEvaluationContext,
     )
+    from .declarative_scheduling.serialized_objects import AssetSubsetWithMetadata
 
 
 def get_execution_period_for_policy(
@@ -165,7 +165,7 @@ def freshness_evaluation_results_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-    from .declarative_scheduling.legacy.asset_condition import AssetSubsetWithMetadata
+    from .declarative_scheduling.serialized_objects import AssetSubsetWithMetadata
 
     asset_key = context.asset_key
     current_time = context.evaluation_time

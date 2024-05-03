@@ -26,11 +26,13 @@ from dagster._serdes.serdes import (
 )
 
 from .base_asset_graph import BaseAssetGraph
+from .declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationState,
+)
 
 if TYPE_CHECKING:
-    from .declarative_scheduling.legacy.asset_condition import (
-        AssetConditionEvaluation,
-        AssetConditionEvaluationState,
+    from .declarative_scheduling.serialized_objects import (
         AssetConditionSnapshot,
     )
 
@@ -149,11 +151,11 @@ def get_backcompat_asset_condition_evaluation_state(
 ) -> "AssetConditionEvaluationState":
     """Generates an AssetDaemonCursor from information available on the old cursor format."""
     from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnMissingRule
-    from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-        AssetConditionEvaluationState,
-    )
     from dagster._core.definitions.declarative_scheduling.legacy.rule_condition import (
         RuleCondition,
+    )
+    from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+        AssetConditionEvaluationState,
     )
 
     return AssetConditionEvaluationState(
@@ -178,8 +180,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     from .auto_materialize_rule_evaluation import (
         deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
     )
-    from .declarative_scheduling.legacy.asset_condition import (
-        AssetConditionEvaluation,
+    from .declarative_scheduling.serialized_objects import (
         AssetConditionSnapshot,
     )
 
