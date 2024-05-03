@@ -72,7 +72,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     const queryResult = await client.query<TQuery, TVariables>({
       query,
       variables,
-      fetchPolicy: typeof jest === undefined ? 'no-cache' : undefined, // Don't store the result in the cache,
+      fetchPolicy: 'no-cache', // Don't store the result in the cache,
       // should help avoid page stuttering due to granular updates to the data
     });
     const {data} = queryResult;
