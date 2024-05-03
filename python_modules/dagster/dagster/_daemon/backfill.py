@@ -52,12 +52,10 @@ def execute_backfill_jobs(
         )
         try:
             if backfill.is_asset_backfill:
-                backfill_logger.info("Backfill is an asset backfill.")
                 yield from execute_asset_backfill_iteration(
                     backfill, backfill_logger, workspace_process_context, instance
                 )
             else:
-                backfill_logger.info("Backfill is a job backfill.")
                 yield from execute_job_backfill_iteration(
                     backfill,
                     backfill_logger,

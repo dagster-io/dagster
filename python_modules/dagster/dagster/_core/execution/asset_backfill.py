@@ -913,8 +913,6 @@ def execute_asset_backfill_iteration(
         f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
     )
 
-    logger.info(f"AssetBackfillData from previous iteration: {previous_asset_backfill_data}")
-
     if backfill.status == BulkActionStatus.REQUESTED:
         result = None
         for result in execute_asset_backfill_iteration_inner(
@@ -1278,9 +1276,6 @@ def execute_asset_backfill_iteration_inner(
     logger.info(
         f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
     )
-    logger.info(
-        f"Assets in initial subset but not in subset to request: {initial_candidates - asset_partitions_to_request}"
-    )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
     asset_backfill_policies = [
@@ -1435,8 +1430,8 @@ def should_backfill_atomic_asset_partitions_unit(
             elif candidate in materialized_subset:
                 reason = "already materialized by backfill"
             else:  # candidate in requested_subset
-                reason = "already requested by backfill"
-            logger.info(f"Removing {candidate} from request list. Reason: {reason}")
+                reason = "already requested by a previous iteration of the backfill"
+            logger.info(f"Excluding {candidate} from request list. Reason: {reason}.")
             return False
 
         parent_partitions_result = asset_graph.get_parents_partitions(
@@ -1468,11 +1463,6 @@ def should_backfill_atomic_asset_partitions_unit(
                     asset_partitions_to_request_map,
                 )
             ):
-                logger.info(
-                    f"Removing {candidate} from request list. Reason: Parent asset {parent} is in "
-                    f"the target subset, has not been materialized, and {candidate} cannot be "
-                    f"materialized in the same run as {parent}"
-                )
                 return False
 
     return True
