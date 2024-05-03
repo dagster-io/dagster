@@ -7,16 +7,36 @@ from dagster_aws.utils import construct_boto_client_retry_config
 
 
 def construct_ssm_client(
-    max_attempts: int, region_name: Optional[str] = None, profile_name: Optional[str] = None
+    max_attempts: int,
+    region_name: Optional[str] = None,
+    profile_name: Optional[str] = None,
+    endpoint_url: Optional[str] = None,
+    use_ssl: bool = True,
+    aws_access_key_id: Optional[str] = None,
+    aws_secret_access_key: Optional[str] = None,
+    aws_session_token: Optional[str] = None,
+    verify=None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")
     check.opt_str_param(profile_name, "profile_name")
+    check.opt_str_param(endpoint_url, "endpoint_url")
+    check.bool_param(use_ssl, "use_ssl")
+    check.opt_str_param(verify, "verify")
+    check.opt_str_param(aws_access_key_id, "aws_access_key_id")
+    check.opt_str_param(aws_secret_access_key, "aws_secret_access_key")
+    check.opt_str_param(aws_session_token, "aws_session_token")
 
     client_session = boto3.session.Session(profile_name=profile_name)
     ssm_client = client_session.client(
         "ssm",
         region_name=region_name,
+        use_ssl=use_ssl,
+        verify=verify,
+        endpoint_url=endpoint_url,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_session_token=aws_session_token,
         config=construct_boto_client_retry_config(max_attempts),
     )
 

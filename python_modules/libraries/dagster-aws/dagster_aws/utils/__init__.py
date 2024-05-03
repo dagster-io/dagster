@@ -40,6 +40,29 @@ class ResourceWithBoto3Configuration(ConfigurableResource):
     profile_name: Optional[str] = Field(
         default=None, description="Specifies a profile to connect that session"
     )
+    use_ssl: bool = Field(
+        default=True, description="Whether or not to use SSL. By default, SSL is used."
+    )
+    endpoint_url: Optional[str] = Field(
+        default=None, description="Specifies a custom endpoint for the Boto3 session."
+    )
+    verify: Optional[str] = Field(
+        default=None,
+        description=(
+            "Whether or not to verify SSL certificates. By default SSL certificates are verified."
+            " You can also specify this argument if you want to use a different CA cert bundle than"
+            " the one used by botocore."
+        ),
+    )
+    aws_access_key_id: Optional[str] = Field(
+        default=None, description="AWS access key ID to use when creating the boto3 session."
+    )
+    aws_secret_access_key: Optional[str] = Field(
+        default=None, description="AWS secret access key to use when creating the boto3 session."
+    )
+    aws_session_token: Optional[str] = Field(
+        default=None, description="AWS session token to use when creating the boto3 session."
+    )
 
 
 def ensure_dagster_aws_tests_import() -> None:
