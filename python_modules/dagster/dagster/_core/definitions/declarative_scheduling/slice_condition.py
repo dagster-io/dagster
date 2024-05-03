@@ -31,3 +31,12 @@ class MissingSchedulingCondition(SliceSchedulingCondition):
         return context.asset_graph_view.compute_missing_subslice(
             context.asset_key, from_slice=context.candidate_slice
         )
+
+
+class InLatestTimeWindowCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Within latest time window"
+
+    def compute_slice(self, context: SchedulingConditionEvaluationContext) -> AssetSlice:
+        return context.asset_graph_view.create_latest_time_window_slice(context.asset_key)
