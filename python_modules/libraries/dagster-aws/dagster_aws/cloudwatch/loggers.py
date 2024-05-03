@@ -1,5 +1,6 @@
 import datetime
 import logging
+from typing import Optional
 
 import boto3
 from dagster import (
@@ -34,14 +35,22 @@ class CloudwatchLogsHandler(logging.Handler):
         log_group_name,
         log_stream_name,
         aws_region=None,
-        aws_secret_access_key=None,
-        aws_access_key_id=None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
+        endpoint_url: Optional[str] = None,
+        use_ssl: bool = True,
+        aws_session_token: Optional[str] = None,
+        verify=None,
     ):
         self.client = boto3.client(
             "logs",
             region_name=aws_region,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
+            endpoint_url=endpoint_url,
+            use_ssl=use_ssl,
+            aws_session_token=aws_session_token,
+            verify=verify,
         )
         self.log_group_name = check.str_param(log_group_name, "log_group_name")
         # Maybe we should make this optional, and default to the run_id

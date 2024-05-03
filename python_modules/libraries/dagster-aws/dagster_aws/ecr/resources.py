@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 import boto3
 from botocore.stub import Stubber
@@ -7,8 +8,26 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 
 
 class ECRPublicClient:
-    def __init__(self):
-        self.client = boto3.client("ecr-public")
+    def __init__(
+        self,
+        region_name: Optional[str] = None,
+        endpoint_url: Optional[str] = None,
+        use_ssl: bool = True,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
+        aws_session_token: Optional[str] = None,
+        verify=None,
+    ):
+        self.client = boto3.client(
+            "ecr-public",
+            region_name=region_name,
+            use_ssl=use_ssl,
+            verify=verify,
+            endpoint_url=endpoint_url,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+        )
 
     def get_login_password(self):
         return self.client.get_authorization_token()["authorizationData"]["authorizationToken"]
