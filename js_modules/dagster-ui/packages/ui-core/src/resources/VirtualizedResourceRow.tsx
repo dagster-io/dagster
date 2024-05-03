@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import {succinctType} from './ResourceRoot';
 import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -85,20 +85,11 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
 
 export const VirtualizedResourceHeader = () => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Type</HeaderCell>
       <HeaderCell>Uses</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

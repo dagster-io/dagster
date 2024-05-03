@@ -37,31 +37,29 @@ export const VirtualizedSensorTable = ({
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <VirtualizedSensorHeader checkbox={headerCheckbox} />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const row: SensorInfo = sensors[index]!;
-              const sensorKey = makeSensorKey(repoAddress, row.name);
-              return (
-                <VirtualizedSensorRow
-                  key={key}
-                  name={row.name}
-                  repoAddress={repoAddress}
-                  sensorState={row.sensorState}
-                  checked={checkedKeys.has(sensorKey)}
-                  showCheckboxColumn={!!headerCheckbox}
-                  onToggleChecked={onToggleCheckFactory(sensorKey)}
-                  height={size}
-                  start={start}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <VirtualizedSensorHeader checkbox={headerCheckbox} />
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const row: SensorInfo = sensors[index]!;
+            const sensorKey = makeSensorKey(repoAddress, row.name);
+            return (
+              <VirtualizedSensorRow
+                key={key}
+                name={row.name}
+                repoAddress={repoAddress}
+                sensorState={row.sensorState}
+                checked={checkedKeys.has(sensorKey)}
+                showCheckboxColumn={!!headerCheckbox}
+                onToggleChecked={onToggleCheckFactory(sensorKey)}
+                height={size}
+                start={start}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };
