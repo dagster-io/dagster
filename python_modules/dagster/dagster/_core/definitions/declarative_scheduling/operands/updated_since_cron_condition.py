@@ -27,9 +27,10 @@ class UpdatedSinceCronCondition(AssetCondition):
         previous_cron_tick = self._get_previous_cron_tick(context)
 
         if (
-            # never evaluated
+            # never evaluated or evaluation info is no longer valid
             context.previous_evaluation_info is None
             or context.previous_evaluation_node is None
+            or context.previous_evaluation_node.true_slice is None
             # not evaluated since latest schedule tick
             or context.previous_evaluation_info.temporal_context.effective_dt < previous_cron_tick
             # has new set of candidates
@@ -46,7 +47,7 @@ class UpdatedSinceCronCondition(AssetCondition):
             )
             # TODO: implement this on the AssetGraphView
             true_slice = context.candidate_slice.compute_intersection(
-                context.asset_graph_view.get_asset_slice_from_subset(updated_subset)
+                context.asset_graph_view.get_asset_slice_from_valid_subset(updated_subset)
             )
         else:
             true_slice = context.previous_evaluation_node.true_slice
