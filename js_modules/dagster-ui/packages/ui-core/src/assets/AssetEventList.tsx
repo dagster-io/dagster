@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Icon, Tag} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
@@ -21,12 +21,17 @@ export const AssetEventList = ({
   setFocused,
   xAxis,
   assetKey,
+  loading,
+  onLoadMore,
 }: {
   xAxis: 'time' | 'partition';
   groups: AssetEventGroup[];
   assetKey: AssetKeyInput;
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
+
+  loading: boolean;
+  onLoadMore: () => void;
 }) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const focusedRowRef = useRef<HTMLDivElement | null>(null);
@@ -47,47 +52,77 @@ export const AssetEventList = ({
         el.scrollIntoView({block: 'nearest'});
       }
     }
-  }, [focused]);
+  }, [focused?.timestamp, focused?.partition]);
 
   return (
-    <AssetListContainer ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
-        {items.map(({index, key, size, start}) => {
-          const group = groups[index]!;
-          return (
-            <AssetListRow
-              key={key}
-              $height={size}
-              $start={start}
-              $focused={group === focused}
-              ref={group === focused ? focusedRowRef : undefined}
-              onClick={(e) => {
-                // If you're interacting with something in the row, don't trigger a focus change.
-                // Since focus is stored in the URL bar this overwrites any link click navigation.
-                // We could alternatively e.preventDefault() on every link but it's easy to forget.
-                if (e.target instanceof HTMLElement && e.target.closest('a')) {
-                  return;
-                }
-                setFocused?.(focused !== group ? group : undefined);
-              }}
-            >
-              <Box
-                style={{height: size}}
-                padding={{left: 24, right: 12}}
-                flex={{direction: 'column', justifyContent: 'center', gap: 8}}
-                border="bottom"
+    <Box style={{position: 'relative', flex: 1, minHeight: 0}}>
+      <AssetListContainer
+        ref={parentRef}
+        onScroll={(e) => {
+          if (
+            !loading &&
+            e.currentTarget.scrollHeight > e.currentTarget.clientHeight &&
+            e.currentTarget.clientHeight + e.currentTarget.scrollTop >= e.currentTarget.scrollHeight
+          ) {
+            onLoadMore();
+          }
+        }}
+      >
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const group = groups[index]!;
+            return (
+              <AssetListRow
+                key={key}
+                $height={size}
+                $start={start}
+                $focused={group === focused}
+                ref={group === focused ? focusedRowRef : undefined}
+                onClick={(e) => {
+                  // If you're interacting with something in the row, don't trigger a focus change.
+                  // Since focus is stored in the URL bar this overwrites any link click navigation.
+                  // We could alternatively e.preventDefault() on every link but it's easy to forget.
+                  if (e.target instanceof HTMLElement && e.target.closest('a')) {
+                    return;
+                  }
+                  setFocused?.(focused !== group ? group : undefined);
+                }}
               >
-                {xAxis === 'partition' ? (
-                  <AssetEventListPartitionRow group={group} />
-                ) : (
-                  <AssetEventListEventRow group={group} assetKey={assetKey} />
-                )}
-              </Box>
-            </AssetListRow>
-          );
-        })}
-      </Inner>
-    </AssetListContainer>
+                <Box
+                  style={{height: size}}
+                  padding={{left: 24, right: 12}}
+                  flex={{direction: 'column', justifyContent: 'center', gap: 8}}
+                  border="bottom"
+                >
+                  {xAxis === 'partition' ? (
+                    <AssetEventListPartitionRow group={group} />
+                  ) : (
+                    <AssetEventListEventRow group={group} assetKey={assetKey} />
+                  )}
+                </Box>
+              </AssetListRow>
+            );
+          })}
+        </Inner>
+      </AssetListContainer>
+
+      {loading ? (
+        <Box
+          style={{position: 'absolute', bottom: 12, left: 0, right: 0}}
+          flex={{alignItems: 'center', justifyContent: 'center'}}
+        >
+          <Box
+            style={{borderRadius: 6}}
+            padding={{vertical: 8, horizontal: 12}}
+            flex={{gap: 4, alignItems: 'center', justifyContent: 'center'}}
+            background={Colors.backgroundLighter()}
+          >
+            <Spinner purpose="body-text" />
+            Loading...
+          </Box>
+        </Box>
+      ) : undefined}
+    </Box>
   );
 };
 
