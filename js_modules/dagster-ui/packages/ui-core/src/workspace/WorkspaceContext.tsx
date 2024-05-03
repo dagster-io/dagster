@@ -199,7 +199,7 @@ const useWorkspaceState = (): WorkspaceState => {
   } = useIndexedDBCachedQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>({
     query: ROOT_WORKSPACE_QUERY,
     key: 'RootWorkspace',
-    version: 999,
+    version: 1,
   });
   useMemo(() => refetch(), [refetch]);
 
