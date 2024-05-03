@@ -19,6 +19,7 @@ from dagster._core.definitions.declarative_scheduling.asset_condition import (
     AssetConditionEvaluationState,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partition import PartitionsDefinition
 
 from .asset_condition_evaluation_context import AssetConditionEvaluationContext
 
@@ -90,6 +91,10 @@ class SchedulingConditionEvaluationContext:
     def new_max_storage_id(self) -> Optional[int]:
         # TODO: this should be pulled from the asset graph view
         return self._get_updated_parents_and_storage_id()[1]
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self.asset_graph_view.asset_graph.get(self.asset_key).partitions_def
 
     def _get_updated_parents_and_storage_id(
         self,

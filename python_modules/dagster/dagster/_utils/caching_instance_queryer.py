@@ -150,7 +150,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ) | cache_value.deserialize_in_progress_partition_subsets(partitions_def)
 
     @cached_method
-    def get_materialized_asset_subset(self, *, asset_key: AssetKey) -> AssetSubset:
+    def get_materialized_asset_subset(self, *, asset_key: AssetKey) -> ValidAssetSubset:
         """Returns an AssetSubset representing the subset of the asset that has been materialized."""
         partitions_def = self.asset_graph.get(asset_key).partitions_def
         if partitions_def:
@@ -163,7 +163,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             value = self.asset_partition_has_materialization_or_observation(
                 AssetKeyPartitionKey(asset_key)
             )
-        return AssetSubset(asset_key=asset_key, value=value)
+        return ValidAssetSubset(asset_key=asset_key, value=value)
 
     ####################
     # ASSET RECORDS / STORAGE IDS
