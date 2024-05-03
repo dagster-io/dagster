@@ -11,7 +11,7 @@ class Thing(DagsterModel):
 
 class ThingLoader(DataLoader[str, Thing]):
     async def batch_load_fn(self, keys: List[str]):
-        print(f"Imagine: SELECT * from THINGS where keys in {keys}") # noqa: T201
+        print(f"Imagine: SELECT * from THINGS where keys in {keys}")  # noqa: T201
         return [Thing(key=key + "_value") for key in keys]
 
 
@@ -26,7 +26,7 @@ async def main() -> None:
         two_round_trips(loader, "key"), two_round_trips(loader, "another_key")
     )
 
-    print(f"Value 1: {value1}. Value 2: {value2}") # noqa: T201
+    print(f"Value 1: {value1}. Value 2: {value2}")  # noqa: T201
 
 
 asyncio.run(main())
