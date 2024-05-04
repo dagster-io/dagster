@@ -5,6 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, List, Sequence
 
+import yaml
 from dagster import AssetSpec, file_relative_path, multi_asset
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
@@ -13,12 +14,15 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster._seven import import_module_from_path
 from typing_extensions import Self
+
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 # Directory path
 directory = Path(file_relative_path(__file__, "assets"))
-
 
 
 def compute_file_hash(file_path, hash_algorithm="sha256") -> Any:
@@ -36,13 +40,13 @@ def compute_file_hash(file_path, hash_algorithm="sha256") -> Any:
     return file_hash
 
 
-def deps_from_metadata_cls(asset_metadata_cls) -> Sequence[CoercibleToAssetDep]:
-    if not asset_metadata_cls or not hasattr(asset_metadata_cls, "deps"):
+def deps_from_metadata_cls(raw_manifest_obj: dict) -> Sequence[CoercibleToAssetDep]:
+    if not raw_manifest_obj or "deps" not in raw_manifest_obj:
         return []
 
     return [
         AssetKey.from_user_string(dep) if isinstance(dep, str) else dep
-        for dep in (getattr(asset_metadata_cls, "deps") or [])
+        for dep in raw_manifest_obj["deps"]
     ]
 
 
@@ -56,19 +60,23 @@ def build_description_from_python_file(file_path: Path) -> str:
     )
 
 
+class PipesScriptAssetManifest: ...
+
+
 class PipesScriptManifest:
     file_path: Path
     asset_spec: AssetSpec
 
-    def __init__(self, group_folder: Path, full_python_path: Path) -> None:
-        mod = import_module_from_path(full_python_path.stem, str(full_python_path.resolve()))
+    def __init__(self, *, group_folder: Path, full_python_path: Path, full_yaml_path: Path) -> None:
+        # mod = import_module_from_path(full_python_path.stem, str(full_python_path.resolve()))
         self.group_folder = group_folder
-        self.full_python_path = full_python_path
-        self.attrs_obj = getattr(mod, "Attrs") if hasattr(mod, "Attrs") else None
+        self.full_python_script_path = full_python_path
+        self.attrs_obj = yaml.load(full_yaml_path.read_text(), Loader=Loader)
+        print(f"from path: {full_yaml_path} attrs_obj: {self.attrs_obj}")
 
     @property
     def code_version(self) -> str:
-        return compute_file_hash(self.full_python_path)
+        return compute_file_hash(self.full_python_script_path)
 
     @property
     def deps(self) -> Sequence[CoercibleToAssetDep]:
@@ -76,7 +84,7 @@ class PipesScriptManifest:
 
     @property
     def description(self) -> str:
-        return build_description_from_python_file(self.full_python_path)
+        return build_description_from_python_file(self.full_python_script_path)
 
     @property
     def asset_key(self) -> CoercibleToAssetKey:
@@ -84,7 +92,7 @@ class PipesScriptManifest:
 
     @property
     def file_name_parts(self) -> List[str]:
-        return self.full_python_path.stem.split(".")
+        return self.full_python_script_path.stem.split(".")
 
     @property
     def op_name(self) -> str:
@@ -112,7 +120,7 @@ class PipesScriptManifest:
 
     @property
     def python_file_path(self) -> str:
-        return str(self.full_python_path.resolve())
+        return str(self.full_python_script_path.resolve())
 
 
 class PipesScript:
@@ -142,13 +150,25 @@ class PipesScript:
         return self.attrs.python_file_path
 
     @classmethod
-    def from_file_path(cls, group_folder: Path, full_python_path: Path) -> Self:
-        return cls(PipesScriptManifest(group_folder, full_python_path))
+    def from_file_path(
+        cls, group_folder: Path, full_python_path: Path, full_yaml_path: Path
+    ) -> Self:
+        return cls(
+            PipesScriptManifest(
+                group_folder=group_folder,
+                full_python_path=full_python_path,
+                full_yaml_path=full_yaml_path,
+            )
+        )
 
     @classmethod
-    def make_def(cls, group_folder: Path, full_python_path: Path) -> AssetsDefinition:
+    def make_def(
+        cls, group_folder: Path, full_python_path: Path, full_yaml_path: Path
+    ) -> AssetsDefinition:
         return cls.from_file_path(
-            group_folder=group_folder, full_python_path=full_python_path
+            group_folder=group_folder,
+            full_python_path=full_python_path,
+            full_yaml_path=full_yaml_path,
         ).to_assets_def()
 
     @classmethod
@@ -156,12 +176,27 @@ class PipesScript:
         cls, cwd: Path, group_folder: Path
     ) -> Sequence[AssetsDefinition]:
         assets_defs = []
-        for full_python_path in (cwd / group_folder).iterdir():
-            if full_python_path.suffix != ".py":
+        yaml_files = {}
+        python_files = {}
+        for full_path in (cwd / group_folder).iterdir():
+            if full_path.suffix == ".yaml":
+                yaml_files[full_path.stem] = full_path
+            elif full_path.suffix == ".py":
+                python_files[full_path.stem] = full_path
+
                 continue
 
+        # import code
+
+        # code.interact(local=locals())
+
+        for stem_name in set(yaml_files) & set(python_files):
             assets_defs.append(
-                cls.make_def(group_folder=group_folder, full_python_path=full_python_path)
+                cls.make_def(
+                    group_folder=group_folder,
+                    full_python_path=python_files[stem_name],
+                    full_yaml_path=yaml_files[stem_name],
+                )
             )
 
         return assets_defs
@@ -207,4 +242,5 @@ defs = Definitions(
 )
 
 if __name__ == "__main__":
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    ...
+    # defs.get_implicit_global_asset_job_def().execute_in_process()
