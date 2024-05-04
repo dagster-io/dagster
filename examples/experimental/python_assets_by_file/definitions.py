@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, Type
+from typing import Iterable, List, Type
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.compute import AssetExecutionContext
@@ -17,11 +17,18 @@ class ProjectFooBarScriptManifest(PipesScriptManifest):
 class ProjectFooBarAssetManifest(PipesScriptAssetManifest):
     @property
     def tags(self) -> dict:
-        return {**{"some_default_tags": "default_value", "compute_kind": "python"}, **super().tags}
+        return {**{"some_default_tags": "default_value"}, **super().tags}
 
     @property
     def metadata(self) -> dict:
         return {**{"a_metadata_key": "a_metadata_value"}, **super().metadata}
+
+    @property
+    def owners(self) -> List[str]:
+        owners_from_file = super().owners
+        if not owners_from_file:
+            return ["team:foobar"]
+        return owners_from_file
 
 
 class ProjectFooBarScript(PipesScript):
@@ -48,4 +55,5 @@ defs = Definitions(
 )
 
 if __name__ == "__main__":
+    ...
     # defs.get_implicit_global_asset_job_def().execute_in_process()

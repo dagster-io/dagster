@@ -106,6 +106,10 @@ class PipesScriptAssetManifest:
         return self.manifest_obj.get("metadata", {})
 
     @property
+    def owners(self) -> List[str]:
+        return self.manifest_obj.get("owners", [])
+
+    @property
     def asset_spec(self) -> AssetSpec:
         return AssetSpec(
             key=self.asset_key,
@@ -114,6 +118,7 @@ class PipesScriptAssetManifest:
             group_name=self.group_name,
             tags=self.tags,
             metadata=self.metadata,
+            owners=self.owners,
         )
 
 

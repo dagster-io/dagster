@@ -1,2 +1,4 @@
 deps:
   - some_group/asset_one
+owners:
+  - some_owner@acmecorp.com
