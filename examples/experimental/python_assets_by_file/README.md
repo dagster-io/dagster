@@ -64,6 +64,7 @@ During this README I'm going to interrrupt it with commentary to note decisions 
     * Want make groups "heavier" here and make them a function of filesystem layout. The "default" group would have confused that mental model considerably, so I just made it impossible to create an asset without a group. We could find lighterweight solutions here, but I think the outcome is pretty reasonable.
     * By default, this system incorporates group name into the asset key. In general Project Pipes 1) will never introduce the concept of asset prefix 2) will assume that groups are just incorporate into the asset key and 3) let the user opt into explicit asset key management if they want to do so.
 * Forcing a file-per-script gets us a bunch of a stuff for free. Two of them are right up front: rendering the python code in the UI and usage of the code versioning system.
+* We have also just written an asset factory (`HelloWorldProjectScript` serves that purpose here) without dynamically generating decorated functions. I think the ergonomics are much better here.
 
 ## Building the graph
 
