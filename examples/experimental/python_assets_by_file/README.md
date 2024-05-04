@@ -108,7 +108,7 @@ Just a few things to note:
 
 As a data engineer you will want to customize this for your stakeholders. Pipes Projects provide pluggability points to do that easily, allowing your stakeholders to write standalone python scripts and yaml only, but allowing you to programmaticaly control the create of asset definitions.
 
-For example, let's imagine that we wanted to automatically set the "kind" tag to be Python and, for every asset, make the default owner "projecthelloworld@fancycompany.com" if manifest did not specify an owner.
+For example, let's imagine that we wanted to automatically set the "kind" tag to be Python and, for every asset, make the default owner "team:foobar" if manifest did not specify an owner. But we decided that an asset author is allowed to completely override the field, rather than merge.
 
 "Kinds" are attached to scripts, not assets. We have to create a new class that inherits from `PipesScriptManifest` and customize the tags behavior:
 
@@ -128,6 +128,24 @@ class HelloWorldProjectScript(PipesScript):
     @classmethod
     def script_manifest_class(cls) -> Type:
         return HelloWorldProjectScriptManifest
+```
+
+Next we want to do a similar thing at the asset level. For that we override a `PipesAssetManifest`, and in similar fashion, override a class method in our `HelloWorldProjectScript` class.
+
+```python
+class HelloWorldProjectAssetManifest(PipesAssetManifest):
+    @property
+    def owners(self) -> list:
+        owners_from_file = super().owners
+        if not owners_from_file:
+            return ["team:foobar"]
+        return owners_from_file
+
+class HelloWorldProjectScript(PipesScript):
+    @classmethod
+    def asset_manifest_class(cls) -> Type:
+        return HelloWorldProjectAssetManifest
+    ...
 ```
 
 ## Multiple assets in a single script
