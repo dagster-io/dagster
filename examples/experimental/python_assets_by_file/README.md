@@ -93,8 +93,45 @@ Now reload your definitions and you should see a dependency graph:
 
 ![Screenshot 2024-05-04 at 2 48 13 PM](https://github.com/dagster-io/dagster/assets/28738937/371ea9d3-82a4-47e5-8192-f3ddad48af84)
 
+You can also add tags, metadata, and other attributes via the manifest.
 
-## TODO Discussions
+### Commentary on graph construction
 
-* Groups versus asset prefixes.
+Just a few things to note:
 
+* A stakeholder can add themselves to the asset graph via a manifest without touching Python.
+* This could easily plug into any tooling we create for the YAML DSL for typeaheads etc.
+* Dependencies must be fully qualified (no asset key prefixes or anything) and it parses forward slashes, which is much more convenient than arrays of strings.
+* The asset key by default is `{group_name}/{asset_name}`
+
+## Customizing script and asset creation
+
+As a data engineer you will want to customize this for your stakeholders. Pipes Projects provide pluggability points to do that easily, allowing your stakeholders to write standalone python scripts and yaml only, but allowing you to programmaticaly control the create of asset definitions.
+
+For example, let's imagine that we wanted to automatically set the "kind" tag to be Python and, for every asset, make the default owner "projecthelloworld@fancycompany.com" if manifest did not specify an owner.
+
+"Kinds" are attached to scripts, not assets. We have to create a new class that inherits from `PipesScriptManifest` and customize the tags behavior:
+
+```python
+class HelloWorldProjectScriptManifest(PipesScriptManifest):
+    @property
+    def tags(self) -> dict:
+        # makes the kind tag "python" if it doesn't exist. User can override with their
+        # own kind tag in the manifest
+        return {**{"kind": "python"}, **super().tags}
+```
+
+Then you need to inform the `HelloWorldProjectScript` class to use that manifest type. To do this you have to override the `script_manifest_class` class method:
+
+```python
+class HelloWorldProjectScript(PipesScript):
+    @classmethod
+    def script_manifest_class(cls) -> Type:
+        return HelloWorldProjectScriptManifest
+```
+
+## Multiple assets in a single script
+
+TODO
+
+## Deployment
