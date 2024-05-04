@@ -67,6 +67,23 @@ During this README I'm going to interrrupt it with commentary to note decisions 
 
 ## Building the graph
 
+```python
+from dagster_pipes import open_dagster_pipes
+
+
+def main(pipes) -> None:
+    pipes.log.info("Hello from asset two.")
+
+
+if __name__ == "__main__":
+    with open_dagster_pipes() as pipes:
+        main(pipes)
+```
+
+```yaml
+deps:
+  - group_a/asset_one
+```
 
 
 ## TODO Discussions
