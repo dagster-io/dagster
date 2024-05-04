@@ -151,11 +151,44 @@ class HelloWorldProjectScript(PipesScript):
 
 ## Multiple assets in a single script
 
-TODO
+Sometimes scripts materialize more than a single asset. Pipes Projects support that. You create a script as normal. In this case we are going to simulate creating two assets, `asset_three` and `asset_four`. We create a script in `assets_three_and_four.py`
 
+```python
+from dagster_pipes import open_dagster_pipes
+
+
+def main(pipes) -> None:
+    pipes.log.info("Hello from asset two.")
+    pipes.report_asset_materialization(asset_key="group_a/asset_three",metadata= {"metadata": "value_one"})
+    pipes.report_asset_materialization(asset_key="group_a/asset_four",metadata= {"metadata": "value_two"})
+
+if __name__ == "__main__":
+    with open_dagster_pipes() as pipes:
+        main(pipes)
+```
+
+Now we need to inform the system that there are two assets, and that they both depend on `asset_two`. We can do this via the manifest. By using the top-level key `assets` we inform the manifest system there are multiple assets encoded in the manifest:
+
+`assets_three_and_four.yaml`:
+
+```yaml
+assets:
+  asset_three:
+    deps:
+      - group_a/asset_two
+  asset_four:
+    deps:
+      - group_a/asset_two
+```
+
+### Commentary
+
+* It's a bit gross to have two file formats, but I did not want have to double specify asset name in the filename and the file in the single-asset case. Open to suggestions here.
+* It would be straight forward to extend this with a top-level `checks` key to support asset checks.
 
 ## Future work
 
+* Asset checks: Straightforward to add asset check support to the script manifest. Just need to do so.
 * Deployment and Branch Deployment Management: A structure like this is highly amenable to tooling support for deployment. Imagine the ability to have a command line utility that invokes user-defined functions that script deployment of code. That script could have the branch name in context. Imagine moving code into a well-known spot in databricks or another hosted runtime. We could invoke that function on startup in dagster dev, during branch deployment creation, or any number of scenarios. The idea here is that the we have just a little support for shipping the python code the stakeholder writes into an environment they can invoke via the pipes client.
  
  
