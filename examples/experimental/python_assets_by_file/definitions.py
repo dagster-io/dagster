@@ -1,12 +1,13 @@
+import hashlib
 import shutil
 from abc import abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Iterable, NamedTuple, Sequence
+from typing import Any, Iterable, List, Sequence
 
 from dagster import AssetSpec, file_relative_path, multi_asset
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.compute import AssetExecutionContext
@@ -19,32 +20,8 @@ from typing_extensions import Self
 directory = Path(file_relative_path(__file__, "assets"))
 
 
-class AssetMetadataHolder:
-    def __init__(self, cls_instance) -> None:
-        self.cls_instance = cls_instance
 
-    @property
-    def deps(self):
-        if not hasattr(self.cls_instance, "deps"):
-            return []
-
-        return [
-            AssetKey.from_user_string(dep_string)
-            for dep_string in (getattr(self.cls_instance, "deps") or [])
-        ]
-
-    @property
-    def description(self):
-        if not hasattr(self.cls_instance, "description"):
-            return None
-
-        return getattr(self.cls_instance, "description") or None
-
-
-import hashlib
-
-
-def compute_file_hash(file_path, hash_algorithm="sha256"):
+def compute_file_hash(file_path, hash_algorithm="sha256") -> Any:
     # Initialize the hash object
     hash_object = hashlib.new(hash_algorithm)
 
@@ -60,7 +37,7 @@ def compute_file_hash(file_path, hash_algorithm="sha256"):
 
 
 def deps_from_metadata_cls(asset_metadata_cls) -> Sequence[CoercibleToAssetDep]:
-    if not hasattr(asset_metadata_cls, "deps"):
+    if not asset_metadata_cls or not hasattr(asset_metadata_cls, "deps"):
         return []
 
     return [
@@ -79,39 +56,75 @@ def build_description_from_python_file(file_path: Path) -> str:
     )
 
 
-class PythonFileBasedAttrs(NamedTuple):
+class PipesScriptManifest:
     file_path: Path
-    op_name: str
     asset_spec: AssetSpec
 
-    @classmethod
-    def from_file_path(cls, file_path: Path) -> "PythonFileBasedAttrs":
-        mod = import_module_from_path(file_path.stem, str(file_path.resolve()))
-        attrs_obj = getattr(mod, "Attrs")
-        assert attrs_obj
-        parts = file_path.stem.split(".")
-        asset_key = AssetKey(parts)
-        return cls(
-            file_path=file_path,
-            op_name=parts[-1],
-            asset_spec=AssetSpec(
-                key=asset_key,
-                deps=deps_from_metadata_cls(attrs_obj),
-                description=build_description_from_python_file(file_path),
-            ),
-        )
+    def __init__(self, group_folder: Path, full_python_path: Path) -> None:
+        mod = import_module_from_path(full_python_path.stem, str(full_python_path.resolve()))
+        self.group_folder = group_folder
+        self.full_python_path = full_python_path
+        self.attrs_obj = getattr(mod, "Attrs") if hasattr(mod, "Attrs") else None
+
+    @property
+    def code_version(self) -> str:
+        return compute_file_hash(self.full_python_path)
+
+    @property
+    def deps(self) -> Sequence[CoercibleToAssetDep]:
+        return deps_from_metadata_cls(self.attrs_obj)
+
+    @property
+    def description(self) -> str:
+        return build_description_from_python_file(self.full_python_path)
+
+    @property
+    def asset_key(self) -> CoercibleToAssetKey:
+        return AssetKey([self.group_name] + self.file_name_parts)
+
+    @property
+    def file_name_parts(self) -> List[str]:
+        return self.full_python_path.stem.split(".")
+
+    @property
+    def op_name(self) -> str:
+        return self.file_name_parts[-1]
+
+    @property
+    def group_name(self) -> str:
+        return self.group_folder.name
+
+    @property
+    def tags(self) -> dict:
+        return {}
+
+    @property
+    def asset_specs(self) -> Sequence[AssetSpec]:
+        return [
+            AssetSpec(
+                key=self.asset_key,
+                deps=self.deps,
+                description=self.description,
+                group_name=self.group_name,
+                tags=self.tags,
+            )
+        ]
 
     @property
     def python_file_path(self) -> str:
-        return str(self.file_path.resolve())
+        return str(self.full_python_path.resolve())
 
 
-class PythonFileBasedAsset:
-    def __init__(self, attrs: PythonFileBasedAttrs):
-        self.attrs = attrs
+class PipesScript:
+    def __init__(self, attrs: PipesScriptManifest):
+        self._attrs = attrs
+
+    @property
+    def attrs(self) -> PipesScriptManifest:
+        return self._attrs
 
     def to_assets_def(self) -> AssetsDefinition:
-        @multi_asset(specs=[self.attrs.asset_spec], name=self.attrs.op_name)
+        @multi_asset(specs=self.attrs.asset_specs, name=self.attrs.op_name)
         def _pipes_asset(context: AssetExecutionContext, subprocess_client: PipesSubprocessClient):
             return self.execute(context, subprocess_client)
 
@@ -129,21 +142,27 @@ class PythonFileBasedAsset:
         return self.attrs.python_file_path
 
     @classmethod
-    def from_file_path(cls, file_path: Path) -> Self:
-        return cls(PythonFileBasedAttrs.from_file_path(file_path))
+    def from_file_path(cls, group_folder: Path, full_python_path: Path) -> Self:
+        return cls(PipesScriptManifest(group_folder, full_python_path))
 
     @classmethod
-    def make_def(cls, file_path: Path) -> AssetsDefinition:
-        return cls.from_file_path(file_path).to_assets_def()
+    def make_def(cls, group_folder: Path, full_python_path: Path) -> AssetsDefinition:
+        return cls.from_file_path(
+            group_folder=group_folder, full_python_path=full_python_path
+        ).to_assets_def()
 
     @classmethod
-    def make_defs_from_folder(cls, cwd: Path, folder: Path) -> Sequence[AssetsDefinition]:
+    def make_defs_from_group_folder(
+        cls, cwd: Path, group_folder: Path
+    ) -> Sequence[AssetsDefinition]:
         assets_defs = []
-        for file in (cwd / folder).iterdir():
-            if file.suffix != ".py":
+        for full_python_path in (cwd / group_folder).iterdir():
+            if full_python_path.suffix != ".py":
                 continue
 
-            assets_defs.append(cls.make_def(file))
+            assets_defs.append(
+                cls.make_def(group_folder=group_folder, full_python_path=full_python_path)
+            )
 
         return assets_defs
 
@@ -154,18 +173,16 @@ class PythonFileBasedAsset:
 
     @classmethod
     @abstractmethod
-    def build_asset(cls, attrs: PythonFileBasedAttrs) -> Self: ...
+    def build_pipes_script(cls, attrs: PipesScriptManifest) -> Self: ...
 
 
+class ProjectFooBarScriptManifest(PipesScriptManifest):
+    @property
+    def tags(self) -> dict:
+        return {"tag1": "default_value"}
 
 
-# class ThisAssetAttrs(PythonFileBasedAttrs):
-#     @property
-#     def tags(self) -> dict:
-#         return {"tag1": "default_value"}
-
-
-class ThisAsset(PythonFileBasedAsset):
+class ProjectFooBarScript(PipesScript):
     def execute(
         self, context: AssetExecutionContext, subprocess_client: PipesSubprocessClient
     ) -> Iterable[PipesExecutionResult]:
@@ -175,17 +192,17 @@ class ThisAsset(PythonFileBasedAsset):
         ).get_results()
         return results
 
-    # @classmethod
-    # def build_asset_attrs(cls) -> ThisAssetAttrs:
-    #     return ThisAssetAttrs()
+    @property
+    def attrs(self) -> ProjectFooBarScriptManifest:
+        return super().attrs  # type: ignore
 
     @classmethod
-    def build_asset(cls, attrs: PythonFileBasedAttrs) -> "ThisAsset":
-        return ThisAsset(attrs)
+    def build_pipes_script(cls, attrs: ProjectFooBarScriptManifest) -> "ProjectFooBarScript":
+        return ProjectFooBarScript(attrs)
 
 
 defs = Definitions(
-    assets=ThisAsset.make_defs_from_folder(Path.cwd(), Path("assets")),
+    assets=ProjectFooBarScript.make_defs_from_group_folder(Path.cwd(), Path("assets/some_group")),
     resources={"subprocess_client": PipesSubprocessClient()},
 )
 
