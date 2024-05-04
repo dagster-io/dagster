@@ -67,6 +67,8 @@ During this README I'm going to interrrupt it with commentary to note decisions 
 
 ## Building the graph
 
+Now we want to build an asset graph. For that we need dependencies. First let's create a second asset file `asset_two.py`:
+
 ```python
 from dagster_pipes import open_dagster_pipes
 
@@ -80,10 +82,16 @@ if __name__ == "__main__":
         main(pipes)
 ```
 
+Now we need to tell the system about this dependency. We do that via a `manifest file`, which is a yaml file with the same name as the script in the same group folder.
+
 ```yaml
 deps:
   - group_a/asset_one
 ```
+
+Now reload your definitions and you should see a dependency graph:
+
+![Screenshot 2024-05-04 at 2 48 13 PM](https://github.com/dagster-io/dagster/assets/28738937/371ea9d3-82a4-47e5-8192-f3ddad48af84)
 
 
 ## TODO Discussions
