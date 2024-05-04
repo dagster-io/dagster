@@ -1,0 +1,15 @@
+invocations:
+  - name: transform_and_load
+    target: bespoke_elt 
+    source: file://example/file.csv
+    destination: s3://bucket/file.csv
+    assets:
+      root_one:
+        deps: []
+      root_two:
+        deps: []
+    
+  # - target: dbt
+    # dbt_manifest:
+    # # TODO dbt integration
+  
