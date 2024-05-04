@@ -1,0 +1,16 @@
+executables:
+  - kind: bespoke_elt 
+    name: transform_and_load
+    source: file://example/file.csv
+    destination: s3://bucket/file.csv
+    assets:
+      - key: root_one 
+      - key: root_two 
+  - kind: dbt_manifest
+    manifest_json_path: jaffle_shop/target/manifest.json
+  - kind: subprocess
+    python_script_path: scripts/some_script.py
+    assets:
+      - key: ml_team/downstream
+        group_name: ml_team
+        deps: ["customers"]

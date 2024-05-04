@@ -1,0 +1,9 @@
+target: subprocess 
+script: assets_three_and_four.py
+assets:
+  - asset_key: asset_three
+    group_name: group_a
+    deps: ["group_a/asset_two"]
+  - asset_key: asset_four
+    group_name: group_a
+    deps: ["group_a/asset_two"]
