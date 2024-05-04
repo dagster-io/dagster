@@ -270,6 +270,9 @@ class PipesScript:
                 elif full_path.suffix == ".py":
                     python_files[full_path.stem] = full_path
 
+            print(f"yaml_files: {yaml_files}")
+            print(f"python_files: {python_files}")
+
             for stem_name in set(yaml_files) & set(python_files):
                 assets_defs.append(
                     cls.make_def(
