@@ -2,7 +2,7 @@
 
 Pipes projects is a way to structure your Dagster projects if you want to execute external scripts with Dagster Pipes. It has an opinionated file layout scheme. The explicit goal of this approach is to allow for contributors to add and contribute to python-based assets in Dagster without interact with the core `dagster` library or program against it. They shouldn't even need to have a python environment that includes it if they rely on branch deployments.
 
-## Hello world
+## Hello world asset
 
 To get started you'll need to create a `definitions.py` file and a `defs` folder. 
 
@@ -46,15 +46,28 @@ if __name__ == "__main__":
 
 With these two files in place we can load them in Dagster UI with `dagster dev -f definitions.py`.
 
+![Screenshot 2024-05-04 at 2 23 04 PM](https://github.com/dagster-io/dagster/assets/28738937/6244402d-35ca-41fa-bcdc-a81dcac56876)
+
+Note that the folder you made, `group_a`, corresponds to a group in the left nav. Similarly the file you created `asset_one.py`, creates an asset called `asset_one`. If you click on the asset, more information appears:
+
+![Screenshot 2024-05-04 at 2 24 36 PM](https://github.com/dagster-io/dagster/assets/28738937/9a01adaf-df4d-4bcc-9c8f-0c07c24d3c06)
+
+The entire contents of the python file are included in the description for your convenience. In addition, you'll note that there is a "Code Version." Dagster uses this to detect if your code has changed and requires recomputation to keep your assets up-to-date. It is just a hash computed from the contents of your pipes script. We'll come back to that later.
+
+Next you can click on asset and materialize it. You are off to the races!
 
 ### Commentary on Hello World
 
 During this README I'm going to interrrupt it with commentary to note decisions made for users.
 
-We are heavily opting the user into groups here. There a couple reasons here.
+* We are heavily opting the user into groups here. There a couple reasons here.
+    * Want make groups "heavier" here and make them a function of filesystem layout. The "default" group would have confused that mental model considerably, so I just made it impossible to create an asset without a group. We could find lighterweight solutions here, but I think the outcome is pretty reasonable.
+    * By default, this system incorporates group name into the asset key. In general Project Pipes 1) will never introduce the concept of asset prefix 2) will assume that groups are just incorporate into the asset key and 3) let the user opt into explicit asset key management if they want to do so.
+* Forcing a file-per-script gets us a bunch of a stuff for free. Two of them are right up front: rendering the python code in the UI and usage of the code versioning system.
 
-* Want make groups "heavier" here and make them a function of filesystem layout. The "default" group would have confused that mental model considerably, so I just made it impossible to create an asset without a group. We could find lighterweight solutions here, but I think the outcome is pretty reasonable.
-* By default, this system incorporates group name into the asset key. In general Project Pipes 1) will never introduce the concept of asset prefix 2) will assume that groups are just incorporate into the asset key and 3) let the user opt into explicit asset key management if they want to do so.
+## Building the graph
+
+
 
 ## TODO Discussions
 
