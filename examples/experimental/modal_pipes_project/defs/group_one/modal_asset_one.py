@@ -2,9 +2,7 @@ import os
 
 import modal  # type: ignore
 
-app = modal.App(
-    "schrockn-project-pipes-kicktest"
-)  
+app = modal.App("schrockn-project-pipes-kicktest")
 
 slack_sdk_image = modal.Image.debian_slim().pip_install("slack-sdk")
 

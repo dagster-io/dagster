@@ -149,6 +149,10 @@ class HelloWorldProjectScript(PipesScript):
     ...
 ```
 
+*** Commentary
+
+We are going to need even more customization levers than this, but I think this approach is a good "simple things simple, hard things possible" interface. You can completely take over the creation of specs by overriding the appropriate properties (e.g. `asset_spec` on `PipesAssetManifest`)
+
 ## Multiple assets in a single script
 
 Sometimes scripts materialize more than a single asset. Pipes Projects support that. You create a script as normal. In this case we are going to simulate creating two assets, `asset_three` and `asset_four`. We create a script in `assets_three_and_four.py`
@@ -159,8 +163,8 @@ from dagster_pipes import open_dagster_pipes
 
 def main(pipes) -> None:
     pipes.log.info("Hello from asset two.")
-    pipes.report_asset_materialization(asset_key="group_a/asset_three",metadata= {"metadata": "value_one"})
-    pipes.report_asset_materialization(asset_key="group_a/asset_four",metadata= {"metadata": "value_two"})
+    pipes.report_asset_materialization(asset_key="group_a/asset_three", metadata= {"metadata": "value_one"})
+    pipes.report_asset_materialization(asset_key="group_a/asset_four", metadata= {"metadata": "value_two"})
 
 if __name__ == "__main__":
     with open_dagster_pipes() as pipes:
@@ -190,6 +194,5 @@ assets:
 
 * Asset checks: Straightforward to add asset check support to the script manifest. Just need to do so.
 * Deployment and Branch Deployment Management: A structure like this is highly amenable to tooling support for deployment. Imagine the ability to have a command line utility that invokes user-defined functions that script deployment of code. That script could have the branch name in context. Imagine moving code into a well-known spot in databricks or another hosted runtime. We could invoke that function on startup in dagster dev, during branch deployment creation, or any number of scenarios. The idea here is that the we have just a little support for shipping the python code the stakeholder writes into an environment they can invoke via the pipes client.
- 
- 
-## Deployment
+* Partitioning support: Add partitioning support. My first proposal would be to have the `definitions.py` create a static set partition definitions avaiable for use by the stakeholders, which could be referenced by key in the manifest file.
+* Declarative scheduling support: Supporting cron strings in the manifest is straightforward. For more complex scheduling rules, I think the mental model is that the platform owner "publishes" a set of rule expressions that stakeholders can key into. But complex scheduling conditions should be strictly confined to the native python APIs.

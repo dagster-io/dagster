@@ -5,8 +5,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult
 from dagster._core.pipes.project import (
+    PipesAssetManifest,
     PipesScript,
-    PipesScriptAssetManifest,
     PipesScriptManifest,
 )
 from dagster._core.pipes.subprocess import PipesSubprocessClient
@@ -20,8 +20,8 @@ class ProjectModalKicktestScriptManifest(PipesScriptManifest):
         }
 
 
-class ProjectModalKicktestAssetManifest(PipesScriptAssetManifest):
-    ...
+class ProjectModalKicktestAssetManifest(PipesAssetManifest): ...
+
 
 class ProjectModalKicktestScript(PipesScript):
     def execute(

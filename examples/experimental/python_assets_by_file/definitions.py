@@ -4,7 +4,7 @@ from typing import Iterable, List, Type
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult
-from dagster._core.pipes.project import PipesScript, PipesScriptAssetManifest, PipesScriptManifest
+from dagster._core.pipes.project import PipesAssetManifest, PipesScript, PipesScriptManifest
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 
@@ -14,7 +14,7 @@ class ProjectFooBarScriptManifest(PipesScriptManifest):
         return {**{"kind": "python"}, **super().tags}
 
 
-class ProjectFooBarAssetManifest(PipesScriptAssetManifest):
+class ProjectFooBarAssetManifest(PipesAssetManifest):
     @property
     def tags(self) -> dict:
         return {**{"some_default_tags": "default_value"}, **super().tags}

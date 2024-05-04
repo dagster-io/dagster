@@ -3,7 +3,7 @@ import shutil
 from abc import abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Iterable, List, Sequence, Type
+from typing import Any, Iterable, List, Optional, Sequence, Type
 
 import yaml
 from typing_extensions import Self
@@ -60,7 +60,7 @@ def build_description_from_python_file(file_path: Path) -> str:
     )
 
 
-class PipesScriptAssetManifest:
+class PipesAssetManifest:
     def __init__(
         self,
         manifest_obj,
@@ -119,6 +119,7 @@ class PipesScriptAssetManifest:
             tags=self.tags,
             metadata=self.metadata,
             owners=self.owners,
+            code_version=self.code_version,
         )
 
 
@@ -131,24 +132,22 @@ class PipesScriptManifest:
         *,
         group_folder: Path,
         full_python_path: Path,
-        full_manifest_path: Path,
+        full_manifest_path: Optional[Path],
         asset_manifest_class: Type,
     ) -> None:
         self.group_folder = group_folder
         self.full_python_path = full_python_path
-        self.manifest_object = yaml.load(full_manifest_path.read_text(), Loader=Loader)
+        self.manifest_object = (
+            yaml.load(full_manifest_path.read_text(), Loader=Loader) if full_manifest_path else {}
+        )
         self.asset_manifest_class = asset_manifest_class
 
     @property
-    def asset_manifests(self) -> Sequence[PipesScriptAssetManifest]:
+    def asset_manifests(self) -> Sequence[PipesAssetManifest]:
         if self.manifest_object and "assets" in self.manifest_object:
-            list_of_single_key_dicts = self.manifest_object["assets"]
-
+            raw_asset_manifests = self.manifest_object["assets"]
             asset_manifests = []
-            for single_key_dict in list_of_single_key_dicts:
-                if len(single_key_dict) != 1:
-                    raise ValueError("Each asset manifest must have exactly one key.")
-                asset_name, raw_asset_manifest = next(iter(single_key_dict.items()))
+            for asset_name, raw_asset_manifest in raw_asset_manifests.items():
                 asset_manifests.append(
                     self.asset_manifest_class(
                         manifest_obj=raw_asset_manifest,
@@ -199,7 +198,7 @@ class PipesScript:
 
     @classmethod
     def asset_manifest_class(cls) -> Type:
-        return PipesScriptAssetManifest
+        return PipesAssetManifest
 
     @classmethod
     def script_manifest_class(cls) -> Type:
@@ -229,7 +228,7 @@ class PipesScript:
 
     @classmethod
     def from_file_path(
-        cls, group_folder: Path, full_python_path: Path, full_yaml_path: Path
+        cls, group_folder: Path, full_python_path: Path, full_yaml_path: Optional[Path]
     ) -> Self:
         return cls(
             cls.script_manifest_class()(
@@ -242,7 +241,7 @@ class PipesScript:
 
     @classmethod
     def make_def(
-        cls, group_folder: Path, full_python_path: Path, full_yaml_path: Path
+        cls, group_folder: Path, full_python_path: Path, full_yaml_path: Optional[Path]
     ) -> AssetsDefinition:
         return cls.from_file_path(
             group_folder=group_folder,
@@ -252,15 +251,14 @@ class PipesScript:
 
     @classmethod
     def make_pipes_project_defs(
-        cls, cwd: Path, top_level_folder: Path
+        cls, cwd: Optional[Path] = None, top_level_folder: Optional[Path] = None
     ) -> Sequence[AssetsDefinition]:
+        cwd = cwd or Path.cwd()
+        top_level_folder = top_level_folder or Path("defs")
         assets_defs = []
         for group_folder in (cwd / top_level_folder).iterdir():
             if not group_folder.is_dir():
                 continue
-
-            # for asset_def in cls.make_defs_from_group_folder(cwd, group_dir):
-            #     yield asset_def
 
             yaml_files = {}
             python_files = {}
@@ -270,15 +268,12 @@ class PipesScript:
                 elif full_path.suffix == ".py":
                     python_files[full_path.stem] = full_path
 
-            print(f"yaml_files: {yaml_files}")
-            print(f"python_files: {python_files}")
-
-            for stem_name in set(yaml_files) & set(python_files):
+            for stem_name in set(python_files):
                 assets_defs.append(
                     cls.make_def(
                         group_folder=group_folder,
                         full_python_path=python_files[stem_name],
-                        full_yaml_path=yaml_files[stem_name],
+                        full_yaml_path=yaml_files.get(stem_name),
                     )
                 )
 

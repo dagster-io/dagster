@@ -1,4 +1,5 @@
 import modal  # type: ignore
+
 app = modal.App("schrockn-project-pipes-kicktest")
 
 
@@ -10,6 +11,7 @@ def asset_two_on_modal() -> None:
 @app.local_entrypoint()
 def main() -> None:
     from dagster_pipes import open_dagster_pipes
+
     with open_dagster_pipes():
         asset_two_on_modal.remote()
 
