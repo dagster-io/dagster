@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, Iterable, Optional, Sequence, Union, cast
+from typing import Any, Iterable, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -12,9 +12,9 @@ from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     JsonMetadataValue,
-    MetadataValue,
     TimestampMetadataValue,
 )
+from dagster._core.definitions.metadata.metadata_set import FreshnessCheckMetadataSet
 from dagster._core.execution.context.compute import (
     AssetCheckExecutionContext,
 )
@@ -28,12 +28,7 @@ from ..utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
-    FRESH_UNTIL_METADATA_KEY,
-    FRESHNESS_PARAMS_METADATA_KEY,
-    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
-    LATEST_CRON_TICK_METADATA_KEY,
     LOWER_BOUND_DELTA_PARAM_KEY,
-    LOWER_BOUND_TIMESTAMP_METADATA_KEY,
     TIMEZONE_PARAM_KEY,
     assets_to_keys,
     ensure_no_duplicate_assets,
@@ -195,16 +190,6 @@ def _build_freshness_multi_check(
                 and update_timestamp >= last_update_time_lower_bound.timestamp()
             )
 
-            metadata: Dict[str, MetadataValue] = {
-                FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
-                LOWER_BOUND_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(
-                    last_update_time_lower_bound.timestamp()
-                ),
-            }
-            if latest_completed_cron_tick:
-                metadata[LATEST_CRON_TICK_METADATA_KEY] = TimestampMetadataValue(
-                    latest_completed_cron_tick.timestamp()
-                )
             if passed:
                 # If the asset is fresh, we can determine when it has the possibility of becoming stale again.
                 # In the case of a deadline cron, this is the next cron tick after the current time.
@@ -217,11 +202,24 @@ def _build_freshness_multi_check(
                     if deadline_cron
                     else check.not_none(update_timestamp) + lower_bound_delta.total_seconds()
                 )
-                metadata[FRESH_UNTIL_METADATA_KEY] = TimestampMetadataValue(fresh_until)
-            if update_timestamp:
-                metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY] = TimestampMetadataValue(
-                    update_timestamp
+            else:
+                fresh_until = None
+
+            metadata = FreshnessCheckMetadataSet(
+                freshness_params=JsonMetadataValue(params_metadata),
+                freshness_lower_bound_timestamp=TimestampMetadataValue(
+                    last_update_time_lower_bound.timestamp()
+                ),
+                last_updated_timestamp=TimestampMetadataValue(update_timestamp)
+                if update_timestamp
+                else None,
+                latest_cron_tick_timestamp=TimestampMetadataValue(
+                    latest_completed_cron_tick.timestamp()
                 )
+                if latest_completed_cron_tick
+                else None,
+                fresh_until_timestamp=TimestampMetadataValue(fresh_until) if fresh_until else None,
+            )
 
             yield AssetCheckResult(
                 passed=passed,
@@ -233,7 +231,7 @@ def _build_freshness_multi_check(
                 ),
                 severity=severity,
                 asset_key=asset_key,
-                metadata=metadata,
+                metadata={**metadata},
             )
 
     return the_check
