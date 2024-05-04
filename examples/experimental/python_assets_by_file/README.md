@@ -153,4 +153,10 @@ class HelloWorldProjectScript(PipesScript):
 
 TODO
 
+
+## Future work
+
+* Deployment and Branch Deployment Management: A structure like this is highly amenable to tooling support for deployment. Imagine the ability to have a command line utility that invokes user-defined functions that script deployment of code. That script could have the branch name in context. Imagine moving code into a well-known spot in databricks or another hosted runtime. We could invoke that function on startup in dagster dev, during branch deployment creation, or any number of scenarios. The idea here is that the we have just a little support for shipping the python code the stakeholder writes into an environment they can invoke via the pipes client.
+ 
+ 
 ## Deployment
