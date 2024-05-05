@@ -7,7 +7,7 @@ type CacheData<TQuery> = {
   version: number;
 };
 
-let fetchState: Record<
+const fetchState: Record<
   string,
   {
     onFetched: ((value: any) => void)[];
@@ -58,7 +58,6 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   const fetch = React.useCallback(async () => {
     setLoading(true);
     if (fetchState[key]) {
-      console.log('subscribing');
       return await new Promise<ApolloQueryResult<TQuery>>((res) => {
         fetchState[key]?.onFetched.push((value) => {
           setCacheBreaker((v) => v + 1);
@@ -87,8 +86,14 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     );
     delete fetchState[key];
     const onFetched = fetchState[key]?.onFetched;
-    setData(data);
-    onFetched?.forEach((cb) => cb(queryResult));
+    try {
+      setData(data);
+    } catch (e) {}
+    onFetched?.forEach((cb) => {
+      try {
+        cb(queryResult);
+      } catch (e) {}
+    });
     return queryResult;
   }, [client, key, lru, query, variables, version]);
 
@@ -98,7 +103,3 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     loading,
   };
 }
-
-export const __resetForJest = () => {
-  fetchState = {};
-};
