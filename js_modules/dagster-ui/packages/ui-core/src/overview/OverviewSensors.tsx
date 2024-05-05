@@ -108,6 +108,7 @@ export const OverviewSensors = () => {
     (cachedData?.workspaceOrError.__typename === 'Workspace'
       ? (cachedData as Extract<typeof cachedData, {workspaceOrError: {__typename: 'Workspace'}}>)
       : null);
+
   useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSensorsQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
