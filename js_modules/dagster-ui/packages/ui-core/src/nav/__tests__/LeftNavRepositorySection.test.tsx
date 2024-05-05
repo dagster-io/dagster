@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {useContext} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
+import {__resetForJest} from '../../search/useIndexedDBCachedQuery';
 import {
   HIDDEN_REPO_KEYS,
   WorkspaceContext,
@@ -41,7 +42,7 @@ describe('Repository options', () => {
 
   afterEach(() => {
     window.localStorage.clear();
-    jest.resetModules();
+    __resetForJest();
   });
 
   it('Correctly displays the current repository state', async () => {

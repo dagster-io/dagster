@@ -7,7 +7,7 @@ type CacheData<TQuery> = {
   version: number;
 };
 
-const fetchState: Record<
+let fetchState: Record<
   string,
   {
     onFetched: ((value: any) => void)[];
@@ -103,3 +103,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     loading,
   };
 }
+
+export const __resetForJest = () => {
+  fetchState = {};
+};
