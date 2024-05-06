@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any, Iterable, Mapping, Optional, Sequence, cast
+from typing import Iterable, Mapping, Optional, Sequence, cast
 
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -8,26 +8,6 @@ from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.error import SerializableErrorInfo
-
-
-class BackfillLogAdapter(logging.LoggerAdapter):
-    """Logger that will always add the backfill id to the log message as an `extra` so that it is
-    included as a key-value pair in JSON log formatting.
-
-    Usage:
-
-    :code-block: python
-
-        adapted_backfill_logger = BackfillLogAdapter(logger, extra={"backfill_id": backfill_id})
-    """
-
-    def process(self, msg, kwargs) -> Any:
-        """Extract the backfill_id from self.extra and add it as an `extra` in the log message."""
-        log_call_extra = kwargs.get("extra", {})
-        log_call_extra["backfill_id"] = self.extra["backfill_id"]
-        kwargs["extra"] = log_call_extra
-
-        return msg, kwargs
 
 
 def execute_backfill_iteration(
@@ -65,8 +45,8 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        # create a logger that will always include the backfill_id in the log message
-        backfill_logger = BackfillLogAdapter(logger, extra={"backfill_id": backfill.backfill_id})
+        # create a logger that will always include the backfill_id as an `extra`
+        backfill_logger = logging.LoggerAdapter(logger, extra={"backfill_id": backfill.backfill_id})
         try:
             if backfill.is_asset_backfill:
                 yield from execute_asset_backfill_iteration(
@@ -85,7 +65,6 @@ def execute_backfill_jobs(
                 sys.exc_info(),
                 logger=logger,
                 log_message=f"Backfill failed for {backfill.backfill_id}",
-                extra={"backfill_id": backfill.backfill_id},
             )
             instance.update_backfill(
                 backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)

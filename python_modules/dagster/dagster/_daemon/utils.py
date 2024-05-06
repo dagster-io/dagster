@@ -14,11 +14,10 @@ class DaemonErrorCapture:
         exc_info: ExceptionInfo,
         logger: Optional[logging.Logger] = None,
         log_message: Optional[str] = None,
-        extra: Optional[dict] = None,
     ) -> SerializableErrorInfo:
         error_info = serializable_error_info_from_exc_info(exc_info)
         if logger and log_message:
-            logger.exception(log_message, extra=extra)
+            logger.exception(log_message)
         return error_info
 
     # global behavior for how to handle unexpected exceptions

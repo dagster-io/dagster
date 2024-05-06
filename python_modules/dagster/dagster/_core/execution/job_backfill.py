@@ -45,7 +45,7 @@ CHECKPOINT_COUNT = 25
 
 def execute_job_backfill_iteration(
     backfill: PartitionBackfill,
-    logger: logging.LoggerAdapter,
+    logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: Optional[Mapping[str, int]],
     instance: DagsterInstance,

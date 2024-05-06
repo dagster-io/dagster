@@ -878,7 +878,7 @@ def _check_validity_and_deserialize_asset_backfill_data(
 
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
-    logger: logging.LoggerAdapter,
+    logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
 ) -> Iterable[None]:
