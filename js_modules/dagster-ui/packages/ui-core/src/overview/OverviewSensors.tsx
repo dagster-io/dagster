@@ -352,11 +352,6 @@ export const OverviewSensors = () => {
   );
 };
 
-type RepoBucket = {
-  repoAddress: RepoAddress;
-  sensors: {name: string; sensorType: SensorType; sensorState: BasicInstigationStateFragment}[];
-};
-
 const buildBuckets = (data?: null | OverviewSensorsQuery | RootWorkspaceQuery) => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];

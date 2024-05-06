@@ -8,8 +8,8 @@ import {
 import {toGraphId} from '../../asset-graph/Utils';
 import {AssetKeyInput} from '../../graphql/types';
 import {isCanonicalColumnLineageEntry} from '../../metadata/TableSchema';
-import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
+import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 
 export type AssetColumnLineageLocalColumn = {
   name: string;
