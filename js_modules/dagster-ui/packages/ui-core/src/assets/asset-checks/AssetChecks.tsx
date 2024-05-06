@@ -115,7 +115,7 @@ export const AssetChecks = ({
     return checks.find((check) => check.name === selectedCheckName) ?? checks[0];
   }, [selectedCheckName, checks]);
 
-  const {executions, paginationProps} = useHistoricalCheckExecutions(
+  const {paginationProps, executions, executionsLoading} = useHistoricalCheckExecutions(
     selectedCheck ? {assetKey, checkName: selectedCheck.name} : null,
   );
   const pastExecutions = useMemo(() => executions.slice(1), [executions]);
@@ -343,6 +343,8 @@ export const AssetChecks = ({
             <CollapsibleSection
               header={<Subtitle1>Plots</Subtitle1>}
               headerWrapperProps={headerWrapperProps}
+              isInitiallyCollapsed={executionsLoading || executionPlotGroups.length === 0}
+              key={`reset-collapsed-on-load-${executionsLoading}`}
               arrowSide="right"
             >
               <AssetMaterializationGraphs
@@ -415,12 +417,13 @@ const useHistoricalCheckExecutions = (
   // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
+  const executionsLoading = queryResult.loading && !queryResult.data;
   const executions = React.useMemo(
     // Remove first element since the latest execution info is already shown above
     () => queryResult.data?.assetCheckExecutions || [],
     [queryResult],
   );
-  return {executions, paginationProps};
+  return {executions, executionsLoading, paginationProps};
 };
 
 const CheckExecutions = ({
