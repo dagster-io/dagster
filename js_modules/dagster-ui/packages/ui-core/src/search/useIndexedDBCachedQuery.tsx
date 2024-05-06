@@ -81,19 +81,28 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       'cache',
       {data, version},
       {
-        expiry: new Date('3000'), // never expire,
+        expiry: new Date('3000-01-01'), // never expire,
       },
     );
     delete fetchState[key];
     const onFetched = fetchState[key]?.onFetched;
     try {
       setData(data);
-    } catch (e) {}
+    } catch (e) {
+      setTimeout(() => {
+        throw e;
+      });
+    }
     onFetched?.forEach((cb) => {
       try {
         cb(queryResult);
-      } catch (e) {}
+      } catch (e) {
+        setTimeout(() => {
+          throw e;
+        });
+      }
     });
+
     return queryResult;
   }, [client, key, lru, query, variables, version]);
 
