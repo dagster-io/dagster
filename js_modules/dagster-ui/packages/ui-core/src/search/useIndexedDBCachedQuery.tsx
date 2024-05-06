@@ -81,7 +81,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       'cache',
       {data, version},
       {
-        expiry: new Date('3000'), // never expire,
+        expiry: new Date('3000-01-01'), // never expire,
       },
     );
     setData(data);
