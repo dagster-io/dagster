@@ -50,7 +50,7 @@ def build_time_partition_freshness_checks(
     deadline_cron: str,
     timezone: str = DEFAULT_FRESHNESS_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
-) -> AssetChecksDefinition:
+) -> Sequence[AssetChecksDefinition]:
     r"""Construct an `AssetChecksDefinition` that checks the freshness of the provided assets.
 
     This check passes if the asset is considered "fresh" by the time that execution begins. We
@@ -109,8 +109,8 @@ def build_time_partition_freshness_checks(
             not provided, defaults to "UTC".
 
     Returns:
-        AssetChecksDefinition: An `AssetChecksDefinition` object, which can execute a freshness
-            check for each provided asset.
+        Sequence[AssetChecksDefinition]: `AssetChecksDefinition` objects which execute freshness
+            checks for the provided assets.
     """
     check.str_param(timezone, "timezone")
     check.opt_str_param(deadline_cron, "deadline_cron")
@@ -120,12 +120,14 @@ def build_time_partition_freshness_checks(
     check.inst_param(severity, "severity", AssetCheckSeverity)
     check.sequence_param(assets, "assets")
     ensure_no_duplicate_assets(assets)
-    return _build_freshness_multi_check(
-        asset_keys=assets_to_keys(assets),
-        deadline_cron=deadline_cron,
-        timezone=timezone,
-        severity=severity,
-    )
+    return [
+        _build_freshness_multi_check(
+            asset_keys=assets_to_keys(assets),
+            deadline_cron=deadline_cron,
+            timezone=timezone,
+            severity=severity,
+        )
+    ]
 
 
 def _build_freshness_multi_check(

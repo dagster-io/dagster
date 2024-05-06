@@ -42,28 +42,21 @@ def test_params() -> None:
     )
 
     # Only essential params
-    result = build_sensor_for_freshness_checks(
-        freshness_checks=[check],
-    )
+    result = build_sensor_for_freshness_checks(freshness_checks=check)
     assert result.name == "freshness_checks_sensor"
 
     # All params (valid)
     result = build_sensor_for_freshness_checks(
-        freshness_checks=[check], minimum_interval_seconds=10, name="my_sensor"
+        freshness_checks=check, minimum_interval_seconds=10, name="my_sensor"
     )
 
     # Duplicate checks
     with pytest.raises(CheckError, match="duplicate asset checks"):
-        build_sensor_for_freshness_checks(
-            freshness_checks=[check, check],
-        )
+        build_sensor_for_freshness_checks(freshness_checks=[*check, *check])
 
     # Invalid interval
     with pytest.raises(CheckError, match="Interval must be a positive integer"):
-        build_sensor_for_freshness_checks(
-            freshness_checks=[check],
-            minimum_interval_seconds=-1,
-        )
+        build_sensor_for_freshness_checks(freshness_checks=check, minimum_interval_seconds=-1)
 
 
 def test_sensor_multi_asset_different_states(
@@ -123,19 +116,10 @@ def test_sensor_multi_asset_different_states(
             )
         )
 
-        sensor = build_sensor_for_freshness_checks(
-            freshness_checks=[freshness_checks],
-        )
-        defs = Definitions(
-            asset_checks=[freshness_checks],
-            assets=[my_asset],
-            sensors=[sensor],
-        )
+        sensor = build_sensor_for_freshness_checks(freshness_checks=freshness_checks)
+        defs = Definitions(asset_checks=freshness_checks, assets=[my_asset], sensors=[sensor])
 
-        context = build_sensor_context(
-            instance=instance,
-            definitions=defs,
-        )
+        context = build_sensor_context(instance=instance, definitions=defs)
 
         # Upon evaluation, we should get a run request for never_eval and success_eval_expired.
         run_request = sensor(context)
