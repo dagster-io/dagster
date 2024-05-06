@@ -3073,6 +3073,61 @@ class TestEventLogStorage:
                     {},
                 )
 
+    def test_get_latest_asset_partition_materialization_attempts_without_materializations_external_asset(
+        self, storage, instance
+    ):
+        a = AssetKey(["a"])
+
+        def _planned_unmaterialized_runs_by_partition(asset_key):
+            result = storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                asset_key
+            )
+            return {partition: run_id for partition, (run_id, _event_id) in result.items()}
+
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
+            # no events
+            assert _planned_unmaterialized_runs_by_partition(a) == {}
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, "foo"),
+                    ),
+                )
+            )
+
+            # new materialization planned appears
+            assert _planned_unmaterialized_runs_by_partition(a) == {"foo": run_id}
+
+            # materialize external asset
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=RUNLESS_RUN_ID,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        RUNLESS_JOB_NAME,
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(asset_key=a, partition="foo")
+                        ),
+                    ),
+                )
+            )
+
+            # no events
+            assert _planned_unmaterialized_runs_by_partition(a) == {}
+
     def test_store_asset_materialization_planned_event_with_invalid_partitions_subset(
         self, storage, instance
     ) -> None:
@@ -3746,21 +3801,33 @@ class TestEventLogStorage:
                 assert asset_entry.last_run_id == result.run_id
                 assert asset_entry.asset_details is None
 
-                event_log_record = storage.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=my_asset_key,
-                    )
-                )[0]
+                # get the materialization from the one_asset_job run
+                event_log_record = storage.get_records_for_run(
+                    run_id_1,
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    limit=1,
+                    ascending=False,
+                ).records[0]
 
-                assert asset_entry.last_materialization_record == event_log_record
-
-                materialization_planned_record = storage.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                        asset_key=my_asset_key,
+                if self.is_sqlite(storage):
+                    # sqlite storages are run sharded, so the storage ids in the run-shard will be
+                    # different from the storage ids in the index shard.  We therefore cannot
+                    # compare records directly for sqlite. But we can compare event log entries.
+                    assert (
+                        asset_entry.last_materialization_record
+                        and asset_entry.last_materialization_record.event_log_entry
+                        == event_log_record.event_log_entry
                     )
-                )[0]
+                else:
+                    assert asset_entry.last_materialization_record == event_log_record
+
+                # get the planned materialization from the one asset_job run
+                materialization_planned_record = storage.get_records_for_run(
+                    run_id_1,
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    limit=1,
+                    ascending=False,
+                ).records[0]
 
                 if storage.asset_records_have_last_planned_materialization_storage_id:
                     assert (
