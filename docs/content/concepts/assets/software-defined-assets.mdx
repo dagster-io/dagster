@@ -1,6 +1,6 @@
 ---
 title: Asset definitions | Dagster
-description: An asset definition is a description of how to compute the contents of a particular data asset.
+description: An asset definition is a description, in code, of a particular asset.
 ---
 
 # Asset definitions
@@ -17,15 +17,16 @@ description: An asset definition is a description of how to compute the contents
   videos to get a quick look at asset definitions.
 </Note>
 
-An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **asset definition** is a description, in code, of an asset that should exist and how to produce and update that asset.
+An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. An **asset definition** is a description, in code, of an asset that should exist. It also usually describes how to update that asset.
 
 Asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
 
 An asset definition includes the following:
 
 - An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
-- A set of upstream asset keys, which refer to assets that the contents of the asset definition are derived from.
-- A Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
+- A set of upstream asset keys, which refer to assets that the contents of the asset are derived from.
+
+The primary kind of asset definition in Dagster is a _materializable_ asset definition. A materializable asset definition includes a Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
 
   **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between asset definitions and ops is that asset definitions know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
@@ -52,7 +53,7 @@ An asset definition includes the following:
 
 ### Basic asset definitions
 
-The easiest way to create an asset definitions is with the <PyObject object="asset" decorator /> decorator.
+The easiest way to create a materializable asset definition is with the <PyObject object="asset" decorator /> decorator.
 
 ```python file=/concepts/assets/basic_asset_definition.py
 import json
@@ -68,7 +69,7 @@ def my_asset():
         json.dump([1, 2, 3], f)
 ```
 
-By default, the name of the decorated function, `my_asset`, is used as the asset key. The decorated function is responsible for producing the asset's contents. The asset in this example doesn't depend on any other assets.
+By default, the name of the decorated function, `my_asset`, is used as the asset key. The decorated function is responsible for producing the asset's contents, i.e. _materializing_ it. The asset in this example doesn't depend on any other assets.
 
 ### Assets with dependencies
 
@@ -79,7 +80,7 @@ Asset definitions can depend on other asset definitions. In this section, we'll 
 
 #### Defining basic dependencies
 
-You can define a dependency between two assets by passing the upstream asset to the `deps` parameter in the downstream asset's `@asset` decorator.
+You can define a dependency between two assets by passing the upstream asset to the `deps` parameter in the downstream asset's `@asset` decorator. This expresses a data dependency: that the contents of the downstream asset are derived from the upstream asset. When a run is launched to materialize both of the assets, asset dependencies also determine the order of execution: an asset will always be materialized after the assets it depends on.
 
 In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table. Then the asset `shopping_list` creates a new table (`shopping_list`) by selecting records from `sugary_cereals`:
 
