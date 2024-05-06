@@ -129,7 +129,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         )
 
         return {
-            **TableMetadataSet(total_row_count=obj.shape[0]),
+            **TableMetadataSet(row_count=obj.shape[0]),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(
                     columns=[

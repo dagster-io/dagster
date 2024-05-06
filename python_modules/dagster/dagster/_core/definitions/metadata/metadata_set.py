@@ -154,7 +154,7 @@ class TableMetadataSet(NamespacedMetadataSet):
 
     column_schema: Optional[TableSchema] = None
     column_lineage: Optional[TableColumnLineage] = None
-    total_row_count: Optional[int] = None
+    row_count: Optional[int] = None
 
     @classmethod
     def namespace(cls) -> str:
