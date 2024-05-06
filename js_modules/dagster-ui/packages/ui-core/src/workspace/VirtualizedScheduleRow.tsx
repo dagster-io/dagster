@@ -36,7 +36,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1fr 1fr 76px 148px 210px 92px';
 const TEMPLATE_COLUMNS = '1fr 1fr 76px 148px 210px 92px';
@@ -274,15 +274,9 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) => {
   const {checkbox} = props;
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
+    <HeaderRow
+      templateColumns={checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS}
+      sticky
     >
       {checkbox ? (
         <HeaderCell>
@@ -295,7 +289,7 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
       <HeaderCell>Last tick</HeaderCell>
       <HeaderCell>Last run</HeaderCell>
       <HeaderCell>Actions</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

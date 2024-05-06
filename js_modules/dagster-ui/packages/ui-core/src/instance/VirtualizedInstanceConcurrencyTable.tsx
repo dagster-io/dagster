@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   Icon,
   Menu,
   MenuItem,
@@ -19,7 +18,7 @@ import {
   SingleConcurrencyKeyQueryVariables,
 } from './types/VirtualizedInstanceConcurrencyTable.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
 
 const TEMPLATE_COLUMNS = '1fr 150px 150px 150px 150px 150px';
@@ -48,51 +47,40 @@ export const ConcurrencyTable = ({
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <ConcurrencyHeader />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const concurrencyKey = concurrencyKeys[index]!;
-              return (
-                <ConcurrencyRow
-                  key={key}
-                  concurrencyKey={concurrencyKey}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onSelect={onSelect}
-                  height={size}
-                  start={start}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <ConcurrencyHeader />
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const concurrencyKey = concurrencyKeys[index]!;
+            return (
+              <ConcurrencyRow
+                key={key}
+                concurrencyKey={concurrencyKey}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onSelect={onSelect}
+                height={size}
+                start={start}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };
 
 const ConcurrencyHeader = () => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Concurrency key</HeaderCell>
       <HeaderCell>Total slots</HeaderCell>
       <HeaderCell>Assigned steps</HeaderCell>
       <HeaderCell>Pending steps</HeaderCell>
       <HeaderCell>All steps</HeaderCell>
       <HeaderCell></HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 const ConcurrencyRow = ({

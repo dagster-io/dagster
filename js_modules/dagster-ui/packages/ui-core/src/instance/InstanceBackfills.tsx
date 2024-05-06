@@ -25,6 +25,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {BulkActionStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {useFilters} from '../ui/Filters';
@@ -66,6 +67,10 @@ export const InstanceBackfills = () => {
     InstanceHealthForBackfillsQueryVariables
   >(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
+  const [statusState, setStatusState] = useQueryPersistedState<Set<BulkActionStatus>>({
+    encode: (vals) => ({status: vals.size ? Array.from(vals).join(',') : undefined}),
+    decode: (qs) => new Set((qs.status?.split(',') as BulkActionStatus[]) || []),
+  });
   const statusFilter = useStaticSetFilter<BulkActionStatus>({
     name: 'Status',
     icon: 'status',
@@ -74,9 +79,9 @@ export const InstanceBackfills = () => {
     closeOnSelect: true,
     renderLabel: ({value}) => <div>{labelForBackfillStatus(value)}</div>,
     getStringValue: (status) => labelForBackfillStatus(status),
+    state: statusState,
+    onStateChanged: setStatusState,
   });
-
-  const {state: statusState} = statusFilter;
 
   const {button, activeFiltersJsx} = useFilters({filters: [statusFilter]});
 

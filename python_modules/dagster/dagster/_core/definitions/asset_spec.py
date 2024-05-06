@@ -11,7 +11,7 @@ from .events import (
     CoercibleToAssetKey,
 )
 from .freshness_policy import FreshnessPolicy
-from .utils import validate_definition_tags
+from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -143,5 +143,5 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_definition_tags(tags),
+            tags=validate_tags_strict(tags),
         )

@@ -2,7 +2,6 @@ from abc import ABC, abstractproperty
 from collections import defaultdict
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Dict,
     FrozenSet,
@@ -31,15 +30,13 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.security import non_secure_md5_hash_str
 
+from .declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationWithRunIds,
+    AssetConditionSnapshot,
+    AssetSubsetWithMetadata,
+)
 from .partition import PartitionsDefinition, SerializedPartitionsSubset
-
-if TYPE_CHECKING:
-    from .asset_condition.asset_condition import (
-        AssetConditionEvaluation,
-        AssetConditionEvaluationWithRunIds,
-        AssetConditionSnapshot,
-        AssetSubsetWithMetadata,
-    )
 
 
 @whitelist_for_serdes
@@ -148,7 +145,9 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
     """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
     objects into the new AssetConditionEvaluationWithRunIds objects.
     """
-    from .asset_condition.asset_condition import AssetConditionEvaluationWithRunIds
+    from .declarative_scheduling.serialized_objects import (
+        AssetConditionEvaluationWithRunIds,
+    )
 
     class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
         @property
@@ -213,7 +212,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
     ) -> "AssetConditionSnapshot":
-        from .asset_condition.asset_condition import AssetConditionSnapshot, RuleCondition
+        from .declarative_scheduling.legacy.rule_condition import RuleCondition
+        from .declarative_scheduling.serialized_objects import AssetConditionSnapshot
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
@@ -233,9 +233,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         is_partitioned: bool,
         rule_snapshot: AutoMaterializeRuleSnapshot,
     ) -> "AssetConditionEvaluation":
-        from .asset_condition.asset_condition import (
-            AssetConditionEvaluation,
-            AssetSubsetWithMetadata,
+        from .declarative_scheduling.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
 
@@ -278,12 +276,12 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
     ) -> Optional["AssetConditionEvaluation"]:
-        from .asset_condition.asset_condition import (
-            AssetConditionEvaluation,
-            AssetConditionSnapshot,
-            HistoricalAllPartitionsSubsetSentinel,
+        from .declarative_scheduling.operators.boolean_operators import (
             NotAssetCondition,
             OrAssetCondition,
+        )
+        from .declarative_scheduling.serialized_objects import (
+            HistoricalAllPartitionsSubsetSentinel,
         )
 
         partition_subsets_by_condition_by_rule_snapshot = defaultdict(list)
@@ -371,10 +369,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
-        from .asset_condition.asset_condition import (
-            AndAssetCondition,
-            AssetConditionEvaluation,
-            AssetConditionSnapshot,
+        from .declarative_scheduling.operators.boolean_operators import AndAssetCondition
+        from .declarative_scheduling.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
 
