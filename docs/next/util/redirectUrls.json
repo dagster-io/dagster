@@ -920,6 +920,11 @@
       "statusCode": 302
   },
   {
+      "source": "/dagster-cloud/deployment/agents/kubernetes",
+      "destination": "/dagster-plus/deployment/agents/kubernetes",
+      "statusCode": 302
+  },
+  {
       "source": "/dagster-cloud/deployment/agents/local",
       "destination": "/dagster-plus/deployment/agents/local",
       "statusCode": 302
