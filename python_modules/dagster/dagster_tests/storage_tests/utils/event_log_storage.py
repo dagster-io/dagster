@@ -3746,21 +3746,33 @@ class TestEventLogStorage:
                 assert asset_entry.last_run_id == result.run_id
                 assert asset_entry.asset_details is None
 
-                event_log_record = storage.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=my_asset_key,
-                    )
-                )[0]
+                # get the materialization from the one_asset_job run
+                event_log_record = storage.get_records_for_run(
+                    run_id_1,
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    limit=1,
+                    ascending=False,
+                ).records[0]
 
-                assert asset_entry.last_materialization_record == event_log_record
-
-                materialization_planned_record = storage.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                        asset_key=my_asset_key,
+                if self.is_sqlite(storage):
+                    # sqlite storages are run sharded, so the storage ids in the run-shard will be
+                    # different from the storage ids in the index shard.  We therefore cannot
+                    # compare records directly for sqlite. But we can compare event log entries.
+                    assert (
+                        asset_entry.last_materialization_record
+                        and asset_entry.last_materialization_record.event_log_entry
+                        == event_log_record.event_log_entry
                     )
-                )[0]
+                else:
+                    assert asset_entry.last_materialization_record == event_log_record
+
+                # get the planned materialization from the one asset_job run
+                materialization_planned_record = storage.get_records_for_run(
+                    run_id_1,
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    limit=1,
+                    ascending=False,
+                ).records[0]
 
                 if storage.asset_records_have_last_planned_materialization_storage_id:
                     assert (
