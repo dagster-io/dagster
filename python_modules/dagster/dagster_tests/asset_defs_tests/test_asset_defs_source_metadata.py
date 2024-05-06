@@ -3,7 +3,6 @@ from typing import cast
 
 from dagster import AssetsDefinition, load_assets_from_modules
 from dagster._core.definitions.metadata import (
-    DEFAULT_SOURCE_FILE_KEY,
     LocalFileCodeReference,
     with_source_code_references,
 )
@@ -74,16 +73,12 @@ def test_asset_code_origins() -> None:
                     )
 
                 assert isinstance(
-                    asset.metadata_by_key[key]["dagster/code_references"].code_references[
-                        DEFAULT_SOURCE_FILE_KEY
-                    ],
+                    asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                     LocalFileCodeReference,
                 )
                 meta = cast(
                     LocalFileCodeReference,
-                    asset.metadata_by_key[key]["dagster/code_references"].code_references[
-                        DEFAULT_SOURCE_FILE_KEY
-                    ],
+                    asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                 )
 
                 assert meta.file_path == expected_file_path
