@@ -1198,6 +1198,7 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
+        logger.info("Not all root assets have been requested, finding root assets.")
         target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
         # Because the code server may have failed while requesting roots, some roots may have
         # already been requested. Checking here will reduce the amount of BFS work later in the iteration.
@@ -1205,6 +1206,7 @@ def execute_asset_backfill_iteration_inner(
             root for root in target_roots if root not in asset_backfill_data.requested_subset
         ]
         initial_candidates.update(not_yet_requested)
+        logger.info(f"Root assets that have not yet been requested: {initial_candidates}")
 
         yield None
 
