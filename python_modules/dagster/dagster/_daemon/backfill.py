@@ -83,8 +83,9 @@ def execute_backfill_jobs(
         except Exception:
             error_info = DaemonErrorCapture.on_exception(
                 sys.exc_info(),
-                logger=backfill_logger,
+                logger=logger,
                 log_message=f"Backfill failed for {backfill.backfill_id}",
+                extra={"backfill_id": backfill.backfill_id},
             )
             instance.update_backfill(
                 backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
