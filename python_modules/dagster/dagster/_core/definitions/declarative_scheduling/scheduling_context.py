@@ -17,7 +17,6 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
     SchedulingEvaluationInfo,
     SchedulingEvaluationResultNode,
 )
-from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._model import DagsterModel
 
@@ -175,15 +174,3 @@ class SchedulingContext(DagsterModel):
     def new_max_storage_id(self) -> Optional[int]:
         # TODO: pull this from the AssetGraphView instead
         return self.legacy_context.new_max_storage_id
-
-    def asset_updated_since_previous_tick(self) -> bool:
-        """Returns True if the target asset has been updated since the previous evaluation."""
-        cursor = (
-            self.previous_evaluation_info.temporal_context.last_event_id
-            if self.previous_evaluation_info
-            else None
-        )
-        return self._queryer.asset_partition_has_materialization_or_observation(
-            asset_partition=AssetKeyPartitionKey(self.asset_key),
-            after_cursor=cursor,
-        )

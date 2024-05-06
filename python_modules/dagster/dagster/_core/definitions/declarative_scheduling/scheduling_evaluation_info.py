@@ -1,4 +1,3 @@
-import datetime
 import itertools
 from typing import Any, Optional, Sequence
 
@@ -15,6 +14,7 @@ from dagster._core.definitions.declarative_scheduling.serialized_objects import 
     AssetSubsetWithMetadata,
 )
 from dagster._model import DagsterModel
+from dagster._utils import utc_datetime_from_timestamp
 
 
 class SchedulingEvaluationResultNode(DagsterModel):
@@ -80,9 +80,7 @@ class SchedulingEvaluationInfo(DagsterModel):
         asset_graph_view: AssetGraphView, state: AssetConditionEvaluationState
     ) -> "SchedulingEvaluationInfo":
         temporal_context = TemporalContext(
-            effective_dt=datetime.datetime.fromtimestamp(
-                state.previous_tick_evaluation_timestamp or 0
-            ),
+            effective_dt=utc_datetime_from_timestamp(state.previous_tick_evaluation_timestamp or 0),
             last_event_id=state.max_storage_id,
         )
         nodes = SchedulingEvaluationResultNode.nodes_for_evaluation(
