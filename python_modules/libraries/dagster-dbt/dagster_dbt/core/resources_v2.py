@@ -1,5 +1,6 @@
 import contextlib
 import copy
+import dataclasses
 import os
 import shutil
 import signal
@@ -538,7 +539,7 @@ class DbtCliInvocation:
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
     adapter: Optional[BaseAdapter] = field(default=None)
-    should_fetch_row_counts: bool = field(default=False)
+    should_fetch_row_count: bool = field(default=False)
     _stdout: List[str] = field(init=False, default_factory=list)
     _error_messages: List[str] = field(init=False, default_factory=list)
 
@@ -596,7 +597,7 @@ class DbtCliInvocation:
             raise_on_error=raise_on_error,
             context=context,
             adapter=adapter,
-            should_fetch_row_counts=False,
+            should_fetch_row_count=False,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
@@ -695,6 +696,7 @@ class DbtCliInvocation:
             pass
 
         unique_id = dbt_resource_props["unique_id"]
+        logger.debug("Fetching row count for %s", unique_id)
         table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
 
         with adapter.connection_named(f"row_count_{unique_id}"):
@@ -727,7 +729,7 @@ class DbtCliInvocation:
         for event in self._stream_asset_events():
             # For any materialization or output event, we run postprocessing steps
             # to attach additional metadata to the event.
-            if self.should_fetch_row_counts and isinstance(event, (AssetMaterialization, Output)):
+            if self.should_fetch_row_count and isinstance(event, (AssetMaterialization, Output)):
                 output_events_and_futures.append(
                     executor.submit(
                         self._attach_post_materialization_metadata,
@@ -738,24 +740,14 @@ class DbtCliInvocation:
                 output_events_and_futures.append(event)
 
     @experimental
-    def fetch_row_counts(
+    def enable_fetch_row_count(
         self,
     ) -> "DbtCliInvocation":
         """Experimental functionality which will fetch row counts for materialized dbt
         models in a dbt run once they are built. Note that row counts will not be fetched
         for views, since this requires running the view's SQL query which may be costly.
         """
-        return DbtCliInvocation(
-            process=self.process,
-            manifest=self.manifest,
-            dagster_dbt_translator=self.dagster_dbt_translator,
-            project_dir=self.project_dir,
-            target_path=self.target_path,
-            raise_on_error=self.raise_on_error,
-            context=self.context,
-            adapter=self.adapter,
-            should_fetch_row_counts=True,
-        )
+        return dataclasses.replace(self, should_fetch_row_count=True)
 
     @public
     def stream(
@@ -793,6 +785,11 @@ class DbtCliInvocation:
                 def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
+        if self.should_fetch_row_count:
+            logger.info(
+                "Row counts will be fetched for non-view models once they are materialized."
+            )
+
         # We keep a list of emitted Dagster events and pending futures which augment
         # emitted events with additional metadata. This ensures we can yield events in the order
         # they are emitted by dbt.

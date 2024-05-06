@@ -34,7 +34,7 @@ def test_no_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
 def test_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).fetch_row_counts().stream()
+        yield from dbt.cli(["build"], context=context).enable_fetch_row_count().stream()
 
     result = materialize(
         [my_dbt_assets],
