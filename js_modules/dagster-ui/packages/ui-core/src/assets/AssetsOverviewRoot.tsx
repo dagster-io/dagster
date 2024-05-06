@@ -18,6 +18,7 @@ import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {usePageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsOverviewRoot = ({
@@ -45,6 +46,8 @@ export const AssetsOverviewRoot = ({
       variables: {assetKey: {path: currentPath}},
     },
   );
+
+  useBlockTraceOnQueryResult(queryResult, 'AssetsOverviewRootQuery');
 
   useDocumentTitle(
     currentPath && currentPath.length

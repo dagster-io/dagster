@@ -6,6 +6,7 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -38,24 +39,23 @@ export function useRecentAssetEvents(
 
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
-  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
-    ASSET_EVENTS_QUERY,
-    {
-      skip: !assetKey,
-      fetchPolicy: 'cache-and-network',
-      variables: loadUsingPartitionKeys
-        ? {
-            assetKey: {path: assetKey?.path ?? []},
-            before,
-            partitionInLast: 120,
-          }
-        : {
-            assetKey: {path: assetKey?.path ?? []},
-            before,
-            limit: 100,
-          },
-    },
-  );
+  const queryResult = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(ASSET_EVENTS_QUERY, {
+    skip: !assetKey,
+    fetchPolicy: 'cache-and-network',
+    variables: loadUsingPartitionKeys
+      ? {
+          assetKey: {path: assetKey?.path ?? []},
+          before,
+          partitionInLast: 120,
+        }
+      : {
+          assetKey: {path: assetKey?.path ?? []},
+          before,
+          limit: 100,
+        },
+  });
+  const {data, loading, refetch} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'AssetEventsQuery');
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;

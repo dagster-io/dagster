@@ -222,7 +222,7 @@ export function useAssetLayout(
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
   // Add a UID to create a new dependency whenever the layout inputs change
-  useBlockTraceUntilTrue('AssetGraphLayout', !loading && !!state.layout, uid.current);
+  useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, uid.current);
 
   return {
     loading,

@@ -34,7 +34,7 @@ export function useAssetLiveData(assetKey: AssetKeyInput, thread: LiveDataThread
   }, [refreshBaseData, refreshStaleData]);
   const refreshing = baseDataRefreshing || staleDataRefreshing;
 
-  useBlockTraceUntilTrue('AssetLiveData', !!(baseData && staleData));
+  useBlockTraceUntilTrue('useAssetLiveData', !!(baseData && staleData));
 
   if (baseData && staleData) {
     return {
@@ -80,6 +80,12 @@ export function useAssetsLiveData(
     refreshStaleData();
   }, [refreshBaseData, refreshStaleData]);
   const refreshing = baseDataRefreshing || staleDataRefreshing;
+
+  useBlockTraceUntilTrue(
+    'useAssetsLiveData',
+    Object.keys(staleDataByNode).length === assetKeys.length &&
+      Object.keys(baseDataByNode).length === assetKeys.length,
+  );
 
   return {
     liveDataByNode: completeDataByNode,
