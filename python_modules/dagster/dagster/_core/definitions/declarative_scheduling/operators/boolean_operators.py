@@ -25,9 +25,9 @@ class AndAssetCondition(SchedulingCondition):
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         child_results: List[SchedulingResult] = []
         true_slice = context.candidate_slice
-        for child in self.children:
+        for i, child in enumerate(self.children):
             child_context = context.for_child_condition(
-                child_condition=child, candidate_slice=true_slice
+                child_condition=child, child_index=i, candidate_slice=true_slice
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
@@ -53,9 +53,9 @@ class OrAssetCondition(SchedulingCondition):
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         child_results: List[SchedulingResult] = []
         true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
-        for child in self.children:
+        for i, child in enumerate(self.children):
             child_context = context.for_child_condition(
-                child_condition=child, candidate_slice=context.candidate_slice
+                child_condition=child, child_index=i, candidate_slice=context.candidate_slice
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
@@ -81,7 +81,7 @@ class NotAssetCondition(SchedulingCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         child_context = context.for_child_condition(
-            child_condition=self.operand, candidate_slice=context.candidate_slice
+            child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
         )
         child_result = self.operand.evaluate(child_context)
         true_slice = context.candidate_slice.compute_difference(child_result.true_slice)
