@@ -39,7 +39,6 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.outputs import StepOutputData
 
 from dagster_graphql.schema.metadata import (
-    GrapheneCodeReferenceEntry,
     GrapheneCodeReferencesMetadataEntry,
     GrapheneLocalFileCodeReference,
 )
@@ -163,14 +162,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
             yield GrapheneCodeReferencesMetadataEntry(
                 label=key,
                 code_references=[
-                    GrapheneCodeReferenceEntry(
-                        key=source_key,
-                        reference=GrapheneLocalFileCodeReference(
-                            filePath=reference.file_path,
-                            lineNumber=reference.line_number,
-                        ),
+                    GrapheneLocalFileCodeReference(
+                        filePath=reference.file_path,
+                        lineNumber=reference.line_number,
+                        label=reference.label,
                     )
-                    for source_key, reference in value.code_references.items()
+                    for reference in value.code_references
                 ],
             )
         elif isinstance(value, TableMetadataValue):

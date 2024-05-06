@@ -17,9 +17,7 @@ elvis_presley = SourceAsset(key=AssetKey("elvis_presley"))
     metadata={
         **CodeReferencesMetadataSet(
             code_references=CodeReferencesMetadataValue(
-                code_references={
-                    "my_test_source": LocalFileCodeReference(file_path=__file__, line_number=1)
-                }
+                code_references=[LocalFileCodeReference(file_path=__file__, line_number=1)]
             )
         ),
     }

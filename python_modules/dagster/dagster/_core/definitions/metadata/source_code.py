@@ -4,7 +4,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Mapping,
+    List,
     Optional,
     Sequence,
     Union,
@@ -37,6 +37,7 @@ class LocalFileCodeReference(DagsterModel):
 
     file_path: str
     line_number: int
+    label: Optional[str] = None
 
 
 @experimental
@@ -47,12 +48,12 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
     asset is defined.
 
     Attributes:
-        sources (Dict[str, LocalFileCodeReference]):
-            A labeled dictionary of sources. The main source file should be keyed with
-            the `DEFAULT_SOURCE_FILE_KEY` constant.
+        sources (List[LocalFileCodeReference]):
+            A list of code references for the asset, such as file locations or
+            references to source control.
     """
 
-    code_references: Mapping[str, LocalFileCodeReference]
+    code_references: List[LocalFileCodeReference]
 
     @property
     def value(self) -> "CodeReferencesMetadataValue":
@@ -103,19 +104,19 @@ def _with_code_source_single_definition(
     source_path = source_path_from_fn(base_fn)
 
     if source_path:
-        sources = {DEFAULT_SOURCE_FILE_KEY: source_path}
+        sources = [source_path]
 
         for key in assets_def.keys:
             # defer to any existing metadata
-            sources_for_asset = {**sources}
+            sources_for_asset = [*sources]
             try:
                 existing_source_code_metadata = CodeReferencesMetadataSet.extract(
                     metadata_by_key.get(key, {})
                 )
-                sources_for_asset = {
-                    **sources,
-                    **existing_source_code_metadata.code_references.code_references,
-                }
+                sources_for_asset = [
+                    *existing_source_code_metadata.code_references.code_references,
+                    *sources,
+                ]
             except pydantic.ValidationError:
                 pass
 
