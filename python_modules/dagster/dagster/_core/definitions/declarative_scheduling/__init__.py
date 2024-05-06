@@ -6,6 +6,7 @@ from .operands import (
     MissingSchedulingCondition as MissingSchedulingCondition,
     ParentNewerCondition as ParentNewerCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
+    UpdatedSinceCronCondition as UpdatedSinceCronCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,
