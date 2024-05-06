@@ -11,29 +11,23 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 class BackfillLogAdapter(logging.LoggerAdapter):
-    """Logger that will always prepend the backfill id to the log message. Additionally it
-    adds the backfill_id to the `extra` dictionary of the log record so that it is included
-    as a key-value pair in JSON log formatting.
+    """Logger that will always add the backfill id to the log message as an `extra` so that it is
+    included as a key-value pair in JSON log formatting.
 
     Usage:
 
     :code-block: python
 
-        adapted_backfill_logger = BackfillLogAdapter(logger, {"backfill_id": backfill_id})
+        adapted_backfill_logger = BackfillLogAdapter(logger, extra={"backfill_id": backfill_id})
     """
 
     def process(self, msg, kwargs) -> Any:
-        backfill_id = self.extra["backfill_id"]
-
-        # the extra passed in the log call logger.info("message", extra={"foo": "bar"}), not
-        # to be confused with the extra passed to the BackfillLogAdapter constructor
-        # add the backfill_id to the extra too so that JSON log formatting includes it as
-        # a key-value pait
+        """Extract the backfill_id from self.extra and add it as an `extra` in the log message."""
         log_call_extra = kwargs.get("extra", {})
-        log_call_extra["backfill_id"] = backfill_id
+        log_call_extra["backfill_id"] = self.extra["backfill_id"]
         kwargs["extra"] = log_call_extra
 
-        return f"Backfill {backfill_id}: {msg}", kwargs
+        return msg, kwargs
 
 
 def execute_backfill_iteration(
