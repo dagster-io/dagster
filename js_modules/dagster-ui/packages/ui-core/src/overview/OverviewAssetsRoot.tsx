@@ -44,7 +44,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useDocumentTitle('Overview | Assets');
 
   const {assets, query, error, loading} = useAllAssets();
-  const refreshState = useRefreshAtInterval({
+  const refreshState = useRefreshAtInterval<any>({
     refresh: query,
     intervalMs: FIFTEEN_SECONDS,
     leading: true,

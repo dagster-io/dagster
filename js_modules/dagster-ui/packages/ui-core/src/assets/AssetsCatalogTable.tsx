@@ -116,7 +116,7 @@ export const AssetsCatalogTable = ({
       ? buildFlatProps(filtered, prefixPath)
       : buildNamespaceProps(filtered, prefixPath);
 
-  const refreshState = useRefreshAtInterval({
+  const refreshState = useRefreshAtInterval<any>({
     refresh: query,
     intervalMs: FIFTEEN_SECONDS,
     leading: true,
