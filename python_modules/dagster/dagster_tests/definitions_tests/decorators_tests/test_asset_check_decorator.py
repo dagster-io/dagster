@@ -568,6 +568,13 @@ def test_managed_input():
         assets=[asset1], asset_checks=[check1], resources={"io_manager": MyIOManager()}
     ).success
 
+    assert execute_assets_and_checks(
+        assets=[asset1],
+        asset_checks=[check1],
+        resources={"io_manager": MyIOManager()},
+        selection=AssetSelection.all_asset_checks(),
+    ).success
+
 
 def test_multiple_managed_inputs():
     with pytest.raises(
