@@ -19,6 +19,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
@@ -49,6 +50,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       variables: {selector},
     },
   );
+  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSchedulesQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
