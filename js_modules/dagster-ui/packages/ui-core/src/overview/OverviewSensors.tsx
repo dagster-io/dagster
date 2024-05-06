@@ -5,7 +5,6 @@ import {useContext, useMemo} from 'react';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
 import {OverviewSensorsQuery, OverviewSensorsQueryVariables} from './types/OverviewSensors.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -33,7 +32,6 @@ import {SENSOR_TYPE_META} from '../workspace/VirtualizedSensorRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
 import {RootWorkspaceQuery} from '../workspace/types/WorkspaceContext.types';
 
 function toSetFilterValue(type: SensorType) {

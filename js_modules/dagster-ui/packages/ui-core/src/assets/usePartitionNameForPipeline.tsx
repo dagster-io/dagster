@@ -6,20 +6,24 @@ import {
   AssetJobPartitionSetsQueryVariables,
 } from './types/usePartitionNameForPipeline.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RepoAddress} from '../workspace/types';
 
 export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineName: string) {
-  const {data: partitionSetsData} = useQuery<
-    AssetJobPartitionSetsQuery,
-    AssetJobPartitionSetsQueryVariables
-  >(ASSET_JOB_PARTITION_SETS_QUERY, {
-    skip: !pipelineName,
-    variables: {
-      repositoryLocationName: repoAddress.location,
-      repositoryName: repoAddress.name,
-      pipelineName,
+  const queryResult = useQuery<AssetJobPartitionSetsQuery, AssetJobPartitionSetsQueryVariables>(
+    ASSET_JOB_PARTITION_SETS_QUERY,
+    {
+      skip: !pipelineName,
+      variables: {
+        repositoryLocationName: repoAddress.location,
+        repositoryName: repoAddress.name,
+        pipelineName,
+      },
     },
-  });
+  );
+
+  useBlockTraceOnQueryResult(queryResult, 'AssetJobPartitionSetsQuery');
+  const {data: partitionSetsData} = queryResult;
 
   return useMemo(
     () => ({
