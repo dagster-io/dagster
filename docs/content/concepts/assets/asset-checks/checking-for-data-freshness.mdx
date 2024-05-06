@@ -14,7 +14,7 @@ As freshness checks don't depend on a specific root cause, it makes them helpful
 - A backed up run queue
 - Runs are taking longer than expected to complete
 
-By the end of this guide, you'll understand what freshness checks are and how to implement them in your data pipelines.
+By the end of this guide, you'll understand what freshness checks are, how to implement them in your data pipelines, and how to be alerted when your assets are overdue.
 
 ---
 
@@ -41,6 +41,7 @@ Before continuing, you should be familiar with:
 - [Software-defined Assets](/concepts/assets/software-defined-assets)
 - [Asset checks](/concepts/assets/asset-checks)
 - [Schedules](/concepts/partitions-schedules-sensors/schedules) and/or [sensors](/concepts/partitions-schedules-sensors/sensors)
+- [Alerts](/dagster-plus/managing-deployments/alerts) (Dagster+ only)
 
 ---
 
@@ -355,6 +356,44 @@ height={1944}
 />
 
 ---
+
+## Alert on overdue assets (Dagster+ only)
+
+In Dagster+, you can set up [alerts](/dagster-plus/managing-deployments/alerts) to notify you when an asset is overdue for an update. By default, a freshness check will fail with severity `WARN` if an asset is overdue for an update. Then, in order to alert on overdue assets, you'll want to create an alert policy that triggers on asset check failures with severity `WARN` (or `ERROR` if you've overridden the default severity), for your specific assets which you've defined freshness checks for. Asset alert policies can currently be targeted at specific asset keys, asset groups, or all assets.
+
+To become more familiar with the various ways alert policies can be set up, see the guide on [managing alert policies](/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui).
+
+<TabGroup>
+<TabItem name="In the UI">
+
+1. Navigate to the **Deployments** in the top navigation
+2. Click the **Alerts** tab.
+3. Click **+Create alert policy**.
+4. Select the **Asset** alert policy type in the **Create alert policy** window.
+5. Select an asset (or set of assets) to target with the alert policy. You can target all
+
+assets, a specific asset key, or an asset group. 6. Check the box for **Failed (WARN)** or **Failed (ERROR)** severity, depending on the severity set for freshness check failure. 7. Select a [notification service](/dagster-plus/managing-deployments/alerts#supported-notification-services), provide the necessary information, and save the alert policy. </TabItem> <TabItem name="Via config">
+
+If you prefer to work in code, you can define an asset check-based alert policy in a YAML configuration file and use the `dagster-cloud` CLI to set the policy for the deployment. **Note**: Asset check-based policies also target freshness checks.
+
+```yaml
+alert_policies:
+  - name: "daily_rollup_warn_checks"
+    description: "Alert on WARN check failures for daily rollup table"
+    target:
+      asset_key: "daily_rollup"
+    severity: "WARN"
+    notification_config:
+      email:
+        email_addresses:
+          - "nelson.bighetti@hooli.com"
+          - "gavin.belson@hooli.com"
+```
+
+</TabItem>
+</TabGroup>
+
+Refer to the [Managing alerts using the dagster-cloud CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli#how-it-works) for more information.
 
 ## APIs in this guide
 
