@@ -29,7 +29,7 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
 )
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 
@@ -147,6 +147,18 @@ class Output(Generic[T]):
             and self.output_name == other.output_name
             and self.metadata == other.metadata
             and self.tags == other.tags
+        )
+
+    def with_metadata(self, metadata: Optional[Mapping[str, RawMetadataValue]]) -> "Output":
+        """Returns a new Output with the same value and output_name,
+        but with the provided metadata.
+        """
+        return Output(
+            value=self.value,
+            output_name=self.output_name,
+            metadata=metadata,
+            data_version=self.data_version,
+            tags=self.tags,
         )
 
 
@@ -711,6 +723,8 @@ def validate_asset_event_tags(tags: Optional[Mapping[str, str]]) -> Optional[Map
 
 
 def is_system_asset_event_tag(key: str) -> bool:
+    from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+
     from .data_version import (
         CODE_VERSION_TAG,
         DATA_VERSION_TAG,
@@ -719,7 +733,7 @@ def is_system_asset_event_tag(key: str) -> bool:
     )
 
     return (
-        key in [CODE_VERSION_TAG, DATA_VERSION_TAG, _OLD_DATA_VERSION_TAG, REPORTING_USER_TAG]
+        key in [CODE_VERSION_TAG, DATA_VERSION_TAG, _OLD_DATA_VERSION_TAG]
         or key.startswith(INPUT_DATA_VERSION_TAG_PREFIX)
         or key.startswith(INPUT_EVENT_POINTER_TAG_PREFIX)
         or key.startswith(_OLD_INPUT_DATA_VERSION_TAG_PREFIX)
