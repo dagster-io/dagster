@@ -14,7 +14,7 @@ As freshness checks don't depend on a specific root cause, it makes them helpful
 - A backed up run queue
 - Runs are taking longer than expected to complete
 
-By the end of this guide, you'll understand what freshness checks are and how to implement them in your data pipelines.
+By the end of this guide, you'll understand what freshness checks are, how to implement them in your data pipelines, and how to be alerted when your assets are overdue.
 
 ---
 
@@ -41,6 +41,7 @@ Before continuing, you should be familiar with:
 - [Software-defined Assets](/concepts/assets/software-defined-assets)
 - [Asset checks](/concepts/assets/asset-checks)
 - [Schedules](/concepts/partitions-schedules-sensors/schedules) and/or [sensors](/concepts/partitions-schedules-sensors/sensors)
+- [Alerts](/dagster-plus/managing-deployments/alerts) (Dagster+ only)
 
 ---
 
@@ -355,6 +356,10 @@ height={1944}
 />
 
 ---
+
+## Alert on overdue assets (Dagster+ only)
+
+See the guide on [asset check alerting](/dagster-plus/managing-deployments/alerts) for more information. In Dagster+, you can set up [alert policies](/dagster-plus/managing-deployments/alerts) to notify you when an asset is overdue for an update. By default, a freshness check will fail with severity `WARN` if an asset is overdue, so in order to alert on overdue assets, you'll want to create an alert policy that triggers on asset check failures with severity `WARN` (or `ERROR` if you've overridden the default severity), for your specific assets which you've defined freshness checks for. Asset alert policies can currently be targeted at specific asset keys, asset groups, or all assets.
 
 ## APIs in this guide
 
