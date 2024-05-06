@@ -12,7 +12,6 @@ from dagster import (
     DagsterEventType,
     DagsterInstance,
     Definitions,
-    EventRecordsFilter,
     ExecuteInProcessResult,
     IOManager,
     MetadataValue,
@@ -134,25 +133,23 @@ def test_execute_asset_and_check():
 
     assert check_eval.target_materialization_data is not None
     assert check_eval.target_materialization_data.run_id == result.run_id
-    materialization_record = instance.get_event_records(
-        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
-    )[0]
+    materialization_record = instance.fetch_materializations(asset1.key, limit=1).records[0]
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
     assert (
         len(
-            instance.get_event_records(
-                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
-            )
+            instance.get_records_for_run(
+                result.run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+            ).records
         )
         == 1
     )
     assert (
         len(
-            instance.get_event_records(
-                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION)
-            )
+            instance.get_records_for_run(
+                result.run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION
+            ).records
         )
         == 1
     )
@@ -210,9 +207,7 @@ def test_execute_check_and_asset_in_separate_run():
 
     assert check_eval.target_materialization_data is not None
     assert check_eval.target_materialization_data.run_id == materialize_result.run_id
-    materialization_record = instance.get_event_records(
-        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
-    )[0]
+    materialization_record = instance.fetch_materializations(asset1.key, limit=1).records[0]
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
@@ -657,9 +652,9 @@ def test_multi_asset_check():
         ]
     )
     def checks(context):
-        materialization_records = context.instance.get_event_records(
-            EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
-        )
+        asset1_records = instance.fetch_materializations(asset1.key, limit=1000).records
+        asset2_records = instance.fetch_materializations(asset2.key, limit=1000).records
+        materialization_records = [*asset1_records, *asset2_records]
         assert len(materialization_records) == 2
         assert {record.asset_key for record in materialization_records} == {asset1.key, asset2.key}
 
@@ -685,17 +680,17 @@ def test_multi_asset_check():
 
     assert (
         len(
-            instance.get_event_records(
-                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
-            )
+            instance.get_records_for_run(
+                result.run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+            ).records
         )
         == 3
     )
     assert (
         len(
-            instance.get_event_records(
-                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION)
-            )
+            instance.get_records_for_run(
+                result.run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION
+            ).records
         )
         == 3
     )
@@ -757,17 +752,17 @@ def test_multi_asset_check_subset():
 
     assert (
         len(
-            instance.get_event_records(
-                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
-            )
+            instance.get_records_for_run(
+                result.run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+            ).records
         )
         == 2
     )
     assert (
         len(
-            instance.get_event_records(
-                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION)
-            )
+            instance.get_records_for_run(
+                result.run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION
+            ).records
         )
         == 2
     )

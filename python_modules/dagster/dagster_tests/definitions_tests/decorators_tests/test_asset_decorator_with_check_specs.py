@@ -6,9 +6,7 @@ from dagster import (
     AssetCheckSpec,
     AssetKey,
     AssetOut,
-    DagsterEventType,
     DagsterInstance,
-    EventRecordsFilter,
     In,
     MetadataValue,
     Output,
@@ -53,9 +51,7 @@ def test_asset_check_same_op():
 
     assert check_eval.target_materialization_data is not None
     assert check_eval.target_materialization_data.run_id == result.run_id
-    materialization_record = instance.get_event_records(
-        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
-    )[0]
+    materialization_record = instance.fetch_materializations(asset1.key, limit=1).records[0]
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
@@ -84,9 +80,7 @@ def test_asset_check_same_op_with_key_prefix():
 
     assert check_eval.target_materialization_data is not None
     assert check_eval.target_materialization_data.run_id == result.run_id
-    materialization_record = instance.get_event_records(
-        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
-    )[0]
+    materialization_record = instance.fetch_materializations(asset1.key, limit=1).records[0]
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
@@ -441,9 +435,7 @@ def test_asset_check_doesnt_store_output():
 
     assert check_eval.target_materialization_data is not None
     assert check_eval.target_materialization_data.run_id == result.run_id
-    materialization_record = instance.get_event_records(
-        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
-    )[0]
+    materialization_record = instance.fetch_materializations(asset1.key, limit=1).records[0]
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 

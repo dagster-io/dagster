@@ -82,7 +82,9 @@ def test_write_staging_label():
     ) as staging_runner:
         assert staging_runner.materialize_all_assets().success
 
-        all_mat_log_records = staging_runner.get_all_asset_materialization_event_records("now_time")
+        all_mat_log_records = staging_runner.get_last_5000_asset_materialization_event_records(
+            "now_time"
+        )
         assert all_mat_log_records
 
         assert len(all_mat_log_records) == 1
@@ -114,7 +116,9 @@ def test_setup_teardown() -> None:
             "teardown_after_execution parent",
         ]
 
-        all_mat_log_records = staging_runner.get_all_asset_materialization_event_records("now_time")
+        all_mat_log_records = staging_runner.get_last_5000_asset_materialization_event_records(
+            "now_time"
+        )
         assert all_mat_log_records
 
         assert len(all_mat_log_records) == 1
@@ -139,7 +143,9 @@ def test_write_alternative_branch_metadata_key():
     ) as staging_runner:
         assert staging_runner.materialize_all_assets()
 
-        all_mat_log_records = staging_runner.get_all_asset_materialization_event_records("now_time")
+        all_mat_log_records = staging_runner.get_last_5000_asset_materialization_event_records(
+            "now_time"
+        )
         assert all_mat_log_records
 
         assert len(all_mat_log_records) == 1
@@ -197,7 +203,7 @@ def test_basic_workflow():
 
         assert dev_t0_runner.materialize_asset("now_time_plus_N").success
 
-        all_mat_event_log_records = dev_t0_runner.get_all_asset_materialization_event_records(
+        all_mat_event_log_records = dev_t0_runner.get_last_5000_asset_materialization_event_records(
             "now_time_plus_N"
         )
 
@@ -210,7 +216,7 @@ def test_basic_workflow():
         assert dev_t0_runner.load_asset_value("now_time_plus_N") == now_time_prod_value_1 + 10
 
         # we have done this with *no* materializations of the root asset in staging
-        assert not dev_t0_runner.get_all_asset_materialization_event_records("now_time")
+        assert not dev_t0_runner.get_last_5000_asset_materialization_event_records("now_time")
 
         dev_t1_runner = DefinitionsRunner(
             Definitions(
@@ -238,7 +244,7 @@ def test_basic_workflow():
         )
 
         # we were able to do this without having an materializations in staging of the root asset
-        assert not dev_t1_runner.get_all_asset_materialization_event_records("now_time")
+        assert not dev_t1_runner.get_last_5000_asset_materialization_event_records("now_time")
 
         dev_t1_runner.materialize_asset("now_time_plus_20_after_plus_N")
 

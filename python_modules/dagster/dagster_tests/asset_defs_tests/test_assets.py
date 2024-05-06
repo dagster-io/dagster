@@ -13,7 +13,6 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     Definitions,
-    EventRecordsFilter,
     FreshnessPolicy,
     GraphOut,
     IdentityPartitionMapping,
@@ -1081,9 +1080,11 @@ def test_from_op_w_configured():
     assert the_asset.keys_by_output_name["result"].path == ["foo2"]
 
 
-def get_step_keys_from_run(instance: DagsterInstance) -> Sequence[str]:
+def get_step_keys_from_run(instance: DagsterInstance, run_id: str) -> Sequence[str]:
     engine_events = list(
-        instance.get_event_records(EventRecordsFilter(DagsterEventType.ENGINE_EVENT))
+        instance.get_records_for_run(
+            run_id=run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=False
+        ).records
     )
     metadata = engine_events[0].event_log_entry.get_dagster_event().engine_event_data.metadata
     step_metadata = metadata["step_keys"]
@@ -1124,7 +1125,7 @@ def test_graph_backed_asset_subset():
             == 1
         )
         assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 1
-        step_keys = get_step_keys_from_run(instance)
+        step_keys = get_step_keys_from_run(instance, result.run_id)
         assert set(step_keys) == set(["my_graph.foo", "my_graph.bar_1"])
 
 
@@ -1155,7 +1156,7 @@ def test_graph_backed_asset_partial_output_selection():
         # This test will yield two materialization events, for assets "one" and "two". This is
         # because the "foo" op will still be executed, even though we only selected "one".
         assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
-        step_keys = get_step_keys_from_run(instance)
+        step_keys = get_step_keys_from_run(instance, result.run_id)
         assert set(step_keys) == set(["graph_asset.foo"])
 
 
@@ -1215,7 +1216,7 @@ def test_input_subsetting_graph_backed_asset():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["my_graph.bar_1", "upstream_1"])
 
         # test second "bar" alias
@@ -1234,7 +1235,7 @@ def test_input_subsetting_graph_backed_asset():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["my_graph.bar_2", "upstream_2"])
 
         # test "baz" which uses both inputs
@@ -1253,7 +1254,7 @@ def test_input_subsetting_graph_backed_asset():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 3
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["my_graph.baz", "upstream_1", "upstream_2"])
 
 
@@ -1524,7 +1525,7 @@ def test_graph_backed_asset_reused():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["graph_asset.foo", "one_downstream"])
 
             # Other graph-backed asset
@@ -1542,7 +1543,7 @@ def test_graph_backed_asset_reused():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["graph_asset.foo", "duplicate_one_downstream"])
 
 
