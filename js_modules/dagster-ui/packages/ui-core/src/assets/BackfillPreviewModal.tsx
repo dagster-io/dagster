@@ -18,7 +18,7 @@ import {
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
 import {testId} from '../testing/testId';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 interface BackfillPreviewModalProps {
   isOpen: boolean;
@@ -137,21 +137,12 @@ const RowGrid = styled(Box)`
 
 export const BackfillPreviewTableHeader = () => {
   return (
-    <Box
-      border="bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Asset key</HeaderCell>
       <HeaderCell>Backfill policy</HeaderCell>
       <HeaderCell>Partition definition</HeaderCell>
       <HeaderCell>Partitions to launch</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

@@ -429,6 +429,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
+        if not status:
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, f"Job {job_name} could not be found")
+
         inactive_job_with_finished_pods = bool(
             (not status.active) and (status.failed or status.succeeded)
         )

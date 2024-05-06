@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Body2, Box, Caption, Colors} from '@dagster-io/ui-components';
+import {Body2, Box, Caption} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -13,7 +13,7 @@ import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types'
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 type Props = {
@@ -130,22 +130,13 @@ const CaptionEllipsed = styled(Caption)`
 
 export const VirtualizedAssetCheckHeader = () => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Check name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Evaluation timestamp</HeaderCell>
       <HeaderCell>Evaluation metadata</HeaderCell>
       <HeaderCell>Actions</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

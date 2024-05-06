@@ -356,6 +356,7 @@ def validate_and_coerce_op_result_to_iterator(
                         value=element.value,
                         metadata=element.metadata,
                         data_version=element.data_version,
+                        tags=element.tags,
                     )
             else:
                 # If annotation indicates a generic output annotation, and an

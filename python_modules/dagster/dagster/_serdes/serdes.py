@@ -42,7 +42,7 @@ from typing import (
     overload,
 )
 
-import pydantic
+from pydantic import BaseModel
 from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -82,7 +82,7 @@ PackableValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
+    BaseModel,
     "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
@@ -98,12 +98,18 @@ UnpackedValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
+    BaseModel,
     "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
     "UnknownSerdesValue",
+]
+
+SerializableObject: TypeAlias = Union[
+    NamedTuple,
+    BaseModel,
+    "DataclassInstance",
 ]
 
 _K = TypeVar("_K")
@@ -396,7 +402,7 @@ def _whitelist_for_serdes(
                 field_serializers=field_serializers,
             )
             return klass  # type: ignore
-        elif issubclass(klass, pydantic.BaseModel) and (
+        elif issubclass(klass, BaseModel) and (
             serializer is None or issubclass(serializer, PydanticModelSerializer)
         ):
             whitelist_map.register_object(
@@ -424,7 +430,7 @@ def is_whitelisted_for_serdes_object(
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))  # NamedTuple
         or (is_dataclass(val) and not isinstance(val, type))  # dataclass instance
-        or isinstance(val, pydantic.BaseModel)
+        or isinstance(val, BaseModel)
     ):
         klass_name = val.__class__.__name__
         return whitelist_map.has_object_serializer(klass_name)
@@ -595,44 +601,44 @@ class ObjectSerializer(Serializer, Generic[T]):
     ) -> Any:
         raise exc
 
-    def pack(
+    def pack_items(
         self,
         value: T,
         whitelist_map: WhitelistMap,
+        object_handler: Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue],
         descent_path: str,
-    ) -> Dict[str, JsonSerializableValue]:
-        packed: Dict[str, JsonSerializableValue] = {}
-        packed["__class__"] = self.get_storage_name()
+    ) -> Iterator[Tuple[str, JsonSerializableValue]]:
+        yield "__class__", self.get_storage_name()
         for key, inner_value in self.object_as_mapping(self.before_pack(value)).items():
             if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
             storage_key = self.storage_field_names.get(key, key)
             custom = self.field_serializers.get(key)
             if custom:
-                packed[storage_key] = custom.pack(
-                    inner_value,
-                    whitelist_map=whitelist_map,
-                    descent_path=f"{descent_path}.{key}",
+                yield (
+                    storage_key,
+                    custom.pack(
+                        inner_value,
+                        whitelist_map=whitelist_map,
+                        descent_path=f"{descent_path}.{key}",
+                    ),
                 )
             else:
-                packed[storage_key] = _pack_value(
-                    inner_value,
-                    whitelist_map=whitelist_map,
-                    descent_path=f"{descent_path}.{key}",
+                yield (
+                    storage_key,
+                    _transform_for_serialization(
+                        inner_value,
+                        whitelist_map=whitelist_map,
+                        object_handler=object_handler,
+                        descent_path=f"{descent_path}.{key}",
+                    ),
                 )
         for key, default in self.old_fields.items():
-            packed[key] = default
-        packed = self.after_pack(**packed)
-        return packed
+            yield key, default
 
     # Hook: Modify the contents of the object before packing
     def before_pack(self, value: T) -> T:
         return value
-
-    # Hook: Modify the contents of the packed, json-serializable dict before it is converted to a
-    # string.
-    def after_pack(self, **packed_dict: JsonSerializableValue) -> Dict[str, JsonSerializableValue]:
-        return packed_dict
 
     @property
     @abstractmethod
@@ -666,7 +672,7 @@ class DataclassSerializer(ObjectSerializer[T_Dataclass]):
         return list(f.name for f in dataclasses.fields(self.klass))
 
 
-T_PydanticModel = TypeVar("T_PydanticModel", bound=pydantic.BaseModel, default=pydantic.BaseModel)
+T_PydanticModel = TypeVar("T_PydanticModel", bound=BaseModel, default=BaseModel)
 
 
 class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
@@ -687,7 +693,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
 
         return result
 
-    @property
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
         return [field.alias or key for key, field in self._model_fields.items()]
 
@@ -755,8 +761,13 @@ def serialize_value(
 
     Objects are first converted to a JSON-serializable form with `pack_value`.
     """
-    packed_value = pack_value(val, whitelist_map=whitelist_map)
-    return seven.json.dumps(packed_value, **json_kwargs)
+    serializable_value = _transform_for_serialization(
+        val,
+        whitelist_map=whitelist_map,
+        object_handler=_wrap_object,
+        descent_path=_root(val),
+    )
+    return seven.json.dumps(serializable_value, **json_kwargs)
 
 
 @overload
@@ -775,7 +786,7 @@ def pack_value(
         FrozenSet[PackableValue],
         NamedTuple,
         "DataclassInstance",
-        pydantic.BaseModel,
+        BaseModel,
         Enum,
     ],
     whitelist_map: WhitelistMap = ...,
@@ -805,12 +816,18 @@ def pack_value(
         * frozenset
     """
     descent_path = _root(val) if descent_path is None else descent_path
-    return _pack_value(val, whitelist_map=whitelist_map, descent_path=descent_path)
+    return _transform_for_serialization(
+        val,
+        whitelist_map=whitelist_map,
+        descent_path=descent_path,
+        object_handler=_pack_object,
+    )
 
 
-def _pack_value(
+def _transform_for_serialization(
     val: PackableValue,
     whitelist_map: WhitelistMap,
+    object_handler: Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue],
     descent_path: str,
 ) -> JsonSerializableValue:
     # this is a hot code path so we handle the common base cases without isinstance
@@ -819,20 +836,40 @@ def _pack_value(
         return cast(JsonSerializableValue, val)
     if tval is list:
         return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            _transform_for_serialization(
+                item,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}[{idx}]",
+            )
             for idx, item in enumerate(cast(list, val))
         ]
     if tval is dict:
         return {
-            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: _transform_for_serialization(
+                value,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}.{key}",
+            )
             for key, value in cast(dict, val).items()
         }
     if tval is SerializableNonScalarKeyMapping:
         return {
             "__mapping_items__": [
                 [
-                    _pack_value(k, whitelist_map, f"{descent_path}.{k}"),
-                    _pack_value(v, whitelist_map, f"{descent_path}.{k}"),
+                    _transform_for_serialization(
+                        k,
+                        whitelist_map,
+                        object_handler,
+                        f"{descent_path}.{k}",
+                    ),
+                    _transform_for_serialization(
+                        v,
+                        whitelist_map,
+                        object_handler,
+                        f"{descent_path}.{k}",
+                    ),
                 ]
                 for k, v in cast(dict, val).items()
             ]
@@ -849,7 +886,7 @@ def _pack_value(
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
-        or isinstance(val, pydantic.BaseModel)
+        or isinstance(val, BaseModel)
         or (is_dataclass(val) and not isinstance(val, type))
     ):
         klass_name = val.__class__.__name__
@@ -858,20 +895,34 @@ def _pack_value(
                 "Can only serialize whitelisted namedtuples, received"
                 f" {val}.\nDescent path: {descent_path}",
             )
-        serializer = whitelist_map.get_object_serializer(klass_name)
-        return serializer.pack(val, whitelist_map, descent_path)
+        return object_handler(
+            cast(SerializableObject, val),
+            whitelist_map,
+            descent_path,
+        )
     if isinstance(val, set):
         set_path = descent_path + "{}"
         return {
             "__set__": [
-                _pack_value(item, whitelist_map, set_path) for item in sorted(list(val), key=str)
+                _transform_for_serialization(
+                    item,
+                    whitelist_map,
+                    object_handler,
+                    set_path,
+                )
+                for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, frozenset):
         frz_set_path = descent_path + "{}"
         return {
             "__frozenset__": [
-                _pack_value(item, whitelist_map, frz_set_path)
+                _transform_for_serialization(
+                    item,
+                    whitelist_map,
+                    object_handler,
+                    frz_set_path,
+                )
                 for item in sorted(list(val), key=str)
             ]
         }
@@ -883,16 +934,79 @@ def _pack_value(
     # handle more expensive and uncommon abc instance checks last
     if isinstance(val, collections.abc.Mapping):
         return {
-            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: _transform_for_serialization(
+                value,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}.{key}",
+            )
             for key, value in val.items()
         }
     if isinstance(val, collections.abc.Sequence):
         return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            _transform_for_serialization(
+                item,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}[{idx}]",
+            )
             for idx, item in enumerate(val)
         ]
 
     raise SerializationError(f"Unhandled value type {tval}")
+
+
+def _pack_object(
+    obj: SerializableObject, whitelist_map: WhitelistMap, descent_path: str
+) -> Mapping[str, JsonSerializableValue]:
+    # the object_handler for _transform_for_serialization to produce dicts for objects
+
+    klass_name = obj.__class__.__name__
+    serializer = whitelist_map.get_object_serializer(klass_name)
+    return dict(serializer.pack_items(obj, whitelist_map, _pack_object, descent_path))
+
+
+class _LazySerializationWrapper(dict):
+    """An object used to allow us to drive serialization iteratively
+    over the tree of objects via json.dumps, instead of having to create
+    an entire tree of primitive objects to pass to json.dumps.
+    """
+
+    __slots__ = [
+        "_obj",
+        "_whitelist_map",
+        "_descent_path",
+    ]
+
+    def __init__(
+        self,
+        obj: SerializableObject,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ):
+        self._obj = obj
+        self._whitelist_map = whitelist_map
+        self._descent_path = descent_path
+
+        # populate backing native dict to work around c fast path check
+        # https://github.com/python/cpython/blob/0fb18b02c8ad56299d6a2910be0bab8ad601ef24/Modules/_json.c#L1542
+        super().__init__({"__serdes": "wrapper"})
+
+    def items(self) -> Iterator[Tuple[str, JsonSerializableValue]]:
+        klass_name = self._obj.__class__.__name__
+        serializer = self._whitelist_map.get_object_serializer(klass_name)
+        yield from serializer.pack_items(
+            self._obj, self._whitelist_map, _wrap_object, self._descent_path
+        )
+
+
+def _wrap_object(
+    obj: SerializableObject,
+    whitelist_map: WhitelistMap,
+    descent_path: str,
+) -> "_LazySerializationWrapper":
+    # the object_handler for _transform_for_serialization to use in conjunction with json.dumps for iterative serialization
+    return _LazySerializationWrapper(obj, whitelist_map, descent_path)
 
 
 ###################################################################################################

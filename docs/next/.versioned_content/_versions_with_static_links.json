@@ -478,5 +478,9 @@
   {
     "url": "https://release-1-7-3.dagster.dagster-docs.io/",
     "version": "1.7.3"
+  },
+  {
+    "url": "https://release-1-7-4.dagster.dagster-docs.io/",
+    "version": "1.7.4"
   }
 ]

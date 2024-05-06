@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from unittest import mock
 
+import kubernetes
 import pytest
 from dagster import DagsterRunStatus, job, reconstructable
 from dagster._core.launcher import LaunchRunContext
@@ -704,6 +705,19 @@ def test_check_run_health(kubeconfig_file):
 
             health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.FAILED, health.msg
+
+            mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = (
+                kubernetes.client.rest.ApiException(reason="Not Found")
+            )
+
+            finished_k8s_job_name = get_job_name_from_run_id(finished_run.run_id)
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
+
+            assert (
+                health.status == WorkerStatus.UNKNOWN
+                and health.msg == f"Job {finished_k8s_job_name} could not be found"
+            )
 
 
 def test_get_run_worker_debug_info(kubeconfig_file):

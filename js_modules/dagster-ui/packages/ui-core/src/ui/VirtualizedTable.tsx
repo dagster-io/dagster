@@ -1,6 +1,39 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+export const TABLE_HEADER_HEIGHT = 32;
+
+export const HeaderRow = ({
+  children,
+  templateColumns,
+  sticky = false,
+}: {
+  children: React.ReactNode;
+  templateColumns: string;
+  sticky?: boolean;
+}) => (
+  <Box
+    border="top-and-bottom"
+    style={{
+      display: 'grid',
+      gridTemplateColumns: templateColumns,
+      height: TABLE_HEADER_HEIGHT,
+      fontSize: '12px',
+      color: Colors.textLight(),
+      ...(sticky
+        ? {
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            background: Colors.backgroundDefault(),
+          }
+        : {}),
+    }}
+  >
+    {children}
+  </Box>
+);
 
 export const HeaderCell = ({
   children,
@@ -54,6 +87,7 @@ const CellBox = styled(Box)`
 
   :last-child {
     padding-right: 24px;
+    box-shadow: none;
   }
 `;
 
