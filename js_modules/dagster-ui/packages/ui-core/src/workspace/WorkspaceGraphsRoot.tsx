@@ -17,6 +17,7 @@ import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -38,6 +39,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       variables: {selector},
     },
   );
+  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceGraphsQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

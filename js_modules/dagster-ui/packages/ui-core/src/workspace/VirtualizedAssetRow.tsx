@@ -24,6 +24,7 @@ import {AssetViewType} from '../assets/useAssetView';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
@@ -256,13 +257,16 @@ export function useLiveDataOrLatestMaterializationDebounced(
 
   const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : []);
 
+  const skip = type !== 'asset_non_sda' || !debouncedKey;
   const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
     SINGLE_NON_SDA_ASSET_QUERY,
     {
-      skip: type !== 'asset_non_sda' || !debouncedKey,
+      skip,
       variables: {input: debouncedKey},
     },
   );
+
+  useBlockTraceUntilTrue('SingleNonSdaAssetQuery', !!nonSDAData || skip);
 
   React.useEffect(() => {
     if (type === 'folder') {

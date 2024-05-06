@@ -43,6 +43,7 @@ import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {DimensionPartitionKeys, SensorType} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -72,6 +73,8 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     queryKey: SELECTED_PARTITION_QUERY_STRING_KEY,
   });
 
+  const skipQuery = !!_selectedEvaluation || !!selectedPartition;
+
   // We receive the selected evaluation ID and retrieve it here because the middle panel
   // may be displaying an evaluation that was not retrieved at the page level for the
   // left panel, e.g. as we paginate away from it, we don't want to lose it.
@@ -86,6 +89,8 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       skip: !!_selectedEvaluation || !!selectedPartition,
     },
   );
+
+  useBlockTraceUntilTrue('GetEvaluationsQuery<Single>', !!data || skipQuery);
 
   const {data: specificPartitionData, previousData: previousSpecificPartitionData} = useQuery<
     GetEvaluationsSpecificPartitionQuery,

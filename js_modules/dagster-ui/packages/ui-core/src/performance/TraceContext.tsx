@@ -62,10 +62,10 @@ export function useBlockTraceOnQueryResult(
   const hasError = !!queryResult.error;
 
   useDangerousRenderEffect(() => {
-    if (hasData) {
+    if (hasData && !hasError) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
-  }, [dep, hasData]);
+  }, [dep, hasData, hasError]);
 
   useDangerousRenderEffect(() => {
     if (!hasData && hasError) {

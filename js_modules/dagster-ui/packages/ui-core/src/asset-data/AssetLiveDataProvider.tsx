@@ -12,7 +12,6 @@ import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../asset-graph/Uti
 import {AssetKeyInput} from '../graphql/types';
 import {LiveDataPollRateContext} from '../live-data-provider/LiveDataProvider';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
-import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
 export function useAssetLiveData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
@@ -33,8 +32,6 @@ export function useAssetLiveData(assetKey: AssetKeyInput, thread: LiveDataThread
     refreshStaleData();
   }, [refreshBaseData, refreshStaleData]);
   const refreshing = baseDataRefreshing || staleDataRefreshing;
-
-  useBlockTraceUntilTrue('AssetLiveData', !!(baseData && staleData));
 
   if (baseData && staleData) {
     return {

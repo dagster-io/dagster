@@ -22,6 +22,7 @@ import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {PageLoadTrace} from '../performance';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 import {LoadingSpinner} from '../ui/Loading';
 type Asset = AssetTableFragment;
@@ -110,6 +111,8 @@ export const AssetsCatalogTable = ({
   const {assets, query, error} = useAllAssets(groupSelector);
   const {searchPath, filtered, isFiltered, filterButton, filterInput, activeFiltersJsx} =
     useAssetCatalogFiltering(assets, prefixPath);
+
+  useBlockTraceUntilTrue('useAllAssets', !!assets?.length);
 
   const {displayPathForAsset, displayed} =
     view === 'flat'

@@ -53,6 +53,7 @@ import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -70,6 +71,7 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
+
   const tabList = useTabBuilder({definition, params});
 
   const defaultTab = flagUseNewOverviewPage
@@ -407,6 +409,8 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
       notifyOnNetworkStatusChange: true,
     },
   );
+
+  useBlockTraceOnQueryResult(result, 'AssetViewDefinitionQuery');
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {

@@ -49,6 +49,7 @@ import {Timestamp} from '../../app/time/Timestamp';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {MetadataEntries} from '../../metadata/MetadataEntry';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {Description} from '../../pipelines/Description';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
@@ -70,6 +71,7 @@ export const AssetChecks = ({
   });
   const {data} = queryResult;
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useBlockTraceOnQueryResult(queryResult, 'AssetChecksQuery');
 
   const [selectedCheckName, setSelectedCheckName] = useQueryPersistedState<string>({
     queryKey: 'checkDetail',
@@ -413,6 +415,7 @@ const useHistoricalCheckExecutions = (
     },
     pageSize: PAGE_SIZE,
   });
+  useBlockTraceOnQueryResult(queryResult, 'AssetCheckDetailsQuery');
 
   // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
