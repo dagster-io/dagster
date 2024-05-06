@@ -55,7 +55,7 @@ from ..utils import (
     DEFAULT_IO_MANAGER_KEY,
     DEFAULT_OUTPUT,
     NoValueSentinel,
-    validate_definition_tags,
+    validate_tags_strict,
 )
 
 
@@ -236,7 +236,7 @@ def asset(
             ins=ins,
             deps=upstream_asset_deps,
             metadata=metadata,
-            tags=validate_definition_tags(tags),
+            tags=validate_tags_strict(tags),
             description=description,
             config_schema=config_schema,
             required_resource_keys=required_resource_keys,

@@ -634,10 +634,12 @@ def test_named_tuple_custom_serializer():
     test_map = WhitelistMap.create()
 
     class FooSerializer(NamedTupleSerializer):
-        def after_pack(self, **storage_dict: Dict[str, Any]):
-            storage_dict["colour"] = storage_dict["color"]
-            del storage_dict["color"]
-            return storage_dict
+        def pack_items(self, *args, **kwargs):
+            for k, v in super().pack_items(*args, **kwargs):
+                if k == "color":
+                    yield "colour", v
+                else:
+                    yield k, v
 
         def before_unpack(self, context, unpacked_dict: Dict[str, Any]):
             unpacked_dict["color"] = unpacked_dict["colour"]

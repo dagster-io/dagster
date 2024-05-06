@@ -51,7 +51,7 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
 )
 
-from .utils import validate_definition_tags
+from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import (
@@ -233,7 +233,7 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.tags = validate_definition_tags(tags) or {}
+        self.tags = validate_tags_strict(tags) or {}
 
         resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         if io_manager_def:

@@ -5,6 +5,9 @@ setup(
     packages=find_packages(exclude=["with_openai_tests"]),
     install_requires=[
         "dagster",
+        "dagster-aws",
+        # Commented to avoid version conflicts with Pyright in the Dagster repo, uncomment when using Dagster+
+        # "dagster-cloud",
         "dagster-openai",
         "faiss-cpu==1.8.0",
         "filelock",

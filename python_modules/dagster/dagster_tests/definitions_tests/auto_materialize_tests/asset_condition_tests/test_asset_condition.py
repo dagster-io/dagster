@@ -1,6 +1,8 @@
 from dagster import AutoMaterializePolicy, Definitions, asset
-from dagster._core.definitions.asset_condition.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
     AssetCondition,
+)
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
 )
 from dagster._core.remote_representation.external_data import external_repository_data_from_def

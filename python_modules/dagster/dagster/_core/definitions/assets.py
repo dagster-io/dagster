@@ -72,7 +72,7 @@ from .partition_mapping import (
 )
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
-from .utils import DEFAULT_GROUP_NAME, validate_definition_tags, validate_group_name
+from .utils import DEFAULT_GROUP_NAME, validate_group_name, validate_tags_strict
 
 if TYPE_CHECKING:
     from .base_asset_graph import AssetKeyOrCheckKey
@@ -272,7 +272,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         for tags in (tags_by_key or {}).values():
-            validate_definition_tags(tags)
+            validate_tags_strict(tags)
         self._tags_by_key = tags_by_key or {}
 
         self._descriptions_by_key = dict(

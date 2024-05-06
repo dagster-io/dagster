@@ -19,28 +19,29 @@ from typing import (
 
 import pendulum
 
-from dagster._core.definitions.asset_condition.asset_condition import (
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from ..asset_subset import AssetSubset, ValidAssetSubset
-from ..base_asset_graph import BaseAssetGraph
+from ...asset_subset import AssetSubset, ValidAssetSubset
+from ..serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationState,
+    AssetSubsetWithMetadata,
+)
 
 if TYPE_CHECKING:
-    from ..asset_daemon_context import AssetDaemonContext
-    from .asset_condition import (
-        AssetCondition,
-        AssetConditionEvaluation,
-        AssetConditionEvaluationState,
-        AssetSubsetWithMetadata,
-    )
+    from dagster._core.definitions.data_time import CachingDataTimeResolver
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+    from ...asset_daemon_context import AssetDaemonContext
+    from ...base_asset_graph import BaseAssetGraph
+    from ..scheduling_condition import SchedulingCondition
 
 T = TypeVar("T")
 
@@ -57,41 +58,41 @@ def root_property(fn: Callable[[Any], T]) -> Callable[[Any], T]:
 
 
 @dataclass(frozen=True)
-class AssetConditionEvaluationContext:
+class LegacyRuleEvaluationContext:
     """Context object containing methods and properties used for evaluating the entire state of an
     asset's automation rules.
     """
 
     asset_key: AssetKey
-    condition: "AssetCondition"
-    previous_evaluation_state: Optional["AssetConditionEvaluationState"]
-    previous_evaluation: Optional["AssetConditionEvaluation"]
+    condition: "SchedulingCondition"
+    previous_evaluation_state: Optional[AssetConditionEvaluationState]
+    previous_evaluation: Optional[AssetConditionEvaluation]
     candidate_subset: ValidAssetSubset
 
-    instance_queryer: CachingInstanceQueryer
-    data_time_resolver: CachingDataTimeResolver
+    instance_queryer: "CachingInstanceQueryer"
+    data_time_resolver: "CachingDataTimeResolver"
     daemon_context: "AssetDaemonContext"
 
-    evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"]
+    evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
-    root_ref: Optional["AssetConditionEvaluationContext"] = None
+    root_ref: Optional["LegacyRuleEvaluationContext"] = None
 
     @staticmethod
     def create(
         asset_key: AssetKey,
-        condition: "AssetCondition",
-        previous_evaluation_state: Optional["AssetConditionEvaluationState"],
-        instance_queryer: CachingInstanceQueryer,
-        data_time_resolver: CachingDataTimeResolver,
+        condition: "SchedulingCondition",
+        previous_evaluation_state: Optional[AssetConditionEvaluationState],
+        instance_queryer: "CachingInstanceQueryer",
+        data_time_resolver: "CachingDataTimeResolver",
         daemon_context: "AssetDaemonContext",
-        evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
+        evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> "AssetConditionEvaluationContext":
+    ) -> "LegacyRuleEvaluationContext":
         partitions_def = instance_queryer.asset_graph.get(asset_key).partitions_def
 
-        return AssetConditionEvaluationContext(
+        return LegacyRuleEvaluationContext(
             asset_key=asset_key,
             condition=condition,
             previous_evaluation_state=previous_evaluation_state,
@@ -113,12 +114,15 @@ class AssetConditionEvaluationContext:
         )
 
     def for_child(
-        self, condition: "AssetCondition", candidate_subset: AssetSubset
-    ) -> "AssetConditionEvaluationContext":
+        self,
+        child_condition: "SchedulingCondition",
+        child_unique_id: str,
+        candidate_subset: AssetSubset,
+    ) -> "LegacyRuleEvaluationContext":
         return dataclasses.replace(
             self,
-            condition=condition,
-            previous_evaluation=self.previous_evaluation.for_child(condition)
+            condition=child_condition,
+            previous_evaluation=self.previous_evaluation.for_child(child_unique_id)
             if self.previous_evaluation
             else None,
             candidate_subset=candidate_subset,
@@ -127,12 +131,12 @@ class AssetConditionEvaluationContext:
         )
 
     @property
-    def root_context(self) -> "AssetConditionEvaluationContext":
+    def root_context(self) -> "LegacyRuleEvaluationContext":
         """A reference to the context of the root condition for this evaluation."""
         return self.root_ref or self
 
     @property
-    def asset_graph(self) -> BaseAssetGraph:
+    def asset_graph(self) -> "BaseAssetGraph":
         return self.instance_queryer.asset_graph
 
     @property
@@ -179,7 +183,7 @@ class AssetConditionEvaluationContext:
             return candidate_subset
 
     @property
-    def previous_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
+    def previous_subsets_with_metadata(self) -> Sequence[AssetSubsetWithMetadata]:
         if self.previous_evaluation is None:
             return []
         return self.previous_evaluation.subsets_with_metadata
@@ -290,7 +294,7 @@ class AssetConditionEvaluationContext:
         """Returns the set of candidates for this tick which were not candidates on the previous
         tick.
         """
-        from .asset_condition import HistoricalAllPartitionsSubsetSentinel
+        from ..serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         if not self.previous_evaluation:
             return self.candidate_subset
@@ -361,7 +365,7 @@ class AssetConditionEvaluationContext:
             FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
         ],
         ignore_subset: AssetSubset,
-    ) -> Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+    ) -> Tuple[ValidAssetSubset, Sequence[AssetSubsetWithMetadata]]:
         """Combines information calculated on this tick with information from the previous tick,
         returning a tuple of the combined true subset and the combined subsets with metadata.
 
@@ -371,7 +375,7 @@ class AssetConditionEvaluationContext:
             ignore_subset: An AssetSubset which represents information that we should *not* carry
                 forward from the previous tick.
         """
-        from .asset_condition import AssetSubsetWithMetadata
+        from ..serialized_objects import AssetSubsetWithMetadata
 
         mapping = defaultdict(lambda: self.empty_subset())
         has_new_metadata_subset = self.empty_subset()

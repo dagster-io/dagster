@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, MiddleTruncate} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -17,7 +17,7 @@ import {RunStatusPezList} from '../runs/RunStatusPez';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
 
@@ -130,22 +130,13 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
 
 export const VirtualizedJobHeader = () => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Schedules/sensors</HeaderCell>
       <HeaderCell>Latest run</HeaderCell>
       <HeaderCell>Run history</HeaderCell>
       <HeaderCell></HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

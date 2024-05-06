@@ -1,8 +1,10 @@
 from dagster import MetadataValue
-from dagster._core.definitions.asset_condition.asset_condition import AssetSubsetWithMetadata
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+)
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetSubsetWithMetadata,
 )
 from dagster._core.definitions.events import AssetKey
 

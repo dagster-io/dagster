@@ -8,6 +8,31 @@ import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAsse
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 /**
+The params behavior on this page is a bit nuanced - there are two main query
+params: ?timestamp= and ?partition= and only one is set at a time. They can
+be undefined, an empty string or a value and all three states are used.
+
+- If both are undefined, we expand the first item in the table by default
+- If one is present, it determines which xAxis is used (partition grouping)
+- If one is present and set to a value, that item in the table is expanded.
+- If one is present but an empty string, no items in the table is expanded.
+ */
+export function getXAxisForParams(
+  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
+  {defaultToPartitions}: {defaultToPartitions: boolean},
+) {
+  const xAxisDefault = defaultToPartitions ? 'partition' : 'time';
+  const xAxis: 'partition' | 'time' =
+    params.partition !== undefined
+      ? 'partition'
+      : params.time !== undefined || params.asOf
+      ? 'time'
+      : xAxisDefault;
+
+  return xAxis;
+}
+
+/**
  * If the asset has a defined partition space, we load all materializations in the
  * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
  * you still see accurate info for the last 100 partitions in the UI. A count-based
@@ -18,23 +43,8 @@ export function useRecentAssetEvents(
   params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
-  // The params behavior on this page is a bit nuanced - there are two main query
-  // params: ?timestamp= and ?partition= and only one is set at a time. They can
-  // be undefined, an empty string or a value and all three states are used.
-  //
-  // - If both are undefined, we expand the first item in the table by default
-  // - If one is present, it determines which xAxis is used (partition grouping)
-  // - If one is present and set to a value, that item in the table is expanded.
-  // - If one is present but an empty string, no items in the table is expanded.
-
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
-  const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
-  const xAxis: 'partition' | 'time' =
-    params.partition !== undefined
-      ? 'partition'
-      : params.time !== undefined || before
-      ? 'time'
-      : xAxisDefault;
+  const xAxis = getXAxisForParams(params, {defaultToPartitions: assetHasDefinedPartitions});
 
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
