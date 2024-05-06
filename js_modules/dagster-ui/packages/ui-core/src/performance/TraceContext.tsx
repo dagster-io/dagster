@@ -53,7 +53,10 @@ export class Dependency {
 }
 
 /** Use this to declare a dependency on an apollo query result */
-export function useBlockTraceOnQueryResult(queryResult: QueryResult<any, any>, name: string) {
+export function useBlockTraceOnQueryResult(
+  queryResult: Pick<QueryResult<any, any>, 'data' | 'error'>,
+  name: string,
+) {
   const dep = useTraceDependency(name);
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;

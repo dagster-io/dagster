@@ -30,6 +30,10 @@ jest.mock('idb-lru-cache', () => {
   };
 });
 
+afterEach(() => {
+  jest.resetModules();
+});
+
 jest.mock('@apollo/client', () => {
   const actual = jest.requireActual('@apollo/client');
   const query = jest.fn().mockReturnValue({

@@ -27,6 +27,7 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
@@ -113,6 +114,8 @@ export const PipelineRunsRoot = (props: Props) => {
       return data.pipelineRunsOrError.results;
     },
   });
+
+  useBlockTraceOnQueryResult(queryResult, 'PipelineRunsRootQuery');
 
   const onAddTag = useCallback(
     (token: RunFilterToken) => {

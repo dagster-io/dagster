@@ -7,7 +7,7 @@ type CacheData<TQuery> = {
   version: number;
 };
 
-const fetchState: Record<
+let fetchState: Record<
   string,
   {
     onFetched: ((value: any) => void)[];
@@ -84,9 +84,25 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         expiry: new Date('3000-01-01'), // never expire,
       },
     );
-    setData(data);
-    fetchState[key]?.onFetched.forEach((cb) => cb(queryResult));
     delete fetchState[key];
+    const onFetched = fetchState[key]?.onFetched;
+    try {
+      setData(data);
+    } catch (e) {
+      setTimeout(() => {
+        throw e;
+      });
+    }
+    onFetched?.forEach((cb) => {
+      try {
+        cb(queryResult);
+      } catch (e) {
+        setTimeout(() => {
+          throw e;
+        });
+      }
+    });
+
     return queryResult;
   }, [client, key, lru, query, variables, version]);
 
@@ -96,3 +112,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     loading,
   };
 }
+
+export const __resetForJest = () => {
+  fetchState = {};
+};
