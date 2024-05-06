@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import pendulum
 
+from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
     from .scheduling_context import SchedulingContext
 
 
+@experimental
 class SchedulingCondition(ABC, DagsterModel):
     @property
     def children(self) -> Sequence["SchedulingCondition"]:
