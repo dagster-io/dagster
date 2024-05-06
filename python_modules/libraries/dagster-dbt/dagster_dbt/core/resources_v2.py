@@ -43,7 +43,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata import (
     TableMetadataSet,
     TextMetadataValue,
@@ -683,7 +683,9 @@ class DbtCliInvocation:
             return event
 
         # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
-        # so that the DuckDB lock is released
+        # so that the DuckDB lock is released. This is because DuckDB does not allow for
+        # opening multiple connections to the same database when a write connection, such
+        # as the one dbt uses, is open.
         try:
             from dbt.adapters.duckdb import DuckDBAdapter
 
@@ -695,20 +697,18 @@ class DbtCliInvocation:
         unique_id = dbt_resource_props["unique_id"]
         table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
 
-        adapter = check.not_none(self.adapter)
-
         with adapter.connection_named(f"row_count_{unique_id}"):
             query_result = adapter.execute(
                 f"""
                     SELECT
-                    count(*)
+                    count(*) as row_count
                     FROM
                     {table_str}
                 """,
                 fetch=True,
             )
-        row_count = query_result[1][0][0]
-        additional_metadata = {**TableMetadataSet(total_row_count=row_count)}
+        row_count = query_result[1][0]["row_count"]
+        additional_metadata = {**TableMetadataSet(row_count=row_count)}
 
         if isinstance(event, Output):
             return event.with_metadata(metadata={**event.metadata, **additional_metadata})
@@ -737,9 +737,14 @@ class DbtCliInvocation:
             else:
                 output_events_and_futures.append(event)
 
+    @experimental
     def fetch_row_counts(
         self,
     ) -> "DbtCliInvocation":
+        """Experimental functionality which will fetch row counts for materialized dbt
+        models in a dbt run once they are built. Note that row counts will not be fetched
+        for views, since this requires running the view's SQL query which may be costly.
+        """
         return DbtCliInvocation(
             process=self.process,
             manifest=self.manifest,
