@@ -204,6 +204,10 @@ def _build_github_url(url: str, branch: str) -> str:
     return f"{url}/tree/{branch}"
 
 
+def _build_gitlab_url(url: str, branch: str) -> str:
+    return f"{url}/-/tree/{branch}"
+
+
 @experimental
 def link_to_source_control(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
@@ -211,7 +215,10 @@ def link_to_source_control(
     source_control_branch: str,
     repository_root_absolute_path: Union[Path, str],
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
-    if source_control_url and "github.com/" in source_control_url:
+    if "gitlab.com" in source_control_url:
+        source_control_url = _build_gitlab_url(source_control_url, source_control_branch)
+    else:
+        # assume GitHub URL scheme
         source_control_url = _build_github_url(source_control_url, source_control_branch)
 
     return [
