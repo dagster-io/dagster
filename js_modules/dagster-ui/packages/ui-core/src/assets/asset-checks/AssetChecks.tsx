@@ -415,7 +415,7 @@ const useHistoricalCheckExecutions = (
     },
     pageSize: PAGE_SIZE,
   });
-  useBlockTraceOnQueryResult(queryResult, 'AssetCheckDetailsQuery');
+  useBlockTraceOnQueryResult(queryResult, 'AssetCheckDetailsQuery', {skip: !variables});
 
   // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);

@@ -7,6 +7,7 @@ import {
   TypeListContainerQuery,
   TypeListContainerQueryVariables,
 } from './types/TypeListContainer.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {
@@ -43,6 +44,7 @@ export const TypeListContainer = ({explorerPath, repoAddress}: ITypeListContaine
       skip: !pipelineSelector,
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'TypeListContainerQuery', {skip: !pipelineSelector});
 
   if (!pipelineSelector) {
     return (

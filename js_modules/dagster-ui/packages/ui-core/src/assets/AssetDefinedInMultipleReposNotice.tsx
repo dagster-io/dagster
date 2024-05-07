@@ -24,12 +24,13 @@ export const AssetDefinedInMultipleReposNotice = ({
   loadedFromRepo: RepoAddress;
   padded?: boolean;
 }) => {
-  const {data} = useQuery<AssetDefinitionCollisionQuery, AssetDefinitionCollisionQueryVariables>(
-    ASSET_DEFINITION_COLLISION_QUERY,
-    {
-      variables: {assetKeys: [{path: assetKey.path}]},
-    },
-  );
+  const queryResult = useQuery<
+    AssetDefinitionCollisionQuery,
+    AssetDefinitionCollisionQueryVariables
+  >(ASSET_DEFINITION_COLLISION_QUERY, {
+    variables: {assetKeys: [{path: assetKey.path}]},
+  });
+  const {data} = queryResult;
 
   const collision = data?.assetNodeDefinitionCollisions[0];
   if (!collision) {

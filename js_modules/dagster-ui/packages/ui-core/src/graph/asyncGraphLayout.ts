@@ -181,7 +181,9 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
   // Add a UID to create a new dependency whenever the layout inputs change
-  useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, uid.current);
+  useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
+    uid: uid.current.toString(),
+  });
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
@@ -232,7 +234,9 @@ export function useAssetLayout(
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
   // Add a UID to create a new dependency whenever the layout inputs change
-  useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, uid.current);
+  useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
+    uid: uid.current.toString(),
+  });
 
   return {
     loading,

@@ -119,7 +119,7 @@ describe('useBlockTraceUntilTrue', () => {
     );
 
     const {rerender, unmount} = renderHook(
-      ({name, isSuccessful}: any) => useBlockTraceUntilTrue(name, isSuccessful, 'uid123'),
+      ({name, isSuccessful}: any) => useBlockTraceUntilTrue(name, isSuccessful, {uid: 'uid123'}),
       {
         initialProps: {name: 'testDep', isSuccessful: false},
         wrapper,

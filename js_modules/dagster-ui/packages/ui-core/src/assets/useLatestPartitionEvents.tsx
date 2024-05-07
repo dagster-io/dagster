@@ -25,6 +25,7 @@ export function useLatestPartitionEvents(
   >(ASSET_OVERVIEW_METADATA_EVENTS_QUERY, {
     variables: {assetKey: asAssetKeyInput(assetNode)},
   });
+  useBlockTraceOnQueryResult(queryResult, 'AssetOverviewMetadataEventsQuery');
 
   const {data, refetch} = queryResult;
 
@@ -38,8 +39,6 @@ export function useLatestPartitionEvents(
       : undefined;
   const observation =
     data?.assetOrError.__typename === 'Asset' ? data.assetOrError.assetObservations[0] : undefined;
-
-  useBlockTraceOnQueryResult(queryResult, 'AssetOverviewMetadataEventsQuery');
 
   return {materialization, observation, loading: !data};
 }

@@ -46,15 +46,15 @@ export const AssetsOverviewRoot = ({
   );
   const assetKey = useMemo(() => ({path: currentPath}), [currentPath]);
 
+  const skip = currentPath.length === 0;
   const queryResult = useQuery<AssetsOverviewRootQuery, AssetsOverviewRootQueryVariables>(
     ASSETS_OVERVIEW_ROOT_QUERY,
     {
-      skip: currentPath.length === 0,
+      skip,
       variables: {assetKey},
     },
   );
-
-  useBlockTraceOnQueryResult(queryResult, 'AssetsOverviewRootQuery');
+  useBlockTraceOnQueryResult(queryResult, 'AssetsOverviewRootQuery', {skip});
 
   useDocumentTitle(
     currentPath && currentPath.length

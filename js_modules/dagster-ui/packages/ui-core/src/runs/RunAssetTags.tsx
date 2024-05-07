@@ -4,13 +4,17 @@ import {AssetKeyTagCollection} from './AssetTagCollections';
 import {RunAssetsQuery, RunAssetsQueryVariables} from './types/RunAssetTags.types';
 import {RunFragment} from './types/RunFragments.types';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const RunAssetTags = (props: {run: RunFragment}) => {
   const {run} = props;
-  const {data, loading} = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
+  const skip = isHiddenAssetGroupJob(run.pipelineName);
+  const queryResult = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
     variables: {runId: run.id},
-    skip: isHiddenAssetGroupJob(run.pipelineName),
+    skip,
   });
+  const {data, loading} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'RunAssetsQuery', {skip});
 
   if (loading || !data || data.pipelineRunOrError.__typename !== 'Run') {
     return null;
