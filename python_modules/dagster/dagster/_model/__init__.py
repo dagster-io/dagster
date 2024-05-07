@@ -15,7 +15,10 @@ class DagsterModel(BaseModel):
     - Avoid pydantic reading a cached property class as part of the schema.
     """
 
-    _cached_method_cache__internal__: Dict[Hashable, Any] = PrivateAttr(default_factory=dict)
+    if not USING_PYDANTIC_2:
+        # the setattr approach for cached_method works in pydantic 2 so only declare the PrivateAttr
+        # in pydantic 1 as it has non trivial performance impact
+        _cached_method_cache__internal__: Dict[Hashable, Any] = PrivateAttr(default_factory=dict)
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)

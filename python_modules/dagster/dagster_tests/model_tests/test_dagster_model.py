@@ -1,6 +1,6 @@
 import pytest
 from dagster._model import DagsterModel
-from dagster._utils.cached_method import cached_method
+from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
 from pydantic import ValidationError
 
 
@@ -81,3 +81,5 @@ def test_cached_method() -> None:
     m = CoolModel(name="bob")
     assert m.calculate(4) is m.calculate(4)
     assert m.calculate(4) is not m.reticulate(4)
+
+    assert CACHED_METHOD_CACHE_FIELD not in m.dict()
