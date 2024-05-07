@@ -367,17 +367,6 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
     return []
 
 
-# execution_test_folders = [
-#     "execution_tests-context_tests",
-#     "execution_tests-dynamic_tests",
-#     "execution_tests-engine_tests",
-#     "execution_tests-execute_job_tests",
-#     "execution_tests-execution_plan_tests",
-#     "execution_tests-misc_execution_tests",
-#     "execution_tests-pipes_tests",
-#     "execution_tests-versioning_tests",
-# ]
-
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
@@ -400,6 +389,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "definitions_tests_pendulum_2",
             "execution_tests",
             "execution_tests_context_tests",
+            "execution_tests_dynamic_tests",
+            "execution_tests_engine_tests",
+            "execution_tests_execute_job_tests",
+            "execution_tests_execution_plan_tests",
+            "execution_tests_misc_execution_tests",
+            "execution_tests_pipes_tests",
+            "execution_tests_versioning_tests",
             "general_tests",
             "general_tests_old_protobuf",
             "launcher_tests",
