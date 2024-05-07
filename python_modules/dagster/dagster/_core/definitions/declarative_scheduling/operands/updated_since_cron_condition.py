@@ -1,11 +1,13 @@
 import datetime
 
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
 
 
+@whitelist_for_serdes
 class UpdatedSinceCronCondition(SchedulingCondition):
     cron_schedule: str
     cron_timezone: str
