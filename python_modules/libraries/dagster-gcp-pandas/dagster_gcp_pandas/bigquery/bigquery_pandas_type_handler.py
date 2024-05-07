@@ -58,6 +58,13 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
         context.add_output_metadata(
             {
+                # output object may be a slice/partition, so we output different metadata keys based on
+                # whether this output represents an entire table or just a slice/partition
+                **(
+                    TableMetadataSet(partition_row_count=obj.shape[0])
+                    if context.has_partition_key
+                    else TableMetadataSet(row_count=obj.shape[0])
+                ),
                 **TableMetadataSet(row_count=obj.shape[0]),
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(
