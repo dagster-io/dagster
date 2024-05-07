@@ -15,6 +15,7 @@ import {
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryTrafficDashboard,
 } from '../__fixtures__/AssetTables.fixtures';
+import {RecoilRoot} from 'recoil';
 
 const workspaceMock = buildWorkspaceContextMockedResponse(buildWorkspace({}));
 
@@ -49,6 +50,7 @@ describe('AssetTable', () => {
     it('is enabled when rows are selected', async () => {
       const Test = () => {
         return (
+          <RecoilRoot>
           <MemoryRouter>
             <MockedProvider mocks={MOCKS}>
               <WorkspaceProvider>
@@ -56,6 +58,7 @@ describe('AssetTable', () => {
               </WorkspaceProvider>
             </MockedProvider>
           </MemoryRouter>
+          </RecoilRoot>
         );
       };
       render(<Test />);
