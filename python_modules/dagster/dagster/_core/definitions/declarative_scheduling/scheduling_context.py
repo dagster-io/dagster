@@ -151,6 +151,15 @@ class SchedulingContext(DagsterModel):
         return self.asset_graph_view._queryer  # noqa
 
     @property
+    def previous_requested_slice(self) -> Optional[AssetSlice]:
+        """Returns the requested slice for the previous evaluation. If this asset has never been
+        evaluated, returns None.
+        """
+        return (
+            self.previous_evaluation_info.requested_slice if self.previous_evaluation_info else None
+        )
+
+    @property
     def previous_candidate_slice(self) -> Optional[AssetSlice]:
         """Returns the candidate slice for the previous evaluation. If this node has never been
         evaluated, returns None.
