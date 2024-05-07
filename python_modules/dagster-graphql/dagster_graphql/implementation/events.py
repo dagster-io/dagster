@@ -65,6 +65,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneTableSchemaMetadataEntry,
         GrapheneTextMetadataEntry,
         GrapheneTimestampMetadataEntry,
+        GrapheneUrlCodeReference,
         GrapheneUrlMetadataEntry,
     )
     from ..schema.table import GrapheneTable, GrapheneTableSchema
@@ -159,14 +160,18 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         elif isinstance(value, CodeReferencesMetadataValue):
             yield GrapheneCodeReferencesMetadataEntry(
                 label=key,
-                code_references=[
+                codeReferences=[
                     GrapheneLocalFileCodeReference(
                         filePath=reference.file_path,
                         lineNumber=reference.line_number,
                         label=reference.label,
                     )
-                    for reference in value.code_references
                     if isinstance(reference, LocalFileCodeReference)
+                    else GrapheneUrlCodeReference(
+                        url=reference.url,
+                        label=reference.label,
+                    )
+                    for reference in value.code_references
                 ],
             )
         elif isinstance(value, TableMetadataValue):

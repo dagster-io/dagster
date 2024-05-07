@@ -2684,11 +2684,16 @@ type CodeReferencesMetadataEntry implements MetadataEntry {
   codeReferences: [SourceLocation!]!
 }
 
-union SourceLocation = LocalFileCodeReference
+union SourceLocation = LocalFileCodeReference | UrlCodeReference
 
 type LocalFileCodeReference {
   filePath: String!
   lineNumber: Int!
+  label: String
+}
+
+type UrlCodeReference {
+  url: String!
   label: String
 }
 

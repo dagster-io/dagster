@@ -270,6 +270,11 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
             lineNumber: 12,
             label: 'my_code_reference',
           },
+          {
+            __typename: 'UrlCodeReference',
+            url: 'http://localhost:3000/assets/yoyo_singledim_staticla?partition=GA',
+            label: 'my_code_reference',
+          },
         ],
       };
     default:
