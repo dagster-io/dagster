@@ -23,7 +23,6 @@ from dagster import (
     sensor,
     with_resources,
 )
-from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -48,6 +47,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from pydantic import ValidationError
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -274,7 +274,7 @@ def test_io_manager_coercion():
 
 
 def test_bad_executor():
-    with pytest.raises(CheckError):
+    with pytest.raises(ValidationError):
         # ignoring type to catch runtime error
         Definitions(executor="not an executor")
 
@@ -316,13 +316,13 @@ def test_bad_logger_key():
     def a_logger(_):
         raise Exception("not executed")
 
-    with pytest.raises(CheckError):
+    with pytest.raises(ValidationError):
         # ignore type to catch runtime error
         Definitions(loggers={1: a_logger})
 
 
 def test_bad_logger_value():
-    with pytest.raises(CheckError):
+    with pytest.raises(ValidationError):
         # ignore type to catch runtime error
         Definitions(loggers={"not_a_logger": "not_a_logger"})
 
@@ -598,7 +598,7 @@ def test_asset_missing_resources():
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' required by op 'asset_foo' was not provided.",
     ):
-        Definitions(assets=[asset_foo])
+        Definitions(assets=[asset_foo]).validate_loadable()
 
     source_asset_io_req = SourceAsset(key=AssetKey("foo"), io_manager_key="foo")
 
@@ -608,7 +608,7 @@ def test_asset_missing_resources():
             "io manager with key 'foo' required by SourceAsset with key [\"foo\"] was not provided"
         ),
     ):
-        Definitions(assets=[source_asset_io_req])
+        Definitions(assets=[source_asset_io_req]).validate_loadable()
 
     external_asset_io_req = create_external_asset_from_source_asset(source_asset_io_req)
     with pytest.raises(
@@ -617,7 +617,7 @@ def test_asset_missing_resources():
             "io manager with key 'foo' required by external asset with key [\"foo\"] was not provided"
         ),
     ):
-        Definitions(assets=[external_asset_io_req])
+        Definitions(assets=[external_asset_io_req]).validate_loadable()
 
 
 def test_assets_with_executor():
@@ -643,7 +643,7 @@ def test_asset_missing_io_manager():
             " provided."
         ),
     ):
-        Definitions(assets=[asset_foo])
+        Definitions(assets=[asset_foo]).validate_loadable()
 
 
 def test_resource_defs_on_asset():
@@ -735,7 +735,7 @@ def test_job_with_reserved_name():
             "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
         ),
     ):
-        Definitions(jobs=[the_job])
+        Definitions(jobs=[the_job]).validate_loadable()
 
 
 def test_asset_cycle():

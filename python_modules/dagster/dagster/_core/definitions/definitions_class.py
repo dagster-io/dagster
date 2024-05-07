@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -27,6 +28,7 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
+from dagster._model import DagsterModel
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition, SourceAsset
@@ -326,7 +328,7 @@ class BindResourcesToJobs(list):
     """
 
 
-class Definitions:
+class Definitions(DagsterModel):
     """A set of definitions explicitly available and loadable by Dagster tools.
 
     Parameters:
@@ -415,6 +417,19 @@ class Definitions:
       Any other object is coerced to a :py:class:`ResourceDefinition`.
     """
 
+    assets: Optional[Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]] = (
+        None
+    )
+    schedules: Optional[
+        Sequence[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ] = None
+    sensors: Optional[Sequence[SensorDefinition]] = None
+    jobs: Optional[Sequence[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None
+    resources: Optional[Mapping[str, Any]] = None
+    executor: Optional[Union[ExecutorDefinition, Executor]] = None
+    loggers: Optional[Mapping[str, LoggerDefinition]] = None
+    asset_checks: Optional[Sequence[AssetChecksDefinition]] = None
+
     def __init__(
         self,
         assets: Optional[
@@ -430,16 +445,27 @@ class Definitions:
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
     ):
-        self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
-            name=SINGLETON_REPOSITORY_NAME,
-            assets=assets,
-            schedules=schedules,
-            sensors=sensors,
-            jobs=jobs,
+        T = TypeVar("T")
+
+        def optional_iterable_to_optional_sequence(
+            iterable: Optional[Iterable[T]],
+        ) -> Optional[Sequence[T]]:
+            if iterable is None:
+                return None
+            elif isinstance(iterable, Sequence):
+                return iterable
+            else:
+                return list(iterable)
+
+        super().__init__(
+            assets=optional_iterable_to_optional_sequence(assets),
+            schedules=optional_iterable_to_optional_sequence(schedules),
+            sensors=optional_iterable_to_optional_sequence(sensors),
+            jobs=optional_iterable_to_optional_sequence(jobs),
+            asset_checks=optional_iterable_to_optional_sequence(asset_checks),
             resources=resources,
             executor=executor,
             loggers=loggers,
-            asset_checks=asset_checks,
         )
 
     @public
@@ -555,21 +581,89 @@ class Definitions:
         in order to access an functionality which is not exposed on Definitions. This method
         also resolves a PendingRepositoryDefinition to a RepositoryDefinition.
         """
+        inner_repository = self.get_inner_repository()
         return (
-            self._created_pending_or_normal_repo.compute_repository_definition()
-            if isinstance(self._created_pending_or_normal_repo, PendingRepositoryDefinition)
-            else self._created_pending_or_normal_repo
+            inner_repository.compute_repository_definition()
+            if isinstance(inner_repository, PendingRepositoryDefinition)
+            else inner_repository
         )
 
-    def get_inner_repository_for_loading_process(
+    @cached_method
+    def get_inner_repository(
         self,
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        """This method is used internally to access the inner repository during the loading process
-        at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
-        point is to defer that resolution until later.
+        """This method is used internally to access the inner repository. We explicitly do not want
+        to resolve the pending repo because the entire point is to defer that resolution until
+        later.
         """
-        return self._created_pending_or_normal_repo
+        return _create_repository_using_definitions_args(
+            name=SINGLETON_REPOSITORY_NAME,
+            assets=self.assets,
+            schedules=self.schedules,
+            sensors=self.sensors,
+            jobs=self.jobs,
+            resources=self.resources,
+            executor=self.executor,
+            loggers=self.loggers,
+            asset_checks=self.asset_checks,
+        )
 
     def get_asset_graph(self) -> AssetGraph:
         """Get the AssetGraph for this set of definitions."""
         return self.get_repository_def().asset_graph
+
+    def validate_loadable(self) -> None:
+        """Validates that the enclosed definitions will be loadable by Dagster:
+        - No assets have conflicting keys.
+        - No jobs, sensors, or schedules have conflicting names.
+        - All asset jobs can be resolved.
+        - All resource requirements are satisfied.
+
+        Raises an error if any of the above are not true.
+        """
+        self.get_inner_repository()
+
+    @staticmethod
+    def merge(*def_sets: "Definitions") -> "Definitions":
+        assets = []
+        schedules = []
+        sensors = []
+        jobs = []
+        resources = {}
+        executor = None
+        loggers = {}
+        asset_checks = []
+        for def_set in def_sets:
+            assets.extend(def_set.assets or [])
+            asset_checks.extend(def_set.asset_checks or [])
+            schedules.extend(def_set.schedules or [])
+            sensors.extend(def_set.sensors or [])
+            jobs.extend(def_set.jobs or [])
+
+            for resource_key, resource_value in (def_set.resources or {}).items():
+                if resource_key in resources:
+                    raise DagsterInvariantViolationError(
+                        f"Resource key '{resource_key}' already defined"
+                    )
+                resources[resource_key] = resource_value
+
+            for logger_key, logger_value in (def_set.loggers or {}).items():
+                if logger_key in resources:
+                    raise DagsterInvariantViolationError(
+                        f"Logger key '{logger_key}' already defined"
+                    )
+                resources[logger_key] = logger_value
+
+            if executor is not None and def_set.executor != def_set.executor:
+                raise DagsterInvariantViolationError("Definitions have conflicting executors")
+
+        return Definitions(
+            assets=assets,
+            schedules=schedules,
+            sensors=sensors,
+            jobs=jobs,
+            resources=resources,
+            executor=executor,
+            loggers=loggers,
+            asset_checks=asset_checks,
+        )
