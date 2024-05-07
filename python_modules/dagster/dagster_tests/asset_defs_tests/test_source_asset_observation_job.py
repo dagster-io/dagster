@@ -179,4 +179,4 @@ def test_source_asset_observation_job_with_pythonic_resource(is_valid, resource_
                 assets=[foo],
                 jobs=[define_asset_job("source_asset_job", [foo])],
                 resources=resource_defs,
-            )
+            ).validate_loadable()

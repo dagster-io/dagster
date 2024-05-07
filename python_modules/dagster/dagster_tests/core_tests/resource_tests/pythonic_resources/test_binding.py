@@ -66,7 +66,7 @@ def test_bind_resource_to_job_at_defn_time_err() -> None:
     ):
         Definitions(
             jobs=[hello_world_job],
-        )
+        ).validate_loadable()
 
 
 def test_bind_resource_to_job_at_defn_time() -> None:
@@ -92,7 +92,7 @@ def test_bind_resource_to_job_at_defn_time() -> None:
         resources={
             "writer": WriterResource(prefix=""),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["hello, world!"]
@@ -104,7 +104,7 @@ def test_bind_resource_to_job_at_defn_time() -> None:
         resources={
             "writer": WriterResource(prefix="msg: "),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["msg: hello, world!"]
@@ -133,7 +133,7 @@ def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
         resources={
             "writer": WriterResource(prefix=""),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["hello, world!"]
@@ -146,7 +146,7 @@ def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
         resources={
             "writer": WriterResource(prefix="msg: "),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["msg: hello, world!"]
@@ -181,7 +181,7 @@ def test_bind_resource_to_job_with_job_config() -> None:
         resources={
             "writer": WriterResource(prefix="msg: "),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["msg: hello, world!"]
@@ -197,7 +197,7 @@ def test_bind_resource_to_job_with_job_config() -> None:
     ):
         Definitions(
             jobs=[hello_world_job],
-        )
+        ).validate_loadable()
 
 
 def test_bind_resource_to_job_at_defn_time_override() -> None:
@@ -231,7 +231,7 @@ def test_bind_resource_to_job_at_defn_time_override() -> None:
         resources={
             "writer": WriterResource(prefix="definitions says: "),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job_with_override").execute_in_process().success
     assert out_txt == ["job says: hello, world!"]
@@ -274,7 +274,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
         resources={
             "writer": WriterResource(prefix="msg: "),
         },
-    )
+    ).validate_loadable()
 
     assert (
         cast(JobDefinition, defs.get_sensor_def("hello_world_sensor").job)
@@ -327,7 +327,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
         resources={
             "writer": WriterResource(prefix="msg: "),
         },
-    )
+    ).validate_loadable()
 
     assert (
         defs.get_job_def(cast(str, defs.get_sensor_def("hello_world_sensor").job_name))
@@ -372,7 +372,7 @@ def test_bind_io_manager_default() -> None:
         resources={
             "io_manager": MyIOManager(),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert outputs == ["foo"]
@@ -410,7 +410,7 @@ def test_bind_io_manager_override() -> None:
         resources={
             "io_manager": MyOtherIOManager(),
         },
-    )
+    ).validate_loadable()
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert outputs == ["foo"]
@@ -445,7 +445,7 @@ def test_bind_top_level_resource_sensor_multi_job() -> None:
         resources={
             "foo": FooResource(my_str="foo"),
         },
-    )
+    ).validate_loadable()
 
 
 def test_override_default_value_in_asset_config() -> None:
