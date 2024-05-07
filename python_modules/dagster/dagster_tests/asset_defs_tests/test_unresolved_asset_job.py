@@ -829,7 +829,13 @@ def test_backfill_policy():
     @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.multi_run(2))
     def baz(): ...
 
+    @asset
+    def qux(): ...
+
     assert create_test_asset_job([foo, bar]).backfill_policy == BackfillPolicy.single_run()
+    # Unpartitioned assets won't affect backfill policy
+    assert create_test_asset_job([qux]).backfill_policy is None
+    assert create_test_asset_job([foo, bar, qux]).backfill_policy == BackfillPolicy.single_run()
     assert create_test_asset_job([baz]).backfill_policy == BackfillPolicy.multi_run(2)
 
     # different backfill policies
