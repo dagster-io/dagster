@@ -11,9 +11,11 @@ import pytest
 from dagster import (
     AllPartitionMapping,
     Any,
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     AssetsDefinition,
+    Config,
     DagsterEventType,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -339,6 +341,34 @@ def asset_with_multi_run_backfill_policy():
     pass
 
 
+asset_job_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+
+class BpSingleRunConfig(Config):
+    name: str
+
+
+@asset(partitions_def=asset_job_partitions, backfill_policy=BackfillPolicy.single_run())
+def bp_single_run(context: AssetExecutionContext):
+    return {k: 1 for k in context.partition_keys}
+
+
+@asset(partitions_def=asset_job_partitions, backfill_policy=BackfillPolicy.single_run())
+def bp_single_run_config(context: AssetExecutionContext, config: BpSingleRunConfig):
+    context.log.info(config.name)
+    return {k: 1 for k in context.partition_keys}
+
+
+@asset(partitions_def=asset_job_partitions, backfill_policy=BackfillPolicy.multi_run(2))
+def bp_multi_run(context: AssetExecutionContext):
+    return {k: 1 for k in context.partition_keys}
+
+
+@asset(partitions_def=asset_job_partitions)
+def bp_none(context: AssetExecutionContext):
+    return 1
+
+
 @repository
 def the_repo():
     return [
@@ -371,6 +401,25 @@ def the_repo():
         asset_g,
         asset_with_single_run_backfill_policy,
         asset_with_multi_run_backfill_policy,
+        bp_single_run,
+        bp_single_run_config,
+        bp_multi_run,
+        bp_none,
+        define_asset_job(
+            "bp_single_run_asset_job",
+            selection=[bp_single_run_config, bp_single_run],
+            tags={"alpha": "beta"},
+            config={"ops": {"bp_single_run_config": {"config": {"name": "harry"}}}},
+        ),
+        define_asset_job(
+            "bp_multi_run_asset_job",
+            selection=[bp_multi_run],
+            tags={"alpha": "beta"},
+        ),
+        define_asset_job(
+            "bp_none_asset_job",
+            selection=[bp_none],
+        ),
     ]
 
 
@@ -1593,6 +1642,83 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
     assert (
         "All runs have completed, but not all requested partitions have been marked as materialized or failed"
     ) in error_msg
+
+
+def _get_asset_job_backfill(external_repo: ExternalRepository, job_name: str) -> PartitionBackfill:
+    external_partition_set = external_repo.get_external_partition_set(f"{job_name}_partition_set")
+    return PartitionBackfill(
+        backfill_id="simple",
+        partition_set_origin=external_partition_set.get_external_origin(),
+        status=BulkActionStatus.REQUESTED,
+        partition_names=["a", "b", "c", "d"],
+        from_failure=False,
+        reexecution_steps=None,
+        tags=None,
+        backfill_timestamp=pendulum.now().timestamp(),
+    )
+
+
+def test_asset_job_backfill_single_run(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    backfill = _get_asset_job_backfill(external_repo, "bp_single_run_asset_job")
+    assert instance.get_runs_count() == 0
+    instance.add_backfill(backfill)
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 1
+    run = instance.get_runs()[0]
+    assert run.tags[BACKFILL_ID_TAG] == "simple"
+    assert run.tags[ASSET_PARTITION_RANGE_START_TAG] == "a"
+    assert run.tags[ASSET_PARTITION_RANGE_END_TAG] == "d"
+    assert run.tags["alpha"] == "beta"
+
+
+def test_asset_job_backfill_multi_run(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    backfill = _get_asset_job_backfill(external_repo, "bp_multi_run_asset_job")
+    assert instance.get_runs_count() == 0
+    instance.add_backfill(backfill)
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 2
+    run_1, run_2 = instance.get_runs()
+
+    assert run_1.tags[BACKFILL_ID_TAG] == "simple"
+    assert run_1.tags[ASSET_PARTITION_RANGE_START_TAG] == "c"
+    assert run_1.tags[ASSET_PARTITION_RANGE_END_TAG] == "d"
+
+    assert run_2.tags[BACKFILL_ID_TAG] == "simple"
+    assert run_2.tags[ASSET_PARTITION_RANGE_START_TAG] == "a"
+    assert run_2.tags[ASSET_PARTITION_RANGE_END_TAG] == "b"
+
+
+def test_asset_job_backfill_default(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    backfill = _get_asset_job_backfill(external_repo, "bp_none_asset_job")
+    assert instance.get_runs_count() == 0
+    instance.add_backfill(backfill)
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 4
+    run_1, run_2, run_3, run_4 = instance.get_runs()
+
+    assert run_1.tags[BACKFILL_ID_TAG] == "simple"
+    assert run_1.tags[PARTITION_NAME_TAG] == "d"
+    assert run_2.tags[BACKFILL_ID_TAG] == "simple"
+    assert run_2.tags[PARTITION_NAME_TAG] == "c"
+    assert run_3.tags[BACKFILL_ID_TAG] == "simple"
+    assert run_3.tags[PARTITION_NAME_TAG] == "b"
+    assert run_4.tags[BACKFILL_ID_TAG] == "simple"
+    assert run_4.tags[PARTITION_NAME_TAG] == "a"
 
 
 def test_asset_backfill_with_single_run_backfill_policy(

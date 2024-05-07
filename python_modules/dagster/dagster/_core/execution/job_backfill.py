@@ -1,8 +1,10 @@
 import logging
 import time
-from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
@@ -14,12 +16,13 @@ from dagster._core.remote_representation import (
     ExternalPartitionSet,
 )
 from dagster._core.remote_representation.external_data import (
-    ExternalPartitionExecutionParamData,
     ExternalPartitionSetExecutionParamData,
 )
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -58,7 +61,7 @@ def execute_job_backfill_iteration(
             f" {backfill.last_submitted_partition_name}"
         )
 
-    _check_repo_has_partition_set(workspace_process_context, backfill)
+    partition_set = _get_partition_set(workspace_process_context, backfill)
 
     has_more = True
     while has_more:
@@ -66,7 +69,11 @@ def execute_job_backfill_iteration(
             break
 
         chunk, checkpoint, has_more = _get_partitions_chunk(
-            instance, logger, backfill, CHECKPOINT_COUNT
+            instance,
+            logger,
+            backfill,
+            CHECKPOINT_COUNT,
+            partition_set,
         )
         check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
@@ -101,9 +108,9 @@ def execute_job_backfill_iteration(
             yield None
 
 
-def _check_repo_has_partition_set(
+def _get_partition_set(
     workspace_process_context: IWorkspaceProcessContext, backfill_job: PartitionBackfill
-) -> None:
+) -> ExternalPartitionSet:
     origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
 
     location_name = origin.repository_origin.code_location_origin.location_name
@@ -124,6 +131,27 @@ def _check_repo_has_partition_set(
         raise DagsterBackfillFailedError(
             f"Could not find partition set {partition_set_name} in repository {repo_name}. "
         )
+    return external_repo.get_external_partition_set(partition_set_name)
+
+
+def _subdivide_partition_key_range(
+    partitions_def: PartitionsDefinition,
+    partition_key_range: PartitionKeyRange,
+    instance: DagsterInstance,
+    max_range_size: Optional[int],
+) -> Sequence[PartitionKeyRange]:
+    """Take a partition key range and subdivide it into smaller ranges of size max_range_size. This
+    is done to satisfy backfill policies that limit the maximum number of partitions that can be
+    materialized in a run.
+    """
+    if max_range_size is None:
+        return [partition_key_range]
+    else:
+        keys = partitions_def.get_partition_keys_in_range(
+            partition_key_range, dynamic_partitions_store=instance
+        )
+        chunks = [keys[i : i + max_range_size] for i in range(0, len(keys), max_range_size)]
+        return [PartitionKeyRange(start=chunk[0], end=chunk[-1]) for chunk in chunks]
 
 
 def _get_partitions_chunk(
@@ -131,7 +159,8 @@ def _get_partitions_chunk(
     logger: logging.Logger,
     backfill_job: PartitionBackfill,
     chunk_size: int,
-) -> Tuple[Sequence[str], str, bool]:
+    partition_set: ExternalPartitionSet,
+) -> Tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
     partition_names = cast(Sequence[str], backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
 
@@ -151,20 +180,40 @@ def _get_partitions_chunk(
         partition_names.index(checkpoint) + 1 if checkpoint and checkpoint in partition_names else 0
     )
     partition_names = partition_names[initial_checkpoint:]
-    has_more = chunk_size < len(partition_names)
-    partitions_chunk = partition_names[:chunk_size]
-    next_checkpoint = partitions_chunk[-1]
 
-    to_skip = set(partitions_chunk).intersection(completed_partitions)
-    if to_skip:
-        logger.info(
-            f"Found {len(to_skip)} existing runs for backfill {backfill_job.backfill_id}, skipping"
+    partitions_def = partition_set.get_partitions_definition()
+    backfill_policy = partition_set.backfill_policy
+    if backfill_policy and backfill_policy.max_partitions_per_run != 1:
+        partitions_subset = partitions_def.subset_with_partition_keys(partition_names)
+        partition_key_ranges = partitions_subset.get_partition_key_ranges(
+            partitions_def, dynamic_partitions_store=instance
         )
-    to_submit = [
-        partition_name
-        for partition_name in partitions_chunk
-        if partition_name not in completed_partitions
-    ]
+        subdivided_ranges = [
+            sr
+            for r in partition_key_ranges
+            for sr in _subdivide_partition_key_range(
+                partitions_def, r, instance, backfill_policy.max_partitions_per_run
+            )
+        ]
+        ranges_to_launch = subdivided_ranges[:chunk_size]
+        has_more = chunk_size < len(subdivided_ranges)
+        next_checkpoint = ranges_to_launch[-1].end
+        to_submit = ranges_to_launch
+    else:
+        has_more = chunk_size < len(partition_names)
+        partitions_chunk = partition_names[:chunk_size]
+        next_checkpoint = partitions_chunk[-1]
+        to_skip = set(partitions_chunk).intersection(completed_partitions)
+        if to_skip:
+            logger.info(
+                f"Found {len(to_skip)} existing runs for backfill {backfill_job.backfill_id}, skipping"
+            )
+        to_submit = [
+            partition_name
+            for partition_name in partitions_chunk
+            if partition_name not in completed_partitions
+        ]
+
     return to_submit, next_checkpoint, has_more
 
 
@@ -172,7 +221,7 @@ def submit_backfill_runs(
     instance: DagsterInstance,
     create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
-    partition_names: Optional[Sequence[str]] = None,
+    partition_names_or_ranges: Optional[Sequence[Union[str, PartitionKeyRange]]] = None,
 ) -> Iterable[Optional[str]]:
     """Returns the run IDs of the submitted runs."""
     origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
@@ -181,12 +230,11 @@ def submit_backfill_runs(
     repo_name = repository_origin.repository_name
     location_name = repository_origin.code_location_origin.location_name
 
-    if not partition_names:
-        partition_names = cast(Sequence[str], backfill_job.partition_names)
+    if not partition_names_or_ranges:
+        partition_names_or_ranges = cast(Sequence[str], backfill_job.partition_names)
 
     workspace = create_workspace()
     code_location = workspace.get_code_location(location_name)
-
     check.invariant(
         code_location.has_repository(repo_name),
         f"Could not find repository {repo_name} in location {code_location.name}",
@@ -194,11 +242,7 @@ def submit_backfill_runs(
     external_repo = code_location.get_repository(repo_name)
     partition_set_name = origin.partition_set_name
     external_partition_set = external_repo.get_external_partition_set(partition_set_name)
-    result = code_location.get_external_partition_set_execution_param_data(
-        external_repo.handle, partition_set_name, partition_names, instance
-    )
 
-    assert isinstance(result, ExternalPartitionSetExecutionParamData)
     if backfill_job.asset_selection:
         # need to make another call to the user code location to properly subset
         # for an asset selection
@@ -212,7 +256,51 @@ def submit_backfill_runs(
         external_job = code_location.get_external_job(pipeline_selector)
     else:
         external_job = external_repo.get_full_external_job(external_partition_set.job_name)
-    for partition_data in result.partition_data:
+
+    partition_data_target = check.is_list(
+        [partition_names_or_ranges[0].start]
+        if isinstance(partition_names_or_ranges[0], PartitionKeyRange)
+        else partition_names_or_ranges,
+        of_type=str,
+    )
+    partition_set_execution_data = code_location.get_external_partition_set_execution_param_data(
+        external_repo.handle,
+        partition_set_name,
+        partition_data_target,
+        instance,
+    )
+    assert isinstance(partition_set_execution_data, ExternalPartitionSetExecutionParamData)
+
+    # Partition-scoped run config is prohibited at the definitions level for a jobs that materialize
+    # ranges, so we can assume that all partition data will have the same run config and tags as the
+    # first partition.
+    tags_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, str]]
+    run_config_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, Any]]
+    if isinstance(partition_names_or_ranges[0], PartitionKeyRange):
+        run_config = partition_set_execution_data.partition_data[0].run_config
+        tags = {
+            k: v
+            for k, v in partition_set_execution_data.partition_data[0].tags.items()
+            if k != PARTITION_NAME_TAG
+        }
+        run_config_by_key_or_range = {r: run_config for r in partition_names_or_ranges}
+        tags_by_key_or_range = {
+            r: {
+                **tags,
+                ASSET_PARTITION_RANGE_START_TAG: r.start,
+                ASSET_PARTITION_RANGE_END_TAG: r.end,
+            }
+            for r in check.is_list(partition_names_or_ranges, of_type=PartitionKeyRange)
+        }
+    else:
+        run_config_by_key_or_range = {
+            pd.name: pd.run_config for pd in partition_set_execution_data.partition_data
+        }
+        tags_by_key_or_range = {
+            pd.name: pd.tags for pd in partition_set_execution_data.partition_data
+        }
+
+    for key_or_range in partition_names_or_ranges:
         # Refresh the code location in case the workspace has reloaded mid-backfill
         workspace = create_workspace()
         code_location = workspace.get_code_location(location_name)
@@ -223,7 +311,9 @@ def submit_backfill_runs(
             external_job,
             external_partition_set,
             backfill_job,
-            partition_data,
+            key_or_range,
+            run_tags=tags_by_key_or_range[key_or_range],
+            run_config=run_config_by_key_or_range[key_or_range],
         )
         if dagster_run:
             # we skip runs in certain cases, e.g. we are running a `from_failure` backfill job
@@ -240,7 +330,9 @@ def create_backfill_run(
     external_pipeline: ExternalJob,
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,
-    partition_data: ExternalPartitionExecutionParamData,
+    partition_key_or_range: Union[str, PartitionKeyRange],
+    run_tags: Mapping[str, str],
+    run_config: Mapping[str, Any],
 ) -> Optional[DagsterRun]:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
@@ -256,7 +348,7 @@ def create_backfill_run(
 
     tags = merge_dicts(
         external_pipeline.tags,
-        partition_data.tags,
+        run_tags,
         DagsterRun.tags_for_backfill_id(backfill_job.backfill_id),
         backfill_job.tags,
     )
@@ -273,7 +365,7 @@ def create_backfill_run(
             op_selection = external_partition_set.op_selection
 
     elif backfill_job.from_failure:
-        last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
+        last_run = _fetch_last_run(instance, external_partition_set, partition_key_or_range)
         if not last_run or last_run.status != DagsterRunStatus.FAILURE:
             return None
         return instance.create_reexecuted_run(
@@ -282,12 +374,12 @@ def create_backfill_run(
             external_job=external_pipeline,
             strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
-            run_config=partition_data.run_config,
+            run_config=run_config,
             use_parent_run_tags=False,  # don't inherit tags from the previous run
         )
 
     else:  # backfill_job.reexecution_steps
-        last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
+        last_run = _fetch_last_run(instance, external_partition_set, partition_key_or_range)
         parent_run_id = last_run.run_id if last_run else None
         root_run_id = (last_run.root_run_id or last_run.run_id) if last_run else None
         if parent_run_id and root_run_id:
@@ -309,7 +401,7 @@ def create_backfill_run(
 
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
-        partition_data.run_config,
+        run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,
@@ -322,7 +414,7 @@ def create_backfill_run(
         job_name=external_pipeline.name,
         run_id=make_new_run_id(),
         resolved_op_selection=resolved_op_selection,
-        run_config=partition_data.run_config,
+        run_config=run_config,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=root_run_id,
@@ -340,19 +432,29 @@ def create_backfill_run(
 
 
 def _fetch_last_run(
-    instance: DagsterInstance, external_partition_set: ExternalPartitionSet, partition_name: str
+    instance: DagsterInstance,
+    external_partition_set: ExternalPartitionSet,
+    partition_key_or_range: Union[str, PartitionKeyRange],
 ) -> Optional[DagsterRun]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
-    check.str_param(partition_name, "partition_name")
+    check.str_param(partition_key_or_range, "partition_name")
+
+    tags = (
+        {
+            PARTITION_NAME_TAG: partition_key_or_range,
+        }
+        if isinstance(partition_key_or_range, str)
+        else {
+            ASSET_PARTITION_RANGE_START_TAG: partition_key_or_range.start,
+            ASSET_PARTITION_RANGE_END_TAG: partition_key_or_range.end,
+        }
+    )
 
     runs = instance.get_runs(
         RunsFilter(
             job_name=external_partition_set.job_name,
-            tags={
-                PARTITION_SET_TAG: external_partition_set.name,
-                PARTITION_NAME_TAG: partition_name,
-            },
+            tags={PARTITION_SET_TAG: external_partition_set.name, **tags},
         ),
         limit=1,
     )
