@@ -610,7 +610,7 @@ def test_asset_missing_resources():
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' required by op 'asset_foo' was not provided.",
     ):
-        Definitions(assets=[asset_foo])
+        Definitions.validate_loadable(Definitions(assets=[asset_foo]))
 
     source_asset_io_req = SourceAsset(key=AssetKey("foo"), io_manager_key="foo")
 
@@ -620,7 +620,7 @@ def test_asset_missing_resources():
             "io manager with key 'foo' required by SourceAsset with key [\"foo\"] was not provided"
         ),
     ):
-        Definitions(assets=[source_asset_io_req])
+        Definitions.validate_loadable(Definitions(assets=[source_asset_io_req]))
 
     external_asset_io_req = create_external_asset_from_source_asset(source_asset_io_req)
     with pytest.raises(
@@ -629,7 +629,7 @@ def test_asset_missing_resources():
             "io manager with key 'foo' required by external asset with key [\"foo\"] was not provided"
         ),
     ):
-        Definitions(assets=[external_asset_io_req])
+        Definitions.validate_loadable(Definitions(assets=[external_asset_io_req]))
 
 
 def test_assets_with_executor():
@@ -655,7 +655,7 @@ def test_asset_missing_io_manager():
             " provided."
         ),
     ):
-        Definitions(assets=[asset_foo])
+        Definitions.validate_loadable(Definitions(assets=[asset_foo]))
 
 
 def test_resource_defs_on_asset():
@@ -747,7 +747,7 @@ def test_job_with_reserved_name():
             "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
         ),
     ):
-        Definitions(jobs=[the_job])
+        Definitions.validate_loadable(Definitions(jobs=[the_job]))
 
 
 def test_asset_cycle():
@@ -768,6 +768,20 @@ def test_asset_cycle():
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
         Definitions(assets=[a, b, c, s]).get_all_job_defs()
+
+
+def test_unsatisfied_resources():
+    @asset(required_resource_keys={"foo"})
+    def asset1(): ...
+
+    Definitions(assets=[asset1])
+
+
+def test_unresolved_asset_job():
+    @asset(required_resource_keys={"foo"})
+    def asset1(): ...
+
+    Definitions(assets=[asset1], jobs=[define_asset_job("job1")])
 
 
 def test_merge():
@@ -925,7 +939,7 @@ def test_invalid_partitions_subclass():
         DeprecationWarning,
         match="custom PartitionsDefinition subclasses",
     ):
-        Definitions(assets=[asset1])
+        Definitions.validate_loadable(Definitions(assets=[asset1]))
 
 
 def test_hoist_automation_assets():

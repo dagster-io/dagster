@@ -425,7 +425,6 @@ class Definitions:
       Any other object is coerced to a :py:class:`ResourceDefinition`.
     """
 
-    _created_pending_or_normal_repo: Union[RepositoryDefinition, PendingRepositoryDefinition]
     _original_args: DefinitionsArgs
 
     def __init__(
@@ -443,42 +442,32 @@ class Definitions:
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
     ):
-        self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
-            name=SINGLETON_REPOSITORY_NAME,
-            assets=check.opt_iterable_param(
+        self._original_args = {
+            "assets": check.opt_iterable_param(
                 assets,
                 "assets",
                 (AssetsDefinition, SourceAsset, CacheableAssetsDefinition),
             ),
-            schedules=check.opt_iterable_param(
+            "schedules": check.opt_iterable_param(
                 schedules,
                 "schedules",
                 (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition),
             ),
-            sensors=check.opt_iterable_param(sensors, "sensors", SensorDefinition),
-            jobs=check.opt_iterable_param(
+            "sensors": check.opt_iterable_param(sensors, "sensors", SensorDefinition),
+            "jobs": check.opt_iterable_param(
                 jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition)
             ),
-            resources=check.opt_mapping_param(resources, "resources", key_type=str),
-            executor=check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor)),
-            loggers=check.opt_mapping_param(
+            "resources": check.opt_mapping_param(resources, "resources", key_type=str),
+            "executor": check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor)),
+            "loggers": check.opt_mapping_param(
                 loggers, "loggers", key_type=str, value_type=LoggerDefinition
             ),
-            asset_checks=check.opt_iterable_param(
-                asset_checks,
-                "asset_checks",
-                (AssetChecksDefinition, AssetsDefinition),
+            # There's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
+            # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
+            # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
+            "asset_checks": check.opt_iterable_param(
+                asset_checks, "asset_checks", (AssetChecksDefinition, AssetsDefinition)
             ),
-        )
-        self._original_args = {
-            "assets": assets,
-            "schedules": schedules,
-            "sensors": sensors,
-            "jobs": jobs,
-            "resources": resources,
-            "executor": executor,
-            "loggers": loggers,
-            "asset_checks": asset_checks,
         }
 
     @property
@@ -613,24 +602,51 @@ class Definitions:
         in order to access any functionality which is not exposed on Definitions. This method
         also resolves a PendingRepositoryDefinition to a RepositoryDefinition.
         """
+        inner_repository = self.get_inner_repository()
         return (
-            self._created_pending_or_normal_repo.compute_repository_definition()
-            if isinstance(self._created_pending_or_normal_repo, PendingRepositoryDefinition)
-            else self._created_pending_or_normal_repo
+            inner_repository.compute_repository_definition()
+            if isinstance(inner_repository, PendingRepositoryDefinition)
+            else inner_repository
         )
 
-    def get_inner_repository_for_loading_process(
+    @cached_method
+    def get_inner_repository(
         self,
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        """This method is used internally to access the inner repository during the loading process
-        at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
-        point is to defer that resolution until later.
+        """This method is used internally to access the inner repository. We explicitly do not want
+        to resolve the pending repo because the entire point is to defer that resolution until
+        later.
         """
-        return self._created_pending_or_normal_repo
+        return _create_repository_using_definitions_args(
+            name=SINGLETON_REPOSITORY_NAME,
+            assets=self.original_args["assets"],
+            schedules=self.original_args["schedules"],
+            sensors=self.original_args["sensors"],
+            jobs=self.original_args["jobs"],
+            resources=self.original_args["resources"],
+            executor=self.original_args["executor"],
+            loggers=self.original_args["loggers"],
+            asset_checks=self.original_args["asset_checks"],
+        )
 
     def get_asset_graph(self) -> AssetGraph:
         """Get the AssetGraph for this set of definitions."""
         return self.get_repository_def().asset_graph
+
+    @public
+    @staticmethod
+    def validate_loadable(defs: "Definitions") -> None:
+        """Validates that the enclosed definitions will be loadable by Dagster:
+        - No assets have conflicting keys.
+        - No jobs, sensors, or schedules have conflicting names.
+        - All asset jobs can be resolved.
+        - All resource requirements are satisfied.
+
+        Meant to be used in unit tests.
+
+        Raises an error if any of the above are not true.
+        """
+        defs.get_inner_repository()
 
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":

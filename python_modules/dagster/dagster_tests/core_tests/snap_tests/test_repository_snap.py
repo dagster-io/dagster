@@ -63,7 +63,7 @@ def test_repository_snap_all_props():
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
-    repo_or_caching_repo = definitions.get_inner_repository_for_loading_process()
+    repo_or_caching_repo = definitions.get_inner_repository()
     return (
         repo_or_caching_repo.compute_repository_definition()
         if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
