@@ -150,11 +150,13 @@ export function useTimeRangeFilter({
         createPortal: (element: JSX.Element) => () => void;
       }) => {
         if (value === 'CUSTOM') {
-          const closeRef = {
-            current: () => {},
-          };
-          closeRef.current = createPortal(
-            <CustomTimeRangeFilterDialog filter={filterObjRef.current} closeRef={closeRef} />,
+          const closeFn = createPortal(
+            <CustomTimeRangeFilterDialog
+              filter={filterObjRef.current}
+              close={() => {
+                closeFn();
+              }}
+            />,
           );
         } else {
           const nextState = timeRanges[value].range;
@@ -284,10 +286,10 @@ export function ActiveFilterState({
 
 export function CustomTimeRangeFilterDialog({
   filter,
-  closeRef,
+  close,
 }: {
   filter: TimeRangeFilter;
-  closeRef: {current: () => void};
+  close: () => void;
 }) {
   const [startDate, setStartDate] = useState<moment.Moment | null>(null);
   const [endDate, setEndDate] = useState<moment.Moment | null>(null);
@@ -296,15 +298,7 @@ export function CustomTimeRangeFilterDialog({
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      title="Select a date range"
-      onClosed={() => {
-        // close the portal after the animation is done
-        closeRef.current();
-      }}
-      style={{width: '652px'}}
-    >
+    <Dialog isOpen={isOpen} title="Select a date range" onClosed={close} style={{width: '652px'}}>
       <Container>
         <Box flex={{direction: 'row', gap: 8}} padding={16}>
           <DateRangePicker
