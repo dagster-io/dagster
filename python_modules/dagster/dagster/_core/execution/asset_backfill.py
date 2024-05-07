@@ -1409,7 +1409,7 @@ def can_run_with_parent(
     ):
         return True
     else:
-        logger.log(
+        logger.info(
             f"Excluding {candidate} from request list. Reason: partition "
             f"mapping between {parent_node.key} and {candidate_node.key} is not simple and "
             f"{parent_node.key} does not meet requirements of: targeting the same partitions as "
