@@ -1,9 +1,10 @@
 import re
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr
+from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
@@ -19,7 +20,7 @@ def parse_asset_key_string(s: str) -> Sequence[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
+class AssetKey(DagsterModel):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -39,13 +40,15 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             strings represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Union[str, Sequence[str]]):
+    path: PublicAttr[List[str]]
+
+    def __init__(self, path: Union[str, Sequence[str]]):
         if isinstance(path, str):
             path = [path]
-        else:
-            path = list(check.sequence_param(path, "path", of_type=str))
+        elif isinstance(path, tuple):
+            path = list(path)
 
-        return super(AssetKey, cls).__new__(cls, path=path)
+        super().__init__(path=path)
 
     def __str__(self):
         return f"AssetKey({self.path})"
@@ -61,6 +64,12 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return False
 
         return self.path == other.path
+
+    def __lt__(self, other):
+        if other.__class__ is not self.__class__:
+            return super().__lt__(other)
+
+        return self.path < other.path
 
     def to_string(self) -> str:
         """E.g. '["first_component", "second_component"]'."""
