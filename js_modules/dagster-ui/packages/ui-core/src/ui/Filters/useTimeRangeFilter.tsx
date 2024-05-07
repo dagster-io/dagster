@@ -3,13 +3,14 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
-import {Suspense, lazy, useContext, useEffect, useMemo, useState} from 'react';
+import {useContext, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {lazy} from '../../util/lazy';
 
 const DateRangePicker = lazy(() => import('./DateRangePickerWrapper'));
 
@@ -306,26 +307,24 @@ export function CustomTimeRangeFilterDialog({
     >
       <Container>
         <Box flex={{direction: 'row', gap: 8}} padding={16}>
-          <Suspense fallback={<div />}>
-            <DateRangePicker
-              minimumNights={0}
-              onDatesChange={({startDate, endDate}) => {
-                setStartDate(startDate ? startDate.clone().startOf('day') : null);
-                setEndDate(endDate ? endDate.clone().endOf('day') : null);
-              }}
-              onFocusChange={(focusedInput) => {
-                focusedInput && setFocusedInput(focusedInput);
-              }}
-              startDate={startDate}
-              endDate={endDate}
-              startDateId="start"
-              endDateId="end"
-              focusedInput={focusedInput}
-              withPortal={false}
-              keepOpenOnDateSelect
-              isOutsideRange={() => false}
-            />
-          </Suspense>
+          <DateRangePicker
+            minimumNights={0}
+            onDatesChange={({startDate, endDate}) => {
+              setStartDate(startDate ? startDate.clone().startOf('day') : null);
+              setEndDate(endDate ? endDate.clone().endOf('day') : null);
+            }}
+            onFocusChange={(focusedInput) => {
+              focusedInput && setFocusedInput(focusedInput);
+            }}
+            startDate={startDate}
+            endDate={endDate}
+            startDateId="start"
+            endDateId="end"
+            focusedInput={focusedInput}
+            withPortal={false}
+            keepOpenOnDateSelect
+            isOutsideRange={() => false}
+          />
         </Box>
       </Container>
       <DialogFooter topBorder>
