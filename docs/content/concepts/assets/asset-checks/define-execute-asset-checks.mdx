@@ -13,15 +13,6 @@ In this guide, we'll show you a few approaches to defining asset checks, how to 
 
 ## Defining asset checks
 
-Depending on your needs, there are a few ways you can define asset checks:
-
-| I want to...                                  | Which will...                                              | You should use...                                                                                                                   |   |
-| --------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | - |
-| Define checks separately from targeted assets | Execute asset materializations and checks in their own ops | [`@asset_check`](#defining-checks-separately-from-assets), or [`@multi_asset_check`](#defining-multiple-checks) for multiple checks |   |
-| Define checks together with targeted assets   | Execute asset materializations and checks in the same op   | [`AssetCheckSpec`](#defining-checks-and-assets-together)                                                                            |   |
-| Define multiple, similar checks               | Execute checks in their own ops                            | [A factory pattern](#using-a-factory)                                                                                               |   |
-| Load my dbt tests as checks                   | TODO                                                       | [`DagsterDbtTranslator`](#loading-dbt-tests-as-asset-checks)                                                                        |   |
-
 ### Defining checks separately from assets
 
 In this example, we'll demonstrate how to define separate functions for an asset and the corresponding check.
@@ -69,8 +60,37 @@ Using <PyObject object="multi_asset_check" decorator />, you can define multiple
 
 For example, you're using Dagster to perform some statistical analysis and you want to execute checks against a few of the computed metrics. If you have a metric that's expensive to compute and shared across multiple checks, you can use <PyObject object="multi_asset_check" decorator /> to avoid having to re-compute the metric each time a check is executed.
 
-```python
-TODO - EXAMPLE
+```python file=/concepts/assets/asset_checks/multi_asset_check.py
+from typing import Iterable
+
+from dagster import (
+    AssetCheckExecutionContext,
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetCheckSpec,
+    multi_asset_check,
+)
+
+
+@multi_asset_check(
+    specs=[
+        AssetCheckSpec(name="asset_check_one", asset="my_asset_one"),
+        AssetCheckSpec(name="asset_check_two", asset="my_asset_two"),
+    ]
+)
+def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
+    yield AssetCheckResult(
+        passed=False,
+        severity=AssetCheckSeverity.WARN,
+        description="The asset is over 0.5",
+        asset_key="asset_check_one",
+    )
+
+    yield AssetCheckResult(
+        passed=True,
+        description="The asset is fresh.",
+        asset_key="asset_check_two",
+    )
 ```
 
 You can enable subsetting of checks defined in a <PyObject object="multi_asset_check" decorator /> to exclude certain checks. Refer to the [Subsetting asset checks](/concepts/assets/asset-checks/subsetting-asset-checks) guide for more information.
@@ -370,12 +390,13 @@ Refer to the [Asset checks section](/concepts/testing#testing-asset-checks) of t
 
 ## APIs in this guide
 
-| Name                                        | Description                                                                                                                           |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset_check" decorator /> | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).                                |
-| <PyObject object="AssetCheckResult" />      | The class returned by asset checks.                                                                                                   |
-| <PyObject object="AssetCheckSeverity" />    | Defines the severity of a given asset check result.                                                                                   |
-| <PyObject object="AssetCheckSpec" />        | A class that's passed to asset decorators to define checks that execute in the same [op](/concepts/ops-jobs-graphs/ops) as the asset. |
+| Name                                              | Description                                                                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset_check" decorator />       | A decorator used to define asset checks that execute in their own [op](/concepts/ops-jobs-graphs/ops).                                |
+| <PyObject object="multi_asset_check" decorator /> | A decorator used to define a set of asset checks that execute together in the same [op](/concepts/ops-jobs-graphs/ops).               |
+| <PyObject object="AssetCheckResult" />            | The class returned by asset checks.                                                                                                   |
+| <PyObject object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                                                   |
+| <PyObject object="AssetCheckSpec" />              | A class that's passed to asset decorators to define checks that execute in the same [op](/concepts/ops-jobs-graphs/ops) as the asset. |
 
 ---
 
@@ -389,6 +410,14 @@ Refer to the [Asset checks section](/concepts/testing#testing-asset-checks) of t
   <ArticleListItem
     title="Asset definitions"
     href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Subsetting asset checks"
+    href="/concepts/assets/asset-checks/subsetting-asset-checks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Checking data freshness"
+    href="/concepts/assets/asset-checks/checking-for-data-freshness"
   ></ArticleListItem>
   <ArticleListItem
     title="Schedules"
