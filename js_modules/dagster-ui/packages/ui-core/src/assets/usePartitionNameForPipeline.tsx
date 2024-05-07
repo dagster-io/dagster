@@ -22,7 +22,7 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
     },
   );
 
-  useBlockTraceOnQueryResult(queryResult, 'AssetJobPartitionSetsQuery');
+  useBlockTraceOnQueryResult(queryResult, 'AssetJobPartitionSetsQuery', {skip: !pipelineName});
   const {data: partitionSetsData} = queryResult;
 
   return useMemo(

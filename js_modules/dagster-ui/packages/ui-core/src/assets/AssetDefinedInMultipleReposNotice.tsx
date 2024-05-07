@@ -8,7 +8,6 @@ import {
 } from './types/AssetDefinedInMultipleReposNotice.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -32,8 +31,6 @@ export const AssetDefinedInMultipleReposNotice = ({
     variables: {assetKeys: [{path: assetKey.path}]},
   });
   const {data} = queryResult;
-
-  useBlockTraceOnQueryResult(queryResult, 'AssetDefinitionCollisionQuery');
 
   const collision = data?.assetNodeDefinitionCollisions[0];
   if (!collision) {

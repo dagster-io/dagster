@@ -92,7 +92,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
   const {data, loading, error} = queryResult;
   useBlockTraceOnQueryResult(queryResult, 'GetEvaluationsQuery<Single>', {skip});
 
-  const {data: specificPartitionData, previousData: previousSpecificPartitionData} = useQuery<
+  const queryResult2 = useQuery<
     GetEvaluationsSpecificPartitionQuery,
     GetEvaluationsSpecificPartitionQueryVariables
   >(GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY, {
@@ -103,6 +103,10 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     },
     skip: !selectedEvaluationId || !selectedPartition,
   });
+  useBlockTraceOnQueryResult(queryResult2, 'GetEvaluationsSpecificPartitionQuery', {
+    skip: !selectedEvaluationId || !selectedPartition,
+  });
+  const {data: specificPartitionData, previousData: previousSpecificPartitionData} = queryResult2;
 
   const sensorName = React.useMemo(
     () =>
@@ -293,7 +297,7 @@ export const AutomaterializeMiddlePanelWithData = ({
     selectedEvaluation?.numRequested,
   ]);
 
-  const {data} = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
+  const fullPartitionsQueryResult = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
     FULL_PARTITIONS_QUERY,
     {
       variables: definition
@@ -304,6 +308,11 @@ export const AutomaterializeMiddlePanelWithData = ({
       skip: !definition?.assetKey,
     },
   );
+  useBlockTraceOnQueryResult(fullPartitionsQueryResult, 'FullPartitionsQuery', {
+    skip: !definition?.assetKey,
+  });
+
+  const {data} = fullPartitionsQueryResult;
 
   let partitionKeys: DimensionPartitionKeys[] = emptyArray;
   if (data?.assetNodeOrError.__typename === 'AssetNode') {

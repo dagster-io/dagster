@@ -13,6 +13,7 @@ import {
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
 
@@ -48,6 +49,7 @@ const useSidebarOpQuery = (
       skip: isGraph,
     },
   );
+  useBlockTraceOnQueryResult(pipelineResult, 'SidebarPipelineOpQuery', {skip: isGraph});
 
   const graphResult = useQuery<SidebarGraphOpQuery, SidebarGraphOpQueryVariables>(
     SIDEBAR_GRAPH_OP_QUERY,
@@ -63,6 +65,8 @@ const useSidebarOpQuery = (
       skip: !isGraph,
     },
   );
+
+  useBlockTraceOnQueryResult(graphResult, 'SidebarPipelineOpQuery', {skip: !isGraph});
 
   if (isGraph) {
     const {error, data, loading} = graphResult;

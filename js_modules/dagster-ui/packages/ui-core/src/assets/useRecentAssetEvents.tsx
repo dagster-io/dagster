@@ -65,7 +65,7 @@ export function useRecentAssetEvents(
         },
   });
   const {data, loading, refetch} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'AssetEventsQuery');
+  useBlockTraceOnQueryResult(queryResult, 'AssetEventsQuery', {skip: !assetKey});
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;

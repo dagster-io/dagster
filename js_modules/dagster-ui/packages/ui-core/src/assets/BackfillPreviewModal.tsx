@@ -58,7 +58,7 @@ export const BackfillPreviewModal = ({
       skip: !isOpen,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'BackfillPreviewQuery');
+  useBlockTraceOnQueryResult(queryResult, 'BackfillPreviewQuery', {skip: !isOpen});
   const {data} = queryResult;
 
   const partitionsByAssetToken = useMemo(() => {
