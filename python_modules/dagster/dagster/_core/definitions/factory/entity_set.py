@@ -131,7 +131,7 @@ class ExecutableEntitySet(ABC):
     def to_asset_checks_def(self) -> AssetChecksDefinition:
         check.invariant(
             not self._partitions_def,
-            "PartitionsDefinition not supported for check-only ExecutableAssetGraphEntitySet",
+            "PartitionsDefinition not supported for check-only ExecutableEntitySet",
         )
 
         @multi_asset_check(

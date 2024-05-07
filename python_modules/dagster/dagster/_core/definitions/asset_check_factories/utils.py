@@ -1,18 +1,14 @@
 import datetime
-from typing import Iterator, Optional, Sequence, Union, cast
+from typing import Any, Dict, Iterator, Optional, Sequence, Union, cast
 
 from dagster import _check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.decorators.asset_check_decorator import (
-    MultiAssetCheckFunction,
-    multi_asset_check,
-)
 from dagster._core.definitions.metadata import JsonMetadataValue
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import DagsterLogManager
 from dagster._utils.security import non_secure_md5_hash_str
 
 from ..assets import AssetsDefinition, SourceAsset
@@ -148,7 +144,7 @@ def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
 
 
 def get_last_updated_timestamp(
-    record: Optional[EventLogRecord], context: AssetCheckExecutionContext
+    record: Optional[EventLogRecord], log: DagsterLogManager
 ) -> Optional[float]:
     if record is None:
         return None
@@ -159,7 +155,7 @@ def get_last_updated_timestamp(
         if metadata_value is not None:
             return check.float_param(metadata_value.value, "last_updated_timestamp")
         else:
-            context.log.warning(
+            log.warning(
                 f"Could not find last updated timestamp in observation record for asset key "
                 f"{check.not_none(record.asset_key).to_user_string()}. Please set "
                 "dagster/last_updated_timestamp in the metadata of the observation record on "
@@ -245,20 +241,19 @@ def unique_id_from_asset_keys(asset_keys: Sequence[AssetKey]) -> str:
     )[:8]
 
 
-def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: Sequence[AssetKey]):
-    def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
-        return multi_asset_check(
-            specs=[
-                AssetCheckSpec(
-                    "freshness_check",
-                    asset=asset_key,
-                    metadata={FRESHNESS_PARAMS_METADATA_KEY: params_metadata},
-                    description="Evaluates freshness for targeted asset.",
-                )
-                for asset_key in asset_keys
-            ],
-            can_subset=True,
-            name=f"freshness_check_{unique_id_from_asset_keys(asset_keys)}",
-        )(fn)
+def freshness_section_friendly_name(asset_keys: Sequence[AssetKey]) -> str:
+    return f"freshness_check_{unique_id_from_asset_keys(asset_keys)}"
 
-    return inner
+
+def create_freshness_check_specs(
+    asset_keys: Sequence[AssetKey], params_metadata: Dict[str, Any]
+) -> Sequence[AssetCheckSpec]:
+    return [
+        AssetCheckSpec(
+            "freshness_check",
+            asset=asset_key,
+            metadata={FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata)},
+            description="Evaluates freshness for targeted asset.",
+        )
+        for asset_key in asset_keys
+    ]

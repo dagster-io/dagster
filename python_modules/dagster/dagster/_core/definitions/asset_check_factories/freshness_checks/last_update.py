@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, Iterable, Optional, Sequence, Union, cast
+from typing import Any, Dict, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -9,7 +9,11 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.factory.entity_set import (
+    EntitySetExecuteResult,
+    ExecutableEntitySet,
+)
 from dagster._core.definitions.metadata import (
     JsonMetadataValue,
     MetadataValue,
@@ -36,8 +40,9 @@ from ..utils import (
     LOWER_BOUND_TIMESTAMP_METADATA_KEY,
     TIMEZONE_PARAM_KEY,
     assets_to_keys,
+    create_freshness_check_specs,
     ensure_no_duplicate_assets,
-    freshness_multi_asset_check,
+    freshness_section_friendly_name,
     get_last_updated_timestamp,
     retrieve_latest_record,
     seconds_in_words,
@@ -140,34 +145,52 @@ def build_last_update_freshness_checks(
     check.sequence_param(assets, "assets")
     ensure_no_duplicate_assets(assets)
     return [
-        _build_freshness_multi_check(
-            asset_keys=assets_to_keys(assets),
+        LastUpdateFreshnessCheckSet(
+            assets=assets,
             deadline_cron=deadline_cron,
             timezone=timezone,
             severity=severity,
             lower_bound_delta=lower_bound_delta,
-        )
+        ).to_asset_checks_def()
     ]
 
 
-def _build_freshness_multi_check(
-    asset_keys: Sequence[AssetKey],
-    deadline_cron: Optional[str],
-    timezone: str,
-    severity: AssetCheckSeverity,
-    lower_bound_delta: datetime.timedelta,
-) -> AssetChecksDefinition:
-    params_metadata: dict[str, Any] = {
-        TIMEZONE_PARAM_KEY: timezone,
-        LOWER_BOUND_DELTA_PARAM_KEY: lower_bound_delta.total_seconds(),
-    }
-    if deadline_cron:
-        params_metadata[DEADLINE_CRON_PARAM_KEY] = deadline_cron
+class LastUpdateFreshnessCheckSet(ExecutableEntitySet):
+    def __init__(
+        self,
+        assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+        lower_bound_delta: datetime.timedelta,
+        deadline_cron: Optional[str] = None,
+        timezone: str = DEFAULT_FRESHNESS_TIMEZONE,
+        severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
+    ) -> None:
+        self.deadline_cron = deadline_cron
+        self.timezone = timezone
+        self.severity = severity
+        self.lower_bound_delta = lower_bound_delta
 
-    @freshness_multi_asset_check(
-        params_metadata=JsonMetadataValue(params_metadata), asset_keys=asset_keys
-    )
-    def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
+        params_metadata: dict[str, Any] = {
+            TIMEZONE_PARAM_KEY: timezone,
+            LOWER_BOUND_DELTA_PARAM_KEY: lower_bound_delta.total_seconds(),
+        }
+        if deadline_cron:
+            params_metadata[DEADLINE_CRON_PARAM_KEY] = deadline_cron
+
+        self.params_metadata = params_metadata
+
+        asset_keys = assets_to_keys(assets)
+
+        super().__init__(
+            specs=create_freshness_check_specs(asset_keys, params_metadata),
+            subsettable=True,
+            friendly_name=freshness_section_friendly_name(asset_keys),
+        )
+
+    def execute(self, context: AssetCheckExecutionContext) -> EntitySetExecuteResult:
+        deadline_cron = self.deadline_cron
+        timezone = self.timezone
+        lower_bound_delta = self.lower_bound_delta
+
         for check_key in context.selected_asset_check_keys:
             asset_key = check_key.asset_key
             current_timestamp = pendulum.now("UTC").timestamp()
@@ -191,14 +214,14 @@ def _build_freshness_multi_check(
             latest_record = retrieve_latest_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None
             )
-            update_timestamp = get_last_updated_timestamp(latest_record, context)
+            update_timestamp = get_last_updated_timestamp(latest_record, context.log)
             passed = (
                 update_timestamp is not None
                 and update_timestamp >= last_update_time_lower_bound.timestamp()
             )
 
             metadata: Dict[str, MetadataValue] = {
-                FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
+                FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(self.params_metadata),
                 LOWER_BOUND_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(
                     last_update_time_lower_bound.timestamp()
                 ),
@@ -233,12 +256,10 @@ def _build_freshness_multi_check(
                     current_timestamp=current_timestamp,
                     update_timestamp=update_timestamp,
                 ),
-                severity=severity,
+                severity=self.severity,
                 asset_key=asset_key,
                 metadata=metadata,
             )
-
-    return the_check
 
 
 def construct_description(
