@@ -132,7 +132,7 @@ def test_asset_code_origins_source_control() -> None:
                     asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                 )
 
-                assert meta.source_control_url == (
+                assert meta.url == (
                     "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster"
                     + (expected_file_path[len(DAGSTER_PACKAGE_PATH) :])
                     + f"#L{expected_line_number}"

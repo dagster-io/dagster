@@ -48,7 +48,7 @@ class UrlCodeReference(DagsterModel):
     in source control.
     """
 
-    source_control_url: str
+    url: str
     label: Optional[str] = None
 
 
@@ -152,7 +152,7 @@ def convert_local_path_to_source_control_path(
     )
 
     return UrlCodeReference(
-        source_control_url=f"{base_source_control_url}/{source_file_from_repo_root}#L{local_path.line_number}",
+        url=f"{base_source_control_url}/{source_file_from_repo_root}#L{local_path.line_number}",
         label=local_path.label,
     )
 
