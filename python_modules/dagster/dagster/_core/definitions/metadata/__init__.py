@@ -62,7 +62,7 @@ from .source_code import (
     CodeReferencesMetadataSet as CodeReferencesMetadataSet,
     CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     LocalFileCodeReference as LocalFileCodeReference,
-    SourceControlCodeReference as SourceControlCodeReference,
+    UrlCodeReference as UrlCodeReference,
     link_to_source_control as link_to_source_control,
     with_source_code_references as with_source_code_references,
 )

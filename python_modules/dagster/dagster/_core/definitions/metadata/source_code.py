@@ -43,11 +43,12 @@ class LocalFileCodeReference(DagsterModel):
 
 @experimental
 @whitelist_for_serdes
-class SourceControlCodeReference(DagsterModel):
-    """Represents a source code location ."""
+class UrlCodeReference(DagsterModel):
+    """Represents a source location which points at a URL, for example
+    in source control.
+    """
 
     source_control_url: str
-    line_number: int
     label: Optional[str] = None
 
 
@@ -64,7 +65,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
             references to source control.
     """
 
-    code_references: List[Union[LocalFileCodeReference, SourceControlCodeReference]]
+    code_references: List[Union[LocalFileCodeReference, UrlCodeReference]]
 
     @property
     def value(self) -> "CodeReferencesMetadataValue":
@@ -124,9 +125,7 @@ def _with_code_source_single_definition(
                 existing_source_code_metadata = CodeReferencesMetadataSet.extract(
                     metadata_by_key.get(key, {})
                 )
-                sources_for_asset: List[
-                    Union[LocalFileCodeReference, SourceControlCodeReference]
-                ] = [
+                sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
                     *existing_source_code_metadata.code_references.code_references,
                     *sources,
                 ]
@@ -147,14 +146,13 @@ def convert_local_path_to_source_control_path(
     base_source_control_url: str,
     repository_root_absolute_path: str,
     local_path: LocalFileCodeReference,
-) -> SourceControlCodeReference:
+) -> UrlCodeReference:
     source_file_from_repo_root = os.path.relpath(
         local_path.file_path, repository_root_absolute_path
     )
 
-    return SourceControlCodeReference(
-        source_control_url=f"{base_source_control_url}/{source_file_from_repo_root}",
-        line_number=local_path.line_number,
+    return UrlCodeReference(
+        source_control_url=f"{base_source_control_url}/{source_file_from_repo_root}#L{local_path.line_number}",
         label=local_path.label,
     )
 
@@ -178,7 +176,7 @@ def _convert_local_path_to_source_control_path_single_definition(
             existing_source_code_metadata = CodeReferencesMetadataSet.extract(
                 metadata_by_key.get(key, {})
             )
-            sources_for_asset: List[Union[LocalFileCodeReference, SourceControlCodeReference]] = [
+            sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
                 convert_local_path_to_source_control_path(
                     base_source_control_url,
                     repository_root_absolute_path,
@@ -215,11 +213,30 @@ def link_to_source_control(
     source_control_branch: str,
     repository_root_absolute_path: Union[Path, str],
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
+    """Wrapper function which converts local file path code references to source control URLs
+    based on the provided source control URL and branch.
+
+    Args:
+        assets_defs (Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]):
+            The asset definitions to which source control metadata should be attached.
+            Only assets with local file code references (such as those created by
+            `with_source_code_references`) will be converted.
+        source_control_url (str): The base URL for the source control system. For example,
+            "https://github.com/dagster-io/dagster".
+        source_control_branch (str): The branch in the source control system, such as "master".
+        repository_root_absolute_path (Union[Path, str]): The absolute path to the root of the
+            repository on disk. This is used to calculate the relative path to the source file
+            from the repository root and append it to the source control URL.
+    """
     if "gitlab.com" in source_control_url:
         source_control_url = _build_gitlab_url(source_control_url, source_control_branch)
-    else:
-        # assume GitHub URL scheme
+    elif "github.com" in source_control_url:
         source_control_url = _build_github_url(source_control_url, source_control_branch)
+    else:
+        raise ValueError(
+            "Invalid `source_control_url`."
+            " Only GitHub and GitLab are supported for linking to source control at this time."
+        )
 
     return [
         _convert_local_path_to_source_control_path_single_definition(
@@ -235,7 +252,8 @@ def link_to_source_control(
 def with_source_code_references(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
-    """Wrapper function which attaches source code metadata to the provided asset definitions.
+    """Wrapper function which attaches local code reference metadata to the provided asset definitions.
+    This points to the filepath and line number where the asset body is defined.
 
     Args:
         assets_defs (Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]):

@@ -4,7 +4,7 @@ from typing import cast
 from dagster import AssetsDefinition, load_assets_from_modules
 from dagster._core.definitions.metadata import (
     LocalFileCodeReference,
-    SourceControlCodeReference,
+    UrlCodeReference,
     link_to_source_control,
     with_source_code_references,
 )
@@ -125,15 +125,15 @@ def test_asset_code_origins_source_control() -> None:
 
                 assert isinstance(
                     asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
-                    SourceControlCodeReference,
+                    UrlCodeReference,
                 )
                 meta = cast(
-                    SourceControlCodeReference,
+                    UrlCodeReference,
                     asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                 )
 
                 assert meta.source_control_url == (
                     "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster"
                     + (expected_file_path[len(DAGSTER_PACKAGE_PATH) :])
+                    + f"#L{expected_line_number}"
                 )
-                assert meta.line_number == int(expected_line_number)
