@@ -34,6 +34,25 @@ def build_looker_explore_specs(project_dir: Path) -> Sequence[AssetSpec]:
     return looker_explore_specs
 
 
+def build_looker_view_specs(project_dir: Path) -> Sequence[AssetSpec]:
+    looker_view_specs = []
+
+    # https://cloud.google.com/looker/docs/reference/param-view
+    for view_path in project_dir.rglob("*.view.lkml"):
+        for view in lkml.load(view_path.read_text()).get("views", []):
+            upstream_table = view.get("sql_table_name") or view["name"]
+            upstream_table_asset_key = AssetKey(upstream_table.replace("`", "").split("."))
+
+            looker_view_specs.append(
+                AssetSpec(
+                    key=AssetKey(["view", view["name"]]),
+                    deps={upstream_table_asset_key},
+                )
+            )
+
+    return looker_view_specs
+
+
 def looker_assets(*, project_dir: Path) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     lookml_dashboard_specs = [
         AssetSpec(
@@ -56,5 +75,6 @@ def looker_assets(*, project_dir: Path) -> Callable[[Callable[..., Any]], Assets
         specs=[
             *lookml_dashboard_specs,
             *build_looker_explore_specs(project_dir),
+            *build_looker_view_specs(project_dir),
         ],
     )
