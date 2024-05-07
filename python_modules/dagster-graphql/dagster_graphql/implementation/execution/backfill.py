@@ -163,6 +163,8 @@ def create_and_launch_partition_backfill(
             tags=tags,
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
+            title=backfill_params.get("title"),
+            description=backfill_params.get("description"),
         )
 
         if backfill_params.get("forceSynchronousSubmission"):
@@ -214,6 +216,8 @@ def create_and_launch_partition_backfill(
                 utc_datetime_from_timestamp(backfill_timestamp),
             ),
             all_partitions=backfill_params.get("allPartitions", False),
+            title=backfill_params.get("title"),
+            description=backfill_params.get("description"),
         )
     elif partitions_by_assets is not None:
         if backfill_params.get("forceSynchronousSubmission"):
@@ -242,6 +246,8 @@ def create_and_launch_partition_backfill(
                 PartitionsByAssetSelector.from_graphql_input(partitions_by_asset_selector)
                 for partitions_by_asset_selector in partitions_by_assets
             ],
+            title=backfill_params.get("title"),
+            description=backfill_params.get("description"),
         )
     else:
         raise DagsterError(
