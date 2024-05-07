@@ -19,6 +19,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_execution_target import AssetGraphExecutionTarget
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -427,7 +428,13 @@ class Definitions:
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+        targets: Optional[Iterable[AssetGraphExecutionTarget]] = None,
     ):
+        assets = list(assets or [])
+        if targets:
+            for target in targets:
+                assets.append(target.to_assets_def())
+
         self._assets = check.opt_iterable_param(
             assets,
             "assets",
