@@ -77,7 +77,9 @@ assets:
     assert assets_defs
     assert len(assets_defs) == 1
     assets_def = assets_defs[0]
-    assets_def(context=build_asset_context(), pipes_subprocess_client=PipesSubprocessClient())
+    assets_def(
+        context=build_asset_context(resources=dict(pipes_subprocess_client=PipesSubprocessClient()))
+    )
 
 
 def test_basic_group() -> None:
