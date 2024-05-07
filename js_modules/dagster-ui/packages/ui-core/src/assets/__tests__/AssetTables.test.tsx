@@ -2,6 +2,7 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
+import {RecoilRoot} from 'recoil';
 
 import {buildWorkspace} from '../../graphql/types';
 import {buildWorkspaceContextMockedResponse} from '../../runs/__fixtures__/RunsFilterInput.fixtures';
@@ -49,13 +50,15 @@ describe('AssetTable', () => {
     it('is enabled when rows are selected', async () => {
       const Test = () => {
         return (
-          <MemoryRouter>
-            <MockedProvider mocks={MOCKS}>
-              <WorkspaceProvider>
-                <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>
+          <RecoilRoot>
+            <MemoryRouter>
+              <MockedProvider mocks={MOCKS}>
+                <WorkspaceProvider>
+                  <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+                </WorkspaceProvider>
+              </MockedProvider>
+            </MemoryRouter>
+          </RecoilRoot>
         );
       };
       render(<Test />);
