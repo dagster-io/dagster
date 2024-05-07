@@ -6,9 +6,9 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     AssetSelection,
+    BackfillPolicy,
     DagsterEventType,
     DailyPartitionsDefinition,
-    EventRecordsFilter,
     HourlyPartitionsDefinition,
     IOManager,
     Out,
@@ -370,9 +370,10 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_records_for_run(
+                run_id=result.run_id,
+                of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            ).records
         }
 
     expected_asset_keys = set(
@@ -814,3 +815,32 @@ def test_op_retry_policy():
     job1.execute_in_process(raise_on_error=False)
 
     assert tries == {"a": 3, "b": 4}
+
+
+def test_backfill_policy():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def foo(): ...
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def bar(): ...
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.multi_run(2))
+    def baz(): ...
+
+    assert create_test_asset_job([foo, bar]).backfill_policy == BackfillPolicy.single_run()
+    assert create_test_asset_job([baz]).backfill_policy == BackfillPolicy.multi_run(2)
+
+    # different backfill policies
+    with pytest.raises(DagsterInvalidDefinitionError, match="BackfillPolicy"):
+        create_test_asset_job([foo, bar, baz])
+
+    # can't do PartitionedConfig for single-run backfills
+    with pytest.raises(DagsterInvalidDefinitionError, match="PartitionedConfig"):
+
+        @static_partitioned_config(partition_keys=partitions_def.get_partition_keys())
+        def my_partitioned_config(partition_key: str):
+            return {"ops": {"foo": {"config": {"partition": partition_key}}}}
+
+        create_test_asset_job([foo], config=my_partitioned_config)

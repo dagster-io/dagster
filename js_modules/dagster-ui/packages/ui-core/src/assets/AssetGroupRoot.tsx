@@ -20,6 +20,7 @@ import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {
   ExplorerPath,
   explorerPathFromString,
@@ -164,10 +165,12 @@ export const AssetGroupTags = ({
   repoAddress: RepoAddress;
 }) => {
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
-  const {data} = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
+  const queryResult = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
     ASSET_GROUP_METADATA_QUERY,
     {variables: {selector: groupSelector}},
   );
+  useBlockTraceOnQueryResult(queryResult, 'AssetGroupMetadataQuery');
+  const {data} = queryResult;
 
   const sensorTag = () => {
     const assetNodes = data?.assetNodes;

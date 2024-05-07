@@ -39,9 +39,9 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
-from .batch_asset_record_loader import BatchAssetRecordLoader
 from .load_target import WorkspaceLoadTarget
 from .permissions import (
     PermissionResult,

@@ -34,6 +34,7 @@ import {useTrackPageView} from '../app/analytics';
 import {AssetLink} from '../assets/AssetLink';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 import {Markdown} from '../ui/Markdown';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -102,6 +103,7 @@ export const ResourceRoot = (props: Props) => {
       resourceSelector,
     },
   });
+  useBlockTraceOnQueryResult(queryResult, 'ResourceRootQuery');
 
   const displayName =
     (queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails' &&

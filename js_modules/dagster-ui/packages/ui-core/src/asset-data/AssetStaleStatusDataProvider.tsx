@@ -9,6 +9,7 @@ import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 function init() {
   return liveDataFactory(
@@ -35,17 +36,24 @@ function init() {
 export const AssetStaleStatusData = init();
 
 export function useAssetStaleData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
-  return AssetStaleStatusData.useLiveDataSingle(tokenForAssetKey(assetKey), thread);
+  const result = AssetStaleStatusData.useLiveDataSingle(tokenForAssetKey(assetKey), thread);
+  useBlockTraceUntilTrue('useAssetStaleData', !!result.liveData);
+  return result;
 }
 
 export function useAssetsStaleData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'default',
 ) {
-  return AssetStaleStatusData.useLiveData(
+  const result = AssetStaleStatusData.useLiveData(
     React.useMemo(() => assetKeys.map((key) => tokenForAssetKey(key)), [assetKeys]),
     thread,
   );
+  useBlockTraceUntilTrue(
+    'useAssetsStaleData',
+    !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+  );
+  return result;
 }
 
 export const ASSET_STALE_STATUS_QUERY = gql`

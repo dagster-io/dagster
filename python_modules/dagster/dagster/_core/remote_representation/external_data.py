@@ -903,6 +903,7 @@ class PartitionSetSnap(
             ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
+            ("backfill_policy", Optional[BackfillPolicy]),
         ],
     )
 ):
@@ -913,6 +914,7 @@ class PartitionSetSnap(
         op_selection: Optional[Sequence[str]],
         mode: Optional[str],
         external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
         return super(PartitionSetSnap, cls).__new__(
             cls,
@@ -924,6 +926,9 @@ class PartitionSetSnap(
                 external_partitions_data,
                 "external_partitions_data",
                 ExternalPartitionsDefinitionData,
+            ),
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
             ),
         )
 
@@ -955,6 +960,7 @@ class PartitionSetSnap(
             op_selection=None,
             mode=DEFAULT_MODE_NAME,
             external_partitions_data=partitions_def_data,
+            backfill_policy=job_def.backfill_policy,
         )
 
 
@@ -999,7 +1005,7 @@ class ExternalPartitionTagsData(
 class ExternalPartitionExecutionParamData(
     NamedTuple(
         "_ExternalPartitionExecutionParamData",
-        [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
+        [("name", str), ("tags", Mapping[str, str]), ("run_config", Mapping[str, object])],
     )
 ):
     def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):

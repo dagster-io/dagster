@@ -16,6 +16,7 @@ import {
 import {Timestamp} from '../app/time/Timestamp';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 dayjs.extend(relativeTime);
 
@@ -146,13 +147,15 @@ export const AssetMaterializationUpstreamData = ({
   assetKey: AssetKeyInput;
   timestamp?: string;
 }) => {
+  const skip = !timestamp;
   const result = useQuery<
     AssetMaterializationUpstreamQuery,
     AssetMaterializationUpstreamQueryVariables
   >(ASSET_MATERIALIZATION_UPSTREAM_QUERY, {
     variables: {assetKey: {path: assetKey.path}, timestamp},
-    skip: !timestamp,
+    skip,
   });
+  useBlockTraceOnQueryResult(result, 'AssetMaterializationUpstreamQuery', {skip});
 
   if (!timestamp) {
     return <Caption color={Colors.textLight()}>None</Caption>;

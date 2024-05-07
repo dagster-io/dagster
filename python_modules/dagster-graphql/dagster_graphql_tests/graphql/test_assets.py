@@ -20,7 +20,6 @@ from dagster import (
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
@@ -966,13 +965,18 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             == "ReportRunlessAssetEventsSuccess"
         )
 
-        event_records = graphql_context.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=event_type,
-                asset_key=asset_key,
-            ),
-            ascending=True,
-        )
+        # just make sure we have a limit more than the number of partitions
+        limit = len(partitions) + 1 if partitions else 2
+        if event_type == DagsterEventType.ASSET_MATERIALIZATION:
+            event_records = graphql_context.instance.fetch_materializations(
+                asset_key, ascending=True, limit=limit
+            ).records
+        else:
+            assert event_type == DagsterEventType.ASSET_OBSERVATION
+            event_records = graphql_context.instance.fetch_observations(
+                asset_key, ascending=True, limit=limit
+            ).records
+
         if partitions:
             assert len(event_records) == len(partitions)
         else:
@@ -1366,6 +1370,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # Test that when partition a is materialized that the materialized partitions are a
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="a")
 
+        graphql_context.asset_record_loader.clear_cache()
+
         selector = infer_job_selector(graphql_context, "partition_materialization_job")
         result = execute_dagster_graphql(
             graphql_context,
@@ -1385,6 +1391,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         # Test that when partition c is materialized that the materialized partitions are a, c
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
+
+        graphql_context.asset_record_loader.clear_cache()
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1428,6 +1436,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             tags={"fail": "true"},
         )
 
+        graphql_context.asset_record_loader.clear_cache()
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_STATS,
@@ -1448,6 +1458,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             partition_key="b",
             tags={"fail": "true"},
         )
+
+        graphql_context.asset_record_loader.clear_cache()
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1479,6 +1491,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
+
+        graphql_context.asset_record_loader.clear_cache()
 
         stats_result = execute_dagster_graphql(
             graphql_context,
@@ -1592,6 +1606,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             graphql_context, "time_partitioned_assets_job", partition_key=time_0
         )
 
+        graphql_context.asset_record_loader.clear_cache()
+
         selector = infer_job_selector(graphql_context, "time_partitioned_assets_job")
         result = execute_dagster_graphql(
             graphql_context,
@@ -1615,6 +1631,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         _create_partitioned_run(
             graphql_context, "time_partitioned_assets_job", partition_key=time_2
         )
+
+        graphql_context.asset_record_loader.clear_cache()
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1641,6 +1659,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         _create_partitioned_run(
             graphql_context, "time_partitioned_assets_job", partition_key=time_1
         )
+
+        graphql_context.asset_record_loader.clear_cache()
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1760,10 +1780,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
 
-        graphql_context.asset_record_loader.clear_cache()
-
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
+
+        graphql_context.asset_record_loader.clear_cache()
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1789,14 +1809,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_3"]["latestRun"]["id"] == first_run_id
         assert result["asset_3"]["latestMaterialization"] is None
 
-        graphql_context.asset_record_loader.clear_cache()
-
         # Confirm that asset selection is respected
         run_id = _create_run(
             graphql_context,
             "failure_assets_job",
             asset_selection=[{"path": ["asset_3"]}],
         )
+
+        graphql_context.asset_record_loader.clear_cache()
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -2145,6 +2165,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 MultiPartitionKey({"date": partition_field[0], "ab": partition_field[1]}),
                 asset_selection=[AssetKey("multipartitions_1")],
             )
+
+        graphql_context.asset_record_loader.clear_cache()
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -2262,6 +2285,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 MultiPartitionKey({"date": partition_field[0], "ab": partition_field[1]}),
                 tags={"fail": "true"},
             )
+
+        graphql_context.asset_record_loader.clear_cache()
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -2308,6 +2334,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 MultiPartitionKey({"date": partition_field[0], "ab": partition_field[1]}),
                 tags={"fail": "true"},
             )
+
+        graphql_context.asset_record_loader.clear_cache()
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -2337,6 +2366,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 "multipartitions_fail_job",
                 MultiPartitionKey({"date": partition_field[0], "ab": partition_field[1]}),
             )
+
+        graphql_context.asset_record_loader.clear_cache()
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
@@ -2375,6 +2407,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "dynamic_in_multipartitions_success_job",
             MultiPartitionKey({"dynamic": "1", "static": "a"}),
         )
+
+        graphql_context.asset_record_loader.clear_cache()
+
         counter = Counter()
         traced_counter.set(counter)
         result = execute_dagster_graphql(
@@ -2579,9 +2614,9 @@ class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
         assert result.data["reportRunlessAssetEvents"]
         assert result.data["reportRunlessAssetEvents"]["__typename"] == "UnauthorizedError"
 
-        event_records = graphql_context.instance.get_event_records(
-            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-        )
+        event_records = graphql_context.instance.fetch_materializations(
+            AssetKey("asset_one"), limit=1
+        ).records
         assert len(event_records) == 0
 
 

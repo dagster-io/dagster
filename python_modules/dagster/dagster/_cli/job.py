@@ -771,7 +771,9 @@ def _execute_backfill_command_at_location(
                 external_job,
                 job_partition_set,
                 backfill_job,
-                partition_data,
+                partition_data.name,
+                partition_data.tags,
+                partition_data.run_config,
             )
             if dagster_run:
                 instance.submit_run(dagster_run.run_id, workspace)

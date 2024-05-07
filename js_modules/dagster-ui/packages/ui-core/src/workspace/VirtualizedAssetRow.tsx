@@ -24,9 +24,10 @@ import {AssetViewType} from '../assets/useAssetView';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
 const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
@@ -210,45 +211,23 @@ export const VirtualizedAssetCatalogHeader = ({
   view: AssetViewType;
 }) => {
   return (
-    <Box
-      background={Colors.backgroundDefault()}
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS_FOR_CATALOG,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-        position: 'sticky',
-        top: 0,
-        zIndex: 1,
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS_FOR_CATALOG} sticky>
       <HeaderCell>{headerCheckbox}</HeaderCell>
       <HeaderCell>{view === 'flat' ? 'Asset name' : 'Asset key prefix'}</HeaderCell>
       <HeaderCell>Code location / Asset group</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell></HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 
 export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}) => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>{nameLabel}</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell></HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 
@@ -278,13 +257,16 @@ export function useLiveDataOrLatestMaterializationDebounced(
 
   const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : []);
 
-  const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
+  const skip = type !== 'asset_non_sda' || !debouncedKey;
+  const queryResult = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
     SINGLE_NON_SDA_ASSET_QUERY,
     {
-      skip: type !== 'asset_non_sda' || !debouncedKey,
+      skip,
       variables: {input: debouncedKey},
     },
   );
+  const {data: nonSDAData} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'SingleNonSdaAssetQuery', {skip});
 
   React.useEffect(() => {
     if (type === 'folder') {

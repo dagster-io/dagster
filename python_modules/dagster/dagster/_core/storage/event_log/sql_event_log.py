@@ -86,6 +86,7 @@ from dagster._utils.concurrency import (
     PendingStepInfo,
     get_max_concurrency_limit_value,
 )
+from dagster._utils.warnings import deprecation_warning
 
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
@@ -1124,6 +1125,14 @@ class SqlEventLogStorage(EventLogStorage):
             after_cursor >= -1,
             f"Don't know what to do with negative cursor {after_cursor}",
         )
+
+        if isinstance(dagster_event_type, set) and len(dagster_event_type) > 1:
+            deprecation_warning(
+                "Support for multiple event types to get_logs_for_all_runs_by_log_id",
+                "1.8.0",
+                "You should break up your query into multiple calls, one for each event type.",
+            )
+
         dagster_event_types = (
             {dagster_event_type}
             if isinstance(dagster_event_type, DagsterEventType)
@@ -1191,6 +1200,7 @@ class SqlEventLogStorage(EventLogStorage):
                         if can_cache_asset_status_data
                         else None
                     ),
+                    last_planned_materialization_storage_id=None,
                 ),
             )
         else:
@@ -1962,6 +1972,7 @@ class SqlEventLogStorage(EventLogStorage):
                 latest_events_subquery.c.dagster_event_type,
                 latest_events_subquery.c.partition,
                 latest_events_subquery.c.run_id,
+                latest_events_subquery.c.id,
             ]
         ).where(
             latest_events_subquery.c.dagster_event_type
@@ -1973,16 +1984,17 @@ class SqlEventLogStorage(EventLogStorage):
             materialization_rows = db_fetch_mappings(conn, materialization_events)
 
         materialization_planned_rows_by_partition = {
-            cast(str, row["partition"]): (cast(str, row["run_id"]), cast(int, row["id"]))
-            for row in materialization_planned_rows
+            row["partition"]: (row["run_id"], row["id"]) for row in materialization_planned_rows
         }
-        for row in materialization_rows:
-            if (
-                row["partition"] in materialization_planned_rows_by_partition
-                and materialization_planned_rows_by_partition[cast(str, row["partition"])][0]
-                == row["run_id"]
-            ):
-                materialization_planned_rows_by_partition.pop(cast(str, row["partition"]))
+        for mat_row in materialization_rows:
+            mat_partition = mat_row["partition"]
+            mat_event_id = mat_row["id"]
+            if mat_partition not in materialization_planned_rows_by_partition:
+                continue
+            _, planned_event_id = materialization_planned_rows_by_partition[mat_partition]
+            if planned_event_id < mat_event_id:
+                # this planned materialization event was followed by a materialization event
+                materialization_planned_rows_by_partition.pop(mat_partition)
 
         return materialization_planned_rows_by_partition
 

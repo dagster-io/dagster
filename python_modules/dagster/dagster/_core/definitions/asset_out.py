@@ -15,7 +15,7 @@ from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 
-from .utils import validate_definition_tags
+from .utils import validate_tags_strict
 
 
 @experimental_param(param="owners")
@@ -123,7 +123,7 @@ class AssetOut(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_definition_tags(tags),
+            tags=validate_tags_strict(tags),
         )
 
     def to_out(self) -> Out:

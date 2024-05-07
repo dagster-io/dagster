@@ -1,6 +1,7 @@
 from .asset_check_result import (
     AssetCheckEvaluation as AssetCheckEvaluation,
     AssetCheckResult as AssetCheckResult,
+    AssetCheckSeverity as AssetCheckSeverity,
 )
 from .composition import PendingNodeInvocation as PendingNodeInvocation
 from .config import ConfigMapping as ConfigMapping

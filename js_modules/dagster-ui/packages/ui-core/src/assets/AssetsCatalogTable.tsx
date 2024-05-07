@@ -2,6 +2,8 @@ import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
+import {useRouteMatch} from 'react-router-dom';
+import {useSetRecoilState} from 'recoil';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
@@ -19,11 +21,14 @@ import {AssetViewType, useAssetView} from './useAssetView';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
+import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {PageLoadTrace} from '../performance';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 import {LoadingSpinner} from '../ui/Loading';
+
 type Asset = AssetTableFragment;
 
 const groupTableCache = new Map();
@@ -105,18 +110,26 @@ export const AssetsCatalogTable = ({
   groupSelector,
   trace,
 }: AssetCatalogTableProps) => {
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+  const {path} = useRouteMatch();
+  useEffect(() => {
+    setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=AssetCatalogTable`}));
+  }, [path, setCurrentPage]);
+
   const [view, setView] = useAssetView();
 
   const {assets, query, error} = useAllAssets(groupSelector);
   const {searchPath, filtered, isFiltered, filterButton, filterInput, activeFiltersJsx} =
     useAssetCatalogFiltering(assets, prefixPath);
 
+  useBlockTraceUntilTrue('useAllAssets', !!assets?.length);
+
   const {displayPathForAsset, displayed} =
     view === 'flat'
       ? buildFlatProps(filtered, prefixPath)
       : buildNamespaceProps(filtered, prefixPath);
 
-  const refreshState = useRefreshAtInterval({
+  const refreshState = useRefreshAtInterval<any>({
     refresh: query,
     intervalMs: FIFTEEN_SECONDS,
     leading: true,

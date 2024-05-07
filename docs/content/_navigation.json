@@ -306,6 +306,46 @@
             ]
           },
           {
+            "title": "Dagster Pipes (Experimental)",
+            "path": "/concepts/dagster-pipes",
+            "children": [
+              {
+                "title": "Dagster Pipes tutorial",
+                "path": "/concepts/dagster-pipes/subprocess",
+                "children": [
+                  {
+                    "title": "Part 1: Define a Dagster asset",
+                    "path": "/concepts/dagster-pipes/subprocess/create-subprocess-asset"
+                  },
+                  {
+                    "title": "Part 2: Modify external code",
+                    "path": "/concepts/dagster-pipes/subprocess/modify-external-code"
+                  },
+                  {
+                    "title": "Dagster Pipes + subprocess reference",
+                    "path": "/concepts/dagster-pipes/subprocess/reference"
+                  }
+                ]
+              },
+              {
+                "title": "Dagster Pipes + AWS Lambda",
+                "path": "/concepts/dagster-pipes/aws-lambda"
+              },
+              {
+                "title": "Dagster Pipes + Databricks",
+                "path": "/concepts/dagster-pipes/databricks"
+              },
+              {
+                "title": "Dagster Pipes + Kubernetes",
+                "path": "/concepts/dagster-pipes/kubernetes"
+              },
+              {
+                "title": "Details and customization",
+                "path": "/concepts/dagster-pipes/dagster-pipes-details-and-customization"
+              }
+            ]
+          },
+          {
             "title": "I/O management",
             "children": [
               {
@@ -685,7 +725,7 @@
                 "path": "/dagster-plus/managing-deployments/branch-deployments",
                 "children": [
                   {
-                   "title": "Overview",
+                    "title": "Overview",
                     "path": "/dagster-plus/managing-deployments/branch-deployments"
                   },
                   {
@@ -701,7 +741,7 @@
                     "path": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments"
                   },
                   {
-                   "title": "Change Tracking",
+                    "title": "Change Tracking",
                     "path": "/dagster-plus/managing-deployments/branch-deployments/change-tracking"
                   }
                 ]
@@ -1054,46 +1094,6 @@
           {
             "title": "Re-executing jobs",
             "path": "/guides/dagster/re-execution"
-          }
-        ]
-      },
-      {
-        "title": "Dagster Pipes (Experimental)",
-        "path": "/guides/dagster-pipes",
-        "children": [
-          {
-            "title": "Dagster Pipes tutorial",
-            "path": "/guides/dagster-pipes/subprocess",
-            "children": [
-              {
-                "title": "Part 1: Define a Dagster asset",
-                "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
-              },
-              {
-                "title": "Part 2: Modify external code",
-                "path": "/guides/dagster-pipes/subprocess/modify-external-code"
-              },
-              {
-                "title": "Dagster Pipes & subprocess reference",
-                "path": "/guides/dagster-pipes/subprocess/reference"
-              }
-            ]
-          },
-          {
-            "title": "Dagster Pipes & AWS Lambda",
-            "path": "/guides/dagster-pipes/aws-lambda"
-          },
-          {
-            "title": "Dagster Pipes & Databricks",
-            "path": "/guides/dagster-pipes/databricks"
-          },
-          {
-            "title": "Dagster Pipes & Kubernetes",
-            "path": "/guides/dagster-pipes/kubernetes"
-          },
-          {
-            "title": "Details and customization",
-            "path": "/guides/dagster-pipes/dagster-pipes-details-and-customization"
           }
         ]
       },

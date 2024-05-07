@@ -3,7 +3,8 @@ import {gql, useQuery} from '@apollo/client';
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
 import {useContext, useEffect, useMemo} from 'react';
-import {Link, Redirect, useLocation} from 'react-router-dom';
+import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
+import {useSetRecoilState} from 'recoil';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
@@ -38,6 +39,7 @@ import {
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
 import {useFeatureFlags} from '../app/Flags';
+import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
@@ -53,6 +55,7 @@ import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -70,6 +73,7 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
+
   const tabList = useTabBuilder({definition, params});
 
   const defaultTab = flagUseNewOverviewPage
@@ -263,6 +267,12 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
     }
   };
 
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+  const {path} = useRouteMatch();
+  useEffect(() => {
+    setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
+  }, [path, selectedTab, setCurrentPage]);
+
   const reportEvents = useReportEventsModal(
     definition
       ? {
@@ -407,6 +417,8 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
       notifyOnNetworkStatusChange: true,
     },
   );
+
+  useBlockTraceOnQueryResult(result, 'AssetViewDefinitionQuery');
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {

@@ -6,6 +6,32 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+
+/**
+The params behavior on this page is a bit nuanced - there are two main query
+params: ?timestamp= and ?partition= and only one is set at a time. They can
+be undefined, an empty string or a value and all three states are used.
+
+- If both are undefined, we expand the first item in the table by default
+- If one is present, it determines which xAxis is used (partition grouping)
+- If one is present and set to a value, that item in the table is expanded.
+- If one is present but an empty string, no items in the table is expanded.
+ */
+export function getXAxisForParams(
+  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
+  {defaultToPartitions}: {defaultToPartitions: boolean},
+) {
+  const xAxisDefault = defaultToPartitions ? 'partition' : 'time';
+  const xAxis: 'partition' | 'time' =
+    params.partition !== undefined
+      ? 'partition'
+      : params.time !== undefined || params.asOf
+      ? 'time'
+      : xAxisDefault;
+
+  return xAxis;
+}
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -18,44 +44,28 @@ export function useRecentAssetEvents(
   params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
-  // The params behavior on this page is a bit nuanced - there are two main query
-  // params: ?timestamp= and ?partition= and only one is set at a time. They can
-  // be undefined, an empty string or a value and all three states are used.
-  //
-  // - If both are undefined, we expand the first item in the table by default
-  // - If one is present, it determines which xAxis is used (partition grouping)
-  // - If one is present and set to a value, that item in the table is expanded.
-  // - If one is present but an empty string, no items in the table is expanded.
-
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
-  const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
-  const xAxis: 'partition' | 'time' =
-    params.partition !== undefined
-      ? 'partition'
-      : params.time !== undefined || before
-      ? 'time'
-      : xAxisDefault;
+  const xAxis = getXAxisForParams(params, {defaultToPartitions: assetHasDefinedPartitions});
 
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
-  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
-    ASSET_EVENTS_QUERY,
-    {
-      skip: !assetKey,
-      fetchPolicy: 'cache-and-network',
-      variables: loadUsingPartitionKeys
-        ? {
-            assetKey: {path: assetKey?.path ?? []},
-            before,
-            partitionInLast: 120,
-          }
-        : {
-            assetKey: {path: assetKey?.path ?? []},
-            before,
-            limit: 100,
-          },
-    },
-  );
+  const queryResult = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(ASSET_EVENTS_QUERY, {
+    skip: !assetKey,
+    fetchPolicy: 'cache-and-network',
+    variables: loadUsingPartitionKeys
+      ? {
+          assetKey: {path: assetKey?.path ?? []},
+          before,
+          partitionInLast: 120,
+        }
+      : {
+          assetKey: {path: assetKey?.path ?? []},
+          before,
+          limit: 100,
+        },
+  });
+  const {data, loading, refetch} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'AssetEventsQuery', {skip: !assetKey});
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;

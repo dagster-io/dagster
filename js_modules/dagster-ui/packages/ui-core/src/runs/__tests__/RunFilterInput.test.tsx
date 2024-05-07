@@ -30,6 +30,29 @@ import {
 } from '../__fixtures__/RunsFilterInput.fixtures';
 import {RunTagKeysQuery} from '../types/RunsFilterInput.types';
 
+const workspaceMock = buildWorkspaceContextMockedResponse(
+  buildWorkspace({
+    locationEntries: [
+      buildWorkspaceLocationEntry({
+        name: 'some_workspace',
+        locationOrLoadError: buildRepositoryLocation({
+          name: 'some_location',
+          repositories: [
+            buildRepository({
+              name: 'some_repo',
+              pipelines: [
+                buildPipeline({
+                  name: 'some_job',
+                }),
+              ],
+            }),
+          ],
+        }),
+      }),
+    ],
+  }),
+);
+
 const runTagKeysMock: MockedResponse<RunTagKeysQuery> = {
   request: {
     query: RUN_TAG_KEYS_QUERY,
@@ -145,7 +168,7 @@ function TestRunsFilterInput({
     );
   }
   return (
-    <MockedProvider mocks={mocks}>
+    <MockedProvider mocks={mocks?.length ? [workspaceMock, ...mocks] : [workspaceMock]}>
       <WorkspaceProvider>
         <RunsFilterInput tokens={tokens} onChange={onChange} enabledFilters={enabledFilters} />
       </WorkspaceProvider>
@@ -196,30 +219,7 @@ describe('<RunFilterInput  />', () => {
         tokens={tokens}
         onChange={onChange}
         enabledFilters={['job']}
-        mocks={[
-          buildWorkspaceContextMockedResponse(
-            buildWorkspace({
-              locationEntries: [
-                buildWorkspaceLocationEntry({
-                  name: 'some_workspace',
-                  locationOrLoadError: buildRepositoryLocation({
-                    name: 'some_location',
-                    repositories: [
-                      buildRepository({
-                        name: 'some_repo',
-                        pipelines: [
-                          buildPipeline({
-                            name: 'some_job',
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-                }),
-              ],
-            }),
-          ),
-        ]}
+        mocks={[workspaceMock]}
       />,
     );
 

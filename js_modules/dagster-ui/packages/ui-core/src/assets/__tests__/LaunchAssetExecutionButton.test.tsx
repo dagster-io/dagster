@@ -6,7 +6,9 @@ import userEvent from '@testing-library/user-event';
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
+import {buildWorkspace} from '../../graphql/types';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
+import {buildWorkspaceContextMockedResponse} from '../../runs/__fixtures__/RunsFilterInput.fixtures';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
 import {TestProvider} from '../../testing/TestProvider';
 import * as WorkspaceContext from '../../workspace/WorkspaceContext';
@@ -43,6 +45,8 @@ import {
   buildLaunchAssetWarningsMock,
 } from '../__fixtures__/LaunchAssetExecutionButton.fixtures';
 import {asAssetKeyInput} from '../asInput';
+
+const workspaceMock = buildWorkspaceContextMockedResponse(buildWorkspace({}));
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
@@ -649,6 +653,7 @@ function renderButton({
     }),
     buildLaunchAssetLoaderMock([MULTI_ASSET_OUT_1.assetKey, MULTI_ASSET_OUT_2.assetKey]),
     buildLaunchAssetLoaderMock(assetKeys),
+    workspaceMock,
     ...(launchMock ? [launchMock] : []),
   ];
 

@@ -55,7 +55,7 @@ from ..utils import (
     DEFAULT_IO_MANAGER_KEY,
     DEFAULT_OUTPUT,
     NoValueSentinel,
-    validate_definition_tags,
+    validate_tags_strict,
 )
 
 
@@ -94,7 +94,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
-    owners: Optional[List[str]] = ...,
+    owners: Optional[Sequence[str]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -136,7 +136,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    owners: Optional[List[str]] = None,
+    owners: Optional[Sequence[str]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -236,7 +236,7 @@ def asset(
             ins=ins,
             deps=upstream_asset_deps,
             metadata=metadata,
-            tags=validate_definition_tags(tags),
+            tags=validate_tags_strict(tags),
             description=description,
             config_schema=config_schema,
             required_resource_keys=required_resource_keys,

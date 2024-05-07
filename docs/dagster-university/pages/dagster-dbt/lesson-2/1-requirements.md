@@ -36,5 +36,5 @@ Even if you’ve already completed the Dagster Essentials course, you should sti
 Run the following to clone the project:
 
 ```bash
-dagster project from-example --name project-dagster-university --example project_du_dbt_starter
+dagster project from-example --name dagster-and-dbt --example project_du_dbt_starter
 ```

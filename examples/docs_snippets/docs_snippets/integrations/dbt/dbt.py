@@ -301,7 +301,7 @@ def scope_custom_tags_dagster_dbt_translator():
             for tag in dbt_tags:
                 key, _, value = tag.partition("=")
 
-                dagster_tags[key] = value if value else "__dagster_no_value"
+                dagster_tags[key] = value if value else ""
 
             return dagster_tags
 

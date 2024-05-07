@@ -22,8 +22,16 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.declarative_scheduling.scheduling_context import (
+    SchedulingContext,
+)
+from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info import (
+    SchedulingEvaluationInfo,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -33,14 +41,17 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
-from .asset_condition.asset_condition_evaluation_context import (
-    AssetConditionEvaluationContext,
-)
 from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
+from .declarative_scheduling.legacy.legacy_context import (
+    LegacyRuleEvaluationContext,
+)
+from .declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationState,
+)
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import PartitionsDefinition, ScheduleType
 
@@ -101,6 +112,19 @@ class AssetDaemonContext:
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
+
+        stale_resolver = CachingStaleStatusResolver(
+            instance=instance, asset_graph=asset_graph, instance_queryer=self.instance_queryer
+        )
+        self._asset_graph_view = AssetGraphView(
+            temporal_context=TemporalContext(
+                effective_dt=self.instance_queryer.evaluation_time,
+                # TODO: we should eventually pass in an explicit last_event_id
+                last_event_id=None,
+            ),
+            stale_resolver=stale_resolver,
+        )
+        self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._auto_materialize_asset_keys = auto_materialize_asset_keys or set()
         self._materialize_run_tags = materialize_run_tags
@@ -123,6 +147,10 @@ class AssetDaemonContext:
     @property
     def data_time_resolver(self) -> CachingDataTimeResolver:
         return self._data_time_resolver
+
+    @property
+    def asset_graph_view(self) -> AssetGraphView:
+        return self._asset_graph_view
 
     @property
     def cursor(self) -> AssetDaemonCursor:
@@ -175,6 +203,7 @@ class AssetDaemonContext:
         asset_key: AssetKey,
         evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        current_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo],
     ) -> Tuple[AssetConditionEvaluationState, Optional[datetime.datetime]]:
         """Evaluates the auto materialize policy of a given asset key.
 
@@ -191,13 +220,13 @@ class AssetDaemonContext:
         # convert the legacy AutoMaterializePolicy to an Evaluator
         asset_condition = check.not_none(
             self.asset_graph.get(asset_key).auto_materialize_policy
-        ).to_asset_condition()
+        ).to_scheduling_condition()
 
-        asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
+        previous_evaluation_state = self.cursor.get_previous_evaluation_state(asset_key)
 
-        context = AssetConditionEvaluationContext.create(
+        legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
-            previous_evaluation_state=asset_cursor,
+            previous_evaluation_state=previous_evaluation_state,
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
@@ -206,10 +235,23 @@ class AssetDaemonContext:
             expected_data_time_mapping=expected_data_time_mapping,
         )
 
+        context = SchedulingContext.create(
+            asset_key=asset_key,
+            asset_graph_view=self.asset_graph_view,
+            logger=self.logger,
+            current_tick_evaluation_info_by_key=current_evaluation_info_by_key,
+            previous_evaluation_info=SchedulingEvaluationInfo.from_asset_condition_evaluation_state(
+                self.asset_graph_view, previous_evaluation_state
+            )
+            if previous_evaluation_state
+            else None,
+            legacy_context=legacy_context,
+        )
+
         result = asset_condition.evaluate(context)
 
         expected_data_time = get_expected_data_time_for_asset_key(
-            context, will_materialize=result.true_subset.size > 0
+            legacy_context, will_materialize=result.true_subset.size > 0
         )
         return AssetConditionEvaluationState.create(context, result), expected_data_time
 
@@ -221,6 +263,7 @@ class AssetDaemonContext:
         materialized or discarded this tick.
         """
         evaluation_state_by_key: Dict[AssetKey, AssetConditionEvaluationState] = {}
+        current_evaluation_info_by_key: Dict[AssetKey, SchedulingEvaluationInfo] = {}
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         to_request: Set[AssetKeyPartitionKey] = set()
 
@@ -241,7 +284,10 @@ class AssetDaemonContext:
 
             try:
                 (evaluation_state, expected_data_time) = self.evaluate_asset(
-                    asset_key, evaluation_state_by_key, expected_data_time_mapping
+                    asset_key,
+                    evaluation_state_by_key,
+                    expected_data_time_mapping,
+                    current_evaluation_info_by_key,
                 )
             except Exception as e:
                 raise Exception(
@@ -263,6 +309,11 @@ class AssetDaemonContext:
             )
 
             evaluation_state_by_key[asset_key] = evaluation_state
+            current_evaluation_info_by_key[asset_key] = (
+                SchedulingEvaluationInfo.from_asset_condition_evaluation_state(
+                    self.asset_graph_view, evaluation_state
+                )
+            )
             expected_data_time_mapping[asset_key] = expected_data_time
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to

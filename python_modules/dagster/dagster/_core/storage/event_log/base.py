@@ -36,6 +36,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
+from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
@@ -60,6 +61,8 @@ class AssetEntry(
             # This is an optional field which can be used for more performant last observation
             # queries if the underlying storage supports it
             ("last_observation_record", Optional[EventLogRecord]),
+            ("last_planned_materialization_storage_id", Optional[int]),
+            ("last_planned_materialization_run_id", Optional[str]),
         ],
     )
 ):
@@ -71,6 +74,8 @@ class AssetEntry(
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
         last_observation_record: Optional[EventLogRecord] = None,
+        last_planned_materialization_storage_id: Optional[int] = None,
+        last_planned_materialization_run_id: Optional[str] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -87,6 +92,14 @@ class AssetEntry(
             ),
             last_observation_record=check.opt_inst_param(
                 last_observation_record, "last_observation_record", EventLogRecord
+            ),
+            last_planned_materialization_storage_id=check.opt_int_param(
+                last_planned_materialization_storage_id,
+                "last_planned_materialization_storage_id",
+            ),
+            last_planned_materialization_run_id=check.opt_str_param(
+                last_planned_materialization_run_id,
+                "last_planned_materialization_run_id",
             ),
         )
 
@@ -159,6 +172,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             limit (Optional[int]): Max number of records to return.
         """
         if isinstance(cursor, int):
+            deprecation_warning(
+                "Integer cursor values in `get_logs_for_run`",
+                "1.8.0",
+                "You can instead construct a storage_id-based string cursor e.g. `cursor = EventLogCursor.from_storage_id(storage_id).to_string()`",
+            )
             cursor = EventLogCursor.from_offset(cursor + 1).to_string()
         records = self.get_records_for_run(
             run_id, cursor, of_type, limit, ascending=ascending
@@ -292,6 +310,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Sequence[AssetRecord]:
         pass
+
+    @property
+    def asset_records_have_last_planned_materialization_storage_id(self) -> bool:
+        return False
 
     @abstractmethod
     def has_asset_key(self, asset_key: AssetKey) -> bool:

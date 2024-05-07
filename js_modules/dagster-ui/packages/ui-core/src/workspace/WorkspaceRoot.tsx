@@ -25,6 +25,8 @@ const RepoRouteContainer = () => {
   const workspaceState = useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
 
+  const {loading} = workspaceState;
+
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
     return (
@@ -45,12 +47,6 @@ const RepoRouteContainer = () => {
     );
   }
 
-  const {loading} = workspaceState;
-
-  if (loading) {
-    return <div />;
-  }
-
   const matchingRepo = workspaceState.allRepos.find(
     (repo) =>
       repo.repository.name === addressForPath.name &&
@@ -59,7 +55,7 @@ const RepoRouteContainer = () => {
 
   // If we don't have any active code locations, or if our active repo does not match
   // the repo path in the URL, it means we aren't able to load this repo.
-  if (!matchingRepo) {
+  if (!matchingRepo && !loading) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState

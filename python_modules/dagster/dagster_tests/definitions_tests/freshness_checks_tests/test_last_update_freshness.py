@@ -9,14 +9,16 @@ from dagster import (
     asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.utils import (
+    unique_id_from_asset_keys,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.freshness_checks.last_update import (
-    build_last_update_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.metadata import (
     JsonMetadataValue,
     TimestampMetadataValue,
@@ -36,7 +38,7 @@ def test_params() -> None:
 
     check = build_last_update_freshness_checks(
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert (
         check.node_def.name
         == f"freshness_check_{hashlib.md5(str(my_asset.key).encode()).hexdigest()[:8]}"
@@ -61,7 +63,7 @@ def test_params() -> None:
 
     other_check = build_last_update_freshness_checks(
         assets=[other_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(other_check, AssetChecksDefinition)
     assert check.node_def.name != other_check.node_def.name
 
@@ -69,7 +71,7 @@ def test_params() -> None:
         assets=[my_asset],
         deadline_cron="0 0 * * *",
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_specs)).metadata == {
         "dagster/freshness_params": JsonMetadataValue(
@@ -83,20 +85,20 @@ def test_params() -> None:
 
     check = build_last_update_freshness_checks(
         assets=[my_asset.key], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
 
     src_asset = SourceAsset("source_asset")
     check = build_last_update_freshness_checks(
         assets=[src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == src_asset.key
 
     check = build_last_update_freshness_checks(
         assets=[my_asset, src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {my_asset.key, src_asset.key}
 
@@ -117,18 +119,18 @@ def test_params() -> None:
         lower_bound_delta=datetime.timedelta(minutes=10),
         deadline_cron="0 0 * * *",
         timezone="UTC",
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
 
     check_multiple_assets = build_last_update_freshness_checks(
         assets=[my_asset, other_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     check_multiple_assets_switched_order = build_last_update_freshness_checks(
         assets=[other_asset, my_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
     unique_id = unique_id_from_asset_keys([my_asset.key, other_asset.key])
     unique_id_switched_order = unique_id_from_asset_keys([other_asset.key, my_asset.key])
@@ -159,7 +161,7 @@ def test_different_event_types(
         check = build_last_update_freshness_checks(
             assets=[my_asset],
             lower_bound_delta=lower_bound_delta,
-        )
+        )[0]
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
@@ -176,7 +178,7 @@ def test_observation_descriptions(
     check = build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=lower_bound_delta,
-    )
+    )[0]
     # First, create an event that is outside of the allowed time window.
     with pendulum_freeze_time(
         start_time.subtract(seconds=int(lower_bound_delta.total_seconds() + 1))
@@ -248,7 +250,7 @@ def test_check_result_cron(
         deadline_cron=deadline_cron,
         lower_bound_delta=lower_bound_delta,
         timezone=timezone,
-    )
+    )[0]
 
     freeze_datetime = start_time
     with pendulum_freeze_time(freeze_datetime):
@@ -355,7 +357,7 @@ def test_check_result_bound_only(
     check = build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=lower_bound_delta,
-    )
+    )[0]
 
     freeze_datetime = start_time
     with pendulum_freeze_time(freeze_datetime):
@@ -436,7 +438,7 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     check = build_last_update_freshness_checks(
         assets=[my_asset, my_other_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     single_check_job = define_asset_job(
         "the_job", selection=AssetChecksForAssetKeysSelection(selected_asset_keys=[my_asset.key])
     )

@@ -8,6 +8,7 @@ import {
 import {toGraphId} from '../../asset-graph/Utils';
 import {AssetKeyInput} from '../../graphql/types';
 import {isCanonicalColumnLineageEntry} from '../../metadata/TableSchema';
+import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 
 export type AssetColumnLineageLocalColumn = {
@@ -97,6 +98,11 @@ export function useColumnLineageDataForAssets(assetKeys: AssetKeyInput[]) {
       void fetch();
     }
   }, [client, missing]);
+
+  useBlockTraceUntilTrue(
+    'useColumnLineageDataForAssets',
+    Object.keys(loaded).length === assetKeys.length,
+  );
 
   return loaded;
 }

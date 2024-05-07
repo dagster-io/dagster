@@ -6,14 +6,12 @@ import {OverviewAssetsRoot} from './OverviewAssetsRoot';
 import {OverviewPageHeader} from './OverviewPageHeader';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
-import {useTrackPageView} from '../app/analytics';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ActivatableButton} from '../runs/RunListTabs';
 
 export const OverviewActivityRoot = () => {
-  useTrackPageView();
   useDocumentTitle('Overview | Activity');
 
   const header = React.useCallback(

@@ -1,6 +1,8 @@
 import {QueryResult} from '@apollo/client';
 import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 'react';
 
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+
 export enum CompletionType {
   SUCCESS = 1,
   ERROR = 2,
@@ -50,32 +52,47 @@ export class Dependency {
   }
 }
 
+type Options = {
+  uid?: string;
+  skip?: boolean;
+};
+
 /** Use this to declare a dependency on an apollo query result */
-export function useBlockTraceOnQueryResult(queryResult: QueryResult<any>, name: string) {
-  const dep = useDependency(name);
+export function useBlockTraceOnQueryResult(
+  queryResult: Pick<QueryResult<any, any>, 'data' | 'error'>,
+  name: string,
+  opts: Options = {},
+) {
+  const dep = useTraceDependency(name, opts);
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;
 
-  useLayoutEffect(() => {
-    if (hasData) {
+  useDangerousRenderEffect(() => {
+    if (hasData && !hasError) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
-  }, [dep, hasData]);
+  }, [dep, hasData, hasError]);
 
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     if (!hasData && hasError) {
       dep.completeDependency(CompletionType.ERROR);
     }
   }, [dep, hasData, hasError]);
 }
 
-export function useDependency(name: string) {
+export function useTraceDependency(name: string, opts: Options = {}) {
   const {addDependency, completeDependency, createDependency} = useContext(TraceContext);
 
-  const dependency = useMemo(() => createDependency(name), [createDependency, name]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const dependency = useMemo(() => createDependency(name), [createDependency, name, opts?.uid]);
+
+  useDangerousRenderEffect(() => {
+    if (!opts?.skip) {
+      addDependency(dependency);
+    }
+  }, [dependency, opts.skip]);
 
   useLayoutEffect(() => {
-    addDependency(dependency);
     return () => {
       // By default cancel a dependency when the component unmounts.
       // Rely on the user of TraceContext to track if the dependency
@@ -92,4 +109,14 @@ export function useDependency(name: string) {
     }),
     [completeDependency, dependency],
   );
+}
+
+export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, opts: Options = {}) {
+  const dep = useTraceDependency(name, opts);
+  useLayoutEffect(() => {
+    if (isSuccessful) {
+      dep.completeDependency(CompletionType.SUCCESS);
+    }
+  }, [dep, isSuccessful, name]);
+  return dep;
 }

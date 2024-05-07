@@ -26,6 +26,7 @@ import {OP_TYPE_SIGNATURE_FRAGMENT, OpTypeSignature} from './OpTypeSignature';
 import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -132,6 +133,7 @@ export const OpsRoot = (props: Props) => {
   const queryResult = useQuery<OpsRootQuery, OpsRootQueryVariables>(OPS_ROOT_QUERY, {
     variables: {repositorySelector},
   });
+  useBlockTraceOnQueryResult(queryResult, 'OpsRootQuery');
 
   return (
     <div style={{flex: 1, minHeight: 0}}>

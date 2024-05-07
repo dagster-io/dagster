@@ -10,6 +10,7 @@ import {
 } from './types/useLatestPartitionEvents.types';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export function useLatestPartitionEvents(
   assetNode: AssetNodeDefinitionFragment,
@@ -18,12 +19,15 @@ export function useLatestPartitionEvents(
 ) {
   const refreshHint = liveData?.lastMaterialization?.timestamp;
 
-  const {data, refetch} = useQuery<
+  const queryResult = useQuery<
     AssetOverviewMetadataEventsQuery,
     AssetOverviewMetadataEventsQueryVariables
   >(ASSET_OVERVIEW_METADATA_EVENTS_QUERY, {
     variables: {assetKey: asAssetKeyInput(assetNode)},
   });
+  useBlockTraceOnQueryResult(queryResult, 'AssetOverviewMetadataEventsQuery');
+
+  const {data, refetch} = queryResult;
 
   React.useEffect(() => {
     refetch();

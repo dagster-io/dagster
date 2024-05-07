@@ -60,6 +60,7 @@ import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses} from '../runs/RunStatuses';
 import {titleForRun} from '../runs/RunUtils';
@@ -168,7 +169,7 @@ export const RunConcurrencyContent = ({
           <Subheading>Run concurrency</Subheading>
           {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
         </Box>
-        <div>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
           limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
           <Mono>dagster.yaml</Mono>. See the{' '}
@@ -180,7 +181,7 @@ export const RunConcurrencyContent = ({
             QueuedRunCoordinator documentation
           </a>{' '}
           for more information.
-        </div>
+        </Box>
       </>
     );
   }
@@ -719,6 +720,7 @@ const ConcurrencyStepsDialog = ({
       skip: !concurrencyKey,
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'ConcurrencyKeyDetailsQuery', {skip: !concurrencyKey});
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
   const refetch = React.useCallback(() => {
@@ -773,6 +775,9 @@ const PendingStepsTable = ({
       skip: !keyInfo.pendingSteps.length,
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'RunsForConcurrencyKeyQuery', {
+    skip: !keyInfo.pendingSteps.length,
+  });
   const statusByRunId: {[id: string]: RunStatus} = {};
   const runs =
     queryResult.data?.pipelineRunsOrError.__typename === 'Runs'
