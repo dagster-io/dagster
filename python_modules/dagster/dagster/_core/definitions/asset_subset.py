@@ -39,7 +39,7 @@ class AssetSubsetSerializer(PydanticModelSerializer):
 
     def before_pack(self, value: "AssetSubset") -> "AssetSubset":
         if value.is_partitioned:
-            return value.copy(update={"value": value.subset_value.to_serializable_subset()})
+            return value.model_copy(update={"value": value.subset_value.to_serializable_subset()})
         return value
 
 
@@ -219,7 +219,7 @@ class ValidAssetSubset(AssetSubset):
     ) -> "ValidAssetSubset":
         """Returns the AssetSubset containing all asset partitions which are not in this AssetSubset."""
         if partitions_def is None:
-            return self.copy(update={"value": not self.bool_value})
+            return self.model_copy(update={"value": not self.bool_value})
         else:
             value = partitions_def.subset_with_partition_keys(
                 self.subset_value.get_partition_keys_not_in_subset(
@@ -228,17 +228,17 @@ class ValidAssetSubset(AssetSubset):
                     dynamic_partitions_store=dynamic_partitions_store,
                 )
             )
-            return self.copy(update={"value": value})
+            return self.model_copy(update={"value": value})
 
     def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
-        return self.copy(update={"value": value})
+        return self.model_copy(update={"value": value})
 
     def __sub__(self, other: AssetSubset) -> "ValidAssetSubset":
         """Returns an AssetSubset representing self.asset_partitions - other.asset_partitions."""
         valid_other = self.get_valid(other)
         if not self.is_partitioned:
-            return self.copy(update={"value": self.bool_value and not valid_other.bool_value})
+            return self.model_copy(update={"value": self.bool_value and not valid_other.bool_value})
         return self._oper(valid_other, operator.sub)
 
     def __and__(self, other: AssetSubset) -> "ValidAssetSubset":
@@ -256,7 +256,7 @@ class ValidAssetSubset(AssetSubset):
         if self._is_compatible_with_subset(other):
             return ValidAssetSubset(asset_key=other.asset_key, value=other.value)
         else:
-            return self.copy(
+            return self.model_copy(
                 # unfortunately, this is the best way to get an empty partitions subset of an unknown
                 # type if you don't have access to the partitions definition
                 update={

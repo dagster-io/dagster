@@ -202,7 +202,7 @@ class LegacyRuleEvaluationContext:
             if not parent_info:
                 continue
             parent_subset = parent_info.true_subset.as_valid(self.partitions_def)
-            subset |= parent_subset.copy(update={"asset_key": self.asset_key})
+            subset |= parent_subset.model_copy(update={"asset_key": self.asset_key})
         return subset
 
     @functools.cached_property
