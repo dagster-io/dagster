@@ -76,6 +76,16 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     ... on TableSchemaMetadataEntry {
       ...TableSchemaForMetadataEntry
     }
+    ... on CodeReferencesMetadataEntry {
+      codeReferences {
+        __typename
+        ... on LocalFileCodeReference {
+          filePath
+          lineNumber
+          label
+        }
+      }
+    }
   }
 
   fragment TableSchemaForMetadataEntry on TableSchemaMetadataEntry {
