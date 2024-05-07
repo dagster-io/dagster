@@ -13,6 +13,13 @@ In this guide, we'll show you a few approaches to defining asset checks, how to 
 
 ## Defining asset checks
 
+There are a few ways you can define an asset check:
+
+- **Separately from the assets the checks target** - In this approach, asset materialization and asset checks are executed in their own separate ops. If using the <PyObject object="multiprocess_executor" />, this allows you to launch runs that will use separate processes to materialize the asset and execute its check.
+- **Together with assets** - In this approach, checks execute in the same op that materializes the asset.
+- **Using an asset check factory** - This approach allows you to define multiple, similar asset checks at once
+- **Loading dbt tests into Dagster** - This approach allows you to model your dbt tests as asset checks
+
 ### Defining checks separately from assets
 
 In this example, we'll demonstrate how to define separate functions for an asset and the corresponding check.
@@ -56,9 +63,7 @@ The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graph
 
 #### Defining multiple checks
 
-Using <PyObject object="multi_asset_check" decorator />, you can define multiple checks that execute in an op without an asset. This approach can help mitigate performance issues for expensive computations.
-
-For example, you're using Dagster to perform some statistical analysis and you want to execute checks against a few of the computed metrics. If you have a metric that's expensive to compute and shared across multiple checks, you can use <PyObject object="multi_asset_check" decorator /> to avoid having to re-compute the metric each time a check is executed.
+Using <PyObject object="multi_asset_check" decorator />, you can define multiple checks that execute in an op without an asset. This approach avoids the overhead of running a separate op for every check and may enable reusing computations across checks.
 
 ```python file=/concepts/assets/asset_checks/multi_asset_check.py
 from typing import Iterable
