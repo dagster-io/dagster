@@ -41,36 +41,18 @@ export const CodeLink = ({codeLinkData}: {codeLinkData: CodeReferencesMetadataEn
                     const codeLink = getCodeReferenceLink(codeLinkProtocol, source);
                     window.open(codeLink, '_blank');
                   }}
+                  icon={<Icon name="open_in_new" />}
                 />
               ))}
             </Menu>
           }
         >
-          <Button
-            icon={<Icon name="expand_more" />}
-            style={{
-              minWidth: 'initial',
-              borderTopLeftRadius: 0,
-              borderBottomLeftRadius: 0,
-              marginLeft: '-1px',
-            }}
-          >
-            Open in editor
-          </Button>
+          <Button rightIcon={<Icon name="expand_more" />}>Open in editor</Button>
         </Popover>
       ) : (
         <ExternalAnchorButton
           icon={<Icon name="open_in_new" />}
           href={getCodeReferenceLink(codeLinkProtocol, sources[0] as SourceLocation)}
-          style={
-            hasMultipleCodeSources
-              ? {
-                  borderTopRightRadius: 0,
-                  borderBottomRightRadius: 0,
-                  borderRight: '0px',
-                }
-              : {}
-          }
         >
           Open {getCodeReferenceEntryLabel(sources[0] as SourceLocation)} in editor
         </ExternalAnchorButton>
