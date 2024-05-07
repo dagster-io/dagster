@@ -10,7 +10,7 @@ from dagster._core.definitions.metadata import IntMetadataValue
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 
-from ...dbt_projects import test_jaffle_shop_path
+from ..dbt_projects import test_jaffle_shop_path
 
 
 def test_no_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
