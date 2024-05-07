@@ -20,7 +20,7 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
 )
-from dagster._model import DagsterModel
+from dagster._model import DagsterModel, InstanceOf
 from dagster._serdes.serdes import (
     PydanticModelSerializer,
     whitelist_for_serdes,
@@ -51,7 +51,9 @@ class AssetSubset(DagsterModel):
     the asset is present or not.
     """
 
-    asset_key: AssetKey
+    # use InstanceOf to tell pydantic to just do an instanceof check instead of the default
+    # costly NamedTuple validation and reconstruction
+    asset_key: InstanceOf[AssetKey]
     value: Union[bool, PartitionsSubset]
 
     @property
