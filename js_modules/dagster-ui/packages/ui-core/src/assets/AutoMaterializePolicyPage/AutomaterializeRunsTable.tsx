@@ -24,6 +24,7 @@ export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
       skip: !runIds.length,
     },
   );
+  const {data, loading, error} = queryResult;
   useBlockTraceOnQueryResult(queryResult, 'AutomaterializeRunsQuery', {skip: !runIds.length});
 
   if (!runIds.length) {
