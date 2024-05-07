@@ -27,6 +27,7 @@ if TYPE_CHECKING:
         AllDepsCondition,
         AndAssetCondition,
         AnyDepsCondition,
+        ChildCondition,
         NotAssetCondition,
         OrAssetCondition,
     )
@@ -57,6 +58,20 @@ class SchedulingCondition(ABC, DagsterModel):
         parts = [str(parent_unique_id), str(index), self.__class__.__name__, self.description]
         return non_secure_md5_hash_str("".join(parts).encode())
 
+    def get_tree_unique_id(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> str:
+        """Returns a unique identifier representing this condtition and all of its children."""
+        node_unique_id = self.get_unique_id(parent_unique_id=parent_unique_id, index=index)
+        parts = [
+            node_unique_id,
+            *[
+                child.get_tree_unique_id(parent_unique_id=node_unique_id, index=i)
+                for i, child in enumerate(self.children)
+            ],
+        ]
+        return non_secure_md5_hash_str("".join(parts).encode())
+
     @abstractmethod
     def evaluate(self, context: "SchedulingContext") -> "SchedulingResult":
         raise NotImplementedError()
@@ -81,6 +96,12 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operators import NotAssetCondition
 
         return NotAssetCondition(operand=self)
+
+    @staticmethod
+    def child_condition() -> "ChildCondition":
+        from .operators import ChildCondition
+
+        return ChildCondition()
 
     @staticmethod
     def any_deps_match(condition: "SchedulingCondition") -> "AnyDepsCondition":

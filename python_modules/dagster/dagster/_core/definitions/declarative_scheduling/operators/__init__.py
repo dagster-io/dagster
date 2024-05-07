@@ -3,6 +3,7 @@ from .boolean_operators import (
     NotAssetCondition as NotAssetCondition,
     OrAssetCondition as OrAssetCondition,
 )
+from .child_condition import ChildCondition as ChildCondition
 from .dep_operators import (
     AllDepsCondition as AllDepsCondition,
     AnyDepsCondition as AnyDepsCondition,
