@@ -10,8 +10,8 @@ run_launcher:
   module: dagster_gcp.cloud_run
   class: CloudRunJobLauncher
   config:
-    project_id: 77834198250
-    cloud_run_job_name: projects/77834198250/locations/northamerica-northeast1/jobs/dagster-job
+    project_id: YOUR_PROJECT_ID
+    cloud_run_job_name: projects/YOUR_PROJECT_ID/locations/northamerica-northeast1/jobs/dagster-job
 
 run_storage:
   module: dagster_postgres.run_storage
