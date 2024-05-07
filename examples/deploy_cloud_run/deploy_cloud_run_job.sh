@@ -3,7 +3,7 @@
 PROJECT_ID=""
 IMAGE_NAME="dagster"
 FOLDER_NAME="dagster"
-REGION="northamerica-northeast1"
+REGION=""
 JOB_NAME="dagster-job"
 
 echo "Building Docker image..."
