@@ -90,8 +90,8 @@
     "statusCode": 302
   },
   {
-    "source": "/overview", 
-    "destination": "/concepts", 
+    "source": "/overview",
+    "destination": "/concepts",
     "statusCode": 302
   },
   {
@@ -1083,5 +1083,10 @@
       "source": "/dagster-cloud",
       "destination": "/dagster-plus",
       "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster-pipes/:slug*",
+    "destination": "/concepts/dagster-pipes/:slug*",
+    "statusCode": 302
   }
 ]
