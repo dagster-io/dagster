@@ -140,7 +140,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
                     latest_asset_record = (
-                        data_time_queryer.instance_queryer.get_latest_asset_partition_record(
+                        data_time_queryer.instance_queryer.get_latest_persistence_record(
                             AssetKeyPartitionKey(AssetKey(ak))
                         )
                     )

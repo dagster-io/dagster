@@ -198,7 +198,7 @@ class CachingDataTimeResolver:
                 before_cursor = None
 
             if before_cursor is not None:
-                parent_record = self._instance_queryer.get_latest_asset_partition_record(
+                parent_record = self._instance_queryer.get_latest_persistence_record(
                     AssetKeyPartitionKey(parent_key), before_cursor=before_cursor
                 )
                 if parent_record is not None:
@@ -493,7 +493,7 @@ class CachingDataTimeResolver:
     def get_current_data_time(
         self, asset_key: AssetKey, current_time: datetime.datetime
     ) -> Optional[datetime.datetime]:
-        latest_record = self.instance_queryer.get_latest_asset_partition_record(
+        latest_record = self.instance_queryer.get_latest_persistence_record(
             AssetKeyPartitionKey(asset_key)
         )
         if latest_record is None:
@@ -509,7 +509,7 @@ class CachingDataTimeResolver:
     def _get_source_data_time(
         self, asset_key: AssetKey, current_time: datetime.datetime
     ) -> Optional[datetime.datetime]:
-        latest_record = self.instance_queryer.get_latest_asset_partition_record(
+        latest_record = self.instance_queryer.get_latest_persistence_record(
             AssetKeyPartitionKey(asset_key)
         )
         if latest_record is None:
@@ -518,7 +518,7 @@ class CachingDataTimeResolver:
         if observation is None:
             check.failed(
                 "when invoked on a source asset, "
-                "get_latest_asset_partition_record should always return an "
+                "get_latest_persistence_record should always return an "
                 "observation"
             )
 
