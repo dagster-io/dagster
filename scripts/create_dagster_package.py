@@ -1,4 +1,6 @@
+# pyright: reportUnnecessaryTypeIgnoreComment=false
 # ruff: noqa: T201
+
 import os
 
 import click
