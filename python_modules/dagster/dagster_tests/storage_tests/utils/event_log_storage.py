@@ -108,8 +108,6 @@ from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
 from dagster._utils.concurrency import ConcurrencySlotStatus
 
-TEST_TIMEOUT = 5
-
 # py36 & 37 list.append not hashable
 
 
@@ -484,6 +482,9 @@ class TestEventLogStorage:
 
     def set_default_op_concurrency(self, instance, storage, limit):
         pass
+
+    def watch_timeout(self):
+        return 5
 
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage: EventLogStorage):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
@@ -1048,7 +1049,7 @@ class TestEventLogStorage:
             storage.store_event(event)
 
         start = time.time()
-        while len(event_list) < len(events) and time.time() - start < TEST_TIMEOUT:
+        while len(event_list) < len(events) and time.time() - start < self.watch_timeout():
             time.sleep(0.01)
 
         assert len(event_list) == len(events)
@@ -1077,7 +1078,7 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             start = time.time()
-            while len(event_list) < len(events_two) and time.time() - start < TEST_TIMEOUT:
+            while len(event_list) < len(events_two) and time.time() - start < self.watch_timeout():
                 time.sleep(0.01)
 
             assert len(event_list) == len(events_two)
@@ -1110,7 +1111,7 @@ class TestEventLogStorage:
             start = time.time()
             while (
                 len(event_list_one) < len(events_one) or len(event_list_two) < len(events_two)
-            ) and time.time() - start < TEST_TIMEOUT:
+            ) and time.time() - start < self.watch_timeout():
                 pass
 
             assert len(event_list_one) == len(events_one)
@@ -2138,7 +2139,7 @@ class TestEventLogStorage:
             storage.store_event(event)
 
         start = time.time()
-        while len(event_list) < len(safe_events) and time.time() - start < TEST_TIMEOUT:
+        while len(event_list) < len(safe_events) and time.time() - start < self.watch_timeout():
             time.sleep(0.01)
 
         assert len(event_list) == len(safe_events)
@@ -2177,7 +2178,7 @@ class TestEventLogStorage:
             storage.store_event(event)
 
         start = time.time()
-        while len(event_list) < len(safe_events) and time.time() - start < TEST_TIMEOUT:
+        while len(event_list) < len(safe_events) and time.time() - start < self.watch_timeout():
             time.sleep(0.01)
 
         assert len(event_list) == len(safe_events)
