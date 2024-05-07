@@ -102,7 +102,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
       key="code-link"
     >
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        Code link protocol
+        Editor link protocol
         <Tooltip
           content={
             <>
