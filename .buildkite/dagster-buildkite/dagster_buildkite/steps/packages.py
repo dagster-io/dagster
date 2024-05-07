@@ -399,7 +399,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "definitions_tests_pendulum_1",
             "definitions_tests_pendulum_2",
             "execution_tests",
-            "execution_tests-context_tests",
+            "execution_tests_context_tests",
             "general_tests",
             "general_tests_old_protobuf",
             "launcher_tests",
