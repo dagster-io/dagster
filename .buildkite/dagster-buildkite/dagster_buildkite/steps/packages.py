@@ -367,6 +367,17 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
     return []
 
 
+# execution_test_folders = [
+#     "execution_tests-context_tests",
+#     "execution_tests-dynamic_tests",
+#     "execution_tests-engine_tests",
+#     "execution_tests-execute_job_tests",
+#     "execution_tests-execution_plan_tests",
+#     "execution_tests-misc_execution_tests",
+#     "execution_tests-pipes_tests",
+#     "execution_tests-versioning_tests",
+# ]
+
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
@@ -378,30 +389,32 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         env_vars=["AWS_ACCOUNT_ID"],
         pytest_tox_factors=[
             "api_tests",
+            "asset_defs_tests",
             "cli_tests",
             "core_tests_pydantic1",
             "core_tests_pydantic2",
-            "model_tests_pydantic1",
-            "model_tests_pydantic2",
-            "storage_tests_sqlalchemy_1_3",
-            "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests",
             "definitions_tests_pendulum_1",
             "definitions_tests_pendulum_2",
+            "execution_tests",
+            "execution_tests-context_tests",
             "general_tests",
             "general_tests_old_protobuf",
+            "launcher_tests",
+            "logging_tests",
+            "model_tests_pydantic1",
+            "model_tests_pydantic2",
             "scheduler_tests",
             "scheduler_tests_pendulum_1",
             "scheduler_tests_pendulum_2",
-            "execution_tests",
             "storage_tests",
+            "storage_tests_sqlalchemy_1_3",
+            "storage_tests_sqlalchemy_1_4",
             "type_signature_tests",
-            "asset_defs_tests",
-            "launcher_tests",
-            "logging_tests",
         ],
+        # + [f"execution_tests-{folder}" for folder in execution_test_folders],
         unsupported_python_versions=_unsupported_dagster_python_versions,
     ),
     PackageSpec(
