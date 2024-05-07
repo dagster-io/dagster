@@ -43,7 +43,7 @@ import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {DimensionPartitionKeys, SensorType} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -73,12 +73,12 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     queryKey: SELECTED_PARTITION_QUERY_STRING_KEY,
   });
 
-  const skipQuery = !!_selectedEvaluation || !!selectedPartition;
+  const skip = !!_selectedEvaluation || !!selectedPartition;
 
   // We receive the selected evaluation ID and retrieve it here because the middle panel
   // may be displaying an evaluation that was not retrieved at the page level for the
   // left panel, e.g. as we paginate away from it, we don't want to lose it.
-  const {data, loading, error} = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
+  const queryResult = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
     GET_EVALUATIONS_QUERY,
     {
       variables: {
@@ -86,11 +86,11 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
         cursor: selectedEvaluationId ? `${selectedEvaluationId + 1}` : undefined,
         limit: 2,
       },
-      skip: !!_selectedEvaluation || !!selectedPartition,
+      skip,
     },
   );
-
-  useBlockTraceUntilTrue('GetEvaluationsQuery<Single>', !!data || skipQuery);
+  const {data, loading, error} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'GetEvaluationsQuery<Single>', {skip});
 
   const {data: specificPartitionData, previousData: previousSpecificPartitionData} = useQuery<
     GetEvaluationsSpecificPartitionQuery,

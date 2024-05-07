@@ -52,12 +52,18 @@ export class Dependency {
   }
 }
 
+type Options = {
+  uid?: string;
+  skip?: boolean;
+};
+
 /** Use this to declare a dependency on an apollo query result */
 export function useBlockTraceOnQueryResult(
   queryResult: Pick<QueryResult<any, any>, 'data' | 'error'>,
   name: string,
+  opts: Options = {},
 ) {
-  const dep = useTraceDependency(name);
+  const dep = useTraceDependency(name, opts);
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;
 
@@ -74,15 +80,17 @@ export function useBlockTraceOnQueryResult(
   }, [dep, hasData, hasError]);
 }
 
-export function useTraceDependency(name: string, uid: any = '') {
+export function useTraceDependency(name: string, opts: Options = {}) {
   const {addDependency, completeDependency, createDependency} = useContext(TraceContext);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dependency = useMemo(() => createDependency(name), [createDependency, name, uid]);
+  const dependency = useMemo(() => createDependency(name), [createDependency, name, opts?.uid]);
 
   useDangerousRenderEffect(() => {
-    addDependency(dependency);
-  }, [dependency]);
+    if (!opts?.skip) {
+      addDependency(dependency);
+    }
+  }, [dependency, opts.skip]);
 
   useLayoutEffect(() => {
     return () => {
@@ -103,8 +111,8 @@ export function useTraceDependency(name: string, uid: any = '') {
   );
 }
 
-export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, uid: any = '') {
-  const dep = useTraceDependency(name, uid);
+export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, opts: Options = {}) {
+  const dep = useTraceDependency(name, opts);
   useLayoutEffect(() => {
     if (isSuccessful) {
       dep.completeDependency(CompletionType.SUCCESS);

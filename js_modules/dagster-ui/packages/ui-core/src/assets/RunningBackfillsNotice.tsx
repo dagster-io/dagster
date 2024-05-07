@@ -6,11 +6,14 @@ import {
   RunningBackfillsNoticeQuery,
   RunningBackfillsNoticeQueryVariables,
 } from './types/RunningBackfillsNotice.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const RunningBackfillsNotice = ({partitionSetName}: {partitionSetName: string}) => {
-  const {data} = useQuery<RunningBackfillsNoticeQuery, RunningBackfillsNoticeQueryVariables>(
+  const queryResult = useQuery<RunningBackfillsNoticeQuery, RunningBackfillsNoticeQueryVariables>(
     RUNNING_BACKFILLS_NOTICE_QUERY,
   );
+  useBlockTraceOnQueryResult(queryResult, 'RunningBackfillsNoticeQuery');
+  const {data} = queryResult;
 
   const runningBackfills =
     data?.partitionBackfillsOrError.__typename === 'PartitionBackfills'

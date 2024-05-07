@@ -12,6 +12,7 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 import {ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 /** Note: This hook paginates through an asset's events, optionally beginning at ?asOf=.
  * This could re-use useCursorPaginatedQuery in the future if we made the API use a `cursor`
@@ -37,6 +38,7 @@ export function usePaginatedAssetEvents(
 
   const client = useApolloClient();
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     setObservations([]);
@@ -75,6 +77,7 @@ export function usePaginatedAssetEvents(
         : 0;
       const minToKeep = Math.max(minMatTimestamp, minObsTimestamp);
 
+      setLoaded(true);
       setMaterializations((loaded) =>
         uniqBy(
           [...loaded, ...materializations.filter((m) => Number(m.timestamp) >= minToKeep)],
@@ -90,6 +93,8 @@ export function usePaginatedAssetEvents(
     },
     [assetKey, client, initialAsOf],
   );
+
+  useBlockTraceUntilTrue('AssetEventsQuery', loaded);
 
   return useMemo(() => {
     const all = [...materializations, ...observations];
