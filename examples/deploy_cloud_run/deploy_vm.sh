@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VM_NAME="dagster-vm"
-ZONE="northamerica-northeast1-a"
+ZONE="" # add your zone
 PROJECT_ID="" # add your project id
 LOCAL_FILE_PATH="./vm_config/*"
 DAGSTER_GCP_PATH="../../python_modules/libraries/dagster-gcp/*"
