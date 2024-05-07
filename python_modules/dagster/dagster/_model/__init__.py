@@ -43,3 +43,10 @@ class DagsterModel(BaseModel):
             return super().model_copy(update=update)  # type: ignore
         else:
             return super().copy(update=update)
+
+    @classmethod
+    def model_construct(cls, **kwargs: Any) -> Self:
+        if USING_PYDANTIC_2:
+            return super().model_construct(**kwargs)  # type: ignore
+        else:
+            return super().construct(**kwargs)
