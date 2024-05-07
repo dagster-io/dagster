@@ -191,12 +191,11 @@ class UnresolvedAssetJobDefinition(
             ) from e
 
         # Require that all assets in the job have the same backfill policy
-        backfill_policies = {
-            job_asset_graph.get(k).backfill_policy for k in job_asset_graph.executable_asset_keys
-        }
+        executable_nodes = {job_asset_graph.get(k) for k in job_asset_graph.executable_asset_keys}
+        backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
         if len(backfill_policies) > 1:
             raise DagsterInvalidDefinitionError(
-                f"Asset job {self.name} materializes asset with varying BackfillPolicies. All assets"
+                f"Asset job {self.name} materializes assets with varying BackfillPolicies. All assets"
                 " in a job must share the same BackfillPolicy."
             )
 
