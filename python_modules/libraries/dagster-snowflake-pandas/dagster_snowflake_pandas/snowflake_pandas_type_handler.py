@@ -129,9 +129,13 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         )
 
         return {
-            # write_pandas truncates the table, so this dataframe represents the entire contents
-            # of the table after the write (we don't just overwrite a partition's worth of data)
-            **TableMetadataSet(row_count=obj.shape[0]),
+            # output object may be a slice/partition, so we output different metadata keys based on
+            # whether this output represents an entire table or just a slice/partition
+            **(
+                TableMetadataSet(partition_row_count=obj.shape[0])
+                if context.has_partition_key
+                else TableMetadataSet(row_count=obj.shape[0])
+            ),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(
                     columns=[

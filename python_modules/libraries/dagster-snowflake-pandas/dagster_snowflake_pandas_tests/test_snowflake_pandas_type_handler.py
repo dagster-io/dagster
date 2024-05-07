@@ -1,7 +1,7 @@
 import os
 import uuid
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping
+from typing import Any, Iterator, Mapping, cast
 from unittest.mock import MagicMock, patch
 
 import pandas
@@ -30,6 +30,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
@@ -323,12 +324,19 @@ def test_time_window_partitioned_asset(io_manager):
         snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
-        materialize(
+        result = materialize(
             [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
+        materialization = next(
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        )
+        meta = materialization.materialization.metadata["dagster/partition_row_count"]
+        assert cast(IntMetadataValue, meta).value_inner == 3
 
         with snowflake_conn.get_connection() as conn:
             out_df = (

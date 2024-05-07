@@ -65,7 +65,6 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                     if context.has_partition_key
                     else TableMetadataSet(row_count=obj.shape[0])
                 ),
-                **TableMetadataSet(row_count=obj.shape[0]),
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(
                         columns=[
