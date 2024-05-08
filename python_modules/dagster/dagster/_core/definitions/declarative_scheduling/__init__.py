@@ -1,3 +1,4 @@
+from .legacy import RuleCondition as RuleCondition
 from .legacy.asset_condition import AssetCondition as AssetCondition
 from .operands import (
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
@@ -12,3 +13,9 @@ from .operators import (
     OrAssetCondition as OrAssetCondition,
 )
 from .scheduling_condition import SchedulingCondition as SchedulingCondition
+from .serialized_objects import (
+    AssetConditionEvaluationState as AssetConditionEvaluationState,
+    AssetConditionSnapshot as AssetConditionSnapshot,
+    AssetSubsetWithMetadata as AssetSubsetWithMetadata,
+    HistoricalAllPartitionsSubsetSentinel as HistoricalAllPartitionsSubsetSentinel,
+)
