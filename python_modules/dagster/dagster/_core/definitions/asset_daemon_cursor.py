@@ -24,13 +24,11 @@ from dagster._serdes.serdes import (
 )
 
 from .base_asset_graph import BaseAssetGraph
-from .declarative_scheduling.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionEvaluationState,
-)
 
 if TYPE_CHECKING:
     from .declarative_scheduling.serialized_objects import (
+        AssetConditionEvaluation,
+        AssetConditionEvaluationState,
         AssetConditionSnapshot,
     )
 
