@@ -21,6 +21,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
@@ -88,11 +89,16 @@ export const BackfillRowLoader = (props: {
     },
   );
 
+  const isCountsQuery = (numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD;
+
   // Note: We switch queries based on how many partitions there are to display,
   // because the detail is nice for small backfills but breaks for 100k+ partitions.
   //
-  const [statusQueryFn, statusQueryResult] =
-    (numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? statusCounts : statusDetails;
+  const [statusQueryFn, statusQueryResult] = isCountsQuery ? statusCounts : statusDetails;
+  useBlockTraceOnQueryResult(
+    statusQueryResult,
+    isCountsQuery ? 'SingleBackfillCountsQuery' : 'SingleBackfillQuery',
+  );
 
   useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
@@ -426,8 +432,6 @@ export const BackfillStatusTag = ({
       return <Tag intent="warning">Incomplete</Tag>;
     case BulkActionStatus.CANCELING:
       return <Tag>Canceling</Tag>;
-    case BulkActionStatus.CANCELED:
-      return <Tag>Canceled</Tag>;
   }
   return <span />;
 };

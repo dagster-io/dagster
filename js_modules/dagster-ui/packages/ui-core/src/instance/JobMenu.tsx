@@ -1,12 +1,12 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import {useCallback} from 'react';
 
 import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 import {ReexecutionStrategy} from '../graphql/types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
 import {RunTimeFragment} from '../runs/types/RunUtils.types';
 import {useJobReexecution} from '../runs/useJobReExecution';
@@ -41,16 +41,16 @@ export const JobMenu = (props: Props) => {
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
-  const [fetchHasExecutionPlan, {data}] = useLazyQuery<
-    RunReExecutionQuery,
-    RunReExecutionQueryVariables
-  >(RUN_RE_EXECUTION_QUERY);
-
-  const fetchIfPossible = useCallback(() => {
-    if (lastRun?.id) {
-      fetchHasExecutionPlan({variables: {runId: lastRun.id}});
-    }
-  }, [lastRun, fetchHasExecutionPlan]);
+  const skip = !lastRun?.id;
+  const queryResult = useQuery<RunReExecutionQuery, RunReExecutionQueryVariables>(
+    RUN_RE_EXECUTION_QUERY,
+    {
+      skip,
+      variables: {runId: lastRun?.id ?? ''},
+    },
+  );
+  useBlockTraceOnQueryResult(queryResult, 'RunReExecutionQuery');
+  const {data} = queryResult;
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const executeItem =
