@@ -294,9 +294,7 @@ After changing the deployment type, you will need to update your code locations'
   - [Kubernetes](/dagster-plus/deployment/agents/kubernetes/configuration-reference#per-location-configuration)
   - [Docker](/dagster-plus/deployment/agents/docker/configuration-reference#docker-agent-configuration-reference)
 
-- Replace your current build process and use it to publish new images for your code locations and update your deployment with the new configurations.
-
-  - [Step 4. Configure CI/CD for your project](/dagster-plus/getting-started#step-4-configure-cicd-for-your-project)
+- **Update your build process** to publish a new container image and configuration for each code location. To use Dagster's CI/CD process, refer to [Step 4 of the Dagster+ getting started guide](/dagster-plus/getting-started#step-4-configure-cicd-for-your-project).
 
 - **Replace Serverless-only features with their Hybrid equivalents**:
    - [**Lifecycle hooks**](#disabling-pex-based-deploys) - To customize a code location's runtime environment, customize  the code location's [`Dockerfile`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) to build its image 
