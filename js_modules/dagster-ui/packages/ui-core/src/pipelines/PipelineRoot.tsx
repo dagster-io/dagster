@@ -1,5 +1,5 @@
 import {useContext} from 'react';
-import {Redirect, RouteComponentProps, Switch} from 'react-router-dom';
+import {Redirect, Switch} from 'react-router-dom';
 
 import {JobFeatureContext} from './JobFeatureContext';
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
@@ -64,9 +64,7 @@ export const PipelineRoot = (props: Props) => {
             '/locations/:repoPath/pipelines/:pipelinePath/runs/:runId',
             '/locations/:repoPath/jobs/:pipelinePath/runs/:runId',
           ]}
-          render={(props: RouteComponentProps<{runId: string}>) => (
-            <Redirect to={`/runs/${props.match.params.runId}`} />
-          )}
+          render={(props) => <Redirect to={`/runs/${props.match.params.runId}`} />}
         />
         <Route
           path={[
