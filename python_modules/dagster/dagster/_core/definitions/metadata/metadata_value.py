@@ -20,9 +20,13 @@ from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._model import DagsterModel
-from dagster._serdes import whitelist_for_serdes
+from dagster._serdes import pack_value, whitelist_for_serdes
 from dagster._serdes.serdes import (
+    FieldSerializer,
+    JsonSerializableValue,
     PackableValue,
+    UnpackContext,
+    WhitelistMap,
 )
 
 from .table import (  # re-exported
@@ -609,7 +613,31 @@ class NotebookMetadataValue(DagsterModel, MetadataValue[str]):
         return self.path_inner
 
 
-@whitelist_for_serdes(storage_name="JsonMetadataEntryData")
+class JsonDataFieldSerializer(FieldSerializer):
+    def pack(
+        self,
+        mapping: JsonSerializableValue,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> JsonSerializableValue:
+        # return the json serializable data field as is
+        return mapping
+
+    def unpack(
+        self,
+        unpacked_value: JsonSerializableValue,
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ) -> PackableValue:
+        # erase any serdes objects that were stored here in earlier versions and
+        # return plain json serializable data
+        return pack_value(unpacked_value, whitelist_map=whitelist_map)
+
+
+@whitelist_for_serdes(
+    storage_name="JsonMetadataEntryData",
+    field_serializers={"data": JsonDataFieldSerializer},
+)
 class JsonMetadataValue(DagsterModel, MetadataValue[Union[Sequence[Any], Mapping[str, Any]]]):
     """Container class for JSON metadata entry data.
 
