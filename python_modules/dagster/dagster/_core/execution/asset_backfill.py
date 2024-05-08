@@ -1283,8 +1283,10 @@ def execute_asset_backfill_iteration_inner(
     logger.info(
         f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
     )
-    not_requested_str = "\n".join(
-        [f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons]
+    not_requested_str = (
+        "\n".join([f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons])
+        if len(not_requested_and_reasons) > 0
+        else "None"
     )
     logger.info(
         f"The following assets were considered for materialization but not requested:\n {not_requested_str}"
@@ -1386,6 +1388,11 @@ def can_run_with_parent(
         return (
             False,
             f"parent {parent_node.key} and {candidate_node.key} are in different code locations",
+        )
+    if parent_node.partitions_def != candidate_node.partitions_def:
+        return (
+            False,
+            f"parent {parent_node.key} and {candidate_node.key} have different partitions definitions",
         )
     if (
         parent.partition_key not in asset_partitions_to_request_map[parent.asset_key]
