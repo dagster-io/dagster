@@ -40,7 +40,7 @@ from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
     DagsterInvalidDefinitionError,
 )
-from dagster._core.event_api import AssetRecordsFilter, EventRecordsFilter
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
@@ -56,6 +56,8 @@ if TYPE_CHECKING:
     from dagster._core.storage.event_log import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
+RECORD_BATCH_SIZE = 1000
 
 
 class CachingInstanceQueryer(DynamicPartitionsStore):
@@ -232,18 +234,21 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 return None
             return asset_record.asset_entry.last_materialization_record
 
-        records = self.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=self._event_type_for_key(asset_partition.asset_key),
-                asset_key=asset_partition.asset_key,
-                asset_partitions=(
-                    [asset_partition.partition_key] if asset_partition.partition_key else None
-                ),
-                before_cursor=before_cursor,
+        records_filter = AssetRecordsFilter(
+            asset_key=asset_partition.asset_key,
+            asset_partitions=(
+                [asset_partition.partition_key] if asset_partition.partition_key else None
             ),
-            ascending=False,
-            limit=1,
+            before_storage_id=before_cursor,
         )
+        if self.asset_graph.get(asset_partition.asset_key).is_observable:
+            records = self.instance.fetch_observations(
+                records_filter, ascending=False, limit=1
+            ).records
+        else:
+            records = self.instance.fetch_materializations(
+                records_filter, ascending=False, limit=1
+            ).records
         return next(iter(records), None)
 
     @cached_method
@@ -373,17 +378,21 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         after_cursor: Optional[int],
         data_version: Optional[DataVersion],
     ) -> Optional["EventLogRecord"]:
-        for record in self.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_OBSERVATION,
-                asset_key=asset_key,
-                after_cursor=after_cursor,
-            ),
-            ascending=True,
-        ):
-            record_version = extract_data_version_from_entry(record.event_log_entry)
-            if record_version is not None and record_version != data_version:
-                return record
+        has_more = True
+        cursor = None
+        while has_more:
+            result = self.instance.fetch_observations(
+                AssetRecordsFilter(asset_key=asset_key, after_storage_id=after_cursor),
+                limit=RECORD_BATCH_SIZE,
+                cursor=cursor,
+                ascending=True,
+            )
+            has_more = result.has_more
+            cursor = result.cursor
+            for record in result.records:
+                record_version = extract_data_version_from_entry(record.event_log_entry)
+                if record_version is not None and record_version != data_version:
+                    return record
 
         # no records found with a new data version
         return None
