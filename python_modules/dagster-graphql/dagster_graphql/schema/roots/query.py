@@ -938,7 +938,9 @@ class GrapheneQuery(graphene.ObjectType):
                 else []
             )
         else:
-            results = get_asset_nodes(graphene_info)
+            results = get_asset_nodes(
+                graphene_info, resolved_asset_keys if not use_all_asset_keys else None
+            )
 
         # Filter down to requested asset keys
         results = [
@@ -1074,7 +1076,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        results = get_asset_nodes(graphene_info)
+        results = get_asset_nodes(graphene_info, asset_keys)
 
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset

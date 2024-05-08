@@ -177,7 +177,7 @@ def get_assets_latest_info(
     if not asset_keys:
         return []
 
-    asset_nodes = get_asset_nodes_by_asset_key(graphene_info, asset_keys)
+    asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
 
     asset_records = asset_record_loader.get_asset_records(asset_keys)
 
