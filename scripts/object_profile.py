@@ -4,18 +4,20 @@ import subprocess
 import timeit
 from tempfile import TemporaryDirectory
 
-import memray  # type: ignore
-from dagster import AssetKey
-
 # This script provides a way to measure the performance of instantiating an object.
 #
 # An example of when this is useful is measuring the impact of changing the backing class
 # for a model object from a NamedTuple to a dataclass or pydantic model (DagsterModel).
+import memray  # type: ignore
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_subset import AssetSubset
+
+fixed_key = AssetKey("asset_key")
 
 
 def make_one(i: int = 0):
     """Create an instance of the object you want to profile."""
-    return AssetKey(f"key_{i}")
+    return AssetSubset(asset_key=fixed_key, value=False)
 
 
 def make_n(n: int):
