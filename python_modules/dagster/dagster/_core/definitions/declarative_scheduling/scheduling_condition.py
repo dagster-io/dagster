@@ -19,6 +19,7 @@ from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
     from .operands import (
+        FailedSchedulingCondition,
         InLatestTimeWindowCondition,
         InProgressSchedulingCondition,
         MissingSchedulingCondition,
@@ -119,6 +120,13 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import InProgressSchedulingCondition
 
         return InProgressSchedulingCondition()
+
+    @staticmethod
+    def failed() -> "FailedSchedulingCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if its latest run failed."""
+        from .operands import FailedSchedulingCondition
+
+        return FailedSchedulingCondition()
 
     @staticmethod
     def updated_since_cron(
