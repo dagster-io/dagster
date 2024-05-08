@@ -421,10 +421,9 @@ class JobDefinition(IHasInternalInit):
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 
-        backfill_policies = {
-            self.asset_layer.get(k).backfill_policy for k in self.asset_layer.executable_asset_keys
-        }
-        if not self.name.startswith(ASSET_BASE_JOB_PREFIX) and not backfill_policies:
+        executable_nodes = {self.asset_layer.get(k) for k in self.asset_layer.executable_asset_keys}
+        backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
+        if not self.name.startswith(ASSET_BASE_JOB_PREFIX):
             check.invariant(
                 len(backfill_policies) <= 1,
                 "All assets in non-asset base job a job must have the same backfill policy.",
