@@ -142,8 +142,8 @@ class AssetDaemonCursor:
 def backcompat_deserialize_asset_daemon_cursor_str(
     cursor_str: str, asset_graph: Optional[BaseAssetGraph], default_evaluation_id: int
 ) -> AssetDaemonCursor:
-    """This serves as a backcompat layer for deserializing the old cursor format. Some information
-    is impossible to fully recover, this will recover enough to continue operating as normal.
+    """This serves as a backcompat layer for deserializing the old cursor format. Will only recover
+    the previous evaluation id.
     """
     data = json.loads(cursor_str)
 
