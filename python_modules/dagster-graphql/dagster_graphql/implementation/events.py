@@ -23,6 +23,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.metadata import (
+    CodeReferencesMetadataValue,
     DagsterRunMetadataValue,
     MetadataValue,
     TableColumnLineageMetadataValue,
@@ -36,6 +37,11 @@ from dagster._core.events import (
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.outputs import StepOutputData
+
+from dagster_graphql.schema.metadata import (
+    GrapheneCodeReferencesMetadataEntry,
+    GrapheneLocalFileCodeReference,
+)
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -151,6 +157,18 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                 jobName=value.job_name,
                 repositoryName=value.repository_name,
                 locationName=value.location_name,
+            )
+        elif isinstance(value, CodeReferencesMetadataValue):
+            yield GrapheneCodeReferencesMetadataEntry(
+                label=key,
+                code_references=[
+                    GrapheneLocalFileCodeReference(
+                        filePath=reference.file_path,
+                        lineNumber=reference.line_number,
+                        label=reference.label,
+                    )
+                    for reference in value.code_references
+                ],
             )
         elif isinstance(value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(
