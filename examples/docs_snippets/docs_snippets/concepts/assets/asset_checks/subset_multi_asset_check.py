@@ -23,12 +23,12 @@ def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]
         in context.selected_asset_check_keys
     ):
         yield AssetCheckResult(
-            passed=True, metadata={"foo": "bar"}, name="asset_check_one"
+            passed=True, metadata={"foo": "bar"}, check_name="asset_check_one"
         )
     if (
         AssetCheckKey(AssetKey("asset_two"), "asset_check_two")
         in context.selected_asset_check_keys
     ):
         yield AssetCheckResult(
-            passed=True, metadata={"foo": "bar"}, name="asset_check_two"
+            passed=True, metadata={"foo": "bar"}, check_name="asset_check_two"
         )
