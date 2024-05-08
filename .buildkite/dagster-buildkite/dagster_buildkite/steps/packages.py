@@ -370,7 +370,7 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
 
 def test_subfolders(tests_folder_name: str) -> Iterable[str]:
     tests_path = (
-        Path(__file__)
+        Path(__file__).parent
         / Path("../../../python_modules/dagster/dagster_tests/")
         / Path(tests_folder_name)
     )
