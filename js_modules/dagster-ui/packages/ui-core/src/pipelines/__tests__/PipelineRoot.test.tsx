@@ -96,13 +96,15 @@ describe('PipelineRoot', () => {
     };
 
     render(
-      <JobFeatureProvider>
-        <TestPermissionsProvider locationOverrides={locationPermissions}>
-          <MemoryRouter initialEntries={[`${path}/playground`]}>
-            <PipelineRoot repoAddress={repoAddress} />
-          </MemoryRouter>
-        </TestPermissionsProvider>
-      </JobFeatureProvider>,
+      <RecoilRoot>
+        <JobFeatureProvider>
+          <TestPermissionsProvider locationOverrides={locationPermissions}>
+            <MemoryRouter initialEntries={[`${path}/playground`]}>
+              <PipelineRoot repoAddress={repoAddress} />
+            </MemoryRouter>
+          </TestPermissionsProvider>
+        </JobFeatureProvider>
+      </RecoilRoot>,
     );
 
     const overviewDummy = await screen.findByText(/pipeline or job disambiguation placeholder/i);
