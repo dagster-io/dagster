@@ -80,6 +80,7 @@ export const BackfillRowLoader = (props: {
       notifyOnNetworkStatusChange: true,
     },
   );
+  useBlockTraceOnQueryResult(statusDetails[1], 'SingleBackfillQuery');
 
   const statusCounts = useLazyQuery<SingleBackfillCountsQuery, SingleBackfillCountsQueryVariables>(
     SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
@@ -88,17 +89,13 @@ export const BackfillRowLoader = (props: {
       notifyOnNetworkStatusChange: true,
     },
   );
-
-  const isCountsQuery = (numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD;
+  useBlockTraceOnQueryResult(statusCounts[1], 'SingleBackfillCountsQuery');
 
   // Note: We switch queries based on how many partitions there are to display,
   // because the detail is nice for small backfills but breaks for 100k+ partitions.
   //
-  const [statusQueryFn, statusQueryResult] = isCountsQuery ? statusCounts : statusDetails;
-  useBlockTraceOnQueryResult(
-    statusQueryResult,
-    isCountsQuery ? 'SingleBackfillCountsQuery' : 'SingleBackfillQuery',
-  );
+  const [statusQueryFn, statusQueryResult] =
+    (numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? statusCounts : statusDetails;
 
   useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
