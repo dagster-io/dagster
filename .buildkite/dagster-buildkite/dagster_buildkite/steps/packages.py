@@ -375,6 +375,11 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
         / Path(tests_folder_name)
     )
     for subfolder in tests_path.iterdir():
+        if subfolder.suffix == ".py" and subfolder.stem != "__init__":
+            raise Exception(
+                f"If you are splitting a test folder into parallel subfolders "
+                f"there should be no python files in the root of the folder. Found {subfolder}."
+            )
         if subfolder.is_dir():
             yield subfolder.name
 
@@ -406,14 +411,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "definitions_tests",
             "definitions_tests_pendulum_1",
             "definitions_tests_pendulum_2",
-            # "execution_tests__context_tests",
-            # "execution_tests__dynamic_tests",
-            # "execution_tests__engine_tests",
-            # "execution_tests__execute_job_tests",
-            # "execution_tests__execution_plan_tests",
-            # "execution_tests__misc_execution_tests",
-            # "execution_tests__pipes_tests",
-            # "execution_tests__versioning_tests",
             "general_tests",
             "general_tests_old_protobuf",
             "launcher_tests",
@@ -429,7 +426,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "type_signature_tests",
         ]
         + tox_factors_for_folder("execution_tests"),
-        # + [f"execution_tests-{folder}" for folder in execution_test_folders],
         unsupported_python_versions=_unsupported_dagster_python_versions,
     ),
     PackageSpec(
