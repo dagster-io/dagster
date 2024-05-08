@@ -1,5 +1,6 @@
 from dagster import (
     AssetKey,
+    FloatMetadataValue,
     GraphDefinition,
     IntMetadataValue,
     JsonMetadataValue,
@@ -105,3 +106,8 @@ def test_table_schema_metadata_value():
 def test_json_metadata_value():
     assert JsonMetadataValue({"a": "b"}).data == {"a": "b"}
     assert JsonMetadataValue({"a": "b"}).value == {"a": "b"}
+
+
+def test_serdes_json_metadata():
+    val = JsonMetadataValue({"float": FloatMetadataValue(1.0)})
+    assert deserialize_value(serialize_value(val)) == val

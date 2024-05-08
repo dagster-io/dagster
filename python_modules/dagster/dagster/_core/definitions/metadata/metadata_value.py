@@ -15,14 +15,15 @@ from pydantic import Field
 from typing_extensions import Self, TypeVar
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.errors import SerializationError
 from dagster._serdes.serdes import (
     PackableValue,
+    serialize_value,
 )
 
 from .table import (  # re-exported
@@ -622,9 +623,9 @@ class JsonMetadataValue(DagsterModel, MetadataValue[Union[Sequence[Any], Mapping
     def __init__(self, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
         data = check.opt_inst_param(data, "data", (Sequence, Mapping))
         try:
-            # check that the value is JSON serializable
-            seven.dumps(data)
-        except TypeError:
+            # check that the value is JSON serializable, with special handling for nested dagster objects
+            serialize_value(data)
+        except SerializationError:
             raise DagsterInvalidMetadata("Value is not JSON serializable.")
         super().__init__(data=data)
 
