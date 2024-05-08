@@ -12,19 +12,19 @@ from ..asset_checks import AssetChecksDefinition
 from ..asset_key import AssetKey, CoercibleToAssetKey
 from ..assets import AssetsDefinition, SourceAsset
 from ..decorators.asset_check_decorator import multi_asset_check
-from .utils import unique_id_from_asset_keys
+from .utils import assets_to_keys, unique_id_from_asset_keys
 
 
 @experimental
-def build_metadata_range_checks(
+def build_metadata_limit_checks(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
     severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
     metadata_key: str,
     min_value: Optional[Union[int, float]] = None,
     max_value: Optional[Union[int, float]] = None,
-    strict_min: bool = False,
-    strict_max: bool = False,
+    exclusive_min: bool = False,
+    exclusive_max: bool = False,
 ) -> Sequence[AssetChecksDefinition]:
     """Returns asset checks that pass if the metadata value of the asset's latest materialization
     is within the specified range.
@@ -38,9 +38,9 @@ def build_metadata_range_checks(
             value check is performed.
         max_value (Optional[Union[int, float]]): The maximum value to check for. If None, no maximum
             value check is performed.
-        strict_min (bool): If True, the check will fail if the metadata value is equal to `min_value`.
+        exclusive_min (bool): If True, the check will fail if the metadata value is equal to `min_value`.
             Defaults to False.
-        strict_max (bool): If True, the check will fail if the metadata value is equal to `max_value`.
+        exclusive_max (bool): If True, the check will fail if the metadata value is equal to `max_value`.
             Defaults to False.
 
     Returns:
@@ -51,8 +51,8 @@ def build_metadata_range_checks(
     check.str_param(metadata_key, "metadata_key")
     check.opt_numeric_param(min_value, "min_value")
     check.opt_numeric_param(max_value, "max_value")
-    check.bool_param(strict_min, "strict_min")
-    check.bool_param(strict_max, "strict_max")
+    check.bool_param(exclusive_min, "exclusive_min")
+    check.bool_param(exclusive_max, "exclusive_max")
 
     if min_value is None and max_value is None:
         raise DagsterInvalidDefinitionError(
@@ -62,20 +62,13 @@ def build_metadata_range_checks(
     if min_value is not None and max_value is not None and min_value > max_value:
         raise DagsterInvalidDefinitionError("`min_value` may not be greater than `max_value`")
 
-    asset_keys = set()
-    for el in assets:
-        if isinstance(el, AssetsDefinition):
-            asset_keys |= el.keys
-        elif isinstance(el, SourceAsset):
-            asset_keys.add(el.key)
-        else:
-            asset_keys.add(AssetKey.from_coercible(el))
+    asset_keys = assets_to_keys(assets)
 
-    description = f"Checks that the latest materialization has metadata value `{metadata_key}` is"
+    description = f"Checks that the latest materialization has metadata value `{metadata_key}`"
     if min_value is not None:
-        description += f" greater than {'or equal to ' if not strict_min else ''}{min_value}"
+        description += f" greater than {'or equal to ' if not exclusive_min else ''}{min_value}"
     if max_value is not None:
-        description += f" {'and ' if min_value is not None else ''}less than {'or equal to ' if not strict_max else ''}{max_value}"
+        description += f" {'and ' if min_value is not None else ''}less than {'or equal to ' if not exclusive_max else ''}{max_value}"
 
     def _result_for_check_key(
         instance: DagsterInstance, asset_check_key: AssetCheckKey
@@ -92,15 +85,15 @@ def build_metadata_range_checks(
         if not isinstance(value, (int, float)):
             return False, f"Value `{value}` is not a number"
 
-        if min_value is not None and (value <= min_value if strict_min else value < min_value):
+        if min_value is not None and (value <= min_value if exclusive_min else value < min_value):
             return (
                 False,
-                f"Value `{value}` is less than {'or equal to ' if strict_min else ''}{min_value}",
+                f"Value `{value}` is less than {'or equal to ' if exclusive_min else ''}{min_value}",
             )
-        if max_value is not None and (value >= max_value if strict_max else value > max_value):
+        if max_value is not None and (value >= max_value if exclusive_max else value > max_value):
             return (
                 False,
-                f"Value `{value}` is greater than {'or equal to ' if strict_max else ''}{max_value}",
+                f"Value `{value}` is greater than {'or equal to ' if exclusive_max else ''}{max_value}",
             )
         return True, f"Value `{value}` is within range"
 

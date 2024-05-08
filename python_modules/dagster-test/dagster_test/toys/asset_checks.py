@@ -18,7 +18,7 @@ from dagster import (
     Output,
     asset,
     asset_check,
-    build_metadata_range_checks,
+    build_metadata_limit_checks,
     define_asset_job,
     graph_asset,
     graph_multi_asset,
@@ -446,7 +446,7 @@ def metadata_asset(
     return MaterializeResult(metadata={"my_key": int(context.get_tag("my_key") or 0)})
 
 
-metadata_checks = build_metadata_range_checks(
+metadata_checks = build_metadata_limit_checks(
     assets=[metadata_asset],
     metadata_key="my_key",
     min_value=0,
