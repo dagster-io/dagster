@@ -1257,6 +1257,9 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
+    # to collect the reasons why some AssetKeyPartitionKeys are not requested as part of this tick
+    not_requested_reasons: Dict[AssetKeyPartitionKey, str] = {}
+
     asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions(
         instance_queryer,
         lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
@@ -1270,6 +1273,7 @@ def execute_asset_backfill_iteration_inner(
             dynamic_partitions_store=instance_queryer,
             current_time=backfill_start_time,
             logger=logger,
+            not_requested_reasons=not_requested_reasons,
         ),
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
@@ -1277,6 +1281,12 @@ def execute_asset_backfill_iteration_inner(
 
     logger.info(
         f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
+    )
+    not_requested_str = "\n".join(
+        [f"{key} - Reason: {reason}." for key, reason in not_requested_reasons.items()]
+    )
+    logger.info(
+        f"The following assets were considered for materialization but not requested:\n {not_requested_str}"
     )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
@@ -1340,6 +1350,7 @@ def can_run_with_parent(
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
     logger: logging.Logger,
+    not_requested_reasons: Dict[AssetKeyPartitionKey, str],
 ) -> bool:
     """Returns if a given candidate can be materialized in the same run as a given parent on
     this tick.
@@ -1368,21 +1379,21 @@ def can_run_with_parent(
         )
     )
     if parent_node.backfill_policy != candidate_node.backfill_policy:
-        logger.info(
-            f"Excluding {candidate} from request list. Reason: parent {parent_node.key} and {candidate_node.key} have different backfill policies."
+        not_requested_reasons[candidate] = (
+            f"parent {parent_node.key} and {candidate_node.key} have different backfill policies"
         )
         return False
     if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
-        logger.info(
-            f"Excluding {candidate} from request list. Reason: parent {parent_node.key} and {candidate_node.key} are in different code locations."
+        not_requested_reasons[candidate] = (
+            f"parent {parent_node.key} and {candidate_node.key} are in different code locations"
         )
         return False
     if (
         parent.partition_key not in asset_partitions_to_request_map[parent.asset_key]
         and parent not in candidates_unit
     ):
-        logger.info(
-            f"Excluding {candidate} from request list. Reason: parent asset {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration."
+        not_requested_reasons[candidate] = (
+            f"parent {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration"
         )
         return False
     if (
@@ -1409,9 +1420,8 @@ def can_run_with_parent(
     ):
         return True
     else:
-        logger.info(
-            f"Excluding {candidate} from request list. Reason: partition "
-            f"mapping between {parent_node.key} and {candidate_node.key} is not simple and "
+        not_requested_reasons[candidate] = (
+            f"partition mapping between {parent_node.key} and {candidate_node.key} is not simple and "
             f"{parent_node.key} does not meet requirements of: targeting the same partitions as "
             f"{candidate_node.key}, have all of its partitions requested in this iteration, having "
             "a backfill policy, and that backfill policy size limit is not exceeded by adding "
@@ -1431,6 +1441,7 @@ def should_backfill_atomic_asset_partitions_unit(
     dynamic_partitions_store: DynamicPartitionsStore,
     current_time: datetime,
     logger: logging.Logger,
+    not_requested_reasons: Dict[AssetKeyPartitionKey, str],
 ) -> bool:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
@@ -1438,24 +1449,16 @@ def should_backfill_atomic_asset_partitions_unit(
     """
     for candidate in candidates_unit:
         if candidate not in target_subset:
-            logger.info(
-                f"Excluding {candidate} from request list. Reason: not targeted by backfill."
-            )
+            not_requested_reasons[candidate] = "not targeted by backfill"
             return False
         elif candidate in failed_and_downstream_subset:
-            logger.info(
-                f"Excluding {candidate} from request list. Reason: in failed and downstream subset."
-            )
+            not_requested_reasons[candidate] = "in failed and downstream subset"
             return False
         elif candidate in materialized_subset:
-            logger.info(
-                f"Excluding {candidate} from request list. Reason: already materialized by backfill."
-            )
+            not_requested_reasons[candidate] = "already materialized by backfill"
             return False
         elif candidate in requested_subset:
-            logger.info(
-                f"Excluding {candidate} from request list. Reason: already requested by backfill."
-            )
+            not_requested_reasons[candidate] = "already requested by backfill"
             return False
 
         parent_partitions_result = asset_graph.get_parents_partitions(
@@ -1486,6 +1489,7 @@ def should_backfill_atomic_asset_partitions_unit(
                     target_subset,
                     asset_partitions_to_request_map,
                     logger,
+                    not_requested_reasons,
                 )
             ):
                 return False
