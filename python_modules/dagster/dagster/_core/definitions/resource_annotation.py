@@ -1,3 +1,4 @@
+from abc import ABC
 from inspect import Parameter
 from typing import Any, Optional, Sequence, Type, TypeVar
 
@@ -20,12 +21,28 @@ def get_resource_args(fn) -> Sequence[Parameter]:
 RESOURCE_PARAM_METADATA = "resource_param"
 
 
+class TreatAsResourceParam(ABC):
+    """Marker class for types that can be used as a parameter on an annotated
+    function like `@asset`. Any type marked with this class does not require
+    a ResourceParam when used on an asset.
+
+    Example:
+        class YourClass(TreatAsResourceParam):
+            ...
+
+        @asset
+        def an_asset(your_class: YourClass):
+            ...
+    """
+
+
 def _is_resource_annotation(annotation: Optional[Type[Any]]) -> bool:
     from dagster._config.pythonic_config import ConfigurableResourceFactory
 
     if isinstance(annotation, type) and (
         is_subclass(annotation, ResourceDefinition)
         or is_subclass(annotation, ConfigurableResourceFactory)
+        or is_subclass(annotation, TreatAsResourceParam)
     ):
         return True
 
