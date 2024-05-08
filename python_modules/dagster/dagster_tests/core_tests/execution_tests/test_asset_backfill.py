@@ -485,7 +485,7 @@ def make_random_subset(
                 root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
     target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
-        instance, lambda _a, _b: True, root_asset_partitions, evaluation_time=evaluation_time
+        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
     )
 
     return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
@@ -508,7 +508,7 @@ def make_subset_from_partition_keys(
             root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
     target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
-        instance, lambda _a, _b: True, root_asset_partitions, evaluation_time=evaluation_time
+        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
     )
 
     return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
@@ -580,7 +580,7 @@ def run_backfill_to_completion(
 
     fail_and_downstream_asset_partitions = asset_graph.bfs_filter_asset_partitions(
         instance,
-        lambda _a, _b: True,
+        lambda _a, _b: (True, ""),
         fail_asset_partitions,
         evaluation_time=backfill_data.backfill_start_time,
     )
