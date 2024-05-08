@@ -105,3 +105,13 @@ def test_table_schema_metadata_value():
 def test_json_metadata_value():
     assert JsonMetadataValue({"a": "b"}).data == {"a": "b"}
     assert JsonMetadataValue({"a": "b"}).value == {"a": "b"}
+
+
+def test_serdes_json_metadata():
+    old_bad_event_str = '{"__class__": "JsonMetadataEntryData", "data": {"float": {"__class__": "FloatMetadataEntryData", "value": 1.0}}}'
+    val = deserialize_value(old_bad_event_str, JsonMetadataValue)
+    assert val
+    assert isinstance(val.data["float"], dict)  # and not FloatMetadataValue
+    s = serialize_value(val)
+    val_2 = deserialize_value(s, JsonMetadataValue)
+    assert val_2 == val
