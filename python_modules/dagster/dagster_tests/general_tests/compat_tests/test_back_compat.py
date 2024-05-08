@@ -23,6 +23,7 @@ from dagster import (
     op,
 )
 from dagster._cli.debug import DebugRunPayload
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataValue
@@ -1021,7 +1022,7 @@ def test_add_kvs_table():
 def test_add_asset_event_tags_table():
     @op
     def yields_materialization_w_tags(_):
-        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={DATA_VERSION_TAG: "bar"})
         yield Output(1)
 
     @job
@@ -1050,7 +1051,7 @@ def test_add_asset_event_tags_table():
 
             asset_job.execute_in_process(instance=instance)
             assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
-                {"dagster/foo": "bar"}
+                {DATA_VERSION_TAG: "bar"}
             ]
 
             indexes = get_sqlite3_indexes(db_path, "asset_event_tags")
