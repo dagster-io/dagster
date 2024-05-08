@@ -1,18 +1,62 @@
-import {ExternalAnchorButton} from '@dagster-io/ui-components/src/components/Button';
+import {Box, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
+import {Button, ExternalAnchorButton} from '@dagster-io/ui-components/src/components/Button';
 import {Icon} from '@dagster-io/ui-components/src/components/Icon';
 import * as React from 'react';
 
-import {CodeLinkProtocolContext} from './CodeLinkProtocol';
+import {CodeLinkProtocolContext, ProtocolData} from './CodeLinkProtocol';
+import {CodeReferencesMetadataEntry, SourceLocation} from '../graphql/types';
 
-export const CodeLink = ({file, lineNumber}: {file: string; lineNumber: number}) => {
+const getCodeReferenceEntryLabel = (codeReference: SourceLocation): string => {
+  return codeReference.label || (codeReference.filePath.split('/').pop() as string);
+};
+
+const getCodeReferenceLink = (
+  codeLinkProtocol: ProtocolData,
+  codeReference: SourceLocation,
+): string => {
+  return codeLinkProtocol.protocol
+    .replace('{FILE}', codeReference.filePath)
+    .replace('{LINE}', codeReference.lineNumber.toString());
+};
+
+export const CodeLink = ({codeLinkData}: {codeLinkData: CodeReferencesMetadataEntry}) => {
   const [codeLinkProtocol, _] = React.useContext(CodeLinkProtocolContext);
 
-  const codeLink = codeLinkProtocol.protocol
-    .replace('{FILE}', file)
-    .replace('{LINE}', lineNumber.toString());
+  const sources = codeLinkData.codeReferences;
+
+  const hasMultipleCodeSources = sources.length > 1;
+
   return (
-    <ExternalAnchorButton icon={<Icon name="open_in_new" />} href={codeLink}>
-      Open in editor
-    </ExternalAnchorButton>
+    <Box flex={{alignItems: 'center'}}>
+      {hasMultipleCodeSources ? (
+        <Popover
+          position="bottom-right"
+          content={
+            <Menu>
+              {sources.map((source) => (
+                <MenuItem
+                  key={`${source.filePath}:${source.lineNumber}`}
+                  text={getCodeReferenceEntryLabel(source)}
+                  onClick={() => {
+                    const codeLink = getCodeReferenceLink(codeLinkProtocol, source);
+                    window.open(codeLink, '_blank');
+                  }}
+                  icon={<Icon name="open_in_new" />}
+                />
+              ))}
+            </Menu>
+          }
+        >
+          <Button rightIcon={<Icon name="expand_more" />}>Open in editor</Button>
+        </Popover>
+      ) : (
+        <ExternalAnchorButton
+          icon={<Icon name="open_in_new" />}
+          href={getCodeReferenceLink(codeLinkProtocol, sources[0] as SourceLocation)}
+        >
+          Open {getCodeReferenceEntryLabel(sources[0] as SourceLocation)} in editor
+        </ExternalAnchorButton>
+      )}
+    </Box>
   );
 };

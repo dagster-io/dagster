@@ -21,7 +21,7 @@ const POPULAR_PROTOCOLS: {[name: string]: string} = {
 
 const DEFAULT_PROTOCOL = {protocol: Object.keys(POPULAR_PROTOCOLS)[0]!, custom: false};
 
-type ProtocolData = {
+export type ProtocolData = {
   protocol: string;
   custom: boolean;
 };
