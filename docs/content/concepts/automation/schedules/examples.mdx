@@ -1,0 +1,585 @@
+---
+title: "Schedule examples | Dagster Docs"
+---
+
+# Schedule examples
+
+TODO: Add intro, figure out where to put link to GH discussions: https://github.com/dagster-io/dagster/discussions?discussions_q=is:open+label:%22area:+schedule%22
+
+---
+
+## LAYOUT 1
+
+_Summary is contained in the table; table comes before the code_
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Summary</strong>
+      </td>
+      <td>
+        This example demonstrates how to emit log messages from a schedule
+        during its evaluation function. These logs will be visible in the UI
+        when you inspect a tick in the schedule's tick history.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Notes</strong>
+      </td>
+      <td>
+        Schedule logs are stored in your{" "}
+        <a href="/deployment/dagster-instance#compute-log-storage">
+          Dagster instance's compute log storage
+        </a>
+        . You should ensure that your compute log storage is configured to view your
+        schedule logs.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <a href="/concepts/logging">Logging</a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="schedule" decorator />,{" "}
+        <PyObject object="ScheduleDefinition" />,{" "}
+        <PyObject object="SkipReason" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
+@schedule(job=my_job, cron_schedule="* * * * *")
+def logs_then_skips(context):
+    context.log.info("Logging from a schedule!")
+    return SkipReason("Nothing to do")
+```
+
+---
+
+## LAYOUT 2
+
+_Summary is first, followed by code, then table_
+
+This example demonstrates how to emit log messages from a schedule during its evaluation function. These logs will be visible in the UI when you inspect a tick in the schedule's tick history.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
+@schedule(job=my_job, cron_schedule="* * * * *")
+def logs_then_skips(context):
+    context.log.info("Logging from a schedule!")
+    return SkipReason("Nothing to do")
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        Schedule logs are stored in your{" "}
+        <a href="/deployment/dagster-instance#compute-log-storage">
+          Dagster instance's compute log storage
+        </a>
+        . You should ensure that your compute log storage is configured to view your
+        schedule logs.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <a href="/concepts/logging">Logging</a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="schedule" decorator />,{" "}
+        <PyObject object="ScheduleDefinition" />,{" "}
+        <PyObject object="SkipReason" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Resources
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Summary</strong>
+      </td>
+      <td>
+        This example demonstrates use resources in schedules. To specify a
+        resource dependency, annotate the resource as a parameter to the
+        schedule's function.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Notes</strong>
+      </td>
+      <td>
+        All Dagster definitions, including schedules and resources, must be
+        attached to a <PyObject object="Definitions" /> call.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/resources">Resources</a>
+          </li>
+          <li>
+            <a href="/concepts/code-locations">Code locations (Definitions)</a>
+          </li>
+          <li>
+            <a href="/concepts/automation/testing">Testing schedules</a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <PyObject object="schedule" decorator />
+          </li>
+          <li>
+            <PyObject object="ScheduleEvaluationContext" />
+          </li>
+          <li>
+            <PyObject object="ConfigurableResource" />
+          </li>
+          <li>
+            <PyObject object="job" decorator />
+          </li>
+          <li>
+            <PyObject object="RunRequest" />
+          </li>
+          <li>
+            <PyObject object="RunConfig" />
+          </li>
+          <li>
+            <PyObject object="Definitions" />
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
+from dagster import (
+    schedule,
+    ScheduleEvaluationContext,
+    ConfigurableResource,
+    job,
+    RunRequest,
+    RunConfig,
+    Definitions,
+)
+from datetime import datetime
+from typing import List
+
+class DateFormatter(ConfigurableResource):
+    format: str
+
+    def strftime(self, dt: datetime) -> str:
+        return dt.strftime(self.format)
+
+@job
+def process_data(): ...
+
+@schedule(job=process_data, cron_schedule="* * * * *")
+def process_data_schedule(
+    context: ScheduleEvaluationContext,
+    date_formatter: DateFormatter,
+):
+    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
+
+    return RunRequest(
+        run_key=None,
+        tags={"date": formatted_date},
+    )
+
+defs = Definitions(
+    jobs=[process_data],
+    schedules=[process_data_schedule],
+    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+)
+```
+
+---
+
+## Run config and tags
+
+This example demonstrates how to use run config to vary the behavior of a job based on its scheduled run time.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
+@op(config_schema={"scheduled_date": str})
+def configurable_op(context: OpExecutionContext):
+    context.log.info(context.op_config["scheduled_date"])
+
+
+@job
+def configurable_job():
+    configurable_op()
+
+
+@schedule(job=configurable_job, cron_schedule="0 0 * * *")
+def configurable_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return RunRequest(
+        run_key=None,
+        run_config={
+            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+        },
+        tags={"date": scheduled_date},
+    )
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>Schedules without a set timezone will run in UTC.</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <a href="">TODO</a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="op" decorator />, <PyObject object="job" decorator />,{" "}
+        <PyObject object="OpExecutionContext" />,{" "}
+        <PyObject object="ScheduleEvaluationContext" />,{" "}
+        <PyObject object="RunRequest" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Execution timezones
+
+This example demonstrates how to customize the timezone a schedule executes in. The schedule in this example will execute every day at 9AM in US/Pacific time.
+
+TODO: ADD DECORATOR EXAMPLE, NOTE ABOUT PARTITIONED CONFIG
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
+my_timezone_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="US/Pacific"
+)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>Schedules without a set timezone will run in UTC.</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <a href="">TODO</a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="ScheduleDefinition" decorator />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Partitions
+
+### Time-based partitions
+
+The examples in this section demonstrate how to construct schedules for time-partitioned assets and jobs. These examples use <PyObject object="build_schedule_from_partitioned_job"/>, which will build a schedule with an interval that matches the spacing of the partitions in the asset or job.
+
+<TabGroup>
+<TabItem name="Assets">
+
+#### Assets
+
+TODO
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
+from dagster import (
+    asset,
+    build_schedule_from_partitioned_job,
+    define_asset_job,
+    HourlyPartitionsDefinition,
+)
+
+
+@asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
+def hourly_asset(): ...
+
+
+partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
+
+
+asset_partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_asset_job,
+)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>TBD</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/partitions-schedules-sensors/partitioning-assets">
+              Partitioning assets
+            </a>
+          </li>
+          <li>
+            <a href="/concepts/assets/asset-jobs">Asset jobs</a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="asset" decorator />,{" "}
+        <PyObject object="build_schedule_from_partitioned_job" />,{" "}
+        <PyObject object="define_asset_job" />,{" "}
+        <PyObject object="HourlyPartitionsDefinition" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</TabItem>
+<TabItem name="Jobs">
+
+#### Jobs
+
+This example demonstrates how to construct a schedule for a time-partitioned job. When using <PyObject object="build_schedule_from_partitioned_job"/>, the resulting schedule interval will match the spacing of the partitions in the job.
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
+from dagster import build_schedule_from_partitioned_job, job
+
+
+@job(config=my_partitioned_config)
+def do_stuff_partitioned(): ...
+
+
+do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
+    do_stuff_partitioned,
+)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>TBD</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/ops-jobs-graphs/jobs">Op jobs</a>
+          </li>
+          <li>
+            <a href="/concepts/partitions-schedules-sensors/partitioning-ops">
+              Partitioning ops
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="job" decorator />,{" "}
+        <PyObject object="build_schedule_from_partitioned_job" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+  </TabItem>
+</TabGroup>
+
+### Static partitions
+
+This example demonstrates how to construct a schedule for a job with a static partition. Rather than use a helper function like <PyObject object="build_schedule_from_partitioned_job"/>, this example constructs the schedule from scratch using <PyObject object="schedule" decorator />. We took this approach to allow for more flexibility in determining which partitions should be run by the schedule.
+
+TODO: Link to example that shows the static partitioned job
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
+from dagster import schedule, RunRequest
+
+
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def continent_schedule():
+    for c in CONTINENTS:
+        yield RunRequest(run_key=c, partition_key=c)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>TBD</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <a href="">TODO</a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="schedule" decorator />,{" "}
+        <PyObject object="RunRequest" />
+      </td>
+    </tr>
+  </tbody>
+</table>
