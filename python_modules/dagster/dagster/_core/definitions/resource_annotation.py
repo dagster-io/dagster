@@ -5,6 +5,7 @@ from typing_extensions import Annotated
 
 from dagster._core.decorator_utils import get_function_params, get_type_hints
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._seven import is_subclass
 
 
 def get_resource_args(fn) -> Sequence[Parameter]:
@@ -22,20 +23,14 @@ RESOURCE_PARAM_METADATA = "resource_param"
 def _is_resource_annotation(annotation: Optional[Type[Any]]) -> bool:
     from dagster._config.pythonic_config import ConfigurableResourceFactory
 
-    extends_resource_definition = False
-    try:
-        extends_resource_definition = isinstance(annotation, type) and issubclass(
-            annotation, (ResourceDefinition, ConfigurableResourceFactory)
-        )
-    except TypeError:
-        # Using builtin Python types in python 3.9+ will raise a TypeError when using issubclass
-        # even though the isinstance check will succeed (as will inspect.isclass), for example
-        # list[dict[str, str]] will raise a TypeError
-        pass
+    if isinstance(annotation, type) and (
+        is_subclass(annotation, ResourceDefinition)
+        or is_subclass(annotation, ConfigurableResourceFactory)
+    ):
+        return True
 
-    return (extends_resource_definition) or (
-        hasattr(annotation, "__metadata__")
-        and getattr(annotation, "__metadata__") == (RESOURCE_PARAM_METADATA,)
+    return hasattr(annotation, "__metadata__") and getattr(annotation, "__metadata__") == (
+        RESOURCE_PARAM_METADATA,
     )
 
 
