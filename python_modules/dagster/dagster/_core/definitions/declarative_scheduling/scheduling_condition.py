@@ -147,6 +147,41 @@ class SchedulingCondition(ABC, DagsterModel):
 
         return ParentNewerCondition()
 
+    @staticmethod
+    def eager() -> "SchedulingCondition":
+        """Returns a condition which will "eagerly" fill in missing partitions as they are created,
+        and ensures unpartitioned assets are updated whenever their dependencies are updated (either
+        via scheduled execution or ad-hoc runs).
+
+        Specifically, this is a composite SchedulingCondition which is true for an asset partition
+        if all of the following are true:
+
+        - The asset partition is within the latest time window
+        - At least one of its parents has been updated more recently than it, or the asset partition
+            has never been materialized
+        - None of its parent partitions are missing
+        - None of its parent partitions are currently part of an in-progress run
+        - It is not currently part of an in-progress run
+        """
+        missing_or_parent_updated = (
+            SchedulingCondition.parent_newer()
+            | SchedulingCondition.any_deps_match(SchedulingCondition.requested_this_tick())
+            | SchedulingCondition.missing()
+        )
+        any_parent_missing = SchedulingCondition.any_deps_match(
+            SchedulingCondition.missing() & ~SchedulingCondition.requested_this_tick()
+        )
+        any_parent_in_progress = SchedulingCondition.any_deps_match(
+            SchedulingCondition.in_progress()
+        )
+        return (
+            SchedulingCondition.in_latest_time_window()
+            & missing_or_parent_updated
+            & ~any_parent_missing
+            & ~any_parent_in_progress
+            & ~SchedulingCondition.in_progress()
+        )
+
 
 class SchedulingResult(DagsterModel):
     condition: SchedulingCondition
