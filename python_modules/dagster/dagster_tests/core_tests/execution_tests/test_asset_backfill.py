@@ -1,5 +1,4 @@
 import datetime
-import logging
 from typing import (
     AbstractSet,
     Iterable,
@@ -555,7 +554,6 @@ def execute_asset_backfill_iteration_consume_generator(
             asset_graph=asset_graph,
             run_tags={},
             backfill_start_time=asset_backfill_data.backfill_start_time,
-            logger=logging.getLogger("fake_logger"),
         ):
             if isinstance(result, AssetBackfillIterationResult):
                 assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
