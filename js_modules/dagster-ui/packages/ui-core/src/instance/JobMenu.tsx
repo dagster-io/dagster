@@ -1,5 +1,6 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useCallback} from 'react';
 
 import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 import {usePermissionsForLocation} from '../app/Permissions';
@@ -41,16 +42,19 @@ export const JobMenu = (props: Props) => {
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
-  const skip = !lastRun?.id;
-  const queryResult = useQuery<RunReExecutionQuery, RunReExecutionQueryVariables>(
-    RUN_RE_EXECUTION_QUERY,
-    {
-      skip,
-      variables: {runId: lastRun?.id ?? ''},
-    },
-  );
-  useBlockTraceOnQueryResult(queryResult, 'RunReExecutionQuery');
+  const [fetchHasExecutionPlan, queryResult] = useLazyQuery<
+    RunReExecutionQuery,
+    RunReExecutionQueryVariables
+  >(RUN_RE_EXECUTION_QUERY);
+
   const {data} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'RunReExecutionQuery');
+
+  const fetchIfPossible = useCallback(() => {
+    if (lastRun?.id) {
+      fetchHasExecutionPlan({variables: {runId: lastRun.id}});
+    }
+  }, [lastRun, fetchHasExecutionPlan]);
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const executeItem =
