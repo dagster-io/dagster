@@ -1,7 +1,7 @@
 import os
 import uuid
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Iterator, Optional, cast
 
 import pandas as pd
 import pandas_gbq
@@ -25,6 +25,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
 from google.cloud import bigquery
 
@@ -169,12 +170,20 @@ def test_time_window_partitioned_asset(io_manager):
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
-        materialize(
+        result = materialize(
             [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
+
+        materialization = next(
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        )
+        meta = materialization.materialization.metadata["dagster/partition_row_count"]
+        assert cast(IntMetadataValue, meta).value_inner == 3
 
         out_df = pandas_gbq.read_gbq(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
