@@ -445,7 +445,13 @@ class UPathIOManager(MemoizableIOManager):
         context.log.debug(self.get_writing_output_log_message(path))
         self.dump_to_path(context=context, obj=obj, path=path)
 
-        metadata = {"path": MetadataValue.path(str(path))}
+        # Usually, when the value is None, it means that the user didn't intend to use an IO manager
+        # at all, but ended up with one because they didn't set None as their return type
+        # annotation. In these cases, seeing a "path" metadata value can be very confusing, because
+        # often they're actually writing data to a different location within their op. We omit
+        # the metadata when "obj is None", in order to avoid this confusion in the common case.
+        # This comes at the cost of this metadata not being present in these edge cases.
+        metadata = {"path": MetadataValue.path(str(path))} if obj is not None else {}
         custom_metadata = self.get_metadata(context=context, obj=obj)
         metadata.update(custom_metadata)  # type: ignore
 
