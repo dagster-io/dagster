@@ -40,16 +40,23 @@ def execute_backfill_jobs(
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
 
+    # TODO remove
+    fh = logging.FileHandler("backfill_logs.log")
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
         # create a logger that will always include the backfill_id as an `extra`
+
         backfill_logger = cast(
             logging.Logger,
             logging.LoggerAdapter(logger, extra={"backfill_id": backfill.backfill_id}),
         )
+
         try:
             if backfill.is_asset_backfill:
                 yield from execute_asset_backfill_iteration(
