@@ -16,7 +16,7 @@ import requests
 from dagster import asset
 
 @asset
-def taxi_trips_file():
+def taxi_trips_file() -> None:
     """
       The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
     """

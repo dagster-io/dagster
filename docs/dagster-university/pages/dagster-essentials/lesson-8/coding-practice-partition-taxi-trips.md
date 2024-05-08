@@ -44,7 +44,7 @@ from ..partitions import monthly_partitions
   deps=["taxi_trips_file"],
   partitions_def=monthly_partition,
 )
-def taxi_trips(context: AssetExecutionContext, database: DuckDBResource):
+def taxi_trips(context: AssetExecutionContext, database: DuckDBResource) -> None:
     """
       The raw taxi trips dataset, loaded into a DuckDB database, partitioned by month.
     """

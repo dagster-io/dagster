@@ -26,7 +26,7 @@ from ..partitions import weekly_partition
     deps=["taxi_trips"],
     partitions_def=weekly_partition
 )
-def trips_by_week(context: AssetExecutionContext, database: DuckDBResource):
+def trips_by_week(context: AssetExecutionContext, database: DuckDBResource) -> None:
     """
       The number of trips per week, aggregated by week.
     """

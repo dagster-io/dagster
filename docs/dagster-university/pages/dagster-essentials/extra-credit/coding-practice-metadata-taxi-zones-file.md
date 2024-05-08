@@ -21,7 +21,7 @@ from dagster import MaterializeResult
 @asset(
     group_name="raw_files",
 )
-def taxi_zones_file():
+def taxi_zones_file() -> None:
     """
       The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
     """

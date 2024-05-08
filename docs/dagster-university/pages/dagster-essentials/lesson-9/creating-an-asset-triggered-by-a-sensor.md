@@ -32,7 +32,7 @@ Now that you’ve defined how the asset can be materialized, let’s create the 
    @asset(
        deps=["taxi_zones", "taxi_trips"]
    )
-   def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource):
+   def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource) -> None:
    ```
 
 3. When the report is written to a file, it should have a similar name to the request. A template has been provided in `assets/constants.py` that contains a template named `REQUEST_DESTINATION_TEMPLATE_FILE_PATH` .
@@ -130,7 +130,7 @@ class AdhocRequestConfig(Config):
 @asset(
     deps=["taxi_zones", "taxi_trips"]
 )
-def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource):
+def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource) -> None:
     """
       The response to an request made in the `requests` directory.
       See `requests/README.md` for more information.
