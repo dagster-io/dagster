@@ -38,11 +38,6 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.outputs import StepOutputData
 
-from dagster_graphql.schema.metadata import (
-    GrapheneCodeReferencesMetadataEntry,
-    GrapheneLocalFileCodeReference,
-)
-
 MAX_INT = 2147483647
 MIN_INT = -2147483648
 
@@ -51,10 +46,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
+        GrapheneCodeReferencesMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJobMetadataEntry,
         GrapheneJsonMetadataEntry,
+        GrapheneLocalFileCodeReference,
         GrapheneMarkdownMetadataEntry,
         GrapheneNotebookMetadataEntry,
         GrapheneNullMetadataEntry,
