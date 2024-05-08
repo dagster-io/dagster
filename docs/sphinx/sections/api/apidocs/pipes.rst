@@ -32,5 +32,3 @@ Abstractions for the orchestration side of the Dagster Pipes protocol.
 .. autofunction:: open_pipes_session
 
 .. currentmodule:: dagster._core.pipes.subprocess
-
-.. autoclass:: _PipesSubprocess

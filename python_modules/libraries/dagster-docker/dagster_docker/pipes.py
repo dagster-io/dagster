@@ -4,10 +4,10 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 import docker
 from dagster import (
     OpExecutionContext,
-    ResourceParam,
     _check as check,
 )
 from dagster._annotations import experimental
+from dagster._core.definitions.resource_annotation import UsableAsResourceParam
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -62,7 +62,7 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
 
 
 @experimental
-class _PipesDockerClient(PipesClient):
+class PipesDockerClient(PipesClient, UsableAsResourceParam):
     """A pipes client that runs external processes in docker containers.
 
     By default context is injected via environment variables and messages are parsed out of the
@@ -213,6 +213,3 @@ class _PipesDockerClient(PipesClient):
             },
             **kwargs,
         )
-
-
-PipesDockerClient = ResourceParam[_PipesDockerClient]
