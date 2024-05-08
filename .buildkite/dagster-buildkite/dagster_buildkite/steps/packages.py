@@ -1,6 +1,7 @@
 import os
 from glob import glob
-from typing import List, Optional
+from pathlib import Path
+from typing import Iterable, List, Optional
 
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
@@ -367,6 +368,24 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
     return []
 
 
+def test_subfolders(tests_folder_name: str) -> Iterable[str]:
+    tests_path = (
+        Path(__file__)
+        / Path("../../../python_modules/dagster/dagster_tests/")
+        / Path(tests_folder_name)
+    )
+    for subfolder in tests_path.iterdir():
+        if subfolder.is_dir():
+            yield subfolder.name
+
+
+def tox_factors_for_folder(tests_folder_name: str) -> List[str]:
+    return [
+        f"{tests_folder_name}__{subfolder_name}"
+        for subfolder_name in test_subfolders(tests_folder_name)
+    ]
+
+
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
@@ -387,14 +406,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "definitions_tests",
             "definitions_tests_pendulum_1",
             "definitions_tests_pendulum_2",
-            "execution_tests_context_tests",
-            "execution_tests_dynamic_tests",
-            "execution_tests_engine_tests",
-            "execution_tests_execute_job_tests",
-            "execution_tests_execution_plan_tests",
-            "execution_tests_misc_execution_tests",
-            "execution_tests_pipes_tests",
-            "execution_tests_versioning_tests",
+            # "execution_tests__context_tests",
+            # "execution_tests__dynamic_tests",
+            # "execution_tests__engine_tests",
+            # "execution_tests__execute_job_tests",
+            # "execution_tests__execution_plan_tests",
+            # "execution_tests__misc_execution_tests",
+            # "execution_tests__pipes_tests",
+            # "execution_tests__versioning_tests",
             "general_tests",
             "general_tests_old_protobuf",
             "launcher_tests",
@@ -408,7 +427,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
             "type_signature_tests",
-        ],
+        ]
+        + tox_factors_for_folder("execution_tests"),
         # + [f"execution_tests-{folder}" for folder in execution_test_folders],
         unsupported_python_versions=_unsupported_dagster_python_versions,
     ),
