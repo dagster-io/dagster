@@ -7,7 +7,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental
-from dagster._core.definitions.resource_annotation import UsableAsResourceParam
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -62,7 +62,7 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
 
 
 @experimental
-class PipesDockerClient(PipesClient, UsableAsResourceParam):
+class PipesDockerClient(PipesClient, TreatAsResourceParam):
     """A pipes client that runs external processes in docker containers.
 
     By default context is injected via environment variables and messages are parsed out of the

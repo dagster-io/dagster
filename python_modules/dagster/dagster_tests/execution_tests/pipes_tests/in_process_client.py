@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from typing import Callable, Iterator, List, Optional
 
 from dagster._annotations import public
-from dagster._core.definitions.resource_annotation import UsableAsResourceParam
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
@@ -90,7 +90,7 @@ class InProcessMessageReader(PipesMessageReader):
         return "In-process message reader."
 
 
-class InProcessPipesClient(PipesClient, UsableAsResourceParam):
+class InProcessPipesClient(PipesClient, TreatAsResourceParam):
     """An in-process pipes clients unusable in test cases. A function inside the orchestration
     process actually serves as the "external" execution. This allows us to test the inner machinery
     of pipes without actually launching subprocesses, which makes the tests much more lightweight

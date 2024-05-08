@@ -10,7 +10,7 @@ from typing import Iterator, Literal, Mapping, Optional, Sequence, TextIO
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.resource_annotation import UsableAsResourceParam
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
@@ -36,7 +36,7 @@ from pydantic import Field
 
 
 @experimental
-class PipesDatabricksClient(PipesClient, UsableAsResourceParam):
+class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     """Pipes client for databricks.
 
     Args:
