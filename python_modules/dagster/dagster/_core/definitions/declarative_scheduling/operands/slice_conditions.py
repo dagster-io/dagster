@@ -45,7 +45,7 @@ class InProgressSchedulingCondition(SliceSchedulingCondition):
         return "Part of an in-progress run"
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
-        return context.asset_graph_view.compute_in_progress_asset_slice(context.asset_key)
+        return context.asset_graph_view.compute_in_progress_asset_slice(asset_key=context.asset_key)
 
 
 @whitelist_for_serdes

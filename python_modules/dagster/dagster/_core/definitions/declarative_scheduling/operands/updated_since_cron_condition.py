@@ -51,7 +51,7 @@ class UpdatedSinceCronCondition(SchedulingCondition):
             # since the previous evaluation
             true_slice = context.previous_evaluation_node.true_slice.compute_union(
                 context.asset_graph_view.compute_updated_since_cursor_slice(
-                    context.asset_key, context.previous_evaluation_max_storage_id
+                    asset_key=context.asset_key, cursor=context.previous_evaluation_max_storage_id
                 )
             )
 
