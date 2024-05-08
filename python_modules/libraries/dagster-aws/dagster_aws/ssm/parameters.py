@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import boto3.session
 import dagster._check as check
@@ -15,7 +15,7 @@ def construct_ssm_client(
     aws_access_key_id: Optional[str] = None,
     aws_secret_access_key: Optional[str] = None,
     aws_session_token: Optional[str] = None,
-    verify=None,
+    verify: Optional[Union[str, bool]] = None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")

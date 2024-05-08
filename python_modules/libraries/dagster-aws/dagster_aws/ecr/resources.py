@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, Union
 
 import boto3
 from botocore.stub import Stubber
@@ -16,7 +16,7 @@ class ECRPublicClient:
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
-        verify=None,
+        verify: Optional[Union[str, bool]] =None,
     ):
         self.client = boto3.client(
             "ecr-public",

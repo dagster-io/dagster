@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, Union
 
 import dagster._check as check
 from botocore import __version__ as botocore_version
@@ -46,12 +46,12 @@ class ResourceWithBoto3Configuration(ConfigurableResource):
     endpoint_url: Optional[str] = Field(
         default=None, description="Specifies a custom endpoint for the Boto3 session."
     )
-    verify: Optional[str] = Field(
+    verify: Optional[Union[str, bool]] = Field(
         default=None,
         description=(
             "Whether or not to verify SSL certificates. By default SSL certificates are verified."
-            " You can also specify this argument if you want to use a different CA cert bundle than"
-            " the one used by botocore."
+            " You can pass the following values to this parameter: True, False, or a path to a"
+            " CA_BUNDLE file."
         ),
     )
     aws_access_key_id: Optional[str] = Field(
