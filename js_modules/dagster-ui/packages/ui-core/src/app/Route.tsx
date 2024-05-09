@@ -13,11 +13,7 @@ export const Route = memo((props: ComponentProps<typeof ReactRouterRoute>) => {
       return;
     }
     return (...args: Parameters<typeof render>) => {
-      return (
-        <>
-          <Wrapper>{render(...args)}</Wrapper>
-        </>
-      );
+      return <Wrapper>{render(...args)}</Wrapper>;
     };
   }, [render]);
   const WrapperComponent = useMemo(() => {
@@ -26,11 +22,9 @@ export const Route = memo((props: ComponentProps<typeof ReactRouterRoute>) => {
     }
     return (props: any) => {
       return (
-        <>
-          <Wrapper>
-            <Component {...props} />
-          </Wrapper>
-        </>
+        <Wrapper>
+          <Component {...props} />
+        </Wrapper>
       );
     };
   }, [Component]);
@@ -40,11 +34,7 @@ export const Route = memo((props: ComponentProps<typeof ReactRouterRoute>) => {
       return;
     }
     return (...args: Parameters<typeof children>) => {
-      return (
-        <>
-          <Wrapper>{children(...args)}</Wrapper>
-        </>
-      );
+      return <Wrapper>{children(...args)}</Wrapper>;
     };
   }, [children]);
 
