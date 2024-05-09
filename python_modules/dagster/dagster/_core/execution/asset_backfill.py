@@ -1284,12 +1284,13 @@ def execute_asset_backfill_iteration_inner(
         f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
     )
     not_requested_str = (
-        "\n".join([f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons])
+        "\n"
+        + "\n".join([f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons])
         if len(not_requested_and_reasons) > 0
         else "None"
     )
     logger.info(
-        f"The following assets were considered for materialization but not requested:\n {not_requested_str}"
+        f"The following assets were considered for materialization but not requested:  {not_requested_str}"
     )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error

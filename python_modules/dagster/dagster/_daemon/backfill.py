@@ -40,11 +40,6 @@ def execute_backfill_jobs(
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
 
-    # TODO remove
-    fh = logging.FileHandler("backfill_logs.log")
-    fh.setLevel(logging.DEBUG)
-    logger.addHandler(fh)
-
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
 
