@@ -28,7 +28,7 @@ def construct_s3_client(
     max_attempts: int,
     region_name: Optional[str] = None,
     endpoint_url: Optional[str] = None,
-    use_unsigned_session: bool=False,
+    use_unsigned_session: bool = False,
     profile_name: Optional[str] = None,
     use_ssl: bool = True,
     verify: Optional[Union[str, bool]] = None,

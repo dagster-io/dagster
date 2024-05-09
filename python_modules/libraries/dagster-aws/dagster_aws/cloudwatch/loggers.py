@@ -40,7 +40,7 @@ class CloudwatchLogsHandler(logging.Handler):
         endpoint_url: Optional[str] = None,
         use_ssl: bool = True,
         aws_session_token: Optional[str] = None,
-        verify: Optional[bool] =None,
+        verify: Optional[bool] = None,
     ):
         self.client = boto3.client(
             "logs",
