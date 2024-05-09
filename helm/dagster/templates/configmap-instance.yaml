@@ -150,6 +150,10 @@ data:
       auto_materialize:
         purge_after_days: {{ .Values.retention.autoMaterialize.purgeAfterDays | toYaml | nindent 12 }}
       {{- end }}
+      {{- if .Values.retention.backfill }}
+      auto_materialize:
+        purge_after_days: {{ .Values.retention.backfill.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
     {{- end }}
 
     {{- if .Values.additionalInstanceConfig }}

@@ -1,6 +1,17 @@
 import logging
 import time
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -19,6 +30,7 @@ from dagster._core.remote_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
 )
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -40,6 +52,9 @@ from dagster._utils.merger import merge_dicts
 
 from .backfill import BulkActionStatus, PartitionBackfill
 
+if TYPE_CHECKING:
+    from dagster._daemon.backfill import BackfillLaunchContext
+
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
 CHECKPOINT_INTERVAL = 1
@@ -52,6 +67,7 @@ def execute_job_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: Optional[Mapping[str, int]],
     instance: DagsterInstance,
+    tick_context: "BackfillLaunchContext",
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     if not backfill.last_submitted_partition_name:
         logger.info(f"Starting job backfill for {backfill.backfill_id}")
@@ -106,6 +122,8 @@ def execute_job_backfill_iteration(
             )
             instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
             yield None
+
+    tick_context.update_state(TickStatus.SUCCESS)
 
 
 def _get_partition_set(

@@ -22,6 +22,7 @@ class Retention(BaseModel):
     sensor: TickRetention
     schedule: TickRetention
     autoMaterialize: Optional[TickRetention]
+    backfill: Optional[TickRetention]  # TODO - should this be optional?
 
     class Config:
         extra = Extra.forbid

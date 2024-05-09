@@ -3117,6 +3117,8 @@ class DagsterInstance(DynamicPartitionsStore):
             tick_settings = retention_settings.get("sensor")
         elif instigator_type == InstigatorType.AUTO_MATERIALIZE:
             tick_settings = retention_settings.get("auto_materialize")
+        elif instigator_type == InstigatorType.BACKFILL:
+            tick_settings = retention_settings.get("backfill")
         else:
             raise Exception(f"Unexpected instigator type {instigator_type}")
 

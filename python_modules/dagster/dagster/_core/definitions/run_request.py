@@ -44,6 +44,7 @@ class InstigatorType(Enum):
     SCHEDULE = "SCHEDULE"
     SENSOR = "SENSOR"
     AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
+    BACKFILL = "BACKFILL"
 
 
 @whitelist_for_serdes

@@ -1333,6 +1333,15 @@ retention:
       skipped: 7
       started: -1
       success: -1
+  backfill:
+    # For backfill ticks, specifies after how many days ticks can be removed.  This
+    # field can either be a dict of tick types to integers, or an integer (applies to all tick
+    # types).  A value of -1 indicates that ticks should be retained indefinitely.
+    purgeAfterDays:
+      failure: -1
+      skipped: 7
+      started: -1
+      success: -1
 ####################################################################################################
 # Additional fields on the instance to configure that aren't already determined by a key above.
 # See https://docs.dagster.io/deployment/dagster-instance for the full set of available fields.

@@ -51,6 +51,7 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     IN_PROGRESS_RUN_STATUSES,
@@ -75,7 +76,10 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from .submit_asset_runs import submit_asset_runs_in_chunks
 
 if TYPE_CHECKING:
+    from dagster._daemon.backfill import BackfillLaunchContext
+
     from .backfill import PartitionBackfill
+
 
 RUN_CHUNK_SIZE = 25
 MATERIALIZATION_CHUNK_SIZE = 1000
@@ -881,6 +885,7 @@ def execute_asset_backfill_iteration(
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
+    tick_context: "BackfillLaunchContext",
 ) -> Iterable[None]:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
@@ -1057,6 +1062,8 @@ def execute_asset_backfill_iteration(
         pass
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
+
+    tick_context.update_state(TickStatus.SUCCESS)
 
 
 def get_canceling_asset_backfill_iteration_data(
