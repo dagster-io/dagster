@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
