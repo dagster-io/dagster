@@ -2678,6 +2678,20 @@ type JobMetadataEntry implements MetadataEntry {
   locationName: String!
 }
 
+type CodeReferencesMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  codeReferences: [SourceLocation!]!
+}
+
+union SourceLocation = LocalFileCodeReference
+
+type LocalFileCodeReference {
+  filePath: String!
+  lineNumber: Int!
+  label: String
+}
+
 type NullMetadataEntry implements MetadataEntry {
   label: String!
   description: String

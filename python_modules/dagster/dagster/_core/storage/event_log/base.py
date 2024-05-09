@@ -14,6 +14,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import (
     AssetRecordsFilter,
@@ -34,6 +35,7 @@ from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 from dagster._utils.warnings import deprecation_warning
@@ -377,6 +379,13 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         filter_event_id: Optional[int] = None,
     ) -> Sequence[Mapping[str, str]]:
         pass
+
+    def get_asset_tags_to_index(self, tag_keys: Set[str]) -> Set[str]:
+        return {
+            key
+            for key in tag_keys
+            if key == DATA_VERSION_TAG or key.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+        }
 
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey) -> None:

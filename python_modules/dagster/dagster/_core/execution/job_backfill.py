@@ -54,10 +54,10 @@ def execute_job_backfill_iteration(
     instance: DagsterInstance,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     if not backfill.last_submitted_partition_name:
-        logger.info(f"Starting backfill for {backfill.backfill_id}")
+        logger.info(f"Starting job backfill for {backfill.backfill_id}")
     else:
         logger.info(
-            f"Resuming backfill for {backfill.backfill_id} from"
+            f"Resuming job backfill for {backfill.backfill_id} from"
             f" {backfill.last_submitted_partition_name}"
         )
 

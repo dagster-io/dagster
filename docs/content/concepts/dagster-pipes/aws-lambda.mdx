@@ -8,13 +8,13 @@ description: "Learn to integrate Dagster Pipes with AWS Lambda to launch externa
 <Note>
   <strong>Heads up!</strong> This guide focuses on using an out-of-the-box
   Amazon Web Services (AWS) Lambda resource. For further customization, use the{" "}
-  <a href="/guides/dagster-pipes/dagster-pipes-details-and-customization">
+  <a href="/concepts/dagster-pipes/dagster-pipes-details-and-customization">
     <code>open_pipes_session</code> approach
   </a>{" "}
   instead.
 </Note>
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s AWS Lambda integration to invoke a Lambda function and execute external code.
+In this guide, we’ll show you how to use [Dagster Pipes](/concepts/dagster-pipes) with Dagster’s AWS Lambda integration to invoke a Lambda function and execute external code.
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
@@ -154,7 +154,7 @@ Let's review what this code does:
 
   We're using the default context loader (<PyObject object="PipesDefaultContextLoader" module="dagster_pipes" />) and message writer (<PyObject object="PipesDefaultMessageWriter" module="dagster_pipes" />) in this example. These objects establish communication between the orchestration and external process. On the orchestration end, these match a corresponding `PipesLambdaEventContextInjector` and `PipesLambdaLogsMessageReader`, which are instantiated inside the <PyObject module="dagster_aws.pipes" object="PipesLambdaClient" />.
 
-- **Inside the body of the context manager (<PyObject object="open_dagster_pipes" module="dagster_pipes" />), retrieve a log and report an asset materialization.** These calls use the temporary communications channels established by <PyObject object="PipesDefaultContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDefaultMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes documentation](/guides/dagster-pipes).
+- **Inside the body of the context manager (<PyObject object="open_dagster_pipes" module="dagster_pipes" />), retrieve a log and report an asset materialization.** These calls use the temporary communications channels established by <PyObject object="PipesDefaultContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDefaultMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes documentation](/concepts/dagster-pipes).
 
 At this point you can execute the rest of your AWS Lambda code as normal, invoking various <PyObject object="PipesContext" module="dagster_pipes" /> APIs as needed.
 
@@ -257,11 +257,11 @@ In this step, you’ll invoke the AWS Lambda function you defined in [Step 1](#s
 <ArticleList>
   <ArticleListItem
     title="Dagster Pipes"
-    href="/guides/dagster-pipes"
+    href="/concepts/dagster-pipes"
   ></ArticleListItem>
   <ArticleListItem
     title="Dagster Pipes details and customization"
-    href="/guides/dagster-pipes/dagster-pipes-details-and-customization"
+    href="/concepts/dagster-pipes/dagster-pipes-details-and-customization"
   ></ArticleListItem>
   <ArticleListItem
     title="dagster-aws API reference"

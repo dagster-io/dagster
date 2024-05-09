@@ -475,9 +475,6 @@ def test_fs_io_manager_none():
         )
         assert len(handled_output_events) == 0
 
-        for event in handled_output_events:
-            assert len(event.event_specific_data.metadata) == 0
-
 
 def test_fs_io_manager_ops_none():
     with tempfile.TemporaryDirectory() as tmpdir_path:
@@ -502,8 +499,24 @@ def test_fs_io_manager_ops_none():
         )
         assert len(handled_output_events) == 0
 
-        for event in handled_output_events:
-            assert len(event.event_specific_data.metadata) == 0
+
+def test_fs_io_manager_none_value_no_metadata():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        @asset
+        def asset1():
+            pass
+
+        result = materialize(with_resources([asset1], resource_defs={"io_manager": io_manager_def}))
+
+        assert os.path.exists(os.path.join(tmpdir_path, "asset1"))
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.all_node_events)
+        )
+        assert len(handled_output_events) == 1
+        metadata = handled_output_events[0].event_specific_data.metadata
+        assert "path" not in metadata
 
 
 def test_multipartitions_fs_io_manager():

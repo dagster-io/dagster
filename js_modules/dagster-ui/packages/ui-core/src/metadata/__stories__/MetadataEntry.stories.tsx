@@ -258,6 +258,20 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         label: 'my_timestamp',
         timestamp: 1710187280.5,
       };
+    case 'CodeReferencesMetadataEntry':
+      return {
+        __typename: 'CodeReferencesMetadataEntry',
+        description: 'This is the description',
+        label: 'my_code_references',
+        codeReferences: [
+          {
+            __typename: 'LocalFileCodeReference',
+            filePath: '/path/to/file.py',
+            lineNumber: 12,
+            label: 'my_code_reference',
+          },
+        ],
+      };
     default:
       return assertUnreachable(type);
   }

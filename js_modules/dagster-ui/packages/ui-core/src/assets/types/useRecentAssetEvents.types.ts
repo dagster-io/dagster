@@ -42,6 +42,17 @@ export type AssetMaterializationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -204,6 +215,17 @@ export type AssetObservationFragment = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -377,6 +399,17 @@ export type AssetEventsQuery = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<{
+                  __typename: 'LocalFileCodeReference';
+                  filePath: string;
+                  lineNumber: number;
+                  label: string | null;
+                }>;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -555,6 +588,17 @@ export type AssetEventsQuery = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<{
+                  __typename: 'LocalFileCodeReference';
+                  filePath: string;
+                  lineNumber: number;
+                  label: string | null;
+                }>;
               }
             | {
                 __typename: 'FloatMetadataEntry';
