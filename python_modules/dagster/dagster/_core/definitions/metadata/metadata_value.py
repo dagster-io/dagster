@@ -969,6 +969,11 @@ class TableColumnLineageMetadataValue(DagsterModel, MetadataValue[TableColumnLin
 
     @public
     @property
+    def column_lineage(self) -> TableColumnLineage:
+        return self.column_lineage_inner
+
+    @public
+    @property
     def value(self) -> TableColumnLineage:
         """TableSpec: The wrapped :py:class:`TableSpec`."""
         return self.column_lineage_inner
