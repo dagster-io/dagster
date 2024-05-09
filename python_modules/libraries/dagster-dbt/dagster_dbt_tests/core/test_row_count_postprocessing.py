@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, cast
 
+import pytest
 from dagster import (
     AssetExecutionContext,
     _check as check,
@@ -31,7 +32,25 @@ def test_no_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     )
 
 
-def test_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+import shutil
+
+
+@pytest.fixture()
+def force_free_lock_on_db() -> None:
+    db_file = os.getenv("DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH")
+
+    # copy db file to a new location and delete the original
+    if db_file and os.path.exists(db_file):
+        db_file_copy = os.path.abspath(f"{db_file}_copy")
+        db_file_abspath = os.path.abspath(db_file)
+
+        shutil.copyfile(db_file_abspath, db_file_copy)
+        os.remove(db_file_abspath)
+
+        shutil.copyfile(db_file_copy, db_file_abspath)
+
+
+def test_row_count(test_jaffle_shop_manifest: Dict[str, Any], force_free_lock_on_db) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).enable_fetch_row_count().stream()
