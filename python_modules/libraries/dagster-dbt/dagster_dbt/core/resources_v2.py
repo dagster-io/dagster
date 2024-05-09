@@ -785,6 +785,14 @@ class DbtCliInvocation:
                 def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
+        has_any_parallel_tasks = self.should_fetch_row_count
+
+        if not has_any_parallel_tasks:
+            # If we're not enqueuing any parallel tasks, we can just stream the events in
+            # the main thread.
+            yield from self._stream_asset_events()
+            return
+
         if self.should_fetch_row_count:
             logger.info(
                 "Row counts will be fetched for non-view models once they are materialized."
