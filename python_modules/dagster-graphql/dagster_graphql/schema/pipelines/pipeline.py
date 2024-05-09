@@ -27,7 +27,6 @@ from ...implementation.fetch_pipelines import get_job_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
-from ...implementation.loader import BatchRunLoader
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_checks import GrapheneAssetCheckHandle
 from ..asset_key import GrapheneAssetKey
@@ -235,9 +234,7 @@ class GrapheneAsset(graphene.ObjectType):
             after_timestamp=after_timestamp,
             limit=limit,
         )
-        run_ids = [event.run_id for event in events]
-        loader = BatchRunLoader(graphene_info.context.instance, run_ids) if run_ids else None
-        return [GrapheneMaterializationEvent(event=event, loader=loader) for event in events]
+        return [GrapheneMaterializationEvent(event=event) for event in events]
 
     def resolve_assetObservations(
         self,
