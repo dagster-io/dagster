@@ -180,12 +180,12 @@ dagster schedule stop
 
 You can set the schedule's default status using `DefaultScheduleStatus.RUNNING` in the schedule's <PyObject object="ScheduleDefinition" />:
 
-```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=43-47
-# start_definitions
-defs = Definitions(
-    assets=[orders_asset, users_asset],
-    jobs=[ecommerce_job],
-    schedules=[ecommerce_schedule],
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_schedule endbefore=end_schedule
+ecommerce_schedule = ScheduleDefinition(
+    job=ecommerce_job,
+    cron_schedule="15 5 * * 1-5",
+    default_status=DefaultScheduleStatus.RUNNING,
+)
 ```
 
 </TabItem>
