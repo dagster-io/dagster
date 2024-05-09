@@ -45,7 +45,15 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationTargetMaterializationData,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
-from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.data_version import (
+    _OLD_DATA_VERSION_TAG,
+    _OLD_INPUT_DATA_VERSION_TAG_PREFIX,
+    CODE_VERSION_TAG,
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
+    DATA_VERSION_TAG,
+    INPUT_DATA_VERSION_TAG_PREFIX,
+    INPUT_EVENT_POINTER_TAG_PREFIX,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
@@ -100,6 +108,7 @@ from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -5627,3 +5636,41 @@ class TestEventLogStorage:
         if self.can_wipe():
             storage.wipe()
             assert len(storage.get_logs_for_run(test_run_id)) == 0
+
+    def test_asset_tags_to_insert(self, test_run_id: str, storage: EventLogStorage):
+        key = AssetKey("test_asset")
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name=RUNLESS_JOB_NAME,
+                    event_specific_data=StepMaterializationData(
+                        materialization=AssetMaterialization(
+                            asset_key=key,
+                            tags={
+                                DATA_VERSION_TAG: "test_data_version",
+                                CODE_VERSION_TAG: "test_code_version",
+                                _OLD_DATA_VERSION_TAG: "test_old_data_version",
+                                f"{INPUT_DATA_VERSION_TAG_PREFIX}/foo": "test_input_data_version",
+                                f"{_OLD_INPUT_DATA_VERSION_TAG_PREFIX}/foo": "test_old_input_data_version",
+                                f"{INPUT_EVENT_POINTER_TAG_PREFIX}/foo": "test_input_event_pointer",
+                                DATA_VERSION_IS_USER_PROVIDED_TAG: "test_data_version_is_user_provided",
+                                f"{MULTIDIMENSIONAL_PARTITION_PREFIX}foo": "test_multidimensional_partition",
+                            },
+                        )
+                    ),
+                ),
+            )
+        )
+
+        assert storage.get_event_tags_for_asset(key) == [
+            {
+                DATA_VERSION_TAG: "test_data_version",
+                f"{MULTIDIMENSIONAL_PARTITION_PREFIX}foo": "test_multidimensional_partition",
+            }
+        ]
