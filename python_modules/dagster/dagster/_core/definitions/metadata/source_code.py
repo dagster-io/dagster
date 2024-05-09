@@ -11,8 +11,6 @@ from typing import (
     Union,
 )
 
-import pydantic
-
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
@@ -87,7 +85,7 @@ class CodeReferencesMetadataSet(NamespacedMetadataSet):
     source code for the asset can be found.
     """
 
-    code_references: CodeReferencesMetadataValue
+    code_references: Optional[CodeReferencesMetadataValue] = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -119,18 +117,19 @@ def _with_code_source_single_definition(
         sources = [source_path]
 
         for key in assets_def.keys:
-            # defer to any existing metadata
-            sources_for_asset = [*sources]
-            try:
-                existing_source_code_metadata = CodeReferencesMetadataSet.extract(
-                    metadata_by_key.get(key, {})
-                )
-                sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
-                    *existing_source_code_metadata.code_references.code_references,
-                    *sources,
-                ]
-            except pydantic.ValidationError:
-                pass
+            # merge with any existing metadata
+            existing_source_code_metadata = CodeReferencesMetadataSet.extract(
+                metadata_by_key.get(key, {})
+            )
+            existing_code_references = (
+                existing_source_code_metadata.code_references.code_references
+                if existing_source_code_metadata.code_references
+                else []
+            )
+            sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
+                *existing_code_references,
+                *sources,
+            ]
 
             metadata_by_key[key] = {
                 **metadata_by_key.get(key, {}),
@@ -172,28 +171,29 @@ def _convert_local_path_to_source_control_path_single_definition(
     metadata_by_key = dict(assets_def.metadata_by_key) or {}
 
     for key in assets_def.keys:
-        try:
-            existing_source_code_metadata = CodeReferencesMetadataSet.extract(
-                metadata_by_key.get(key, {})
+        existing_source_code_metadata = CodeReferencesMetadataSet.extract(
+            metadata_by_key.get(key, {})
+        )
+        if not existing_source_code_metadata.code_references:
+            continue
+
+        sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
+            convert_local_path_to_source_control_path(
+                base_source_control_url,
+                repository_root_absolute_path,
+                source,
             )
-            sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
-                convert_local_path_to_source_control_path(
-                    base_source_control_url,
-                    repository_root_absolute_path,
-                    source,
-                )
-                if isinstance(source, LocalFileCodeReference)
-                else source
-                for source in existing_source_code_metadata.code_references.code_references
-            ]
-            metadata_by_key[key] = {
-                **metadata_by_key.get(key, {}),
-                **CodeReferencesMetadataSet(
-                    code_references=CodeReferencesMetadataValue(code_references=sources_for_asset)
-                ),
-            }
-        except pydantic.ValidationError:
-            pass
+            if isinstance(source, LocalFileCodeReference)
+            else source
+            for source in existing_source_code_metadata.code_references.code_references
+        ]
+
+        metadata_by_key[key] = {
+            **metadata_by_key.get(key, {}),
+            **CodeReferencesMetadataSet(
+                code_references=CodeReferencesMetadataValue(code_references=sources_for_asset)
+            ),
+        }
 
     return assets_def.with_attributes(metadata_by_key=metadata_by_key)
 
