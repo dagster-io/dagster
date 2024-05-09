@@ -1,7 +1,8 @@
 import {Box} from '@dagster-io/ui-components';
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Redirect, Switch} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
+import {Route} from '../app/Route';
 import {CodeLocationsPageContent} from '../instance/CodeLocationsPage';
 import {InstanceConcurrencyPageContent} from '../instance/InstanceConcurrency';
 import {InstanceConfigContent} from '../instance/InstanceConfig';

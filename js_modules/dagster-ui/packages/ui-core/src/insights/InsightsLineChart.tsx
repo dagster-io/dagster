@@ -332,6 +332,5 @@ const buildFillGradient = (ctx: CanvasRenderingContext2D, lineColor: string) => 
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
   gradient.addColorStop(0, lineColor.replace(/, ?1\)/, ', 0.2)'));
   gradient.addColorStop(1, lineColor.replace(/, ?1\)/, ', 0.0)'));
-  console.log(lineColor);
   return gradient;
 };
