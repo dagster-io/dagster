@@ -88,8 +88,7 @@ class AssetSensorDefinition(SensorDefinition):
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter
 
         resource_arg_names: Set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
@@ -109,15 +108,14 @@ class AssetSensorDefinition(SensorDefinition):
                     except ValueError:
                         after_cursor = None
 
-                event_records = context.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                event_records = context.instance.fetch_materializations(
+                    AssetRecordsFilter(
                         asset_key=self._asset_key,
-                        after_cursor=after_cursor,
+                        after_storage_id=after_cursor,
                     ),
                     ascending=False,
                     limit=1,
-                )
+                ).records
 
                 if not event_records:
                     yield SkipReason(
