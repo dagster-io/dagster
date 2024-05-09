@@ -3,6 +3,7 @@ import os
 import time
 from typing import List, Optional, Tuple, Union, cast
 
+import pendulum
 from dagster import (
     AssetKey,
     Output,
@@ -13,6 +14,9 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.run_request import (
+    InstigatorType,
+)
 from dagster._core.execution.asset_backfill import (
     AssetBackfillIterationResult,
     execute_asset_backfill_iteration,
@@ -23,6 +27,10 @@ from dagster._core.execution.backfill import (
     PartitionBackfill,
 )
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.scheduler.instigation import (
+    TickData,
+    TickStatus,
+)
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -32,6 +40,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.utils import make_new_backfill_id
+from dagster._daemon.backfill import _BACKFILL_ORIGIN_ID, BackfillLaunchContext
 from dagster._seven import get_system_temp_directory
 from dagster._utils import safe_tempfile_path
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -260,11 +269,33 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
     """Executes an asset backfill iteration with side effects (i.e. updates run status and bulk action status)."""
     with get_workspace_process_context(graphql_context.instance) as context:
         backfill = graphql_context.instance.get_backfill(backfill_id)
-        list(
-            execute_asset_backfill_iteration(
-                backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
+        evaluation_time = pendulum.now("UTC")
+        tick = graphql_context.instance.create_tick(
+            TickData(
+                instigator_origin_id=_BACKFILL_ORIGIN_ID,
+                instigator_name=backfill_id,
+                instigator_type=InstigatorType.BACKFILL,
+                status=TickStatus.STARTED,
+                timestamp=evaluation_time.timestamp(),
+                selector_id=backfill_id,
             )
         )
+        tick_retention_settings = graphql_context.instance.get_tick_retention_settings(
+            InstigatorType.BACKFILL
+        )
+        logger = logging.getLogger("fake_logger")
+        with BackfillLaunchContext(
+            tick,
+            backfill_id,
+            graphql_context.instance,
+            logger,
+            tick_retention_settings,
+        ) as tick_context:
+            list(
+                execute_asset_backfill_iteration(
+                    backfill, logger, context, graphql_context.instance, tick_context
+                )
+            )
 
 
 def _mock_asset_backfill_runs(

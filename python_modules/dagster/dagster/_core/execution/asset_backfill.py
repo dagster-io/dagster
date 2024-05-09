@@ -912,6 +912,9 @@ def execute_asset_backfill_iteration(
         workspace_context, backfill, asset_graph, instance_queryer, logger
     )
     if previous_asset_backfill_data is None:
+        tick_context.update_state(
+            TickStatus.SUCCESS
+        )  # should this be a fail? it's bc the code location is unavailable?
         return
 
     logger.info(

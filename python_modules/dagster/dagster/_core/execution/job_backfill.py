@@ -104,6 +104,7 @@ def execute_job_backfill_iteration(
                 # before submitting, refetch the backfill job to check for status changes
                 backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
                 if backfill.status != BulkActionStatus.REQUESTED:
+                    tick_context.update_state(TickStatus.SUCCESS)
                     return
 
         check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
