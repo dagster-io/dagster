@@ -1,6 +1,7 @@
 import {Colors, FontFamily} from '@dagster-io/ui-components';
-import {Suspense, lazy} from 'react';
 import styled from 'styled-components';
+
+import {lazy} from '../util/lazy';
 
 const MarkdownWithPlugins = lazy(() => import('./MarkdownWithPlugins'));
 
@@ -11,9 +12,7 @@ interface Props {
 export const Markdown = (props: Props) => {
   return (
     <Container>
-      <Suspense fallback={<div />}>
-        <MarkdownWithPlugins {...props} />
-      </Suspense>
+      <MarkdownWithPlugins {...props} />
     </Container>
   );
 };

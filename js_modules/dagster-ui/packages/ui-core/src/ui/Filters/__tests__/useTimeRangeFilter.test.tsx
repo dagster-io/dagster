@@ -82,9 +82,7 @@ describe('CustomTimeRangeFilterDialog', () => {
     const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
     const filter = result.current;
 
-    const {getByText} = render(
-      <CustomTimeRangeFilterDialog filter={filter} closeRef={{current: () => {}}} />,
-    );
+    const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={() => {}} />);
 
     expect(getByText('Select a date range')).toBeInTheDocument();
   });
@@ -93,18 +91,20 @@ describe('CustomTimeRangeFilterDialog', () => {
     const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
     let filter = result.current;
 
-    const {getByText} = render(
-      <CustomTimeRangeFilterDialog filter={filter} closeRef={{current: () => {}}} />,
+    const {getByText} = await act(async () =>
+      render(<CustomTimeRangeFilterDialog filter={filter} close={() => {}} />),
     );
 
     // Mock selecting start and end dates
     const startDate = moment().startOf('day').subtract(10, 'days');
     const endDate = moment().endOf('day').subtract(5, 'days');
 
-    act(() => {
-      ((mockReactDates.mock.calls[0] as any)[0] as any).onDatesChange({
-        startDate,
-        endDate,
+    await waitFor(() => {
+      act(() => {
+        ((mockReactDates.mock.calls[0] as any)[0] as any).onDatesChange({
+          startDate,
+          endDate,
+        });
       });
     });
 
@@ -116,13 +116,11 @@ describe('CustomTimeRangeFilterDialog', () => {
   });
 
   it('should close dialog on cancel', async () => {
-    const closeRefMock = jest.fn();
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const closeMock = jest.fn();
+    const {result} = await act(async () => renderHook(() => useTimeRangeFilter(mockFilterProps)));
     let filter = result.current;
 
-    const {getByText} = render(
-      <CustomTimeRangeFilterDialog filter={filter} closeRef={{current: closeRefMock}} />,
-    );
+    const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={closeMock} />);
 
     // Click cancel button
     await userEvent.click(getByText('Cancel'));
@@ -130,7 +128,7 @@ describe('CustomTimeRangeFilterDialog', () => {
 
     await waitFor(() => {
       // wait for blueprint animation
-      expect(closeRefMock).toHaveBeenCalled();
+      expect(closeMock).toHaveBeenCalled();
     });
   });
 });
