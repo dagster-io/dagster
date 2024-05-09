@@ -51,18 +51,7 @@ from dagster._core.test_utils import instance_for_test
 
 
 def get_all_assets_from_defs(defs: Definitions):
-    # could not find public method on repository to do this
-    repo = resolve_pending_repo_if_required(defs)
-    return list(repo.asset_graph.assets_defs)
-
-
-def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
-    repo_or_caching_repo = definitions.get_inner_repository_for_loading_process()
-    return (
-        repo_or_caching_repo.compute_repository_definition()
-        if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
-        else repo_or_caching_repo
-    )
+    return list(defs.get_repository_def().asset_graph.assets_defs)
 
 
 def test_basic_asset():
@@ -152,7 +141,7 @@ def test_with_resource_binding():
         assets=[requires_foo],
         resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
     )
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
 
     assert len(repo.get_top_level_resources()) == 1
     assert "foo" in repo.get_top_level_resources()
@@ -173,7 +162,7 @@ def test_nested_resources() -> None:
     defs = Definitions(
         resources={"foo": MyOuterResource(inner=inner)},
     )
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
 
     assert len(repo.get_top_level_resources()) == 1
     assert "foo" in repo.get_top_level_resources()
@@ -191,7 +180,7 @@ def test_resource_coercion():
         assets=[requires_foo],
         resources={"foo": "object-to-coerce"},
     )
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
 
     assert len(repo.get_top_level_resources()) == 1
     assert "foo" in repo.get_top_level_resources()
@@ -203,7 +192,7 @@ def test_resource_coercion():
 
 def test_source_asset():
     defs = Definitions(assets=[SourceAsset("a-source-asset")])
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     all_assets = list(repo.asset_graph.assets_defs)
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "a-source-asset"
@@ -233,7 +222,7 @@ def test_pending_repo():
             ]
 
     # This section of the test was just to test my understanding of what is happening
-    # here and then it also documents why resolve_pending_repo_if_required is necessary
+    # here and then it also documents why pending repo resolution is necessary
     @repository
     def a_pending_repo():
         return [MyCacheableAssetsDefinition("foobar")]
