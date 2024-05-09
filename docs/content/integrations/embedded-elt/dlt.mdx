@@ -46,7 +46,10 @@ Next, we defined a dlt pipeline that specifies how we want the data to be loaded
 
 ```python
 pipeline = dlt.pipeline(
-    pipeline_name="example_pipeline", destination="snowflake", dataset_name="example_data"
+    pipeline_name="example_pipeline",
+    destination="snowflake",
+    dataset_name="example_data",
+    progress="log",
 )
 ```
 
@@ -195,6 +198,7 @@ from dlt_sources.github import github_reactions
         pipeline_name="github_issues",
         dataset_name="github",
         destination="snowflake",
+        progress="log",
     ),
     name="github",
     group_name="github",

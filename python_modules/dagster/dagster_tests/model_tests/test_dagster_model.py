@@ -4,6 +4,15 @@ from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_metho
 from pydantic import ValidationError
 
 
+def test_runtime_typecheck():
+    class MyClass(DagsterModel):
+        foo: str
+        bar: int
+
+    with pytest.raises(ValidationError):
+        MyClass(foo="fdsjk", bar="fdslk")
+
+
 def test_override_constructor_in_subclass():
     class MyClass(DagsterModel):
         foo: str

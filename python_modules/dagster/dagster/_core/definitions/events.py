@@ -149,6 +149,18 @@ class Output(Generic[T]):
             and self.tags == other.tags
         )
 
+    def with_metadata(self, metadata: Optional[Mapping[str, RawMetadataValue]]) -> "Output":
+        """Returns a new Output with the same value and output_name,
+        but with the provided metadata.
+        """
+        return Output(
+            value=self.value,
+            output_name=self.output_name,
+            metadata=metadata,
+            data_version=self.data_version,
+            tags=self.tags,
+        )
+
 
 class DynamicOutput(Generic[T]):
     """Variant of :py:class:`Output <dagster.Output>` used to support

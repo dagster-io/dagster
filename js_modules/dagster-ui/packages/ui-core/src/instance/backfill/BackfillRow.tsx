@@ -21,6 +21,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
@@ -79,6 +80,7 @@ export const BackfillRowLoader = (props: {
       notifyOnNetworkStatusChange: true,
     },
   );
+  useBlockTraceOnQueryResult(statusDetails[1], 'SingleBackfillQuery');
 
   const statusCounts = useLazyQuery<SingleBackfillCountsQuery, SingleBackfillCountsQueryVariables>(
     SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
@@ -87,6 +89,7 @@ export const BackfillRowLoader = (props: {
       notifyOnNetworkStatusChange: true,
     },
   );
+  useBlockTraceOnQueryResult(statusCounts[1], 'SingleBackfillCountsQuery');
 
   // Note: We switch queries based on how many partitions there are to display,
   // because the detail is nice for small backfills but breaks for 100k+ partitions.
