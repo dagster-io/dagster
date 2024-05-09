@@ -1269,7 +1269,7 @@ class DbtCliResource(ConfigurableResource):
 
                 import json
 
-                from dagster import asset, op
+                from dagster import Nothing, Out, asset, op
                 from dagster_dbt import DbtCliResource
 
 
@@ -1279,10 +1279,10 @@ class DbtCliResource(ConfigurableResource):
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
 
 
-                @op
+                @op(out=Out(Nothing))
                 def my_dbt_op(dbt: DbtCliResource):
                     dbt_macro_args = {"key": "value"}
-                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
+                    yield from dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).stream()
         """
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 

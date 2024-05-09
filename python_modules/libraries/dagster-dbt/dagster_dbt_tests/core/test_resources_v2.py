@@ -7,6 +7,9 @@ from typing import Any, Dict, List, Optional, Union, cast
 import pydantic
 import pytest
 from dagster import (
+    In,
+    Nothing,
+    Out,
     job,
     materialize,
     op,
@@ -476,9 +479,17 @@ def test_dbt_cli_op_execution(
     def my_dbt_op_yield_events(context: OpExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], manifest=test_jaffle_shop_manifest, context=context).stream()
 
+    @op(out=Out(Nothing))
+    def my_dbt_op_yield_events_with_downstream(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], manifest=test_jaffle_shop_manifest, context=context).stream()
+
+    @op(ins={"depends_on": In(dagster_type=Nothing)})
+    def my_downstream_op(): ...
+
     @job
     def my_dbt_job_yield_events():
         my_dbt_op_yield_events()
+        my_downstream_op(depends_on=my_dbt_op_yield_events_with_downstream())
 
     result = my_dbt_job_yield_events.execute_in_process(resources={"dbt": dbt})
     assert result.success
