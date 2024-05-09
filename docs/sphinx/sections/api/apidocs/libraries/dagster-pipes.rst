@@ -5,7 +5,7 @@ Pipes (dagster-pipes)
 
 The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes </concepts/dagster-pipes>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
 
-For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`_.
+For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__.
 
 **Looking to set up a Pipes client in Dagster?** Refer to the `Dagster Pipes API reference </_apidocs/pipes>`_.
 
@@ -22,8 +22,15 @@ Context
 
 ----
 
+Advanced
+--------
+
+The APIs in the following sections are primarily used by those who need more control over Pipes than the simplified objects, such as ``dagster.PipesSubprocessClient``, can offer. Most Pipes users won't need to use these APIs in their Pipes implementation.
+
+Refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__ for more information.
+
 Context loaders
----------------
+^^^^^^^^^^^^^^^
 
 Context loaders load the context payload from the location specified in the bootstrap payload.
 
@@ -36,7 +43,7 @@ Context loaders load the context payload from the location specified in the boot
 ----
 
 Params loaders
---------------
+^^^^^^^^^^^^^^
 
 Params loaders load the bootstrap payload from some globally accessible key-value store.
 
@@ -47,7 +54,7 @@ Params loaders load the bootstrap payload from some globally accessible key-valu
 ----
 
 Message writers
----------------
+^^^^^^^^^^^^^^^
 
 Message writers write messages to the location specified in the bootstrap payload.
 
@@ -64,7 +71,7 @@ Message writers write messages to the location specified in the bootstrap payloa
 ----
 
 Message writer channels
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Message writer channels are objects that write messages back to the Dagster orchestration process.
 
@@ -83,7 +90,7 @@ Message writer channels are objects that write messages back to the Dagster orch
 ----
 
 Utilities
----------
+^^^^^^^^^
 
 .. autofunction:: encode_env_var
 
