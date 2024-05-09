@@ -4,6 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';
+import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {Row} from '../ui/VirtualizedTable';
 
@@ -79,13 +80,15 @@ const CaptionTextContainer = styled.div`
 const JOB_QUERY_DELAY = 100;
 
 export const useDelayedRowQuery = (lazyQueryFn: () => void) => {
+  const dependency = useTraceDependency('DelayedRowQuery');
   React.useEffect(() => {
     const timer = setTimeout(() => {
       lazyQueryFn();
+      dependency.completeDependency(CompletionType.SUCCESS);
     }, JOB_QUERY_DELAY);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [lazyQueryFn]);
+  }, [lazyQueryFn, dependency]);
 };
