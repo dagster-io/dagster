@@ -2,9 +2,16 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Dict, Hashable, Optional
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
-from typing_extensions import Self
+from typing_extensions import Annotated, Self, TypeAlias, TypeVar
 
 from .pydantic_compat_layer import USING_PYDANTIC_2
+
+if USING_PYDANTIC_2:
+    from pydantic import InstanceOf as InstanceOf  # type: ignore
+else:
+    # fallback to a no-op on pydantic 1 as there is no equivalent
+    AnyType = TypeVar("AnyType")
+    InstanceOf: TypeAlias = Annotated[AnyType, ...]
 
 
 class DagsterModel(BaseModel):
