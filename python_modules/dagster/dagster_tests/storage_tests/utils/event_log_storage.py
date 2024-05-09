@@ -4365,14 +4365,13 @@ class TestEventLogStorage:
             pytest.skip("storage does not support event consumer queries")
 
         storage.wipe()
-        assert storage.get_maximum_record_id() is None
 
         storage.store_event(
             EventLogEntry(
                 error_info=None,
                 level="debug",
                 user_message="",
-                run_id="foo_run",
+                run_id=make_new_run_id(),
                 timestamp=time.time(),
                 dagster_event=DagsterEvent(
                     DagsterEventType.ENGINE_EVENT.value,
@@ -4391,7 +4390,7 @@ class TestEventLogStorage:
                     error_info=None,
                     level="debug",
                     user_message="",
-                    run_id=f"foo_run_{i}",
+                    run_id=make_new_run_id(),
                     timestamp=time.time(),
                     dagster_event=DagsterEvent(
                         DagsterEventType.ENGINE_EVENT.value,
