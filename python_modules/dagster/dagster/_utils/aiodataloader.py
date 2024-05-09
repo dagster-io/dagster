@@ -66,7 +66,7 @@ class DataLoader(Generic[KeyT, ReturnT]):
         cache_map: Optional[MutableMapping[Union[CacheKeyT, KeyT], "Future[ReturnT]"]] = None,
         loop: Optional[AbstractEventLoop] = None,
     ):
-        self.loop = loop or get_event_loop()
+        self._loop = loop or get_event_loop()
 
         if batch_load_fn is not None:
             self.batch_load_fn = batch_load_fn
@@ -99,6 +99,21 @@ class DataLoader(Generic[KeyT, ReturnT]):
 
         self._cache = cache_map if cache_map is not None else {}
         self._queue: List[Loader] = []
+
+    @property
+    def loop(self) -> AbstractEventLoop:
+        # ensure a good error is thrown if the event loop has changed since instantiation,
+        # can result in cryptic errors otherwise.
+
+        # it might be possible to instead update the event loop if there is no work in flight,
+        # unclear if there are valid uses cases for that
+
+        if self._loop != get_event_loop():
+            raise Exception(
+                "event loop has changed since init, this DataLoader instance is no longer usable."
+            )
+
+        return self._loop
 
     def load(self, key: KeyT) -> "Future[ReturnT]":
         """Loads a key, returning a `Future` for the value represented by that key."""
@@ -235,7 +250,10 @@ async def dispatch_queue_batch(loader: DataLoader[Any, Any], queue: List[Loader]
     keys = [ql.key for ql in queue]
 
     # Call the provided batch_load_fn for this loader with the loader queue's keys.
-    batch_future = loader.batch_load_fn(keys)
+    try:
+        batch_future = loader.batch_load_fn(keys)
+    except Exception as e:
+        return failed_dispatch(loader, queue, e)
 
     # Assert the expected response from batch_load_fn
     if not batch_future or not iscoroutine(batch_future):
