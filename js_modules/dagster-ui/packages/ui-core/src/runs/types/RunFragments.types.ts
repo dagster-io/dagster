@@ -117,6 +117,17 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -285,6 +296,17 @@ export type RunDagsterRunEventFragment_EngineEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -448,6 +470,17 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -600,6 +633,17 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -749,6 +793,17 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -883,6 +938,17 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
           boolValue: boolean | null;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
         }
       | {
           __typename: 'FloatMetadataEntry';
@@ -1090,6 +1156,17 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1273,6 +1350,17 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1439,6 +1527,17 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1581,6 +1680,17 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
           boolValue: boolean | null;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
         }
       | {
           __typename: 'FloatMetadataEntry';
@@ -1731,6 +1841,17 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1874,6 +1995,17 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -2030,6 +2162,17 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2172,6 +2315,17 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -2401,6 +2555,17 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -2551,6 +2716,17 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2693,6 +2869,17 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
       }
     | {
         __typename: 'FloatMetadataEntry';

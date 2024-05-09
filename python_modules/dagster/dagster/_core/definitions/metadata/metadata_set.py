@@ -149,10 +149,14 @@ class TableMetadataSet(NamespacedMetadataSet):
         column_schema (Optional[TableSchema]): The schema of the columns in the table.
         column_lineage (Optional[TableColumnLineage]): The lineage of column inputs to column
             outputs for the table.
+        row_count (Optional[int]): The number of rows in the table.
+        partition_row_count (Optional[int]): The number of rows in the materialized or observed partition.
     """
 
     column_schema: Optional[TableSchema] = None
     column_lineage: Optional[TableColumnLineage] = None
+    row_count: Optional[int] = None
+    partition_row_count: Optional[int] = None
 
     @classmethod
     def namespace(cls) -> str:

@@ -5,7 +5,7 @@ description: "Learn to integrate Dagster Pipes with Databricks to launch externa
 
 # Integrating Databricks with Dagster Pipes
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Databricks integration to launch Databricks jobs.
+In this guide, we’ll show you how to use [Dagster Pipes](/concepts/dagster-pipes) with Dagster’s Databricks integration to launch Databricks jobs.
 
 Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr` of the driver process) and events back to Dagster. This does not require a full Dagster environment on Databricks; instead:
 
@@ -210,13 +210,13 @@ with open_dagster_pipes(
 
 Before we go any futher, let's review what this script does:
 
-- **Imports `PipesDbfsContextLoader`, `PipesDbfsMessageWriter`, and `open_dagster_pipes` from `dagster_pipes`.** The <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" /> are DBFS-specific implementations of the <PyObject object="PipesContextLoader" /> and <PyObject object="PipesMessageWriter" />. Refer to the [Dagster Pipes details and customization Guide](/guides/dagster-pipes/dagster-pipes-details-and-customization) for protocol details.
+- **Imports `PipesDbfsContextLoader`, `PipesDbfsMessageWriter`, and `open_dagster_pipes` from `dagster_pipes`.** The <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" /> are DBFS-specific implementations of the <PyObject object="PipesContextLoader" /> and <PyObject object="PipesMessageWriter" />. Refer to the [Dagster Pipes details and customization Guide](/concepts/dagster-pipes/dagster-pipes-details-and-customization) for protocol details.
 
   Both objects write temporary files on DBFS for communication between the orchestration and external process. The <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" /> match a corresponding `PipesDbfsContextInjector` and `PipesDbfsMessageReader` on the orchestration end, which are instantiated inside the <PyObject object="PipesDatabricksClient" module="dagster_databricks" />.
 
 - **Passes the context loader and message writer to the <PyObject object="open_dagster_pipes" module="dagster_pipes" /> context manager**, which yields an instance of <PyObject object="PipesContext" module="dagster_pipes" /> called `pipes`.
 
-  Inside the body of the context manager are various calls against `pipes` to retrieve an extra, log, and report an asset materialization. All of these calls will use the DBFS temporary file-based communications channels established by <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes guide](/guides/dagster-pipes).
+  Inside the body of the context manager are various calls against `pipes` to retrieve an extra, log, and report an asset materialization. All of these calls will use the DBFS temporary file-based communications channels established by <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes guide](/concepts/dagster-pipes).
 
 At this point you can execute the rest of your Databricks code as normal, invoking various <PyObject object="PipesContext" module="dagster_pipes" /> APIs as needed.
 
@@ -378,11 +378,11 @@ def databricks_asset(context: AssetExecutionContext):
 <ArticleList>
   <ArticleListItem
     title="Dagster Pipes"
-    href="/guides/dagster-pipes"
+    href="/concepts/dagster-pipes"
   ></ArticleListItem>
   <ArticleListItem
     title="Dagster Pipes details and customization"
-    href="/guides/dagster-pipes/dagster-pipes-details-and-customization"
+    href="/concepts/dagster-pipes/dagster-pipes-details-and-customization"
   ></ArticleListItem>
   <ArticleListItem
     title="dagster-databricks API reference"

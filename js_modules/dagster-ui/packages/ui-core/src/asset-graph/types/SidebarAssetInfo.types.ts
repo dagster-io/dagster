@@ -23,6 +23,17 @@ export type SidebarAssetFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -769,6 +780,17 @@ export type SidebarAssetFragment = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -2037,6 +2059,17 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -3303,6 +3336,17 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -4558,6 +4602,17 @@ export type SidebarAssetFragment = {
               boolValue: boolean | null;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<{
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number;
+                label: string | null;
+              }>;
             }
           | {
               __typename: 'FloatMetadataEntry';
@@ -5832,6 +5887,17 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -7096,6 +7162,17 @@ export type SidebarAssetFragment = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -8364,6 +8441,17 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -9619,6 +9707,17 @@ export type SidebarAssetFragment = {
               boolValue: boolean | null;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<{
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number;
+                label: string | null;
+              }>;
             }
           | {
               __typename: 'FloatMetadataEntry';
@@ -10893,6 +10992,17 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -12157,6 +12267,17 @@ export type SidebarAssetFragment = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -13425,6 +13546,17 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -14680,6 +14812,17 @@ export type SidebarAssetFragment = {
               boolValue: boolean | null;
               label: string;
               description: string | null;
+            }
+          | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<{
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number;
+                label: string | null;
+              }>;
             }
           | {
               __typename: 'FloatMetadataEntry';
@@ -15950,6 +16093,17 @@ export type SidebarAssetQuery = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<{
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number;
+                label: string | null;
+              }>;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -16715,6 +16869,17 @@ export type SidebarAssetQuery = {
                           boolValue: boolean | null;
                           label: string;
                           description: string | null;
+                        }
+                      | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
                         }
                       | {
                           __typename: 'FloatMetadataEntry';
@@ -17989,6 +18154,17 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -19261,6 +19437,17 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -20522,6 +20709,17 @@ export type SidebarAssetQuery = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -21801,6 +21999,17 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -23071,6 +23280,17 @@ export type SidebarAssetQuery = {
                           boolValue: boolean | null;
                           label: string;
                           description: string | null;
+                        }
+                      | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
                         }
                       | {
                           __typename: 'FloatMetadataEntry';
@@ -24345,6 +24565,17 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -25606,6 +25837,17 @@ export type SidebarAssetQuery = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -26885,6 +27127,17 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -28155,6 +28408,17 @@ export type SidebarAssetQuery = {
                           boolValue: boolean | null;
                           label: string;
                           description: string | null;
+                        }
+                      | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
                         }
                       | {
                           __typename: 'FloatMetadataEntry';
@@ -29429,6 +29693,17 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<{
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number;
+                            label: string | null;
+                          }>;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -30690,6 +30965,17 @@ export type SidebarAssetQuery = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<{
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number;
+                      label: string | null;
+                    }>;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';

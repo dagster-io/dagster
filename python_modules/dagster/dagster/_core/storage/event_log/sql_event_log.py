@@ -426,14 +426,16 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(AssetEventTagsTable.insert(), all_values)
 
     def _tags_for_asset_event(self, event: EventLogEntry) -> Mapping[str, str]:
+        tags = {}
         if event.dagster_event and event.dagster_event.asset_key:
             if event.dagster_event.is_step_materialization:
-                return (
+                tags = (
                     event.get_dagster_event().step_materialization_data.materialization.tags or {}
                 )
             elif event.dagster_event.is_asset_observation:
-                return event.get_dagster_event().asset_observation_data.asset_observation.tags
-        return {}
+                tags = event.get_dagster_event().asset_observation_data.asset_observation.tags
+        keys_to_index = self.get_asset_tags_to_index(set(tags.keys()))
+        return {k: v for k, v in tags.items() if k in keys_to_index}
 
     def store_event(self, event: EventLogEntry) -> None:
         """Store an event corresponding to a pipeline run.
@@ -1881,6 +1883,11 @@ class SqlEventLogStorage(EventLogStorage):
         check.opt_nullable_sequence_param(asset_partitions, "asset_partitions", of_type=str)
         check.opt_int_param(before_cursor, "before_cursor")
         check.opt_int_param(after_cursor, "after_cursor")
+
+        if not tag_keys or len(tag_keys) != len(self.get_asset_tags_to_index(set(tag_keys))):
+            check.failed(
+                "Only a limited set of tag keys are whitelisted for querying the latest tag values by partition."
+            )
 
         latest_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
             asset_key=asset_key,

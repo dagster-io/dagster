@@ -69,7 +69,7 @@ class SchedulingContext(DagsterModel):
         scheduling_condition = auto_materialize_policy.to_scheduling_condition()
 
         # construct is used here for performance
-        return SchedulingContext.construct(
+        return SchedulingContext.model_construct(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key),
             condition=scheduling_condition,
             condition_unique_id=scheduling_condition.get_unique_id(None),
@@ -86,7 +86,7 @@ class SchedulingContext(DagsterModel):
         self, child_condition: SchedulingCondition, candidate_slice: AssetSlice
     ) -> "SchedulingContext":
         # construct is used here for performance
-        return SchedulingContext.construct(
+        return SchedulingContext.model_construct(
             candidate_slice=candidate_slice,
             condition=child_condition,
             condition_unique_id=child_condition.get_unique_id(

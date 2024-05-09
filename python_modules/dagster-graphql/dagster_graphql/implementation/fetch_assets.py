@@ -9,6 +9,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     cast,
@@ -200,7 +201,7 @@ def get_asset_node_definition_collisions(
 
 
 def get_asset_nodes_by_asset_key(
-    graphene_info: "ResolveInfo", asset_keys: Optional[Sequence[AssetKey]] = None
+    graphene_info: "ResolveInfo", asset_keys: Optional[Set[AssetKey]] = None
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
     """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
@@ -265,8 +266,8 @@ def get_asset_nodes_by_asset_key(
     }
 
 
-def get_asset_nodes(graphene_info: "ResolveInfo"):
-    return get_asset_nodes_by_asset_key(graphene_info).values()
+def get_asset_nodes(graphene_info: "ResolveInfo", asset_keys: Optional[Set[AssetKey]] = None):
+    return get_asset_nodes_by_asset_key(graphene_info, asset_keys=asset_keys).values()
 
 
 def get_asset_node(
@@ -275,7 +276,7 @@ def get_asset_node(
     from ..schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
-    node = get_asset_nodes_by_asset_key(graphene_info, asset_keys=[asset_key]).get(asset_key, None)
+    node = get_asset_nodes_by_asset_key(graphene_info, asset_keys={asset_key}).get(asset_key, None)
     if not node:
         return GrapheneAssetNotFoundError(asset_key=asset_key)
     return node
@@ -290,7 +291,7 @@ def get_asset(
     check.inst_param(asset_key, "asset_key", AssetKey)
     instance = graphene_info.context.instance
 
-    asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info, asset_keys=[asset_key])
+    asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info, asset_keys={asset_key})
     asset_node = asset_nodes_by_asset_key.get(asset_key)
 
     if not asset_node and not instance.has_asset_key(asset_key):

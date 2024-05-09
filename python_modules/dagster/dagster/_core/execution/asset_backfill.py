@@ -922,6 +922,7 @@ def execute_asset_backfill_iteration(
             asset_graph=asset_graph,
             run_tags=backfill.tags,
             backfill_start_time=backfill_start_time,
+            logger=logger,
         ):
             yield None
 
@@ -1184,6 +1185,7 @@ def execute_asset_backfill_iteration_inner(
     instance_queryer: CachingInstanceQueryer,
     run_tags: Mapping[str, str],
     backfill_start_time: datetime,
+    logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -1196,6 +1198,7 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
+        logger.info("Not all root assets have been requested, finding root assets.")
         target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
         # Because the code server may have failed while requesting roots, some roots may have
         # already been requested. Checking here will reduce the amount of BFS work later in the iteration.
@@ -1203,6 +1206,7 @@ def execute_asset_backfill_iteration_inner(
             root for root in target_roots if root not in asset_backfill_data.requested_subset
         ]
         initial_candidates.update(not_yet_requested)
+        logger.info(f"Root assets that have not yet been requested: {initial_candidates}")
 
         yield None
 
@@ -1229,6 +1233,10 @@ def execute_asset_backfill_iteration_inner(
                 "Expected get_asset_backfill_iteration_materialized_partitions to return an"
                 " AssetGraphSubset"
             )
+
+        logger.info(
+            f"Assets materialized since last tick {updated_materialized_subset - asset_backfill_data.materialized_subset}"
+        )
 
         parent_materialized_asset_partitions = set().union(
             *(
@@ -1264,6 +1272,10 @@ def execute_asset_backfill_iteration_inner(
         ),
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
+    )
+
+    logger.info(
+        f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
     )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error

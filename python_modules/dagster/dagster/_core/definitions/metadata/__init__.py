@@ -57,6 +57,13 @@ from .metadata_value import (
     TimestampMetadataValue as TimestampMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
+from .source_code import (
+    DEFAULT_SOURCE_FILE_KEY as DEFAULT_SOURCE_FILE_KEY,
+    CodeReferencesMetadataSet as CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue as CodeReferencesMetadataValue,
+    LocalFileCodeReference as LocalFileCodeReference,
+    with_source_code_references as with_source_code_references,
+)
 from .table import (  # re-exported
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
@@ -87,7 +94,6 @@ MetadataMapping: TypeAlias = Mapping[str, "MetadataValue"]
 RawMetadataMapping: TypeAlias = Mapping[str, RawMetadataValue]
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
-
 
 # ########################
 # ##### NORMALIZATION

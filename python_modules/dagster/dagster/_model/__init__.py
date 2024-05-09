@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Any, Dict, Hashable, Optional
+from typing import TYPE_CHECKING, Any, Dict, Hashable, Optional
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 from typing_extensions import Self
@@ -15,10 +15,14 @@ class DagsterModel(BaseModel):
     - Avoid pydantic reading a cached property class as part of the schema.
     """
 
-    _cached_method_cache__internal__: Dict[Hashable, Any] = PrivateAttr(default_factory=dict)
+    if not USING_PYDANTIC_2:
+        # the setattr approach for cached_method works in pydantic 2 so only declare the PrivateAttr
+        # in pydantic 1 as it has non trivial performance impact
+        _cached_method_cache__internal__: Dict[Hashable, Any] = PrivateAttr(default_factory=dict)
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
+    if TYPE_CHECKING:
+        # without this, the type checker does not understand the constructor kwargs on subclasses
+        def __init__(self, **data: Any) -> None: ...
 
     if USING_PYDANTIC_2:
         model_config = ConfigDict(  # type: ignore
@@ -40,3 +44,10 @@ class DagsterModel(BaseModel):
             return super().model_copy(update=update)  # type: ignore
         else:
             return super().copy(update=update)
+
+    @classmethod
+    def model_construct(cls, **kwargs: Any) -> Self:
+        if USING_PYDANTIC_2:
+            return super().model_construct(**kwargs)  # type: ignore
+        else:
+            return super().construct(**kwargs)
