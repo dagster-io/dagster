@@ -12,7 +12,7 @@ from dagster import (
     Field,
     Selector,
 )
-from dagster._config.config_type import Array, ConfigType, Noneable
+from dagster._config.config_type import Array, ConfigType, ConfigTypeKind, Noneable
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
     Map,
@@ -55,9 +55,13 @@ def _apply_defaults_to_schema_field(old_field: Field, additional_default_values:
         new_default = (
             old_field.default_value if old_field.default_provided else FIELD_NO_DEFAULT_PROVIDED
         )
+
         if all(
             sub_field.default_provided or not sub_field.is_required
             for sub_field in updated_sub_fields.values()
+        ) or (
+            old_field.config_type.kind == ConfigTypeKind.SELECTOR
+            and any(sub_field.default_provided for sub_field in updated_sub_fields.values())
         ):
             new_default = {
                 **additional_default_values,
