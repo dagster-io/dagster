@@ -20,22 +20,18 @@ export const Route = memo((props: ComponentProps<typeof ReactRouterRoute>) => {
     if (!Component) {
       return;
     }
-    return (props: any) => {
-      return (
-        <Wrapper>
-          <Component {...props} />
-        </Wrapper>
-      );
-    };
+    return (props: any) => (
+      <Wrapper>
+        <Component {...props} />
+      </Wrapper>
+    );
   }, [Component]);
 
   const childRenderFn = useMemo(() => {
     if (!(children instanceof Function)) {
       return;
     }
-    return (...args: Parameters<typeof children>) => {
-      return <Wrapper>{children(...args)}</Wrapper>;
-    };
+    return (...args: Parameters<typeof children>) => <Wrapper>{children(...args)}</Wrapper>;
   }, [children]);
 
   if (render) {
