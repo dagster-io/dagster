@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
+from typing import Any, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
@@ -1076,20 +1076,10 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        results = get_asset_nodes(graphene_info, asset_keys)
-
-        # Filter down to requested asset keys
-        # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            node.external_asset_node.asset_key: node.external_asset_node.op_names
-            for node in results
-            if node.assetKey in asset_keys
-        }
-
         asset_record_loader = graphene_info.context.asset_record_loader
         asset_record_loader.add_asset_keys(asset_keys)
 
-        return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
+        return get_assets_latest_info(graphene_info, asset_keys, asset_record_loader)
 
     @capture_error
     def resolve_logsForRun(
