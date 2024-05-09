@@ -5,7 +5,7 @@ import React from 'react';
 // The conditional logic is to ensure that it works in all cases rather than just the one where the children are wrapped in a <p> tag.
 
 export const unpackText = (children) => {
-  console.log(children);
+  // console.log(children);
   if (children?.type === 'p') {
     return [...React.Children.toArray(children.props.children)];
   } else {

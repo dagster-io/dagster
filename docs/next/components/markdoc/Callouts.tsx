@@ -1,5 +1,4 @@
-import {unpackText} from 'util/unpackText';
-// import * as React from 'react';
+import * as React from 'react';
 
 import Icons from '../Icons';
 
@@ -17,14 +16,25 @@ const ADMONITION_STYLES = {
     icon: Icons.About,
   },
 };
+
+const applyTextStyles = (children, colors) => {
+  return React.Children.map(children, (child) => {
+    const existingStyles = child.props.className || '';
+    const newStyles = `text-sm text-${colors.text} ${existingStyles}`;
+    return React.cloneElement(child, {className: newStyles});
+  });
+};
+
 const Admonition = ({style, children}) => {
   const {colors, icon} = ADMONITION_STYLES[style];
+  console.log(children);
   return (
     <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} p-4 my-4`}>
-      <div className="flex items-center">
+      <div className="flex">
+        {/* Make container for the svg element that aligns it with the top right of the parent flex container */}
         <div className="flex-shrink-0">
           <svg
-            className={`h-5 w-5 text-${colors.borderIcon}`}
+            className={`mt-.5 h-5 w-5 text-${colors.borderIcon}`}
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 25 25"
             fill="currentColor"
@@ -33,8 +43,8 @@ const Admonition = ({style, children}) => {
             {icon && icon}
           </svg>
         </div>
-        <div className="ml-3">
-          <span className={`text-sm text-${colors.text}`}>{unpackText(children)}</span>
+        <div className="flex-shrink-1 ml-3">
+          <div className="admonition"> {applyTextStyles(children, colors)} </div>
         </div>
       </div>
     </div>
