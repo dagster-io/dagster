@@ -1,7 +1,8 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
 import {memo, useEffect, useRef} from 'react';
-import {Route, Switch, useLocation} from 'react-router-dom';
+import {Switch, useLocation} from 'react-router-dom';
 
+import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {AssetsOverview} from '../assets/AssetsOverview';
 import {lazy} from '../util/lazy';
