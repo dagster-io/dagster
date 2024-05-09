@@ -8,6 +8,11 @@ from dagster._core.definitions.asset_job import (
     build_asset_job,
     get_asset_graph_for_job,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
@@ -18,14 +23,7 @@ from .partition import PartitionedConfig
 from .policy import RetryPolicy
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import (
-        AssetSelection,
-        ExecutorDefinition,
-        HookDefinition,
-        JobDefinition,
-        PartitionsDefinition,
-        ResourceDefinition,
-    )
+    from dagster._core.definitions import JobDefinition
     from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
     from dagster._core.definitions.run_config import RunConfig
@@ -36,7 +34,7 @@ class UnresolvedAssetJobDefinition(
         "_UnresolvedAssetJobDefinition",
         [
             ("name", str),
-            ("selection", "AssetSelection"),
+            ("selection", AssetSelection),
             (
                 "config",
                 Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
@@ -44,9 +42,9 @@ class UnresolvedAssetJobDefinition(
             ("description", Optional[str]),
             ("tags", Optional[Mapping[str, Any]]),
             ("metadata", Optional[Mapping[str, RawMetadataValue]]),
-            ("partitions_def", Optional["PartitionsDefinition"]),
-            ("executor_def", Optional["ExecutorDefinition"]),
-            ("hooks", Optional[AbstractSet["HookDefinition"]]),
+            ("partitions_def", Optional[PartitionsDefinition]),
+            ("executor_def", Optional[ExecutorDefinition]),
+            ("hooks", Optional[AbstractSet[HookDefinition]]),
             ("op_retry_policy", Optional["RetryPolicy"]),
         ],
     )
@@ -54,24 +52,19 @@ class UnresolvedAssetJobDefinition(
     def __new__(
         cls,
         name: str,
-        selection: "AssetSelection",
+        selection: AssetSelection,
         config: Optional[
             Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        partitions_def: Optional["PartitionsDefinition"] = None,
-        executor_def: Optional["ExecutorDefinition"] = None,
-        hooks: Optional[AbstractSet["HookDefinition"]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+        hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional["RetryPolicy"] = None,
     ):
-        from dagster._core.definitions import (
-            AssetSelection,
-            ExecutorDefinition,
-            HookDefinition,
-            PartitionsDefinition,
-        )
+        from dagster._core.definitions import ExecutorDefinition
         from dagster._core.definitions.run_config import convert_config_input
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
@@ -179,8 +172,8 @@ class UnresolvedAssetJobDefinition(
     def resolve(
         self,
         asset_graph: "AssetGraph",
-        default_executor_def: Optional["ExecutorDefinition"] = None,
-        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        default_executor_def: Optional[ExecutorDefinition] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
         try:
@@ -239,9 +232,9 @@ def define_asset_job(
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    partitions_def: Optional["PartitionsDefinition"] = None,
-    executor_def: Optional["ExecutorDefinition"] = None,
-    hooks: Optional[AbstractSet["HookDefinition"]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    executor_def: Optional[ExecutorDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional["RetryPolicy"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
