@@ -9,6 +9,7 @@ import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 export type Graph = {name: string; path: string; description: string | null};
@@ -83,6 +84,7 @@ const GraphRow = (props: GraphRowProps) => {
     },
   );
 
+  useBlockTraceOnQueryResult(queryResult, 'SingleGraphQuery');
   useDelayedRowQuery(queryGraph);
   const {data} = queryResult;
 

@@ -13,6 +13,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunStatusPezList} from '../runs/RunStatusPez';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
@@ -40,7 +41,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
       },
     },
   );
-
+  useBlockTraceOnQueryResult(queryResult, 'SingleJobQuery');
   useDelayedRowQuery(queryJob);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 

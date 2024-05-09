@@ -59,11 +59,11 @@ type Options = {
 
 /** Use this to declare a dependency on an apollo query result */
 export function useBlockTraceOnQueryResult(
-  queryResult: Pick<QueryResult<any, any>, 'data' | 'error'>,
+  queryResult: Pick<QueryResult<any, any>, 'data' | 'error' | 'called'>,
   name: string,
   opts: Options = {},
 ) {
-  const dep = useTraceDependency(name, opts);
+  const dep = useTraceDependency(name, {skip: opts.skip || !queryResult.called});
   const hasData = !!queryResult.data;
   const hasError = !!queryResult.error;
 
