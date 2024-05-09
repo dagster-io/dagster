@@ -1,5 +1,42 @@
 # Changelog
 
+# 1.7.5 (core) / 0.23.5 (libraries)
+
+### New
+
+- The Asset > Checks tab now allows you to view plots of numeric metadata emitted by your checks.
+- The Asset > Events tab now supports infinite-scrolling, making it possible to view all historical materialization and observation events.
+- When constructing a `MaterializeResult`, `ObserveResult`, or `Output`, you can now include tags that will be attached to the corresponding `AssetMaterialization` or `AssetObservation` event. These tags will be rendered on these events in the UI.
+
+### Bugfixes
+
+- Fixed an issue where backfills would sometimes fail if a partition definition was changed in the middle of the backfill.
+- Fixed an issue where if the code server became unavailable during the first tick of a backfill, the backfill would stall and be unable to submit runs once the code server became available.
+- Fixed an issue where the status of an external asset would not get updated correctly.
+- Fixed an issue where run status sensors would sometimes fall behind in deployments with large numbers of runs.
+- The descriptions and metadata on the experimental `build_last_update_freshness_checks` and `build_time_partition_freshness_checks` APIs have been updated to be clearer.
+- The headers of tables no longer become misaligned when a scrollbar is present in some scenarios.
+- The sensor type, instigation type, and backfill status filters on their respective pages are now saved to the URL, so sharing the view or reloading the page preserve your filters.
+- Typing a `%` into the asset graph’s query selector no longer crashes the UI.
+- “Materializing” states on the asset graph animate properly in both light and dark themes.
+- Thanks to [@lautaro79](https://github.com/lautaro79) for fixing a helm chart issue.
+
+### Breaking Changes
+
+- Subclasses of `MetadataValue` have been changed from `NamedTuple`s to Pydantic models. `NamedTuple` functionality on these classes was not part of Dagster’s stable public API, but usages relying on their tuple-ness may break. For example: calling `json.dumps` on collections that include them.
+
+### Deprecations
+
+- [dagster-dbt] Support for `dbt-core==1.5.*` has been removed, as it has reached [end of life in April 2024](https://docs.getdbt.com/docs/dbt-versions/core).
+
+### Dagster Plus
+
+- Fixed an issue in the `dagster-cloud` CLI where the `--deployment` argument was ignored when the `DAGSTER_CLOUD_URL` environment variable was set.
+- Fixed an issue where `dagster-cloud-cli` package wouldn’t work unless the `dagster-cloud` package was installed as well.
+- A new “budget alerts” feature has launched for users on self-serve plans. This feature will alert you when you hit your credit limit.
+- The experimental asset health overview now allows you to group assets by compute kind, tag, and tag value.
+- The concurrency and locations pages in settings correctly show Dagster Plus-specific options when experimental navigation is enabled.
+
 # 1.7.4 (core) / 0.23.4 (libraries)
 
 ### New
