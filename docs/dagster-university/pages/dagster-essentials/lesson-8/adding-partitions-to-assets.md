@@ -43,7 +43,7 @@ To add the partition to the asset:
    )
    ```
 
-3. In Dagster, the `context` argument provides you with metadata about the current materialization. To access it, include it as the first argument in the asset definition function. You can enable typehinting for this by importing `AssetExecutionContext` from `dagster` and adding it to the function signature. For example, the updated asset definition should look like this:
+3. In Dagster, the `context` argument provides you with metadata about the current materialization. To access it, include it as the first argument in the asset definition function. You can enable type hinting for this by importing `AssetExecutionContext` from `dagster` and adding it to the function signature. For example, the updated asset definition should look like this:
 
    ```python
    from dagster import asset, AssetExecutionContext
