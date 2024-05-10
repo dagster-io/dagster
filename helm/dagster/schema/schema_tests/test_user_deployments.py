@@ -1245,6 +1245,7 @@ def test_env(template: HelmTemplate, user_deployment_configmap_template):
     assert dagster_user_deployment.spec.template.spec.containers[0].env[3].name == "test_env"
     assert dagster_user_deployment.spec.template.spec.containers[0].env[3].value == "test_value"
 
+
 def test_namespace(template: HelmTemplate, user_deployment_configmap_template):
     # add a deployment namespace
     deployment = UserDeployment.construct(
