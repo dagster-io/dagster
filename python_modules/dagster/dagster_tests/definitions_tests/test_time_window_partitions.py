@@ -1228,6 +1228,18 @@ def test_time_window_partition_len():
         == partitions_def.get_partition_keys(current_time=current_time)[50:53]
     )
 
+    partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="*/15 * * * *",
+        start="2020-11-01-00:30",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time) == len(
+        partitions_def.get_partition_keys(current_time)
+    )
+
 
 def test_get_first_partition_window():
     assert DailyPartitionsDefinition(
