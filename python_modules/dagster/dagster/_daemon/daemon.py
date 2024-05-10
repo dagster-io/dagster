@@ -230,9 +230,16 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
 
 
 class IntervalDaemon(DagsterDaemon[TContext], ABC):
-    def __init__(self, interval_seconds, jitter_seconds: float = 0):
+    def __init__(
+        self,
+        interval_seconds,
+        *,
+        interval_jitter_seconds: float = 0,
+        startup_jitter_seconds: float = 0,
+    ):
         self.interval_seconds = check.numeric_param(interval_seconds, "interval_seconds")
-        self.jitter_seconds = jitter_seconds
+        self.interval_jitter_seconds = interval_jitter_seconds
+        self.startup_jitter_seconds = startup_jitter_seconds
         super().__init__()
 
     def core_loop(
@@ -240,8 +247,11 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
         workspace_process_context: TContext,
         shutdown_event: Event,
     ) -> DaemonIterator:
+        if self.startup_jitter_seconds:
+            time.sleep(random.uniform(0, self.startup_jitter_seconds))
+
         while True:
-            interval = self.interval_seconds + random.uniform(0, self.jitter_seconds)
+            interval = self.interval_seconds + random.uniform(0, self.interval_jitter_seconds)
             start_time = time.time()
             yield SpanMarker.START_SPAN
             try:
