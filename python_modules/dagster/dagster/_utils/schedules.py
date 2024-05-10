@@ -38,8 +38,9 @@ def _is_simple_cron(
     cron_expression: str,
     dt: datetime.datetime,
 ) -> bool:
-    """The default croniter match function only checks that the given datetime is within 60 seconds
-    of a cron schedule tick. This function checks that the given datetime is exactly on a cron tick.
+    """This function is purely an optimization to see if the provided datetime is already on an obvious boundary
+    of the common and easy to detect (daily at midnight and on the hour). The optimization is to avoid calling 
+    _find_schedule_time to find the next cron boundary.
     """
     if cron_expression == "0 0 * * *":
         return dt.hour == 0 and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0
@@ -118,14 +119,14 @@ def _replace_date_fields(
     minute: int,
     day: int,
 ):
-    new_time = date.replace(
+    new_date = date.replace(
         day=day,
         hour=hour,
         minute=minute,
         second=0,
         microsecond=0,
     )
-    return apply_fold_and_post_transition(new_time)
+    return apply_fold_and_post_transition(new_date)
 
 
 SECONDS_PER_MINUTE = 60
@@ -240,7 +241,7 @@ def _find_daily_schedule_time(
         if already_on_boundary or new_time.timestamp() >= date.timestamp():
             new_time = new_time - datetime.timedelta(days=1)
 
-    # If the hour has changed from the hour on the cronstring,
+    # If the hour or minute has changed the schedule in cronstring,
     # double-check that it's still correct in case we crossed a DST boundary
     if new_time.hour != hour or new_time.minute != minute:
         new_time = _replace_date_fields(
@@ -294,7 +295,7 @@ def _find_weekly_schedule_time(
         if already_on_boundary or new_time.timestamp() >= date.timestamp():
             new_time = new_time - relativedelta(weeks=1)
 
-    # If the hour has changed from the hour on the cronstring,
+    # If the hour or minute has from the schedule in cronstring,
     # double-check that it's still correct in case we crossed a DST boundary
     if new_time.hour != hour or new_time.minute != minute:
         new_time = _replace_date_fields(
@@ -333,7 +334,7 @@ def _find_monthly_schedule_time(
             # Move back a month if needed
             new_time = new_time - relativedelta(months=1)
 
-    # If the hour has changed from the hour on the cronstring,
+    # If the hour or minute has changed from the schedule in cronstring,
     # double-check that it's still correct in case we crossed a DST boundary
     if new_time.hour != hour or new_time.minute != minute:
         new_time = _replace_date_fields(
