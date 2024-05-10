@@ -101,6 +101,8 @@ def execute_job_backfill_iteration(
                 chunk,
             ):
                 yield None
+                if _run_id is not None:
+                    tick_context.add_run_info(_run_id)
                 # before submitting, refetch the backfill job to check for status changes
                 backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
                 if backfill.status != BulkActionStatus.REQUESTED:

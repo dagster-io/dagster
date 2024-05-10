@@ -677,6 +677,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     asset_graph: RemoteAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
+    tick_context: "BackfillLaunchContext",
 ) -> Iterable[Optional[AssetBackfillData]]:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
@@ -715,8 +716,12 @@ def _submit_runs_and_update_backfill_in_chunks(
 
         retryable_error_raised = submit_run_request_chunk_result.retryable_error_raised
 
+        run_requests, submitted_dagster_runs = zip(
+            *submit_run_request_chunk_result.chunk_submitted_runs
+        )
+
         requested_partitions_in_chunk = _get_requested_asset_partitions_from_run_requests(
-            [rr for (rr, _) in submit_run_request_chunk_result.chunk_submitted_runs],
+            run_requests,
             asset_graph,
             instance_queryer,
         )
@@ -731,6 +736,9 @@ def _submit_runs_and_update_backfill_in_chunks(
                 submitted_partitions
             )
         )
+        tick_context.set_run_requests(run_requests)
+        for run in submitted_dagster_runs:
+            tick_context.add_run_info(run_id=run.run_id)
         if retryable_error_raised:
             # Code server became unavailable mid-backfill. Rewind the cursor back to the cursor
             # from the previous iteration, to allow next iteration to reevaluate the same
@@ -952,6 +960,7 @@ def execute_asset_backfill_iteration(
                 asset_graph,
                 instance_queryer,
                 logger,
+                tick_context,
             ):
                 yield None
 

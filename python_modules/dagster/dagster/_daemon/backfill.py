@@ -64,9 +64,8 @@ class BackfillLaunchContext:
     def set_run_requests(
         self,
         run_requests: Sequence[RunRequest],
-        reserved_run_ids: Optional[Sequence[str]],
     ):
-        self._tick = self._tick.with_run_requests(run_requests, reserved_run_ids=reserved_run_ids)
+        self._tick = self._tick.with_run_requests(run_requests)
         return self._tick
 
     def update_state(self, status: TickStatus, **kwargs: object):
