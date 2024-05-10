@@ -4109,6 +4109,57 @@ class TestEventLogStorage:
                 asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
                 assert asset_entry.last_observation_record == fetched_record
 
+    def test_get_cursored_asset_records_for_run(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
+        @op
+        def materialize_asset():
+            yield AssetMaterialization("a")
+            yield AssetMaterialization("b")
+            yield AssetMaterialization("c")
+            yield AssetMaterialization("d")
+            yield AssetMaterialization("e")
+            yield Output(5)
+
+        with instance_for_test() as created_instance:
+            if not storage.has_instance:
+                storage.register_instance(created_instance)
+
+            run_id = make_new_run_id()
+            with create_and_delete_test_runs(instance, [run_id]):
+                events, result = _synthesize_events(
+                    lambda: materialize_asset(), instance=created_instance, run_id=run_id
+                )
+                for event in events:
+                    storage.store_event(event)
+
+                # get the materialization from the one_asset_job run
+                def _get_record_storage_ids(cursor=None, limit=None, ascending=True):
+                    return [
+                        record.storage_id
+                        for record in storage.get_records_for_run(
+                            run_id,
+                            of_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            cursor=cursor,
+                            limit=limit,
+                            ascending=ascending,
+                        ).records
+                    ]
+
+                storage_ids = _get_record_storage_ids()
+                assert len(storage_ids) == 5
+                assert storage_ids[0] < storage_ids[4]
+                [a, b, c, d, e] = storage_ids
+
+                assert _get_record_storage_ids(
+                    cursor=EventLogCursor.from_storage_id(c).to_string(), limit=2, ascending=True
+                ) == [d, e]
+                assert _get_record_storage_ids(
+                    cursor=EventLogCursor.from_storage_id(c).to_string(), limit=2, ascending=False
+                ) == [b, a]
+
     def test_last_run_id_updates_on_materialization_planned(
         self,
         storage: EventLogStorage,
