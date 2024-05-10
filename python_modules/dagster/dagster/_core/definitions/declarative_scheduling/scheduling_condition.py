@@ -1,9 +1,10 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple
 
 import pendulum
 
+import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -11,6 +12,7 @@ from dagster._core.definitions.declarative_scheduling.serialized_objects import 
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
 )
+from dagster._core.definitions.metadata import MetadataMapping
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import PackableValue
 from dagster._utils.security import non_secure_md5_hash_str
@@ -265,9 +267,22 @@ class SchedulingResult(DagsterModel):
         context: "SchedulingContext",
         true_slice: AssetSlice,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
+        slices_with_metadata: Sequence[Tuple[AssetSlice, MetadataMapping]] = [],
         extra_state: PackableValue = None,
     ) -> "SchedulingResult":
         """Returns a new AssetConditionEvaluation from the given parameters."""
+        check.param_invariant(
+            not (bool(subsets_with_metadata) and bool(slices_with_metadata)),
+            "slices_with_metadata",
+            "Cannot provide both subsets_with_metadata and slices_with_metadata.",
+        )
+        if slices_with_metadata:
+            subsets_with_metadata = [
+                AssetSubsetWithMetadata(
+                    subset=asset_slice.convert_to_valid_asset_subset(), metadata=metadata
+                )
+                for asset_slice, metadata in slices_with_metadata
+            ]
         return SchedulingResult(
             condition=context.condition,
             condition_unique_id=context.condition_unique_id,
