@@ -107,6 +107,7 @@ class GrapheneSensor(graphene.ObjectType):
         )
 
         self._stored_state = sensor_state
+        # looks like we get the state twice, why? do i need to do  the same for backfills?
         self._sensor_state = self._external_sensor.get_current_instigator_state(sensor_state)
 
         super().__init__(

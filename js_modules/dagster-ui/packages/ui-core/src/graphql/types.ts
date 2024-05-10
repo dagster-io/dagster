@@ -2008,6 +2008,7 @@ export enum InstigationTickStatus {
 
 export enum InstigationType {
   AUTO_MATERIALIZE = 'AUTO_MATERIALIZE',
+  BACKFILL = 'BACKFILL',
   SCHEDULE = 'SCHEDULE',
   SENSOR = 'SENSOR',
 }
@@ -3056,6 +3057,7 @@ export type PartitionBackfill = {
   runs: Array<Run>;
   status: BulkActionStatus;
   tags: Array<PipelineTag>;
+  ticks: Array<InstigationTick>;
   timestamp: Scalars['Float']['output'];
   unfinishedRuns: Array<Run>;
   user: Maybe<Scalars['String']['output']>;
@@ -3067,6 +3069,16 @@ export type PartitionBackfillPartitionsTargetedForAssetKeyArgs = {
 
 export type PartitionBackfillRunsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type PartitionBackfillTicksArgs = {
+  afterTimestamp?: InputMaybe<Scalars['Float']['input']>;
+  beforeTimestamp?: InputMaybe<Scalars['Float']['input']>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  dayOffset?: InputMaybe<Scalars['Int']['input']>;
+  dayRange?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  statuses?: InputMaybe<Array<InstigationTickStatus>>;
 };
 
 export type PartitionBackfillUnfinishedRunsArgs = {
@@ -10630,6 +10642,7 @@ export const buildPartitionBackfill = (
         ? overrides.status!
         : BulkActionStatus.CANCELED,
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+    ticks: overrides && overrides.hasOwnProperty('ticks') ? overrides.ticks! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 8.28,
     unfinishedRuns:
       overrides && overrides.hasOwnProperty('unfinishedRuns') ? overrides.unfinishedRuns! : [],

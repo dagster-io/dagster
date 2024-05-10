@@ -20,12 +20,15 @@ from dagster._core.execution.backfill import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalPartitionSet
+from dagster._core.scheduler.instigation import (
+    InstigatorType,
+)
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     TagType,
-    get_tag_type,
+    get_tag_type
 )
 from dagster._core.workspace.permissions import Permissions
 
@@ -33,6 +36,7 @@ from ..implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
     partition_statuses_from_run_partition_data,
 )
+from ..implementation.fetch_ticks import get_instigation_ticks
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GrapheneError,
@@ -46,6 +50,7 @@ from .errors import (
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
 )
+from .instigation import GrapheneInstigationTick, GrapheneInstigationTickStatus
 from .pipelines.config import GrapheneRunConfigValidationInvalid
 from .util import ResolveInfo, non_null_list
 
@@ -286,6 +291,16 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     hasResumePermission = graphene.NonNull(graphene.Boolean)
     user = graphene.Field(graphene.String)
     tags = non_null_list("dagster_graphql.schema.tags.GraphenePipelineTag")
+    ticks = graphene.Field(
+        non_null_list(GrapheneInstigationTick),
+        dayRange=graphene.Int(),
+        dayOffset=graphene.Int(),
+        limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        beforeTimestamp=graphene.Float(),
+        afterTimestamp=graphene.Float(),
+    )
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -523,6 +538,35 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_user(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._backfill_job.user
+
+    def resolve_ticks(
+        self,
+        graphene_info,
+        dayRange=None,
+        dayOffset=None,
+        limit=None,
+        statuses=None,
+        beforeTimestamp=None,
+        afterTimestamp=None,
+    ) -> Sequence[GrapheneInstigationTick]:
+        from dagster._daemon.backfill import _BACKFILL_ORIGIN_ID
+
+        return get_instigation_ticks(
+            graphene_info=graphene_info,
+            instigator_type=InstigatorType.BACKFILL,
+            instigator_origin_id=_BACKFILL_ORIGIN_ID,
+            selector_id=self._backfill_job.backfill_id,
+            batch_loader=None,
+            # TODO - not sure if we should be passing the dayRange/dayOffset and timestamps through since we want to get the ticks for a backfill that may have finished a while ago
+            dayRange=dayRange,
+            dayOffset=dayOffset,
+            limit=limit,
+            cursor=None,
+            status_strings=statuses,
+            # maybe we pull the timestamp and endTimestamp from this objet
+            before=beforeTimestamp,
+            after=afterTimestamp,
+        )
 
 
 class GrapheneBackfillNotFoundError(graphene.ObjectType):

@@ -32,6 +32,7 @@ def get_backfills(
     backfills = graphene_info.context.instance.get_backfills(
         status=status, cursor=cursor, limit=limit
     )
+
     return GraphenePartitionBackfills(
         results=[GraphenePartitionBackfill(backfill) for backfill in backfills]
     )
