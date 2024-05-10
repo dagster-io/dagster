@@ -18,7 +18,7 @@ from .client_queries import (
     RELOAD_REPOSITORY_LOCATION_MUTATION,
     SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
     TERMINATE_RUN_JOB_MUTATION,
-    TERMINATE_RUNS_JOB_MUTATION
+    TERMINATE_RUNS_JOB_MUTATION,
 )
 from .utils import (
     DagsterGraphQLClientError,
@@ -401,19 +401,20 @@ class DagsterGraphQLClient:
     def terminate_runs(self, run_ids: List[str], termination_policy: str = "SAFE_TERMINATE"):
         """Terminates a list of pipeline runs. This method it is useful when you would like to stop a list of pipeline runs
         based on a external event.
+
         Args:
             run_ids (List[str]): The list run ids of the pipeline runs to terminate
             termination_policy (str): The termination policy to use. Defaults to "SAFE_TERMINATE"
         """
-
         check.list_param(run_ids, "run_ids", of_type=str)
 
         res_data: Dict[str, Dict[str, Any]] = self._execute(
-            TERMINATE_RUNS_JOB_MUTATION, {"runIds": run_ids, "terminationPolicy": termination_policy}
+            TERMINATE_RUNS_JOB_MUTATION,
+            {"runIds": run_ids, "terminationPolicy": termination_policy},
         )
 
         query_result: Dict[str, Any] = res_data["terminateRuns"]
-        run_query_result : List[Dict[str, Any]] = query_result["terminateRunResults"]
+        run_query_result: List[Dict[str, Any]] = query_result["terminateRunResults"]
 
         errors = []
         for run_result in run_query_result:
@@ -426,6 +427,10 @@ class DagsterGraphQLClient:
 
         if errors:
             if len(errors) < len(run_ids):
-                raise DagsterGraphQLClientError("TerminateRunsError", f"Some runs could not be terminated: {errors}")
+                raise DagsterGraphQLClientError(
+                    "TerminateRunsError", f"Some runs could not be terminated: {errors}"
+                )
             elif len(errors) == len(run_ids):
-                raise DagsterGraphQLClientError("TerminateRunsError", f"All run terminations failed: {errors}")
+                raise DagsterGraphQLClientError(
+                    "TerminateRunsError", f"All run terminations failed: {errors}"
+                )
