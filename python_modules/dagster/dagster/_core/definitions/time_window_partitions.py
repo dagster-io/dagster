@@ -1890,9 +1890,11 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             TimeWindowPartitionsDefinition, self.partitions_def
         ).time_window_for_partition_key(partition_key)
 
+        time_window_start_timestamp = time_window.start.timestamp()
+
         return any(
-            time_window.start.timestamp() >= included_time_window.start.timestamp()
-            and time_window.start.timestamp() < included_time_window.end.timestamp()
+            time_window_start_timestamp >= included_time_window.start.timestamp()
+            and time_window_start_timestamp < included_time_window.end.timestamp()
             for included_time_window in self.included_time_windows
         )
 
