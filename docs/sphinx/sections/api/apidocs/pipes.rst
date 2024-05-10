@@ -32,7 +32,7 @@ Clients
 Advanced
 --------
 
-The APIs in the following sections are primarily used by those who need more control over Pipes than the simplified objects, such as ``dagster.PipesSubprocessClient``, can offer. Most Pipes users won't need to use these APIs in their Pipes implementation.
+Most Pipes users won't need to use the APIs in the following sections unless they are customizing the Pipes protocol.
 
 Refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__ for more information.
 
