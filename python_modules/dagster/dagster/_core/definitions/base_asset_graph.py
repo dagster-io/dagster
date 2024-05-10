@@ -11,11 +11,13 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Set,
+    Tuple,
     TypeVar,
     Union,
     cast,
@@ -714,16 +716,25 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         self,
         dynamic_partitions_store: DynamicPartitionsStore,
         condition_fn: Callable[
-            [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], bool
+            [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], Tuple[bool, str]
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
         evaluation_time: datetime,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> Tuple[
+        AbstractSet[AssetKeyPartitionKey], Sequence[Tuple[Iterable[AssetKeyPartitionKey], str]]
+    ]:
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
         - Are >= initial_asset_partitions
         - Match the condition_fn
         - Any of their ancestors >= initial_asset_partitions match the condition_fn
+
+        Also returns a list of tuples, where each tuple is a candidated_unit (list of
+        AssetKeyPartitionKeys that must be materialized together - ie multi_asset) that do not
+        satisfy the criteria and the reason they were filtered out.
+
+        The condition_fn should return a tuple of a boolean indicating whether the asset partition meets
+        the condition and a string explaining why it does not meet the condition, if applicable.
 
         Visits parents before children.
 
@@ -736,11 +747,13 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         queue = ToposortedPriorityQueue(self, all_nodes, include_full_execution_set=True)
 
         result: Set[AssetKeyPartitionKey] = set()
+        failed_reasons: List[Tuple[Iterable[AssetKeyPartitionKey], str]] = []
 
         while len(queue) > 0:
             candidates_unit = queue.dequeue()
 
-            if condition_fn(candidates_unit, result):
+            meets_condition, fail_reason = condition_fn(candidates_unit, result)
+            if meets_condition:
                 result.update(candidates_unit)
 
                 for candidate in candidates_unit:
@@ -753,8 +766,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                         if child not in all_nodes:
                             queue.enqueue(child)
                             all_nodes.add(child)
+            else:
+                failed_reasons.append((candidates_unit, fail_reason))
 
-        return result
+        return result, failed_reasons
 
     def split_asset_keys_by_repository(
         self, asset_keys: AbstractSet[AssetKey]

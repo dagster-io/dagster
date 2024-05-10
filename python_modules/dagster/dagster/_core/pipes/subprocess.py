@@ -7,7 +7,7 @@ from dagster_pipes import PipesExtras
 
 from dagster import _check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions.resource_annotation import ResourceParam
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
@@ -24,7 +24,7 @@ from dagster._core.pipes.utils import (
 
 
 @experimental
-class _PipesSubprocess(PipesClient):
+class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
     """A pipes client that runs a subprocess with the given command and environment.
 
     By default parameters are injected via environment variables. Context is passed via
@@ -134,6 +134,3 @@ class _PipesSubprocess(PipesClient):
                 raise
 
         return PipesClientCompletedInvocation(pipes_session)
-
-
-PipesSubprocessClient = ResourceParam[_PipesSubprocess]

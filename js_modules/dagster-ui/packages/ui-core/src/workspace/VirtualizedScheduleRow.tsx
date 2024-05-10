@@ -28,6 +28,7 @@ import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
@@ -79,6 +80,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     },
     notifyOnNetworkStatusChange: true,
   });
+  useBlockTraceOnQueryResult(queryResult, 'SingleScheduleQuery');
 
   useDelayedRowQuery(querySchedule);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);

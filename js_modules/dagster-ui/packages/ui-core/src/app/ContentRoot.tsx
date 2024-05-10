@@ -1,9 +1,11 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
-import {Suspense, lazy, memo, useEffect, useRef} from 'react';
-import {Route, Switch, useLocation} from 'react-router-dom';
+import {memo, useEffect, useRef} from 'react';
+import {Switch, useLocation} from 'react-router-dom';
 
+import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {AssetsOverview} from '../assets/AssetsOverview';
+import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
@@ -35,94 +37,60 @@ export const ContentRoot = memo(() => {
       <ErrorBoundary region="page" resetErrorOnChange={[pathname]}>
         <Switch>
           <Route path="/asset-groups(/?.*)">
-            <Suspense fallback={<div />}>
-              <AssetsGroupsGlobalGraphRoot />
-            </Suspense>
+            <AssetsGroupsGlobalGraphRoot />
           </Route>
           <Route path="/assets(/?.*)">
-            <Suspense fallback={<div />}>
-              <AssetFeatureProvider>
-                <AssetsOverview
-                  headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
-                  documentTitlePrefix="Assets"
-                />
-              </AssetFeatureProvider>
-            </Suspense>
+            <AssetFeatureProvider>
+              <AssetsOverview
+                headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
+                documentTitlePrefix="Assets"
+              />
+            </AssetFeatureProvider>
           </Route>
           <Route path="/runs" exact>
-            <Suspense fallback={<div />}>
-              <RunsRoot />
-            </Suspense>
+            <RunsRoot />
           </Route>
           <Route path="/runs/scheduled" exact>
-            <Suspense fallback={<div />}>
-              <ScheduledRunListRoot />
-            </Suspense>
+            <ScheduledRunListRoot />
           </Route>
           <Route path="/runs/:runId" exact>
-            <Suspense fallback={<div />}>
-              <RunRoot />
-            </Suspense>
+            <RunRoot />
           </Route>
           <Route path="/snapshots/:pipelinePath/:tab?">
-            <Suspense fallback={<div />}>
-              <SnapshotRoot />
-            </Suspense>
+            <SnapshotRoot />
           </Route>
           <Route path="/health">
-            <Suspense fallback={<div />}>
-              <InstanceHealthPage />
-            </Suspense>
+            <InstanceHealthPage />
           </Route>
           <Route path="/concurrency">
-            <Suspense fallback={<div />}>
-              <InstanceConcurrencyPage />
-            </Suspense>
+            <InstanceConcurrencyPage />
           </Route>
           <Route path="/config">
-            <Suspense fallback={<div />}>
-              <InstanceConfig />
-            </Suspense>
+            <InstanceConfig />
           </Route>
           <Route path="/locations" exact>
-            <Suspense fallback={<div />}>
-              <CodeLocationsPage />
-            </Suspense>
+            <CodeLocationsPage />
           </Route>
           <Route path="/locations">
-            <Suspense fallback={<div />}>
-              <WorkspaceRoot />
-            </Suspense>
+            <WorkspaceRoot />
           </Route>
           <Route path="/guess/:jobPath">
-            <Suspense fallback={<div />}>
-              <GuessJobLocationRoot />
-            </Suspense>
+            <GuessJobLocationRoot />
           </Route>
           <Route path="/overview">
-            <Suspense fallback={<div />}>
-              <OverviewRoot />
-            </Suspense>
+            <OverviewRoot />
           </Route>
           <Route path="/jobs">
-            <Suspense fallback={<div />}>
-              <JobsRoot />
-            </Suspense>
+            <JobsRoot />
           </Route>
           <Route path="/automation">
-            <Suspense fallback={<div />}>
-              <AutomationRoot />
-            </Suspense>
+            <AutomationRoot />
           </Route>
           <Route path="/settings">
-            <Suspense fallback={<div />}>
-              <SettingsRoot />
-            </Suspense>
+            <SettingsRoot />
           </Route>
           <Route path="*">
-            <Suspense fallback={<div />}>
-              <FallthroughRoot />
-            </Suspense>
+            <FallthroughRoot />
           </Route>
         </Switch>
       </ErrorBoundary>

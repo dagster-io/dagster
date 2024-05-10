@@ -57,6 +57,13 @@ from .metadata_value import (
     TimestampMetadataValue as TimestampMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
+from .source_code import (
+    DEFAULT_SOURCE_FILE_KEY as DEFAULT_SOURCE_FILE_KEY,
+    CodeReferencesMetadataSet as CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue as CodeReferencesMetadataValue,
+    LocalFileCodeReference as LocalFileCodeReference,
+    with_source_code_references as with_source_code_references,
+)
 from .table import (  # re-exported
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
@@ -70,7 +77,7 @@ from .table import (  # re-exported
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 
 RawMetadataValue = Union[
-    "MetadataValue",
+    MetadataValue,
     TableSchema,
     AssetKey,
     os.PathLike,
@@ -83,11 +90,10 @@ RawMetadataValue = Union[
     None,
 ]
 
-MetadataMapping: TypeAlias = Mapping[str, "MetadataValue"]
+MetadataMapping: TypeAlias = Mapping[str, MetadataValue]
 RawMetadataMapping: TypeAlias = Mapping[str, RawMetadataValue]
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
-
 
 # ########################
 # ##### NORMALIZATION
@@ -97,7 +103,7 @@ T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, c
 def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
     allow_invalid: bool = False,
-) -> Mapping[str, "MetadataValue"]:
+) -> Mapping[str, MetadataValue]:
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
     # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
     # for serialization. This will cause unsupported values to be silently replaced with a

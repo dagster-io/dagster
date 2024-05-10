@@ -11,7 +11,7 @@ def error_on_warning():
     raise_exception_on_warnings()
 
 
-def test_table_metadata_set():
+def test_table_metadata_set() -> None:
     column_schema = TableSchema(columns=[TableColumn("foo", "str")])
     table_metadata = TableMetadataSet(column_schema=column_schema)
 
@@ -27,6 +27,18 @@ def test_table_metadata_set():
 
     assert dict(TableMetadataSet()) == {}
     assert TableMetadataSet.extract(dict(TableMetadataSet())) == TableMetadataSet()
+
+
+def test_row_count() -> None:
+    table_metadata = TableMetadataSet(row_count=67)
+
+    dict_table_metadata = dict(table_metadata)
+    assert dict_table_metadata == {"dagster/row_count": 67}
+    AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
+
+    splat_table_metadata = {**table_metadata}
+    assert splat_table_metadata == {"dagster/row_count": 67}
+    AssetMaterialization(asset_key="a", metadata=splat_table_metadata)
 
 
 @ignore_warning("Class `TableColumnLineage` is experimental")

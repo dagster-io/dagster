@@ -9,7 +9,7 @@ from dagster._cli.job import execute_list_versions_command
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
-from ...execution_tests.memoized_dev_loop_job import op_job
+from ...execution_tests.versioning_tests.memoized_dev_loop_job import op_job
 
 
 class Capturing(list):
@@ -45,7 +45,7 @@ def test_execute_display_command():
                 "config": (os.path.join(temp_dir, "job_config.yaml"),),
                 "job_name": "op_job",
                 "python_file": file_relative_path(
-                    __file__, "../../execution_tests/memoized_dev_loop_job.py"
+                    __file__, "../../execution_tests/versioning_tests/memoized_dev_loop_job.py"
                 ),
                 "tags": '{"dagster/is_memoized_run": "true"}',
             }

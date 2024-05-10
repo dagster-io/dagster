@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
-from dagster import PipesClient, ResourceParam
+from dagster import PipesClient
 from dagster._annotations import experimental
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -163,7 +164,7 @@ class PipesLambdaEventContextInjector(PipesEnvContextInjector):
 
 
 @experimental
-class _PipesLambdaClient(PipesClient):
+class PipesLambdaClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS lambda.
 
     By default context is injected via the lambda input event and messages are parsed out of the
@@ -240,6 +241,3 @@ class _PipesLambdaClient(PipesClient):
 
         # should probably have a way to return the lambda result payload
         return PipesClientCompletedInvocation(session)
-
-
-PipesLambdaClient = ResourceParam[_PipesLambdaClient]
