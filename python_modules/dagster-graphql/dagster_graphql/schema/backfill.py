@@ -551,6 +551,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     ) -> Sequence[GrapheneInstigationTick]:
         from dagster._daemon.backfill import _BACKFILL_ORIGIN_ID
 
+        # this might be getting all ticks for all backfills? need to investigate
         return get_instigation_ticks(
             graphene_info=graphene_info,
             instigator_type=InstigatorType.BACKFILL,
