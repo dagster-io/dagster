@@ -152,7 +152,7 @@ def execute_backfill_jobs(
             logging.Logger,
             logging.LoggerAdapter(logger, extra={"backfill_id": backfill.backfill_id}),
         )
-
+        # TODO make the logger here the InstigatorLogger so that we can store logs and fetch them for the UI
         try:
             evaluation_time = pendulum.now("UTC")
             tick = instance.create_tick(
