@@ -27,12 +27,18 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.scoped_resources_builder import (
+    Resources,
+    ScopedResourcesBuilder,
+)
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
+from dagster._utils.schedules import (
+    has_out_of_range_cron_interval,
+    is_valid_cron_schedule,
+)
 
 from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
@@ -63,14 +69,18 @@ RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
     RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest], None
 ]
-RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
+RawScheduleEvaluationFunction: TypeAlias = Callable[
+    ..., ScheduleEvaluationFunctionReturn
+]
 
 ScheduleRunConfigFunction: TypeAlias = Union[
     Callable[["ScheduleEvaluationContext"], RunConfig],
     Callable[[], RunConfig],
 ]
 
-ScheduleTagsFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], Mapping[str, str]]
+ScheduleTagsFunction: TypeAlias = Callable[
+    ["ScheduleEvaluationContext"], Mapping[str, str]
+]
 ScheduleShouldExecuteFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], bool]
 ScheduleExecutionFunction: TypeAlias = Union[
     Callable[["ScheduleEvaluationContext"], Any],
@@ -98,7 +108,9 @@ def get_or_create_schedule_context(
 
     context_param_name = get_context_param_name(fn)
 
-    kwarg_keys_non_resource = set(kwargs.keys()) - {param.name for param in get_resource_args(fn)}
+    kwarg_keys_non_resource = set(kwargs.keys()) - {
+        param.name for param in get_resource_args(fn)
+    }
     if len(args) + len(kwarg_keys_non_resource) > 1:
         raise DagsterInvalidInvocationError(
             "Schedule invocation received multiple non-resource arguments. Only a first "
@@ -194,7 +206,9 @@ class ScheduleEvaluationContext:
         self._exit_stack = ExitStack()
         self._instance = None
 
-        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._instance_ref = check.opt_inst_param(
+            instance_ref, "instance_ref", InstanceRef
+        )
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
@@ -203,7 +217,12 @@ class ScheduleEvaluationContext:
 
         # Kept for backwards compatibility if the schedule log key is not passed into the
         # schedule evaluation.
-        if not self._log_key and repository_name and schedule_name and scheduled_execution_time:
+        if (
+            not self._log_key
+            and repository_name
+            and schedule_name
+            and scheduled_execution_time
+        ):
             self._log_key = [
                 repository_name,
                 schedule_name,
@@ -260,10 +279,15 @@ class ScheduleEvaluationContext:
 
             instance = self.instance if self._instance or self._instance_ref else None
 
-            resources_cm = build_resources(resources=self._resource_defs, instance=instance)
+            resources_cm = build_resources(
+                resources=self._resource_defs, instance=instance
+            )
             self._resources = self._exit_stack.enter_context(resources_cm)
 
-            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+            if (
+                isinstance(self._resources, IContainsGenerator)
+                and not self._cm_scope_entered
+            ):
                 self._exit_stack.close()
                 raise DagsterInvariantViolationError(
                     "At least one provided resource is a generator, but attempting to access"
@@ -273,7 +297,9 @@ class ScheduleEvaluationContext:
 
         return self._resources
 
-    def merge_resources(self, resources_dict: Mapping[str, Any]) -> "ScheduleEvaluationContext":
+    def merge_resources(
+        self, resources_dict: Mapping[str, Any]
+    ) -> "ScheduleEvaluationContext":
         """Merge the specified resources into this context.
         This method is intended to be used by the Dagster framework, and should not be called by user code.
 
@@ -281,7 +307,8 @@ class ScheduleEvaluationContext:
             resources_dict (Mapping[str, Any]): The resources to replace in the context.
         """
         check.invariant(
-            self._resources is None, "Cannot merge resources in context that has been initialized."
+            self._resources is None,
+            "Cannot merge resources in context that has been initialized.",
         )
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
@@ -448,7 +475,8 @@ class ScheduleExecutionData(
         check.opt_str_param(skip_message, "skip_message")
         check.opt_list_param(log_key, "log_key", str)
         check.invariant(
-            not (run_requests and skip_message), "Found both skip data and run request data"
+            not (run_requests and skip_message),
+            "Found both skip data and run request data",
         )
         return super(ScheduleExecutionData, cls).__new__(
             cls,
@@ -482,47 +510,43 @@ def validate_and_get_schedule_resource_dict(
     ),
 )
 class ScheduleDefinition(IHasInternalInit):
-    """Define a schedule that targets a job.
+    """Defines a schedule that targets a job.
 
     Args:
         name (Optional[str]): The name of the schedule to create. Defaults to the job name plus
-            "_schedule".
+            ``_schedule``.
         cron_schedule (Union[str, Sequence[str]]): A valid cron string or sequence of cron strings
-            specifying when the schedule will run, e.g., ``'45 23 * * 6'`` for a schedule that runs
+            specifying when the schedule will run, e.g., ``45 23 * * 6`` for a schedule that runs
             at 11:45 PM every Saturday. If a sequence is provided, then the schedule will run for
             the union of all execution times for the provided cron strings, e.g.,
             ``['45 23 * * 6', '30 9 * * 0]`` for a schedule that runs at 11:45 PM every Saturday and
             9:30 AM every Sunday.
-        execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the
-            schedule, which is run at an interval to determine whether a run should be launched or
-            not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
+        execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the schedule, which is run at an interval to determine whether a run should be launched or not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
 
-            This function must return a generator, which must yield either a single SkipReason
-            or one or more RunRequest objects.
+            This function must return a generator, which must yield either a single :py:class:`~dagster.SkipReason`
+            or one or more :py:class:`~dagster.RunRequest` objects.
         run_config (Optional[Mapping]): The config that parameterizes this execution,
             as a dict.
         run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Mapping]]]): A function that
-            takes a ScheduleEvaluationContext object and returns the run configuration that
-            parameterizes this execution, as a dict. You may set only one of ``run_config``,
-            ``run_config_fn``, and ``execution_fn``.
+            takes a :py:class:`~dagster.ScheduleEvaluationContext` object and returns the run configuration that
+            parameterizes this execution, as a dict. **Note**: Only one of the following may be set: You may set ``run_config``, ``run_config_fn``, or ``execution_fn``.
         tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]]): A
-            function that generates tags to attach to the schedules runs. Takes a
+            function that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
-            key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
+            key-value pairs). **Note**: Only one of the following may be set:  ``tags``, ``tags_fn``, or ``execution_fn``.
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. ``"America/Los_Angeles"``.
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
-        default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from the Dagster UI or via the GraphQL API.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
@@ -570,7 +594,9 @@ class ScheduleDefinition(IHasInternalInit):
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
     ):
-        self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
+        self._cron_schedule = check.inst_param(
+            cron_schedule, "cron_schedule", (str, Sequence)
+        )
         if not isinstance(self._cron_schedule, str):
             check.sequence_param(self._cron_schedule, "cron_schedule", of_type=str)  # type: ignore
 
@@ -609,21 +635,27 @@ class ScheduleDefinition(IHasInternalInit):
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
 
-        self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
+        self._execution_timezone = check.opt_str_param(
+            execution_timezone, "execution_timezone"
+        )
 
-        if execution_fn and (run_config_fn or tags_fn or should_execute or tags or run_config):
+        if execution_fn and (
+            run_config_fn or tags_fn or should_execute or tags or run_config
+        ):
             raise DagsterInvalidDefinitionError(
                 "Attempted to provide both execution_fn and individual run_config/tags arguments "
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn: Optional[Union[Callable[..., Any], DecoratedScheduleFunction]] = (
-                None
-            )
+            self._execution_fn: Optional[
+                Union[Callable[..., Any], DecoratedScheduleFunction]
+            ] = None
             if isinstance(execution_fn, DecoratedScheduleFunction):
                 self._execution_fn = execution_fn
             else:
-                self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
+                self._execution_fn = check.opt_callable_param(
+                    execution_fn, "execution_fn"
+                )
             self._run_config_fn = None
         else:
             if run_config_fn and run_config:
@@ -649,13 +681,17 @@ class ScheduleDefinition(IHasInternalInit):
                 tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
-                    tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
+                    tags_fn,
+                    "tags_fn",
+                    default=lambda _context: cast(Mapping[str, str], {}),
                 )
             self._tags_fn = tags_fn
             self._tags = tags
 
-            self._should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
-                should_execute, "should_execute", default=lambda _context: True
+            self._should_execute: ScheduleShouldExecuteFunction = (
+                check.opt_callable_param(
+                    should_execute, "should_execute", default=lambda _context: True
+                )
             )
 
             # Several type-ignores are present in this function to work around bugs in mypy
@@ -668,7 +704,9 @@ class ScheduleDefinition(IHasInternalInit):
                     ),
                 ):
                     if not self._should_execute(context):
-                        yield SkipReason(f"should_execute function for {name} returned false.")
+                        yield SkipReason(
+                            f"should_execute function for {name} returned false."
+                        )
                         return
 
                 with user_code_error_boundary(
@@ -688,7 +726,9 @@ class ScheduleDefinition(IHasInternalInit):
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = normalize_tags(tags_fn(context), allow_reserved_tags=False)
+                    evaluated_tags = normalize_tags(
+                        tags_fn(context), allow_reserved_tags=False
+                    )
 
                 yield RunRequest(
                     run_key=None,
@@ -726,7 +766,9 @@ class ScheduleDefinition(IHasInternalInit):
         self._raw_required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys", of_type=str
         )
-        self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
+        self._required_resource_keys = (
+            self._raw_required_resource_keys or resource_arg_names
+        )
 
     @staticmethod
     def dagster_internal_init(
@@ -777,7 +819,9 @@ class ScheduleDefinition(IHasInternalInit):
             )
 
         context_param_name = get_context_param_name(self._execution_fn.decorated_fn)
-        context = get_or_create_schedule_context(self._execution_fn.decorated_fn, *args, **kwargs)
+        context = get_or_create_schedule_context(
+            self._execution_fn.decorated_fn, *args, **kwargs
+        )
         context_param = {context_param_name: context} if context_param_name else {}
 
         resources = validate_and_get_schedule_resource_dict(
@@ -838,15 +882,21 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
+    def job(
+        self,
+    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
         if isinstance(self._target, DirectTarget):
             return self._target.target
-        raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
+        raise DagsterInvalidDefinitionError(
+            "No job was provided to ScheduleDefinition."
+        )
 
-    def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
+    def evaluate_tick(
+        self, context: "ScheduleEvaluationContext"
+    ) -> ScheduleExecutionData:
         """Evaluate schedule using the provided context.
 
         Args:
@@ -897,7 +947,9 @@ class ScheduleDefinition(IHasInternalInit):
             skip_message = None
 
         dynamic_partitions_store = (
-            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+            CachingDynamicPartitionsLoader(context.instance)
+            if context.instance_ref
+            else None
         )
 
         # clone all the run requests with resolved tags and config
@@ -922,7 +974,9 @@ class ScheduleDefinition(IHasInternalInit):
 
             resolved_run_requests.append(
                 resolved_request.with_replaced_attrs(
-                    tags=merge_dicts(resolved_request.tags, DagsterRun.tags_for_schedule(self))
+                    tags=merge_dicts(
+                        resolved_request.tags, DagsterRun.tags_for_schedule(self)
+                    )
                 )
             )
 
