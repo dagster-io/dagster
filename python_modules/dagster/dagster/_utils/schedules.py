@@ -39,7 +39,7 @@ def _is_simple_cron(
     dt: datetime.datetime,
 ) -> bool:
     """This function is purely an optimization to see if the provided datetime is already on an obvious boundary
-    of the common and easy to detect (daily at midnight and on the hour). The optimization is to avoid calling 
+    of the common and easy to detect (daily at midnight and on the hour). The optimization is to avoid calling
     _find_schedule_time to find the next cron boundary.
     """
     if cron_expression == "0 0 * * *":
