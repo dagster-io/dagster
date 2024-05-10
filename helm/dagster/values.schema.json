@@ -609,7 +609,7 @@
                     "items": {
                         "type": "string"
                     }
-                },               
+                },              
                 "includeConfigInLaunchedRuns": {
                     "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
