@@ -87,7 +87,20 @@ class HighLevelDSLNopeProject(NopeProject):
         )
 
 
-class HighLevelDSLFileSystemManifestSource:
+class ManifestSource:
+    def get_manifest(self) -> HighLevelDSLManifest:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+
+class InMemoryManifestSource(ManifestSource):
+    def __init__(self, manifest: HighLevelDSLManifest):
+        self.manifest = manifest
+
+    def get_manifest(self) -> HighLevelDSLManifest:
+        return self.manifest
+
+
+class HighLevelDSLFileSystemManifestSource(ManifestSource):
     def __init__(self, path: Path):
         self.path = path
 
@@ -134,26 +147,51 @@ def make_definitions_from_file_system() -> Definitions:
     )
 
 
+def nope_definitions_pipeline(manifest_source: ManifestSource) -> Definitions:
+    return DefinitionsBuilder().build(manifest_source.get_manifest())
+
+
 def make_definitions_from_python_api() -> Definitions:
-    return DefinitionsBuilder().build(
-        HighLevelDSLManifest(
-            manifest_file=HighLevelDSLGroupFileManifest(
-                invocations=[
-                    BespokeELTInvocationTargetManifest(
-                        name="transform_and_load",
-                        target="bespoke_elt",
-                        source="file://example/file.csv",
-                        destination="s3://bucket/file.csv",
-                        assets={
-                            "root_one": BespokeELTAssetManifest(deps=None),
-                            "root_two": BespokeELTAssetManifest(deps=None),
-                        },
-                    )
-                ]
-            ),
-            group_name="group_a",
+    return nope_definitions_pipeline(
+        manifest_source=InMemoryManifestSource(
+            HighLevelDSLManifest(
+                group_name="group_a",
+                manifest_file=HighLevelDSLGroupFileManifest(
+                    invocations=[
+                        BespokeELTInvocationTargetManifest(
+                            name="transform_and_load",
+                            target="bespoke_elt",
+                            source="file://example/file.csv",
+                            destination="s3://bucket/file.csv",
+                            assets={
+                                "root_one": BespokeELTAssetManifest(deps=None),
+                                "root_two": BespokeELTAssetManifest(deps=None),
+                            },
+                        )
+                    ]
+                ),
+            )
         )
     )
+    # return DefinitionsBuilder().build(
+    #     HighLevelDSLManifest(
+    #         manifest_file=HighLevelDSLGroupFileManifest(
+    #             invocations=[
+    #                 BespokeELTInvocationTargetManifest(
+    #                     name="transform_and_load",
+    #                     target="bespoke_elt",
+    #                     source="file://example/file.csv",
+    #                     destination="s3://bucket/file.csv",
+    #                     assets={
+    #                         "root_one": BespokeELTAssetManifest(deps=None),
+    #                         "root_two": BespokeELTAssetManifest(deps=None),
+    #                     },
+    #                 )
+    #             ]
+    #         ),
+    #         group_name="group_a",
+    #     )
+    # )
 
 
 defs = make_definitions_from_file_system()
