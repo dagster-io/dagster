@@ -1,23 +1,8 @@
-from typing import Dict, List, Literal, Optional, Union
+from typing import List, Union
 
+from bespoke_elt import BespokeELTExecutableManifest
+from dbt_executable import DbtExecutableManifest
 from pydantic import BaseModel
-
-
-class BespokeELTAssetManifest(BaseModel):
-    deps: Optional[List[str]]
-
-
-class BespokeELTExecutableManifest(BaseModel):
-    kind: Literal["bespoke_elt"]
-    name: str
-    source: str
-    destination: str
-    assets: Dict[str, BespokeELTAssetManifest]
-
-
-class DbtExecutableManifest(BaseModel):
-    kind: Literal["dbt_manifest"]
-    manifest_json_path: str
 
 
 class HighLevelDSLExecutableList(BaseModel):

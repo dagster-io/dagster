@@ -1,22 +1,19 @@
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from bespoke_elt import BespokeELTAssetManifest, BespokeELTExecutable
 from dagster import _check as check
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.factory.executable import (
     AssetGraphExecutable,
-    AssetGraphExecutionContext,
-    AssetGraphExecutionResult,
 )
-from dagster._core.definitions.result import MaterializeResult
 from dagster._nope.definitions import (
     DefinitionsBuilder,
     InMemoryManifestSource,
     make_nope_definitions,
 )
+from dbt_executable import DbtManifestExecutable
 from manifest import (
-    BespokeELTAssetManifest,
     BespokeELTExecutableManifest,
     DbtExecutableManifest,
     HighLevelDSLExecutableList,
@@ -55,34 +52,6 @@ class HighLevelDSLDefsBuilder(DefinitionsBuilder):
             return DbtManifestExecutable(group_name=group_name, manifest=harness)
         else:
             raise NotImplementedError(f"Unknown kind {harness.kind}")
-
-
-class DbtManifestExecutable(AssetGraphExecutable):
-    def __init__(self, group_name: str, manifest: DbtExecutableManifest):
-        super().__init__(
-            specs=[AssetSpec(key=asset_key, group_name=group_name) for asset_key in ["hardcoded"]]
-        )
-
-    def execute(self, context: AssetGraphExecutionContext) -> AssetGraphExecutionResult:
-        context.log.info("Run dbt project")
-        return [MaterializeResult(asset_key="hardcoded")]
-
-
-class BespokeELTExecutable(AssetGraphExecutable):
-    def __init__(self, group_name: str, manifest: BespokeELTExecutableManifest):
-        super().__init__(
-            specs=[
-                AssetSpec(key=asset_key, group_name=group_name)
-                for asset_key in manifest.assets.keys()
-            ]
-        )
-
-    def execute(self, context: AssetGraphExecutionContext) -> AssetGraphExecutionResult:
-        context.log.info("Running bespoke ELT")
-        for spec in self.specs:
-            context.log.info(f"Running {spec.key}")
-            assert isinstance(spec, AssetSpec)  # only do assets right now
-            yield MaterializeResult(asset_key=spec.key)
 
 
 def make_definitions_from_python_api() -> Definitions:
