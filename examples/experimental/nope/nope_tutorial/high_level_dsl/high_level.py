@@ -121,7 +121,7 @@ def make_definitions_from_python_api() -> Definitions:
 
 defs = make_nope_definitions(
     manifest_source=HighLevelDSLFileSystemManifestSource(
-        path=Path(__file__).resolve().parent / Path("high_level_defs")
+        path=Path(__file__).resolve().parent / Path("defs")
     ),
     defs_builder_cls=HighLevelDSLDefsBuilder,
 )

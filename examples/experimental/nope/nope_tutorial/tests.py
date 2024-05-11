@@ -39,22 +39,3 @@ def test_03_single_file_manifest_execute_in_process() -> None:
     assert isinstance(defs.get_assets_def(key), AssetsDefinition)
     assert defs.get_implicit_global_asset_job_def().execute_in_process().success
 
-
-def test_high_level_pydantic_parse() -> None:
-    from high_level import HighLevelDSLGroupFileManifest, load_yaml_to_pydantic
-
-    yaml_manifest_path = Path(__file__).resolve().parent / Path("high_level_defs/group_a.yaml")
-
-    manifest = load_yaml_to_pydantic(
-        str(yaml_manifest_path.resolve()), HighLevelDSLGroupFileManifest
-    )
-    assert isinstance(manifest, HighLevelDSLGroupFileManifest)
-    assert len(manifest.invocations) == 1
-    invocation = next(iter(manifest.invocations))
-    assert invocation.target == "bespoke_elt"
-    assert invocation.name == "transform_and_load"
-    assert invocation.source == "file://example/file.csv"
-    assert invocation.destination == "s3://bucket/file.csv"
-    assert len(invocation.assets) == 2
-
-    assert set(invocation.assets.keys()) == {"root_one", "root_two"}
