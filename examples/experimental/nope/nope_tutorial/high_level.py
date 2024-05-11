@@ -80,11 +80,39 @@ class HighLevelDSLNopeProject(NopeProject):
             ),
             HighLevelDSLGroupFileManifest,
         )
-        return make_definitions_from_manifest(
+        return DefinitionsBuilder().build(
             HighLevelDSLManifest(
                 group_name=group_manifest_path.stem, manifest_file=group_file_manifest
             )
         )
+
+
+class HighLevelDSLFileSystemManifestSource:
+    def __init__(self, path: Path):
+        self.path = path
+
+    def get_manifest(self) -> HighLevelDSLManifest:
+        single_group_yaml_file = get_single_yaml_file(self.path)
+        group_file_manifest = check.inst(
+            load_yaml_to_pydantic(str(single_group_yaml_file), HighLevelDSLGroupFileManifest),
+            HighLevelDSLGroupFileManifest,
+        )
+        return HighLevelDSLManifest(group_name=self.path.stem, manifest_file=group_file_manifest)
+
+
+class DefinitionsBuilder:
+    def build(self, manifest: HighLevelDSLManifest) -> Definitions:
+        # return make_definitions_from_manifest(manifest)
+        manifest_file = manifest.manifest_file
+        assert isinstance(manifest_file, HighLevelDSLGroupFileManifest)
+        assets_defs = []
+        for invocation in manifest_file.invocations:
+            assets_defs.append(
+                BespokeELTExecutable(
+                    group_name=manifest.group_name, manifest=invocation
+                ).to_assets_def()
+            )
+        return Definitions(assets_defs)
 
 
 class BespokeELTExecutable(AssetGraphExecutable):
@@ -98,27 +126,16 @@ class BespokeELTExecutable(AssetGraphExecutable):
         raise NotImplementedError("Not implemented")
 
 
-def make_definitions_from_manifest(manifest: HighLevelDSLManifest) -> Definitions:
-    manifest_file = manifest.manifest_file
-    assert isinstance(manifest_file, HighLevelDSLGroupFileManifest)
-    assets_defs = []
-    for invocation in manifest_file.invocations:
-        assets_defs.append(
-            BespokeELTExecutable(
-                group_name=manifest.group_name, manifest=invocation
-            ).to_assets_def()
-        )
-    return Definitions(assets_defs)
-
-
 def make_definitions_from_file_system() -> Definitions:
-    return HighLevelDSLNopeProject.make_definitions(
-        defs_path=Path(__file__).resolve().parent / Path("high_level_defs")
+    return DefinitionsBuilder().build(
+        HighLevelDSLFileSystemManifestSource(
+            path=Path(__file__).resolve().parent / Path("high_level_defs")
+        ).get_manifest()
     )
 
 
 def make_definitions_from_python_api() -> Definitions:
-    return make_definitions_from_manifest(
+    return DefinitionsBuilder().build(
         HighLevelDSLManifest(
             manifest_file=HighLevelDSLGroupFileManifest(
                 invocations=[
